@@ -3,7 +3,7 @@ mod checkpoint_tests {
     use super::super::super::{
         Dictionary, ExtensionFunctionId, FunctionBinding, FunctionCatalogBuilder, FunctionDefine,
         FunctionDefinition, FunctionExport, FunctionExposure, FunctionExtensionEntry,
-        FunctionSpecializer, FunctionSystem, Interpreter, MResult, MechFunction, MechSourceCode,
+        FunctionSpecializer, Interpreter, MResult, MechFunction, MechSourceCode,
         ModuleManifestCatalog, OperationId, ProgramState, ReactiveCellId, Ref,
         RuntimeContextBinding, ValRef, Value, ValueStateBorrowConflict, hash_str,
         internal_pattern_value_identifier,
@@ -79,15 +79,9 @@ mod checkpoint_tests {
             })
             .unwrap();
         let catalog = Arc::new(builder.build().unwrap());
-        let function_system = FunctionSystem::from_catalog(Arc::clone(&catalog));
-        let legacy_boundary = Arc::clone(function_system.legacy_boundary());
-        let mut interpreter = Interpreter::with_function_system(41, 100, function_system);
+        let mut interpreter = Interpreter::with_function_catalog(41, 100, Arc::clone(&catalog));
 
         assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
-        assert!(Arc::ptr_eq(
-            interpreter.legacy_function_boundary(),
-            &legacy_boundary,
-        ));
         assert!(
             interpreter
                 .state
@@ -120,17 +114,9 @@ mod checkpoint_tests {
 
         let cloned = interpreter.clone();
         assert!(Arc::ptr_eq(cloned.function_catalog(), &catalog));
-        assert!(Arc::ptr_eq(
-            cloned.legacy_function_boundary(),
-            &legacy_boundary,
-        ));
 
         let child = interpreter.new_child_interpreter(42, 100);
         assert!(Arc::ptr_eq(child.function_catalog(), &catalog));
-        assert!(Arc::ptr_eq(
-            child.legacy_function_boundary(),
-            &legacy_boundary,
-        ));
         assert!(
             child
                 .state
@@ -162,14 +148,6 @@ mod checkpoint_tests {
                 .resolve_name(user_name)
                 .is_some()
         );
-        assert!(
-            child
-                .state
-                .borrow()
-                .legacy_functions
-                .same_handle(&interpreter.state.borrow().legacy_functions)
-        );
-
         let environment_before = interpreter.state.borrow().function_environment.clone();
         assert_eq!(environment_before.resolve_name("plus"), None);
         let checkpoint = interpreter.checkpoint().unwrap();
@@ -195,10 +173,6 @@ mod checkpoint_tests {
 
         interpreter.restore(checkpoint).unwrap();
         assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
-        assert!(Arc::ptr_eq(
-            interpreter.legacy_function_boundary(),
-            &legacy_boundary,
-        ));
         assert_eq!(
             interpreter.state.borrow().function_environment,
             environment_before,
@@ -214,10 +188,6 @@ mod checkpoint_tests {
 
         interpreter.clear();
         assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
-        assert!(Arc::ptr_eq(
-            interpreter.legacy_function_boundary(),
-            &legacy_boundary,
-        ));
         assert!(
             interpreter
                 .state

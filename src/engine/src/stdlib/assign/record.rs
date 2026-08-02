@@ -194,8 +194,8 @@ fn impl_set_record_column_fxn(
 }
 
 pub struct AssignRecordField {}
-impl NativeFunctionCompiler for AssignRecordField {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AssignRecordField {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

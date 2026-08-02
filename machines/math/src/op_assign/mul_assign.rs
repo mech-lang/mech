@@ -75,8 +75,8 @@ fn mul_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunct
 }
 
 pub struct MulAssignValue {}
-impl NativeFunctionCompiler for MulAssignValue {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MulAssignValue {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -172,8 +172,8 @@ impl_mul_assign_range_fxn_v!(MulAssign1DRVB, mul_assign_1d_range_vec_b, bool);
 op_assign_range_fxn!(mul_assign_range_fxn, MulAssign1DR);
 
 pub struct MulAssignRange {}
-impl NativeFunctionCompiler for MulAssignRange {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MulAssignRange {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -186,7 +186,7 @@ impl NativeFunctionCompiler for MulAssignRange {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match mul_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (&sink, &ixes, &source) {
@@ -218,13 +218,6 @@ impl NativeFunctionCompiler for MulAssignRange {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/mul-assign/range",
-    ptr: &MulAssignRange{},
-  }
 }
 
 // x[1..3,:] *= 1 ------------------------------------------------------------------
@@ -293,8 +286,8 @@ impl_mul_assign_range_fxn_v!(MulAssign2DRAVB, mul_assign_2d_vector_all_mat_b, bo
 op_assign_range_all_fxn!(mul_assign_range_all_fxn, MulAssign2DRA);
 
 pub struct MulAssignRangeAll {}
-impl NativeFunctionCompiler for MulAssignRangeAll {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MulAssignRangeAll {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -307,7 +300,7 @@ impl NativeFunctionCompiler for MulAssignRangeAll {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match mul_assign_range_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => {
@@ -346,11 +339,4 @@ impl NativeFunctionCompiler for MulAssignRangeAll {
             }
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/mul-assign/range-all",
-    ptr: &MulAssignRangeAll{},
-  }
 }

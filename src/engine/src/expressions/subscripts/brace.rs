@@ -55,7 +55,7 @@ pub(super) fn access(
                 /*[Subscript::All] => {
                   fxn_input.push(Value::IndexAll);
                   #[cfg(feature = "matrix")]
-                  plan.borrow_mut().push(MapAccessAll{}.compile(&fxn_input)?);
+                  plan.borrow_mut().push(MapAccessAll{}.specialize(&fxn_input)?);
                 },*/
                 _ => {
                     todo!("Implement brace subscript")

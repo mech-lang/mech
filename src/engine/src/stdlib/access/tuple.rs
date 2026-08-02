@@ -38,13 +38,6 @@ impl MechFunctionFactory for TupleAccessElement {
         }
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "TupleAccessElement",
-    ptr: TupleAccessElement::new,
-  }
-}
-
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     builder.insert_runtime_factory("TupleAccessElement", TupleAccessElement::new)
 }
@@ -62,8 +55,8 @@ impl MechFunctionCompiler for TupleAccessElement {
 }
 
 pub struct TupleAccess {}
-impl NativeFunctionCompiler for TupleAccess {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for TupleAccess {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

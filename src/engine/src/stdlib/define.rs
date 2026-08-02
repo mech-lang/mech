@@ -1,20 +1,6 @@
 #[macro_use]
 use crate::stdlib::*;
 
-#[macro_export]
-macro_rules! register_define {
-    ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
-        paste! {
-          register_descriptor! {
-            FunctionDescriptor {
-              name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), ">") ,
-              ptr: $fxn_name::<$scalar,$row1<$scalar>>::new,
-            }
-          }
-        }
-    };
-}
-
 #[derive(Debug)]
 pub struct VariableDefineMatrix<T, MatA> {
     pub id: u64,
@@ -160,12 +146,6 @@ macro_rules! impl_variable_define_fxn {
           compile_binop!(name, self.var, self.name, self.mutable, ctx, FeatureFlag::Builtin(FeatureKind::VariableDefine) );
         }
       }
-      inventory::submit! {
-        FunctionDescriptor {
-          name: stringify!([<VariableDefine $kind:camel>]),
-          ptr: [<VariableDefine $kind:camel>]::new,
-        }
-      }
     }
   };
 }
@@ -284,12 +264,6 @@ impl MechFunctionCompiler for VariableDefineEmpty {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "VariableDefineEmpty",
-    ptr: variable_define_empty_factory,
-  }
-}
 
 #[cfg(test)]
 mod empty_transaction_state_tests {
@@ -322,77 +296,62 @@ macro_rules! impl_variable_define_match_arms {
         (Value::[<$value_kind:camel>](sink), name, mutable, id) => box_mech_fxn(Ok(Box::new([<VariableDefine $value_kind:camel>]{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id } ))),
         #[cfg(all(feature = $feature, feature = "matrix1"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, Matrix1);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix2"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, Matrix2);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix2x3"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, Matrix2x3);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix3x2"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, Matrix3x2);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix3"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, Matrix3);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, Matrix4);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrixd"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, DMatrix);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vector2"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, Vector2);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vector3"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, Vector3);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, Vector4);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vectord"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, DVector);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vector2"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, RowVector2);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vector3"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, RowVector3);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vector4"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, RowVector4);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vectord"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), name, mutable, id) => {
-          register_define!(VariableDefineMatrix, $value_kind, $feature, RowDVector);
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         (sink, name, mutable, id) => Err(MechError::new(
@@ -670,8 +629,8 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 }
 
 pub struct VarDefine {}
-impl NativeFunctionCompiler for VarDefine {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for VarDefine {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

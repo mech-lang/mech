@@ -79,13 +79,6 @@ impl MechFunctionCompiler for SetElementOfFxn {
     }
 }
 
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetElementOfFxn",
-    ptr: SetElementOfFxn::new,
-  }
-}
-
 fn set_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFunction>> {
     match (elem, set) {
         (elem, Value::Set(set)) => Ok(Box::new(SetElementOfFxn {
@@ -105,8 +98,8 @@ fn set_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFunction>>
 }
 
 pub struct SetElementOf {}
-impl NativeFunctionCompiler for SetElementOf {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetElementOf {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -142,11 +135,4 @@ impl NativeFunctionCompiler for SetElementOf {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/element-of",
-    ptr: &SetElementOf{},
-  }
 }

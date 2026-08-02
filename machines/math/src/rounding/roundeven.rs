@@ -69,8 +69,8 @@ fn impl_roundeven_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathRoundeven {}
 
-impl NativeFunctionCompiler for MathRoundeven {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathRoundeven {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -97,18 +97,4 @@ impl NativeFunctionCompiler for MathRoundeven {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/roundeven",
-    ptr: &MathRoundeven{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "roundeven",
-  }
 }

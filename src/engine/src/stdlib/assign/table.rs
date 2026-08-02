@@ -174,8 +174,8 @@ fn impl_set_column_fxn(sink: Value, source: Value, key: Value) -> MResult<Box<dy
 }
 
 pub struct AssignTableColumn {}
-impl NativeFunctionCompiler for AssignTableColumn {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AssignTableColumn {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -316,8 +316,8 @@ pub fn add_assign_table_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechF
 }
 
 pub struct AddAssignTable {}
-impl NativeFunctionCompiler for AddAssignTable {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AddAssignTable {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

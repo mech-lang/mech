@@ -81,12 +81,6 @@ impl MechFunctionCompiler for SetUnionFxn {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetUnionFxn",
-    ptr: SetUnionFxn::new,
-  }
-}
 
 fn set_union_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
@@ -110,8 +104,8 @@ fn set_union_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
 }
 
 pub struct SetUnion {}
-impl NativeFunctionCompiler for SetUnion {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetUnion {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -147,11 +141,4 @@ impl NativeFunctionCompiler for SetUnion {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/union",
-    ptr: &SetUnion{},
-  }
 }

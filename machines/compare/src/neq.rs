@@ -237,12 +237,6 @@ fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     match (&lhs_value, &rhs_value) {
         #[cfg(all(feature = "table"))]
         (Value::Table(lhs), Value::Table(rhs)) => {
-            register_descriptor! {
-              FunctionDescriptor {
-                name: "TableNeq",
-                ptr: TableNeq::new,
-              }
-            }
             return Ok(Box::new(TableNeq {
                 lhs: lhs.clone(),
                 rhs: rhs.clone(),
@@ -251,12 +245,6 @@ fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
         }
         #[cfg(feature = "atom")]
         (Value::Atom(lhs), Value::Atom(rhs)) => {
-            register_descriptor! {
-              FunctionDescriptor {
-                name: "AtomNeq",
-                ptr: AtomNeq::new,
-              }
-            }
             return Ok(Box::new(AtomNeq {
                 lhs: lhs.clone(),
                 rhs: rhs.clone(),
@@ -267,7 +255,6 @@ fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     }
     impl_binop_match_arms!(
       NEQ,
-      register_fxn_descriptor_inner,
       (lhs_value, rhs_value),
       Bool, bool, "bool";
       I8,   bool, "i8";

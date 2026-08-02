@@ -59,7 +59,6 @@ jobs:
           cargo check -p mech-core --no-default-features --features mika
           cargo check -p mech-core --no-default-features --features "mika serde"
           cargo check -p mech-syntax --no-default-features --features mika
-          cargo check -p mech-interpreter --no-default-features --features program
           cargo check -p mech-engine --no-default-features --features program
 
       - name: Run serve executable HTTP suite
@@ -76,7 +75,6 @@ jobs:
       fail-fast: false
       matrix:
         slice:
-          - surface
           - machines
           - consumer
     env:
@@ -97,7 +95,7 @@ jobs:
         run: bash scripts/check-function-system-contracts.sh "${{ matrix.slice }}"
 
   engine-catalog:
-    name: Engine catalog vertical slice
+    name: Complete function-system migration
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -113,8 +111,8 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
-      - name: Check catalog vertical-slice contracts
-        run: bash scripts/check-engine-catalog-slice.sh
+      - name: Check complete function-system migration contracts
+        run: bash scripts/check-complete-function-system-migration.sh
 
   cargo:
     name: cargo
@@ -175,8 +173,8 @@ jobs:
           cargo test --lib
           cargo test -p mech-bytecode
 
-      - name: Run complete core and interpreter suites
-        run: cargo test -p mech-core -p mech-interpreter
+      - name: Run complete core suite
+        run: cargo test -p mech-core
 
       - name: Run complete program library suite
         run: cargo test -p mech-engine --lib --tests
@@ -201,27 +199,27 @@ jobs:
             --test mech_format_shims \
             -- --nocapture
 
-      - name: Check isolated interpreter feature boundaries
+      - name: Check isolated engine feature boundaries
         run: |
-          cargo check -p mech-interpreter \
+          cargo check -p mech-engine \
             --no-default-features \
             --features "program compiler variables variable_define variable_assign f64 math_mul_assign"
-          cargo test -p mech-interpreter \
+          cargo test -p mech-engine \
             --test op_assign_feature_gates \
             --no-default-features \
             --features "program compiler variables variable_define variable_assign f64 math_mul_assign" \
             whole_mul_assignment_uses_mul_feature_only \
             -- --exact --nocapture
-          cargo check -p mech-interpreter \
+          cargo check -p mech-engine \
             --no-default-features \
             --features "program compiler variables variable_define variable_assign f64 math_div_assign"
-          cargo test -p mech-interpreter \
+          cargo test -p mech-engine \
             --test op_assign_feature_gates \
             --no-default-features \
             --features "program compiler variables variable_define variable_assign f64 math_div_assign" \
             whole_div_assignment_uses_div_feature_only \
             -- --exact --nocapture
-          cargo check -p mech-interpreter \
+          cargo check -p mech-engine \
             --no-default-features \
             --features "compiler functions formulas string_concat"
 
@@ -588,9 +586,7 @@ jobs:
           rustup default nightly-2026-03-03
 
       - name: Run resolver and workspace portability contracts
-        run: |
-          cargo test -p mech-runtime --lib --no-default-features --features "base,u64" resolver::file::tests:: -- --nocapture
-          cargo test -p mech-runtime --lib --no-default-features --features "base,u64" workspace::tests:: -- --nocapture
+        run: cargo test -p mech-runtime --lib --no-default-features --features "base,u64" windows_ -- --nocapture
 
   windows-cli-contracts:
     name: Windows CLI platform contracts
@@ -630,10 +626,7 @@ jobs:
         run: cargo test -p mech --no-default-features --features serve --test mech_serve -- --nocapture
 
       - name: Run reduced-feature Windows source-tooling tests
-        run: |
-          cargo test -p mech --no-default-features --features run --test windows_source_paths windows_run -- --nocapture
-          cargo test -p mech --no-default-features --features build --test windows_source_paths windows_build -- --nocapture
-          cargo test -p mech --no-default-features --features test --test windows_source_paths windows_test -- --nocapture
+        run: cargo test -p mech --no-default-features --features "run build test" --test windows_source_paths -- --nocapture
 
       - name: Run Windows formatter and serve HTML shim contracts
         run: |

@@ -1,6 +1,6 @@
 use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, MResult, MechFunctionFactory,
-    NativeFunctionCompiler, legacy_source_specializer,
+    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
+    MechFunctionFactory,
 };
 #[cfg(feature = "matrix")]
 use nalgebra::{
@@ -9,6 +9,7 @@ use nalgebra::{
 };
 #[cfg(feature = "functions")]
 use paste::paste;
+use std::sync::Arc;
 
 #[cfg(feature = "abs")]
 use crate::arithmetic::abs::*;
@@ -101,19 +102,18 @@ use crate::trig::tan::*;
 #[cfg(feature = "tanh")]
 use crate::trig::tanh::*;
 
-fn install_legacy_source<T>(
+fn install_source_specializer<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &'static str,
     module: Option<&'static str>,
     item: Option<&'static str>,
     exposure: FunctionExposure,
-    compiler: T,
+    specializer: T,
 ) -> MResult<()>
 where
-    T: NativeFunctionCompiler + 'static,
+    T: FunctionSpecializer + 'static,
 {
-    let operation =
-        builder.insert_specializer(canonical_name, legacy_source_specializer(compiler))?;
+    let operation = builder.insert_specializer(canonical_name, Arc::new(specializer))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -125,7 +125,7 @@ where
 
 macro_rules! install_prelude {
     ($builder:expr, $name:literal, $compiler:expr) => {
-        install_legacy_source(
+        install_source_specializer(
             $builder,
             $name,
             None,
@@ -138,7 +138,7 @@ macro_rules! install_prelude {
 
 macro_rules! install_math_module {
     ($builder:expr, $name:literal, $item:literal, $compiler:expr) => {
-        install_legacy_source(
+        install_source_specializer(
             $builder,
             $name,
             Some("math"),
@@ -261,6 +261,10 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     {
         // The baseline contains these two range forms, but no named
         // `math/mul-assign` source specializer.
+        builder.insert_intrinsic_specializer(
+            "math/mul-assign",
+            Arc::new(crate::MulAssignValue {}),
+        )?;
         install_prelude!(builder, "math/mul-assign/range", crate::MulAssignRange {});
         install_prelude!(
             builder,
@@ -1247,8 +1251,8 @@ pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{FunctionCatalog, FunctionDescriptor, OperationId, RuntimeFunctionId};
-    use std::collections::{BTreeMap, BTreeSet};
+    use mech_core::{FunctionCatalog, OperationId, RuntimeFunctionId};
+    use std::collections::BTreeSet;
 
     #[cfg(feature = "math_default")]
     const FROZEN_NAMES: [&str; 64] = [
@@ -1377,6 +1381,11 @@ mod tests {
                     .is_none()
             );
         }
+
+        let mul_assign = OperationId::from_name("math/mul-assign");
+        assert!(catalog.specializer(mul_assign).is_none());
+        assert!(catalog.intrinsic_specializer(mul_assign).is_some());
+        assert!(catalog.exports_for_operation(mul_assign).is_empty());
     }
 
     #[cfg(feature = "math_default")]
@@ -1405,50 +1414,27 @@ mod tests {
         }
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     #[test]
-    fn runtime_catalog_matches_legacy_inventory_names_ids_and_pointers() {
+    fn runtime_catalog_entries_have_unique_canonical_names_and_ids() {
         let mut builder = FunctionCatalogBuilder::new();
         install_runtime(&mut builder).unwrap();
         let catalog = builder.build().unwrap();
-        let explicit = catalog
-            .runtime_entries()
-            .map(|entry| (entry.name.clone(), entry.factory as usize))
-            .collect::<BTreeMap<_, _>>();
-        let mut legacy = BTreeMap::new();
-        for descriptor in inventory::iter::<FunctionDescriptor> {
-            let stem = descriptor.name.split('<').next().unwrap_or(descriptor.name);
-            if stem.starts_with("Math")
-                || stem.starts_with("Atan2")
-                || stem.starts_with("Negate")
-                || ["Add", "Div", "Mod", "Mul", "Pow", "Sub"]
-                    .iter()
-                    .any(|prefix| stem.starts_with(prefix))
-            {
-                if let Some(existing) = legacy.insert(descriptor.name, descriptor.ptr as usize) {
-                    assert_eq!(existing, descriptor.ptr as usize);
-                }
-            }
-        }
 
-        assert_eq!(
-            explicit.keys().cloned().collect::<BTreeSet<_>>(),
-            legacy
-                .keys()
-                .map(ToString::to_string)
-                .collect::<BTreeSet<_>>()
-        );
-        for (name, pointer) in legacy {
-            let id = RuntimeFunctionId::from_name(name);
-            let entry = catalog
-                .runtime_entry(id)
-                .unwrap_or_else(|| panic!("missing explicit runtime factory {name}"));
-            assert_eq!(entry.id, id, "runtime ID mismatch for {name}");
-            assert_eq!(entry.name, name);
+        let mut names = BTreeSet::new();
+        for entry in catalog.runtime_entries() {
             assert_eq!(
-                entry.factory as usize, pointer,
-                "factory mismatch for {name}"
+                entry.id,
+                RuntimeFunctionId::from_name(&entry.name),
+                "runtime ID mismatch for {}",
+                entry.name,
+            );
+            assert!(
+                names.insert(entry.name.as_str()),
+                "duplicate runtime factory {}",
+                entry.name,
             );
         }
+
+        assert_eq!(names.len(), catalog.runtime_factory_count());
     }
 }

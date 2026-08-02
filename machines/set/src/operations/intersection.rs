@@ -81,12 +81,6 @@ impl MechFunctionCompiler for SetIntersectionFxn {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetIntersectionFxn",
-    ptr: SetIntersectionFxn::new,
-  }
-}
 
 fn set_intersection_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
@@ -110,8 +104,8 @@ fn set_intersection_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>
 }
 
 pub struct SetIntersection {}
-impl NativeFunctionCompiler for SetIntersection {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetIntersection {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -147,11 +141,4 @@ impl NativeFunctionCompiler for SetIntersection {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/intersection",
-    ptr: &SetIntersection{},
-  }
 }

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use mech::{MechProgram, MechProgramConfig, default_function_system};
+use mech::{MechProgram, MechProgramConfig, default_function_catalog};
 use mech_core::{
     FunctionCatalogBuilder, FunctionSpecializer, MResult, MechFunction, OperationId, Value,
     hash_str,
@@ -17,21 +17,12 @@ impl FunctionSpecializer for UnreachableSpecializer {
 }
 
 fn assert_math_add_is_catalog_owned(program: &MechProgram) {
-    let operation = hash_str("math/add");
-    let functions = program.interpreter().functions();
-    assert!(
-        !functions
-            .borrow()
-            .function_compilers
-            .contains_key(&operation),
-        "standard source specializers must not be copied into the mutable legacy table",
-    );
     assert!(
         program
             .function_catalog()
             .specializer(OperationId::from_name("math/add"))
             .is_some(),
-        "standard catalog must own math/add",
+        "standard catalog must contain math/add",
     );
 }
 
@@ -52,14 +43,8 @@ fn assert_f64(value: Value, expected: f64) {
 }
 
 #[test]
-fn standard_catalog_source_addition_does_not_use_legacy_compiler() {
+fn standard_catalog_source_addition_uses_catalog_specializer() {
     let mut program = MechProgram::new(MechProgramConfig::default());
-    assert!(
-        program
-            .function_system()
-            .legacy_boundary()
-            .owns_operation(OperationId::from_name("math/add"))
-    );
     assert_math_add_is_catalog_owned(&program);
 
     let result = program
@@ -70,17 +55,11 @@ fn standard_catalog_source_addition_does_not_use_legacy_compiler() {
 }
 
 #[test]
-fn explicitly_injected_catalog_source_addition_does_not_use_legacy_compiler() {
-    let function_system = default_function_system();
-    let catalog = Arc::clone(function_system.catalog());
-    let legacy_boundary = Arc::clone(function_system.legacy_boundary());
+fn explicitly_injected_catalog_source_addition_uses_catalog_specializer() {
+    let catalog = default_function_catalog();
     let mut program =
-        MechProgram::with_function_system(MechProgramConfig::default(), function_system);
+        MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
     assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
-    assert!(Arc::ptr_eq(
-        program.function_system().legacy_boundary(),
-        &legacy_boundary,
-    ));
 
     assert_math_add_is_catalog_owned(&program);
     let result = program
@@ -120,7 +99,7 @@ fn non_visible_catalog_operation_reports_its_name_and_id() {
 }
 
 #[test]
-fn named_math_add_uses_catalog_without_legacy_compiler() {
+fn named_math_add_uses_catalog() {
     let mut program = MechProgram::new(MechProgramConfig::default());
     assert_math_add_is_catalog_owned(&program);
 

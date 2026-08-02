@@ -338,8 +338,8 @@ fn impl_assign_scalar_fxn(
 }
 
 pub struct MatrixAssignScalar {}
-impl NativeFunctionCompiler for MatrixAssignScalar {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixAssignScalar {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -352,7 +352,7 @@ impl NativeFunctionCompiler for MatrixAssignScalar {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match impl_assign_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match sink {
@@ -482,8 +482,8 @@ fn impl_assign_range_fxn(
 }
 
 pub struct MatrixAssignRange {}
-impl NativeFunctionCompiler for MatrixAssignRange {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixAssignRange {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -496,7 +496,7 @@ impl NativeFunctionCompiler for MatrixAssignRange {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match impl_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (sink.clone(), &ixes, source.clone()) {
@@ -663,8 +663,8 @@ fn impl_assign_all_fxn(
 }
 
 pub struct MatrixAssignAll {}
-impl NativeFunctionCompiler for MatrixAssignAll {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixAssignAll {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -677,7 +677,7 @@ impl NativeFunctionCompiler for MatrixAssignAll {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match impl_assign_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
@@ -887,8 +887,8 @@ fn impl_assign_scalar_scalar_fxn(
 }
 
 pub struct MatrixAssignScalarScalar {}
-impl NativeFunctionCompiler for MatrixAssignScalarScalar {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixAssignScalarScalar {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -901,7 +901,7 @@ impl NativeFunctionCompiler for MatrixAssignScalarScalar {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match impl_assign_scalar_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
@@ -1113,8 +1113,8 @@ fn impl_assign_all_scalar_fxn(
 }
 
 pub struct MatrixAssignAllScalar {}
-impl NativeFunctionCompiler for MatrixAssignAllScalar {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixAssignAllScalar {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -1127,7 +1127,7 @@ impl NativeFunctionCompiler for MatrixAssignAllScalar {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match impl_assign_all_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match sink {
@@ -1211,8 +1211,8 @@ fn impl_assign_scalar_all_fxn(
 }
 
 pub struct MatrixAssignScalarAll {}
-impl NativeFunctionCompiler for MatrixAssignScalarAll {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixAssignScalarAll {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -1225,7 +1225,7 @@ impl NativeFunctionCompiler for MatrixAssignScalarAll {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match impl_assign_scalar_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
@@ -1688,8 +1688,8 @@ fn impl_assign_range_scalar_fxn(
 }
 
 pub struct MatrixAssignRangeScalar {}
-impl NativeFunctionCompiler for MatrixAssignRangeScalar {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixAssignRangeScalar {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -1702,7 +1702,7 @@ impl NativeFunctionCompiler for MatrixAssignRangeScalar {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match impl_assign_range_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
@@ -2163,8 +2163,8 @@ fn impl_assign_scalar_range_fxn(
 }
 
 pub struct MatrixAssignScalarRange {}
-impl NativeFunctionCompiler for MatrixAssignScalarRange {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixAssignScalarRange {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -2177,7 +2177,7 @@ impl NativeFunctionCompiler for MatrixAssignScalarRange {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match impl_assign_scalar_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
@@ -2590,8 +2590,8 @@ fn impl_assign_range_range_fxn(
 }
 
 pub struct MatrixAssignRangeRange {}
-impl NativeFunctionCompiler for MatrixAssignRangeRange {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixAssignRangeRange {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -2604,7 +2604,7 @@ impl NativeFunctionCompiler for MatrixAssignRangeRange {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match impl_assign_range_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
@@ -2738,8 +2738,8 @@ macro_rules! matrix_assign_all_range_fxn {
 matrix_assign_all_range_fxn!(impl_assign_all_range_fxn, Set2DAR);
 
 pub struct MatrixAssignAllRange {}
-impl NativeFunctionCompiler for MatrixAssignAllRange {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixAssignAllRange {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -2752,7 +2752,7 @@ impl NativeFunctionCompiler for MatrixAssignAllRange {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match impl_assign_all_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (sink.clone(), ixes.clone(), source.clone()) {
@@ -2893,8 +2893,8 @@ macro_rules! matrix_assign_range_all_fxn {
 matrix_assign_range_all_fxn!(impl_assign_range_all_fxn, Set2DRA);
 
 pub struct MatrixAssignRangeAll {}
-impl NativeFunctionCompiler for MatrixAssignRangeAll {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixAssignRangeAll {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -2907,7 +2907,7 @@ impl NativeFunctionCompiler for MatrixAssignRangeAll {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match impl_assign_range_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (sink.clone(), ixes.clone(), source.clone()) {

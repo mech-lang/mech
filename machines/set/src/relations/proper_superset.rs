@@ -75,13 +75,6 @@ impl MechFunctionCompiler for SetProperSupersetFxn {
     }
 }
 
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetProperSupersetFxn",
-    ptr: SetProperSupersetFxn::new,
-  }
-}
-
 fn set_proper_superset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetProperSupersetFxn {
@@ -101,8 +94,8 @@ fn set_proper_superset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFuncti
 }
 
 pub struct SetProperSuperset {}
-impl NativeFunctionCompiler for SetProperSuperset {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetProperSuperset {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -138,11 +131,4 @@ impl NativeFunctionCompiler for SetProperSuperset {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/proper-superset",
-    ptr: &SetProperSuperset{},
-  }
 }

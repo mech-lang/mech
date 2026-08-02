@@ -87,12 +87,6 @@ impl MechFunctionCompiler for SetCartesianProductFxn {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetCartesianProductFxn",
-    ptr: SetCartesianProductFxn::new,
-  }
-}
 
 fn set_cartesian_product_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
@@ -116,8 +110,8 @@ fn set_cartesian_product_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunc
 }
 
 pub struct SetCartesianProduct {}
-impl NativeFunctionCompiler for SetCartesianProduct {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetCartesianProduct {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -153,11 +147,4 @@ impl NativeFunctionCompiler for SetCartesianProduct {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/cartesian-product",
-    ptr: &SetCartesianProduct{},
-  }
 }

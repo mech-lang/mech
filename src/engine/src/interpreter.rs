@@ -26,19 +26,11 @@ pub struct RuntimeContextBinding {
 
 pub type InterpreterRef = Ref<Box<Interpreter>>;
 
-#[cfg(feature = "functions")]
-fn legacy_runtime_factory_fallback(
-    legacy_functions: &Functions,
-    id: RuntimeFunctionId,
-) -> Option<RuntimeFunctionFactory> {
-    legacy_functions.functions.get(&id.raw()).copied()
-}
-
 pub struct Interpreter {
     pub id: u64,
     checkpoint_owner: Rc<()>,
     #[cfg(feature = "functions")]
-    function_system: FunctionSystem,
+    function_catalog: Arc<FunctionCatalog>,
     pub profile: bool,
     pub max_steps: usize,
     #[cfg(feature = "trace")]
@@ -477,10 +469,6 @@ struct ProgramStateCheckpoint {
     #[cfg(feature = "symbol_table")]
     environment: Option<SymbolTableCellCheckpoint>,
     #[cfg(feature = "functions")]
-    functions: FunctionsRef,
-    #[cfg(feature = "functions")]
-    functions_snapshot: FunctionsSnapshot,
-    #[cfg(feature = "functions")]
     function_environment: FunctionEnvironment,
     #[cfg(feature = "functions")]
     function_extensions: FunctionExtensions,
@@ -523,10 +511,6 @@ impl ProgramStateCheckpoint {
             None => None,
         };
 
-        #[cfg(feature = "functions")]
-        let functions = state.legacy_functions.clone();
-        #[cfg(feature = "functions")]
-        let functions_snapshot = FunctionsSnapshot::capture(&functions)?;
         #[cfg(feature = "functions")]
         let function_environment = state.function_environment.clone();
         #[cfg(feature = "functions")]
@@ -584,10 +568,6 @@ impl ProgramStateCheckpoint {
             #[cfg(feature = "symbol_table")]
             environment,
             #[cfg(feature = "functions")]
-            functions,
-            #[cfg(feature = "functions")]
-            functions_snapshot,
-            #[cfg(feature = "functions")]
             function_environment,
             #[cfg(feature = "functions")]
             function_extensions,
@@ -617,8 +597,6 @@ impl ProgramStateCheckpoint {
             environment.preflight(interpreter_id)?;
         }
         #[cfg(feature = "functions")]
-        self.functions_snapshot.preflight_restore()?;
-        #[cfg(feature = "functions")]
         self.user_functions.preflight_restore()?;
         #[cfg(feature = "functions")]
         self.plan.preflight_rollback(&self.plan_checkpoint)?;
@@ -642,7 +620,6 @@ impl ProgramStateCheckpoint {
             }
             #[cfg(feature = "functions")]
             {
-                state.legacy_functions = self.functions.clone();
                 state.function_environment = self.function_environment.clone();
                 state.function_extensions = self.function_extensions.clone();
                 state.user_functions = self.user_functions.table.clone();
@@ -667,8 +644,6 @@ impl ProgramStateCheckpoint {
             environment.apply();
         }
         #[cfg(feature = "functions")]
-        self.functions_snapshot.apply_restore_structure();
-        #[cfg(feature = "functions")]
         self.user_functions.apply_restore_structure();
         #[cfg(feature = "functions")]
         self.plan.apply_rollback_structure(&self.plan_checkpoint);
@@ -681,12 +656,8 @@ impl ProgramStateCheckpoint {
 
     #[cfg(feature = "functions")]
     fn rebuild_checkpoint_indexes(&self, turn_state: &ReactiveTurnState) {
-        self.functions_snapshot.rebuild_checkpoint_indexes();
         self.user_functions.rebuild_checkpoint_indexes();
         self.plan.rebuild_checkpoint_indexes();
-        self.functions_snapshot
-            .validate_checkpoint_invariants()
-            .expect("function checkpoint preflight guarantees restored plan invariants");
         self.user_functions
             .validate_checkpoint_invariants()
             .expect("user-function checkpoint preflight guarantees restored plan invariants");
@@ -1151,7 +1122,7 @@ impl Clone for Interpreter {
             id: self.id,
             checkpoint_owner: Rc::new(()),
             #[cfg(feature = "functions")]
-            function_system: self.function_system.clone(),
+            function_catalog: Arc::clone(&self.function_catalog),
             ip: self.ip,
             profile: false,
             max_steps: self.max_steps,
@@ -1372,7 +1343,7 @@ impl Interpreter {
     pub fn new(id: u64, max_steps: usize) -> Self {
         #[cfg(feature = "functions")]
         {
-            Self::with_function_system(id, max_steps, default_function_system())
+            Self::with_function_catalog(id, max_steps, default_function_catalog())
         }
         #[cfg(not(feature = "functions"))]
         {
@@ -1386,31 +1357,17 @@ impl Interpreter {
         max_steps: usize,
         function_catalog: Arc<FunctionCatalog>,
     ) -> Self {
-        Self::with_function_system(
-            id,
-            max_steps,
-            FunctionSystem::from_catalog(function_catalog),
-        )
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn with_function_system(
-        id: u64,
-        max_steps: usize,
-        function_system: FunctionSystem,
-    ) -> Self {
         let mut state = ProgramState::new();
-        state.function_environment =
-            FunctionEnvironment::from_catalog_defaults(function_system.catalog())
-                .expect("validated function catalog defaults must initialize");
-        Self::initialize(id, max_steps, state, function_system)
+        state.function_environment = FunctionEnvironment::from_catalog_defaults(&function_catalog)
+            .expect("validated function catalog defaults must initialize");
+        Self::initialize(id, max_steps, state, function_catalog)
     }
 
     fn initialize(
         id: u64,
         max_steps: usize,
         mut state: ProgramState,
-        #[cfg(feature = "functions")] function_system: FunctionSystem,
+        #[cfg(feature = "functions")] function_catalog: Arc<FunctionCatalog>,
     ) -> Self {
         load_stdkinds(&mut state.kinds);
         #[cfg(feature = "symbol_table")]
@@ -1435,7 +1392,7 @@ impl Interpreter {
             id,
             checkpoint_owner: Rc::new(()),
             #[cfg(feature = "functions")]
-            function_system,
+            function_catalog,
             ip: 0,
             profile: false,
             max_steps, // Default maximum steps
@@ -1474,27 +1431,16 @@ impl Interpreter {
     }
 
     #[cfg(feature = "functions")]
-    pub fn function_system(&self) -> &FunctionSystem {
-        &self.function_system
-    }
-
-    #[cfg(feature = "functions")]
     pub fn function_catalog(&self) -> &Arc<FunctionCatalog> {
-        self.function_system.catalog()
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn legacy_function_boundary(&self) -> &Arc<LegacyFunctionBoundary> {
-        self.function_system.legacy_boundary()
+        &self.function_catalog
     }
 
     #[cfg(feature = "functions")]
     pub(crate) fn new_child_interpreter(&self, id: u64, max_steps: usize) -> Self {
-        let child = Self::with_function_system(id, max_steps, self.function_system.clone());
+        let child = Self::with_function_catalog(id, max_steps, Arc::clone(&self.function_catalog));
         {
             let parent_state = self.state.borrow();
             let mut child_state = child.state.borrow_mut();
-            child_state.legacy_functions = parent_state.legacy_functions.clone();
             child_state.function_environment = parent_state.function_environment.clone();
             child_state.function_extensions = parent_state.function_extensions.clone();
             child_state.user_functions = parent_state.user_functions.clone();
@@ -1573,8 +1519,8 @@ impl Interpreter {
         let checkpoint_owner = self.checkpoint_owner.clone();
         #[cfg(feature = "functions")]
         {
-            let function_system = self.function_system.clone();
-            *self = Interpreter::with_function_system(id, self.max_steps, function_system);
+            let function_catalog = Arc::clone(&self.function_catalog);
+            *self = Interpreter::with_function_catalog(id, self.max_steps, function_catalog);
         }
         #[cfg(not(feature = "functions"))]
         {
@@ -1722,16 +1668,6 @@ impl Interpreter {
 
     pub fn dictionary(&self) -> Ref<Dictionary> {
         self.state.borrow().dictionary.clone()
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn functions(&self) -> FunctionsRef {
-        self.state.borrow().legacy_functions.clone()
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn set_functions(&mut self, functions: FunctionsRef) {
-        self.state.borrow_mut().legacy_functions = functions;
     }
 
     #[cfg(feature = "functions")]
@@ -1947,31 +1883,6 @@ impl Interpreter {
     }
 
     #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
-    fn resolve_runtime_factory(
-        &self,
-        legacy_functions: &Functions,
-        id: RuntimeFunctionId,
-    ) -> MResult<Option<RuntimeFunctionFactory>> {
-        let catalog_factory = {
-            let state = self.state.borrow();
-            FunctionResolver::new(
-                self.function_catalog(),
-                &state.function_environment,
-                &state.function_extensions,
-                &state.user_functions,
-            )
-            .runtime_factory(id)
-        };
-        if let Some(factory) = catalog_factory {
-            return Ok(Some(factory));
-        }
-        if self.legacy_function_boundary().owns_runtime_function(id) {
-            return Err(MechError::new(RuntimeFunctionUnavailable { id }, None).with_compiler_loc());
-        }
-        Ok(legacy_runtime_factory_fallback(legacy_functions, id))
-    }
-
-    #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
     pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
         // Reset the instruction pointer
         self.ip = 0;
@@ -1993,8 +1904,8 @@ impl Interpreter {
         }
         // Load the instructions
         {
+            let function_catalog = Arc::clone(&self.function_catalog);
             let state_brrw = self.state.borrow();
-            let functions_table = state_brrw.legacy_functions.borrow();
             while self.ip < program.instrs.len() {
                 let instr = &program.instrs[self.ip];
                 match instr {
@@ -2004,7 +1915,7 @@ impl Interpreter {
                     }
                     DecodedInstr::NullOp { fxn_id, dst } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
-                        match self.resolve_runtime_factory(&functions_table, runtime_id)? {
+                        match function_catalog.runtime_factory(runtime_id) {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let function_args = FunctionArgs::Nullary(out);
@@ -2025,7 +1936,7 @@ impl Interpreter {
                     }
                     DecodedInstr::UnOp { fxn_id, dst, src } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
-                        match self.resolve_runtime_factory(&functions_table, runtime_id)? {
+                        match function_catalog.runtime_factory(runtime_id) {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let input = self.registers[*src as usize].clone();
@@ -2050,59 +1961,59 @@ impl Interpreter {
                         dst,
                         lhs,
                         rhs,
-                    } => match self.resolve_runtime_factory(
-                        &functions_table,
-                        RuntimeFunctionId::from_raw(*fxn_id),
-                    )? {
-                        Some(fxn_factory) => {
-                            let out = self.registers[*dst as usize].clone();
-                            let lhs = self.registers[*lhs as usize].clone();
-                            let rhs = self.registers[*rhs as usize].clone();
-                            let function_args = FunctionArgs::Binary(out, lhs, rhs);
-                            self.out = register_bytecode_function(
-                                &state_brrw,
-                                fxn_factory,
-                                function_args,
-                            )?;
+                    } => {
+                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                        match function_catalog.runtime_factory(runtime_id) {
+                            Some(fxn_factory) => {
+                                let out = self.registers[*dst as usize].clone();
+                                let lhs = self.registers[*lhs as usize].clone();
+                                let rhs = self.registers[*rhs as usize].clone();
+                                let function_args = FunctionArgs::Binary(out, lhs, rhs);
+                                self.out = register_bytecode_function(
+                                    &state_brrw,
+                                    fxn_factory,
+                                    function_args,
+                                )?;
+                            }
+                            None => {
+                                return Err(MechError::new(
+                                    UnknownBinaryFunctionError { fxn_id: *fxn_id },
+                                    None,
+                                )
+                                .with_compiler_loc());
+                            }
                         }
-                        None => {
-                            return Err(MechError::new(
-                                UnknownBinaryFunctionError { fxn_id: *fxn_id },
-                                None,
-                            )
-                            .with_compiler_loc());
-                        }
-                    },
+                    }
                     DecodedInstr::TernOp {
                         fxn_id,
                         dst,
                         a,
                         b,
                         c,
-                    } => match self.resolve_runtime_factory(
-                        &functions_table,
-                        RuntimeFunctionId::from_raw(*fxn_id),
-                    )? {
-                        Some(fxn_factory) => {
-                            let out = self.registers[*dst as usize].clone();
-                            let arg_a = self.registers[*a as usize].clone();
-                            let arg_b = self.registers[*b as usize].clone();
-                            let arg_c = self.registers[*c as usize].clone();
-                            let function_args = FunctionArgs::Ternary(out, arg_a, arg_b, arg_c);
-                            self.out = register_bytecode_function(
-                                &state_brrw,
-                                fxn_factory,
-                                function_args,
-                            )?;
+                    } => {
+                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                        match function_catalog.runtime_factory(runtime_id) {
+                            Some(fxn_factory) => {
+                                let out = self.registers[*dst as usize].clone();
+                                let arg_a = self.registers[*a as usize].clone();
+                                let arg_b = self.registers[*b as usize].clone();
+                                let arg_c = self.registers[*c as usize].clone();
+                                let function_args = FunctionArgs::Ternary(out, arg_a, arg_b, arg_c);
+                                self.out = register_bytecode_function(
+                                    &state_brrw,
+                                    fxn_factory,
+                                    function_args,
+                                )?;
+                            }
+                            None => {
+                                return Err(MechError::new(
+                                    UnknownTernaryFunctionError { fxn_id: *fxn_id },
+                                    None,
+                                )
+                                .with_compiler_loc());
+                            }
                         }
-                        None => {
-                            return Err(MechError::new(
-                                UnknownTernaryFunctionError { fxn_id: *fxn_id },
-                                None,
-                            )
-                            .with_compiler_loc());
-                        }
-                    },
+                    }
                     DecodedInstr::QuadOp {
                         fxn_id,
                         dst,
@@ -2110,35 +2021,35 @@ impl Interpreter {
                         b,
                         c,
                         d,
-                    } => match self.resolve_runtime_factory(
-                        &functions_table,
-                        RuntimeFunctionId::from_raw(*fxn_id),
-                    )? {
-                        Some(fxn_factory) => {
-                            let out = self.registers[*dst as usize].clone();
-                            let arg_a = self.registers[*a as usize].clone();
-                            let arg_b = self.registers[*b as usize].clone();
-                            let arg_c = self.registers[*c as usize].clone();
-                            let arg_d = self.registers[*d as usize].clone();
-                            let function_args =
-                                FunctionArgs::Quaternary(out, arg_a, arg_b, arg_c, arg_d);
-                            self.out = register_bytecode_function(
-                                &state_brrw,
-                                fxn_factory,
-                                function_args,
-                            )?;
+                    } => {
+                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                        match function_catalog.runtime_factory(runtime_id) {
+                            Some(fxn_factory) => {
+                                let out = self.registers[*dst as usize].clone();
+                                let arg_a = self.registers[*a as usize].clone();
+                                let arg_b = self.registers[*b as usize].clone();
+                                let arg_c = self.registers[*c as usize].clone();
+                                let arg_d = self.registers[*d as usize].clone();
+                                let function_args =
+                                    FunctionArgs::Quaternary(out, arg_a, arg_b, arg_c, arg_d);
+                                self.out = register_bytecode_function(
+                                    &state_brrw,
+                                    fxn_factory,
+                                    function_args,
+                                )?;
+                            }
+                            None => {
+                                return Err(MechError::new(
+                                    UnknownQuadFunctionError { fxn_id: *fxn_id },
+                                    None,
+                                )
+                                .with_compiler_loc());
+                            }
                         }
-                        None => {
-                            return Err(MechError::new(
-                                UnknownQuadFunctionError { fxn_id: *fxn_id },
-                                None,
-                            )
-                            .with_compiler_loc());
-                        }
-                    },
+                    }
                     DecodedInstr::VarArg { fxn_id, dst, args } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
-                        match self.resolve_runtime_factory(&functions_table, runtime_id)? {
+                        match function_catalog.runtime_factory(runtime_id) {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let argument_values = args

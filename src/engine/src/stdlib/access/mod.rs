@@ -31,8 +31,7 @@ pub use self::tuple::*;
 #[macro_use]
 use crate::stdlib::*;
 
-/// Installs every enabled concrete access factory without consulting the
-/// legacy distributed inventory.
+/// Installs every enabled concrete access factory into the supplied catalog.
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrix")]
     matrix::install_runtime(builder)?;
@@ -47,31 +46,33 @@ fn matrix_access_index_is_scalar(index: &Value) -> bool {
 }
 
 #[cfg(feature = "matrix")]
-fn compile_matrix_access(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    match arguments.as_slice().get(1..).unwrap_or_default() {
-        [Value::IndexAll] => MatrixAccessAll {}.compile(arguments),
-        [index] if matrix_access_index_is_scalar(index) => MatrixAccessScalar {}.compile(arguments),
-        [_] => MatrixAccessRange {}.compile(arguments),
+fn compile_matrix_access(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    match arguments.get(1..).unwrap_or_default() {
+        [Value::IndexAll] => MatrixAccessAll {}.specialize(arguments),
+        [index] if matrix_access_index_is_scalar(index) => {
+            MatrixAccessScalar {}.specialize(arguments)
+        }
+        [_] => MatrixAccessRange {}.specialize(arguments),
         [Value::IndexAll, index] if matrix_access_index_is_scalar(index) => {
-            MatrixAccessAllScalar {}.compile(arguments)
+            MatrixAccessAllScalar {}.specialize(arguments)
         }
-        [Value::IndexAll, _] => MatrixAccessAllRange {}.compile(arguments),
+        [Value::IndexAll, _] => MatrixAccessAllRange {}.specialize(arguments),
         [index, Value::IndexAll] if matrix_access_index_is_scalar(index) => {
-            MatrixAccessScalarAll {}.compile(arguments)
+            MatrixAccessScalarAll {}.specialize(arguments)
         }
-        [_, Value::IndexAll] => MatrixAccessRangeAll {}.compile(arguments),
+        [_, Value::IndexAll] => MatrixAccessRangeAll {}.specialize(arguments),
         [left, right]
             if matrix_access_index_is_scalar(left) && matrix_access_index_is_scalar(right) =>
         {
-            MatrixAccessScalarScalar {}.compile(arguments)
+            MatrixAccessScalarScalar {}.specialize(arguments)
         }
         [left, _] if matrix_access_index_is_scalar(left) => {
-            MatrixAccessScalarRange {}.compile(arguments)
+            MatrixAccessScalarRange {}.specialize(arguments)
         }
         [_, right] if matrix_access_index_is_scalar(right) => {
-            MatrixAccessRangeScalar {}.compile(arguments)
+            MatrixAccessRangeScalar {}.specialize(arguments)
         }
-        [_, _] => MatrixAccessRangeRange {}.compile(arguments),
+        [_, _] => MatrixAccessRangeRange {}.specialize(arguments),
         _ => Err(MechError::new(
             IncorrectNumberOfArguments {
                 expected: 1,
@@ -84,8 +85,8 @@ fn compile_matrix_access(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction
 }
 
 pub struct AccessScalar {}
-impl NativeFunctionCompiler for AccessScalar {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AccessScalar {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if !(2..=3).contains(&arguments.len()) {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -102,13 +103,13 @@ impl NativeFunctionCompiler for AccessScalar {
             #[cfg(feature = "matrix")]
             ValueKind::Matrix(..) => compile_matrix_access(arguments),
             #[cfg(feature = "table")]
-            ValueKind::Table(..) => TableAccessScalar {}.compile(arguments),
+            ValueKind::Table(..) => TableAccessScalar {}.specialize(arguments),
             #[cfg(feature = "map")]
-            ValueKind::Map(..) => MapAccess {}.compile(arguments),
+            ValueKind::Map(..) => MapAccess {}.specialize(arguments),
             #[cfg(feature = "string")]
-            ValueKind::String => StringAccessScalar {}.compile(arguments),
+            ValueKind::String => StringAccessScalar {}.specialize(arguments),
             #[cfg(feature = "tuple")]
-            ValueKind::Tuple(..) => TupleAccess {}.compile(arguments),
+            ValueKind::Tuple(..) => TupleAccess {}.specialize(arguments),
             _ => Err(MechError::new(
                 UnhandledFunctionArgumentKind2 {
                     arg: (src.kind(), index.kind()),
@@ -122,8 +123,8 @@ impl NativeFunctionCompiler for AccessScalar {
 }
 
 pub struct AccessRange {}
-impl NativeFunctionCompiler for AccessRange {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AccessRange {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if !(2..=3).contains(&arguments.len()) {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -140,7 +141,7 @@ impl NativeFunctionCompiler for AccessRange {
             #[cfg(feature = "matrix")]
             ValueKind::Matrix(..) => compile_matrix_access(arguments),
             #[cfg(feature = "table")]
-            ValueKind::Table(..) => TableAccessRange {}.compile(arguments),
+            ValueKind::Table(..) => TableAccessRange {}.specialize(arguments),
             _ => Err(MechError::new(
                 UnhandledFunctionArgumentKind2 {
                     arg: (src.kind(), index.kind()),
@@ -154,8 +155,8 @@ impl NativeFunctionCompiler for AccessRange {
 }
 
 pub struct AccessSwizzle {}
-impl NativeFunctionCompiler for AccessSwizzle {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AccessSwizzle {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -166,7 +167,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
             )
             .with_compiler_loc());
         }
-        let keys = &arguments.clone().split_off(1);
+        let keys = &arguments[1..];
         let src = &arguments[0];
         match src {
             #[cfg(feature = "record")]
@@ -278,11 +279,11 @@ impl NativeFunctionCompiler for AccessSwizzle {
 pub fn impl_access_column_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
     match source.kind().deref_kind() {
         #[cfg(feature = "record")]
-        ValueKind::Record(_) => RecordAccess {}.compile(&vec![source, key]),
+        ValueKind::Record(_) => RecordAccess {}.specialize(&vec![source, key]),
         #[cfg(feature = "map")]
-        ValueKind::Map(..) => MapAccess {}.compile(&vec![source, key]),
+        ValueKind::Map(..) => MapAccess {}.specialize(&vec![source, key]),
         #[cfg(feature = "table")]
-        ValueKind::Table(_, _) => TableAccessColumn {}.compile(&vec![source, key]),
+        ValueKind::Table(_, _) => TableAccessColumn {}.specialize(&vec![source, key]),
         _ => Err(MechError::new(
             UnhandledFunctionArgumentKind2 {
                 arg: (source.kind(), key.kind()),
@@ -295,8 +296,8 @@ pub fn impl_access_column_fxn(source: Value, key: Value) -> MResult<Box<dyn Mech
 }
 
 pub struct AccessColumn {}
-impl NativeFunctionCompiler for AccessColumn {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AccessColumn {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -325,43 +326,5 @@ impl NativeFunctionCompiler for AccessColumn {
                 .with_compiler_loc()),
             },
         }
-    }
-}
-
-#[cfg(all(test, not(target_arch = "wasm32")))]
-mod runtime_catalog_tests {
-    use super::*;
-    use std::collections::BTreeMap;
-
-    #[test]
-    fn explicit_runtime_factories_match_access_inventory_names_ids_and_pointers() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_runtime(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
-
-        let mut legacy = BTreeMap::new();
-        for descriptor in inventory::iter::<FunctionDescriptor>
-            .into_iter()
-            .filter(|descriptor| {
-                descriptor.name.starts_with("Access") || descriptor.name == "TupleAccessElement"
-            })
-        {
-            if let Some(existing) = legacy.insert(descriptor.name, descriptor.ptr as usize) {
-                assert_eq!(existing, descriptor.ptr as usize, "{}", descriptor.name);
-            }
-        }
-
-        assert_eq!(catalog.runtime_factory_count(), legacy.len());
-        for entry in catalog.runtime_entries() {
-            assert_eq!(entry.id, RuntimeFunctionId::from_name(&entry.name));
-            let legacy_factory = legacy
-                .remove(entry.name.as_str())
-                .unwrap_or_else(|| panic!("missing legacy access factory {}", entry.name));
-            assert_eq!(entry.factory as usize, legacy_factory, "{}", entry.name);
-        }
-        assert!(
-            legacy.is_empty(),
-            "unmigrated legacy access factories: {legacy:?}"
-        );
     }
 }

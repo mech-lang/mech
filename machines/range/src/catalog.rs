@@ -1,7 +1,8 @@
 use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, MResult, MechFunctionFactory,
-    NativeFunctionCompiler, legacy_source_specializer,
+    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
+    MechFunctionFactory,
 };
+use std::sync::Arc;
 
 #[cfg(all(not(feature = "matrix1"), feature = "matrixd"))]
 use nalgebra::DMatrix;
@@ -23,10 +24,9 @@ fn install_operation<T>(
     exposure: FunctionExposure,
 ) -> MResult<()>
 where
-    T: NativeFunctionCompiler + 'static,
+    T: FunctionSpecializer + 'static,
 {
-    let operation =
-        builder.insert_specializer(canonical_name, legacy_source_specializer(compiler))?;
+    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -191,8 +191,7 @@ pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{FunctionDescriptor, OperationId};
-    use std::collections::BTreeMap;
+    use mech_core::OperationId;
 
     fn expected_operations() -> Vec<(&'static str, FunctionExposure)> {
         let mut expected = Vec::new();
@@ -237,57 +236,5 @@ mod tests {
                 }],
             );
         }
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    #[test]
-    fn runtime_catalog_matches_legacy_inventory_names_ids_and_pointers() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_runtime(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
-        let explicit: BTreeMap<_, _> = catalog
-            .runtime_entries()
-            .map(|entry| (entry.name.clone(), entry.factory as usize))
-            .collect();
-        let mut legacy = BTreeMap::new();
-        for descriptor in inventory::iter::<FunctionDescriptor> {
-            if [
-                "RangeExclusiveScalar",
-                "RangeIncrementExclusiveScalar",
-                "RangeInclusiveScalar",
-                "RangeIncrementInclusiveScalar",
-            ]
-            .iter()
-            .any(|prefix| descriptor.name.starts_with(prefix))
-            {
-                if let Some(existing) = legacy.insert(descriptor.name, descriptor.ptr as usize) {
-                    assert_eq!(existing, descriptor.ptr as usize);
-                }
-            }
-        }
-
-        assert_eq!(explicit.len(), legacy.len());
-        for (name, pointer) in legacy {
-            let entry = catalog
-                .runtime_entry(mech_core::RuntimeFunctionId::from_name(name))
-                .unwrap_or_else(|| panic!("missing explicit runtime factory {name}"));
-            assert_eq!(entry.name, name);
-            assert_eq!(
-                entry.factory as usize, pointer,
-                "factory mismatch for {name}"
-            );
-        }
-
-        #[cfg(all(
-            feature = "exclusive",
-            feature = "inclusive",
-            feature = "matrixd",
-            feature = "row_vectord",
-            not(feature = "matrix1"),
-            not(feature = "row_vector2"),
-            not(feature = "row_vector3"),
-            not(feature = "row_vector4"),
-        ))]
-        assert_eq!(explicit.len(), 96);
     }
 }

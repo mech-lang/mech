@@ -813,8 +813,8 @@ impl_conversion_mat_to_mat_fxn! {
 
 pub struct ConvertMatToMat {}
 
-impl NativeFunctionCompiler for ConvertMatToMat {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for ConvertMatToMat {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

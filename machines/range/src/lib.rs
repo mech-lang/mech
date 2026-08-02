@@ -79,20 +79,6 @@ use mech_core::MechErrorKind;
 // Range Library
 // ----------------------------------------------------------------------------
 
-#[macro_export]
-macro_rules! register_range {
-    ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
-        paste! {
-          register_descriptor! {
-            FunctionDescriptor {
-              name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), ">") ,
-              ptr: $fxn_name::<$scalar, $row1<$scalar>>::new,
-            }
-          }
-        }
-    };
-}
-
 #[derive(Debug, Clone)]
 pub struct EmptyRangeError;
 impl MechErrorKind for EmptyRangeError {

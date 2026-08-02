@@ -116,19 +116,6 @@ where
         );
     }
 }
-register_fxn_descriptor!(
-    Assign, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32,
-    "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64", bool, "bool", String, "string", R64,
-    "r64", C64, "c64",
-);
-
-register_descriptor! {
-  FunctionDescriptor {
-    name: "Assign<index>",
-    ptr: Assign::<usize>::new,
-  }
-}
-
 #[derive(Debug, Clone)]
 pub struct EmptyAssignmentNotBytecodeCompilable;
 impl MechErrorKind for EmptyAssignmentNotBytecodeCompilable {
@@ -282,37 +269,37 @@ fn assignment_index_kind(value: &Value) -> AssignmentIndexKind {
 }
 
 #[cfg(feature = "matrix")]
-fn compile_matrix_assignment(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    match arguments.as_slice() {
+fn compile_matrix_assignment(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    match arguments {
         [_, _, index] => match assignment_index_kind(index) {
-            AssignmentIndexKind::Scalar => MatrixAssignScalar {}.compile(arguments),
-            AssignmentIndexKind::Range => MatrixAssignRange {}.compile(arguments),
-            AssignmentIndexKind::All => MatrixAssignAll {}.compile(arguments),
+            AssignmentIndexKind::Scalar => MatrixAssignScalar {}.specialize(arguments),
+            AssignmentIndexKind::Range => MatrixAssignRange {}.specialize(arguments),
+            AssignmentIndexKind::All => MatrixAssignAll {}.specialize(arguments),
         },
         [_, _, row, column] => match (assignment_index_kind(row), assignment_index_kind(column)) {
             (AssignmentIndexKind::Scalar, AssignmentIndexKind::Scalar) => {
-                MatrixAssignScalarScalar {}.compile(arguments)
+                MatrixAssignScalarScalar {}.specialize(arguments)
             }
             (AssignmentIndexKind::Scalar, AssignmentIndexKind::Range) => {
-                MatrixAssignScalarRange {}.compile(arguments)
+                MatrixAssignScalarRange {}.specialize(arguments)
             }
             (AssignmentIndexKind::Range, AssignmentIndexKind::Scalar) => {
-                MatrixAssignRangeScalar {}.compile(arguments)
+                MatrixAssignRangeScalar {}.specialize(arguments)
             }
             (AssignmentIndexKind::Range, AssignmentIndexKind::Range) => {
-                MatrixAssignRangeRange {}.compile(arguments)
+                MatrixAssignRangeRange {}.specialize(arguments)
             }
             (AssignmentIndexKind::All, AssignmentIndexKind::Scalar) => {
-                MatrixAssignAllScalar {}.compile(arguments)
+                MatrixAssignAllScalar {}.specialize(arguments)
             }
             (AssignmentIndexKind::All, AssignmentIndexKind::Range) => {
-                MatrixAssignAllRange {}.compile(arguments)
+                MatrixAssignAllRange {}.specialize(arguments)
             }
             (AssignmentIndexKind::Scalar, AssignmentIndexKind::All) => {
-                MatrixAssignScalarAll {}.compile(arguments)
+                MatrixAssignScalarAll {}.specialize(arguments)
             }
             (AssignmentIndexKind::Range, AssignmentIndexKind::All) => {
-                MatrixAssignRangeAll {}.compile(arguments)
+                MatrixAssignRangeAll {}.specialize(arguments)
             }
             (AssignmentIndexKind::All, AssignmentIndexKind::All) => Err(MechError::new(
                 GenericError {
@@ -333,8 +320,8 @@ fn compile_matrix_assignment(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunc
     }
 }
 
-impl NativeFunctionCompiler for AssignValue {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AssignValue {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -354,11 +341,11 @@ impl NativeFunctionCompiler for AssignValue {
             }
             #[cfg(feature = "map")]
             if matches!(sink_kind, ValueKind::Map(_, _)) {
-                return MapAssignScalar {}.compile(arguments);
+                return MapAssignScalar {}.specialize(arguments);
             }
             #[cfg(feature = "tuple")]
             if matches!(sink_kind, ValueKind::Tuple(_)) {
-                return TupleAssignScalar {}.compile(arguments);
+                return TupleAssignScalar {}.specialize(arguments);
             }
         }
 
@@ -390,8 +377,8 @@ impl NativeFunctionCompiler for AssignValue {
 }
 
 pub struct AssignColumn {}
-impl NativeFunctionCompiler for AssignColumn {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AssignColumn {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -405,9 +392,9 @@ impl NativeFunctionCompiler for AssignColumn {
         let src = &arguments[0];
         match src.kind().deref_kind() {
             #[cfg(feature = "table")]
-            ValueKind::Table(_, _) => AssignTableColumn {}.compile(&arguments),
+            ValueKind::Table(_, _) => AssignTableColumn {}.specialize(&arguments),
             #[cfg(feature = "record")]
-            ValueKind::Record(_) => AssignRecordField {}.compile(&arguments),
+            ValueKind::Record(_) => AssignRecordField {}.specialize(&arguments),
             _ => Err(MechError::new(
                 UnhandledFunctionArgumentKind1 {
                     arg: src.kind(),
@@ -440,8 +427,8 @@ pub fn add_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechF
 }
 
 pub struct AddAssignValue {}
-impl NativeFunctionCompiler for AddAssignValue {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AddAssignValue {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

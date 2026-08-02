@@ -1,112 +1,91 @@
 #[macro_use]
 use crate::stdlib::*;
 
-macro_rules! register_vertical_concatenate_fxn {
-    ($name:ident) => {
-        register_fxn_descriptor!(
-            $name, bool, "bool", String, "string", u8, "u8", u16, "u16", u32, "u32", u64, "u64",
-            u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32",
-            f64, "f64", C64, "c64", R64, "r64"
-        );
-    };
-}
-
-macro_rules! register_fxns {
-    ($op:ident) => {
-        $op!(bool, "bool");
-        $op!(String, "string");
-        $op!(u8, "u8");
-        $op!(u16, "u16");
-        $op!(u32, "u32");
-        $op!(u64, "u64");
-        $op!(u128, "u128");
-        $op!(i8, "i8");
-        $op!(i16, "i16");
-        $op!(i32, "i32");
-        $op!(i64, "i64");
-        $op!(i128, "i128");
-        $op!(f64, "f64");
-        $op!(f32, "f32");
-        $op!(R64, "r64");
-        $op!(C64, "c64");
-    };
-}
-
 // Vertical Concatenate -----------------------------------------------------
 
 macro_rules! vertcat_two_args {
-  ($fxn:ident, $e0:ident, $e1:ident, $out:ident, $opt:ident) => {
-    #[derive(Debug)]
-    struct $fxn<T> {
-      e0: Ref<$e0<T>>,
-      e1: Ref<$e1<T>>,
-      out: Ref<$out<T>>,
-    }
-    impl<T> MechFunctionFactory for $fxn<T>
-    where
-      T: Debug + Clone + Sync + Send + PartialEq + 'static +
-      ConstElem + AsValueKind,
-      #[cfg(feature = "compiler")]
-      T: CompileConst,
-      Ref<$out<T>>: ToValue
-    {
-      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-          FunctionArgs::Binary(out, arg0, arg1) => {
-            let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
-            let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
-            let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
-            Ok(Box::new(Self { e0, e1, out }))
-          },
-          _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 2, found: args.len()}, None).with_compiler_loc())
+    ($fxn:ident, $e0:ident, $e1:ident, $out:ident, $opt:ident) => {
+        #[derive(Debug)]
+        struct $fxn<T> {
+            e0: Ref<$e0<T>>,
+            e1: Ref<$e1<T>>,
+            out: Ref<$out<T>>,
         }
-      }
-    }
-    impl<T> MechFunctionImpl for $fxn<T>
-    where
-      T: Debug + Clone + Sync + Send + PartialEq + 'static,
-      Ref<$out<T>>: ToValue
-    {
-      fn solve(&self) {
-        unsafe {
-          let e0_ptr = (*(self.e0.as_ptr())).clone();
-          let e1_ptr = (*(self.e1.as_ptr())).clone();
-          let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
-          $opt!(out_ptr, e0_ptr, e1_ptr);
-        }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
-
-      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(self.reactive_output_values())
-      }
-    }
-    #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T>
-    where
-      T: ConstElem + CompileConst + AsValueKind
-    {
-      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("{}<{}{}{}{}>", stringify!($fxn), T::as_value_kind(), stringify!($out), stringify!($e0), stringify!($e1));
-        compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
-      }
-    }
-    macro_rules! register_vertcat_fxn {
-      ($type:ty, $type_string:tt) => {
-        paste!{
-          #[cfg(feature = $type_string)]
-          register_descriptor! {
-            FunctionDescriptor {
-            name: concat!(stringify!($fxn), "<", stringify!([<$type:lower>]), stringify!($out), stringify!($e0), stringify!($e1), ">"),
-            ptr: $fxn::<$type>::new,
+        impl<T> MechFunctionFactory for $fxn<T>
+        where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            #[cfg(feature = "compiler")]
+            T: CompileConst,
+            Ref<$out<T>>: ToValue,
+        {
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                match args {
+                    FunctionArgs::Binary(out, arg0, arg1) => {
+                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
+                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
+                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        Ok(Box::new(Self { e0, e1, out }))
+                    }
+                    _ => Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 2,
+                            found: args.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
+                }
             }
-          }
         }
-      };
-    }
-    register_fxns!(register_vertcat_fxn);
-  };
+        impl<T> MechFunctionImpl for $fxn<T>
+        where
+            T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            Ref<$out<T>>: ToValue,
+        {
+            fn solve(&self) {
+                unsafe {
+                    let e0_ptr = (*(self.e0.as_ptr())).clone();
+                    let e1_ptr = (*(self.e1.as_ptr())).clone();
+                    let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+                    $opt!(out_ptr, e0_ptr, e1_ptr);
+                }
+            }
+            fn out(&self) -> Value {
+                self.out.to_value()
+            }
+            fn to_string(&self) -> String {
+                format!("{:#?}", self)
+            }
+
+            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+                Ok(self.reactive_output_values())
+            }
+        }
+        #[cfg(feature = "compiler")]
+        impl<T> MechFunctionCompiler for $fxn<T>
+        where
+            T: ConstElem + CompileConst + AsValueKind,
+        {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let name = format!(
+                    "{}<{}{}{}{}>",
+                    stringify!($fxn),
+                    T::as_value_kind(),
+                    stringify!($out),
+                    stringify!($e0),
+                    stringify!($e1)
+                );
+                compile_binop!(
+                    name,
+                    self.out,
+                    self.e0,
+                    self.e1,
+                    ctx,
+                    FeatureFlag::Builtin(FeatureKind::VertCat)
+                );
+            }
+        }
+    };
 }
 
 macro_rules! vertcat_three_args {
@@ -188,7 +167,6 @@ macro_rules! vertcat_three_args {
                 );
             }
         }
-        register_vertical_concatenate_fxn!($fxn);
     };
 }
 
@@ -281,7 +259,6 @@ macro_rules! vertcat_four_args {
                 );
             }
         }
-        register_vertical_concatenate_fxn!($fxn);
     };
 }
 
@@ -369,8 +346,6 @@ where
         Ok(registers[0])
     }
 }
-#[cfg(feature = "matrixd")]
-register_vertical_concatenate_fxn!(VerticalConcatenateTwoArgs);
 
 // VerticalConcatenateThreeArgs -----------------------------------------------
 
@@ -460,8 +435,6 @@ where
         Ok(registers[0])
     }
 }
-#[cfg(feature = "matrixd")]
-register_vertical_concatenate_fxn!(VerticalConcatenateThreeArgs);
 
 // VerticalConcatenateFourArgs ------------------------------------------------
 
@@ -562,8 +535,6 @@ where
         Ok(registers[0])
     }
 }
-#[cfg(feature = "matrixd")]
-register_vertical_concatenate_fxn!(VerticalConcatenateFourArgs);
 
 // VerticalConcatenateNArgs ---------------------------------------------------
 
@@ -650,8 +621,6 @@ where
         Ok(registers[0])
     }
 }
-#[cfg(feature = "matrixd")]
-register_vertical_concatenate_fxn!(VerticalConcatenateNArgs);
 
 #[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "i64"))]
 mod compiler_tests {
@@ -751,7 +720,6 @@ macro_rules! vertical_concatenate {
           compile_unop!(name, self.out, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
         }
       }
-      register_vertical_concatenate_fxn!($name);
     }
   };}
 
@@ -837,8 +805,6 @@ where
         Ok(registers[0])
     }
 }
-#[cfg(feature = "vectord")]
-register_vertical_concatenate_fxn!(VerticalConcatenateVD2);
 
 // VerticalConcatenateVD3 -----------------------------------------------------
 
@@ -925,8 +891,6 @@ where
         Ok(registers[0])
     }
 }
-#[cfg(feature = "vectord")]
-register_vertical_concatenate_fxn!(VerticalConcatenateVD3);
 
 // VerticalConcatenateVD4 -----------------------------------------------------
 
@@ -1024,8 +988,6 @@ where
         Ok(registers[0])
     }
 }
-#[cfg(feature = "vectord")]
-register_vertical_concatenate_fxn!(VerticalConcatenateVD4);
 
 // VerticalConcatenateVDN -----------------------------------------------------
 
@@ -1129,8 +1091,6 @@ where
         Ok(registers[0])
     }
 }
-#[cfg(feature = "vectord")]
-register_vertical_concatenate_fxn!(VerticalConcatenateVDN);
 
 // VerticalConcatenateS1 ------------------------------------------------------
 
@@ -1197,8 +1157,6 @@ where
         );
     }
 }
-#[cfg(feature = "matrix1")]
-register_vertical_concatenate_fxn!(VerticalConcatenateS1);
 
 // VerticalConcatenateS2 ------------------------------------------------------
 
@@ -1330,8 +1288,6 @@ where
         );
     }
 }
-#[cfg(feature = "vectord")]
-register_vertical_concatenate_fxn!(VerticalConcatenateSD);
 
 // VerticalConcatenateM1M1 ----------------------------------------------------
 
@@ -1619,8 +1575,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "vector4"))]
-register_vertical_concatenate_fxn!(VerticalConcatenateM1M1M1M1);
 
 // Mixed Type Vertical Concatenations -----------------------------------------
 
@@ -2411,7 +2365,7 @@ macro_rules! impl_vertcat_arms {
         }
   }}}}}
 
-fn impl_vertcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+fn impl_vertcat_fxn(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
     let kinds: Vec<ValueKind> = arguments
         .iter()
         .map(|x| x.kind())
@@ -2732,17 +2686,10 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 }
 
 pub struct MatrixVertCat {}
-impl NativeFunctionCompiler for MatrixVertCat {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixVertCat {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         impl_vertcat_fxn(arguments)
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "matrix/vertcat",
-    ptr: &MatrixVertCat{},
-  }
 }
 
 #[derive(Debug, Clone)]
@@ -2759,52 +2706,5 @@ impl MechErrorKind for VerticalConcatenateDimensionMismatch {
             "Cannot vertically concatenate matrices/vectors with dimensions ({}, {})",
             self.rows, self.cols
         )
-    }
-}
-
-#[cfg(all(test, not(target_arch = "wasm32")))]
-mod runtime_catalog_tests {
-    use super::*;
-    use mech_core::{FunctionDescriptor, RuntimeFunctionId};
-    use std::collections::{BTreeMap, BTreeSet};
-
-    #[test]
-    fn explicit_runtime_catalog_matches_legacy_inventory() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_runtime(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
-        let explicit = catalog
-            .runtime_entries()
-            .map(|entry| (entry.name.clone(), entry.factory as usize))
-            .collect::<BTreeMap<_, _>>();
-        let mut legacy = BTreeMap::new();
-        for descriptor in inventory::iter::<FunctionDescriptor>
-            .into_iter()
-            .filter(|descriptor| descriptor.name.starts_with("VerticalConcatenate"))
-        {
-            if let Some(existing) = legacy.insert(descriptor.name, descriptor.ptr as usize) {
-                assert_eq!(existing, descriptor.ptr as usize, "{0}", descriptor.name);
-            }
-        }
-
-        assert_eq!(
-            explicit.keys().cloned().collect::<BTreeSet<_>>(),
-            legacy
-                .keys()
-                .map(ToString::to_string)
-                .collect::<BTreeSet<_>>()
-        );
-        for (name, pointer) in legacy {
-            let id = RuntimeFunctionId::from_name(name);
-            let entry = catalog
-                .runtime_entry(id)
-                .unwrap_or_else(|| panic!("missing explicit vertcat factory {name}"));
-            assert_eq!(entry.id, id, "runtime ID mismatch for {name}");
-            assert_eq!(entry.name, name);
-            assert_eq!(
-                entry.factory as usize, pointer,
-                "factory mismatch for {name}"
-            );
-        }
     }
 }

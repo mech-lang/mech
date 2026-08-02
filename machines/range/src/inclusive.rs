@@ -153,32 +153,26 @@ macro_rules! impl_range_inclusive_match_arms {
               ).with_compiler_loc()),
               #[cfg(feature = "matrix1")]
               1 => {
-                register_range!($fxn, $ty, $feat, Matrix1);
                 Ok(Box::new($fxn::<$ty,Matrix1<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(Matrix1::from_element(vec[0])), phantom: PhantomData::default()}))
               }
               #[cfg(all(not(feature = "matrix1"), feature = "matrixd")  )]
               1 => {
-                register_range!($fxn, $ty, $feat, DMatrix);
                 Ok(Box::new($fxn::<$ty,DMatrix<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(DMatrix::from_element(1,1,vec[0])), phantom: PhantomData::default()}))
               }
               #[cfg(feature = "row_vector2")]
               2 => {
-                register_range!($fxn, $ty, $feat, RowVector2);
                 Ok(Box::new($fxn::<$ty,RowVector2<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(RowVector2::from_vec(vec)), phantom: PhantomData::default()}))
               }
               #[cfg(feature = "row_vector3")]
               3 => {
-                register_range!($fxn, $ty, $feat, RowVector3);
                 Ok(Box::new($fxn::<$ty,RowVector3<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(RowVector3::from_vec(vec)), phantom: PhantomData::default()}))
               }
               #[cfg(feature = "row_vector4")]
               4 => {
-                register_range!($fxn, $ty, $feat, RowVector4);
                 Ok(Box::new($fxn::<$ty,RowVector4<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(RowVector4::from_vec(vec)), phantom: PhantomData::default()}))
               }
               #[cfg(feature = "row_vectord")]
               n => {
-                register_range!($fxn, $ty, $feat, RowDVector);
                 Ok(Box::new($fxn::<$ty,RowDVector<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(RowDVector::from_vec(vec)), phantom: PhantomData::default()}))
               }
             }
@@ -215,8 +209,8 @@ fn impl_range_inclusive_fxn(
 
 pub struct RangeInclusive {}
 
-impl NativeFunctionCompiler for RangeInclusive {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for RangeInclusive {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -252,11 +246,4 @@ impl NativeFunctionCompiler for RangeInclusive {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "range/inclusive",
-    ptr: &RangeInclusive{},
-  }
 }

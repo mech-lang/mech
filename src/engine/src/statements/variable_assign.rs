@@ -6,7 +6,7 @@ use crate::Value;
 #[cfg(all(feature = "subscript", feature = "assign", feature = "subscript_range"))]
 use crate::subscript_range;
 #[cfg(all(feature = "subscript", feature = "assign"))]
-use crate::{AssignColumn, NativeFunctionCompiler, Subscript};
+use crate::{AssignColumn, FunctionSpecializer, Subscript};
 #[cfg(any(
     feature = "variable_assign",
     all(feature = "subscript", feature = "assign")
@@ -129,7 +129,6 @@ pub fn subscript_ref(
 ) -> MResult<Value> {
     let plan = p.plan();
     let symbols = p.symbols();
-    let functions = p.functions();
     match sbscrpt {
         Subscript::Dot(x) => {
             let key = x.hash();

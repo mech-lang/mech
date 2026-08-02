@@ -5,11 +5,9 @@ use crate::*;
 
 #[cfg(feature = "functions")]
 use indexmap::map::IndexMap;
-use std::cell::RefCell;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt;
 use std::rc::Rc;
-use std::sync::Arc;
 #[cfg(feature = "pretty_print")]
 use tabled::{
     Tabled,
@@ -18,10 +16,6 @@ use tabled::{
 };
 
 // Functions ------------------------------------------------------------------
-
-pub type FunctionsRef = Ref<Functions>;
-pub type FunctionTable = HashMap<u64, fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>>;
-pub type FunctionCompilerTable = HashMap<u64, Arc<dyn NativeFunctionCompiler>>;
 
 /// Program-local user-function definitions keyed by their stable name hash.
 ///
@@ -80,33 +74,6 @@ impl UserFunctionTable {
 
     pub fn clear(&mut self) {
         self.definitions.clear();
-    }
-
-    /// Transitional stable-ID lookup for callers that have not moved to
-    /// [`Self::resolve_name`] yet.
-    #[doc(hidden)]
-    pub fn get(&self, id: &u64) -> Option<&FunctionDefinition> {
-        self.definitions.get(id)
-    }
-
-    /// Transitional insertion API for callers that still carry a separately
-    /// computed name ID. New code should use [`Self::insert_or_replace`].
-    #[doc(hidden)]
-    pub fn insert(
-        &mut self,
-        id: u64,
-        definition: FunctionDefinition,
-    ) -> MResult<Option<FunctionDefinition>> {
-        if id != definition.id {
-            return Err(invalid_user_function_definition(
-                &definition,
-                format!(
-                    "insertion key 0x{id:016x} does not match definition ID 0x{:016x}",
-                    definition.id,
-                ),
-            ));
-        }
-        self.insert_or_replace(definition)
     }
 }
 
@@ -226,38 +193,6 @@ impl FunctionArgs {
             FunctionArgs::Variadic(_, arguments) => arguments.clone(),
         }
     }
-}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct FunctionDescriptor {
-    pub name: &'static str,
-    pub ptr: fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>,
-}
-
-impl Debug for FunctionDescriptor {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{{ name: {:?}, ptr: {:?} }}", self.name, self.ptr)
-    }
-}
-
-#[repr(C)]
-pub struct FunctionCompilerDescriptor {
-    pub name: &'static str,
-    pub ptr: &'static dyn NativeFunctionCompiler,
-}
-
-impl Debug for FunctionCompilerDescriptor {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.name)
-    }
-}
-
-#[repr(C)]
-#[derive(Clone, Debug)]
-pub struct ModuleItemDescriptor {
-    pub module: &'static str,
-    pub item: &'static str,
 }
 
 pub trait MechFunctionFactory {
@@ -427,53 +362,6 @@ pub enum GuardFunctionSafety {
     Unsupported,
 }
 
-pub trait NativeFunctionCompiler: Send + Sync {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
-
-    /// Whether this compiler can be elaborated into a static activation-guard
-    /// graph without executing eager or effectful work. Native compilers are
-    /// rejected by default and must opt in explicitly.
-    fn guard_safety(&self) -> GuardFunctionSafety {
-        GuardFunctionSafety::Unsupported
-    }
-}
-
-pub struct StaticNativeFunctionCompiler {
-    inner: &'static dyn NativeFunctionCompiler,
-}
-
-impl StaticNativeFunctionCompiler {
-    pub fn new(inner: &'static dyn NativeFunctionCompiler) -> Self {
-        Self { inner }
-    }
-}
-
-impl NativeFunctionCompiler for StaticNativeFunctionCompiler {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        self.inner.compile(arguments)
-    }
-
-    fn guard_safety(&self) -> GuardFunctionSafety {
-        self.inner.guard_safety()
-    }
-}
-
-#[derive(Clone)]
-pub struct Functions {
-    pub functions: FunctionTable,
-    pub function_compilers: FunctionCompilerTable,
-    pub dictionary: Ref<Dictionary>,
-}
-
-#[derive(Clone)]
-pub struct FunctionsSnapshot {
-    target: FunctionsRef,
-    functions: FunctionTable,
-    function_compilers: FunctionCompilerTable,
-    dictionary_target: Ref<Dictionary>,
-    dictionary: Dictionary,
-}
-
 #[derive(Debug, Clone)]
 pub struct TransactionStateUnsupportedError {
     pub function: String,
@@ -507,152 +395,6 @@ impl MechErrorKind for TransactionStateBorrowConflictError {
             "Cannot inspect retained transaction state for function '{}' because {} is already borrowed.",
             self.function, self.component,
         )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct FunctionsSnapshotBorrowConflictError {
-    pub phase: &'static str,
-    pub component: &'static str,
-}
-
-impl MechErrorKind for FunctionsSnapshotBorrowConflictError {
-    fn name(&self) -> &str {
-        "FunctionsSnapshotBorrowConflict"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Cannot borrow functions {} during {}.",
-            self.component, self.phase,
-        )
-    }
-}
-
-impl FunctionsSnapshot {
-    fn borrow_conflict(phase: &'static str, component: &'static str) -> MechError {
-        MechError::new(
-            FunctionsSnapshotBorrowConflictError { phase, component },
-            None,
-        )
-        .with_compiler_loc()
-    }
-
-    /// Captures all function tables and the contents and identity of their
-    /// dictionary. The original [`FunctionsRef`] is retained as the restore
-    /// target so restoration never substitutes the outer container.
-    pub fn capture(target: &FunctionsRef) -> MResult<Self> {
-        let functions = target
-            .try_borrow()
-            .map_err(|_| Self::borrow_conflict("capture", "table"))?;
-        let dictionary_target = functions.dictionary.clone();
-        let dictionary = dictionary_target
-            .try_borrow()
-            .map_err(|_| Self::borrow_conflict("capture", "dictionary"))?
-            .clone();
-        let snapshot = Self {
-            target: target.clone(),
-            functions: functions.functions.clone(),
-            function_compilers: functions.function_compilers.clone(),
-            dictionary_target,
-            dictionary,
-        };
-        Ok(snapshot)
-    }
-
-    /// Verifies that both original containers can be restored without changing
-    /// either one.
-    pub fn preflight_restore(&self) -> MResult<()> {
-        {
-            let _functions = self
-                .target
-                .try_borrow_mut()
-                .map_err(|_| Self::borrow_conflict("restore", "table"))?;
-            let _dictionary = self
-                .dictionary_target
-                .try_borrow_mut()
-                .map_err(|_| Self::borrow_conflict("restore", "dictionary"))?;
-        }
-        Ok(())
-    }
-
-    /// Restores captured registry and plan structure after successful preflight.
-    ///
-    /// Consumer indexes are finalized separately so a coordinating checkpoint
-    /// can restore journal payloads before rebuilding derived state.
-    pub fn apply_restore_structure(&self) {
-        let mut functions = self.target.borrow_mut();
-        let mut dictionary = self.dictionary_target.borrow_mut();
-        functions.functions = self.functions.clone();
-        functions.function_compilers = self.function_compilers.clone();
-        functions.dictionary = self.dictionary_target.clone();
-        *dictionary = self.dictionary.clone();
-    }
-
-    pub fn rebuild_checkpoint_indexes(&self) {}
-
-    pub fn validate_checkpoint_invariants(&self) -> MResult<()> {
-        Ok(())
-    }
-
-    /// Restores the captured tables and dictionary after successful preflight.
-    ///
-    /// No function compiler, callback, or user function is invoked.
-    pub fn apply_restore(&self) {
-        self.apply_restore_structure();
-        self.rebuild_checkpoint_indexes();
-    }
-
-    pub fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(Vec::new())
-    }
-
-    pub fn restore(&self) -> MResult<()> {
-        self.preflight_restore()?;
-        self.apply_restore();
-        Ok(())
-    }
-}
-
-impl Functions {
-    pub fn new() -> Self {
-        Self {
-            functions: HashMap::new(),
-            function_compilers: HashMap::new(),
-            dictionary: Ref::new(Dictionary::new()),
-        }
-    }
-
-    pub fn insert_function(&mut self, fxn: FunctionDescriptor) {
-        let id = hash_str(&fxn.name);
-        self.functions.insert(id.clone(), fxn.ptr);
-        self.dictionary
-            .borrow_mut()
-            .insert(id, fxn.name.to_string());
-    }
-
-    pub fn insert_function_compiler(
-        &mut self,
-        name: impl Into<String>,
-        compiler: Arc<dyn NativeFunctionCompiler>,
-    ) {
-        let name = name.into();
-        let id = hash_str(&name);
-        self.function_compilers.insert(id, compiler);
-        self.dictionary.borrow_mut().insert(id, name);
-    }
-
-    #[cfg(feature = "pretty_print")]
-    pub fn pretty_print(&self) -> String {
-        let mut output = String::new();
-        output.push_str("\nFunctions:\n");
-        // print number of functions loaded:
-        output.push_str(&format!("Total Functions: {}\n", self.functions.len()));
-        //for (id, fxn_ptr) in &self.functions {
-        //  let dict_brrw = self.dictionary.borrow();
-        //  let name = dict_brrw.get(id).unwrap();
-        //  output.push_str(&format!("  {}: {:?}\n", name, fxn_ptr));
-        //}
-        output
     }
 }
 
@@ -2542,19 +2284,6 @@ impl PrettyPrint for Plan {
 #[cfg(test)]
 #[path = "functions/tests/mod.rs"]
 mod tests;
-
-// Function Registry
-// ----------------------------------------------------------------------------
-
-// Function registry is a mapping from function IDs to the actual fucntion implementaionts
-
-/*lazy_static! {
-  pub static ref FUNCTION_REGISTRY: RefCell<HashMap<u64, Box<dyn NativeFunctionCompiler>>> = RefCell::new(HashMap::new());
-}*/
-
-pub struct FunctionRegistry {
-    pub registry: RefCell<HashMap<u64, Box<dyn MechFunctionImpl>>>,
-}
 
 #[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentKind1 {

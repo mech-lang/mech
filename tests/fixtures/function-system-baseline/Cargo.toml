@@ -59,7 +59,6 @@ mech-string = {
   path = "../../../machines/string",
   default-features = false,
 }
-inventory = "0.3.22"
 nalgebra = "0.34.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

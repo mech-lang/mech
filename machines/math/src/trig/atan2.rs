@@ -116,12 +116,6 @@ macro_rules! impl_two_arg_fxn {
                 return Ok(registers[0]);
             }
         }
-        register_descriptor! {
-          FunctionDescriptor {
-            name: stringify!($struct_name),
-            ptr: $struct_name::new,
-          }
-        }
     };
 }
 
@@ -261,8 +255,8 @@ pub fn impl_atan2_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
 
 pub struct MathAtan2 {}
 
-impl NativeFunctionCompiler for MathAtan2 {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathAtan2 {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -298,18 +292,4 @@ impl NativeFunctionCompiler for MathAtan2 {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/atan2",
-    ptr: &MathAtan2{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "atan2",
-  }
 }

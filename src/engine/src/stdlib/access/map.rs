@@ -67,8 +67,8 @@ pub fn impl_access_map_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFun
 
 pub struct MapAccess {}
 
-impl NativeFunctionCompiler for MapAccess {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MapAccess {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

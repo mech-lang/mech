@@ -69,8 +69,8 @@ fn impl_cbrt_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathCbrt {}
 
-impl NativeFunctionCompiler for MathCbrt {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathCbrt {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -97,18 +97,4 @@ impl NativeFunctionCompiler for MathCbrt {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/cbrt",
-    ptr: &MathCbrt{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "cbrt",
-  }
 }

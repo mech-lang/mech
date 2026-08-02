@@ -1,7 +1,8 @@
 use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, MResult, MechFunctionFactory,
-    NativeFunctionCompiler, legacy_source_specializer,
+    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
+    MechFunctionFactory,
 };
+use std::sync::Arc;
 
 #[cfg(feature = "cartesian_product")]
 use crate::SetCartesianProduct;
@@ -47,10 +48,9 @@ fn install_operation<T>(
     exposure: FunctionExposure,
 ) -> MResult<()>
 where
-    T: NativeFunctionCompiler + 'static,
+    T: FunctionSpecializer + 'static,
 {
-    let operation =
-        builder.insert_specializer(canonical_name, legacy_source_specializer(compiler))?;
+    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -284,46 +284,6 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_runtime(builder)?;
     install_source(builder)
-}
-
-#[cfg(all(test, not(target_arch = "wasm32")))]
-mod runtime_tests {
-    use super::*;
-    use mech_core::FunctionDescriptor;
-    use std::collections::BTreeMap;
-
-    #[test]
-    fn explicit_runtime_factories_match_the_linked_set_inventory() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_runtime(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
-
-        let mut legacy = BTreeMap::new();
-        for descriptor in inventory::iter::<FunctionDescriptor>
-            .into_iter()
-            .filter(|descriptor| {
-                descriptor.name.starts_with("Set") && descriptor.name.ends_with("Fxn")
-            })
-        {
-            assert!(legacy.insert(descriptor.name, descriptor.ptr).is_none());
-        }
-
-        assert_eq!(catalog.runtime_factory_count(), legacy.len());
-        for entry in catalog.runtime_entries() {
-            let legacy_factory = legacy
-                .remove(entry.name.as_str())
-                .unwrap_or_else(|| panic!("missing legacy set factory {}", entry.name));
-            assert_eq!(
-                entry.factory as usize, legacy_factory as usize,
-                "{}",
-                entry.name
-            );
-        }
-        assert!(
-            legacy.is_empty(),
-            "unmigrated legacy set factories: {legacy:?}"
-        );
-    }
 }
 
 #[cfg(all(

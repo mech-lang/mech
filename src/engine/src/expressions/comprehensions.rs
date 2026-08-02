@@ -7,11 +7,10 @@ use crate::{
     BytecodeCompilerContext, CompileConst, FeatureFlag, FeatureKind, MechFunctionCompiler, Register,
 };
 use crate::{
-    ComprehensionQualifier, FunctionArgs, IncorrectNumberOfArguments, Interpreter,
-    InterpreterExecution, MResult, MechError, MechFunction, MechFunctionFactory, MechFunctionImpl,
-    NativeFunctionCompiler, Ref, ToValue, Value, execute_catalog_operation, hash_str,
+    ComprehensionQualifier, FunctionArgs, FunctionSpecializer, IncorrectNumberOfArguments,
+    Interpreter, InterpreterExecution, MResult, MechError, MechFunction, MechFunctionFactory,
+    MechFunctionImpl, Ref, ToValue, Value, execute_catalog_operation, hash_str,
 };
-use crate::{FunctionCompilerDescriptor, FunctionDescriptor};
 #[cfg(feature = "matrix_comprehensions")]
 use crate::{Matrix, MatrixComprehension};
 #[cfg(feature = "set_comprehensions")]
@@ -212,32 +211,17 @@ impl MechFunctionCompiler for ValueSetComprehension {
         );
     }
 }
-#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
-register_descriptor! {
-  FunctionDescriptor {
-    name: "set/comprehension",
-    ptr: ValueSetComprehension::new,
-  }
-}
 #[cfg(feature = "set_comprehensions")]
 pub struct SetComprehensionDefine {}
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
-impl NativeFunctionCompiler for SetComprehensionDefine {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetComprehensionDefine {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         Ok(Box::new(ValueSetComprehension {
-            arguments: arguments.clone(),
-            out: Ref::new(MechSet::from_vec(arguments.clone())),
+            arguments: arguments.to_vec(),
+            out: Ref::new(MechSet::from_vec(arguments.to_vec())),
         }))
     }
 }
-#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/comprehension",
-    ptr: &SetComprehensionDefine{},
-  }
-}
-
 #[cfg(feature = "matrix_comprehensions")]
 #[derive(Debug)]
 pub struct ValueMatrixComprehension {
@@ -303,18 +287,11 @@ impl MechFunctionCompiler for ValueMatrixComprehension {
         );
     }
 }
-#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
-register_descriptor! {
-  FunctionDescriptor {
-    name: "matrix/comprehension",
-    ptr: ValueMatrixComprehension::new,
-  }
-}
 #[cfg(feature = "matrix_comprehensions")]
 pub struct MatrixComprehensionDefine {}
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
-impl NativeFunctionCompiler for MatrixComprehensionDefine {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixComprehensionDefine {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         let out = if arguments.is_empty() {
             Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
         } else {
@@ -323,19 +300,11 @@ impl NativeFunctionCompiler for MatrixComprehensionDefine {
             fxn.out()
         };
         Ok(Box::new(ValueMatrixComprehension {
-            arguments: arguments.clone(),
+            arguments: arguments.to_vec(),
             out: Ref::new(out),
         }))
     }
 }
-#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "matrix/comprehension",
-    ptr: &MatrixComprehensionDefine{},
-  }
-}
-
 #[cfg(feature = "set_comprehensions")]
 pub fn set_comprehension(
     set_comp: &SetComprehension,

@@ -1848,15 +1848,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "inventory"
-version = "0.3.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4f0c30c76f2f4ccee3fe55a2435f691ca00c0e4bd87abe4f4a851b1d4dac39b"
-dependencies = [
- "rustversion",
-]
-
-[[package]]
 name = "ipnet"
 version = "2.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2144,7 +2135,6 @@ dependencies = [
 name = "mech-combinatorics"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "itertools 0.14.0",
  "mech-core",
  "nalgebra",
@@ -2156,7 +2146,6 @@ dependencies = [
 name = "mech-compare"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "paste",
@@ -2176,7 +2165,6 @@ dependencies = [
  "fxhash",
  "hashbrown 0.16.1",
  "indexmap",
- "inventory",
  "libm",
  "nalgebra",
  "num-rational",
@@ -2202,7 +2190,6 @@ dependencies = [
  "criterion",
  "grapheme",
  "indexmap",
- "inventory",
  "libloading",
  "mech-abi",
  "mech-bytecode",
@@ -2299,7 +2286,6 @@ dependencies = [
 name = "mech-logic"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "paste",
@@ -2309,7 +2295,6 @@ dependencies = [
 name = "mech-math"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "libm",
  "mech-core",
  "nalgebra",
@@ -2322,7 +2307,6 @@ dependencies = [
 name = "mech-matrix"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "num-traits",
@@ -2333,7 +2317,6 @@ dependencies = [
 name = "mech-range"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "num-traits",
@@ -2368,7 +2351,6 @@ name = "mech-set"
 version = "0.3.5"
 dependencies = [
  "indexmap",
- "inventory",
  "mech-core",
  "paste",
 ]
@@ -2377,7 +2359,6 @@ dependencies = [
 name = "mech-stats"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "num-traits",
@@ -2388,7 +2369,6 @@ dependencies = [
 name = "mech-string"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "paste",

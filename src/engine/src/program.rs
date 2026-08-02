@@ -19,8 +19,6 @@ use mech_core::{
 #[cfg(feature = "compiler")]
 use mech_bytecode::CompileCtx;
 
-#[cfg(feature = "functions")]
-use crate::FunctionSystem;
 use crate::{Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint};
 use mech_syntax::parser;
 
@@ -207,8 +205,7 @@ pub fn compile_stable_value_update(sink: ValRef, source: Value) -> MResult<Box<d
         validate_stable_value_update(&current, &source)?;
     }
 
-    let compiler = crate::AssignValue {};
-    compiler.compile(&vec![Value::MutableReference(sink), source])
+    crate::AssignValue {}.specialize(&[Value::MutableReference(sink), source])
 }
 
 pub fn apply_stable_value_update(sink: ValRef, source: Value) -> MResult<Value> {
@@ -507,7 +504,7 @@ impl MechProgram {
     pub fn new(config: MechProgramConfig) -> Self {
         #[cfg(feature = "functions")]
         {
-            Self::with_function_system(config, crate::default_function_system())
+            Self::with_function_catalog(config, crate::default_function_catalog())
         }
         #[cfg(not(feature = "functions"))]
         {
@@ -524,16 +521,10 @@ impl MechProgram {
     }
 
     #[cfg(feature = "functions")]
-    pub fn with_function_system(
-        config: MechProgramConfig,
-        function_system: FunctionSystem,
-    ) -> Self {
+    pub fn with_function_catalog(config: MechProgramConfig, catalog: Arc<FunctionCatalog>) -> Self {
         let id = hash_str(&format!("program/{}", config.name));
-        let mut interpreter = Interpreter::with_function_system(
-            id,
-            config.environment.rounds_per_step,
-            function_system,
-        );
+        let mut interpreter =
+            Interpreter::with_function_catalog(id, config.environment.rounds_per_step, catalog);
 
         interpreter.set_trace_enabled(config.environment.trace_enabled);
 
@@ -544,18 +535,8 @@ impl MechProgram {
     }
 
     #[cfg(feature = "functions")]
-    pub fn with_function_catalog(config: MechProgramConfig, catalog: Arc<FunctionCatalog>) -> Self {
-        Self::with_function_system(config, FunctionSystem::from_catalog(catalog))
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn function_system(&self) -> &FunctionSystem {
-        self.interpreter.function_system()
-    }
-
-    #[cfg(feature = "functions")]
     pub fn function_catalog(&self) -> &Arc<FunctionCatalog> {
-        self.function_system().catalog()
+        self.interpreter.function_catalog()
     }
 
     /// Captures the complete structural and value state of this program.
@@ -1585,26 +1566,16 @@ mod tests {
 
     #[cfg(feature = "functions")]
     #[test]
-    fn program_uses_and_retains_an_explicit_function_system() {
+    fn program_uses_and_retains_an_explicit_function_catalog() {
         let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
-        let function_system = FunctionSystem::from_catalog(Arc::clone(&catalog));
-        let legacy_boundary = Arc::clone(function_system.legacy_boundary());
         let mut program =
-            MechProgram::with_function_system(MechProgramConfig::default(), function_system);
+            MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
 
         assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
-        assert!(Arc::ptr_eq(
-            program.function_system().legacy_boundary(),
-            &legacy_boundary,
-        ));
 
         program.interpreter_mut().clear();
 
         assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
-        assert!(Arc::ptr_eq(
-            program.function_system().legacy_boundary(),
-            &legacy_boundary,
-        ));
     }
 
     #[cfg(feature = "functions")]
@@ -1624,10 +1595,8 @@ mod tests {
             })
             .unwrap();
         let catalog = Arc::new(builder.build().unwrap());
-        let function_system = FunctionSystem::from_catalog(Arc::clone(&catalog));
-        let legacy_boundary = Arc::clone(function_system.legacy_boundary());
         let mut program =
-            MechProgram::with_function_system(MechProgramConfig::default(), function_system);
+            MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
         let environment_before = program
             .interpreter()
             .state
@@ -1659,10 +1628,6 @@ mod tests {
         program.restore(checkpoint).unwrap();
 
         assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
-        assert!(Arc::ptr_eq(
-            program.function_system().legacy_boundary(),
-            &legacy_boundary,
-        ));
         assert_eq!(
             program.interpreter().state.borrow().function_environment,
             environment_before,
@@ -4227,8 +4192,8 @@ mod retained_checkpoint_tests {
         });
         program.run_string("x := 1.0\ny := x + 1.0").unwrap();
 
+        let catalog = Arc::clone(program.function_catalog());
         let symbols_addr = program.interpreter().symbols().addr();
-        let functions_addr = program.interpreter().functions().addr();
         let original_plan = program.interpreter().plan();
         let plan_addr = original_plan.0.addr();
         let original_plan_len = original_plan.borrow().len();
@@ -4247,8 +4212,8 @@ mod retained_checkpoint_tests {
 
         assert_eq!(program.config.name, "retained");
         assert_eq!(program.config.environment.rounds_per_step, 10_000);
+        assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
         assert_eq!(program.interpreter().symbols().addr(), symbols_addr);
-        assert_eq!(program.interpreter().functions().addr(), functions_addr);
         assert_eq!(program.interpreter().plan().0.addr(), plan_addr);
         assert_eq!(program.interpreter().plan_len(), original_plan_len);
         assert!(

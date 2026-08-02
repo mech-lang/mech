@@ -172,7 +172,6 @@ impl_compare_fxns2!(Min);
 fn impl_min_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Min,
-      register_fxn_descriptor_inner,
       (lhs_value, rhs_value),
       I8,   i8, "i8";
       I16,  i16, "i16";

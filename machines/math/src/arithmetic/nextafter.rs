@@ -611,8 +611,8 @@ fn impl_nextafter_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
 
 pub struct MathNextafter {}
 
-impl NativeFunctionCompiler for MathNextafter {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathNextafter {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -648,18 +648,4 @@ impl NativeFunctionCompiler for MathNextafter {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/nextafter",
-    ptr: &MathNextafter{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "nextafter",
-  }
 }

@@ -11,7 +11,7 @@ use super::{AddressedAssignmentUnsupported, NotMutableError, UndefinedVariableEr
     ),
     any(feature = "subscript_formula", feature = "subscript_range")
 ))]
-use crate::NativeFunctionCompiler;
+use crate::FunctionSpecializer;
 #[cfg(any(
     feature = "math_add_assign",
     feature = "math_sub_assign",
@@ -33,7 +33,7 @@ use crate::subscript_range;
 use crate::{AddAssignRange, AddAssignRangeAll, AddAssignValue};
 #[cfg(feature = "math_div_assign")]
 use crate::{DivAssignRange, DivAssignRangeAll, DivAssignValue};
-use crate::{Environment, InterpreterExecution, MResult, MechFunction, OperationId, Value};
+use crate::{Environment, InterpreterExecution, MResult, Value};
 #[cfg(all(
     any(
         feature = "math_add_assign",
@@ -49,6 +49,16 @@ use crate::{
     MechError, OpAssign, OpAssignOp, execute_catalog_operation_with_registration_arguments,
     expression,
 };
+#[cfg(all(
+    any(
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign"
+    ),
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
+use crate::{MechFunction, OperationId};
 #[cfg(feature = "math_mul_assign")]
 use crate::{MulAssignRange, MulAssignRangeAll, MulAssignValue};
 #[cfg(feature = "math_sub_assign")]

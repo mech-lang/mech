@@ -129,8 +129,8 @@ fn impl_tuple_assign_fxn(
 
 pub struct TupleAssignScalar {}
 
-impl NativeFunctionCompiler for TupleAssignScalar {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for TupleAssignScalar {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

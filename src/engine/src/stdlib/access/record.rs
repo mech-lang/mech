@@ -65,8 +65,8 @@ pub fn impl_access_record_fxn(source: Value, key: Value) -> MResult<Box<dyn Mech
 }
 
 pub struct RecordAccess {}
-impl NativeFunctionCompiler for RecordAccess {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for RecordAccess {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

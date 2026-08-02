@@ -69,8 +69,8 @@ fn impl_floor_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathFloor {}
 
-impl NativeFunctionCompiler for MathFloor {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathFloor {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -97,18 +97,4 @@ impl NativeFunctionCompiler for MathFloor {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/floor",
-    ptr: &MathFloor{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "floor",
-  }
 }

@@ -102,12 +102,6 @@ impl MechFunctionCompiler for SetInsertFxn {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetInsertFxn",
-    ptr: SetInsertFxn::new,
-  }
-}
 
 fn set_insert_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
     match (arg1, arg2) {
@@ -131,8 +125,8 @@ fn set_insert_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
 }
 
 pub struct SetInsert {}
-impl NativeFunctionCompiler for SetInsert {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetInsert {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -168,11 +162,4 @@ impl NativeFunctionCompiler for SetInsert {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/insert",
-    ptr: &SetInsert{},
-  }
 }

@@ -115,11 +115,6 @@ where
         );
     }
 }
-register_fxn_descriptor!(
-    NChooseK, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64,
-    "i64", u128, "u128", i128, "i128", f32, "f32", f64, "f64", R64, "r64", C64, "c64"
-);
-
 #[cfg(feature = "matrix")]
 #[derive(Debug)]
 pub struct NChooseKMatrix<T> {
@@ -251,38 +246,6 @@ where
         );
     }
 }
-register_fxn_descriptor!(
-    NChooseKMatrix,
-    u8,
-    "u8",
-    i8,
-    "i8",
-    u16,
-    "u16",
-    i16,
-    "i16",
-    u32,
-    "u32",
-    i32,
-    "i32",
-    u64,
-    "u64",
-    i64,
-    "i64",
-    u128,
-    "u128",
-    i128,
-    "i128",
-    f32,
-    "f32",
-    f64,
-    "f64",
-    R64,
-    "r64",
-    C64,
-    "c64"
-);
-
 #[cfg(all(test, feature = "matrix", feature = "f64"))]
 mod transaction_state_tests {
     use super::*;
@@ -485,8 +448,8 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn Mech
 }
 
 pub struct CombinatoricsNChooseK {}
-impl NativeFunctionCompiler for CombinatoricsNChooseK {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for CombinatoricsNChooseK {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -527,18 +490,4 @@ impl NativeFunctionCompiler for CombinatoricsNChooseK {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "combinatorics/n-choose-k",
-    ptr: &CombinatoricsNChooseK{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "combinatorics",
-    item: "n-choose-k",
-  }
 }

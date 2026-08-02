@@ -1156,24 +1156,46 @@ macro_rules! install_legacy_for_sink_shapes {
 }
 
 #[cfg(feature = "matrix")]
+macro_rules! install_legacy_for_type {
+    (
+        $driver:ident,
+        $install:expr,
+        $arm:ident,
+        $fxn_name:ident,
+        $value_kind:ident,
+        $value_string:tt
+    ) => {{
+        #[inline(never)]
+        fn install_type(
+            install: &mut impl FnMut(&'static str, RuntimeFunctionFactory) -> MResult<()>,
+        ) -> MResult<()> {
+            $driver!(install, $arm, $fxn_name, $value_kind, $value_string);
+            Ok(())
+        }
+
+        install_type($install)?;
+    }};
+}
+
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_for_all_types {
     ($driver:ident, $install:expr, $arm:ident, $fxn_name:ident) => {
-        $driver!($install, $arm, $fxn_name, u8, "u8");
-        $driver!($install, $arm, $fxn_name, u16, "u16");
-        $driver!($install, $arm, $fxn_name, u32, "u32");
-        $driver!($install, $arm, $fxn_name, u64, "u64");
-        $driver!($install, $arm, $fxn_name, u128, "u128");
-        $driver!($install, $arm, $fxn_name, i8, "i8");
-        $driver!($install, $arm, $fxn_name, i16, "i16");
-        $driver!($install, $arm, $fxn_name, i32, "i32");
-        $driver!($install, $arm, $fxn_name, i64, "i64");
-        $driver!($install, $arm, $fxn_name, i128, "i128");
-        $driver!($install, $arm, $fxn_name, f32, "f32");
-        $driver!($install, $arm, $fxn_name, f64, "f64");
-        $driver!($install, $arm, $fxn_name, R64, "rational");
-        $driver!($install, $arm, $fxn_name, C64, "complex");
-        $driver!($install, $arm, $fxn_name, bool, "bool");
-        $driver!($install, $arm, $fxn_name, String, "string");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, u8, "u8");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, u16, "u16");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, u32, "u32");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, u64, "u64");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, u128, "u128");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, i8, "i8");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, i16, "i16");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, i32, "i32");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, i64, "i64");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, i128, "i128");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, f32, "f32");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, f64, "f64");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, R64, "rational");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, C64, "complex");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, bool, "bool");
+        install_legacy_for_type!($driver, $install, $arm, $fxn_name, String, "string");
     };
 }
 
@@ -1300,105 +1322,120 @@ fn install_matrix_runtime(
     );
 
     // Preserve the legacy omission of i128 from the non-boolean range/all path.
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         u8,
         "u8"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         u16,
         "u16"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         u32,
         "u32"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         u64,
         "u64"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         u128,
         "u128"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         i8,
         "i8"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         i16,
         "i16"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         i32,
         "i32"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         i64,
         "i64"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         f32,
         "f32"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         f64,
         "f64"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         R64,
         "rational"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         C64,
         "complex"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
         bool,
         "bool"
     );
-    install_legacy_for_sink_shapes!(
+    install_legacy_for_type!(
+        install_legacy_for_sink_shapes,
         install,
         install_legacy_impl_set_range_all_arms,
         Set2DRA,
@@ -1462,49 +1499,4 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrix")]
     install_matrix_runtime(&mut install)?;
     Ok(())
-}
-
-#[cfg(all(test, not(target_arch = "wasm32")))]
-mod tests {
-    use super::*;
-    use mech_core::{FunctionDescriptor, RuntimeFunctionId};
-    use std::collections::BTreeMap;
-
-    fn is_assignment_factory(name: &str) -> bool {
-        name.starts_with("Assign")
-            || name.starts_with("Set1DA")
-            || name.starts_with("Set2DAR")
-            || name.starts_with("Set2DRA")
-    }
-
-    #[test]
-    fn runtime_catalog_matches_legacy_assignment_names_ids_and_pointers() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_runtime(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
-        let explicit = catalog
-            .runtime_entries()
-            .map(|entry| (entry.name.clone(), entry.factory as usize))
-            .collect::<BTreeMap<_, _>>();
-        let mut legacy = BTreeMap::new();
-        for descriptor in inventory::iter::<FunctionDescriptor> {
-            if is_assignment_factory(descriptor.name) {
-                if let Some(existing) = legacy.insert(descriptor.name, descriptor.ptr as usize) {
-                    assert_eq!(existing, descriptor.ptr as usize);
-                }
-            }
-        }
-
-        assert_eq!(explicit.len(), legacy.len());
-        for (name, pointer) in legacy {
-            let entry = catalog
-                .runtime_entry(RuntimeFunctionId::from_name(name))
-                .unwrap_or_else(|| panic!("missing explicit assignment factory {name}"));
-            assert_eq!(entry.name, name);
-            assert_eq!(
-                entry.factory as usize, pointer,
-                "factory mismatch for {name}"
-            );
-        }
-    }
 }

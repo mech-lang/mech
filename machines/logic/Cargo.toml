@@ -160,7 +160,6 @@ swizzle = ["subscript", "mech-core/swizzle"]
 mech-core = {version = "0.3.5", default-features = false}
 
 paste = "1.0.15"
-inventory = "0.3.22"
 nalgebra = {version="0.34.1", optional = true}
 
 [workspace]

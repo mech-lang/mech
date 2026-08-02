@@ -69,8 +69,8 @@ fn impl_lgamma_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathLgamma {}
 
-impl NativeFunctionCompiler for MathLgamma {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathLgamma {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -97,18 +97,4 @@ impl NativeFunctionCompiler for MathLgamma {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/lgamma",
-    ptr: &MathLgamma{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "lgamma",
-  }
 }

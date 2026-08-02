@@ -48,7 +48,7 @@ pub(super) fn access(
                     return register_initialized_expression_function(&plan, function, &[]);
                 }
                 /*ValueKind::Record(_) => {
-                  let new_fxn = RecordAccessScalar{}.compile(&fxn_input)?;
+                  let new_fxn = RecordAccessScalar{}.specialize(&fxn_input)?;
                   new_fxn.solve();
                   let res = new_fxn.out();
                   plan.borrow_mut().push(new_fxn);

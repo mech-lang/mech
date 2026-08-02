@@ -94,7 +94,6 @@ machines/set/src/membership/not_element_of.rs|typed-machine-kernel|mech-set|macr
 machines/set/src/modify/insert.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/set/src/modify/remove.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/set/src/operations/cartesian_product.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/set/src/operations/complement.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/set/src/operations/difference.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/set/src/operations/intersection.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/set/src/operations/powerset.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
@@ -108,7 +107,6 @@ machines/set/src/relations/proper_superset.rs|typed-machine-kernel|mech-set|macr
 machines/set/src/relations/subset.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/set/src/relations/superset.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/set/src/setdata/size.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/set/src/union.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/stats/src/sum_column.rs|typed-machine-kernel|mech-stats|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/stats/src/sum_row.rs|typed-machine-kernel|mech-stats|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/stats/src/lib.rs|typed-machine-kernel|mech-stats|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch

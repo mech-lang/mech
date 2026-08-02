@@ -64,8 +64,8 @@ fn impl_csc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathCsc {}
 
-impl NativeFunctionCompiler for MathCsc {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathCsc {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -92,18 +92,4 @@ impl NativeFunctionCompiler for MathCsc {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/csc",
-    ptr: &MathCsc{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "csc",
-  }
 }

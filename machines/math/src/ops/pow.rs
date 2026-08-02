@@ -299,7 +299,6 @@ fn impl_pow_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     }
     impl_binop_match_arms!(
       Pow,
-      register_fxn_descriptor_inner,
       (lhs_value, rhs_value),
       U8,   u8,   "u8";
       U16,  u16,  "u16";

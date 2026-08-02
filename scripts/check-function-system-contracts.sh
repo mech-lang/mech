@@ -66,7 +66,7 @@ check_consumer() {
     --manifest-path "$consumer_manifest" \
     -e features)
 
-  for package in mech-core mech-engine mech-engine mech-math mech-range mech-string
+  for package in mech-core mech-engine mech-math mech-range mech-string
   do
     consumer_tree="$consumer_tree
 $(cargo +nightly-2026-03-03 tree \
@@ -77,7 +77,6 @@ $(cargo +nightly-2026-03-03 tree \
 
   reject_tree_entry "$consumer_tree" "mech-bytecode v" "mech-bytecode in the consumer graph"
   reject_tree_entry "$consumer_tree" 'mech-core feature "compiler"' "mech-core/compiler in the consumer graph"
-  reject_tree_entry "$consumer_tree" 'mech-engine feature "compiler"' "mech-engine/compiler in the consumer graph"
   reject_tree_entry "$consumer_tree" 'mech-engine feature "compiler"' "mech-engine/compiler in the consumer graph"
   reject_tree_entry "$consumer_tree" 'mech-math feature "compiler"' "mech-math/compiler in the consumer graph"
   reject_tree_entry "$consumer_tree" 'mech-range feature "compiler"' "mech-range/compiler in the consumer graph"
