@@ -132,9 +132,9 @@ fail_if_found \
   "a documentation-hidden public journal API remains" \
   '#\[doc\(hidden\)\]' \
   src/core/src/reactive_transaction.rs \
-  src/core/src/functions.rs \
+  src/core/src/function/mod.rs \
   src/engine/src/engine.rs \
-  src/engine/src/program.rs
+  src/engine/src/program/mod.rs
 
 fail_if_found \
   "runtime imports a lower-level reactive journal participant" \
@@ -166,7 +166,7 @@ fail_if_cloneable \
   ReactiveJournalParticipant
 
 fail_if_cloneable \
-  src/engine/src/program.rs \
+  src/engine/src/program/mod.rs \
   ProgramReactiveTurnJournal
 
 "$repository_root/scripts/check-unsafe-boundaries.sh"

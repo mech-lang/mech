@@ -1,7 +1,7 @@
 #![allow(warnings)]
-#[path = "bytecode/catalog.rs"]
+#[path = "support/bytecode/catalog.rs"]
 mod catalog;
-#[path = "bytecode/dynamic_matrix_factory.rs"]
+#[path = "support/bytecode/dynamic_matrix_factory.rs"]
 mod dynamic_matrix_factory;
 
 extern crate mech_core;
@@ -15,7 +15,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Root bytecode tests compile against the standard distribution. Bare and
-/// custom-catalog bytecode behavior lives in `bytecode/catalog`.
+/// custom-catalog bytecode behavior lives in `support/bytecode/catalog`.
 struct MechProgram;
 
 impl MechProgram {
