@@ -3,9 +3,10 @@ use std::collections::BTreeMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use mech_core::{
+use mech_core::Value;
+use mech_host_browser::{
     BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
-    BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource, Value,
+    BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource,
 };
 use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
 use mech_runtime::{

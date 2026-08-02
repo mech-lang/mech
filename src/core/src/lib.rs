@@ -108,7 +108,6 @@ use tabled::{
     settings::{Alignment, Modify, Panel, Span, Style, object::Rows},
 };
 
-pub mod browser;
 pub mod error;
 pub mod execution;
 #[cfg(feature = "functions")]
@@ -130,7 +129,6 @@ pub mod program;
 pub mod stdlib;
 pub mod types;
 
-pub use self::browser::*;
 pub use self::error::*;
 pub use self::execution::*;
 #[cfg(feature = "functions")]

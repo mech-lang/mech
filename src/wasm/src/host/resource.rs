@@ -1,4 +1,4 @@
-pub use mech_core::{
+pub use mech_host_browser::{
     BROWSER_CLIPBOARD_PROVIDER_URI, BROWSER_DOM_PROVIDER_URI, BROWSER_HOST_IDENTITY,
     BROWSER_NETWORK_PROVIDER_URI, BROWSER_STORAGE_PROVIDER_URI, BrowserCapabilityGrant,
     BrowserCapabilityRequest, BrowserDomManifestEntry, BrowserDomPath, BrowserDomProperty,

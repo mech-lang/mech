@@ -2,12 +2,12 @@
 
 use std::sync::{Arc, Mutex};
 
-use mech_core::{
-    BROWSER_DOM_PROVIDER_URI, BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry,
-    BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource,
-    MResult, Ref, Value,
+use mech_core::{MResult, Ref, Value};
+use mech_host_browser::{
+    BROWSER_DOM_PROVIDER_URI, BrowserAuthority, BrowserCapabilityGrant, BrowserDomBackend,
+    BrowserDomManifestEntry, BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserOperation,
+    BrowserResource, BrowserResourceProvider,
 };
-use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
 use mech_runtime::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,

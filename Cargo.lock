@@ -2178,8 +2178,6 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "tabled",
- "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]
