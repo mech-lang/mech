@@ -45,6 +45,7 @@ impl Default for ConfigProfileOptions {
     }
 }
 
+#[cfg(feature = "source")]
 pub fn parse_config_document(
     source_name: impl Into<String>,
     source: &str,

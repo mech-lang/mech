@@ -22,6 +22,12 @@ pub mod catalog;
 pub mod access;
 #[cfg(feature = "assign")]
 pub mod assign;
+#[cfg(any(
+    feature = "set",
+    feature = "set_comprehensions",
+    feature = "matrix_comprehensions"
+))]
+pub mod constructors;
 #[cfg(feature = "convert")]
 pub mod convert;
 #[cfg(feature = "variable_define")]

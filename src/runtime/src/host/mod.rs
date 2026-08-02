@@ -30,9 +30,11 @@ use crate::context::RuntimeContext;
 use crate::service::RuntimeManagedServices;
 use crate::{PreparedRuntimeEffect, RuntimeValueSnapshot, TryIntoRuntimeValueSnapshot};
 
+#[cfg(feature = "string")]
 pub mod actor;
 pub mod arg;
 
+#[cfg(feature = "string")]
 pub use self::actor::*;
 pub use self::arg::*;
 
@@ -839,6 +841,7 @@ pub fn default_host_capability_request(
     }
 }
 
+#[cfg(feature = "string")]
 pub fn register_actor_context_host_functions(registry: &mut dyn HostRegistry) -> MResult<()> {
     registry.register_function(RegisteredHostFunction::Pure(Arc::new(
         ActorMessageKindHostFunction::new(),

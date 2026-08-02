@@ -16,14 +16,12 @@ use crate::{
     RuntimeResourceRegistry, Scheduler, SchedulerPolicy, SourceResolver,
     materialize_config_spec_grants, register_config_spec_resources,
 };
-#[cfg(feature = "functions")]
 use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog, ModuleManifestConfig};
 use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
-#[cfg(feature = "functions")]
 use std::sync::Arc;
 
 // -----------------------------------------------------------------------------
@@ -32,8 +30,7 @@ use std::sync::Arc;
 
 pub struct RuntimeBuilder {
     config: RuntimeConfig,
-    #[cfg(feature = "functions")]
-    function_catalog: Option<Arc<FunctionCatalog>>,
+    function_catalog: Arc<FunctionCatalog>,
     id_generator: Box<dyn IdGenerator>,
     store: Box<dyn MechStore>,
     capability_kernel: Box<dyn CapabilityKernel>,
@@ -58,14 +55,7 @@ pub struct RuntimeBuilder {
 
 impl std::fmt::Debug for RuntimeBuilder {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        #[cfg(feature = "functions")]
-        let function_catalog = if self.function_catalog.is_some() {
-            "<configured FunctionCatalog>"
-        } else {
-            "<default FunctionCatalog>"
-        };
-        #[cfg(not(feature = "functions"))]
-        let function_catalog = "<functions disabled>";
+        let function_catalog = "<FunctionCatalog>";
 
         f.debug_struct("RuntimeBuilder")
             .field("config", &self.config)
@@ -96,8 +86,7 @@ impl Default for RuntimeBuilder {
     fn default() -> Self {
         Self {
             config: RuntimeConfig::default(),
-            #[cfg(feature = "functions")]
-            function_catalog: None,
+            function_catalog: mech_engine::empty_function_catalog(),
             id_generator: Box::new(DefaultIdGenerator::new()),
             store: Box::new(extension::RuntimeStoreBoundary::new(Box::new(
                 InMemoryStore::new(),
@@ -136,9 +125,8 @@ impl RuntimeBuilder {
         self
     }
 
-    #[cfg(feature = "functions")]
     pub fn function_catalog(mut self, catalog: Arc<FunctionCatalog>) -> Self {
-        self.function_catalog = Some(catalog);
+        self.function_catalog = catalog;
         self
     }
 
@@ -317,22 +305,14 @@ impl RuntimeBuilder {
             .map(|value| usize::try_from(value).unwrap_or(usize::MAX));
         self.store.configure_event_retention(max_events)?;
 
-        #[cfg(feature = "functions")]
-        let function_catalog = select_function_catalog(
-            self.function_catalog.take(),
-            mech_engine::default_function_catalog,
-        );
-        #[cfg(feature = "functions")]
+        let function_catalog = Arc::clone(&self.function_catalog);
         let program =
             MechProgram::with_function_catalog(program_config, Arc::clone(&function_catalog));
-        #[cfg(not(feature = "functions"))]
-        let program = MechProgram::new(program_config);
 
         let mut runtime = MechRuntime {
             id: runtime_id,
             event_sequence: 0,
             config: self.config,
-            #[cfg(feature = "functions")]
             function_catalog,
             program,
             id_generator: self.id_generator,
@@ -438,17 +418,9 @@ impl RuntimeBuilder {
     }
 }
 
-#[cfg(feature = "functions")]
-fn select_function_catalog(
-    configured: Option<Arc<FunctionCatalog>>,
-    default: impl FnOnce() -> Arc<FunctionCatalog>,
-) -> Arc<FunctionCatalog> {
-    configured.unwrap_or_else(default)
-}
-
-#[cfg(all(test, feature = "functions"))]
+#[cfg(test)]
 mod tests {
-    use super::{MechProgramConfig, RuntimeBuilder, select_function_catalog};
+    use super::{MechProgramConfig, RuntimeBuilder};
     use mech_core::FunctionCatalogBuilder;
     use std::sync::Arc;
 
@@ -468,13 +440,12 @@ mod tests {
     }
 
     #[test]
-    fn configured_function_catalog_does_not_invoke_default_factory() {
-        let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
+    fn bare_runtime_uses_an_empty_catalog() {
+        let runtime = RuntimeBuilder::new().build().unwrap();
 
-        let selected = select_function_catalog(Some(Arc::clone(&catalog)), || {
-            panic!("configured function catalog must bypass the default factory")
-        });
-
-        assert!(Arc::ptr_eq(&selected, &catalog));
+        assert_eq!(runtime.function_catalog.runtime_factory_count(), 0);
+        assert_eq!(runtime.function_catalog.specializer_count(), 0);
+        assert_eq!(runtime.function_catalog.intrinsic_specializer_count(), 0);
+        assert_eq!(runtime.function_catalog.all_exports().len(), 0);
     }
 }

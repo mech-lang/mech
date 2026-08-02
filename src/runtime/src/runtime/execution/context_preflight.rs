@@ -1086,6 +1086,7 @@ impl MechRuntime {
     fn resolved_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
         let value = resolve_runtime_value(value);
         match value {
+            #[cfg(feature = "string")]
             Value::String(value) => {
                 let text = value.borrow().clone();
                 Ok(mech_core::Expression::Literal(mech_core::Literal::String(
@@ -3847,11 +3848,4 @@ pub(super) fn resolve_runtime_value(value: Value) -> Value {
         Value::MutableReference(value) => value.borrow().clone(),
         other => other,
     }
-}
-
-// Activation effects are released after the reactive turn succeeds. Keep the
-// body-time payload separate from any live source cells so a register commit
-// cannot change the value that the selected arm staged for its send.
-pub(super) fn snapshot_runtime_value(value: &Value) -> MResult<Value> {
-    value.try_deep_snapshot()
 }

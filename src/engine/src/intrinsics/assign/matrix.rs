@@ -1,5 +1,5 @@
 #[macro_use]
-use crate::stdlib::*;
+use crate::intrinsics::*;
 use nalgebra::{
     Dim, IsContiguous, Scalar,
     base::{Matrix as naMatrix, Storage, StorageMut},

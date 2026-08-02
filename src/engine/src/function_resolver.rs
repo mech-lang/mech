@@ -2,12 +2,27 @@ use crate::function_environment::{FunctionBinding, FunctionEnvironment};
 use crate::function_extensions::{
     ExtensionFunctionId, FunctionExtensionEntry, FunctionExtensionUnavailable, FunctionExtensions,
 };
-use crate::functions::MissingFunctionError;
 use mech_core::{
     FunctionCatalog, FunctionDefinition, FunctionOperationUnavailable, FunctionSpecializerEntry,
     MResult, MechError, MechFunction, OperationId, RuntimeFunctionFactory, RuntimeFunctionId,
     UserFunctionTable, Value, hash_str,
 };
+
+/// A named source function could not be resolved in the current environment.
+#[derive(Debug, Clone)]
+pub struct MissingFunctionError {
+    pub function_id: u64,
+}
+
+impl mech_core::MechErrorKind for MissingFunctionError {
+    fn name(&self) -> &str {
+        "MissingFunction"
+    }
+
+    fn message(&self) -> String {
+        format!("Function with id {} not found", self.function_id)
+    }
+}
 
 pub struct FunctionResolver<'a> {
     catalog: &'a FunctionCatalog,

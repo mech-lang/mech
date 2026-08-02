@@ -14,7 +14,6 @@ use crate::{
     Term, Value, ValueKind, VecOp, detach_value,
 };
 
-#[cfg(feature = "formulas")]
 fn specialize_formula_operation(
     p: &InterpreterExecution<'_>,
     canonical_name: &str,
@@ -27,7 +26,6 @@ fn specialize_formula_operation(
     )
 }
 
-#[cfg(feature = "formulas")]
 pub fn factor(
     fctr: &Factor,
     env: Option<&Environment>,
@@ -95,7 +93,6 @@ pub fn factor(
     }
 }
 
-#[cfg(feature = "formulas")]
 pub fn term(trm: &Term, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
     let plan = p.plan();
     let mut lhs = factor(&trm.lhs, env, p)?;

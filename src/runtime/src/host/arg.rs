@@ -224,6 +224,7 @@ pub fn host_arg_optional(
 // Strings / booleans
 // -----------------------------------------------------------------------------
 
+#[cfg(feature = "string")]
 pub fn host_arg_string(
     function: &str,
     args: &[impl HostArgumentValue],
@@ -235,6 +236,7 @@ pub fn host_arg_string(
     }
 }
 
+#[cfg(feature = "string")]
 pub fn host_arg_strict_string(
     function: &str,
     args: &[impl HostArgumentValue],
@@ -243,6 +245,7 @@ pub fn host_arg_strict_string(
     host_arg_string(function, args, index)
 }
 
+#[cfg(feature = "string")]
 pub fn host_arg_optional_string(
     function: &str,
     args: &[impl HostArgumentValue],

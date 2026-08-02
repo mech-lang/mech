@@ -425,7 +425,18 @@ impl MechRuntime {
         )?;
 
         if let Some(behavior) = turn.behavior {
+            #[cfg(feature = "source")]
             self.run_module_with_context(context, behavior)?;
+            #[cfg(not(feature = "source"))]
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "run_actor_turn_envelope",
+                    reason: format!(
+                        "actor behavior module {behavior} requires the runtime source layer"
+                    ),
+                },
+                None,
+            ));
         }
 
         let mut driver = std::mem::replace(

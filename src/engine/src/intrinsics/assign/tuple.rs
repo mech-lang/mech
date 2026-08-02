@@ -1,5 +1,5 @@
 #[macro_use]
-use crate::stdlib::*;
+use crate::intrinsics::*;
 use self::assign::*;
 
 use crate::*;

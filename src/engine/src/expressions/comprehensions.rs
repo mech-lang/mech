@@ -1,15 +1,12 @@
-use super::{
-    ComprehensionGeneratorError, Environment, SetComprehensionOutputKindMismatchError, expression,
-};
+use super::{ComprehensionGeneratorError, Environment, expression};
+#[cfg(feature = "matrix_comprehensions")]
+pub use crate::intrinsics::constructors::ValueMatrixComprehension;
+#[cfg(feature = "set_comprehensions")]
+pub use crate::intrinsics::constructors::ValueSetComprehension;
 use crate::patterns::PatternBindingSink;
-#[cfg(feature = "compiler")]
 use crate::{
-    BytecodeCompilerContext, CompileConst, FeatureFlag, FeatureKind, MechFunctionCompiler, Register,
-};
-use crate::{
-    ComprehensionQualifier, FunctionArgs, FunctionSpecializer, IncorrectNumberOfArguments,
-    Interpreter, InterpreterExecution, MResult, MechError, MechFunction, MechFunctionFactory,
-    MechFunctionImpl, Ref, ToValue, Value, execute_catalog_operation, hash_str,
+    ComprehensionQualifier, FunctionSpecializer, Interpreter, InterpreterExecution, MResult,
+    MechError, MechFunction, Ref, ToValue, Value, execute_catalog_operation, hash_str,
 };
 #[cfg(feature = "matrix_comprehensions")]
 use crate::{Matrix, MatrixComprehension};
@@ -141,76 +138,6 @@ fn comprehension_generator_values(collection: &Value) -> MResult<Vec<Value>> {
     }
 }
 
-#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
-fn detach_comprehension_value(value: &Value) -> Value {
-    match value {
-        Value::MutableReference(reference) => reference.borrow().clone(),
-        _ => value.clone(),
-    }
-}
-
-#[cfg(feature = "set_comprehensions")]
-#[derive(Debug)]
-pub struct ValueSetComprehension {
-    pub arguments: Vec<Value>,
-    pub out: Ref<MechSet>,
-}
-#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
-impl MechFunctionImpl for ValueSetComprehension {
-    fn solve(&self) {
-        let args = self
-            .arguments
-            .iter()
-            .map(detach_comprehension_value)
-            .collect::<Vec<Value>>();
-        *self.out.borrow_mut() = MechSet::from_vec(args);
-    }
-    fn out(&self) -> Value {
-        Value::Set(self.out.clone())
-    }
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(self.reactive_output_values())
-    }
-}
-#[cfg(all(feature = "set_comprehensions", feature = "functions"))]
-impl MechFunctionFactory for ValueSetComprehension {
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Nullary(Value::Set(out)) => Ok(Box::new(ValueSetComprehension {
-                arguments: Vec::new(),
-                out,
-            })),
-            FunctionArgs::Nullary(out) => Err(MechError::new(
-                SetComprehensionOutputKindMismatchError { found: out.kind() },
-                None,
-            )
-            .with_compiler_loc()),
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
-    }
-}
-#[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
-impl MechFunctionCompiler for ValueSetComprehension {
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!(
-            "set/comprehension",
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::SetComprehensions)
-        );
-    }
-}
 #[cfg(feature = "set_comprehensions")]
 pub struct SetComprehensionDefine {}
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
@@ -223,71 +150,6 @@ impl FunctionSpecializer for SetComprehensionDefine {
     }
 }
 #[cfg(feature = "matrix_comprehensions")]
-#[derive(Debug)]
-pub struct ValueMatrixComprehension {
-    pub arguments: Vec<Value>,
-    pub out: Ref<Value>,
-}
-#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
-impl MechFunctionImpl for ValueMatrixComprehension {
-    fn solve(&self) {
-        let args = self
-            .arguments
-            .iter()
-            .map(detach_comprehension_value)
-            .collect::<Vec<Value>>();
-        let out = if args.is_empty() {
-            Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
-        } else {
-            let fxn = crate::stdlib::horzcat::impl_horzcat_fxn(&args)
-                .expect("matrix/comprehension input kinds changed to incompatible values");
-            fxn.solve();
-            fxn.out()
-        };
-        *self.out.borrow_mut() = out;
-    }
-    fn out(&self) -> Value {
-        self.out.borrow().clone()
-    }
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(vec![Value::MutableReference(self.out.clone())])
-    }
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
-
-#[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
-impl MechFunctionFactory for ValueMatrixComprehension {
-    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Nullary(out) => Ok(Box::new(ValueMatrixComprehension {
-                arguments: Vec::new(),
-                out: Ref::new(out),
-            })),
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 0,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
-    }
-}
-#[cfg(all(feature = "matrix_comprehensions", feature = "compiler"))]
-impl MechFunctionCompiler for ValueMatrixComprehension {
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!(
-            "matrix/comprehension",
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::MatrixComprehensions)
-        );
-    }
-}
-#[cfg(feature = "matrix_comprehensions")]
 pub struct MatrixComprehensionDefine {}
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl FunctionSpecializer for MatrixComprehensionDefine {
@@ -295,7 +157,7 @@ impl FunctionSpecializer for MatrixComprehensionDefine {
         let out = if arguments.is_empty() {
             Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
         } else {
-            let fxn = crate::stdlib::horzcat::impl_horzcat_fxn(arguments)?;
+            let fxn = crate::intrinsics::horzcat::impl_horzcat_fxn(arguments)?;
             fxn.solve();
             fxn.out()
         };

@@ -1,5 +1,5 @@
 #[macro_use]
-use crate::stdlib::*;
+use crate::intrinsics::*;
 
 pub mod catalog;
 pub use self::catalog::install_runtime;
@@ -413,8 +413,6 @@ pub fn add_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechF
     match sink {
         #[cfg(feature = "table")]
         Value::Table(_) => add_assign_table_fxn(sink, source),
-        #[cfg(feature = "math_add_assign")]
-        _ => add_assign_math_fxn(sink, source),
         _ => Err(MechError::new(
             UnhandledFunctionArgumentKind2 {
                 arg: (sink.kind(), source.kind()),

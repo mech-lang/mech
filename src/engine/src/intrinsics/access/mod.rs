@@ -29,7 +29,7 @@ pub use self::table::*;
 pub use self::tuple::*;
 
 #[macro_use]
-use crate::stdlib::*;
+use crate::intrinsics::*;
 
 /// Installs every enabled concrete access factory into the supplied catalog.
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {

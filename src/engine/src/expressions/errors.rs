@@ -58,24 +58,6 @@ impl MechErrorKind for ComprehensionGeneratorError {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct SetComprehensionOutputKindMismatchError {
-    pub(super) found: ValueKind,
-}
-
-impl MechErrorKind for SetComprehensionOutputKindMismatchError {
-    fn name(&self) -> &str {
-        "SetComprehensionOutputKindMismatch"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "Set comprehension bytecode output must be a set, but found {:?}.",
-            self.found
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct PatternExpectedTupleError {
     found: ValueKind,
 }

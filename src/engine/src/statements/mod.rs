@@ -42,7 +42,12 @@ pub use op_assign::add_assign;
 pub use op_assign::div_assign;
 #[cfg(feature = "math_mul_assign")]
 pub use op_assign::mul_assign;
-#[cfg(feature = "math")]
+#[cfg(any(
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+))]
 pub use op_assign::op_assign;
 #[cfg(feature = "math_sub_assign")]
 pub use op_assign::sub_assign;
@@ -80,7 +85,12 @@ pub fn statement(
             enum_define(&enm_def, p)?;
             Ok(Value::Empty)
         }
-        #[cfg(feature = "math")]
+        #[cfg(any(
+            feature = "math_add_assign",
+            feature = "math_sub_assign",
+            feature = "math_div_assign",
+            feature = "math_mul_assign"
+        ))]
         Statement::OpAssign(op_assgn) => op_assign(&op_assgn, env, p),
         #[cfg(feature = "state_machines")]
         Statement::FsmDeclare(fsm_decl) => fsm_declare(fsm_decl, env, p),

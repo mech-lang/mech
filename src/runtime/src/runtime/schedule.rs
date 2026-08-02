@@ -15,6 +15,8 @@
 // - `run_actor_turn`: Executes a turn for a scheduled actor, handling the retrieval of the actor record, execution of the turn envelope, and management of transactions and events based on the outcome.
 // - `run_tick`: Executes all scheduled work collected in a tick, returning the outcomes of each piece of work executed in the tick.
 
+#[cfg(not(feature = "source"))]
+use crate::runtime::RuntimeInvalidOperationError;
 use crate::runtime::{MechRuntime, RuntimeRecordNotFoundError, extension};
 use crate::scheduler::collect_tick;
 use crate::{
@@ -168,8 +170,21 @@ impl MechRuntime {
                 return Ok(());
             };
 
-            self.run_module_with_context(&mut context, module_version)?;
-            self.complete_task_with_context(&mut context, task_id)?;
+            #[cfg(feature = "source")]
+            {
+                self.run_module_with_context(&mut context, module_version)?;
+                self.complete_task_with_context(&mut context, task_id)?;
+            }
+            #[cfg(not(feature = "source"))]
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "run_scheduled_task",
+                    reason: format!(
+                        "task module {module_version} requires the runtime source layer"
+                    ),
+                },
+                None,
+            ));
 
             Ok(())
         })();

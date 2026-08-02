@@ -95,6 +95,19 @@ pub struct FunctionCatalog {
 }
 
 impl FunctionCatalog {
+    /// Constructs a catalog with no runtime factories, source specializers, or exports.
+    pub fn empty() -> Self {
+        Self {
+            runtime_factories: BTreeMap::new(),
+            specializers: BTreeMap::new(),
+            intrinsic_specializers: BTreeMap::new(),
+            exports_by_module_item: BTreeMap::new(),
+            exports_by_module: BTreeMap::new(),
+            exports_by_operation: BTreeMap::new(),
+            all_exports: Vec::new(),
+        }
+    }
+
     pub fn runtime_factory(&self, id: RuntimeFunctionId) -> Option<RuntimeFunctionFactory> {
         self.runtime_factories.get(&id).map(|entry| entry.factory)
     }
@@ -193,6 +206,12 @@ impl FunctionCatalog {
 
     pub fn intrinsic_specializer_count(&self) -> usize {
         self.intrinsic_specializers.len()
+    }
+}
+
+impl Default for FunctionCatalog {
+    fn default() -> Self {
+        Self::empty()
     }
 }
 
@@ -814,6 +833,16 @@ mod tests {
             module: module.map(String::from),
             item: item.map(String::from),
             exposure,
+        }
+    }
+
+    #[test]
+    fn empty_and_default_catalogs_have_no_function_surface() {
+        for catalog in [FunctionCatalog::empty(), FunctionCatalog::default()] {
+            assert_eq!(catalog.runtime_factory_count(), 0);
+            assert_eq!(catalog.specializer_count(), 0);
+            assert_eq!(catalog.intrinsic_specializer_count(), 0);
+            assert_eq!(catalog.all_exports().len(), 0);
         }
     }
 

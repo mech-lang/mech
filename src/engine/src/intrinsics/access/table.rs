@@ -1,6 +1,6 @@
 #[macro_use]
-use crate::stdlib::*;
-use crate::stdlib::access::*;
+use crate::intrinsics::*;
+use crate::intrinsics::access::*;
 
 // Table Access ---------------------------------------------------------------
 

@@ -37,12 +37,14 @@
   result := demo/math/affine(2.0, 3.0, 4.0);
 */
 
+use super::MechRuntime;
+#[cfg(feature = "compiler")]
+use super::RuntimeHostFunctionNotBytecodeCompilableError;
 use super::execution::{
     ACTIVATION_EFFECT_BARRIER_NAME, ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
     ActivationEffectBarrierSpecializer, ActivationEffectPayloadCaptureSpecializer,
 };
 use super::extension::invoke_extension;
-use super::{MechRuntime, RuntimeHostFunctionNotBytecodeCompilableError};
 use crate::{
     HostCall, HostFunctionNotFoundError, RegisteredHostFunction, RuntimeCallContext,
     RuntimeContext, RuntimeEventKind, RuntimeValueSnapshot,

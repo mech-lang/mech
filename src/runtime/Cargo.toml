@@ -14,21 +14,36 @@ edition = "2024"
 rust-version = "1.92"
 
 [features]
-no_std = ["mech-core/no_std", "mech-engine/no_std"]
+no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-syntax?/no_std"]
 
-default = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
-      "u8", "u16", "u32", "u64", "u128", 
-      "i8", "i16", "i32", "i64", "i128", 
-      "f32", "f64", "c64", "r64",
-      "statements_default", "subscript_default", "state_machines",
-      "watcher",
-      "mech-core/default", "mech-engine/default"
-      ]
-base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
-      "statements_default", "subscript_default", "state_machines",
-      "watcher",
-      "mech-core/base", "mech-engine/base"
-      ]
+runtime = ["mech-engine/runtime"]
+source = ["runtime", "mech-engine/source", "dep:mech-syntax"]
+compiler = ["source", "mech-engine/compiler"]
+
+runtime_default = [
+  "runtime",
+  "async",
+  "bool", "string",
+  "u8", "u16", "u32", "u64", "u128",
+  "i8", "i16", "i32", "i64", "i128",
+  "f32", "f64", "c64", "r64",
+  "set", "map", "table", "tuple", "record", "atom", "enum",
+  "row_vectord", "vectord", "matrixd",
+]
+source_default = [
+  "runtime_default",
+  "source",
+  "pretty_print",
+  "serde",
+  "mika",
+  "statements_default",
+  "subscript_default",
+  "state_machines",
+  "watcher",
+]
+compiler_default = ["source_default", "compiler"]
+default = ["source_default"]
+base = ["source_default", "mech-core/base", "mech-engine/base"]
 
 async = ["mech-engine/async"]
 watcher = ["ignore", "notify"]
@@ -66,12 +81,10 @@ baselib = ["bool", "string",
       "functions", "formulas",
     ]
 
-compiler = ["mech-engine/compiler"]
 program = ["mech-engine/program"]
 pretty_print = ["mech-engine/pretty_print"]
 serde = ["dep:serde", "dep:serde_derive", "mech-engine/serde"]
 mika = ["mech-engine/mika"]
-linked_stdlib = ["mech-engine/linked_stdlib"]
 
 statements = ["mech-core/statements", "mech-engine/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-engine/variables"]
@@ -163,7 +176,7 @@ trybuild = "1.0.118"
 blake3 = "1.8.5"
 mech-engine = { version = "0.3.5", default-features = false }
 mech-core = { version = "0.3.5", default-features = false }
-mech-syntax = { version = "0.3.5", default-features = false }
+mech-syntax = { version = "0.3.5", default-features = false, optional = true }
 serde = { version = "1.0.228", optional = true }
 serde_derive = { version = "1.0.228", optional = true }
 tracing = { version = "0.1.41", optional = true }

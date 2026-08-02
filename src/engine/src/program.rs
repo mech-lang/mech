@@ -20,8 +20,10 @@ use mech_core::{
 use mech_bytecode::CompileCtx;
 
 use crate::{Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint};
+#[cfg(feature = "source")]
 use mech_syntax::parser;
 
+#[cfg(all(feature = "source", feature = "native"))]
 use crate::ClosureFunctionSpecializer;
 
 #[cfg(feature = "compiler")]
@@ -504,7 +506,7 @@ impl MechProgram {
     pub fn new(config: MechProgramConfig) -> Self {
         #[cfg(feature = "functions")]
         {
-            Self::with_function_catalog(config, crate::default_function_catalog())
+            Self::with_function_catalog(config, crate::empty_function_catalog())
         }
         #[cfg(not(feature = "functions"))]
         {
@@ -558,18 +560,18 @@ impl MechProgram {
         Ok(())
     }
 
-    #[cfg(feature = "functions")]
+    #[cfg(all(feature = "source", feature = "functions"))]
     pub fn load_function_module(&mut self, module: &str) -> MResult<()> {
         crate::load_module(&self.interpreter, module)?;
         Ok(())
     }
 
-    #[cfg(feature = "functions")]
+    #[cfg(all(feature = "source", feature = "functions"))]
     pub fn import_function_module_item(&mut self, module: &str, item: &str) -> MResult<()> {
         crate::import_module_item(&self.interpreter, module, item)
     }
 
-    #[cfg(feature = "functions")]
+    #[cfg(all(feature = "source", feature = "functions"))]
     pub fn import_function_module_item_as(
         &mut self,
         module: &str,
@@ -579,7 +581,7 @@ impl MechProgram {
         crate::import_module_item_as(&self.interpreter, module, item, alias)
     }
 
-    #[cfg(feature = "functions")]
+    #[cfg(all(feature = "source", feature = "functions"))]
     pub fn import_function_module_glob(&mut self, module: &str) -> MResult<()> {
         crate::import_module_glob(&self.interpreter, module)
     }
@@ -605,6 +607,7 @@ impl MechProgram {
         Ok(())
     }
 
+    #[cfg(all(feature = "source", feature = "native"))]
     pub fn register_native_closure(
         &mut self,
         name: impl Into<String>,
@@ -667,11 +670,13 @@ impl MechProgram {
         self.interpreter
     }
 
+    #[cfg(feature = "source")]
     pub fn run_string(&mut self, source: &str) -> MResult<Value> {
         let mut services = NoMechExecutionServices;
         self.run_string_with_services(source, &mut services)
     }
 
+    #[cfg(feature = "source")]
     pub fn run_string_with_services(
         &mut self,
         source: &str,
@@ -681,11 +686,13 @@ impl MechProgram {
         self.run_tree_with_services(&tree, services)
     }
 
+    #[cfg(feature = "source")]
     pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<Value> {
         let mut services = NoMechExecutionServices;
         self.run_tree_with_services(tree, &mut services)
     }
 
+    #[cfg(feature = "source")]
     pub fn run_tree_with_services(
         &mut self,
         tree: &mech_core::Program,
@@ -703,10 +710,12 @@ impl MechProgram {
         self.interpreter.run_program(program)
     }
 
+    #[cfg(feature = "source")]
     pub fn run_program(&mut self, source: &str) -> MResult<Value> {
         self.run_profiled_string(source)
     }
 
+    #[cfg(feature = "source")]
     pub fn run_profiled_string(&mut self, source: &str) -> MResult<Value> {
         let now = Instant::now();
         let result = self.run_string(source);
@@ -1301,7 +1310,9 @@ impl MechProgram {
         services: &mut dyn MechExecutionServices,
     ) -> MResult<Value> {
         match source {
+            #[cfg(feature = "source")]
             MechSourceCode::String(source) => self.run_string_with_services(source, services),
+            #[cfg(feature = "source")]
             MechSourceCode::Tree(tree) => self.run_tree_with_services(tree, services),
             MechSourceCode::ByteCode(bytecode) => self.run_bytecode(bytecode),
             MechSourceCode::Program(sources) => self.run_sources_with_services(sources, services),
@@ -1652,7 +1663,7 @@ mod tests {
         }
     }
 
-    #[cfg(all(feature = "functions", feature = "f64"))]
+    #[cfg(all(feature = "functions", feature = "native", feature = "f64"))]
     #[test]
     fn native_closure_registration_replaces_exact_names_and_checkpoint_restores_the_original() {
         let mut program = MechProgram::new(MechProgramConfig::default());
@@ -1689,7 +1700,7 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "functions")]
+    #[cfg(all(feature = "functions", feature = "native"))]
     #[test]
     fn native_closure_registration_is_fallible_atomic_and_checkpointed() {
         let mut program = MechProgram::new(MechProgramConfig::default());
@@ -1749,7 +1760,12 @@ mod tests {
         );
     }
 
-    #[cfg(all(feature = "functions", feature = "compiler", feature = "f64"))]
+    #[cfg(all(
+        feature = "functions",
+        feature = "native",
+        feature = "compiler",
+        feature = "f64"
+    ))]
     #[test]
     fn native_closure_bytecode_rejection_remains_structured() {
         let mut program = MechProgram::new(MechProgramConfig::default());

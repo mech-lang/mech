@@ -1,4 +1,4 @@
-use crate::stdlib::*;
+use crate::intrinsics::*;
 use indexmap::map::IndexMap;
 use mech_core::matrix::Matrix;
 use na::DVector;

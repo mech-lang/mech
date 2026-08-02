@@ -1,5 +1,11 @@
-#[cfg(feature = "variable_define")]
-use crate::stdlib::define::VarDefine;
+#[cfg(feature = "matrix_comprehensions")]
+use crate::intrinsics::constructors::ValueMatrixComprehension;
+#[cfg(feature = "set")]
+use crate::intrinsics::constructors::ValueSet;
+#[cfg(feature = "set_comprehensions")]
+use crate::intrinsics::constructors::ValueSetComprehension;
+#[cfg(all(feature = "source", feature = "variable_define"))]
+use crate::intrinsics::define::VarDefine;
 use crate::*;
 use mech_core::{
     FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
@@ -40,6 +46,7 @@ where
         .map(|_| ())
 }
 
+#[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrix_comprehensions")]
     install_named(
@@ -161,9 +168,4 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     super::vertcat::install_runtime(builder)?;
 
     Ok(())
-}
-
-pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_runtime(builder)?;
-    install_source(builder)
 }

@@ -1,7 +1,8 @@
 use crate::{MechRuntime, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeTransactionalEffect};
+#[cfg(feature = "compiler")]
+use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
-    BytecodeCompilerContext, GenericError, MResult, MechError, MechFunctionCompiler,
-    MechFunctionImpl, ReactiveSolveStatus, Ref, Register, Value,
+    GenericError, MResult, MechError, MechFunctionImpl, ReactiveSolveStatus, Ref, Value,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
