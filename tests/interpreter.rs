@@ -6,12 +6,29 @@ extern crate mech_core;
 extern crate mech_syntax;
 extern crate nalgebra as na;
 use indexmap::set::IndexSet;
-use mech::{MechProgram, MechProgramConfig, MechProgramEnvironment};
+use mech::{MechProgram as EngineMechProgram, MechProgramConfig, MechProgramEnvironment};
 use mech_core::matrix::Matrix;
 use mech_core::*;
 use mech_syntax::*;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+/// Root interpreter tests exercise the standard source distribution. Catalog
+/// behavior for a deliberately bare engine is covered by `interpreter/catalog`.
+struct MechProgram;
+
+impl MechProgram {
+    fn new(config: MechProgramConfig) -> EngineMechProgram {
+        #[cfg(feature = "standard_source")]
+        {
+            EngineMechProgram::with_function_catalog(config, mech::stdlib::source_catalog())
+        }
+        #[cfg(not(feature = "standard_source"))]
+        {
+            EngineMechProgram::new(config)
+        }
+    }
+}
 
 /// Compare interpreter output to expected value
 macro_rules! test_interpreter {
@@ -952,25 +969,25 @@ test_interpreter!(
     "[1+2i 3+4i] == [1+2i 3+4i]",
     Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_interpreter!(
     interpret_matrix_strict_eq,
     "x := 1 + [4 5 6]\nx === [5 6 7]",
     Value::Bool(Ref::new(true))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_interpreter!(
     interpret_matrix_strict_neq,
     "x := 1 + [4 5 6]\nx !== [5 6 8]",
     Value::Bool(Ref::new(true))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_interpreter!(
     interpret_matrix_strict_eq_symbol,
     "x := 1 + [4 5 6]\nx ≡ [5 6 7]",
     Value::Bool(Ref::new(true))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_interpreter!(
     interpret_matrix_strict_neq_symbol,
     "x := 1 + [4 5 6]\nx !≡ [5 6 8]",
@@ -2692,27 +2709,27 @@ test_interpreter!(
 power(2<u64>, 10<u64>)"#,
     Value::U64(Ref::new(1024))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_interpreter!(
     interpret_function_call_native_vector,
     "+> math\nmath/sin([1.570796327 1.570796327])",
     Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_interpreter!(
     interpret_function_call_native,
     r#"+> math
 math/sin(1.5707963267948966)"#,
     Value::F64(Ref::new(1.0))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_interpreter!(
     interpret_function_call_native_cos,
     r#"+> math
 math/cos(0.0)"#,
     Value::F64(Ref::new(1.0))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_interpreter!(
     interpret_function_call_native_vector2,
     "+> math\nmath/cos([0.0 0.0])",
@@ -3374,7 +3391,7 @@ test_interpreter!(
     ))
 );
 
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_interpreter!(
     interpret_stats_sum_rowm2,
     "+> stats\nx := [1 2; 4 5]; y := stats/sum/row(x);",
@@ -3761,7 +3778,7 @@ test_interpreter!(
     Value::U64(Ref::new(200))
 );
 
-#[cfg(all(feature = "table", feature = "u64", feature = "linked_stdlib"))]
+#[cfg(all(feature = "table", feature = "u64", feature = "standard_source"))]
 fn internal_table_join_cell(operation_name: &str, column: &str, row: usize) -> Value {
     let mut program = MechProgram::new(MechProgramConfig {
         name: "internal-table-join".to_string(),
@@ -3811,7 +3828,7 @@ B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |"#,
 }
 
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 #[test]
 fn interpret_table_inner_join_catalog_operation() {
     assert_eq!(
@@ -3827,7 +3844,7 @@ test_interpreter!(
     Value::U64(Ref::new(1))
 );
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 #[test]
 fn interpret_table_left_outer_join_catalog_operation() {
     assert_eq!(
@@ -3843,7 +3860,7 @@ test_interpreter!(
     Value::U64(Ref::new(4))
 );
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 #[test]
 fn interpret_table_right_outer_join_catalog_operation() {
     assert_eq!(
@@ -3859,7 +3876,7 @@ test_interpreter!(
     Value::U64(Ref::new(4))
 );
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 #[test]
 fn interpret_table_full_outer_join_catalog_operation() {
     assert_eq!(
@@ -3965,7 +3982,7 @@ test_interpreter!(
     Value::U64(Ref::new(30))
 );
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 #[test]
 fn interpret_table_left_semi_join_catalog_operation() {
     assert_eq!(
@@ -3981,7 +3998,7 @@ test_interpreter!(
     Value::U64(Ref::new(1))
 );
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 #[test]
 fn interpret_table_left_anti_join_catalog_operation() {
     assert_eq!(
@@ -4207,14 +4224,14 @@ test_interpreter!(
     Value::Bool(Ref::new(true))
 );
 
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_catalog_internal_operation!(
     interpret_compare_max_scalar,
     "compare/max",
     [Value::F64(Ref::new(5.0)), Value::F64(Ref::new(3.0))],
     Value::F64(Ref::new(5.0))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_catalog_internal_operation!(
     interpret_compare_max_vector,
     "compare/max",
@@ -4224,7 +4241,7 @@ test_catalog_internal_operation!(
     ],
     Value::MatrixF64(Matrix::from_vec(vec![4.0, 4.0, 5.0, 6.0], 1, 4))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_catalog_internal_operation!(
     interpret_compare_max_vector_vector,
     "compare/max",
@@ -4234,14 +4251,14 @@ test_catalog_internal_operation!(
     ],
     Value::MatrixF64(Matrix::from_vec(vec![6.0, 5.0, 5.0, 6.0], 1, 4))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_catalog_internal_operation!(
     interpret_compare_min_scalar,
     "compare/min",
     [Value::F64(Ref::new(5.0)), Value::F64(Ref::new(3.0))],
     Value::F64(Ref::new(3.0))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_catalog_internal_operation!(
     interpret_compare_min_vector,
     "compare/min",
@@ -4251,7 +4268,7 @@ test_catalog_internal_operation!(
     ],
     Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 4.0], 1, 4))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_source")]
 test_catalog_internal_operation!(
     interpret_compare_min_vector_vector,
     "compare/min",

@@ -1,4 +1,5 @@
 use super::super::{ProgramTransactionTestFault, set_program_transaction_test_fault};
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{MechRuntime, RuntimeHealth, RuntimeInvalidOperationError};
 use mech_core::{MResult, MechError};
 
@@ -107,7 +108,7 @@ fn missing_implicit_envelope_during_cleanup_is_not_hidden() {
 
 #[test]
 fn incomplete_program_restore_poisons_retained_execution_until_abort() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     runtime.run_string("rollback-poison-anchor := 1").unwrap();
     assert!(runtime.program.interpreter().plan_len() > 0);
     let mut context = runtime.runtime_context().unwrap();

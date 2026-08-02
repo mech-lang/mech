@@ -2,9 +2,12 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
+#[cfg(feature = "compiler")]
+use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
-    MechSourceCode, ModuleManifestConfig, ModuleManifestExportConfig, ModuleManifestExportKind,
-    Ref, Value, hash_str,
+    FunctionCatalog, FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer,
+    MechFunction, MechFunctionImpl, MechSourceCode, ModuleManifestConfig,
+    ModuleManifestExportConfig, ModuleManifestExportKind, Ref, Value, hash_str,
 };
 #[cfg(feature = "compiler")]
 use mech_engine::{MechProgram, MechProgramConfig};
@@ -77,22 +80,319 @@ fn browser_dom_manifest() -> ModuleManifestConfig {
 }
 
 fn runtime_with_browser_manifest() -> mech_runtime::MechRuntime {
-    RuntimeBuilder::new()
+    runtime_with_module_test_catalog()
         .module_manifest(browser_dom_manifest())
         .unwrap()
         .build()
         .unwrap()
 }
 
+struct ConstantF64Function {
+    name: &'static str,
+    output: Ref<f64>,
+}
+
+impl MechFunctionImpl for ConstantF64Function {
+    fn solve(&self) {}
+
+    fn out(&self) -> Value {
+        Value::F64(self.output.clone())
+    }
+
+    fn transaction_state_values(&self) -> mech_core::MResult<Vec<Value>> {
+        Ok(Vec::new())
+    }
+
+    fn to_string(&self) -> String {
+        self.name.to_string()
+    }
+}
+
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for ConstantF64Function {
+    fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> mech_core::MResult<Register> {
+        Ok(0)
+    }
+}
+
+struct ConstantF64Specializer {
+    name: &'static str,
+    value: f64,
+}
+
+impl FunctionSpecializer for ConstantF64Specializer {
+    fn specialize(&self, _arguments: &[Value]) -> mech_core::MResult<Box<dyn MechFunction>> {
+        Ok(Box::new(ConstantF64Function {
+            name: self.name,
+            output: Ref::new(self.value),
+        }))
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum ModuleTestBinaryOperation {
+    Add,
+    AddAssign,
+    Equal,
+    GreaterThan,
+    LessThan,
+    And,
+}
+
+#[derive(Debug)]
+enum ModuleTestBinaryFunction {
+    F64Add {
+        lhs: Ref<f64>,
+        rhs: Ref<f64>,
+        out: Ref<f64>,
+    },
+    F64AddAssign {
+        sink: Ref<f64>,
+        source: Ref<f64>,
+    },
+    StringAdd {
+        lhs: Ref<String>,
+        rhs: Ref<String>,
+        out: Ref<String>,
+    },
+    StringEqual {
+        lhs: Ref<String>,
+        rhs: Ref<String>,
+        out: Ref<bool>,
+    },
+    F64GreaterThan {
+        lhs: Ref<f64>,
+        rhs: Ref<f64>,
+        out: Ref<bool>,
+    },
+    F64LessThan {
+        lhs: Ref<f64>,
+        rhs: Ref<f64>,
+        out: Ref<bool>,
+    },
+    BoolAnd {
+        lhs: Ref<bool>,
+        rhs: Ref<bool>,
+        out: Ref<bool>,
+    },
+}
+
+impl MechFunctionImpl for ModuleTestBinaryFunction {
+    fn solve(&self) {
+        match self {
+            Self::F64Add { lhs, rhs, out } => {
+                *out.borrow_mut() = *lhs.borrow() + *rhs.borrow();
+            }
+            Self::F64AddAssign { sink, source } => {
+                *sink.borrow_mut() += *source.borrow();
+            }
+            Self::StringAdd { lhs, rhs, out } => {
+                *out.borrow_mut() = format!("{}{}", lhs.borrow(), rhs.borrow());
+            }
+            Self::StringEqual { lhs, rhs, out } => {
+                *out.borrow_mut() = *lhs.borrow() == *rhs.borrow();
+            }
+            Self::F64GreaterThan { lhs, rhs, out } => {
+                *out.borrow_mut() = *lhs.borrow() > *rhs.borrow();
+            }
+            Self::F64LessThan { lhs, rhs, out } => {
+                *out.borrow_mut() = *lhs.borrow() < *rhs.borrow();
+            }
+            Self::BoolAnd { lhs, rhs, out } => {
+                *out.borrow_mut() = *lhs.borrow() && *rhs.borrow();
+            }
+        }
+    }
+
+    fn out(&self) -> Value {
+        match self {
+            Self::F64Add { out, .. } => Value::F64(out.clone()),
+            Self::F64AddAssign { sink, .. } => Value::F64(sink.clone()),
+            Self::StringAdd { out, .. } => Value::String(out.clone()),
+            Self::StringEqual { out, .. }
+            | Self::F64GreaterThan { out, .. }
+            | Self::F64LessThan { out, .. }
+            | Self::BoolAnd { out, .. } => Value::Bool(out.clone()),
+        }
+    }
+
+    fn transaction_state_values(&self) -> mech_core::MResult<Vec<Value>> {
+        Ok(vec![self.out()])
+    }
+
+    fn to_string(&self) -> String {
+        format!("{self:#?}")
+    }
+}
+
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for ModuleTestBinaryFunction {
+    fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> mech_core::MResult<Register> {
+        Ok(0)
+    }
+}
+
+struct ModuleTestBinarySpecializer {
+    operation: ModuleTestBinaryOperation,
+}
+
+fn dereference_module_test_value(value: &Value) -> Value {
+    match value {
+        Value::MutableReference(value) => dereference_module_test_value(&value.borrow()),
+        value => value.clone(),
+    }
+}
+
+impl FunctionSpecializer for ModuleTestBinarySpecializer {
+    fn specialize(&self, arguments: &[Value]) -> mech_core::MResult<Box<dyn MechFunction>> {
+        assert_eq!(arguments.len(), 2, "module test binary fixture arity");
+        let lhs = dereference_module_test_value(&arguments[0]);
+        let rhs = dereference_module_test_value(&arguments[1]);
+        let function = match (self.operation, lhs, rhs) {
+            (ModuleTestBinaryOperation::Add, Value::F64(lhs), Value::F64(rhs)) => {
+                ModuleTestBinaryFunction::F64Add {
+                    lhs,
+                    rhs,
+                    out: Ref::new(0.0),
+                }
+            }
+            (ModuleTestBinaryOperation::AddAssign, Value::F64(sink), Value::F64(source)) => {
+                ModuleTestBinaryFunction::F64AddAssign { sink, source }
+            }
+            (ModuleTestBinaryOperation::Add, Value::String(lhs), Value::String(rhs)) => {
+                ModuleTestBinaryFunction::StringAdd {
+                    lhs,
+                    rhs,
+                    out: Ref::new(String::new()),
+                }
+            }
+            (ModuleTestBinaryOperation::Equal, Value::String(lhs), Value::String(rhs)) => {
+                ModuleTestBinaryFunction::StringEqual {
+                    lhs,
+                    rhs,
+                    out: Ref::new(false),
+                }
+            }
+            (ModuleTestBinaryOperation::GreaterThan, Value::F64(lhs), Value::F64(rhs)) => {
+                ModuleTestBinaryFunction::F64GreaterThan {
+                    lhs,
+                    rhs,
+                    out: Ref::new(false),
+                }
+            }
+            (ModuleTestBinaryOperation::LessThan, Value::F64(lhs), Value::F64(rhs)) => {
+                ModuleTestBinaryFunction::F64LessThan {
+                    lhs,
+                    rhs,
+                    out: Ref::new(false),
+                }
+            }
+            (ModuleTestBinaryOperation::And, Value::Bool(lhs), Value::Bool(rhs)) => {
+                ModuleTestBinaryFunction::BoolAnd {
+                    lhs,
+                    rhs,
+                    out: Ref::new(false),
+                }
+            }
+            (operation, lhs, rhs) => panic!(
+                "unsupported module test binary fixture {operation:?}: {:?}, {:?}",
+                lhs.kind(),
+                rhs.kind()
+            ),
+        };
+        Ok(Box::new(function))
+    }
+}
+
+fn install_module_test_operators(builder: &mut FunctionCatalogBuilder) {
+    for (canonical_name, operation) in [
+        ("math/add", ModuleTestBinaryOperation::Add),
+        ("math/add-assign", ModuleTestBinaryOperation::AddAssign),
+        ("string/concat", ModuleTestBinaryOperation::Add),
+        ("compare/eq", ModuleTestBinaryOperation::Equal),
+        ("compare/gt", ModuleTestBinaryOperation::GreaterThan),
+        ("compare/lt", ModuleTestBinaryOperation::LessThan),
+        ("logic/and", ModuleTestBinaryOperation::And),
+    ] {
+        let operation_id = builder
+            .insert_specializer(
+                canonical_name,
+                Arc::new(ModuleTestBinarySpecializer { operation }),
+            )
+            .unwrap();
+        builder
+            .insert_export(FunctionExport {
+                operation: operation_id,
+                canonical_name: canonical_name.to_string(),
+                module: None,
+                item: None,
+                exposure: FunctionExposure::Prelude,
+            })
+            .unwrap();
+    }
+}
+
+fn function_module_catalog() -> Arc<FunctionCatalog> {
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    install_module_test_operators(&mut builder);
+    for (canonical_name, item, value) in [("fixture/sin", "sin", 0.0), ("fixture/cos", "cos", 1.0)]
+    {
+        let operation = builder
+            .insert_specializer(
+                canonical_name,
+                Arc::new(ConstantF64Specializer {
+                    name: canonical_name,
+                    value,
+                }),
+            )
+            .unwrap();
+        builder
+            .insert_export(FunctionExport {
+                operation,
+                canonical_name: canonical_name.to_string(),
+                module: Some("fixture".to_string()),
+                item: Some(item.to_string()),
+                exposure: FunctionExposure::ModuleOnly,
+            })
+            .unwrap();
+    }
+    Arc::new(builder.build().unwrap())
+}
+
+fn module_test_function_catalog() -> Arc<FunctionCatalog> {
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    install_module_test_operators(&mut builder);
+    Arc::new(builder.build().unwrap())
+}
+
+fn runtime_with_module_test_catalog() -> RuntimeBuilder {
+    RuntimeBuilder::new().function_catalog(module_test_function_catalog())
+}
+
+fn runtime_with_function_catalog() -> RuntimeBuilder {
+    RuntimeBuilder::new().function_catalog(function_module_catalog())
+}
+
+fn runtime_with_root_and_function_catalog(root: &std::path::Path) -> mech_runtime::MechRuntime {
+    runtime_with_function_catalog()
+        .source_resolver(FileSourceResolver::new(root))
+        .build()
+        .unwrap()
+}
+
 fn runtime_with_root(root: &std::path::Path) -> mech_runtime::MechRuntime {
-    RuntimeBuilder::new()
+    runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(root))
         .build()
         .unwrap()
 }
 
 fn runtime_with_root_and_browser_manifest(root: &std::path::Path) -> mech_runtime::MechRuntime {
-    RuntimeBuilder::new()
+    runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(root))
         .module_manifest(browser_dom_manifest())
         .unwrap()
@@ -251,7 +551,7 @@ impl RuntimeHostFactory for RecordingCliHostFactory {
 
 fn runtime_with_recording_cli() -> (MechRuntime, Arc<Mutex<RecordingCliState>>) {
     let state = Arc::new(Mutex::new(RecordingCliState::default()));
-    let runtime = RuntimeBuilder::new()
+    let runtime = runtime_with_module_test_catalog()
         .host_factory(Box::new(RecordingCliHostFactory {
             manifest: mech_host_cli::cli_host_manifest().unwrap(),
             state: state.clone(),
@@ -394,7 +694,7 @@ fn direct_run_string_preserves_normal_imports() {
 ok := math/tau > 6.0
 ",
     );
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -548,7 +848,7 @@ fn retained_root_dependency_context_read_does_not_create_live_binding() {
     )
     .unwrap();
     let provider = docs_provider_with("docs://numbers", "increment", Value::F64(Ref::new(41.0)));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(provider)
         .build()
@@ -578,7 +878,7 @@ fn retained_root_context_read_creates_live_binding_and_recomputes() {
         "@numbers := docs://numbers{:read(increment)}\noutput := @numbers/increment + 1\noutput\n",
     );
     let provider = docs_provider_with("docs://numbers", "increment", Value::F64(Ref::new(2.0)));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(provider)
         .build()
@@ -622,7 +922,7 @@ fn failed_retained_root_restores_live_state_and_imported_environment() {
     )
     .unwrap();
     let provider = docs_provider_with("docs://numbers", "increment", Value::F64(Ref::new(1.0)));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(provider)
         .build()
@@ -669,7 +969,7 @@ fn failed_retained_root_restores_live_state_and_imported_environment() {
 
 #[test]
 fn in_memory_docs_provider_write_then_read_returns_value() {
-    let mut provider = InMemoryDocsProvider::new();
+    let provider = InMemoryDocsProvider::new();
     let effect = provider
         .prepare_write(RuntimeResourceWriteRequest {
             base_uri: "docs://manual".to_string(),
@@ -755,7 +1055,7 @@ fn resource_registry_write_missing_provider_fails() {
 
 #[test]
 fn in_memory_docs_write_invalid_scheme_fails() {
-    let mut provider = InMemoryDocsProvider::new();
+    let provider = InMemoryDocsProvider::new();
     let result = provider.prepare_write(RuntimeResourceWriteRequest {
         base_uri: "db://manual".to_string(),
         path: "intro/title".to_string(),
@@ -778,7 +1078,7 @@ fn in_memory_docs_write_invalid_scheme_fails() {
 
 #[test]
 fn in_memory_docs_write_empty_path_fails() {
-    let mut provider = InMemoryDocsProvider::new();
+    let provider = InMemoryDocsProvider::new();
     let result = provider.prepare_write(RuntimeResourceWriteRequest {
         base_uri: "docs://manual".to_string(),
         path: String::new(),
@@ -813,7 +1113,7 @@ impl RuntimeResourceProvider for ReadOnlyDocsProvider {
 
 #[test]
 fn provider_default_write_is_unsupported() {
-    let mut provider = ReadOnlyDocsProvider;
+    let provider = ReadOnlyDocsProvider;
     let result = provider.prepare_write(RuntimeResourceWriteRequest {
         base_uri: "docs://manual".to_string(),
         path: "intro/title".to_string(),
@@ -1026,7 +1326,7 @@ fn context_docs_read_returns_value() {
         "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     );
     let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(provider)
         .build()
@@ -1053,7 +1353,7 @@ fn context_docs_read_uses_provider_base_for_full_requested_uri() {
     );
     let root_provider = docs_provider_with("docs://manual", "intro/title", bool_value(false));
     let intro_provider = docs_provider_with("docs://manual/intro", "title", bool_value(true));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(root_provider)
         .in_memory_docs(intro_provider)
@@ -1085,7 +1385,7 @@ fn config_spec_registers_in_memory_docs_resource() {
                 .with_entry("intro/title", bool_value(true)),
         ))
         .with_capability_grant(read_grant("docs://manual", "intro/title"));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .config_spec(spec)
         .build()
@@ -1116,7 +1416,7 @@ fn config_spec_merges_multiple_docs_bases_into_one_provider() {
         ))
         .with_capability_grant(read_grant("docs://manual", "intro/title"))
         .with_capability_grant(read_grant("docs://guide", "start/title"));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .config_spec(spec)
         .build()
@@ -1147,7 +1447,7 @@ fn config_spec_multiple_entries_same_base() {
             },
         ))
         .with_capability_grant(read_grant("docs://manual", "intro/*"));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .config_spec(spec)
         .build()
@@ -1174,7 +1474,7 @@ fn config_spec_later_duplicate_path_overwrites_earlier() {
                 .with_entry("intro/title", bool_value(true)),
         ))
         .with_capability_grant(read_grant("docs://manual", "intro/title"));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .config_spec(spec)
         .build()
@@ -1245,7 +1545,7 @@ fn direct_provider_registration_still_works() {
         "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     );
     let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(provider)
         .build()
@@ -1278,7 +1578,7 @@ fn builder_config_spec_registers_docs() {
                 .with_entry("intro/title", bool_value(true)),
         ))
         .with_capability_grant(read_grant("docs://manual", "intro/title"));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .config_spec(spec)
         .build()
@@ -1378,7 +1678,7 @@ fn registered_module_manifest_context_import_still_resolves() {
         }],
     };
     let provider = docs_provider_with("docs://manual", "title", bool_value(true));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .module_manifest(manifest)
         .unwrap()
@@ -1649,7 +1949,7 @@ fn context_docs_read_prefix_wildcard_allows_nested_path() {
         "@manual := docs://manual{:read(intro/*)}\n\nresult := @manual/intro/title\n",
     );
     let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(provider)
         .build()
@@ -1733,7 +2033,7 @@ fn interpreter_scope_context_docs_read_returns_value() {
         "~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := @manual/intro/title\n~~~\n",
     );
     let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(provider)
         .build()
@@ -1861,7 +2161,7 @@ fn direct_runtime_derived_context_without_host_read_preflights() {
 
 #[test]
 fn direct_runtime_derived_context_read_uses_alias() {
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .resource_provider(Box::new(docs_provider_with(
             "docs://manual",
             "intro/title",
@@ -1917,7 +2217,7 @@ fn interpreter_scope_imports_work() {
     )
     .unwrap();
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -1958,7 +2258,7 @@ fn program_cannot_see_fenced_import_but_interpreter_can() {
     )
     .unwrap();
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2001,7 +2301,7 @@ fn interpreter_scope_exports_only_interpreter_exports() {
     std::fs::create_dir_all(&root).unwrap();
     std::fs::write(root.join("main.mec"), "~~~mech:foo\nfoo-value := true\n<+ foo-value\n~~~\n\nprogram-value := false\n<+ program-value\n").unwrap();
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2058,7 +2358,7 @@ fn interpreter_scope_executes_only_matching_import_edges() {
     std::fs::write(root.join("bad.mec"), "missing := bad/value\n").unwrap();
     std::fs::write(root.join("main.mec"), "~~~mech:foo\n+> ./good.mec\nok := good/value\n<+ ok\n~~~\n\n~~~mech:bar\n+> ./bad.mec\n~~~\n").unwrap();
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2120,7 +2420,7 @@ fn missing_interpreter_scope_returns_error() {
 fn program_reads_interpreter_export_by_indexed_address() {
     let root = setup_modules("~~~mech:foo\nok := true\n<+ ok\n~~~\n\nresult := @foo/ok\n");
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2145,7 +2445,7 @@ fn program_reads_interpreter_export_by_address_with_interpreter_import() {
         "~~~mech:foo\n+> ./math.mec\nok := math/tau > 6.0\n<+ ok\n~~~\n\nresult := @foo/ok\n",
     );
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2169,7 +2469,7 @@ fn program_address_does_not_execute_unreferenced_interpreter_from_string() {
     let root =
         setup_modules("~~~mech:bar\nbroken := missing\n<+ broken\n~~~\n\ntext := \"@bar\"\n");
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2190,7 +2490,7 @@ fn program_address_does_not_execute_unreferenced_interpreter_from_comment() {
     let root =
         setup_modules("~~~mech:bar\nbroken := missing\n<+ broken\n~~~\n\n-- @bar\n\nok := true\n");
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2212,7 +2512,7 @@ fn program_reads_only_requested_interpreter_export() {
         "~~~mech:foo\nok := true\nother := false\n<+ ok\n<+ other\n~~~\n\nresult := @foo/ok\n",
     );
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2235,7 +2535,7 @@ fn program_reads_only_requested_interpreter_export() {
 fn program_rejects_non_exported_interpreter_address() {
     let root = setup_modules("~~~mech:foo\nhidden := true\n~~~\n\nresult := @foo/hidden\n");
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2469,7 +2769,7 @@ fn module_records_store_scoped_source_declarations_without_execution_changes() {
 #[test]
 fn program_scope_imports_still_work() {
     let root = setup_modules("+> ./math.mec\nok := math/tau > 6.0\n");
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2564,7 +2864,7 @@ fn program_and_fenced_imports_do_not_mix() {
     )
     .unwrap();
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2616,7 +2916,7 @@ fn program_and_fenced_can_import_same_module_without_duplicate_program_binding()
     )
     .unwrap();
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2673,7 +2973,7 @@ fn fenced_import_binding_is_not_visible_to_program_scope() {
     )
     .unwrap();
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2707,7 +3007,7 @@ fn module_records_keep_flat_metadata_for_compatibility() {
     )
     .unwrap();
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2787,7 +3087,7 @@ fn build_dependency_graph() {
 #[test]
 fn run_module() {
     let root = setup_modules("+> ./math.mec\nok := math/tau > 6.0\n");
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2807,7 +3107,7 @@ fn run_module() {
 #[test]
 fn file_import_exposes_exports_under_file_stem_namespace() {
     let root = setup_modules("+> ./math.mec\nok := math/tau > 6.0\n");
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2826,7 +3126,7 @@ fn file_import_exposes_exports_under_file_stem_namespace() {
 #[test]
 fn file_import_does_not_imply_wildcard_import() {
     let root = setup_modules("+> ./math.mec\nok := tau > 6.0\n");
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2845,7 +3145,7 @@ fn file_import_does_not_imply_wildcard_import() {
 #[test]
 fn file_import_does_not_expose_non_exported_binding() {
     let root = setup_modules("+> ./math.mec\nok := math/secret > 0\n");
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2864,7 +3164,7 @@ fn file_import_does_not_expose_non_exported_binding() {
 #[test]
 fn namespace_import_exposes_exports_under_module_namespace() {
     let root = setup_modules("+> math\nok := math/tau > 6.0\n");
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2883,7 +3183,7 @@ fn namespace_import_exposes_exports_under_module_namespace() {
 #[test]
 fn single_import_exposes_export_unqualified() {
     let root = setup_modules("+> math/tau\nok := tau > 6.0\n");
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2902,7 +3202,7 @@ fn single_import_exposes_export_unqualified() {
 #[test]
 fn wildcard_import_exposes_all_exports_unqualified() {
     let root = setup_modules("+> math/*\nok := tau > 6.0\n");
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2921,7 +3221,7 @@ fn wildcard_import_exposes_all_exports_unqualified() {
 #[test]
 fn wildcard_import_does_not_expose_non_exported_binding() {
     let root = setup_modules("+> math/*\nok := secret > 0\n");
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2954,7 +3254,7 @@ fn import_conflict_fails() {
         "+> math/tau\n+> science/tau\nok := tau > 0\n",
     )
     .unwrap();
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -2982,7 +3282,7 @@ fn re_export_works() {
     std::fs::write(root.join("math.mec"), "tau := 6.28318\n<+ tau\n").unwrap();
     std::fs::write(root.join("bridge.mec"), "+> math/tau\n<+ tau\n").unwrap();
     std::fs::write(root.join("main.mec"), "+> bridge/tau\nok := tau > 6.0\n").unwrap();
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -3037,7 +3337,7 @@ fn module_version_records_multiple_import_edges_in_order() {
         "+> ./a.mec\n+> ./b.mec\nok := a/x < b/y\n",
     )
     .unwrap();
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -3102,7 +3402,7 @@ fn multi_level_private_symbol_does_not_leak() {
     .unwrap();
     std::fs::write(root.join("bridge.mec"), "+> math/tau\n<+ tau\n").unwrap();
     std::fs::write(root.join("main.mec"), "+> bridge/*\nok := secret > 0\n").unwrap();
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -3131,7 +3431,7 @@ fn duplicate_unqualified_import_conflict_fails() {
     std::fs::write(root.join("a.mec"), "x := 1\n<+ x\n").unwrap();
     std::fs::write(root.join("b.mec"), "x := 2\n<+ x\n").unwrap();
     std::fs::write(root.join("main.mec"), "+> a/*\n+> b/*\nok := x > 0\n").unwrap();
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -3150,7 +3450,7 @@ fn duplicate_unqualified_import_conflict_fails() {
 #[test]
 fn duplicate_same_export_import_policy_is_explicit() {
     let root = setup_modules("+> math/tau\n+> math/*\nok := tau > 6.0\n");
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -3182,7 +3482,7 @@ fn module_host_call_works_inside_isolated_execution() {
         "+> ./math.mec\nok := math/tau > 40\n",
     )
     .unwrap();
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .host_function(DeterministicHostFunction::new(
             "demo/value",
@@ -3220,7 +3520,7 @@ fn module_host_call_works_inside_isolated_execution() {
 #[test]
 fn repeated_run_module_is_not_stale() {
     let root = setup_modules("+> ./math.mec\nok := math/tau > 6.0\n");
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();
@@ -3274,7 +3574,7 @@ fn run_docs_config_read(spec: RuntimeConfigSpec) -> Result<Value, mech_core::Mec
     let root = setup_modules(
         "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     );
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .config_spec(spec)
         .build()
@@ -3370,7 +3670,7 @@ fn direct_provider_read_with_runtime_grant_still_works() {
         "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     );
     let provider = docs_provider_with("docs://manual", "intro/title", bool_value(true));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(provider)
         .build()
@@ -3409,7 +3709,7 @@ fn builder_config_spec_registers_resources_and_grants() {
     );
     let spec = docs_config("intro/title", bool_value(true))
         .with_capability_grant(read_grant("docs://manual", "intro/title"));
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .config_spec(spec)
         .build()
@@ -3600,7 +3900,7 @@ fn workspace_load_relative_target_uses_workspace_root() {
     std::fs::write(root_a.join("main.mec"), "result := false\n").unwrap();
     std::fs::write(root_b.join("main.mec"), "result := true\n").unwrap();
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root_b))
         .build()
         .unwrap();
@@ -4152,12 +4452,11 @@ fn context_import_alias_is_not_bound_as_value_import() {
     );
 }
 
-#[cfg(feature = "linked_stdlib")]
 #[test]
 fn direct_runtime_normal_import_is_not_dropped() {
-    let mut runtime = runtime_with_browser_manifest();
+    let mut runtime = runtime_with_function_catalog().build().unwrap();
     let result = runtime
-        .run_string("+> math/sin\nresult := sin(0)\n")
+        .run_string("+> fixture/sin\nresult := sin(0)\n")
         .unwrap()
         .into_value();
 
@@ -4167,14 +4466,13 @@ fn direct_runtime_normal_import_is_not_dropped() {
     }
 }
 
-#[cfg(feature = "linked_stdlib")]
 #[test]
 fn function_module_import_namespace_executes_in_root_module() {
     let root = setup_main_only_module(
         "function-module-namespace",
-        "+> math\nresult := math/sin(0)\nresult\n",
+        "+> fixture\nresult := fixture/sin(0)\nresult\n",
     );
-    let mut runtime = runtime_with_root(&root);
+    let mut runtime = runtime_with_root_and_function_catalog(&root);
 
     let result = runtime
         .resolve_and_run_root_module("main.mec", module_options())
@@ -4184,7 +4482,6 @@ fn function_module_import_namespace_executes_in_root_module() {
     std::fs::remove_dir_all(root).unwrap();
 }
 
-#[cfg(feature = "linked_stdlib")]
 #[test]
 fn function_module_import_in_source_dependency_executes() {
     let root = temp_root("function-module-dependency");
@@ -4195,10 +4492,10 @@ fn function_module_import_in_source_dependency_executes() {
     .unwrap();
     std::fs::write(
         root.join("dep.mec"),
-        "+> math\nvalue := math/cos(0)\n<+ value\n",
+        "+> fixture\nvalue := fixture/cos(0)\n<+ value\n",
     )
     .unwrap();
-    let mut runtime = runtime_with_root(&root);
+    let mut runtime = runtime_with_root_and_function_catalog(&root);
 
     let result = runtime
         .resolve_and_run_root_module("main.mec", module_options())
@@ -4208,14 +4505,13 @@ fn function_module_import_in_source_dependency_executes() {
     std::fs::remove_dir_all(root).unwrap();
 }
 
-#[cfg(feature = "linked_stdlib")]
 #[test]
 fn function_module_import_item_executes_in_root_module() {
     let root = setup_main_only_module(
         "function-module-item",
-        "+> math/sin\nresult := sin(0)\nresult\n",
+        "+> fixture/sin\nresult := sin(0)\nresult\n",
     );
-    let mut runtime = runtime_with_root(&root);
+    let mut runtime = runtime_with_root_and_function_catalog(&root);
 
     let result = runtime
         .resolve_and_run_root_module("main.mec", module_options())
@@ -4225,14 +4521,13 @@ fn function_module_import_item_executes_in_root_module() {
     std::fs::remove_dir_all(root).unwrap();
 }
 
-#[cfg(feature = "linked_stdlib")]
 #[test]
 fn function_module_import_item_alias_executes_in_root_module() {
     let root = setup_main_only_module(
         "function-module-item-alias",
-        "+> s := math/sin\nresult := s(0)\nresult\n",
+        "+> s := fixture/sin\nresult := s(0)\nresult\n",
     );
-    let mut runtime = runtime_with_root(&root);
+    let mut runtime = runtime_with_root_and_function_catalog(&root);
 
     let result = runtime
         .resolve_and_run_root_module("main.mec", module_options())
@@ -4242,14 +4537,13 @@ fn function_module_import_item_alias_executes_in_root_module() {
     std::fs::remove_dir_all(root).unwrap();
 }
 
-#[cfg(feature = "linked_stdlib")]
 #[test]
 fn function_module_import_wildcard_executes_in_root_module() {
     let root = setup_main_only_module(
         "function-module-wildcard",
-        "+> math/*\nresult := sin(0)\nresult\n",
+        "+> fixture/*\nresult := sin(0)\nresult\n",
     );
-    let mut runtime = runtime_with_root(&root);
+    let mut runtime = runtime_with_root_and_function_catalog(&root);
 
     let result = runtime
         .resolve_and_run_root_module("main.mec", module_options())
@@ -4259,14 +4553,13 @@ fn function_module_import_wildcard_executes_in_root_module() {
     std::fs::remove_dir_all(root).unwrap();
 }
 
-#[cfg(feature = "linked_stdlib")]
 #[test]
 fn function_module_import_requires_an_explicit_import() {
     let root = setup_main_only_module(
         "function-module-missing-import",
-        "result := math/sin(0)\nresult\n",
+        "result := fixture/sin(0)\nresult\n",
     );
-    let mut runtime = runtime_with_root(&root);
+    let mut runtime = runtime_with_root_and_function_catalog(&root);
 
     let error = runtime
         .resolve_and_run_root_module("main.mec", module_options())
@@ -4276,11 +4569,18 @@ fn function_module_import_requires_an_explicit_import() {
     std::fs::remove_dir_all(root).unwrap();
 }
 
-#[cfg(feature = "linked_stdlib")]
 #[test]
 fn function_module_import_source_edge_takes_precedence() {
-    let root = setup_modules("+> math\nresult := math/tau\nresult\n");
-    let mut runtime = runtime_with_root(&root);
+    let root = setup_main_only_module(
+        "function-module-source-precedence",
+        "+> fixture\nresult := fixture/tau\nresult\n",
+    );
+    std::fs::write(
+        root.join("fixture.mec"),
+        "tau := 6.28318\nsecret := 42\n<+ tau\n",
+    )
+    .unwrap();
+    let mut runtime = runtime_with_root_and_function_catalog(&root);
 
     let version = runtime
         .resolve_and_store_module_source("main.mec", module_options())
@@ -4295,14 +4595,13 @@ fn function_module_import_source_edge_takes_precedence() {
     std::fs::remove_dir_all(root).unwrap();
 }
 
-#[cfg(feature = "linked_stdlib")]
 #[test]
 fn function_module_import_duplicate_namespace_is_idempotent() {
     let root = setup_main_only_module(
         "function-module-duplicate",
-        "+> math\n+> math\nresult := math/sin(0)\nresult\n",
+        "+> fixture\n+> fixture\nresult := fixture/sin(0)\nresult\n",
     );
-    let mut runtime = runtime_with_root(&root);
+    let mut runtime = runtime_with_root_and_function_catalog(&root);
 
     let result = runtime
         .resolve_and_run_root_module("main.mec", module_options())
@@ -4313,9 +4612,9 @@ fn function_module_import_duplicate_namespace_is_idempotent() {
 }
 
 #[test]
-fn workspace_module_build_allows_linked_stdlib_namespace_import_without_source_file() {
-    let root = setup_main_only_module("stdlib-namespace-import", "+> math\nx := 1\n");
-    let mut runtime = runtime_with_root(&root);
+fn workspace_module_build_allows_catalog_namespace_import_without_source_file() {
+    let root = setup_main_only_module("catalog-namespace-import", "+> fixture\nx := 1\n");
+    let mut runtime = runtime_with_root_and_function_catalog(&root);
 
     let version = runtime
         .resolve_and_store_module_source("main.mec", module_options())
@@ -4329,9 +4628,9 @@ fn workspace_module_build_allows_linked_stdlib_namespace_import_without_source_f
 }
 
 #[test]
-fn workspace_module_build_allows_linked_stdlib_item_import_without_source_file() {
-    let root = setup_main_only_module("stdlib-item-import", "+> math/sin\nx := 1\n");
-    let mut runtime = runtime_with_root(&root);
+fn workspace_module_build_allows_catalog_item_import_without_source_file() {
+    let root = setup_main_only_module("catalog-item-import", "+> fixture/sin\nx := 1\n");
+    let mut runtime = runtime_with_root_and_function_catalog(&root);
 
     let version = runtime
         .resolve_and_store_module_source("main.mec", module_options())
@@ -4348,7 +4647,7 @@ fn workspace_module_build_allows_linked_stdlib_item_import_without_source_file()
 fn workspace_module_build_uses_local_namespace_import_when_source_file_exists() {
     let root = setup_modules(
         "+> math
-ok := math/tau > 6.0
+result := math/tau
 ",
     );
     let mut runtime = runtime_with_root(&root);
@@ -4361,8 +4660,9 @@ ok := math/tau > 6.0
     assert_eq!(record.dependencies.len(), 1);
     assert_eq!(record.import_edges.len(), 1);
 
-    assert_bool_true(
+    assert_f64(
         runtime.run_module(version).unwrap().result.into_value(),
+        6.28318,
         "local namespace import",
     );
     std::fs::remove_dir_all(root).unwrap();
@@ -4760,9 +5060,12 @@ impl CliBackend for RuntimeFakeCliBackend {
 }
 
 fn runtime_with_fake_cli(state: Arc<Mutex<RuntimeFakeCliState>>) -> MechRuntime {
-    with_test_cli(RuntimeBuilder::new(), RuntimeFakeCliBackend::new(state))
-        .build()
-        .unwrap()
+    with_test_cli(
+        runtime_with_module_test_catalog(),
+        RuntimeFakeCliBackend::new(state),
+    )
+    .build()
+    .unwrap()
 }
 
 #[derive(Debug)]
@@ -4828,7 +5131,7 @@ fn with_test_cli<B: CliBackend + Clone + 'static>(
 fn with_test_cli_registers_cli_provider_for_instance_bases() {
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/test-home");
 
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
 
@@ -5126,7 +5429,7 @@ fn cli_stdout_missing_write_grant_fails_before_backend() {
 #[test]
 fn cli_host_env_manifest_import_reads_with_runtime_grant() {
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/mech-home");
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
     runtime
@@ -5146,7 +5449,7 @@ fn cli_host_env_manifest_import_reads_with_runtime_grant() {
 fn cli_host_stdout_send_writes_line_with_runtime_grant() {
     let backend = FakeCliBackend::default();
     let stdout = backend.stdout.clone();
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
     runtime
@@ -5167,7 +5470,7 @@ fn cli_host_stdout_send_writes_line_with_runtime_grant() {
 fn cli_host_stderr_send_writes_text_with_runtime_grant() {
     let backend = FakeCliBackend::default();
     let stderr = backend.stderr.clone();
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
     runtime
@@ -5313,7 +5616,7 @@ fn cli_host_missing_stderr_write_grant_fails_before_backend_call() {
 fn default_cli_stdout_grant_allows_send() {
     let backend = FakeCliBackend::default();
     let stdout = backend.stdout.clone();
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
     runtime
@@ -5342,7 +5645,7 @@ fn narrow_env_grant_permits_path_but_denies_home() {
     let backend = FakeCliBackend::default()
         .with_env("PATH", "/bin")
         .with_env("HOME", "/tmp/home");
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
     runtime
@@ -5365,7 +5668,7 @@ fn narrow_env_grant_permits_path_but_denies_home() {
 fn narrow_stdout_grant_permits_line_but_denies_text() {
     let backend = FakeCliBackend::default();
     let stdout = backend.stdout.clone();
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
     runtime
@@ -5849,7 +6152,7 @@ wrappedMismatch
         "wrapped match arm context read pattern should not bind mismatched value",
     );
 
-    let mut bool_runtime = RuntimeBuilder::new()
+    let mut bool_runtime = runtime_with_module_test_catalog()
         .in_memory_docs(InMemoryDocsProvider::new())
         .build()
         .unwrap();
@@ -5991,7 +6294,7 @@ fn module_preflight_denial_emits_program_failed_event() {
 #[test]
 fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/direct-home");
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
     let subject = runtime.runtime_context().unwrap().subject().to_string();
@@ -6014,7 +6317,7 @@ fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
 fn cli_host_direct_stdout_declaration_sends_with_runtime_grant() {
     let backend = FakeCliBackend::default();
     let stdout = backend.stdout.clone();
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
     let subject = runtime.runtime_context().unwrap().subject().to_string();
@@ -6037,7 +6340,7 @@ fn cli_host_direct_stdout_declaration_sends_with_runtime_grant() {
 fn cli_host_direct_stderr_declaration_sends_with_runtime_grant() {
     let backend = FakeCliBackend::default();
     let stderr = backend.stderr.clone();
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
     let subject = runtime.runtime_context().unwrap().subject().to_string();
@@ -6095,7 +6398,7 @@ fn cli_context_module_read_exports_value() {
     let root = setup_modules("+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n");
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/module-home");
     let mut runtime = with_test_cli(
-        RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)),
+        runtime_with_module_test_catalog().source_resolver(FileSourceResolver::new(&root)),
         backend,
     )
     .build()
@@ -6302,7 +6605,7 @@ fn assert_string_value(value: impl IntoTestValue, expected: &str) {
 #[test]
 fn cli_context_direct_read_resolves_inside_formula_expression() {
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
     runtime
@@ -6427,7 +6730,7 @@ fn browser_context_subroot_normalizes_to_provider_base_path() {
         "counter/text",
         Value::String(Ref::new("count".to_string())),
     );
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .resource_provider(Box::new(provider))
         .build()
         .unwrap();
@@ -6452,7 +6755,7 @@ fn docs_context_subroot_normalizes_to_provider_base_path() {
         "intro/title",
         Value::String(Ref::new("Manual".to_string())),
     );
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .resource_provider(Box::new(provider))
         .build()
         .unwrap();
@@ -6528,7 +6831,7 @@ fn context_write_does_not_accept_grant_for_default_subject_when_context_subject_
 #[test]
 fn unqualified_fenced_context_import_is_available_to_program_execution() {
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/fenced-home");
-    let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
+    let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
     runtime
@@ -6599,7 +6902,7 @@ fn named_fenced_context_import_read_exports_value() {
         setup_modules("~~~mech:bar\n+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n~~~\n");
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/named-fence-home");
     let mut runtime = with_test_cli(
-        RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&root)),
+        runtime_with_module_test_catalog().source_resolver(FileSourceResolver::new(&root)),
         backend,
     )
     .build()
@@ -6632,7 +6935,7 @@ fn module_context_read_after_context_write_uses_execution_order() {
         "@manual := docs://manual{:read(intro/title), :write(intro/title)}\n@manual/intro/title = \"hello\"\nresult := @manual/intro/title\n<+ result\nresult\n",
     );
     let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .resource_provider(Box::new(provider))
         .build()
@@ -6672,7 +6975,7 @@ fn module_context_read_after_context_write_ignores_stale_provider_value() {
         "intro/title",
         Value::String(Ref::new("old".to_string())),
     );
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .resource_provider(Box::new(provider))
         .build()
@@ -6807,7 +7110,7 @@ fn context_resource_aliases_share_staged_read_your_writes_identity() {
             path,
             Value::String(Ref::new("stale".to_string())),
         );
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .resource_provider(Box::new(provider))
         .build()
         .unwrap();
@@ -6840,7 +7143,7 @@ fn direct_context_read_resolves_inside_op_assign() {
         "increment",
         Value::F64(Ref::new(2.0)),
     );
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .resource_provider(Box::new(provider))
         .build()
         .unwrap();
@@ -7248,7 +7551,7 @@ fn context_assignment_inside_function_body_fails_runtime_preflight() {
 }
 #[test]
 fn top_level_context_assignment_still_writes_and_reads() {
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = runtime_with_module_test_catalog()
         .in_memory_docs(InMemoryDocsProvider::new())
         .build()
         .unwrap();

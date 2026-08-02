@@ -1,5 +1,6 @@
 use super::support::CommitDecisionEffect;
 use crate::runtime::test_support::capabilities::grant_host_call;
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     CapabilityId, InMemoryDocsProvider, MechRuntime, PlannedStagedHostFunction,
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEventKind, RuntimePreparedHostCall,
@@ -51,7 +52,7 @@ fn resource_provider_staging_failure_leaves_effect_journal_unchanged() {
 #[test]
 fn committed_implicit_participant_failure_never_rolls_back_program() {
     let log = Arc::new(Mutex::new(Vec::new()));
-    let mut builder = MechRuntime::builder();
+    let mut builder = test_runtime_builder();
     for (name, fail_commit) in [
         ("participant-commit/first", false),
         ("participant-commit/second", true),

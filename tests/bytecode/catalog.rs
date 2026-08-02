@@ -18,7 +18,7 @@ const STRING_CONCAT_BYTECODE: &[u8] = include_bytes!(concat!(
 ));
 
 fn full_program() -> MechProgram {
-    MechProgram::new(MechProgramConfig::default())
+    MechProgram::with_function_catalog(MechProgramConfig::default(), mech::stdlib::source_catalog())
 }
 
 fn parse(bytecode: &[u8]) -> ParsedProgram {

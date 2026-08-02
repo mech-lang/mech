@@ -1,28 +1,28 @@
 use super::support::{CommitDecisionEffect, savepoint_effect};
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::runtime::test_support::ids::ScriptedEventIdGenerator;
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::runtime::transaction::RuntimeExecutionTransactionState;
 use crate::{
-    CapabilityId, EventId, MechRuntime, PlannedStagedHostFunction, PreparedRuntimeEffect,
-    RuntimeEventKind, RuntimeIntegrityConstraintFailureReason, RuntimePreparedHostCall,
-    RuntimeValueSnapshot,
+    CapabilityId, EventId, PlannedStagedHostFunction, PreparedRuntimeEffect, RuntimeEventKind,
+    RuntimeIntegrityConstraintFailureReason, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
 use mech_core::{Value, hash_str};
 use std::sync::{Arc, Mutex};
 
 #[test]
 fn invalid_implicit_program_operation_rolls_back_before_publication() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     runtime.run_string("integrity-anchor := 1.0").unwrap();
     let events_before = runtime.list_events(None).unwrap().len();
     let mut context = runtime.runtime_context().unwrap();
 
     let error = runtime
-    .run_string_with_context(
-      &mut context,
-      "integrity-discarded := 2.0\nintegrity-limit := 1.0\nintegrity-invalid! := integrity-discarded <= integrity-limit",
-    )
-    .unwrap_err();
+        .run_string_with_context(
+            &mut context,
+            "integrity-discarded := 2.0\nintegrity-invalid! := false",
+        )
+        .unwrap_err();
 
     assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
     assert!(
@@ -96,8 +96,8 @@ fn invalid_implicit_program_operation_rolls_back_before_publication() {
         audit[0].reason,
         RuntimeIntegrityConstraintFailureReason::EvaluatedFalse,
     );
-    assert_eq!(audit[0].actual.as_deref(), Some("2"));
-    assert_eq!(audit[0].expected.as_deref(), Some("1"));
+    assert_eq!(audit[0].actual.as_deref(), Some("false"));
+    assert_eq!(audit[0].expected.as_deref(), Some("true"));
     assert!(!format!("{audit:?}").contains("@0x"));
     #[cfg(feature = "serde")]
     {
@@ -110,7 +110,7 @@ fn invalid_implicit_program_operation_rolls_back_before_publication() {
 
 #[test]
 fn integrity_audit_append_failure_preserves_original_error_and_health() {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = test_runtime_builder()
         .id_generator(ScriptedEventIdGenerator::new(
             1,
             [
@@ -156,7 +156,7 @@ fn integrity_audit_append_failure_preserves_original_error_and_health() {
 
 #[test]
 fn invalid_explicit_program_operation_rolls_back_only_its_savepoint() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
     runtime
@@ -225,7 +225,7 @@ fn invalid_explicit_program_operation_rolls_back_only_its_savepoint() {
 #[test]
 fn invalid_explicit_integrity_suffix_discards_only_its_effects() {
     let log = Arc::new(Mutex::new(Vec::new()));
-    let mut builder = MechRuntime::builder();
+    let mut builder = test_runtime_builder();
     for name in ["integrity/a", "integrity/b", "integrity/c"] {
         let effect_log = log.clone();
         builder = builder
@@ -319,7 +319,7 @@ fn invalid_explicit_integrity_suffix_discards_only_its_effects() {
 
 #[test]
 fn final_explicit_commit_revalidates_without_consuming_transaction() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
     runtime

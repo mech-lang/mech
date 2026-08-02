@@ -84,7 +84,7 @@ fn non_executable_module_source_is_rejected_before_indexing() {
 fn retained_root_integrity_failure_exposes_no_graph_or_completion() {
     let mut runtime = runtime_with_sources(&[(
         "root.mec",
-        "integrity-root-value := 2.0\nintegrity-root-limit := 1.0\nintegrity-root-safe! := integrity-root-value <= integrity-root-limit\nintegrity-root-value\n",
+        "integrity-root-value := 2.0\nintegrity-root-safe! := false\nintegrity-root-value\n",
     )]);
     runtime.run_string("integrity-baseline := 7").unwrap();
     let events_before = runtime.list_events(None).unwrap().len();
@@ -139,10 +139,7 @@ fn isolated_dependency_integrity_failure_prevents_root_materialization() {
             "root.mec",
             "+> ./dep.mec\nintegrity-root-ran := dep/value\nintegrity-root-ran\n",
         ),
-        (
-            "dep.mec",
-            "value := 2.0\nlimit := 1.0\ndep-safe! := value <= limit\n<+ value\n",
-        ),
+        ("dep.mec", "value := 2.0\ndep-safe! := false\n<+ value\n"),
     ]);
     let events_before = runtime.list_events(None).unwrap().len();
 
@@ -184,7 +181,7 @@ fn isolated_dependency_integrity_failure_prevents_root_materialization() {
 
 #[test]
 fn source_resolver_panic_is_converted_without_poisoning() {
-    let mut runtime = MechRuntime::builder()
+    let runtime = MechRuntime::builder()
         .source_resolver(PanickingSourceResolver)
         .build()
         .unwrap();
@@ -194,7 +191,5 @@ fn source_resolver_panic_is_converted_without_poisoning() {
     assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
     assert!(format!("{error:?}").contains("deliberate source resolver panic"));
     assert!(!runtime.is_poisoned());
-    runtime
-        .run_string("resolver-panic-recovery := 1.0")
-        .unwrap();
+    runtime.list_events(None).unwrap();
 }

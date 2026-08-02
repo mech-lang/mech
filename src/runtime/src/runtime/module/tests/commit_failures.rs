@@ -8,8 +8,8 @@ use crate::runtime::test_support::ids::ScriptedEventIdGenerator;
 use crate::runtime::test_support::providers::TestAfterCommitEffect;
 use crate::{
     Capability, CapabilityId, EventId, InMemorySourceResolver, MechRuntime, ObjectId, ObjectRecord,
-    PlannedRuntimeManagedHostFunction, PreparedRuntimeEffect, RuntimeBuilder,
-    RuntimeEffectMetadata, RuntimeEffectSource, RuntimeEventKind, RuntimeInvalidOperationError,
+    PlannedRuntimeManagedHostFunction, PreparedRuntimeEffect, RuntimeEffectMetadata,
+    RuntimeEffectSource, RuntimeEventKind, RuntimeInvalidOperationError,
     RuntimeTransactionalEffect, RuntimeValueSnapshot,
 };
 
@@ -89,7 +89,7 @@ fn retryable_explicit_store_failure_keeps_graph_without_rebuilding() {
         inner,
         calls: calls.clone(),
     };
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = crate::runtime::test_support::providers::test_runtime_builder()
         .source_resolver(resolver)
         .build()
         .unwrap();

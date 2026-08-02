@@ -10,37 +10,74 @@ use super::super::live_state::RuntimePersistentSendSchedule;
 use super::persistent_send::{publish, runtime_with_console, snapshot};
 use crate::runtime::execution::ACTIVATION_EFFECT_BARRIER_NAME;
 use crate::runtime::test_support::{
-    capabilities::{grant_read, grant_write},
+    capabilities::{grant_host_call, grant_read, grant_write},
     providers::{
-        RecordingTestOutput, TEST_OUTPUT_BASE_URI, TestResourceProvider, sleep_host,
-        test_provider_with, test_runtime, test_runtime_with_output, test_runtime_with_output_host,
+        RecordingTestOutput, TEST_OUTPUT_BASE_URI, TestResourceProvider, test_provider_with,
+        test_runtime_with_host, test_runtime_with_output, test_runtime_with_output_host,
     },
     values::{
-        combinational_node_for_output_and_inputs, f64_value, register_node_for_symbol, source_cell,
-        source_value, symbol_cell, symbol_value,
+        combinational_node_for_output_and_inputs, f64_value, host_f64_argument,
+        register_node_for_symbol, source_cell, source_value, symbol_cell, symbol_value,
     },
 };
 use crate::{
-    RuntimeHostInput, RuntimeHostInputOutcome, RuntimeHostInputSource, RuntimeHostInputUpdate,
-    RuntimeHostInputValue,
+    CapabilityId, PlannedPureHostFunction, RuntimeHostInput, RuntimeHostInputOutcome,
+    RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue, RuntimeValueSnapshot,
 };
 
 const TEST_CLOCK_BASE_URI: &str = "test://clock/ticks";
 const TEST_SIGNALS_BASE_URI: &str = "test://signals/inputs";
+
+fn snapshot_value(value: Value) -> RuntimeValueSnapshot {
+    RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+}
+
+fn plus_one_host() -> PlannedPureHostFunction {
+    PlannedPureHostFunction::new(
+        "test/plus-one",
+        |_context, arguments| {
+            Ok(snapshot_value(Value::F64(Ref::new(
+                host_f64_argument(&arguments[0]) + 1.0,
+            ))))
+        },
+        |_context, arguments| {
+            Ok(snapshot_value(Value::F64(Ref::new(
+                host_f64_argument(&arguments[0]) + 1.0,
+            ))))
+        },
+    )
+}
+
+fn sum_host() -> PlannedPureHostFunction {
+    PlannedPureHostFunction::new(
+        "test/sum",
+        |_context, arguments| {
+            Ok(snapshot_value(Value::F64(Ref::new(
+                host_f64_argument(&arguments[0]) + host_f64_argument(&arguments[1]),
+            ))))
+        },
+        |_context, arguments| {
+            Ok(snapshot_value(Value::F64(Ref::new(
+                host_f64_argument(&arguments[0]) + host_f64_argument(&arguments[1]),
+            ))))
+        },
+    )
+}
 
 #[test]
 fn runtime_reactive_host_input_batches_bound_updates_into_one_turn() {
     let provider = TestResourceProvider::new()
         .with_value(TEST_CLOCK_BASE_URI, "a", Value::F64(Ref::new(1.0)))
         .with_value(TEST_CLOCK_BASE_URI, "b", Value::F64(Ref::new(2.0)));
-    let mut runtime = test_runtime(provider);
+    let mut runtime = test_runtime_with_host(provider, sum_host());
     grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "a");
     grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "b");
+    grant_host_call(&mut runtime, CapabilityId(981), "test/sum");
     let mut context = runtime.runtime_context().unwrap();
     runtime
         .run_string_with_context(
             &mut context,
-            "@pulse := test://clock/ticks{:read(a), :read(b)}\nsum := @pulse/a + @pulse/b",
+            "@pulse := test://clock/ticks{:read(a), :read(b)}\nsum := test/sum(@pulse/a, @pulse/b)",
         )
         .unwrap();
     let a_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "a").unwrap();
@@ -98,12 +135,15 @@ fn runtime_reactive_host_input_batches_bound_updates_into_one_turn() {
 
 #[test]
 fn runtime_reactive_host_input_unbound_packet_does_not_advance_pending_registers() {
-    let (mut runtime, output) =
-        test_runtime_with_output(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0));
+    let (mut runtime, output) = test_runtime_with_output_host(
+        test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0),
+        plus_one_host(),
+    );
     grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
     grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+    grant_host_call(&mut runtime, CapabilityId(982), "test/plus-one");
     let mut context = runtime.runtime_context().unwrap();
-    runtime.run_string_with_context(&mut context, "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\n~a := 0.0\n~b := 0.0\na = @pulse/value\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0\n@out/line <- output").unwrap();
+    runtime.run_string_with_context(&mut context, "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\n~a := 0.0\n~b := 0.0\na = @pulse/value\nmiddle := test/plus-one(a)\nb = middle\noutput := test/plus-one(b)\n@out/line <- output").unwrap();
     assert_eq!(output.lines().len(), 1);
     let source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
     runtime
@@ -156,10 +196,14 @@ fn runtime_reactive_host_input_unbound_packet_does_not_advance_pending_registers
 
 #[test]
 fn runtime_reactive_host_input_preserves_deferred_registers_across_packets() {
-    let mut runtime = test_runtime(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0));
+    let mut runtime = test_runtime_with_host(
+        test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0),
+        plus_one_host(),
+    );
     grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
+    grant_host_call(&mut runtime, CapabilityId(983), "test/plus-one");
     let mut context = runtime.runtime_context().unwrap();
-    runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\n~a := 0.0\n~b := 0.0\na = @pulse/value\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0").unwrap();
+    runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\n~a := 0.0\n~b := 0.0\na = @pulse/value\nmiddle := test/plus-one(a)\nb = middle\noutput := test/plus-one(b)").unwrap();
     let a = register_node_for_symbol(&runtime, "a");
     let b = register_node_for_symbol(&runtime, "b");
     let source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
@@ -356,10 +400,10 @@ fn activation_send_snapshots_fixed_payloads_before_same_trigger_register_commit(
         "tick",
         Value::F64(Ref::new(0.0)),
     );
-    let (mut runtime, output) =
-        test_runtime_with_output_host(provider, sleep_host("demo/activation-duration-sleep"));
+    let (mut runtime, output) = test_runtime_with_output_host(provider, plus_one_host());
     grant_read(&mut runtime, "test://render/timer", "tick");
     grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+    grant_host_call(&mut runtime, CapabilityId(984), "test/plus-one");
     runtime
         .run_string(
             r#"@tick := test://render/timer{:read(tick)}
@@ -368,12 +412,12 @@ render-tick := @tick/tick
 ~state := 0.0
 
 ~> render-tick {
-state = state + 1.0
+state = test/plus-one(state)
 }
 
 ~> render-tick {
 @out/line <- state
-@out/line <- state + 0.0
+@out/line <- state
 }
 "#,
         )
@@ -424,11 +468,11 @@ render-tick := @tick/tick
 | 99.0 => {
     @out/line <- 99.0
   }
-| selected, selected > 0.0 => {
-    @out/line <- selected
+| 7.0 => {
+    @out/line <- 7.0
   }
-| * => {
-    @out/line <- -1.0
+| selected => {
+    @out/line <- selected
   }
 "#,
         )
@@ -465,7 +509,7 @@ render-tick := @tick/tick
             executed_count(turn, barriers[1]),
             executed_count(turn, barriers[2])
         ),
-        (0, 1, 0)
+        (0, 0, 1)
     );
     assert_eq!(activation_plan_snapshot(&runtime), plan);
     let equal = apply_f64_input(&mut runtime, "test://render/timer", "tick", 5.0);
@@ -477,19 +521,19 @@ render-tick := @tick/tick
             executed_count(turn, barriers[1]),
             executed_count(turn, barriers[2])
         ),
-        (0, 1, 0)
+        (0, 0, 1)
     );
     assert_eq!(activation_plan_snapshot(&runtime), plan);
-    let fallback = apply_f64_input(&mut runtime, "test://render/timer", "tick", -5.0);
+    let fallback = apply_f64_input(&mut runtime, "test://render/timer", "tick", 7.0);
     let turn = only_reactive_turn(&fallback);
-    assert_eq!(output.lines(), vec!["5", "5", "-1"]);
+    assert_eq!(output.lines(), vec!["5", "5", "7"]);
     assert_eq!(
         (
             executed_count(turn, barriers[0]),
             executed_count(turn, barriers[1]),
             executed_count(turn, barriers[2])
         ),
-        (0, 0, 1)
+        (0, 1, 0)
     );
     assert_eq!(activation_plan_snapshot(&runtime), plan);
     assert_eq!(activation_send_count(&runtime), 3);
@@ -512,10 +556,9 @@ fn patterned_activation_samples_outer_effect_values_only_on_its_trigger() {
 render-tick := @tick/tick
 scene := @signals/value
 ~> render-tick
-| *, scene > 0.0 => {
+| * => {
     @out/line <- scene
   }
-| * => {}
 "#,
         )
         .unwrap();
@@ -539,26 +582,29 @@ scene := @signals/value
     assert_eq!(executed_count(only_reactive_turn(&scene_only), barrier), 0);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
 
-    let guard_false = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
-    assert!(output.lines().is_empty());
-    assert_eq!(executed_count(only_reactive_turn(&guard_false), barrier), 0);
+    let first_render = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
+    assert_eq!(output.lines(), vec!["-1"]);
+    assert_eq!(
+        executed_count(only_reactive_turn(&first_render), barrier),
+        1
+    );
     assert_eq!(activation_plan_snapshot(&runtime), plan);
 
     let scene_only = apply_f64_input(&mut runtime, TEST_SIGNALS_BASE_URI, "value", 10.0);
-    assert!(output.lines().is_empty());
+    assert_eq!(output.lines(), vec!["-1"]);
     assert_eq!(executed_count(only_reactive_turn(&scene_only), barrier), 0);
 
     let render = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
-    assert_eq!(output.lines(), vec!["10"]);
+    assert_eq!(output.lines(), vec!["-1", "10"]);
     assert_eq!(executed_count(only_reactive_turn(&render), barrier), 1);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
 
     let scene_only = apply_f64_input(&mut runtime, TEST_SIGNALS_BASE_URI, "value", 20.0);
-    assert_eq!(output.lines(), vec!["10"]);
+    assert_eq!(output.lines(), vec!["-1", "10"]);
     assert_eq!(executed_count(only_reactive_turn(&scene_only), barrier), 0);
 
     let equal_render = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
-    assert_eq!(output.lines(), vec!["10", "20"]);
+    assert_eq!(output.lines(), vec!["-1", "10", "20"]);
     assert_eq!(
         executed_count(only_reactive_turn(&equal_render), barrier),
         1
@@ -572,10 +618,11 @@ fn activation_two_clock_physics_render_acceptance() {
     let provider = TestResourceProvider::new()
         .with_value("test://physics/timer", "tick", Value::F64(Ref::new(0.0)))
         .with_value("test://render/timer", "tick", Value::F64(Ref::new(0.0)));
-    let (mut runtime, output) = test_runtime_with_output(provider);
+    let (mut runtime, output) = test_runtime_with_output_host(provider, plus_one_host());
     grant_read(&mut runtime, "test://physics/timer", "tick");
     grant_read(&mut runtime, "test://render/timer", "tick");
     grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+    grant_host_call(&mut runtime, CapabilityId(986), "test/plus-one");
     runtime
         .run_string(
             r#"@physics := test://physics/timer{:read(tick)}
@@ -585,7 +632,7 @@ physics-tick := @physics/tick
 render-tick := @render/tick
 ~x := 0.0
 ~> physics-tick {
-next-x := x + 1.0
+next-x := test/plus-one(x)
 x = next-x
 }
 ~> render-tick {
@@ -651,11 +698,12 @@ x = next-x
 }
 #[test]
 fn activation_send_samples_latest_value_and_ignores_other_updates() {
-    let (mut r, o) = test_runtime_with_output(
+    let (mut r, o) = test_runtime_with_output_host(
         TestResourceProvider::new()
             .with_value("test://render/timer", "tick", Value::F64(Ref::new(0.0)))
             .with_value("test://other/timer", "tick", Value::F64(Ref::new(0.0)))
             .with_value(TEST_SIGNALS_BASE_URI, "value", Value::F64(Ref::new(1.0))),
+        plus_one_host(),
     );
     for (b, p) in [
         ("test://render/timer", "tick"),
@@ -665,6 +713,7 @@ fn activation_send_samples_latest_value_and_ignores_other_updates() {
         grant_read(&mut r, b, p)
     }
     grant_write(&mut r, TEST_OUTPUT_BASE_URI, "line");
+    grant_host_call(&mut r, CapabilityId(987), "test/plus-one");
     r.run_string(
         r#"@render := test://render/timer{:read(tick)}
 @other := test://other/timer{:read(tick)}
@@ -677,7 +726,7 @@ sampled-value := @signals/value
 @out/line <- sampled-value
 }
 ~> other-tick {
-other-result := sampled-value + 1.0
+other-result := test/plus-one(sampled-value)
 }
 "#,
     )

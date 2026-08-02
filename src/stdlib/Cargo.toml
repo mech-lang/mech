@@ -63,7 +63,7 @@ mech-stats = ["dep:mech-stats"]
 mech-combinatorics = ["dep:mech-combinatorics"]
 
 standard_runtime = ["runtime", "standard_values", "standard_operations"]
-standard_source = ["standard_runtime", "source", "variables"]
+standard_source = ["standard_runtime", "source"]
 standard_compiler = ["standard_source", "compiler"]
 
 standard_values = [
@@ -72,11 +72,15 @@ standard_values = [
   "i8", "i16", "i32", "i64", "i128",
   "f32", "f64", "c64", "r64",
   "set", "map", "table", "tuple", "record", "atom", "enum",
+  # The frozen PR2 runtime catalog used the dynamic-shape distribution.
+  # Fixed shapes remain available for explicitly selected profiles and are
+  # exercised separately by the frozen specialization-contract fixture.
   "row_vectord", "vectord", "matrixd",
 ]
 
 standard_operations = [
-  "access", "assign", "convert", "variable_define",
+  "access", "assign", "convert", "variable_define", "variables",
+  "subscript_default",
   "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",
   "set_define", "set_comprehensions", "table_ops",
   "math_default", "compare_default", "logic_default", "range_default",
@@ -90,6 +94,8 @@ assign = ["mech-engine/assign"]
 convert = ["mech-engine/convert"]
 variable_define = ["mech-engine/variable_define"]
 variables = ["mech-engine/variables"]
+logical_indexing = ["mech-engine/logical_indexing"]
+subscript_default = ["mech-engine/subscript_default"]
 matrix_horzcat = ["mech-engine/matrix_horzcat"]
 matrix_vertcat = ["mech-engine/matrix_vertcat"]
 matrix_comprehensions = ["mech-engine/matrix_comprehensions"]
@@ -190,8 +196,8 @@ matrix_dot = ["mech-matrix", "mech-matrix/dot", "mech-engine/matrix_dot"]
 matrix_matmul = ["mech-matrix", "mech-matrix/matmul", "mech-engine/matrix_matmul"]
 matrix_transpose = ["mech-matrix", "mech-matrix/transpose", "mech-engine/matrix_transpose"]
 
-set_element_of = ["mech-set", "mech-set/element_of", "mech-engine/set_element_of"]
-set_not_element_of = ["mech-set", "mech-set/not_element_of", "mech-engine/set_not_element_of"]
+set_element_of = ["bool", "mech-set", "mech-set/element_of", "mech-engine/set_element_of"]
+set_not_element_of = ["bool", "mech-set", "mech-set/not_element_of", "mech-engine/set_not_element_of"]
 set_insert = ["mech-set", "mech-set/insert", "mech-engine/set_insert"]
 set_remove = ["mech-set", "mech-set/remove", "mech-engine/set_remove"]
 set_cartesian_product = ["mech-set", "mech-set/cartesian_product", "mech-engine/set_cartesian_product"]
@@ -200,13 +206,13 @@ set_intersection = ["mech-set", "mech-set/intersection", "mech-engine/set_inters
 set_powerset = ["mech-set", "mech-set/powerset", "mech-engine/set_powerset"]
 set_symmetric_difference = ["mech-set", "mech-set/symmetric_difference", "mech-engine/set_symmetric_difference"]
 set_union = ["mech-set", "mech-set/union", "mech-engine/set_union"]
-set_disjoint = ["mech-set", "mech-set/disjoint", "mech-engine/set_disjoint"]
-set_equals = ["mech-set", "mech-set/equals", "mech-engine/set_equals"]
-set_not_equals = ["mech-set", "mech-set/not_equals", "mech-engine/set_not_equals"]
-set_proper_subset = ["mech-set", "mech-set/proper_subset", "mech-engine/set_proper_subset"]
-set_proper_superset = ["mech-set", "mech-set/proper_superset", "mech-engine/set_proper_superset"]
-set_subset = ["mech-set", "mech-set/subset", "mech-engine/set_subset"]
-set_superset = ["mech-set", "mech-set/superset", "mech-engine/set_superset"]
+set_disjoint = ["bool", "mech-set", "mech-set/disjoint", "mech-engine/set_disjoint"]
+set_equals = ["bool", "mech-set", "mech-set/equals", "mech-engine/set_equals"]
+set_not_equals = ["bool", "mech-set", "mech-set/not_equals", "mech-engine/set_not_equals"]
+set_proper_subset = ["bool", "mech-set", "mech-set/proper_subset", "mech-engine/set_proper_subset"]
+set_proper_superset = ["bool", "mech-set", "mech-set/proper_superset", "mech-engine/set_proper_superset"]
+set_subset = ["bool", "mech-set", "mech-set/subset", "mech-engine/set_subset"]
+set_superset = ["bool", "mech-set", "mech-set/superset", "mech-engine/set_superset"]
 set_size = ["mech-set", "mech-set/size", "mech-engine/set_size"]
 
 string_concat = ["mech-string", "mech-string/concat", "mech-engine/string_concat"]
@@ -258,7 +264,7 @@ matrixd = ["mech-core/matrixd", "mech-engine/matrixd", "mech-math?/matrixd", "me
 
 [dependencies]
 mech-core = { version = "0.3.5", default-features = false }
-mech-engine = { version = "0.3.5", default-features = false }
+mech-engine = { version = "0.3.5", default-features = false, features = ["functions"] }
 mech-math = { version = "0.3.5", default-features = false, optional = true }
 mech-compare = { version = "0.3.5", default-features = false, optional = true }
 mech-logic = { version = "0.3.5", default-features = false, optional = true }

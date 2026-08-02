@@ -165,6 +165,7 @@ fn runtime_builder_with_driver(
     submitted: RuntimeHostInputValue,
 ) -> RuntimeBuilder {
     RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
         .host_factory(Box::new(TestFactory::new(state, submitted)))
         .unwrap()
         .host_instance(HostInstanceConfig {

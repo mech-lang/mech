@@ -3,6 +3,7 @@ use super::super::super::program::{
 };
 use super::add_test_function;
 use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     CapabilityId, MechRuntime, ObjectId, ObjectRecord, PlannedRuntimeManagedHostFunction,
     RuntimeValueSnapshot,
@@ -52,7 +53,7 @@ fn explicit_reactive_turns_reuse_one_outer_program_checkpoint() {
 
 #[test]
 fn explicit_program_owner_excludes_other_reactive_transactions() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     let (output, _) = add_test_function(&mut runtime, None);
     let mut context_a = runtime.runtime_context().unwrap();
     let transaction_a = runtime.begin_transaction(&mut context_a).unwrap();
@@ -95,7 +96,7 @@ fn explicit_program_owner_excludes_other_reactive_transactions() {
 
 #[test]
 fn reactive_host_callback_uses_scoped_transaction_services() {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = test_runtime_builder()
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "demo/reactive-reenter",
             |_context, _args| Ok(snapshot(Value::F64(Ref::new(1.0)))),

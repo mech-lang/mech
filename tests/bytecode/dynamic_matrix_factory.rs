@@ -7,7 +7,10 @@ fn dynamic_matrix_addition_bytecode_reconstructs_from_full_runtime() -> MResult<
     const FACTORY_NAME: &str = "AddMDMD<f64>";
 
     let factory_id = hash_str(FACTORY_NAME);
-    let mut source = MechProgram::new(MechProgramConfig::default());
+    let mut source = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        mech::stdlib::source_catalog(),
+    );
     source.run_string(
         "left := [1 2 3 4 5; 6 7 8 9 10; 11 12 13 14 15; 16 17 18 19 20; 21 22 23 24 25]\n\
          right := [25 24 23 22 21; 20 19 18 17 16; 15 14 13 12 11; 10 9 8 7 6; 5 4 3 2 1]\n\
@@ -33,7 +36,10 @@ fn dynamic_matrix_addition_bytecode_reconstructs_from_full_runtime() -> MResult<
         1,
     );
 
-    let mut decoded = MechProgram::new(MechProgramConfig::default());
+    let mut decoded = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        mech::stdlib::source_catalog(),
+    );
     decoded
         .run_bytecode_program(&parsed)
         .unwrap_or_else(|error| {

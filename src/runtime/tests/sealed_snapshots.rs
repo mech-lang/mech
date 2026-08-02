@@ -1,10 +1,11 @@
 use std::cell::RefCell;
 use std::sync::Arc;
 
-use mech_core::{Ref, Value};
+use mech_core::{FunctionCatalogBuilder, Ref, Value};
 use mech_runtime::{
     BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, MechRuntime,
-    ModuleBuildOptions, PlannedPureHostFunction, RuntimeCallContext, RuntimeValueSnapshot,
+    ModuleBuildOptions, PlannedPureHostFunction, RuntimeBuilder, RuntimeCallContext,
+    RuntimeValueSnapshot,
 };
 
 thread_local! {
@@ -32,6 +33,13 @@ fn module_options() -> ModuleBuildOptions<'static> {
     ModuleBuildOptions::new("test", "v0.3", "native", &[], &[])
 }
 
+fn source_runtime_builder() -> RuntimeBuilder {
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut catalog).unwrap();
+    mech_engine::install_intrinsic_source(&mut catalog).unwrap();
+    RuntimeBuilder::new().function_catalog(Arc::new(catalog.build().unwrap()))
+}
+
 fn grant_host_call(runtime: &mut MechRuntime, name: &str) {
     let subject = runtime.runtime_context().unwrap().subject().to_string();
     runtime
@@ -46,7 +54,7 @@ fn grant_host_call(runtime: &mut MechRuntime, name: &str) {
 
 #[test]
 fn mutating_runtime_value_snapshot_does_not_change_runtime_output() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = source_runtime_builder().build().unwrap();
     let snapshot = runtime.run_string("sealed-value := 41.0").unwrap();
 
     mutate_f64(&snapshot.to_value(), 99.0);
@@ -64,7 +72,7 @@ fn mutating_runtime_value_snapshot_does_not_change_runtime_output() {
 
 #[test]
 fn mutating_module_result_snapshot_does_not_change_module_exports() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = source_runtime_builder().build().unwrap();
     let version = runtime
         .put_source_module(
             "sealed-module",
@@ -104,7 +112,7 @@ fn retained_host_snapshots_cannot_mutate_program_inputs_or_outputs() {
             Ok(result)
         },
     );
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = source_runtime_builder()
         .host_function(function)
         .unwrap()
         .build()

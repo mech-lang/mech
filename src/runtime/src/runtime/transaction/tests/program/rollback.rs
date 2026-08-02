@@ -1,10 +1,11 @@
 use crate::runtime::test_support::ids::ScriptedEventIdGenerator;
-use crate::{EventId, MechRuntime, RuntimeEventKind};
+use crate::runtime::test_support::providers::test_runtime_builder;
+use crate::{EventId, RuntimeEventKind};
 use mech_core::{MechSourceCode, hash_str};
 
 #[test]
 fn program_transaction_outer_abort_restores_program_baseline() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
     let root_interpreter_id = runtime.program.interpreter().id;
@@ -49,7 +50,7 @@ fn program_transaction_outer_abort_restores_program_baseline() {
 
 #[test]
 fn program_transaction_implicit_partial_failure_restores_everything() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     runtime.run_string("implicit-rollback-anchor := 1").unwrap();
     let anchor = runtime
         .program
@@ -66,11 +67,9 @@ fn program_transaction_implicit_partial_failure_restores_everything() {
     let events_before = runtime.list_events(None).unwrap().len();
     let mut context = runtime.runtime_context().unwrap();
     let source = MechSourceCode::Program(vec![
+        MechSourceCode::String("implicit-rollback-partial := 2".to_string()),
         MechSourceCode::String(
-            "implicit-rollback-partial := implicit-rollback-anchor + 1".to_string(),
-        ),
-        MechSourceCode::String(
-            "implicit-rollback-failure := missing-implicit-rollback-value + 1".to_string(),
+            "implicit-rollback-failure := missing-implicit-rollback-value".to_string(),
         ),
     ]);
 
@@ -139,7 +138,7 @@ fn program_transaction_implicit_partial_failure_restores_everything() {
 
 #[test]
 fn completion_event_staging_failure_rolls_back_implicit_program() {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = test_runtime_builder()
         .id_generator(ScriptedEventIdGenerator::new(
             1,
             [
