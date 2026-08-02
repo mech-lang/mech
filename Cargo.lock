@@ -2366,6 +2366,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "mech-stdlib"
+version = "0.3.5"
+dependencies = [
+ "mech-combinatorics",
+ "mech-compare",
+ "mech-core",
+ "mech-engine",
+ "mech-logic",
+ "mech-math",
+ "mech-matrix",
+ "mech-range",
+ "mech-set",
+ "mech-stats",
+ "mech-string",
+]
+
+[[package]]
 name = "mech-string"
 version = "0.3.5"
 dependencies = [
