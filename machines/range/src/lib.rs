@@ -12,22 +12,8 @@ use paste::paste;
 
 #[cfg(feature = "matrixd")]
 use nalgebra::DMatrix;
-#[cfg(feature = "vectord")]
-use nalgebra::DVector;
 #[cfg(feature = "matrix1")]
 use nalgebra::Matrix1;
-#[cfg(feature = "matrix2")]
-use nalgebra::Matrix2;
-#[cfg(feature = "matrix2x3")]
-use nalgebra::Matrix2x3;
-#[cfg(feature = "matrix3")]
-use nalgebra::Matrix3;
-#[cfg(feature = "matrix3x2")]
-use nalgebra::Matrix3x2;
-#[cfg(feature = "matrix4")]
-use nalgebra::Matrix4;
-#[cfg(feature = "rowdvector")]
-use nalgebra::RowDVector;
 #[cfg(feature = "row_vectord")]
 use nalgebra::RowDVector;
 #[cfg(feature = "row_vector2")]
@@ -36,12 +22,6 @@ use nalgebra::RowVector2;
 use nalgebra::RowVector3;
 #[cfg(feature = "row_vector4")]
 use nalgebra::RowVector4;
-#[cfg(feature = "vector2")]
-use nalgebra::Vector2;
-#[cfg(feature = "vector3")]
-use nalgebra::Vector3;
-#[cfg(feature = "vector4")]
-use nalgebra::Vector4;
 
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
@@ -50,9 +30,9 @@ use num_traits::{One, Zero};
 use std::fmt::Debug;
 use std::ops::*;
 
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub mod catalog;
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub use self::catalog::*;
 
 #[cfg(feature = "exclusive")]

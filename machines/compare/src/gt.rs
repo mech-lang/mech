@@ -105,6 +105,7 @@ macro_rules! gt_row_mat_op {
 
 impl_compare_fxns!(GT);
 
+#[cfg(feature = "source")]
 fn impl_gt_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       GT,
@@ -126,4 +127,5 @@ fn impl_gt_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFuncti
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(CompareGreaterThan, impl_gt_fxn, "compare/gt");

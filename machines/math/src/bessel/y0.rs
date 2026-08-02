@@ -48,6 +48,7 @@ impl_math_unop!(MathY0, f32, y0f, FeatureFlag::Custom(hash_str("math/y0")));
 #[cfg(feature = "f64")]
 impl_math_unop!(MathY0, f64, y0, FeatureFlag::Custom(hash_str("math/y0")));
 
+#[cfg(feature = "source")]
 fn impl_y0_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathY0,
@@ -57,8 +58,10 @@ fn impl_y0_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathY0 {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathY0 {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

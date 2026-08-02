@@ -28,7 +28,18 @@ no_std = [
 # next two commits. The public composition API is intentionally stable from
 # this first commit onward.
 runtime = ["mech-engine/default"]
-source = ["runtime"]
+source = [
+  "runtime",
+  "mech-math?/source",
+  "mech-compare?/source",
+  "mech-logic?/source",
+  "mech-range?/source",
+  "mech-matrix?/source",
+  "mech-set?/source",
+  "mech-string?/source",
+  "mech-stats?/source",
+  "mech-combinatorics?/source",
+]
 compiler = [
   "source",
   "mech-engine/compiler",
@@ -205,45 +216,45 @@ combinatorics_n_choose_k = ["mech-combinatorics", "mech-combinatorics/n_choose_k
 
 # Value and shape features use weak forwarding so selecting a value never
 # activates a machine by itself.
-bool = ["mech-core/bool", "mech-engine/bool", "mech-math?/bool", "mech-compare?/bool", "mech-logic?/bool", "mech-range?/bool", "mech-matrix?/bool", "mech-set?/bool", "mech-string?/bool", "mech-stats?/bool", "mech-combinatorics?/bool"]
-string = ["mech-core/string", "mech-engine/string", "mech-math?/string", "mech-compare?/string", "mech-logic?/string", "mech-range?/string", "mech-matrix?/string", "mech-set?/string", "mech-string?/string", "mech-stats?/string", "mech-combinatorics?/string"]
-u8 = ["mech-core/u8", "mech-engine/u8", "mech-math?/u8", "mech-compare?/u8", "mech-logic?/u8", "mech-range?/u8", "mech-matrix?/u8", "mech-set?/u8", "mech-string?/u8", "mech-stats?/u8", "mech-combinatorics?/u8"]
-u16 = ["mech-core/u16", "mech-engine/u16", "mech-math?/u16", "mech-compare?/u16", "mech-logic?/u16", "mech-range?/u16", "mech-matrix?/u16", "mech-set?/u16", "mech-string?/u16", "mech-stats?/u16", "mech-combinatorics?/u16"]
-u32 = ["mech-core/u32", "mech-engine/u32", "mech-math?/u32", "mech-compare?/u32", "mech-logic?/u32", "mech-range?/u32", "mech-matrix?/u32", "mech-set?/u32", "mech-string?/u32", "mech-stats?/u32", "mech-combinatorics?/u32"]
-u64 = ["mech-core/u64", "mech-engine/u64", "mech-math?/u64", "mech-compare?/u64", "mech-logic?/u64", "mech-range?/u64", "mech-matrix?/u64", "mech-set?/u64", "mech-string?/u64", "mech-stats?/u64", "mech-combinatorics?/u64"]
-u128 = ["mech-core/u128", "mech-engine/u128", "mech-math?/u128", "mech-compare?/u128", "mech-logic?/u128", "mech-range?/u128", "mech-matrix?/u128", "mech-set?/u128", "mech-string?/u128", "mech-stats?/u128", "mech-combinatorics?/u128"]
-i8 = ["mech-core/i8", "mech-engine/i8", "mech-math?/i8", "mech-compare?/i8", "mech-logic?/i8", "mech-range?/i8", "mech-matrix?/i8", "mech-set?/i8", "mech-string?/i8", "mech-stats?/i8", "mech-combinatorics?/i8"]
-i16 = ["mech-core/i16", "mech-engine/i16", "mech-math?/i16", "mech-compare?/i16", "mech-logic?/i16", "mech-range?/i16", "mech-matrix?/i16", "mech-set?/i16", "mech-string?/i16", "mech-stats?/i16", "mech-combinatorics?/i16"]
-i32 = ["mech-core/i32", "mech-engine/i32", "mech-math?/i32", "mech-compare?/i32", "mech-logic?/i32", "mech-range?/i32", "mech-matrix?/i32", "mech-set?/i32", "mech-string?/i32", "mech-stats?/i32", "mech-combinatorics?/i32"]
-i64 = ["mech-core/i64", "mech-engine/i64", "mech-math?/i64", "mech-compare?/i64", "mech-logic?/i64", "mech-range?/i64", "mech-matrix?/i64", "mech-set?/i64", "mech-string?/i64", "mech-stats?/i64", "mech-combinatorics?/i64"]
-i128 = ["mech-core/i128", "mech-engine/i128", "mech-math?/i128", "mech-compare?/i128", "mech-logic?/i128", "mech-range?/i128", "mech-matrix?/i128", "mech-set?/i128", "mech-string?/i128", "mech-stats?/i128", "mech-combinatorics?/i128"]
-f32 = ["mech-core/f32", "mech-engine/f32", "mech-math?/f32", "mech-compare?/f32", "mech-logic?/f32", "mech-range?/f32", "mech-matrix?/f32", "mech-set?/f32", "mech-string?/f32", "mech-stats?/f32", "mech-combinatorics?/f32"]
-f64 = ["mech-core/f64", "mech-engine/f64", "mech-math?/f64", "mech-compare?/f64", "mech-logic?/f64", "mech-range?/f64", "mech-matrix?/f64", "mech-set?/f64", "mech-string?/f64", "mech-stats?/f64", "mech-combinatorics?/f64"]
-c64 = ["mech-core/c64", "mech-engine/c64", "mech-math?/c64", "mech-compare?/c64", "mech-logic?/c64", "mech-range?/c64", "mech-matrix?/c64", "mech-set?/c64", "mech-string?/c64", "mech-stats?/c64", "mech-combinatorics?/c64"]
-r64 = ["mech-core/r64", "mech-engine/r64", "mech-math?/r64", "mech-compare?/r64", "mech-logic?/r64", "mech-range?/r64", "mech-matrix?/r64", "mech-set?/r64", "mech-string?/r64", "mech-stats?/r64", "mech-combinatorics?/r64"]
+bool = ["mech-core/bool", "mech-engine/bool", "mech-math?/bool", "mech-compare?/bool", "mech-logic?/bool", "mech-matrix?/bool", "mech-set?/bool"]
+string = ["mech-core/string", "mech-engine/string", "mech-compare?/string", "mech-matrix?/string", "mech-set?/string", "mech-string?/string"]
+u8 = ["mech-core/u8", "mech-engine/u8", "mech-math?/u8", "mech-compare?/u8", "mech-range?/u8", "mech-matrix?/u8", "mech-set?/u8", "mech-stats?/u8", "mech-combinatorics?/u8"]
+u16 = ["mech-core/u16", "mech-engine/u16", "mech-math?/u16", "mech-compare?/u16", "mech-range?/u16", "mech-matrix?/u16", "mech-set?/u16", "mech-stats?/u16", "mech-combinatorics?/u16"]
+u32 = ["mech-core/u32", "mech-engine/u32", "mech-math?/u32", "mech-compare?/u32", "mech-range?/u32", "mech-matrix?/u32", "mech-set?/u32", "mech-stats?/u32", "mech-combinatorics?/u32"]
+u64 = ["mech-core/u64", "mech-engine/u64", "mech-math?/u64", "mech-compare?/u64", "mech-range?/u64", "mech-matrix?/u64", "mech-set?/u64", "mech-stats?/u64", "mech-combinatorics?/u64"]
+u128 = ["mech-core/u128", "mech-engine/u128", "mech-math?/u128", "mech-compare?/u128", "mech-range?/u128", "mech-matrix?/u128", "mech-set?/u128", "mech-stats?/u128", "mech-combinatorics?/u128"]
+i8 = ["mech-core/i8", "mech-engine/i8", "mech-math?/i8", "mech-compare?/i8", "mech-range?/i8", "mech-matrix?/i8", "mech-set?/i8", "mech-stats?/i8", "mech-combinatorics?/i8"]
+i16 = ["mech-core/i16", "mech-engine/i16", "mech-math?/i16", "mech-compare?/i16", "mech-range?/i16", "mech-matrix?/i16", "mech-set?/i16", "mech-stats?/i16", "mech-combinatorics?/i16"]
+i32 = ["mech-core/i32", "mech-engine/i32", "mech-math?/i32", "mech-compare?/i32", "mech-range?/i32", "mech-matrix?/i32", "mech-set?/i32", "mech-stats?/i32", "mech-combinatorics?/i32"]
+i64 = ["mech-core/i64", "mech-engine/i64", "mech-math?/i64", "mech-compare?/i64", "mech-range?/i64", "mech-matrix?/i64", "mech-set?/i64", "mech-stats?/i64", "mech-combinatorics?/i64"]
+i128 = ["mech-core/i128", "mech-engine/i128", "mech-math?/i128", "mech-compare?/i128", "mech-range?/i128", "mech-matrix?/i128", "mech-set?/i128", "mech-stats?/i128", "mech-combinatorics?/i128"]
+f32 = ["mech-core/f32", "mech-engine/f32", "mech-math?/f32", "mech-compare?/f32", "mech-range?/f32", "mech-matrix?/f32", "mech-set?/f32", "mech-stats?/f32", "mech-combinatorics?/f32"]
+f64 = ["mech-core/f64", "mech-engine/f64", "mech-math?/f64", "mech-compare?/f64", "mech-range?/f64", "mech-matrix?/f64", "mech-set?/f64", "mech-stats?/f64", "mech-combinatorics?/f64"]
+c64 = ["mech-core/c64", "mech-engine/c64", "mech-math?/c64", "mech-compare?/c64", "mech-matrix?/c64", "mech-set?/c64", "mech-stats?/c64", "mech-combinatorics?/c64"]
+r64 = ["mech-core/r64", "mech-engine/r64", "mech-math?/r64", "mech-compare?/r64", "mech-matrix?/r64", "mech-set?/r64", "mech-stats?/r64", "mech-combinatorics?/r64"]
 
-set = ["mech-core/set", "mech-engine/set", "mech-math?/set", "mech-compare?/set", "mech-logic?/set", "mech-range?/set", "mech-matrix?/set", "mech-set?/set", "mech-string?/set", "mech-stats?/set", "mech-combinatorics?/set"]
-map = ["mech-core/map", "mech-engine/map", "mech-math?/map", "mech-compare?/map", "mech-logic?/map", "mech-range?/map", "mech-matrix?/map", "mech-set?/map", "mech-string?/map", "mech-stats?/map", "mech-combinatorics?/map"]
-table = ["mech-core/table", "mech-engine/table", "mech-math?/table", "mech-compare?/table", "mech-logic?/table", "mech-range?/table", "mech-matrix?/table", "mech-set?/table", "mech-string?/table", "mech-stats?/table", "mech-combinatorics?/table"]
-tuple = ["mech-core/tuple", "mech-engine/tuple", "mech-math?/tuple", "mech-compare?/tuple", "mech-logic?/tuple", "mech-range?/tuple", "mech-matrix?/tuple", "mech-set?/tuple", "mech-string?/tuple", "mech-stats?/tuple", "mech-combinatorics?/tuple"]
-record = ["mech-core/record", "mech-engine/record", "mech-math?/record", "mech-compare?/record", "mech-logic?/record", "mech-range?/record", "mech-matrix?/record", "mech-set?/record", "mech-string?/record", "mech-stats?/record", "mech-combinatorics?/record"]
-atom = ["mech-core/atom", "mech-engine/atom", "mech-math?/atom", "mech-compare?/atom", "mech-logic?/atom", "mech-range?/atom", "mech-matrix?/atom", "mech-set?/atom", "mech-string?/atom", "mech-stats?/atom", "mech-combinatorics?/atom"]
-enum = ["mech-core/enum", "mech-engine/enum", "mech-math?/enum", "mech-compare?/enum", "mech-logic?/enum", "mech-range?/enum", "mech-matrix?/enum", "mech-set?/enum", "mech-string?/enum", "mech-stats?/enum", "mech-combinatorics?/enum"]
+set = ["mech-core/set", "mech-engine/set", "mech-set?/set"]
+map = ["mech-core/map", "mech-engine/map", "mech-set?/map"]
+table = ["mech-core/table", "mech-engine/table", "mech-compare?/table", "mech-set?/table"]
+tuple = ["mech-core/tuple", "mech-engine/tuple", "mech-compare?/tuple", "mech-set?/tuple"]
+record = ["mech-core/record", "mech-engine/record", "mech-compare?/record", "mech-set?/record"]
+atom = ["mech-core/atom", "mech-engine/atom", "mech-compare?/atom", "mech-set?/atom"]
+enum = ["mech-core/enum", "mech-engine/enum", "mech-set?/enum"]
 
 matrix1 = ["mech-core/matrix1", "mech-engine/matrix1", "mech-math?/matrix1", "mech-compare?/matrix1", "mech-logic?/matrix1", "mech-range?/matrix1", "mech-matrix?/matrix1", "mech-set?/matrix1", "mech-string?/matrix1", "mech-stats?/matrix1", "mech-combinatorics?/matrix1"]
-matrix2 = ["mech-core/matrix2", "mech-engine/matrix2", "mech-math?/matrix2", "mech-compare?/matrix2", "mech-logic?/matrix2", "mech-range?/matrix2", "mech-matrix?/matrix2", "mech-set?/matrix2", "mech-string?/matrix2", "mech-stats?/matrix2", "mech-combinatorics?/matrix2"]
-matrix3 = ["mech-core/matrix3", "mech-engine/matrix3", "mech-math?/matrix3", "mech-compare?/matrix3", "mech-logic?/matrix3", "mech-range?/matrix3", "mech-matrix?/matrix3", "mech-set?/matrix3", "mech-string?/matrix3", "mech-stats?/matrix3", "mech-combinatorics?/matrix3"]
-matrix4 = ["mech-core/matrix4", "mech-engine/matrix4", "mech-math?/matrix4", "mech-compare?/matrix4", "mech-logic?/matrix4", "mech-range?/matrix4", "mech-matrix?/matrix4", "mech-set?/matrix4", "mech-string?/matrix4", "mech-stats?/matrix4", "mech-combinatorics?/matrix4"]
-matrix2x3 = ["mech-core/matrix2x3", "mech-engine/matrix2x3", "mech-math?/matrix2x3", "mech-compare?/matrix2x3", "mech-logic?/matrix2x3", "mech-range?/matrix2x3", "mech-matrix?/matrix2x3", "mech-set?/matrix2x3", "mech-string?/matrix2x3", "mech-stats?/matrix2x3", "mech-combinatorics?/matrix2x3"]
-matrix3x2 = ["mech-core/matrix3x2", "mech-engine/matrix3x2", "mech-math?/matrix3x2", "mech-compare?/matrix3x2", "mech-logic?/matrix3x2", "mech-range?/matrix3x2", "mech-matrix?/matrix3x2", "mech-set?/matrix3x2", "mech-string?/matrix3x2", "mech-stats?/matrix3x2", "mech-combinatorics?/matrix3x2"]
+matrix2 = ["mech-core/matrix2", "mech-engine/matrix2", "mech-math?/matrix2", "mech-compare?/matrix2", "mech-logic?/matrix2", "mech-matrix?/matrix2", "mech-set?/matrix2", "mech-string?/matrix2", "mech-stats?/matrix2", "mech-combinatorics?/matrix2"]
+matrix3 = ["mech-core/matrix3", "mech-engine/matrix3", "mech-math?/matrix3", "mech-compare?/matrix3", "mech-logic?/matrix3", "mech-matrix?/matrix3", "mech-set?/matrix3", "mech-string?/matrix3", "mech-stats?/matrix3", "mech-combinatorics?/matrix3"]
+matrix4 = ["mech-core/matrix4", "mech-engine/matrix4", "mech-math?/matrix4", "mech-compare?/matrix4", "mech-logic?/matrix4", "mech-matrix?/matrix4", "mech-set?/matrix4", "mech-string?/matrix4", "mech-stats?/matrix4", "mech-combinatorics?/matrix4"]
+matrix2x3 = ["mech-core/matrix2x3", "mech-engine/matrix2x3", "mech-math?/matrix2x3", "mech-compare?/matrix2x3", "mech-logic?/matrix2x3", "mech-matrix?/matrix2x3", "mech-set?/matrix2x3", "mech-string?/matrix2x3", "mech-stats?/matrix2x3", "mech-combinatorics?/matrix2x3"]
+matrix3x2 = ["mech-core/matrix3x2", "mech-engine/matrix3x2", "mech-math?/matrix3x2", "mech-compare?/matrix3x2", "mech-logic?/matrix3x2", "mech-matrix?/matrix3x2", "mech-set?/matrix3x2", "mech-string?/matrix3x2", "mech-stats?/matrix3x2", "mech-combinatorics?/matrix3x2"]
 row_vector2 = ["mech-core/row_vector2", "mech-engine/row_vector2", "mech-math?/row_vector2", "mech-compare?/row_vector2", "mech-logic?/row_vector2", "mech-range?/row_vector2", "mech-matrix?/row_vector2", "mech-set?/row_vector2", "mech-string?/row_vector2", "mech-stats?/row_vector2", "mech-combinatorics?/row_vector2"]
 row_vector3 = ["mech-core/row_vector3", "mech-engine/row_vector3", "mech-math?/row_vector3", "mech-compare?/row_vector3", "mech-logic?/row_vector3", "mech-range?/row_vector3", "mech-matrix?/row_vector3", "mech-set?/row_vector3", "mech-string?/row_vector3", "mech-stats?/row_vector3", "mech-combinatorics?/row_vector3"]
 row_vector4 = ["mech-core/row_vector4", "mech-engine/row_vector4", "mech-math?/row_vector4", "mech-compare?/row_vector4", "mech-logic?/row_vector4", "mech-range?/row_vector4", "mech-matrix?/row_vector4", "mech-set?/row_vector4", "mech-string?/row_vector4", "mech-stats?/row_vector4", "mech-combinatorics?/row_vector4"]
-vector2 = ["mech-core/vector2", "mech-engine/vector2", "mech-math?/vector2", "mech-compare?/vector2", "mech-logic?/vector2", "mech-range?/vector2", "mech-matrix?/vector2", "mech-set?/vector2", "mech-string?/vector2", "mech-stats?/vector2", "mech-combinatorics?/vector2"]
-vector3 = ["mech-core/vector3", "mech-engine/vector3", "mech-math?/vector3", "mech-compare?/vector3", "mech-logic?/vector3", "mech-range?/vector3", "mech-matrix?/vector3", "mech-set?/vector3", "mech-string?/vector3", "mech-stats?/vector3", "mech-combinatorics?/vector3"]
-vector4 = ["mech-core/vector4", "mech-engine/vector4", "mech-math?/vector4", "mech-compare?/vector4", "mech-logic?/vector4", "mech-range?/vector4", "mech-matrix?/vector4", "mech-set?/vector4", "mech-string?/vector4", "mech-stats?/vector4", "mech-combinatorics?/vector4"]
+vector2 = ["mech-core/vector2", "mech-engine/vector2", "mech-math?/vector2", "mech-compare?/vector2", "mech-logic?/vector2", "mech-matrix?/vector2", "mech-set?/vector2", "mech-string?/vector2", "mech-stats?/vector2", "mech-combinatorics?/vector2"]
+vector3 = ["mech-core/vector3", "mech-engine/vector3", "mech-math?/vector3", "mech-compare?/vector3", "mech-logic?/vector3", "mech-matrix?/vector3", "mech-set?/vector3", "mech-string?/vector3", "mech-stats?/vector3", "mech-combinatorics?/vector3"]
+vector4 = ["mech-core/vector4", "mech-engine/vector4", "mech-math?/vector4", "mech-compare?/vector4", "mech-logic?/vector4", "mech-matrix?/vector4", "mech-set?/vector4", "mech-string?/vector4", "mech-stats?/vector4", "mech-combinatorics?/vector4"]
 row_vectord = ["mech-core/row_vectord", "mech-engine/row_vectord", "mech-math?/row_vectord", "mech-compare?/row_vectord", "mech-logic?/row_vectord", "mech-range?/row_vectord", "mech-matrix?/row_vectord", "mech-set?/row_vectord", "mech-string?/row_vectord", "mech-stats?/row_vectord", "mech-combinatorics?/row_vectord"]
-vectord = ["mech-core/vectord", "mech-engine/vectord", "mech-math?/vectord", "mech-compare?/vectord", "mech-logic?/vectord", "mech-range?/vectord", "mech-matrix?/vectord", "mech-set?/vectord", "mech-string?/vectord", "mech-stats?/vectord", "mech-combinatorics?/vectord"]
+vectord = ["mech-core/vectord", "mech-engine/vectord", "mech-math?/vectord", "mech-compare?/vectord", "mech-logic?/vectord", "mech-matrix?/vectord", "mech-set?/vectord", "mech-string?/vectord", "mech-stats?/vectord", "mech-combinatorics?/vectord"]
 matrixd = ["mech-core/matrixd", "mech-engine/matrixd", "mech-math?/matrixd", "mech-compare?/matrixd", "mech-logic?/matrixd", "mech-range?/matrixd", "mech-matrix?/matrixd", "mech-set?/matrixd", "mech-string?/matrixd", "mech-stats?/matrixd", "mech-combinatorics?/matrixd"]
 
 [dependencies]

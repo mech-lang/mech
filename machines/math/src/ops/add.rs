@@ -1,5 +1,6 @@
 use crate::*;
 use num_traits::*;
+#[cfg(feature = "source")]
 use std::sync::Arc;
 
 #[cfg(feature = "matrix")]
@@ -91,6 +92,7 @@ macro_rules! add_scalar_rhs_op {
 
 impl_math_fxns!(Add);
 
+#[cfg(feature = "source")]
 fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     #[cfg(feature = "c64")]
     match (&lhs_value, &rhs_value) {
@@ -127,6 +129,7 @@ fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 fn specialize_math_add(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
         return Err(MechError::new(
@@ -177,8 +180,10 @@ fn specialize_math_add(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
     }
 }
 
+#[cfg(feature = "source")]
 pub struct MathAdd {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathAdd {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         specialize_math_add(arguments)
@@ -212,6 +217,7 @@ pub fn install_math_add_runtime(builder: &mut FunctionCatalogBuilder) -> MResult
     )
 }
 
+#[cfg(feature = "source")]
 pub fn install_math_add_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     let operation = builder.insert_specializer("math/add", Arc::new(MathAdd {}))?;
     builder.insert_export(FunctionExport {
@@ -221,11 +227,6 @@ pub fn install_math_add_source(builder: &mut FunctionCatalogBuilder) -> MResult<
         item: None,
         exposure: FunctionExposure::Prelude,
     })
-}
-
-pub fn install_math_add_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_math_add_runtime(builder)?;
-    install_math_add_source(builder)
 }
 
 #[cfg(test)]
@@ -418,7 +419,12 @@ mod tests {
         }
     }
 
-    #[cfg(all(feature = "f64", feature = "matrixd", feature = "vector2"))]
+    #[cfg(all(
+        feature = "source",
+        feature = "f64",
+        feature = "matrixd",
+        feature = "vector2"
+    ))]
     fn assert_catalog_specializes_to(
         specializer: &dyn FunctionSpecializer,
         arguments: [Value; 2],
@@ -472,7 +478,12 @@ mod tests {
         assert_catalog_name_and_id(&catalog, "AddV2S<f64>", 0x0023_38c5_7864_6419);
     }
 
-    #[cfg(all(feature = "f64", feature = "matrixd", feature = "vector2"))]
+    #[cfg(all(
+        feature = "source",
+        feature = "f64",
+        feature = "matrixd",
+        feature = "vector2"
+    ))]
     #[test]
     fn catalog_specializer_selects_all_five_pr0_add_families() {
         let mut builder = FunctionCatalogBuilder::new();
@@ -519,6 +530,7 @@ mod tests {
         assert_catalog_specializes_to(specializer, [vector, scalar], "AddV2S", "AddV2S<f64>");
     }
 
+    #[cfg(feature = "source")]
     #[test]
     fn source_installation_exports_only_the_prelude_operation() {
         let mut builder = FunctionCatalogBuilder::new();
@@ -547,7 +559,7 @@ mod tests {
         assert!(catalog.module_export("math", "add").is_none());
     }
 
-    #[cfg(all(feature = "f64", feature = "i32"))]
+    #[cfg(all(feature = "source", feature = "f64", feature = "i32"))]
     #[test]
     fn catalog_specializer_preserves_mixed_kind_behavior_without_claiming_purity() {
         let mut builder = FunctionCatalogBuilder::new();
@@ -565,7 +577,7 @@ mod tests {
         assert_eq!(fxn.out().as_f64().unwrap().borrow().clone(), 3.5);
     }
 
-    #[cfg(feature = "f64")]
+    #[cfg(all(feature = "source", feature = "f64"))]
     #[test]
     fn catalog_specializer_preserves_mutable_reference_behavior() {
         let left = Value::MutableReference(Ref::new(Value::from(1.0_f64)));

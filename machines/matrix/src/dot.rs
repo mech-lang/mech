@@ -73,6 +73,7 @@ impl_dot!(DotVDVD, DVector<T>, DVector<T>, T);
 #[cfg(all(feature = "row_vectord", feature = "row_vectord"))]
 impl_dot!(DotRDRD, RowDVector<T>, RowDVector<T>, T);
 
+#[cfg(feature = "source")]
 macro_rules! impl_dot_match_arms {
   ($arg:expr, $($lhs_type:tt, $($matrix_kind:tt, $target_type:tt, $value_string:tt),+);+ $(;)?) => {
     match $arg {
@@ -153,6 +154,7 @@ macro_rules! impl_dot_match_arms {
   }
 }
 
+#[cfg(feature = "source")]
 fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_dot_match_arms!(
       (lhs_value, rhs_value),
@@ -173,4 +175,5 @@ fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(MatrixDot, impl_dot_fxn, "matrix/dot");

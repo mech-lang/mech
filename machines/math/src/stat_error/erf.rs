@@ -53,6 +53,7 @@ impl_math_unop!(
 #[cfg(feature = "f64")]
 impl_math_unop!(MathErf, f64, erf, FeatureFlag::Custom(hash_str("math/erf")));
 
+#[cfg(feature = "source")]
 fn impl_erf_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathErf,
@@ -62,8 +63,10 @@ fn impl_erf_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathErf {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathErf {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

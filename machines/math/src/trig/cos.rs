@@ -53,6 +53,7 @@ impl_math_unop!(
 #[cfg(feature = "f64")]
 impl_math_unop!(MathCos, f64, cos, FeatureFlag::Custom(hash_str("math/cos")));
 
+#[cfg(feature = "source")]
 fn impl_cos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathCos,
@@ -62,8 +63,10 @@ fn impl_cos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathCos {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathCos {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

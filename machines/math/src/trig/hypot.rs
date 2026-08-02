@@ -134,6 +134,7 @@ impl_two_arg_fxn!(HypotMDF64, DMatrix<f64>, DMatrix<f64>, DMatrix<f64>, hypot_ve
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(HypotF64, F64, F64, F64, hypot_op);
 
+#[cfg(feature = "source")]
 fn impl_hypot_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
   match (arg1_value,arg2_value) {
     #[cfg(feature = "f32")]
@@ -216,8 +217,10 @@ fn impl_hypot_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechF
   }
 }
 
+#[cfg(feature = "source")]
 pub struct MathHypot {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathHypot {
   fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {

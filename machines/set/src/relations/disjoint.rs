@@ -71,6 +71,7 @@ impl MechFunctionCompiler for SetDisjointFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_disjoint_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetDisjointFxn {
@@ -89,7 +90,9 @@ fn set_disjoint_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetDisjoint {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetDisjoint {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

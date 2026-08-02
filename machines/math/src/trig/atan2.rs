@@ -246,6 +246,7 @@ macro_rules! impl_binop_atan2 {
   }
 }
 
+#[cfg(feature = "source")]
 pub fn impl_atan2_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_atan2!(Atan2, arg1_value, arg2_value,
       F32, f32::default(), "f32";
@@ -253,8 +254,10 @@ pub fn impl_atan2_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathAtan2 {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathAtan2 {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

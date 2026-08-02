@@ -104,6 +104,7 @@ macro_rules! xor_row_mat_op {
 
 impl_logic_fxns!(Xor);
 
+#[cfg(feature = "source")]
 fn impl_xor_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Xor,
@@ -112,4 +113,5 @@ fn impl_xor_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(LogicXor, impl_xor_fxn, "logic/xor");

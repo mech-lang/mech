@@ -88,6 +88,7 @@ impl MechFunctionCompiler for SetCartesianProductFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_cartesian_product_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetCartesianProductFxn {
@@ -109,7 +110,9 @@ fn set_cartesian_product_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunc
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetCartesianProduct {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetCartesianProduct {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

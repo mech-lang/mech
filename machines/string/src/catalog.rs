@@ -1,12 +1,16 @@
-use mech_core::{FunctionCatalogBuilder, FunctionExport, FunctionExposure, MResult};
+use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(feature = "source")]
+use mech_core::{FunctionExport, FunctionExposure};
 #[cfg(feature = "concat")]
 use paste::paste;
+#[cfg(feature = "source")]
 use std::sync::Arc;
 
 #[cfg(feature = "concat")]
 use crate::concat::*;
 
 /// Installs the frozen named source-specializer surface for the string machine.
+#[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "concat")]
     {
@@ -45,12 +49,7 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_runtime(builder)?;
-    install_source(builder)
-}
-
-#[cfg(all(test, feature = "concat"))]
+#[cfg(all(test, feature = "source", feature = "concat"))]
 mod tests {
     use super::*;
     use mech_core::OperationId;

@@ -53,6 +53,7 @@ impl_math_unop!(
 #[cfg(feature = "f64")]
 impl_math_unop!(MathLog, f64, log, FeatureFlag::Custom(hash_str("math/log")));
 
+#[cfg(feature = "source")]
 fn impl_log_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathLog,
@@ -62,8 +63,10 @@ fn impl_log_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathLog {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathLog {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

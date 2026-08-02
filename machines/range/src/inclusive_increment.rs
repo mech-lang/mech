@@ -27,18 +27,17 @@ where
         + Clone
         + Sync
         + Send
-        + ConstElem
         + AsValueKind
         + PartialOrd
         + 'static
         + One
         + Add<Output = T>,
     #[cfg(feature = "compiler")]
-    T: CompileConst,
+    T: CompileConst + ConstElem,
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-    naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind,
+    naMatrix<T, R1, C1, S1>: AsNaKind,
     #[cfg(feature = "compiler")]
-    naMatrix<T, R1, C1, S1>: CompileConst,
+    naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     R1: Dim + 'static,
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug + 'static,
@@ -135,6 +134,7 @@ where
 }
 
 #[macro_export]
+#[cfg(feature = "source")]
 macro_rules! impl_range_increment_inclusive_match_arms {
   ($fxn:ident, $arg1:expr, $arg2:expr, $arg3:expr, $($ty:tt, $feat:tt);+ $(;)?) => {
     paste! {
@@ -208,6 +208,7 @@ macro_rules! impl_range_increment_inclusive_match_arms {
   }
 }
 
+#[cfg(feature = "source")]
 fn impl_range_increment_inclusive_fxn(
     arg1_value: Value,
     arg2_value: Value,
@@ -229,8 +230,10 @@ fn impl_range_increment_inclusive_fxn(
     )
 }
 
+#[cfg(feature = "source")]
 pub struct RangeIncrementInclusive {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for RangeIncrementInclusive {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 3 {

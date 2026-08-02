@@ -5,10 +5,10 @@
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 
-#[cfg(not(feature = "dynamic-module"))]
+#[cfg(all(not(feature = "dynamic-module"), feature = "runtime"))]
 use mech_core::*;
 
-#[cfg(all(not(feature = "dynamic-module"), feature = "functions"))]
+#[cfg(all(not(feature = "dynamic-module"), feature = "math"))]
 use paste::paste;
 
 #[cfg(feature = "matrixd")]
@@ -75,7 +75,7 @@ pub mod stat_error;
 #[cfg(feature = "trig")]
 pub mod trig;
 
-#[cfg(all(feature = "functions", not(feature = "dynamic-module")))]
+#[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
 pub mod catalog;
 
 #[cfg(feature = "arithmetic")]
@@ -101,7 +101,7 @@ pub use self::stat_error::*;
 #[cfg(feature = "trig")]
 pub use self::trig::*;
 
-#[cfg(all(feature = "functions", not(feature = "dynamic-module")))]
+#[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
 pub use self::catalog::*;
 
 // ----------------------------------------------------------------------------
@@ -115,6 +115,7 @@ macro_rules! impl_math_fxns {
     };
 }
 
+#[cfg(feature = "source")]
 #[macro_export]
 macro_rules! impl_urnop_match_arms2 {
   ($lib:ident, $arg:expr, $($lhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {

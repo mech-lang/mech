@@ -42,9 +42,9 @@ use nalgebra::Vector4;
 
 use paste::paste;
 
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub mod catalog;
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub use self::catalog::*;
 
 #[cfg(feature = "eq")]
@@ -104,9 +104,9 @@ macro_rules! impl_compare_binop {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: std::fmt::Debug + Clone + 'static + ConstElem + AsValueKind + PartialEq + PartialOrd,
+            T: std::fmt::Debug + Clone + 'static + AsValueKind + PartialEq + PartialOrd,
             #[cfg(feature = "compiler")]
-            T: CompileConst,
+            T: ConstElem + CompileConst,
             Ref<$out_type>: ToValue,
         {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {

@@ -89,6 +89,7 @@ impl MechFunctionCompiler for SetSymDifferenceFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_sym_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetSymDifferenceFxn {
@@ -110,7 +111,9 @@ fn set_sym_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunctio
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetSymmetricDifference {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetSymmetricDifference {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

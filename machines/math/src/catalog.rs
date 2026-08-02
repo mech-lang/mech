@@ -1,14 +1,14 @@
-use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
-    MechFunctionFactory,
-};
+use mech_core::{FunctionCatalogBuilder, MResult, MechFunctionFactory};
+#[cfg(feature = "source")]
+use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
 #[cfg(feature = "matrix")]
 use nalgebra::{
     DMatrix, DVector, Matrix1, Matrix2, Matrix2x3, Matrix3, Matrix3x2, Matrix4, RowDVector,
     RowVector2, RowVector3, RowVector4, Vector2, Vector3, Vector4,
 };
-#[cfg(feature = "functions")]
+#[cfg(feature = "op_assign")]
 use paste::paste;
+#[cfg(feature = "source")]
 use std::sync::Arc;
 
 #[cfg(feature = "abs")]
@@ -102,6 +102,7 @@ use crate::trig::tan::*;
 #[cfg(feature = "tanh")]
 use crate::trig::tanh::*;
 
+#[cfg(feature = "source")]
 fn install_source_specializer<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &'static str,
@@ -123,6 +124,7 @@ where
     })
 }
 
+#[cfg(feature = "source")]
 macro_rules! install_prelude {
     ($builder:expr, $name:literal, $compiler:expr) => {
         install_source_specializer(
@@ -136,6 +138,7 @@ macro_rules! install_prelude {
     };
 }
 
+#[cfg(feature = "source")]
 macro_rules! install_math_module {
     ($builder:expr, $name:literal, $item:literal, $compiler:expr) => {
         install_source_specializer(
@@ -155,6 +158,7 @@ macro_rules! install_math_module {
 /// source surface intentionally excludes legacy descriptors that were not in
 /// the compatibility baseline (`exp`, `exp2`, `exp10`, `expm1`, `fdim`,
 /// `hypot`, `ilogb`, and `sincos`).
+#[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "abs")]
     install_math_module!(builder, "math/abs", "abs", crate::MathAbs {});
@@ -261,10 +265,8 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     {
         // The baseline contains these two range forms, but no named
         // `math/mul-assign` source specializer.
-        builder.insert_intrinsic_specializer(
-            "math/mul-assign",
-            Arc::new(crate::MulAssignValue {}),
-        )?;
+        builder
+            .insert_intrinsic_specializer("math/mul-assign", Arc::new(crate::MulAssignValue {}))?;
         install_prelude!(builder, "math/mul-assign/range", crate::MulAssignRange {});
         install_prelude!(
             builder,
@@ -1241,20 +1243,13 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-/// Installs the complete explicit static catalog fragment owned by
-/// `mech-math`.
-pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_runtime(builder)?;
-    install_source(builder)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use mech_core::{FunctionCatalog, OperationId, RuntimeFunctionId};
     use std::collections::BTreeSet;
 
-    #[cfg(feature = "math_default")]
+    #[cfg(all(feature = "source", feature = "math_default"))]
     const FROZEN_NAMES: [&str; 64] = [
         "math/abs",
         "math/acos",
@@ -1322,7 +1317,7 @@ mod tests {
         "math/trunc",
     ];
 
-    #[cfg(feature = "math_default")]
+    #[cfg(all(feature = "source", feature = "math_default"))]
     const PRELUDE_NAMES: [&str; 18] = [
         "math/add",
         "math/add-assign",
@@ -1344,14 +1339,14 @@ mod tests {
         "math/sub-assign/range-all",
     ];
 
-    #[cfg(feature = "math_default")]
+    #[cfg(all(feature = "source", feature = "math_default"))]
     fn catalog() -> FunctionCatalog {
         let mut builder = FunctionCatalogBuilder::new();
         install_source(&mut builder).unwrap();
         builder.build().unwrap()
     }
 
-    #[cfg(feature = "math_default")]
+    #[cfg(all(feature = "source", feature = "math_default"))]
     #[test]
     fn source_catalog_matches_the_frozen_math_surface() {
         let catalog = catalog();
@@ -1388,7 +1383,7 @@ mod tests {
         assert!(catalog.exports_for_operation(mul_assign).is_empty());
     }
 
-    #[cfg(feature = "math_default")]
+    #[cfg(all(feature = "source", feature = "math_default"))]
     #[test]
     fn source_catalog_preserves_prelude_and_module_exposure() {
         let catalog = catalog();
@@ -1416,25 +1411,33 @@ mod tests {
 
     #[test]
     fn runtime_catalog_entries_have_unique_canonical_names_and_ids() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_runtime(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
+        std::thread::Builder::new()
+            .name("math-runtime-catalog-uniqueness".to_string())
+            .stack_size(32 * 1024 * 1024)
+            .spawn(|| {
+                let mut builder = FunctionCatalogBuilder::new();
+                install_runtime(&mut builder).unwrap();
+                let catalog = builder.build().unwrap();
 
-        let mut names = BTreeSet::new();
-        for entry in catalog.runtime_entries() {
-            assert_eq!(
-                entry.id,
-                RuntimeFunctionId::from_name(&entry.name),
-                "runtime ID mismatch for {}",
-                entry.name,
-            );
-            assert!(
-                names.insert(entry.name.as_str()),
-                "duplicate runtime factory {}",
-                entry.name,
-            );
-        }
+                let mut names = BTreeSet::new();
+                for entry in catalog.runtime_entries() {
+                    assert_eq!(
+                        entry.id,
+                        RuntimeFunctionId::from_name(&entry.name),
+                        "runtime ID mismatch for {}",
+                        entry.name,
+                    );
+                    assert!(
+                        names.insert(entry.name.as_str()),
+                        "duplicate runtime factory {}",
+                        entry.name,
+                    );
+                }
 
-        assert_eq!(names.len(), catalog.runtime_factory_count());
+                assert_eq!(names.len(), catalog.runtime_factory_count());
+            })
+            .expect("math runtime catalog uniqueness thread must spawn")
+            .join()
+            .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
     }
 }

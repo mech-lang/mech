@@ -114,6 +114,7 @@ macro_rules! and_row_mat_op {
 
 impl_logic_fxns!(And);
 
+#[cfg(feature = "source")]
 fn impl_and_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       And,
@@ -122,4 +123,5 @@ fn impl_and_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(LogicAnd, impl_and_fxn, "logic/and");

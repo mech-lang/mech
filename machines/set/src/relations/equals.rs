@@ -75,6 +75,7 @@ impl MechFunctionCompiler for SetEqualsFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_equals_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetEqualsFxn {
@@ -93,7 +94,9 @@ fn set_equals_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetEquals {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetEquals {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

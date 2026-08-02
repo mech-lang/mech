@@ -53,6 +53,7 @@ impl_math_unop!(
 #[cfg(feature = "f64")]
 impl_math_unop!(MathCsc, f64, csc, FeatureFlag::Custom(hash_str("math/csc")));
 
+#[cfg(feature = "source")]
 fn impl_csc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathCsc,
@@ -62,8 +63,10 @@ fn impl_csc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathCsc {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathCsc {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

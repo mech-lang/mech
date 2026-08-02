@@ -7,6 +7,7 @@ use num_traits::*;
 
 // Sub Assign -----------------------------------------------------------------
 
+#[cfg(feature = "source")]
 #[macro_export]
 macro_rules! impl_sub_assign_match_arms {
     ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
@@ -53,6 +54,7 @@ impl_assign_scalar_scalar!(Sub, -=);
 impl_assign_vector_vector!(Sub, -=);
 impl_assign_vector_scalar!(Sub, -=);
 
+#[cfg(feature = "source")]
 fn sub_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
     impl_op_assign_value_match_arms!(
       Sub,
@@ -74,7 +76,9 @@ fn sub_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 pub struct SubAssignValue {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SubAssignValue {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
@@ -169,9 +173,12 @@ impl_sub_assign_range_fxn_v!(SubAssign1DRV, sub_assign_1d_range_vec, usize);
 #[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_v!(SubAssign1DRVB, sub_assign_1d_range_vec_b, bool);
 
+#[cfg(feature = "source")]
 op_assign_range_fxn!(sub_assign_range_fxn, SubAssign1DR);
 
+#[cfg(feature = "source")]
 pub struct SubAssignRange {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SubAssignRange {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
@@ -283,9 +290,12 @@ impl_sub_assign_range_fxn_v!(SubAssign2DRAV, sub_assign_2d_vector_all_mat, usize
 #[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_v!(SubAssign2DRAVB, sub_assign_2d_vector_all_mat_b, bool);
 
+#[cfg(feature = "source")]
 op_assign_range_all_fxn!(sub_assign_range_all_fxn, SubAssign2DRA);
 
+#[cfg(feature = "source")]
 pub struct SubAssignRangeAll {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SubAssignRangeAll {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {

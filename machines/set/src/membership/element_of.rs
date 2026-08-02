@@ -79,6 +79,7 @@ impl MechFunctionCompiler for SetElementOfFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFunction>> {
     match (elem, set) {
         (elem, Value::Set(set)) => Ok(Box::new(SetElementOfFxn {
@@ -97,7 +98,9 @@ fn set_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFunction>>
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetElementOf {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetElementOf {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

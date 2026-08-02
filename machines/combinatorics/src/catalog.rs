@@ -1,7 +1,10 @@
-use mech_core::{FunctionCatalogBuilder, FunctionExport, FunctionExposure, MResult};
+use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(feature = "source")]
+use mech_core::{FunctionExport, FunctionExposure};
+#[cfg(feature = "source")]
 use std::sync::Arc;
 
-#[cfg(feature = "n_choose_k")]
+#[cfg(all(feature = "source", feature = "n_choose_k"))]
 use crate::CombinatoricsNChooseK;
 
 macro_rules! install_numeric_runtime_factories {
@@ -82,6 +85,7 @@ macro_rules! install_numeric_runtime_factories {
 }
 
 /// Installs the frozen named source-specializer surface for the combinatorics machine.
+#[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "n_choose_k")]
     {
@@ -110,12 +114,7 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_runtime(builder)?;
-    install_source(builder)
-}
-
-#[cfg(all(test, feature = "n_choose_k"))]
+#[cfg(all(test, feature = "source", feature = "n_choose_k"))]
 mod tests {
     use super::*;
     use mech_core::OperationId;

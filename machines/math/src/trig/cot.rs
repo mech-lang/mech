@@ -53,6 +53,7 @@ impl_math_unop!(
 #[cfg(feature = "f64")]
 impl_math_unop!(MathCot, f64, cot, FeatureFlag::Custom(hash_str("math/cot")));
 
+#[cfg(feature = "source")]
 fn impl_cot_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathCot,
@@ -62,8 +63,10 @@ fn impl_cot_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathCot {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathCot {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
