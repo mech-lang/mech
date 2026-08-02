@@ -1,0 +1,621 @@
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::PathBuf,
+    sync::Arc,
+};
+
+use mech_build::{
+    NativeApplicationBuilder, NativeApplicationKind, NativeBuildEnvironment, NativeBuildProfile,
+    NativeBuildRequest, NativeDependencySource, NativeEmit, NativeHostCatalog,
+    NativeHostFunctionLinkage, NativeRuntimeConfig, WorkspacePackage, fingerprint_workspace,
+};
+#[cfg(not(feature = "standard-hosts"))]
+use mech_build::{NativeHostLinkage, NativeTargetFamily};
+use mech_core::{
+    ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant,
+    ExecutionHostFunctionRequest, FunctionArgs, FunctionCatalog, FunctionCatalogBuilder, MResult,
+    MechFunction, RuntimeType, hash_str, write_bytecode,
+};
+use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
+
+#[path = "support/native_linkage.rs"]
+mod native_linkage;
+#[cfg(not(feature = "standard-hosts"))]
+use mech_runtime::{HostContextManifest, HostManifestConfig};
+use native_linkage::representative_catalog;
+
+const LITERAL_F64: &[u8] =
+    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/literal-f64.mecb");
+const SCALAR_ADD_F64: &[u8] =
+    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/scalar-add-f64.mecb");
+const FIXED_MATRIX_ADD_F64: &[u8] =
+    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/fixed-matrix-add-f64.mecb");
+const DYNAMIC_MATRIX_ADD_F64: &[u8] =
+    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/dynamic-matrix-add-f64.mecb");
+const VARIADIC_HORZCAT_F64: &[u8] =
+    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/variadic-horzcat-f64.mecb");
+const CLI_STDOUT: &[u8] =
+    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/cli-stdout.mecb");
+
+#[cfg(not(feature = "standard-hosts"))]
+fn cli_manifest() -> MResult<HostManifestConfig> {
+    Ok(HostManifestConfig {
+        provider: "cli".to_owned(),
+        contexts: vec![
+            HostContextManifest {
+                name: "env".to_owned(),
+                base_uri_template: "cli://{instance}/env".to_owned(),
+                operations: vec!["read".to_owned()],
+            },
+            HostContextManifest {
+                name: "stdout".to_owned(),
+                base_uri_template: "cli://{instance}/stdout".to_owned(),
+                operations: vec!["write".to_owned()],
+            },
+            HostContextManifest {
+                name: "stderr".to_owned(),
+                base_uri_template: "cli://{instance}/stderr".to_owned(),
+                operations: vec!["write".to_owned()],
+            },
+        ],
+    })
+}
+
+#[cfg(not(feature = "standard-hosts"))]
+fn validate_cli_settings(_instance: &str, _settings: &ConfigValue) -> MResult<()> {
+    Ok(())
+}
+
+#[cfg(feature = "standard-hosts")]
+fn cli_host_catalog() -> Arc<NativeHostCatalog> {
+    mech_build::standard_native_host_catalog().unwrap()
+}
+
+#[cfg(not(feature = "standard-hosts"))]
+fn cli_host_catalog() -> Arc<NativeHostCatalog> {
+    let mut catalog = NativeHostCatalog::new();
+    catalog
+        .insert_provider(NativeHostLinkage {
+            provider: "cli",
+            package: "mech-host-cli",
+            crate_name: "mech_host_cli",
+            cargo_features: &["provider"],
+            factory_path: "mech_host_cli::CliHostFactory::new",
+            supported_targets: &[NativeTargetFamily::Unix, NativeTargetFamily::Windows],
+            manifest: cli_manifest,
+            validate_settings: validate_cli_settings,
+        })
+        .unwrap();
+    Arc::new(catalog)
+}
+
+fn environment(function_catalog: Arc<FunctionCatalog>) -> NativeBuildEnvironment {
+    NativeBuildEnvironment {
+        function_catalog,
+        host_catalog: cli_host_catalog(),
+        dependency_source: NativeDependencySource::Registry {
+            version: "0.3.5".to_owned(),
+        },
+    }
+}
+
+fn empty_catalog() -> Arc<FunctionCatalog> {
+    Arc::new(FunctionCatalogBuilder::new().build().unwrap())
+}
+
+fn request(bytecode: &[u8]) -> NativeBuildRequest {
+    NativeBuildRequest {
+        bytecode: bytecode.to_vec(),
+        runtime_config: None,
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "phase1_app".to_owned(),
+        output: PathBuf::from("ignored-output"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    }
+}
+
+fn cli_runtime_config(provider: &str, operations: &[&str], paths: &[&str]) -> NativeRuntimeConfig {
+    NativeRuntimeConfig {
+        runtime: RuntimeConfig::default(),
+        hosts: vec![HostInstanceConfig {
+            name: "cli".to_owned(),
+            provider: provider.to_owned(),
+            settings: ConfigValue::Map(BTreeMap::new()),
+        }],
+        run_grants: vec![RunResourceGrantConfig {
+            target: "cli/stdout".to_owned(),
+            operations: operations
+                .iter()
+                .map(|operation| (*operation).to_owned())
+                .collect(),
+            paths: paths.iter().map(|path| (*path).to_owned()).collect(),
+        }],
+    }
+}
+
+fn unaddressed_runtime_configs() -> Vec<NativeRuntimeConfig> {
+    vec![
+        NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            hosts: vec![HostInstanceConfig {
+                name: "unused".to_owned(),
+                provider: "cli".to_owned(),
+                settings: ConfigValue::Map(BTreeMap::new()),
+            }],
+            run_grants: Vec::new(),
+        },
+        NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            hosts: Vec::new(),
+            run_grants: vec![RunResourceGrantConfig {
+                target: "unused/output".to_owned(),
+                operations: vec!["write".to_owned()],
+                paths: vec!["line".to_owned()],
+            }],
+        },
+    ]
+}
+
+fn plan(bytecode: &[u8]) -> mech_build::NativeBuildPlan {
+    NativeApplicationBuilder::new(environment(representative_catalog()))
+        .plan(&request(bytecode))
+        .unwrap()
+}
+
+fn assert_exact_runtime_function(bytecode: &[u8], name: &str, installer_path: &str, package: &str) {
+    let plan = plan(bytecode);
+    assert_eq!(plan.application_kind, NativeApplicationKind::Engine);
+    assert_eq!(plan.runtime_functions.len(), 1);
+    let function = &plan.runtime_functions[0];
+    assert_eq!(function.runtime_name, name);
+    assert_eq!(function.runtime_id, hash_str(name));
+    assert_eq!(function.installer_path, installer_path);
+    assert_eq!(function.package, package);
+}
+
+#[test]
+fn literal_only_bytecode_yields_an_engine_plan_without_runtime_config() {
+    let plan = plan(LITERAL_F64);
+
+    assert_eq!(plan.application_kind, NativeApplicationKind::Engine);
+    assert!(plan.runtime_functions.is_empty());
+    assert!(plan.application_requirements.is_empty());
+    assert!(plan.hosts.is_empty());
+    assert!(plan.run_grants.is_empty());
+    assert!(plan.core_features.iter().any(|feature| feature == "f64"));
+    assert!(plan.engine_features.iter().any(|feature| feature == "f64"));
+}
+
+#[test]
+fn host_free_plan_accepts_scalar_runtime_config_as_plan_identity() {
+    let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
+    let mut request = request(LITERAL_F64);
+    let mut runtime = RuntimeConfig::default();
+    runtime.name = "custom-native-runtime".to_owned();
+    runtime.limits.max_steps_per_turn = Some(777);
+    request.runtime_config = Some(NativeRuntimeConfig {
+        runtime: runtime.clone(),
+        hosts: Vec::new(),
+        run_grants: Vec::new(),
+    });
+
+    let plan = builder.plan(&request).unwrap();
+    assert_eq!(plan.application_kind, NativeApplicationKind::Hosted);
+    assert_eq!(plan.runtime_config, runtime);
+}
+
+#[test]
+fn host_free_plan_rejects_unaddressed_hosts_and_grants() {
+    let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
+    for config in unaddressed_runtime_configs() {
+        let mut request = request(LITERAL_F64);
+        request.runtime_config = Some(config);
+
+        let error = builder.plan(&request).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeRuntimeConfigUnsupported");
+    }
+}
+
+#[test]
+fn host_function_only_plan_rejects_unaddressed_runtime_config() {
+    const HOST_FUNCTION: &str = "phase1-host-function";
+    let mut host_catalog = NativeHostCatalog::new();
+    host_catalog
+        .insert_function(NativeHostFunctionLinkage {
+            name: HOST_FUNCTION,
+            package: "mech-host-test",
+            crate_name: "mech_host_test",
+            cargo_features: &["provider"],
+            installer_path: "mech_host_test::install_phase1_host_function",
+        })
+        .unwrap();
+    let mut build_environment = environment(representative_catalog());
+    build_environment.host_catalog = Arc::new(host_catalog);
+
+    let builder = NativeApplicationBuilder::new(build_environment);
+    for config in unaddressed_runtime_configs() {
+        let mut request = request(&host_function_only_bytecode(HOST_FUNCTION));
+        request.runtime_config = Some(config);
+
+        let error = builder.plan(&request).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeRuntimeConfigUnsupported");
+    }
+}
+
+#[test]
+fn scalar_add_resolves_only_the_exact_scalar_installer() {
+    assert_exact_runtime_function(
+        SCALAR_ADD_F64,
+        "AddSS<f64>",
+        "mech_math::__mech_native::install_add_ss_f64",
+        "mech-math",
+    );
+}
+
+#[test]
+fn fixed_matrix_add_resolves_the_exact_fixed_matrix_installer() {
+    assert_exact_runtime_function(
+        FIXED_MATRIX_ADD_F64,
+        "AddM2M2<f64>",
+        "mech_math::__mech_native::install_add_m2m2_f64",
+        "mech-math",
+    );
+}
+
+#[test]
+fn dynamic_matrix_add_resolves_the_exact_dynamic_matrix_installer() {
+    assert_exact_runtime_function(
+        DYNAMIC_MATRIX_ADD_F64,
+        "AddMDMD<f64>",
+        "mech_math::__mech_native::install_add_mdmd_f64",
+        "mech-math",
+    );
+}
+
+#[test]
+fn variadic_horzcat_resolves_the_exact_variadic_installer() {
+    assert_exact_runtime_function(
+        VARIADIC_HORZCAT_F64,
+        "HorizontalConcatenateNArgs",
+        "mech_engine::__mech_native::install_horizontal_concatenate_n_args_f64",
+        "mech-engine",
+    );
+}
+
+#[test]
+fn cli_stdout_yields_a_hosted_plan() {
+    let mut request = request(CLI_STDOUT);
+    request.runtime_config = Some(cli_runtime_config("cli", &["write"], &["line"]));
+
+    let plan = NativeApplicationBuilder::new(environment(representative_catalog()))
+        .plan(&request)
+        .unwrap();
+
+    assert_eq!(plan.application_kind, NativeApplicationKind::Hosted);
+    assert_eq!(plan.hosts.len(), 1);
+    assert_eq!(plan.hosts[0].name, "cli");
+    assert_eq!(plan.hosts[0].provider, "cli");
+    assert_eq!(plan.hosts[0].package, "mech-host-cli");
+    assert_eq!(
+        plan.hosts[0].factory_path,
+        "mech_host_cli::CliHostFactory::new"
+    );
+    assert_eq!(plan.run_grants.len(), 1);
+    assert!(
+        plan.runtime_features
+            .iter()
+            .any(|feature| feature == "string")
+    );
+}
+
+#[test]
+fn hosted_bytecode_without_runtime_config_fails_before_generation() {
+    let error = NativeApplicationBuilder::new(environment(representative_catalog()))
+        .plan(&request(CLI_STDOUT))
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeRuntimeConfigMissing");
+}
+
+#[test]
+fn unknown_runtime_ids_fail_before_generation() {
+    let bytecode = runtime_nullary_bytecode(0x0123_4567_89ab_cdef);
+    let error = NativeApplicationBuilder::new(environment(representative_catalog()))
+        .plan(&request(&bytecode))
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeRuntimeFunctionUnknown");
+}
+
+fn unused_factory(_arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    panic!("runtime factory must not execute during planning")
+}
+
+#[test]
+fn known_runtime_ids_without_native_metadata_fail_before_generation() {
+    const NAME: &str = "KnownButUnlinked";
+    let mut catalog = FunctionCatalogBuilder::new();
+    catalog
+        .insert_runtime_factory(NAME, unused_factory)
+        .unwrap();
+    let bytecode = runtime_nullary_bytecode(hash_str(NAME));
+
+    let error = NativeApplicationBuilder::new(environment(Arc::new(catalog.build().unwrap())))
+        .plan(&request(&bytecode))
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeRuntimeFunctionLinkageMissing");
+}
+
+#[test]
+fn unknown_and_browser_providers_fail_before_generation() {
+    for provider in ["untrusted", "browser"] {
+        let mut request = request(CLI_STDOUT);
+        request.runtime_config = Some(cli_runtime_config(provider, &["write"], &["line"]));
+
+        let error = NativeApplicationBuilder::new(environment(representative_catalog()))
+            .plan(&request)
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "NativeHostProviderUnknown");
+    }
+}
+
+#[test]
+fn cli_rejects_an_explicit_unsupported_target_family() {
+    let mut request = request(CLI_STDOUT);
+    request.target = Some("thumbv7em-none-eabihf".to_owned());
+    request.runtime_config = Some(cli_runtime_config("cli", &["write"], &["line"]));
+
+    let error = NativeApplicationBuilder::new(environment(representative_catalog()))
+        .plan(&request)
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeTargetUnsupported");
+}
+
+#[test]
+fn registry_dependency_source_requires_an_exact_version() {
+    let mut environment = environment(representative_catalog());
+    environment.dependency_source = NativeDependencySource::Registry {
+        version: "^0.3".to_owned(),
+    };
+    let error = NativeApplicationBuilder::new(environment)
+        .plan(&request(LITERAL_F64))
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeDependencyInvalid");
+}
+
+#[test]
+fn missing_run_grants_fail_before_generation() {
+    let mut request = request(CLI_STDOUT);
+    let mut config = cli_runtime_config("cli", &["write"], &["line"]);
+    config.run_grants.clear();
+    request.runtime_config = Some(config);
+
+    let error = NativeApplicationBuilder::new(environment(representative_catalog()))
+        .plan(&request)
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeRunGrantMissing");
+}
+
+#[test]
+fn bytecode_strings_cannot_select_cargo_packages_or_features() {
+    const UNTRUSTED: &str = "attacker-selected-package";
+    let bytecode = untrusted_string_bytecode(UNTRUSTED);
+    let plan = plan(&bytecode);
+
+    assert!(plan.packages.iter().all(|package| {
+        package.package != UNTRUSTED
+            && package.crate_name != UNTRUSTED
+            && package
+                .cargo_features
+                .iter()
+                .all(|feature| feature != UNTRUSTED)
+    }));
+    assert!(
+        plan.core_features
+            .iter()
+            .chain(&plan.engine_features)
+            .chain(&plan.runtime_features)
+            .all(|feature| feature != UNTRUSTED)
+    );
+}
+
+#[test]
+fn unrelated_program_types_do_not_become_machine_features() {
+    let plan = plan(&string_and_scalar_add_bytecode());
+    assert!(plan.core_features.iter().any(|feature| feature == "string"));
+    assert!(
+        plan.engine_features
+            .iter()
+            .any(|feature| feature == "string")
+    );
+
+    let math = plan
+        .packages
+        .iter()
+        .find(|package| package.package == "mech-math")
+        .unwrap();
+    assert!(math.cargo_features.iter().any(|feature| feature == "f64"));
+    assert!(
+        math.cargo_features
+            .iter()
+            .all(|feature| feature != "string")
+    );
+}
+
+#[test]
+fn equivalent_normalized_runtime_configs_produce_identical_plans() {
+    let mut first = request(CLI_STDOUT);
+    first.output = PathBuf::from("first-output");
+    first.runtime_config = Some(cli_runtime_config(
+        "cli",
+        &["write", "read", "write"],
+        &["text", "line", "line"],
+    ));
+
+    let mut second = request(CLI_STDOUT);
+    second.output = PathBuf::from("second-output");
+    second.runtime_config = Some(cli_runtime_config(
+        "cli",
+        &["read", "write"],
+        &["line", "text"],
+    ));
+
+    let builder = NativeApplicationBuilder::new(environment(representative_catalog()));
+    assert_eq!(
+        builder.plan(&first).unwrap(),
+        builder.plan(&second).unwrap()
+    );
+}
+
+#[test]
+fn absolute_workspace_relocation_does_not_change_the_fingerprint() {
+    let temporary = tempfile::tempdir().unwrap();
+    let first = temporary.path().join("first-location");
+    let second = temporary.path().join("different/second-location");
+    write_fingerprint_fixture(&first);
+    write_fingerprint_fixture(&second);
+
+    let package =
+        WorkspacePackage::new("mech-example", "mech_example", "packages/example").unwrap();
+    let first_fingerprint = fingerprint_workspace(&first, std::slice::from_ref(&package)).unwrap();
+    let second_fingerprint = fingerprint_workspace(&second, &[package]).unwrap();
+
+    assert_eq!(first_fingerprint, second_fingerprint);
+    assert_eq!(first_fingerprint.as_str().len(), 64);
+}
+
+fn runtime_nullary_bytecode(function: u64) -> Vec<u8> {
+    write_bytecode(&BytecodeProgram {
+        register_count: 1,
+        constants: Vec::new(),
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions: vec![
+            BytecodeInstruction::RuntimeNullary { function, dst: 0 },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+        dictionary: BTreeMap::new(),
+        requirements: Vec::new(),
+    })
+    .unwrap()
+}
+
+fn host_function_only_bytecode(name: &str) -> Vec<u8> {
+    write_bytecode(&BytecodeProgram {
+        register_count: 1,
+        constants: Vec::new(),
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions: vec![
+            BytecodeInstruction::HostCall {
+                requirement: 0,
+                dst: 0,
+                arguments: Vec::new(),
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+        dictionary: BTreeMap::new(),
+        requirements: vec![ApplicationRequirement::HostFunction(
+            ExecutionHostFunctionRequest {
+                name: name.to_owned(),
+            },
+        )],
+    })
+    .unwrap()
+}
+
+fn untrusted_string_bytecode(value: &str) -> Vec<u8> {
+    let dictionary = BTreeMap::from([(hash_str(value), value.to_owned())]);
+    write_bytecode(&BytecodeProgram {
+        register_count: 1,
+        constants: vec![EncodedConstant {
+            runtime_type: RuntimeType::String,
+            alignment: 1,
+            bytes: value.as_bytes().to_vec(),
+        }],
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions: vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+        dictionary,
+        requirements: Vec::new(),
+    })
+    .unwrap()
+}
+
+fn string_and_scalar_add_bytecode() -> Vec<u8> {
+    write_bytecode(&BytecodeProgram {
+        register_count: 4,
+        constants: vec![
+            EncodedConstant {
+                runtime_type: RuntimeType::String,
+                alignment: 1,
+                bytes: b"unrelated".to_vec(),
+            },
+            EncodedConstant {
+                runtime_type: RuntimeType::F64,
+                alignment: 8,
+                bytes: 1.0_f64.to_bits().to_le_bytes().to_vec(),
+            },
+            EncodedConstant {
+                runtime_type: RuntimeType::F64,
+                alignment: 8,
+                bytes: 2.0_f64.to_bits().to_le_bytes().to_vec(),
+            },
+        ],
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions: vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
+            BytecodeInstruction::ConstLoad {
+                dst: 1,
+                constant: 1,
+            },
+            BytecodeInstruction::ConstLoad {
+                dst: 2,
+                constant: 2,
+            },
+            BytecodeInstruction::RuntimeBinary {
+                function: hash_str("AddSS<f64>"),
+                dst: 3,
+                lhs: 1,
+                rhs: 2,
+            },
+            BytecodeInstruction::Return { src: 3 },
+        ],
+        dictionary: BTreeMap::new(),
+        requirements: Vec::new(),
+    })
+    .unwrap()
+}
+
+fn write_fingerprint_fixture(root: &std::path::Path) {
+    let package = root.join("packages/example");
+    fs::create_dir_all(package.join("src/nested")).unwrap();
+    fs::write(
+        root.join("Cargo.lock"),
+        "# deterministic fixture lockfile\nversion = 4\n",
+    )
+    .unwrap();
+    fs::write(
+        package.join("Cargo.toml"),
+        "[package]\nname = \"mech-example\"\nversion = \"0.3.5\"\nedition = \"2024\"\n",
+    )
+    .unwrap();
+    fs::write(package.join("src/lib.rs"), "mod nested;\n").unwrap();
+    fs::write(
+        package.join("src/nested.rs"),
+        "pub const VALUE: u64 = 42;\n",
+    )
+    .unwrap();
+}
