@@ -1,10 +1,11 @@
-use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
-    MechFunctionFactory,
-};
+use mech_core::{FunctionCatalogBuilder, MResult, MechFunctionFactory};
+#[cfg(feature = "source")]
+use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
 use paste::paste;
+#[cfg(feature = "source")]
 use std::sync::Arc;
 
+#[cfg(feature = "source")]
 fn install_operation<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
@@ -23,6 +24,7 @@ where
     })
 }
 
+#[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "and")]
     install_operation(builder, "logic/and", crate::LogicAnd {})?;
@@ -145,12 +147,7 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_runtime(builder)?;
-    install_source(builder)
-}
-
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
     use mech_core::OperationId;

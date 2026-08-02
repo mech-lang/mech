@@ -7,6 +7,7 @@ use num_traits::*;
 
 // Mul Assign -----------------------------------------------------------------
 
+#[cfg(feature = "source")]
 #[macro_export]
 macro_rules! impl_mul_assign_match_arms {
     ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
@@ -53,6 +54,7 @@ impl_assign_scalar_scalar!(Mul, *=);
 impl_assign_vector_vector!(Mul, *=);
 impl_assign_vector_scalar!(Mul, *=);
 
+#[cfg(feature = "source")]
 fn mul_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
     impl_op_assign_value_match_arms!(
       Mul,
@@ -74,7 +76,9 @@ fn mul_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MulAssignValue {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MulAssignValue {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
@@ -169,9 +173,12 @@ impl_mul_assign_range_fxn_v!(MulAssign1DRV, mul_assign_1d_range_vec, usize);
 #[cfg(feature = "matrix")]
 impl_mul_assign_range_fxn_v!(MulAssign1DRVB, mul_assign_1d_range_vec_b, bool);
 
+#[cfg(feature = "source")]
 op_assign_range_fxn!(mul_assign_range_fxn, MulAssign1DR);
 
+#[cfg(feature = "source")]
 pub struct MulAssignRange {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MulAssignRange {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
@@ -283,9 +290,12 @@ impl_mul_assign_range_fxn_v!(MulAssign2DRAV, mul_assign_2d_vector_all_mat, usize
 #[cfg(feature = "matrix")]
 impl_mul_assign_range_fxn_v!(MulAssign2DRAVB, mul_assign_2d_vector_all_mat_b, bool);
 
+#[cfg(feature = "source")]
 op_assign_range_all_fxn!(mul_assign_range_all_fxn, MulAssign2DRA);
 
+#[cfg(feature = "source")]
 pub struct MulAssignRangeAll {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MulAssignRangeAll {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {

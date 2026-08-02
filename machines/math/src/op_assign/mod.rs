@@ -60,19 +60,18 @@ macro_rules! impl_op_assign_range_fxn_s {
                 + One
                 + PartialEq
                 + PartialOrd
-                + ConstElem
                 + AsValueKind,
             #[cfg(feature = "compiler")]
-            T: CompileConst,
-            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+            T: CompileConst + ConstElem,
+            IxVec: Debug + AsRef<[$ix]> + AsNaKind,
             #[cfg(feature = "compiler")]
-            IxVec: CompileConst,
+            IxVec: CompileConst + ConstElem,
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R1, C1, S1>: Debug + AsNaKind,
             #[cfg(feature = "compiler")]
-            naMatrix<T, R1, C1, S1>: CompileConst,
+            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
         {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
@@ -217,25 +216,24 @@ macro_rules! impl_op_assign_range_fxn_v {
                 + One
                 + PartialEq
                 + PartialOrd
-                + ConstElem
                 + AsValueKind,
             #[cfg(feature = "compiler")]
-            T: CompileConst,
-            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+            T: CompileConst + ConstElem,
+            IxVec: AsNaKind + Debug + AsRef<[$ix]>,
             #[cfg(feature = "compiler")]
-            IxVec: CompileConst,
+            IxVec: CompileConst + ConstElem,
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R1, C1, S1>: Debug + AsNaKind,
             #[cfg(feature = "compiler")]
-            naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
+            naMatrix<T, R2, C2, S2>: Debug + AsNaKind,
             #[cfg(feature = "compiler")]
-            naMatrix<T, R2, C2, S2>: CompileConst,
+            naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
         {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
@@ -344,6 +342,7 @@ macro_rules! impl_op_assign_range_fxn_v {
 }
 
 //impl_set_range_arms
+#[cfg(feature = "source")]
 #[macro_export]
 macro_rules! op_assign_range_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
@@ -373,6 +372,7 @@ macro_rules! op_assign_range_fxn {
   }
 }
 
+#[cfg(feature = "source")]
 #[macro_export]
 macro_rules! op_assign_range_all_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
@@ -415,9 +415,9 @@ macro_rules! impl_assign_scalar_scalar {
       where
         T: Debug + Clone + Sync + Send + 'static +
            $op_name<Output = T> + [<$op_name Assign>] +
-           PartialEq + PartialOrd + ConstElem + AsValueKind,
+           PartialEq + PartialOrd + AsValueKind,
         #[cfg(feature = "compiler")]
-        T: CompileConst,
+        T: CompileConst + ConstElem,
         Ref<T>: ToValue
       {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -487,18 +487,18 @@ macro_rules! impl_assign_vector_vector {
       where
         Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
-        ConstElem + AsValueKind,
+        AsValueKind,
         #[cfg(feature = "compiler")]
-        T: CompileConst,
+        T: CompileConst + ConstElem,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         for<'a> &'a MatB: IntoIterator<Item = &'a T>,
-        MatA: Debug + Clone + ConstElem + AsValueKind + 'static,
+        MatA: Debug + Clone + AsValueKind + 'static,
         #[cfg(feature = "compiler")]
-        MatA: CompileConst,
-        MatB: Debug + ConstElem + AsValueKind + 'static,
+        MatA: CompileConst + ConstElem,
+        MatB: Debug + AsValueKind + 'static,
         #[cfg(feature = "compiler")]
-        MatB: CompileConst,
+        MatB: CompileConst + ConstElem,
       {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
@@ -580,14 +580,14 @@ macro_rules! impl_assign_vector_scalar {
       where
         Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
-        ConstElem + AsValueKind,
+        AsValueKind,
         #[cfg(feature = "compiler")]
-        T: CompileConst,
+        T: CompileConst + ConstElem,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-        MatA: Debug + Clone + ConstElem + AsValueKind + 'static,
+        MatA: Debug + Clone + AsValueKind + 'static,
         #[cfg(feature = "compiler")]
-        MatA: CompileConst,
+        MatA: CompileConst + ConstElem,
       {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
@@ -654,6 +654,7 @@ macro_rules! impl_assign_vector_scalar {
   }
 }
 
+#[cfg(feature = "source")]
 #[macro_export]
 macro_rules! impl_op_assign_value_match_arms {
   ($op:tt, $arg:expr,$($value_kind:ident, $feature:tt);+ $(;)?) => {

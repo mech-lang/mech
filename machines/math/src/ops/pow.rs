@@ -132,12 +132,11 @@ macro_rules! impl_powop {
                 + Div<Output = T>
                 + DivAssign
                 + Pow<T, Output = T>
-                + ConstElem
                 + AsValueKind
                 + Zero
                 + One,
             #[cfg(feature = "compiler")]
-            T: CompileConst,
+            T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
         {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -285,6 +284,7 @@ impl MechFunctionCompiler for PowRational {
     }
 }
 
+#[cfg(feature = "source")]
 fn impl_pow_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     match (&lhs_value, &rhs_value) {
         #[cfg(all(feature = "rational", feature = "i32"))]
@@ -308,4 +308,5 @@ fn impl_pow_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(MathPow, impl_pow_fxn, "math/pow");

@@ -58,6 +58,7 @@ impl_math_unop!(
     FeatureFlag::Custom(hash_str("math/trunc"))
 );
 
+#[cfg(feature = "source")]
 fn impl_trunc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathTrunc,
@@ -67,8 +68,10 @@ fn impl_trunc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathTrunc {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathTrunc {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

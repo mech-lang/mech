@@ -148,6 +148,7 @@ impl_matmul!(MatMulMDVD, DMatrix<T>, DVector<T>, DVector<T>);
 #[cfg(all(feature = "matrixd", feature = "row_vectord"))]
 impl_matmul!(MatMulMDRD, DMatrix<T>, RowDVector<T>, DMatrix<T>);
 
+#[cfg(feature = "source")]
 macro_rules! impl_matmul_match_arms {
   ($arg:expr, $($lhs_type:tt, $($matrix_kind:tt, $target_type:tt, $value_string:tt),+);+ $(;)?) => {
     match $arg {
@@ -327,6 +328,7 @@ macro_rules! impl_matmul_match_arms {
   }
 }
 
+#[cfg(feature = "source")]
 fn impl_matmul_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_matmul_match_arms!(
       (lhs_value, rhs_value),
@@ -347,4 +349,5 @@ fn impl_matmul_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFu
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(MatrixMatMul, impl_matmul_fxn, "matrix/matmul");

@@ -53,9 +53,9 @@ use std::ops::*;
 
 use std::fmt::Display;
 
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub mod catalog;
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub use self::catalog::*;
 
 #[cfg(feature = "dot")]

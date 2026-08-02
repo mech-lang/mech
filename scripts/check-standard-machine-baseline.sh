@@ -8,123 +8,123 @@ trap 'rm -rf "$scratch"' EXIT HUP INT TERM
 core_patch="patch.crates-io.mech-core.path=\"$repository_root/src/core\""
 abi_patch="patch.crates-io.mech-abi.path=\"$repository_root/src/abi\""
 
-# These disposable builds do not need debug information. Keeping all three
-# configurations for a machine in one target preserves isolation while reusing
-# its dependencies; the target is then discarded before the next machine.
 export CARGO_PROFILE_DEV_DEBUG=0
 export CARGO_PROFILE_TEST_DEBUG=0
 
-check_machine() {
+check_profile() {
   machine=$1
-  runtime_features=$2
-  compiler_features=$3
+  profile=$2
+  features=$3
   manifest="$repository_root/machines/$machine/Cargo.toml"
   target_dir="$scratch/$machine-target"
-  echo "checking $machine runtime-only operation configuration"
+
+  echo "checking $machine $profile profile"
   cargo +nightly-2026-03-03 check \
     --manifest-path "$manifest" \
     --target-dir "$target_dir" \
     --config "$core_patch" \
+    --config "$abi_patch" \
     --no-default-features \
-    --features "$runtime_features"
-
-  echo "checking $machine compiler-enabled operation configuration"
-  cargo +nightly-2026-03-03 check \
-    --manifest-path "$manifest" \
-    --target-dir "$target_dir" \
-    --config "$core_patch" \
-    --no-default-features \
-    --features "$compiler_features"
-
-  # Most standard machines currently have no default-profile unit assertions.
-  # Type-check every default target so cfg(test), examples, and benches remain
-  # healthy without code-generating and linking an empty test executable.
-  echo "checking $machine default targets"
-  case "$machine" in
-    combinatorics)
-      cargo +nightly-2026-03-03 check \
-        --manifest-path "$manifest" \
-        --target-dir "$target_dir" \
-        --config "$core_patch" \
-        --config "$abi_patch" \
-        --all-targets
-      ;;
-    *)
-      cargo +nightly-2026-03-03 check \
-        --manifest-path "$manifest" \
-        --target-dir "$target_dir" \
-        --config "$core_patch" \
-        --all-targets
-      ;;
-  esac
-
-  # Combinatorics is the only PR0 machine with default-profile assertions.
-  # Run those assertions against the already-validated reduced runtime profile.
-  if [ "$machine" = combinatorics ]; then
-    echo "testing combinatorics reduced-profile behavior"
-    cargo +nightly-2026-03-03 test \
-      --manifest-path "$manifest" \
-      --target-dir "$target_dir" \
-      --config "$core_patch" \
-      --config "$abi_patch" \
-      --no-default-features \
-      --features "$runtime_features" \
-      --lib
-  fi
-
-  rm -rf "$target_dir"
+    --features "$features"
 }
 
-check_machine \
-  math \
-  "program,functions,f64,add" \
-  "program,compiler,functions,f64,add"
+check_machine() {
+  machine=$1
+  operation_features=$2
 
-check_machine \
-  compare \
-  "program,functions,bool,f64,lt" \
-  "program,compiler,functions,bool,f64,lt"
+  check_profile "$machine" runtime "runtime,$operation_features"
+  check_profile "$machine" source "source,$operation_features"
+  check_profile "$machine" compiler "compiler,$operation_features"
+  check_profile "$machine" source+compiler "source,compiler,$operation_features"
+  check_profile "$machine" runtime_default runtime_default
+  check_profile "$machine" source_default source_default
+  check_profile "$machine" compiler_default compiler_default
 
-check_machine \
-  logic \
-  "program,functions,bool,and" \
-  "program,compiler,functions,bool,and"
+  rm -rf "$scratch/$machine-target"
+}
 
-check_machine \
-  range \
-  "program,functions,formulas,f64,row_vectord,inclusive" \
-  "program,compiler,functions,formulas,f64,row_vectord,inclusive"
+# These four profiles are also the reduced-closure contracts from PR3. They
+# deliberately omit transpose, baselib, matrixd, and formulas respectively.
+check_machine math "f64,add"
+check_machine compare "bool,f64,lt"
+check_machine logic "bool,and"
+check_machine range "f64,row_vectord,inclusive"
+check_machine matrix "f64,matrixd,vectord,solve"
+check_machine set "set,f64,union"
+check_machine string "string,concat"
+check_machine stats "f64,matrixd,vectord,sum"
+check_machine combinatorics "f64,n_choose_k"
 
-# The solve implementation imports Zero and One through a crate-root import
-# currently gated on transpose or matmul. Transpose is the smallest operation
-# feature that completes the existing solve-only feature closure.
-check_machine \
-  matrix \
-  "program,functions,f64,matrixd,vectord,solve,transpose" \
-  "program,compiler,functions,f64,matrixd,vectord,solve,transpose"
+# A runtime-only downstream crate must not be able to name a source
+# specializer. The dependency itself has already passed its runtime profile,
+# so a successful check here would mean the source boundary leaked.
+source_probe="$scratch/source-specializer-probe"
+mkdir -p "$source_probe/src"
+cat > "$source_probe/Cargo.toml" <<EOF
+[package]
+name = "machine-source-specializer-probe"
+version = "0.0.0"
+edition = "2024"
 
-# The set operation root currently includes the core set representation, so the
-# smallest valid reduced configuration uses baselib rather than a bare set root.
-check_machine \
-  set \
-  "program,baselib,union" \
-  "program,compiler,baselib,union"
+[dependencies]
+mech-math = { path = "$repository_root/machines/math", default-features = false, features = ["runtime", "f64", "add"] }
+EOF
+cat > "$source_probe/src/lib.rs" <<'EOF'
+use mech_math::MathAdd;
 
-check_machine \
-  string \
-  "program,functions,string,concat" \
-  "program,compiler,functions,string,concat"
+pub fn source_specializer_must_not_exist(_: MathAdd) {}
+EOF
+if cargo +nightly-2026-03-03 check \
+  --manifest-path "$source_probe/Cargo.toml" \
+  --target-dir "$scratch/source-probe-target" \
+  --config "$core_patch" \
+  --quiet >"$scratch/source-probe.log" 2>&1
+then
+  echo "runtime-only math unexpectedly exposed MathAdd" >&2
+  exit 1
+fi
+if ! grep -q 'MathAdd' "$scratch/source-probe.log"; then
+  cat "$scratch/source-probe.log" >&2
+  echo "source-specializer probe failed for an unrelated reason" >&2
+  exit 1
+fi
 
-check_machine \
-  stats \
-  "program,functions,f64,matrixd,vectord,sum" \
-  "program,compiler,functions,f64,matrixd,vectord,sum"
+# Enabling the core compiler API alone must not add lowering implementations
+# to a machine that did not select its compiler layer.
+compiler_probe="$scratch/compiler-impl-probe"
+mkdir -p "$compiler_probe/src"
+cat > "$compiler_probe/Cargo.toml" <<EOF
+[package]
+name = "machine-compiler-impl-probe"
+version = "0.0.0"
+edition = "2024"
 
-# NChooseKMatrix is registered unconditionally but its implementation is gated
-# on matrix support. Matrixd is the smallest valid matrix representation root.
-check_machine \
-  combinatorics \
-  "program,functions,f64,n_choose_k,matrixd" \
-  "program,compiler,functions,f64,n_choose_k,matrixd"
+[dependencies]
+mech-core = { path = "$repository_root/src/core", default-features = false, features = ["functions", "compiler", "f64"] }
+mech-math = { path = "$repository_root/machines/math", default-features = false, features = ["runtime", "f64", "add"] }
+EOF
+cat > "$compiler_probe/src/lib.rs" <<'EOF'
+use mech_core::MechFunctionCompiler;
+
+fn assert_compiler<T: MechFunctionCompiler>() {}
+
+pub fn compiler_impl_must_not_exist() {
+    assert_compiler::<mech_math::AddSS<f64>>();
+}
+EOF
+if cargo +nightly-2026-03-03 check \
+  --manifest-path "$compiler_probe/Cargo.toml" \
+  --target-dir "$scratch/compiler-probe-target" \
+  --config "$core_patch" \
+  --quiet >"$scratch/compiler-probe.log" 2>&1
+then
+  echo "runtime-only math unexpectedly exposed MechFunctionCompiler" >&2
+  exit 1
+fi
+if ! grep -q 'MechFunctionCompiler' "$scratch/compiler-probe.log"; then
+  cat "$scratch/compiler-probe.log" >&2
+  echo "compiler-boundary probe failed for an unrelated reason" >&2
+  exit 1
+fi
 
 echo "standard machine baseline passed"

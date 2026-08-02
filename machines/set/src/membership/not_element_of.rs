@@ -79,6 +79,7 @@ impl MechFunctionCompiler for SetNotElementOfFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_not_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFunction>> {
     match (elem, set) {
         (elem, Value::Set(set)) => Ok(Box::new(SetNotElementOfFxn {
@@ -97,7 +98,9 @@ fn set_not_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFuncti
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetNotElementOf {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetNotElementOf {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

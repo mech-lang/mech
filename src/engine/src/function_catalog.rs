@@ -17,33 +17,58 @@ pub fn install_intrinsic_source(builder: &mut FunctionCatalogBuilder) -> mech_co
 fn build_default_function_catalog() -> Arc<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
 
-    crate::stdlib::catalog::install_catalog(&mut builder)
+    crate::stdlib::catalog::install_runtime(&mut builder)
         .expect("engine function catalog fragment must be valid");
+    #[cfg(feature = "compiler")]
+    crate::stdlib::catalog::install_source(&mut builder)
+        .expect("engine source catalog fragment must be valid");
     #[cfg(feature = "mech-math")]
-    mech_math::install_catalog(&mut builder).expect("math function catalog fragment must be valid");
+    mech_math::install_runtime(&mut builder).expect("math runtime catalog fragment must be valid");
+    #[cfg(all(feature = "mech-math", feature = "compiler"))]
+    mech_math::install_source(&mut builder).expect("math source catalog fragment must be valid");
     #[cfg(feature = "mech-compare")]
-    mech_compare::install_catalog(&mut builder)
-        .expect("compare function catalog fragment must be valid");
+    mech_compare::install_runtime(&mut builder)
+        .expect("compare runtime catalog fragment must be valid");
+    #[cfg(all(feature = "mech-compare", feature = "compiler"))]
+    mech_compare::install_source(&mut builder)
+        .expect("compare source catalog fragment must be valid");
     #[cfg(feature = "mech-logic")]
-    mech_logic::install_catalog(&mut builder)
-        .expect("logic function catalog fragment must be valid");
+    mech_logic::install_runtime(&mut builder)
+        .expect("logic runtime catalog fragment must be valid");
+    #[cfg(all(feature = "mech-logic", feature = "compiler"))]
+    mech_logic::install_source(&mut builder).expect("logic source catalog fragment must be valid");
     #[cfg(feature = "mech-range")]
-    mech_range::install_catalog(&mut builder)
-        .expect("range function catalog fragment must be valid");
+    mech_range::install_runtime(&mut builder)
+        .expect("range runtime catalog fragment must be valid");
+    #[cfg(all(feature = "mech-range", feature = "compiler"))]
+    mech_range::install_source(&mut builder).expect("range source catalog fragment must be valid");
     #[cfg(feature = "mech-matrix")]
-    mech_matrix::install_catalog(&mut builder)
-        .expect("matrix function catalog fragment must be valid");
+    mech_matrix::install_runtime(&mut builder)
+        .expect("matrix runtime catalog fragment must be valid");
+    #[cfg(all(feature = "mech-matrix", feature = "compiler"))]
+    mech_matrix::install_source(&mut builder)
+        .expect("matrix source catalog fragment must be valid");
     #[cfg(feature = "mech-set")]
-    mech_set::install_catalog(&mut builder).expect("set function catalog fragment must be valid");
+    mech_set::install_runtime(&mut builder).expect("set runtime catalog fragment must be valid");
+    #[cfg(all(feature = "mech-set", feature = "compiler"))]
+    mech_set::install_source(&mut builder).expect("set source catalog fragment must be valid");
     #[cfg(feature = "mech-string")]
-    mech_string::install_catalog(&mut builder)
-        .expect("string function catalog fragment must be valid");
+    mech_string::install_runtime(&mut builder)
+        .expect("string runtime catalog fragment must be valid");
+    #[cfg(all(feature = "mech-string", feature = "compiler"))]
+    mech_string::install_source(&mut builder)
+        .expect("string source catalog fragment must be valid");
     #[cfg(feature = "stats")]
-    mech_stats::install_catalog(&mut builder)
-        .expect("stats function catalog fragment must be valid");
+    mech_stats::install_runtime(&mut builder)
+        .expect("stats runtime catalog fragment must be valid");
+    #[cfg(all(feature = "stats", feature = "compiler"))]
+    mech_stats::install_source(&mut builder).expect("stats source catalog fragment must be valid");
     #[cfg(feature = "combinatorics")]
-    mech_combinatorics::install_catalog(&mut builder)
-        .expect("combinatorics function catalog fragment must be valid");
+    mech_combinatorics::install_runtime(&mut builder)
+        .expect("combinatorics runtime catalog fragment must be valid");
+    #[cfg(all(feature = "combinatorics", feature = "compiler"))]
+    mech_combinatorics::install_source(&mut builder)
+        .expect("combinatorics source catalog fragment must be valid");
 
     Arc::new(
         builder

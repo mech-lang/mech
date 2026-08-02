@@ -105,6 +105,7 @@ macro_rules! lt_row_mat_op {
 
 impl_compare_fxns!(LT);
 
+#[cfg(feature = "source")]
 fn impl_lt_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       LT,
@@ -126,4 +127,5 @@ fn impl_lt_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFuncti
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(CompareLessThan, impl_lt_fxn, "compare/lt");

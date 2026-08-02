@@ -71,6 +71,7 @@ impl MechFunctionCompiler for SetSubsetFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_subset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetSubsetFxn {
@@ -89,7 +90,9 @@ fn set_subset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetSubset {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetSubset {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

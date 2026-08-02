@@ -169,6 +169,7 @@ macro_rules! min_row_mat_op {
 
 impl_compare_fxns2!(Min);
 
+#[cfg(feature = "source")]
 fn impl_min_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Min,
@@ -190,4 +191,5 @@ fn impl_min_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(CompareMin, impl_min_fxn, "compare/min");

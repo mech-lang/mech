@@ -332,6 +332,7 @@ impl_two_arg_fxn!(
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(CopysignF64, f64, f64, f64, copysign_op);
 
+#[cfg(feature = "source")]
 fn impl_copysign_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
     match (arg1_value, arg2_value) {
         #[cfg(feature = "f32")]
@@ -609,8 +610,10 @@ fn impl_copysign_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn Me
     }
 }
 
+#[cfg(feature = "source")]
 pub struct MathCopysign {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathCopysign {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

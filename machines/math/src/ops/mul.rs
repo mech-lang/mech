@@ -118,6 +118,7 @@ macro_rules! mul_row_mat_op {
 
 impl_math_fxns!(Mul);
 
+#[cfg(feature = "source")]
 fn impl_mul_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Mul,
@@ -139,4 +140,5 @@ fn impl_mul_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(MathMul, impl_mul_fxn, "math/mul");

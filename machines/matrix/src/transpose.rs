@@ -23,17 +23,9 @@ macro_rules! impl_transpose {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: Debug
-                + Clone
-                + Sync
-                + Send
-                + 'static
-                + ConstElem
-                + AsValueKind
-                + PartialEq
-                + PartialOrd,
+            T: Debug + Clone + Sync + Send + 'static + AsValueKind + PartialEq + PartialOrd,
             #[cfg(feature = "compiler")]
-            T: CompileConst,
+            T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
         {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -209,6 +201,7 @@ impl_transpose!(
     FeatureFlag::Builtin(FeatureKind::Transpose)
 );
 
+#[cfg(feature = "source")]
 macro_rules! impl_transpose_match_arms {
   ($arg:expr, $($input_type:ident, $($target_type:ident, $value_string:tt),+);+ $(;)?) => {
     paste!{
@@ -260,6 +253,7 @@ macro_rules! impl_transpose_match_arms {
   }
 }
 
+#[cfg(feature = "source")]
 fn impl_transpose_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_transpose_match_arms!(
       (lhs_value),
@@ -282,4 +276,5 @@ fn impl_transpose_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_urnop_fxn!(MatrixTranspose, impl_transpose_fxn, "matrix/transpose");

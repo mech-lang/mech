@@ -82,6 +82,7 @@ impl MechFunctionCompiler for SetUnionFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_union_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetUnionFxn {
@@ -103,7 +104,9 @@ fn set_union_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetUnion {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetUnion {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

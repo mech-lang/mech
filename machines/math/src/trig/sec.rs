@@ -53,6 +53,7 @@ impl_math_unop!(
 #[cfg(feature = "f64")]
 impl_math_unop!(MathSec, f64, sec, FeatureFlag::Custom(hash_str("math/sec")));
 
+#[cfg(feature = "source")]
 fn impl_sec_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathSec,
@@ -62,8 +63,10 @@ fn impl_sec_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathSec {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathSec {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

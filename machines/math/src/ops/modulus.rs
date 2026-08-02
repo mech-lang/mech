@@ -25,7 +25,6 @@ macro_rules! impl_binop2 {
                 + 'static
                 + PartialEq
                 + PartialOrd
-                + ConstElem
                 + Add<Output = T>
                 + AddAssign
                 + Sub<Output = T>
@@ -40,7 +39,7 @@ macro_rules! impl_binop2 {
                 + One
                 + AsValueKind,
             #[cfg(feature = "compiler")]
-            T: CompileConst,
+            T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
         {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -234,6 +233,7 @@ macro_rules! impl_math_fxns2 {
 
 impl_math_fxns2!(Mod);
 
+#[cfg(feature = "source")]
 fn impl_mod_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Mod,
@@ -253,4 +253,5 @@ fn impl_mod_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(MathMod, impl_mod_fxn, "math/mod");

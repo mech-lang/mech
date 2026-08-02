@@ -53,6 +53,7 @@ impl_math_unop!(
 #[cfg(feature = "f64")]
 impl_math_unop!(MathTan, f64, tan, FeatureFlag::Custom(hash_str("math/tan")));
 
+#[cfg(feature = "source")]
 fn impl_tan_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathTan,
@@ -62,8 +63,10 @@ fn impl_tan_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathTan {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathTan {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

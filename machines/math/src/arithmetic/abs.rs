@@ -148,6 +148,7 @@ impl_math_unop!(MathAbs, C64, abs, FeatureFlag::Custom(hash_str("math/abs")));
 #[cfg(feature = "r64")]
 impl_math_unop!(MathAbs, R64, abs, FeatureFlag::Custom(hash_str("math/abs")));
 
+#[cfg(feature = "source")]
 fn impl_abs_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathAbs,
@@ -169,8 +170,10 @@ fn impl_abs_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathAbs {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathAbs {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

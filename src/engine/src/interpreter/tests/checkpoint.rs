@@ -63,11 +63,12 @@ mod checkpoint_tests {
         (cell, backing)
     }
 
-    #[cfg(feature = "math_add")]
+    #[cfg(all(feature = "math_add", feature = "compiler"))]
     #[test]
     fn catalog_identity_and_function_environment_survive_children_clear_and_restore() {
         let mut builder = FunctionCatalogBuilder::new();
-        mech_math::install_math_add_catalog(&mut builder).unwrap();
+        mech_math::install_math_add_runtime(&mut builder).unwrap();
+        mech_math::install_math_add_source(&mut builder).unwrap();
         let operation = OperationId::from_name("math/add");
         builder
             .insert_export(FunctionExport {

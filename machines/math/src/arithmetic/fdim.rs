@@ -332,6 +332,7 @@ impl_two_arg_fxn!(
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(FdimF64, f64, f64, f64, fdim_op);
 
+#[cfg(feature = "source")]
 fn impl_fdim_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
     match (arg1_value, arg2_value) {
         #[cfg(feature = "f32")]
@@ -609,8 +610,10 @@ fn impl_fdim_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFu
     }
 }
 
+#[cfg(feature = "source")]
 pub struct MathFdim {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathFdim {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

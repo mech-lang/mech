@@ -9,9 +9,9 @@ extern crate paste;
 
 use mech_core::*;
 
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub mod catalog;
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub use self::catalog::*;
 
 #[cfg(feature = "matrixd")]

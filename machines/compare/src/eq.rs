@@ -112,6 +112,7 @@ pub struct AtomEq {
     pub rhs: Ref<MechAtom>,
     pub out: Ref<bool>,
 }
+#[cfg(feature = "atom")]
 impl MechFunctionFactory for AtomEq {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -176,6 +177,7 @@ pub struct TableEq {
     pub rhs: Ref<MechTable>,
     pub out: Ref<bool>,
 }
+#[cfg(feature = "table")]
 impl MechFunctionFactory for TableEq {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -233,6 +235,7 @@ impl MechFunctionCompiler for TableEq {
     }
 }
 
+#[cfg(feature = "source")]
 fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     match (&lhs_value, &rhs_value) {
         #[cfg(all(feature = "table"))]
@@ -275,4 +278,5 @@ fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFuncti
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(CompareEqual, impl_eq_fxn, "compare/eq");
