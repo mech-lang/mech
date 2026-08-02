@@ -17,6 +17,8 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
+mod support;
+
 const INPUT_BASE_URI: &str = "bench://clock/ticks";
 const INPUT_PATH: &str = "value";
 
@@ -84,7 +86,7 @@ impl RuntimeAfterCommitEffect for BenchAfterCommitEffect {
 }
 
 fn step_fixture(count: usize, _fail_tail: bool) -> StepFixture {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = support::source_runtime_builder()
         .id_generator(SequentialIdGenerator::starting_at(1))
         .build()
         .unwrap();
@@ -123,7 +125,7 @@ fn grant_host_call(runtime: &mut MechRuntime, capability: u64, name: &str) {
 }
 
 fn host_input_fixture(source_tail: &str) -> HostInputFixture {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = support::source_runtime_builder()
         .id_generator(SequentialIdGenerator::starting_at(1))
         .resource_provider(Box::new(BenchInputProvider))
         .build()
@@ -208,7 +210,7 @@ fn copied_host_snapshot(arguments: &[impl HostArgumentValue]) -> RuntimeValueSna
 fn failing_host_input_fixture() -> HostInputFixture {
     let fail = Arc::new(AtomicBool::new(false));
     let fail_for_host = fail.clone();
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = support::source_runtime_builder()
         .id_generator(SequentialIdGenerator::starting_at(1))
         .resource_provider(Box::new(BenchInputProvider))
         .host_function(DeterministicHostFunction::new(
@@ -250,7 +252,7 @@ fn failing_host_input_fixture() -> HostInputFixture {
 }
 
 fn capability_host_input_fixture() -> HostInputFixture {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = support::source_runtime_builder()
         .id_generator(SequentialIdGenerator::starting_at(1))
         .resource_provider(Box::new(BenchInputProvider))
         .host_function(DeterministicHostFunction::new(
@@ -281,7 +283,7 @@ fn capability_host_input_fixture() -> HostInputFixture {
 }
 
 fn effect_host_input_fixture() -> HostInputFixture {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = support::source_runtime_builder()
         .id_generator(SequentialIdGenerator::starting_at(1))
         .resource_provider(Box::new(BenchInputProvider))
         .host_function(PlannedStagedHostFunction::new(
@@ -317,7 +319,7 @@ fn effect_host_input_fixture() -> HostInputFixture {
 }
 
 fn object_host_input_fixture() -> HostInputFixture {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = support::source_runtime_builder()
         .id_generator(SequentialIdGenerator::starting_at(1))
         .resource_provider(Box::new(BenchInputProvider))
         .host_function(PlannedRuntimeManagedHostFunction::new(
@@ -352,10 +354,13 @@ fn object_host_input_fixture() -> HostInputFixture {
 }
 
 fn two_interpreter_fixture() -> TwoInterpreterFixture {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let catalog = support::source_catalog();
+    let mut program =
+        MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
     let mut updates = Vec::new();
     for interpreter_id in [101, 202] {
-        let mut interpreter = Interpreter::new(interpreter_id, 10_000);
+        let mut interpreter =
+            Interpreter::with_function_catalog(interpreter_id, 10_000, Arc::clone(&catalog));
         interpreter
             .interpret(&mech_syntax::parser::parse("input := 1.0\noutput := input + 1.0").unwrap())
             .unwrap();

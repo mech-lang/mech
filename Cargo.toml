@@ -27,6 +27,11 @@ name = "mechc"
 path = "src/bin/mechc.rs"
 required-features = ["compiler", "standard_compiler"]
 
+[[example]]
+name = "matrix_multiply"
+path = "examples/matrix_multiply.rs"
+required-features = ["standard_source", "project"]
+
 [profile.release]
 debug = false
 

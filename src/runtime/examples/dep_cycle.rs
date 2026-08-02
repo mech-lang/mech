@@ -4,9 +4,10 @@ use std::fmt::Display;
 use mech_core::{MResult, MechSourceCode};
 
 use mech_runtime::{
-    ModuleBuildOptions, ResolvedSource, RuntimeBuilder, SourceKind, SourceRequest, SourceResolver,
-    TaskRecord,
+    ModuleBuildOptions, ResolvedSource, SourceKind, SourceRequest, SourceResolver, TaskRecord,
 };
+
+mod support;
 
 #[derive(Debug)]
 struct CycleSourceResolver {
@@ -62,7 +63,9 @@ fn runtime_target() -> String {
 fn main() -> MResult<()> {
     let resolver = CycleSourceResolver::new();
 
-    let mut runtime = RuntimeBuilder::new().source_resolver(resolver).build()?;
+    let mut runtime = support::source_runtime_builder()
+        .source_resolver(resolver)
+        .build()?;
 
     println!("runtime: {}", short(runtime.id()));
 

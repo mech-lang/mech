@@ -4,8 +4,10 @@ use std::fs;
 use mech_core::{MResult, MechSourceCode};
 
 use mech_runtime::{
-    FileSourceResolver, ModuleBuildOptions, ResolvedSource, RuntimeBuilder, SourceKind, TaskRecord,
+    FileSourceResolver, ModuleBuildOptions, ResolvedSource, SourceKind, TaskRecord,
 };
+
+mod support;
 
 fn short_text(text: &str) -> String {
     if text.len() <= 18 {
@@ -34,7 +36,7 @@ fn main() -> MResult<()> {
     fs::write(
         &dep_path,
         r#"
-      y := 20 + 22
+      y := 42
       y
     "#,
     )?;
@@ -44,7 +46,9 @@ fn main() -> MResult<()> {
 
     let resolver = FileSourceResolver::new(&root);
 
-    let mut runtime = RuntimeBuilder::new().source_resolver(resolver).build()?;
+    let mut runtime = support::source_runtime_builder()
+        .source_resolver(resolver)
+        .build()?;
 
     println!("runtime: {}", short(runtime.id()));
 
@@ -57,7 +61,7 @@ fn main() -> MResult<()> {
         MechSourceCode::String(
             r#"
         +> dep.mec
-        x := 41 + 1
+        x := dep/y
         x
       "#
             .to_string(),

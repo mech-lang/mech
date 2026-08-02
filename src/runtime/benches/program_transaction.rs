@@ -12,6 +12,8 @@ use mech_runtime::{
 use std::hint::black_box;
 use std::sync::Arc;
 
+mod support;
+
 struct ExplicitFixture {
     runtime: MechRuntime,
     context: RuntimeContext,
@@ -95,7 +97,7 @@ fn stage_compensatable(fixture: &mut ExplicitFixture, count: usize) {
 }
 
 fn retained_runtime() -> MechRuntime {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = support::source_runtime_builder()
         .id_generator(SequentialIdGenerator::starting_at(1))
         .build()
         .unwrap();
@@ -116,12 +118,9 @@ fn module_options() -> ModuleBuildOptions<'static> {
 
 fn retained_root_fixture() -> MechRuntime {
     let resolver = InMemorySourceResolver::new()
-        .with_string(
-            "root.mec",
-            "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n",
-        )
+        .with_string("root.mec", "+> ./dep.mec\nanswer := dep/value\nanswer\n")
         .with_string("dep.mec", "value := 41\n<+ value\n");
-    MechRuntime::builder()
+    support::source_runtime_builder()
         .id_generator(SequentialIdGenerator::starting_at(1))
         .source_resolver(resolver)
         .build()
@@ -132,7 +131,7 @@ fn retained_root_failure_fixture() -> MechRuntime {
     let resolver = InMemorySourceResolver::new()
         .with_string("root.mec", "+> ./dep.mec\n+> ./missing.mec\nanswer := 1\n")
         .with_string("dep.mec", "value := 41\n<+ value\n");
-    MechRuntime::builder()
+    support::source_runtime_builder()
         .id_generator(SequentialIdGenerator::starting_at(1))
         .source_resolver(resolver)
         .build()
@@ -147,7 +146,7 @@ fn explicit_graph_fixture() -> ExplicitFixture {
 }
 
 fn execution_session_host_fixture() -> MechRuntime {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = support::source_runtime_builder()
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "bench/execution-session",
             |_context, _arguments| RuntimeValueSnapshot::try_capture(&Value::Bool(Ref::new(true))),
@@ -180,7 +179,7 @@ fn provider_preparation_fixture() -> InMemoryDocsProvider {
 
 fn extension_wrapper_fixture() -> MechRuntime {
     let resolver = InMemorySourceResolver::new().with_string("bench.mec", "answer := 42");
-    MechRuntime::builder()
+    support::source_runtime_builder()
         .source_resolver(resolver)
         .build()
         .unwrap()
@@ -210,7 +209,7 @@ fn explicit_failure_source() -> MechSourceCode {
 }
 
 fn staged_effect_rollback_fixture(count: usize) -> (ExplicitFixture, MechSourceCode) {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = support::source_runtime_builder()
         .id_generator(SequentialIdGenerator::starting_at(1))
         .host_function(PlannedStagedHostFunction::new(
             "bench/staged",

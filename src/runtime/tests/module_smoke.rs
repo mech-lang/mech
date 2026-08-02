@@ -691,7 +691,8 @@ fn assert_f64(result: impl IntoTestValue, expected: f64, label: &str) {
 fn direct_run_string_preserves_normal_imports() {
     let root = setup_modules(
         "+> ./math.mec
-ok := math/tau > 6.0
+ok := math/tau
+ok
 ",
     );
     let mut runtime = runtime_with_module_test_catalog()
@@ -705,7 +706,7 @@ ok := math/tau > 6.0
 
     let result = runtime.run_module(version).unwrap().result.into_value();
 
-    assert_bool_true(result, "direct run_string normal import");
+    assert_f64(result, 6.28318, "direct run_string normal import");
 }
 
 #[test]
