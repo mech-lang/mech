@@ -236,12 +236,26 @@ fn runtime_with_drivers(drivers: Vec<MockDriver>) -> MResult<MechRuntime> {
         .build()
 }
 
+fn planning_runtime_with_drivers(drivers: Vec<MockDriver>) -> MResult<MechRuntime> {
+    RuntimeBuilder::new()
+        .planning()
+        .host_factory(Box::new(MockDriverFactory::new(drivers)))?
+        .host_instance(HostInstanceConfig {
+            name: "clock".to_string(),
+            provider: "test-input".to_string(),
+            settings: ConfigValue::Map(Default::default()),
+        })
+        .build()
+}
+
 fn bind_single_mock_input(runtime: &mut MechRuntime) {
+    let source = RuntimeHostInputSource::new(MOCK_DRIVER_BASE_URI, MOCK_DRIVER_PATH).unwrap();
     runtime.live_input_bindings.insert(
-        RuntimeHostInputSource::new(MOCK_DRIVER_BASE_URI, MOCK_DRIVER_PATH).unwrap(),
-        vec![mech_engine::ProgramInputId {
+        source.clone(),
+        vec![crate::RuntimeLiveResourceBinding {
             interpreter_id: 1,
-            symbol_id: 1,
+            source,
+            target: mech_core::Ref::new(mech_core::Value::F64(mech_core::Ref::new(0.0))),
         }],
     );
 }
@@ -281,6 +295,23 @@ fn build_attaches_and_starts_driven_input_drivers() {
     runtime.start_input_drivers().unwrap();
     assert_eq!(state.borrow().start_count, 1);
     assert!(state.borrow().live);
+}
+
+#[test]
+fn planning_never_attaches_starts_or_stops_input_drivers() {
+    let state = Rc::new(RefCell::new(MockDriverState::default()));
+    {
+        let mut runtime =
+            planning_runtime_with_drivers(vec![MockDriver::new("a", state.clone())]).unwrap();
+        bind_single_mock_input(&mut runtime);
+        assert_eq!(runtime.input_driver_count(), 0);
+        runtime.start_input_drivers().unwrap();
+        assert_eq!(state.borrow().attach_count, 0);
+        assert_eq!(state.borrow().start_count, 0);
+        assert_eq!(state.borrow().stop_count, 0);
+        assert!(!state.borrow().live);
+    }
+    assert_eq!(state.borrow().stop_count, 0);
 }
 
 #[test]

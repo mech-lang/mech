@@ -61,15 +61,7 @@ pub(crate) fn source_value(runtime: &MechRuntime, source: &RuntimeHostInputSourc
                 source.path(),
             )
         });
-    runtime
-        .program
-        .interpreter()
-        .symbols()
-        .borrow()
-        .get(input.symbol_id)
-        .unwrap_or_else(|| panic!("missing symbol {}", input.symbol_id))
-        .borrow()
-        .clone()
+    input.target.borrow().clone()
 }
 
 pub(crate) fn symbol_cell(runtime: &MechRuntime, name: &str) -> ReactiveCellId {

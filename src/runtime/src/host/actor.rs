@@ -181,10 +181,13 @@ impl HostFunctionPlan for ActorStateGetHostFunction {
 
     fn plan(
         &self,
-        _context: &RuntimeCallContext,
+        context: &RuntimeCallContext,
         _arguments: &[RuntimeValueSnapshot],
     ) -> MResult<RuntimeValueSnapshot> {
-        snapshot(Value::Empty)
+        match context.actor_state() {
+            Some(_) => snapshot(Value::String(Ref::new(String::new()))),
+            None => snapshot(Value::Empty),
+        }
     }
 
     fn estimated_cost_items(&self, _arguments: &[RuntimeValueSnapshot]) -> u64 {
@@ -206,12 +209,11 @@ impl RuntimeManagedHostFunction for ActorStateGetHostFunction {
         let Some(state) = context.actor_state() else {
             return snapshot(Value::Empty);
         };
-        let Some(object) = services.get_object(state)? else {
-            return snapshot(Value::Empty);
-        };
-        snapshot(Value::String(Ref::new(
-            String::from_utf8_lossy(&object.data).to_string(),
-        )))
+        let value = services
+            .get_object(state)?
+            .map(|object| String::from_utf8_lossy(&object.data).to_string())
+            .unwrap_or_default();
+        snapshot(Value::String(Ref::new(value)))
     }
 }
 

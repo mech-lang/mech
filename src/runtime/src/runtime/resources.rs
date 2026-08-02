@@ -1,10 +1,11 @@
 use super::transaction::{RuntimeCommitResolution, RuntimeExecutionTransactionMode};
-use super::{MechRuntime, RuntimeInvalidOperationError};
+use super::{MechRuntime, RuntimeExecutionMode, RuntimeInvalidOperationError};
 use crate::{
     CapabilityId, CapabilityRequest, ResourcePathCapability, RunResourceGrantConfig,
     RuntimeCapabilityGrantSpec, RuntimeCapabilityOperation, RuntimeContext, RuntimeEffectId,
     RuntimeResourceKey, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, RuntimeValueSnapshot, TransactionId,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    RuntimeValueSnapshot, TransactionId,
 };
 use mech_core::{MResult, MechError, MechErrorKind, Value};
 use std::sync::Arc;
@@ -295,6 +296,22 @@ impl MechRuntime {
 
         request.value = request.value.try_deep_snapshot()?;
         self.authorize_resource_with_context(context, &request.operation, &key)?;
+        if self.execution_mode == RuntimeExecutionMode::Plan {
+            self.resources
+                .preflight_write(RuntimeResourceWritePreflightRequest {
+                    base_uri: request.base_uri,
+                    path: request.path,
+                    context_name: request.context_name,
+                    operation: request.operation,
+                    intent: request.intent,
+                })?;
+            return Ok(RuntimeEffectId {
+                transaction: context
+                    .transaction
+                    .expect("planning write established a transaction"),
+                sequence: u64::MAX,
+            });
+        }
         let staged_resource = if request.intent == RuntimeResourceWriteIntent::Assign {
             Some((
                 self.resources
@@ -415,7 +432,7 @@ impl MechRuntime {
             };
         }
         self.authorize_resource_with_context(context, &RuntimeCapabilityOperation::Read, &key)?;
-        if context.transaction.is_some() {
+        if self.execution_mode == RuntimeExecutionMode::Execute && context.transaction.is_some() {
             let transaction_id = context.transaction.unwrap();
             let resource_identity = self
                 .resources
@@ -428,7 +445,10 @@ impl MechRuntime {
                 return finish(value);
             }
         }
-        let value = self.resources.read(request)?;
+        let value = match self.execution_mode {
+            RuntimeExecutionMode::Execute => self.resources.read(request)?,
+            RuntimeExecutionMode::Plan => self.resources.plan_read(request)?,
+        };
         finish(value)
     }
 

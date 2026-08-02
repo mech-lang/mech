@@ -1,6 +1,6 @@
 use mech_core::{Ref, Value};
 
-use super::scheduling::{activation_send_count, apply_f64_input};
+use super::scheduling::apply_f64_input;
 use crate::runtime::test_support::{
     capabilities::{grant_read, grant_read_to, grant_write_to},
     providers::{
@@ -167,7 +167,6 @@ fn transactional_live_program_is_provisional_until_outer_commit() {
     assert_eq!(context.transaction, None);
     assert!(runtime.live_context_template.is_none());
     assert!(runtime.live_input_bindings.is_empty());
-    assert!(runtime.persistent_sends.is_empty());
     assert!(runtime.program.root_symbol_value("output").is_err());
 }
 
@@ -222,9 +221,7 @@ render-tick := @tick/tick
         )
         .unwrap();
     assert!(output.lines().is_empty());
-    assert_eq!(activation_send_count(&runtime), 1);
     let outcome = apply_f64_input(&mut runtime, "test://render/timer", "tick", 9.0);
     assert!(outcome.turn.is_some());
     assert_eq!(output.lines(), vec!["9"]);
-    assert_eq!(activation_send_count(&runtime), 1);
 }

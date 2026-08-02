@@ -271,10 +271,12 @@ impl MechRuntime {
         self.validate_context_for_runtime(context)?;
 
         let transaction_id = Self::context_transaction_id(context)?;
-        let (transaction_mode, has_program_baseline) = {
-            let transaction = self.active_execution_transaction(transaction_id)?;
-            (transaction.mode, transaction.program.is_some())
-        };
+        let has_program_baseline = self
+            .active_execution_transaction(transaction_id)?
+            .program
+            .is_some();
+        #[cfg(feature = "invariant_define")]
+        let transaction_mode = self.active_execution_transaction(transaction_id)?.mode;
         if has_program_baseline && self.program_transaction_owner != Some(transaction_id) {
             return self.coordinator_invariant_failure(
         "commit_runtime_transaction",

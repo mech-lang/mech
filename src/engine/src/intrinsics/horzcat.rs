@@ -844,19 +844,19 @@ where
     feature = "compiler",
     feature = "matrixd",
     feature = "row_vectord",
-    feature = "i64",
+    feature = "f64",
 ))]
 mod compiler_tests {
     use super::*;
     use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;
 
-    fn matrix() -> Ref<DMatrix<i64>> {
-        Ref::new(DMatrix::from_vec(1, 1, vec![7i64]))
+    fn matrix() -> Ref<DMatrix<f64>> {
+        Ref::new(DMatrix::from_vec(1, 1, vec![7.0]))
     }
 
     fn assert_single_matrix_load(
         context: &RecordingBytecodeCompilerContext,
-        matrix: &Ref<DMatrix<i64>>,
+        matrix: &Ref<DMatrix<f64>>,
     ) -> Register {
         let matrix_register = context.reg_map[&matrix.addr()];
         assert_eq!(
@@ -920,7 +920,7 @@ mod compiler_tests {
             e1: Box::new(matrix.clone()),
             e2: Box::new(matrix.clone()),
             e3: Box::new(matrix.clone()),
-            out: Ref::new(DMatrix::from_element(1, 4, 0i64)),
+            out: Ref::new(DMatrix::from_element(1, 4, 0.0)),
         };
         let mut context = RecordingBytecodeCompilerContext::default();
         function.compile(&mut context).unwrap();
@@ -938,7 +938,7 @@ mod compiler_tests {
         let matrix = matrix();
         let function = HorizontalConcatenateNArgs {
             e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
-            out: Ref::new(DMatrix::from_element(1, 2, 0i64)),
+            out: Ref::new(DMatrix::from_element(1, 2, 0.0)),
         };
         let mut context = RecordingBytecodeCompilerContext::default();
         function.compile(&mut context).unwrap();
@@ -954,12 +954,12 @@ mod compiler_tests {
     #[test]
     fn horizontal_concatenate_rdn_reuses_repeated_matrix_register() {
         let matrix = matrix();
-        let scalar = Ref::new(9i64);
+        let scalar = Ref::new(9.0);
         let scalar_address = scalar.addr();
         let function = HorizontalConcatenateRDN {
             matrix: vec![(Box::new(matrix.clone()), 0), (Box::new(matrix.clone()), 1)],
             scalar: vec![(scalar, 2)],
-            out: Ref::new(RowDVector::from_element(3, 0i64)),
+            out: Ref::new(RowDVector::from_element(3, 0.0)),
         };
         let mut context = RecordingBytecodeCompilerContext::default();
         function.compile(&mut context).unwrap();

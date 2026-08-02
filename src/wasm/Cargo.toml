@@ -161,7 +161,7 @@ matrix2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrix2", 
 matrix1 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrix1", "mech-syntax/matrix1", "mech-runtime/matrix1"]
 matrix2x3 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrix2x3", "mech-syntax/matrix2x3", "mech-runtime/matrix2x3"]
 matrix3x2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrix3x2", "mech-syntax/matrix3x2", "mech-runtime/matrix3x2"]
-row_vectord =["matrix", "matrix_horzcat", "mech-stdlib/row_vectord", "mech-syntax/row_vectord"]
+row_vectord =["matrix", "matrix_horzcat", "mech-stdlib/row_vectord", "mech-syntax/row_vectord", "mech-runtime/row_vectord"]
 vectord = ["matrix", "matrix_vertcat", "mech-stdlib/vectord", "mech-syntax/vectord", "mech-runtime/vectord"]
 matrixd = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-stdlib/matrixd", "mech-syntax/matrixd", "mech-runtime/matrixd"]
 

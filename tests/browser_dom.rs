@@ -593,6 +593,7 @@ name := @browser/form/name/_value
 @browser/form/output/_value = name"#,
         )
         .unwrap();
+
     grant_runtime_context_write(&mut runtime, "form/name/_value");
     let denied = runtime.run_string(
         r#"@browser := browser://dom/{:write(form/name/_value)}

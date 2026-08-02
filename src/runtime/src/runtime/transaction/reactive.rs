@@ -7,9 +7,13 @@ use super::{
 use crate::runtime::MechRuntime;
 use crate::runtime::state::ScopedRuntimeState;
 use crate::{RuntimeContext, RuntimeInvalidOperationError, TransactionId};
-use mech_core::{MResult, MechError, MechExecutionServices, Value};
+use mech_core::{
+    ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult, MechError,
+    MechExecutionServices, ValRef, Value,
+};
 use mech_engine::{
-    ExecutionServicesBorrowConflict, MechProgram, ProgramInputUpdate, ProgramTurnFinalization,
+    ExecutionServicesBorrowConflict, MechProgram, ProgramCellDuplicateTarget, ProgramCellUpdate,
+    ProgramTurnFinalization,
 };
 use std::cell::RefCell;
 use std::collections::HashSet;
@@ -68,21 +72,67 @@ struct RuntimeCoordinatedExecutionServices<'a, 'turn> {
 }
 
 impl MechExecutionServices for RuntimeCoordinatedExecutionServices<'_, '_> {
-    fn invoke_native(&mut self, name: &str, arguments: &[Value]) -> MResult<Value> {
+    fn invoke_host_function(
+        &mut self,
+        request: &ExecutionHostFunctionRequest,
+        arguments: &[Value],
+    ) -> MResult<Value> {
         let mut turn = self
             .turn
             .try_borrow_mut()
-            .map_err(|_| execution_services_borrow_conflict("runtime_invoke_native"))?;
+            .map_err(|_| execution_services_borrow_conflict("runtime_invoke_host_function"))?;
         #[cfg(test)]
-        if take_coordinated_service_reentry(name) {
+        if take_coordinated_service_reentry(&request.name) {
             let mut nested = RuntimeCoordinatedExecutionServices { turn: self.turn };
-            return nested.invoke_native(name, arguments);
+            return nested.invoke_host_function(request, arguments);
         }
         let RuntimeCoordinatedTurn {
             runtime, context, ..
         } = &mut *turn;
         runtime.with_runtime_execution_session(context, |session| {
-            session.invoke_native(name, arguments)
+            session.invoke_host_function(request, arguments)
+        })
+    }
+
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+        let mut turn = self
+            .turn
+            .try_borrow_mut()
+            .map_err(|_| execution_services_borrow_conflict("runtime_read_resource"))?;
+        let RuntimeCoordinatedTurn {
+            runtime, context, ..
+        } = &mut *turn;
+        runtime.with_runtime_execution_session(context, |session| session.read_resource(request))
+    }
+
+    fn write_resource(&mut self, request: &ExecutionResourceRequest, value: &Value) -> MResult<()> {
+        let mut turn = self
+            .turn
+            .try_borrow_mut()
+            .map_err(|_| execution_services_borrow_conflict("runtime_write_resource"))?;
+        let RuntimeCoordinatedTurn {
+            runtime, context, ..
+        } = &mut *turn;
+        runtime.with_runtime_execution_session(context, |session| {
+            session.write_resource(request, value)
+        })
+    }
+
+    fn bind_live_resource(
+        &mut self,
+        interpreter_id: u64,
+        request: &ExecutionResourceRequest,
+        target: ValRef,
+    ) -> MResult<()> {
+        let mut turn = self
+            .turn
+            .try_borrow_mut()
+            .map_err(|_| execution_services_borrow_conflict("runtime_bind_live_resource"))?;
+        let RuntimeCoordinatedTurn {
+            runtime, context, ..
+        } = &mut *turn;
+        runtime.with_runtime_execution_session(context, |session| {
+            session.bind_live_resource(interpreter_id, request, target)
         })
     }
 }
@@ -100,7 +150,7 @@ pub(in crate::runtime) struct PreparedRuntimeHostInput {
     pub(in crate::runtime) update_count: usize,
     pub(in crate::runtime) ignored_update_count: usize,
     pub(in crate::runtime) binding_count: usize,
-    pub(in crate::runtime) updates: Vec<ProgramInputUpdate>,
+    pub(in crate::runtime) updates: Vec<ProgramCellUpdate>,
 }
 
 impl MechRuntime {
@@ -123,17 +173,23 @@ impl MechRuntime {
                 continue;
             }
             let value = update.value.clone().into_mech_value()?;
-            for program_input in bindings {
-                if !seen_targets.insert(*program_input) {
+            for binding in bindings {
+                if binding.source != update.source {
+                    continue;
+                }
+                let identity = (binding.interpreter_id, binding.target_address());
+                if !seen_targets.insert(identity) {
                     return Err(MechError::new(
-                        mech_engine::ProgramInputDuplicateTarget {
-                            input: *program_input,
+                        ProgramCellDuplicateTarget {
+                            interpreter_id: binding.interpreter_id,
+                            target_address: binding.target_address(),
                         },
                         None,
                     ));
                 }
-                updates.push(ProgramInputUpdate {
-                    input: *program_input,
+                updates.push(ProgramCellUpdate {
+                    interpreter_id: binding.interpreter_id,
+                    target: binding.target.clone(),
                     value: value.clone(),
                 });
             }

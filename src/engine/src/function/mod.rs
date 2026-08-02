@@ -133,9 +133,7 @@ mod source_only {
                 ),
             )
         );
-        if !plan.activation_registration_active() {
-            p.with_services(|services| new_fxn.solve_result_with(services))?;
-        }
+        solve_specialized_initial_output(new_fxn.as_ref(), &plan, p)?;
         let result = new_fxn.out();
         trace_println!(
             p,
@@ -157,9 +155,7 @@ mod source_only {
         registration_arguments: Vec<Value>,
     ) -> MResult<Value> {
         let function = compiler.specialize(&compile_arguments)?;
-        if !plan.activation_registration_active() {
-            p.with_services(|services| function.solve_result_with(services))?;
-        }
+        solve_specialized_initial_output(function.as_ref(), plan, p)?;
         let output = function.out();
         plan.register_function(function, &registration_arguments)?;
         Ok(output)
@@ -194,9 +190,7 @@ mod source_only {
             Some(canonical_name),
             &compile_arguments,
         )?;
-        if !plan.activation_registration_active() {
-            p.with_services(|services| function.solve_result_with(services))?;
-        }
+        solve_specialized_initial_output(function.as_ref(), plan, p)?;
         let output = function.out();
         plan.register_function(function, &registration_arguments)?;
         Ok(output)
@@ -216,6 +210,26 @@ mod source_only {
             arguments,
             registration_arguments,
         )
+    }
+
+    fn solve_specialized_initial_output(
+        function: &dyn MechFunction,
+        plan: &Plan,
+        p: &InterpreterExecution<'_>,
+    ) -> MResult<()> {
+        if !plan.activation_registration_active() {
+            match function.initial_solve_policy() {
+                InitialSolvePolicy::Solve => {
+                    p.with_services(|services| function.solve_result_with(services))?;
+                }
+                InitialSolvePolicy::PreserveSpecializedOutput => {
+                    p.with_services(|services| {
+                        function.initialize_preserved_output_with(services)
+                    })?;
+                }
+            }
+        }
+        Ok(())
     }
 
     // Executes a user-defined function. Handles argument count validation,
@@ -1268,12 +1282,16 @@ mod source_only {
         struct FailingInitializationCompiler {
             solve_calls: Arc<AtomicUsize>,
             solve_result_calls: Arc<AtomicUsize>,
+            preserved_initialization_calls: Arc<AtomicUsize>,
+            initial_solve_policy: InitialSolvePolicy,
         }
 
         struct FailingInitializationFunction {
             solve_calls: Arc<AtomicUsize>,
             solve_result_calls: Arc<AtomicUsize>,
+            preserved_initialization_calls: Arc<AtomicUsize>,
             output: Ref<f64>,
+            initial_solve_policy: InitialSolvePolicy,
         }
 
         impl FunctionSpecializer for FailingInitializationCompiler {
@@ -1281,7 +1299,9 @@ mod source_only {
                 Ok(Box::new(FailingInitializationFunction {
                     solve_calls: self.solve_calls.clone(),
                     solve_result_calls: self.solve_result_calls.clone(),
+                    preserved_initialization_calls: self.preserved_initialization_calls.clone(),
                     output: Ref::new(123.0),
+                    initial_solve_policy: self.initial_solve_policy,
                 }))
             }
         }
@@ -1299,6 +1319,19 @@ mod source_only {
                     },
                     None,
                 ))
+            }
+
+            fn initial_solve_policy(&self) -> InitialSolvePolicy {
+                self.initial_solve_policy
+            }
+
+            fn initialize_preserved_output_with(
+                &self,
+                _services: &mut dyn MechExecutionServices,
+            ) -> MResult<()> {
+                self.preserved_initialization_calls
+                    .fetch_add(1, Ordering::SeqCst);
+                Ok(())
             }
 
             fn out(&self) -> Value {
@@ -1328,6 +1361,8 @@ mod source_only {
             Arc::new(FailingInitializationCompiler {
                 solve_calls,
                 solve_result_calls,
+                preserved_initialization_calls: Arc::new(AtomicUsize::new(0)),
+                initial_solve_policy: InitialSolvePolicy::Solve,
             })
         }
 
@@ -1383,6 +1418,37 @@ mod source_only {
             assert_eq!(solve_calls.load(Ordering::SeqCst), 0);
             assert_eq!(plan.len(), plan_len + 1);
         }
+
+        #[test]
+        fn preserve_specialized_output_skips_initial_solve_and_registers_once() {
+            let interpreter = Interpreter::new(0, 100);
+            let mut services = NoMechExecutionServices;
+            let execution = InterpreterExecution::new(&interpreter, &mut services);
+            let arguments = vec![Value::F64(Ref::new(1.0))];
+            let solve_calls = Arc::new(AtomicUsize::new(0));
+            let solve_result_calls = Arc::new(AtomicUsize::new(0));
+            let preserved_initialization_calls = Arc::new(AtomicUsize::new(0));
+            let plan = interpreter.plan();
+            let plan_len = plan.len();
+
+            let result = execute_function_specializer(
+                Arc::new(FailingInitializationCompiler {
+                    solve_calls: solve_calls.clone(),
+                    solve_result_calls: solve_result_calls.clone(),
+                    preserved_initialization_calls: preserved_initialization_calls.clone(),
+                    initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
+                }),
+                &arguments,
+                &execution,
+            )
+            .expect("the planned output must be preserved without calling solve_result");
+
+            assert!(matches!(result, Value::F64(_)));
+            assert_eq!(solve_result_calls.load(Ordering::SeqCst), 0);
+            assert_eq!(solve_calls.load(Ordering::SeqCst), 0);
+            assert_eq!(preserved_initialization_calls.load(Ordering::SeqCst), 1);
+            assert_eq!(plan.len(), plan_len + 1);
+        }
     }
 } // mod source_only
 
@@ -1391,6 +1457,8 @@ pub use source_only::*;
 pub mod catalog;
 pub mod environment;
 pub mod extensions;
+#[cfg(feature = "program")]
+pub mod external;
 #[cfg(all(feature = "source", feature = "functions"))]
 pub mod module;
 #[cfg(all(feature = "source", feature = "native"))]
@@ -1400,6 +1468,8 @@ pub mod resolver;
 pub use catalog::*;
 pub use environment::*;
 pub use extensions::*;
+#[cfg(feature = "program")]
+pub use external::*;
 #[cfg(all(feature = "source", feature = "functions"))]
 pub use module::*;
 #[cfg(all(feature = "source", feature = "native"))]

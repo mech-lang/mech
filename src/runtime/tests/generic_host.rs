@@ -569,6 +569,14 @@ impl RuntimeResourceProvider for PlotterProvider {
             )),
         }
     }
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        if request.base_uri != self.base() || request.path != "read" {
+            return Err(fake_error(
+                "plotter planning read is not implemented for this path",
+            ));
+        }
+        Ok(Value::String(Ref::new(String::new())))
+    }
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
         if request.base_uri != self.base() {
             return Err(fake_error("unknown plotter base URI"));

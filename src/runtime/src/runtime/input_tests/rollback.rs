@@ -6,8 +6,7 @@ use std::sync::{
 use mech_core::{MechError, Ref, Value, hash_str};
 
 use super::scheduling::{
-    activation_plan_snapshot, activation_send_count, apply_f64_input, only_reactive_turn,
-    recorded_f64,
+    activation_plan_snapshot, apply_f64_input, only_reactive_turn, recorded_f64,
 };
 use crate::RuntimeConfig;
 use crate::runtime::test_support::{
@@ -83,7 +82,6 @@ fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
     assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0);
     assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
     assert_eq!(output.lines().len(), 1);
-    assert_eq!(runtime.persistent_send_count(), 1);
     fail_host.store(true, Ordering::SeqCst);
     let error = runtime
         .apply_host_input(RuntimeHostInput::single(
@@ -110,7 +108,6 @@ fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
     assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
     assert_eq!(plan_snapshot(&runtime), plan_before);
     assert_eq!(output.lines(), lines_before);
-    assert_eq!(runtime.persistent_send_count(), 1);
     runtime.run_string("recovery := 1").unwrap();
     assert_eq!(f64_value(&symbol_value(&runtime, "recovery")), 1.0);
 }
@@ -136,7 +133,6 @@ fn failed_source_does_not_leave_live_state_armed() {
     assert!(output.lines().is_empty());
     assert!(runtime.live_context_template.is_none());
     assert!(runtime.live_input_bindings.is_empty());
-    assert!(runtime.persistent_sends.is_empty());
 
     let mut context_b = runtime.runtime_context().unwrap().with_subject("subject-b");
     grant_read_to(&mut runtime, "subject-b", "test://clock/ticks", "value");
@@ -178,7 +174,6 @@ fn duration_failure_restores_live_state() {
     );
     assert!(runtime.live_context_template.is_none());
     assert!(runtime.live_input_bindings.is_empty());
-    assert!(runtime.persistent_sends.is_empty());
     runtime.config.limits.max_turn_duration_ms = None;
     runtime.run_string("recovery := 1").unwrap();
 }
@@ -266,7 +261,6 @@ render-tick := @tick/tick
 
     let plan = activation_plan_snapshot(&runtime);
     assert!(output.lines().is_empty());
-    assert_eq!(activation_send_count(&runtime), 2);
 
     runtime.config.limits.max_turn_duration_ms = Some(1);
     let error = runtime
@@ -282,14 +276,12 @@ render-tick := @tick/tick
     );
     assert!(output.lines().is_empty());
     assert_eq!(activation_plan_snapshot(&runtime), plan);
-    assert_eq!(activation_send_count(&runtime), 2);
 
     runtime.config.limits.max_turn_duration_ms = None;
     let retry = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
     assert!(retry.turn.is_some());
     assert_eq!(output.lines(), vec!["1", "1"]);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
-    assert_eq!(activation_send_count(&runtime), 2);
 }
 
 #[test]
@@ -325,7 +317,6 @@ other-value := other-tick
     let plan = activation_plan_snapshot(&runtime);
     assert_eq!(f64_value(&symbol_value(&runtime, "state")), 0.0);
     assert!(output.lines().is_empty());
-    assert_eq!(activation_send_count(&runtime), 1);
     let error = runtime
         .apply_host_input(RuntimeHostInput::single(
             RuntimeHostInputSource::new("test://render/timer", "tick").unwrap(),
@@ -350,7 +341,6 @@ other-value := other-tick
     assert_eq!(f64_value(&symbol_value(&runtime, "state")), 0.0);
     assert!(output.lines().is_empty());
     assert_eq!(activation_plan_snapshot(&runtime), plan);
-    assert_eq!(activation_send_count(&runtime), 1);
 }
 
 #[test]
@@ -405,7 +395,6 @@ other-value := other-tick
     let plan = activation_plan_snapshot(&runtime);
     assert_eq!(calls.load(Ordering::SeqCst), 0);
     assert!(output.lines().is_empty());
-    assert_eq!(activation_send_count(&runtime), 1);
     let error = runtime
         .apply_host_input(RuntimeHostInput::single(
             RuntimeHostInputSource::new("test://render/timer", "tick").unwrap(),
@@ -428,7 +417,6 @@ other-value := other-tick
     assert_eq!(f64_value(&symbol_value(&runtime, "state")), 1.0);
     assert_eq!(output.lines(), vec!["0"]);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
-    assert_eq!(activation_send_count(&runtime), 1);
 }
 
 #[test]
@@ -484,7 +472,6 @@ render-tick := @tick/tick
         "host invocation must not run during planning"
     );
     assert!(output.lines().is_empty());
-    assert_eq!(activation_send_count(&runtime), 1);
     let error = runtime
         .apply_host_input(RuntimeHostInput::single(
             RuntimeHostInputSource::new("test://render/timer", "tick").unwrap(),
@@ -497,14 +484,12 @@ render-tick := @tick/tick
     );
     assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert!(output.lines().is_empty());
-    assert_eq!(activation_send_count(&runtime), 1);
     assert_eq!(activation_plan_snapshot(&runtime), plan_before);
     let retry = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
     assert!(retry.turn.is_some());
     assert_eq!(calls.load(Ordering::SeqCst), 2);
     assert_eq!(output.lines().len(), 1);
     assert_eq!(recorded_f64(&output, 0), 1.0);
-    assert_eq!(activation_send_count(&runtime), 1);
     assert_eq!(activation_plan_snapshot(&runtime), plan_before);
 }
 
@@ -638,5 +623,4 @@ render-tick := @tick/tick
     assert_eq!(f64_value(&symbol_value(&runtime, "state")), 1.0);
     assert_eq!(output.lines(), vec!["0", "0", "1", "1"]);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
-    assert_eq!(activation_send_count(&runtime), 2);
 }

@@ -1,23 +1,20 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
-use mech_core::{MechError, Ref, Value, hash_str};
+use mech_core::{Ref, Value, hash_str};
 
 use super::super::MechRuntime;
-use super::scheduling::{ActivationPlanSnapshot, activation_plan_snapshot};
 use crate::runtime::test_support::{
     capabilities::{grant_host_call, grant_read, grant_read_to, grant_write},
     providers::{
-        RecordingTestOutput, TEST_OUTPUT_BASE_URI, TestResourceProvider, sleep_host,
-        test_provider_with, test_runtime, test_runtime_builder, test_runtime_with_output,
+        TEST_OUTPUT_BASE_URI, TestResourceProvider, sleep_host, test_provider_with, test_runtime,
+        test_runtime_builder, test_runtime_with_output,
     },
     values::{f64_value, plan_snapshot, source_value, symbol_value},
 };
 use crate::{
-    ActivationScopeEffectWithRegisterUnsupported, ActorId, BasicCapability, BasicOperation,
-    BasicResource, BasicSubject, CapabilityId, MessageId, MessageRecord, ObjectId, ResourceBudget,
-    RuntimeAuthorityScope, RuntimeHostInput, RuntimeHostInputSource, RuntimeHostInputUpdate,
-    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeIsolatedActivationSendUnsupported,
+    ActorId, BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, MessageId,
+    MessageRecord, ObjectId, ResourceBudget, RuntimeAuthorityScope, RuntimeHostInput,
+    RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue,
 };
 
 const TEST_CLOCK_BASE_URI: &str = "test://clock/ticks";
@@ -343,11 +340,15 @@ fn host_input_preparation_opens_no_transaction_or_budget_charge() {
     assert_eq!(runtime.event_sequence, event_sequence);
     assert!(runtime.active_transactions.is_empty());
 
-    let target = runtime.live_input_bindings[&source][0];
+    let target = runtime.live_input_bindings[&source][0].clone();
     let alias = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "alias").unwrap();
+    let alias_binding = crate::RuntimeLiveResourceBinding {
+        source: alias.clone(),
+        ..target
+    };
     runtime
         .live_input_bindings
-        .insert(alias.clone(), vec![target]);
+        .insert(alias.clone(), vec![alias_binding]);
     let duplicate = RuntimeHostInput::new(vec![
         RuntimeHostInputUpdate {
             source: source.clone(),
@@ -362,7 +363,7 @@ fn host_input_preparation_opens_no_transaction_or_budget_charge() {
     let error = runtime
         .apply_host_input_with_context(&mut context, duplicate)
         .unwrap_err();
-    assert_eq!(error.kind_name(), "ProgramInputDuplicateTarget");
+    assert_eq!(error.kind_name(), "ProgramCellDuplicateTarget");
     assert_eq!(context.budget.used_steps, used_steps);
     assert_eq!(runtime.event_sequence, event_sequence);
     assert!(runtime.active_transactions.is_empty());
@@ -497,254 +498,4 @@ fn host_input_context_accepts_transaction_capabilities_but_rejects_drift() {
         )
         .unwrap_err();
     assert!(format!("{error:?}").contains("RuntimeLiveContextMismatch"));
-}
-
-fn activation_rejection_runtime() -> (MechRuntime, RecordingTestOutput) {
-    let (mut r, o) = test_runtime_with_output(TestResourceProvider::new().with_value(
-        "test://render/timer",
-        "tick",
-        Value::F64(Ref::new(0.0)),
-    ));
-    grant_read(&mut r, "test://render/timer", "tick");
-    grant_write(&mut r, TEST_OUTPUT_BASE_URI, "line");
-    (r, o)
-}
-fn assert_rejected_activation_left_no_state(
-    r: &MechRuntime,
-    o: &RecordingTestOutput,
-    p: &ActivationPlanSnapshot,
-    s: usize,
-    b: &HashMap<RuntimeHostInputSource, Vec<mech_engine::ProgramInputId>>,
-) {
-    assert_eq!(activation_plan_snapshot(r), *p);
-    assert_eq!(r.persistent_sends.len(), s);
-    assert_eq!(r.live_input_bindings, *b);
-    assert!(o.lines().is_empty());
-    assert!(
-        !r.program
-            .interpreter()
-            .plan()
-            .activation_registration_active()
-    );
-}
-
-#[test]
-fn activation_send_registration_is_atomic_on_fixed_elaboration_failure() {
-    let (mut runtime, output) = activation_rejection_runtime();
-    runtime
-        .run_string(
-            r#"@tick := test://render/timer{:read(tick)}
-render-tick := @tick/tick
-"#,
-        )
-        .unwrap();
-    let plan = activation_plan_snapshot(&runtime);
-    let sends = runtime.persistent_sends.len();
-    let bindings = runtime.live_input_bindings.clone();
-
-    let error = runtime
-        .run_string(
-            r#"@out := test://effects/output{:write(line)}
-~> render-tick {
-@out/line <- render-tick
-registered-first := render-tick
-failure :=
-  function-that-does-not-exist(registered-first)
-}
-"#,
-        )
-        .unwrap_err();
-
-    assert!(
-        error.kind_name().contains("Function"),
-        "unexpected elaboration error: {error:?}"
-    );
-    assert_rejected_activation_left_no_state(&runtime, &output, &plan, sends, &bindings);
-    assert!(
-        !runtime
-            .program
-            .interpreter()
-            .symbols()
-            .borrow()
-            .contains(hash_str("registered-first"))
-    );
-    assert!(
-        !runtime
-            .program
-            .interpreter()
-            .symbols()
-            .borrow()
-            .contains(hash_str("failure"))
-    );
-}
-
-#[test]
-fn patterned_activation_send_registration_is_atomic_on_elaboration_failure() {
-    let (mut runtime, output) = activation_rejection_runtime();
-    runtime
-        .run_string(
-            r#"@tick := test://render/timer{:read(tick)}
-render-tick := @tick/tick
-"#,
-        )
-        .unwrap();
-    let plan = activation_plan_snapshot(&runtime);
-    let sends = runtime.persistent_sends.len();
-    let bindings = runtime.live_input_bindings.clone();
-    let error = runtime
-        .run_string(
-            r#"@out := test://effects/output{:write(line)}
-~> render-tick
-| selected => {
-    @out/line <- selected
-  }
-| * => {
-    failure := function-that-does-not-exist(1.0)
-  }
-"#,
-        )
-        .unwrap_err();
-    assert!(
-        error.kind_name().contains("Function"),
-        "unexpected elaboration error: {error:?}"
-    );
-    assert_rejected_activation_left_no_state(&runtime, &output, &plan, sends, &bindings);
-}
-
-#[test]
-fn patterned_activation_send_rejects_isolated_registration() {
-    let (mut runtime, output) = activation_rejection_runtime();
-    let plan = activation_plan_snapshot(&runtime);
-    let sends = runtime.persistent_sends.len();
-    let bindings = runtime.live_input_bindings.clone();
-    let mut context = runtime.runtime_context().unwrap();
-    let error = runtime
-        .run_string_with_isolated_registration_for_test(
-            &mut context,
-            r#"@tick := test://render/timer{:read(tick)}
-@out := test://effects/output{:write(line)}
-render-tick := @tick/tick
-~> render-tick
-| selected, selected > 0.0 => {
-    @out/line <- selected
-  }
-| * => {
-    fallback := 0.0
-  }
-"#,
-        )
-        .unwrap_err();
-    assert!(
-        error
-            .kind_as::<RuntimeIsolatedActivationSendUnsupported>()
-            .is_some(),
-        "unexpected error: {error:?}"
-    );
-    assert_rejected_activation_left_no_state(&runtime, &output, &plan, sends, &bindings);
-}
-
-fn rejected(source: &str, check: impl FnOnce(MechError)) {
-    let (mut r, o) = activation_rejection_runtime();
-    let p = activation_plan_snapshot(&r);
-    let n = r.persistent_sends.len();
-    let b = r.live_input_bindings.clone();
-    check(r.run_string(source).unwrap_err());
-    assert_rejected_activation_left_no_state(&r, &o, &p, n, &b);
-}
-#[test]
-fn activation_send_rejects_local_register_mix() {
-    rejected(
-        r#"@tick := test://render/timer{:read(tick)}
-@out := test://effects/output{:write(line)}
-render-tick := @tick/tick
-~x := 0.0
-~> render-tick {
-x = x + 1.0
-@out/line <- x
-}
-"#,
-        |e| {
-            assert!(
-                e.kind_as::<ActivationScopeEffectWithRegisterUnsupported>()
-                    .is_some(),
-                "unexpected error: {e:?}"
-            )
-        },
-    );
-}
-#[test]
-fn activation_send_rejects_local_op_assign_mix() {
-    rejected(
-        r#"@tick := test://render/timer{:read(tick)}
-@out := test://effects/output{:write(line)}
-render-tick := @tick/tick
-~x := 0.0
-~> render-tick {
-x += 1.0
-@out/line <- x
-}
-"#,
-        |e| {
-            assert!(
-                e.kind_as::<ActivationScopeEffectWithRegisterUnsupported>()
-                    .is_some(),
-                "unexpected error: {e:?}"
-            )
-        },
-    );
-}
-#[test]
-fn activation_send_rejects_context_assignment_in_scope() {
-    rejected(
-        r#"@tick := test://render/timer{:read(tick)}
-@out := test://effects/output{:write(line)}
-render-tick := @tick/tick
-x := 1.0
-~> render-tick {
-@out/line = x
-@out/line <- x
-}
-"#,
-        |e| {
-            let k = e
-                .kind_as::<RuntimeInvalidOperationError>()
-                .expect("expected RuntimeInvalidOperationError");
-            assert_eq!(k.operation, "direct_context_effect_placement");
-            assert!(
-                k.reason.contains("context assignment"),
-                "unexpected placement reason: {}",
-                k.reason
-            );
-            assert!(
-                e.kind_as::<ActivationScopeEffectWithRegisterUnsupported>()
-                    .is_none()
-            );
-        },
-    );
-}
-#[test]
-fn activation_send_rejects_isolated_registration() {
-    let (mut r, o) = activation_rejection_runtime();
-    let p = activation_plan_snapshot(&r);
-    let n = r.persistent_sends.len();
-    let b = r.live_input_bindings.clone();
-    let mut c = r.runtime_context().unwrap();
-    let e = r
-        .run_string_with_isolated_registration_for_test(
-            &mut c,
-            r#"@tick := test://render/timer{:read(tick)}
-@out := test://effects/output{:write(line)}
-render-tick := @tick/tick
-~> render-tick {
-@out/line <- render-tick
-}
-"#,
-        )
-        .unwrap_err();
-    assert!(
-        e.kind_as::<RuntimeIsolatedActivationSendUnsupported>()
-            .is_some(),
-        "unexpected error: {e:?}"
-    );
-    assert_rejected_activation_left_no_state(&r, &o, &p, n, &b);
 }

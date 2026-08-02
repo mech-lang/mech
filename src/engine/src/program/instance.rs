@@ -256,6 +256,13 @@ pub struct ProgramInputUpdate {
     pub value: Value,
 }
 
+#[derive(Clone)]
+pub struct ProgramCellUpdate {
+    pub interpreter_id: u64,
+    pub target: ValRef,
+    pub value: Value,
+}
+
 #[derive(Clone, Debug)]
 pub struct ProgramInputUpdateOutcome {
     pub updated_count: usize,
@@ -275,7 +282,7 @@ pub struct ProgramInputTurnOutcome {
     pub interpreter_turns: Vec<ProgramInterpreterTurnOutcome>,
 }
 
-struct PreparedProgramInputBatch {
+struct PreparedProgramCellBatch {
     assignments: Vec<Box<dyn MechFunction>>,
     targets: Vec<ValRef>,
     dirty_cells: Vec<ReactiveCellId>,
@@ -945,23 +952,21 @@ impl MechProgram {
         &mut self,
         updates: &[ProgramInputUpdate],
     ) -> MResult<ProgramInputUpdateOutcome> {
-        let prepared = self.prepare_input_updates(updates)?;
-        Self::apply_prepared_input_updates(&prepared)?;
+        let updates = self.resolve_input_updates(updates)?;
+        let prepared = self.prepare_cell_updates(&updates)?;
+        Self::apply_prepared_cell_updates(&prepared)?;
         Ok(ProgramInputUpdateOutcome {
             updated_count: prepared.assignments.len(),
             dirty_cells: prepared.dirty_cells,
         })
     }
 
-    fn prepare_input_updates(
+    fn resolve_input_updates(
         &self,
         updates: &[ProgramInputUpdate],
-    ) -> MResult<PreparedProgramInputBatch> {
-        let mut seen_targets = BTreeSet::new();
-        let mut assignments = Vec::with_capacity(updates.len());
-        let mut targets = Vec::with_capacity(updates.len());
-        let mut dirty_cells = Vec::new();
-        let mut dirty_cells_by_interpreter = BTreeMap::new();
+    ) -> MResult<Vec<ProgramCellUpdate>> {
+        let mut seen_inputs = BTreeSet::new();
+        let mut resolved = Vec::with_capacity(updates.len());
         for update in updates {
             let Some((actual_interpreter_id, sink)) = with_interpreter(
                 &self.interpreter,
@@ -990,7 +995,7 @@ impl MechProgram {
                 interpreter_id: actual_interpreter_id,
                 symbol_id: update.input.symbol_id,
             };
-            if !seen_targets.insert(canonical_input) {
+            if !seen_inputs.insert(canonical_input) {
                 return Err(MechError::new(
                     ProgramInputDuplicateTarget {
                         input: canonical_input,
@@ -998,12 +1003,53 @@ impl MechProgram {
                     None,
                 ));
             }
-            targets.push(sink.clone());
+            resolved.push(ProgramCellUpdate {
+                interpreter_id: actual_interpreter_id,
+                target: sink,
+                value: update.value.clone(),
+            });
+        }
+        Ok(resolved)
+    }
+
+    fn prepare_cell_updates(
+        &self,
+        updates: &[ProgramCellUpdate],
+    ) -> MResult<PreparedProgramCellBatch> {
+        let mut seen_targets = BTreeSet::new();
+        let mut assignments = Vec::with_capacity(updates.len());
+        let mut targets = Vec::with_capacity(updates.len());
+        let mut dirty_cells = Vec::new();
+        let mut dirty_cells_by_interpreter = BTreeMap::new();
+        for update in updates {
+            let Some(actual_interpreter_id) = with_interpreter(
+                &self.interpreter,
+                update.interpreter_id,
+                &mut |interpreter| interpreter.id,
+            ) else {
+                return Err(MechError::new(
+                    ProgramInputError {
+                        reason: format!("missing interpreter {}", update.interpreter_id),
+                    },
+                    None,
+                ));
+            };
+            let target_address = update.target.as_ptr() as usize;
+            if !seen_targets.insert((actual_interpreter_id, target_address)) {
+                return Err(MechError::new(
+                    ProgramCellDuplicateTarget {
+                        interpreter_id: actual_interpreter_id,
+                        target_address,
+                    },
+                    None,
+                ));
+            }
+            targets.push(update.target.clone());
             assignments.push(compile_stable_value_update(
-                sink.clone(),
+                update.target.clone(),
                 update.value.clone(),
             )?);
-            for cell in val_ref_reactive_cell_ids(&sink) {
+            for cell in val_ref_reactive_cell_ids(&update.target) {
                 if !dirty_cells.contains(&cell) {
                     dirty_cells.push(cell);
                 }
@@ -1015,7 +1061,7 @@ impl MechProgram {
                 }
             }
         }
-        Ok(PreparedProgramInputBatch {
+        Ok(PreparedProgramCellBatch {
             assignments,
             targets,
             dirty_cells,
@@ -1023,7 +1069,7 @@ impl MechProgram {
         })
     }
 
-    fn apply_prepared_input_updates(prepared: &PreparedProgramInputBatch) -> MResult<()> {
+    fn apply_prepared_cell_updates(prepared: &PreparedProgramCellBatch) -> MResult<()> {
         let mut staged = Vec::with_capacity(prepared.assignments.len());
         for assignment in &prepared.assignments {
             staged.push(assignment.stage_register()?);
@@ -1166,16 +1212,38 @@ impl MechProgram {
         services: &mut dyn MechExecutionServices,
         finalize: impl FnOnce(&ProgramInputTurnOutcome) -> ProgramTurnFinalization,
     ) -> MResult<ProgramInputTurnOutcome> {
+        let updates = self.resolve_input_updates(updates)?;
+        self.update_cells_and_advance_turn_coordinated(&updates, services, finalize)
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn update_cells_and_advance_turn_with_services(
+        &mut self,
+        updates: &[ProgramCellUpdate],
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<ProgramInputTurnOutcome> {
+        self.update_cells_and_advance_turn_coordinated(updates, services, |_| {
+            ProgramTurnFinalization::Commit
+        })
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn update_cells_and_advance_turn_coordinated(
+        &mut self,
+        updates: &[ProgramCellUpdate],
+        services: &mut dyn MechExecutionServices,
+        finalize: impl FnOnce(&ProgramInputTurnOutcome) -> ProgramTurnFinalization,
+    ) -> MResult<ProgramInputTurnOutcome> {
         with_reactive_journal_participant(|participant| {
             let mut journal = ProgramReactiveTurnJournal::new(participant);
             let execution =
-                self.update_inputs_and_advance_turn_with_journal(updates, &mut journal, services);
+                self.update_cells_and_advance_turn_with_journal(updates, &mut journal, services);
             match execution {
                 Ok(outcome) => {
                     #[cfg(feature = "invariant_define")]
                     if let Err(error) = self.validate_integrity_constraints() {
                         return self.finish_failed_reactive_operation(
-                            "update_inputs_and_advance_turn",
+                            "update_cells_and_advance_turn",
                             journal,
                             error,
                         );
@@ -1187,7 +1255,7 @@ impl MechProgram {
                         }
                         ProgramTurnFinalization::Rollback(error) => self
                             .finish_failed_reactive_operation(
-                                "update_inputs_and_advance_turn",
+                                "update_cells_and_advance_turn",
                                 journal,
                                 error,
                             ),
@@ -1198,7 +1266,7 @@ impl MechProgram {
                     }
                 }
                 Err(error) => self.finish_failed_reactive_operation(
-                    "update_inputs_and_advance_turn",
+                    "update_cells_and_advance_turn",
                     journal,
                     error,
                 ),
@@ -1207,21 +1275,21 @@ impl MechProgram {
     }
 
     #[cfg(feature = "functions")]
-    fn update_inputs_and_advance_turn_with_journal(
+    fn update_cells_and_advance_turn_with_journal(
         &mut self,
-        updates: &[ProgramInputUpdate],
+        updates: &[ProgramCellUpdate],
         journal: &mut ProgramReactiveTurnJournal<'_>,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ProgramInputTurnOutcome> {
-        journal.begin_operation("update_inputs_and_advance_turn")?;
-        let prepared = self.prepare_input_updates(updates)?;
+        journal.begin_operation("update_cells_and_advance_turn")?;
+        let prepared = self.prepare_cell_updates(updates)?;
         for target in &prepared.targets {
             journal.participant.capture_val_ref(target)?;
         }
         for interpreter_id in prepared.dirty_cells_by_interpreter.keys().copied() {
             self.capture_reactive_interpreter(interpreter_id, journal)?;
         }
-        Self::apply_prepared_input_updates(&prepared)?;
+        Self::apply_prepared_cell_updates(&prepared)?;
         let updated_count = prepared.assignments.len();
         let mut interpreter_turns = Vec::with_capacity(prepared.dirty_cells_by_interpreter.len());
         for (interpreter_id, dirty_cells) in prepared.dirty_cells_by_interpreter {
@@ -1261,7 +1329,8 @@ impl MechProgram {
         journal: &mut ProgramReactiveTurnJournal<'_>,
     ) -> MResult<ProgramInputTurnOutcome> {
         let mut services = NoMechExecutionServices;
-        self.update_inputs_and_advance_turn_with_journal(updates, journal, &mut services)
+        let updates = self.resolve_input_updates(updates)?;
+        self.update_cells_and_advance_turn_with_journal(&updates, journal, &mut services)
     }
 
     #[cfg(all(test, feature = "functions"))]
@@ -1434,6 +1503,23 @@ impl MechErrorKind for ProgramInputError {
 #[derive(Debug, Clone)]
 pub struct ProgramInputDuplicateTarget {
     pub input: ProgramInputId,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProgramCellDuplicateTarget {
+    pub interpreter_id: u64,
+    pub target_address: usize,
+}
+impl MechErrorKind for ProgramCellDuplicateTarget {
+    fn name(&self) -> &str {
+        "ProgramCellDuplicateTarget"
+    }
+    fn message(&self) -> String {
+        format!(
+            "duplicate program cell target at address {:#x} for interpreter {}",
+            self.target_address, self.interpreter_id,
+        )
+    }
 }
 impl MechErrorKind for ProgramInputDuplicateTarget {
     fn name(&self) -> &str {
@@ -3319,6 +3405,75 @@ mod compact_program_reactive_turn_tests {
             input,
             value: Value::Index(Ref::new(value)),
         }
+    }
+
+    #[test]
+    fn direct_cell_update_preserves_target_and_triggers_reactive_node() {
+        let mut program = test_mech_program(MechProgramConfig::default());
+        let id = program.interpreter().id;
+        let (_, target, inner) = index_input(&mut program, id, "input", 1);
+        let target_address = target.addr();
+        let inner_address = inner.addr();
+        let output = Ref::new(10usize);
+        let order = Rc::new(RefCell::new(Vec::new()));
+        let (function, _, solves) = test_function("direct", output.clone(), id, order);
+        add_reactive(&program, id, function, &inner);
+
+        let mut services = NoMechExecutionServices;
+        let outcome = program
+            .update_cells_and_advance_turn_with_services(
+                &[ProgramCellUpdate {
+                    interpreter_id: id,
+                    target: target.clone(),
+                    value: Value::Index(Ref::new(9)),
+                }],
+                &mut services,
+            )
+            .unwrap();
+
+        assert_eq!(outcome.updated_count, 1);
+        assert_eq!(outcome.interpreter_turns.len(), 1);
+        assert_eq!(
+            (*inner.borrow(), *output.borrow(), *solves.borrow()),
+            (9, 11, 1)
+        );
+        assert_eq!(
+            (target.addr(), inner.addr()),
+            (target_address, inner_address)
+        );
+    }
+
+    #[test]
+    fn direct_cell_update_rolls_back_target_and_output_after_downstream_failure() {
+        let mut program = test_mech_program(MechProgramConfig::default());
+        let id = program.interpreter().id;
+        let (_, target, inner) = index_input(&mut program, id, "input", 1);
+        let target_address = target.addr();
+        let inner_address = inner.addr();
+        let output = Ref::new(10usize);
+        let order = Rc::new(RefCell::new(Vec::new()));
+        let (mut function, _, _) = test_function("direct", output.clone(), id, order);
+        function.fail = true;
+        add_reactive(&program, id, function, &inner);
+
+        let mut services = NoMechExecutionServices;
+        let error = program
+            .update_cells_and_advance_turn_with_services(
+                &[ProgramCellUpdate {
+                    interpreter_id: id,
+                    target: target.clone(),
+                    value: Value::Index(Ref::new(9)),
+                }],
+                &mut services,
+            )
+            .unwrap_err();
+
+        assert!(error.kind_message().contains("deliberate direct failure"));
+        assert_eq!((*inner.borrow(), *output.borrow()), (1, 10));
+        assert_eq!(
+            (target.addr(), inner.addr()),
+            (target_address, inner_address)
+        );
     }
 
     #[test]

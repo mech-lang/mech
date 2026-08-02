@@ -40,7 +40,7 @@ impl MechFunctionImpl for MisleadingRuntimeHostNameFunction {
         Value::MutableReference(self.output.clone())
     }
     fn to_string(&self) -> String {
-        "RuntimeHostNativeFunction::misleading-name".to_string()
+        "ExternalHostCallFunction::misleading-name".to_string()
     }
 
     fn transaction_state_values(&self) -> MResult<Vec<Value>> {

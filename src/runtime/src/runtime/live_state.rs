@@ -1,13 +1,13 @@
+use super::external::ExternalRequirementCatalog;
 use super::{
     MechRuntime, RuntimeInvalidOperationError, RuntimeTransactionalLiveRegistrationUnsupported,
 };
 use crate::{
     ActorId, MessageRecord, ModuleVersionId, ObjectId, ResourceBudget, RuntimeAuthorityScope,
-    RuntimeContext, RuntimeContextBinding, RuntimeId, TaskId,
+    RuntimeContext, RuntimeId, RuntimeLiveResourceBinding, TaskId,
 };
-use mech_core::{MResult, MechError, ValRef};
-use mech_engine::ProgramInputId;
-use std::collections::HashMap;
+use mech_core::{MResult, MechError};
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug)]
 pub(in crate::runtime) struct RuntimeLiveContextTemplate {
@@ -83,32 +83,15 @@ impl RuntimeLiveContextTemplate {
 pub(in crate::runtime) struct RuntimeLiveStateSnapshot {
     pub(in crate::runtime) context_template: Option<RuntimeLiveContextTemplate>,
     pub(in crate::runtime) input_bindings:
-        HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
-    pub(in crate::runtime) persistent_sends: Vec<RuntimePersistentSend>,
+        BTreeMap<crate::RuntimeHostInputSource, Vec<RuntimeLiveResourceBinding>>,
     pub(in crate::runtime) registration_mode: LiveRegistrationMode,
+    pub(in crate::runtime) external_requirements: ExternalRequirementCatalog,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum LiveRegistrationMode {
     RetainedRoot,
     IsolatedSnapshot,
-}
-
-#[derive(Clone, Debug)]
-pub(in crate::runtime) struct RuntimePersistentSend {
-    pub(in crate::runtime) binding: RuntimeContextBinding,
-    pub(in crate::runtime) path: String,
-    pub(in crate::runtime) value: ValRef,
-    pub(in crate::runtime) schedule: RuntimePersistentSendSchedule,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum RuntimePersistentSendSchedule {
-    EveryAcceptedTurn,
-    Activation {
-        interpreter_id: u64,
-        barrier_node_id: mech_core::ReactiveNodeId,
-    },
 }
 
 impl MechRuntime {
@@ -156,16 +139,16 @@ impl MechRuntime {
         RuntimeLiveStateSnapshot {
             context_template: self.live_context_template.clone(),
             input_bindings: self.live_input_bindings.clone(),
-            persistent_sends: self.persistent_sends.clone(),
             registration_mode: self.live_registration_mode,
+            external_requirements: self.external_requirements.clone(),
         }
     }
 
     pub(in crate::runtime) fn restore_live_state(&mut self, snapshot: RuntimeLiveStateSnapshot) {
         self.live_context_template = snapshot.context_template;
         self.live_input_bindings = snapshot.input_bindings;
-        self.persistent_sends = snapshot.persistent_sends;
         self.live_registration_mode = snapshot.registration_mode;
+        self.external_requirements = snapshot.external_requirements;
     }
 
     pub(in crate::runtime) fn live_turn_context(&self) -> MResult<RuntimeContext> {

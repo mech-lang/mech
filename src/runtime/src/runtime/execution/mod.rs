@@ -1,10 +1,9 @@
 //! Runtime execution topology.
 //!
-//! Source execution, queries, reactive turns, context preflight, activation
-//! effects, module execution, live registration, host input, persistent sends,
-//! and input-driver lifecycle each live in their owning module.
+//! Source execution, queries, reactive turns, context preflight, module
+//! execution, live registration, host input, and input-driver lifecycle each
+//! live in their owning module.
 
-mod activation_effects;
 #[cfg(feature = "source")]
 mod context_preflight;
 mod host_input;
@@ -14,8 +13,6 @@ mod live_registration;
 mod module;
 #[cfg(feature = "source")]
 mod module_environment;
-#[cfg(feature = "source")]
-mod persistent_send;
 mod query;
 mod reactive;
 #[cfg(feature = "source")]
@@ -23,20 +20,11 @@ mod source;
 #[cfg(feature = "source")]
 mod source_reconstruction;
 
-#[cfg(test)]
-pub(super) use activation_effects::snapshot_runtime_value;
-pub(super) use activation_effects::{
-    ACTIVATION_EFFECT_BARRIER_NAME, ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
-    ActivationEffectBarrierSpecializer, ActivationEffectPayloadCaptureSpecializer,
-};
 #[allow(unused_imports)]
 #[cfg(feature = "source")]
 pub use context_preflight::RuntimeAddressedAssignmentUnsupported;
 #[cfg(feature = "source")]
-use context_preflight::{
-    AddressedReadPreflight, RuntimeProgramTarget, identifier_from_str, resolve_runtime_value,
-    single_code_program,
-};
+use context_preflight::{AddressedReadPreflight, RuntimeProgramTarget};
 #[cfg(feature = "source")]
 pub(super) use module::IntegrityEvaluationCollector;
 #[cfg(feature = "source")]

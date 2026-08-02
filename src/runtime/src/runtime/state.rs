@@ -1,5 +1,6 @@
 use super::builder::RuntimeBuilder;
-use super::live_state::{LiveRegistrationMode, RuntimeLiveContextTemplate, RuntimePersistentSend};
+use super::external::ExternalRequirementCatalog;
+use super::live_state::{LiveRegistrationMode, RuntimeLiveContextTemplate};
 use super::resources::RuntimeResourceBinding;
 use super::transaction::{
     ActiveRuntimeProgramOperation, RuntimeExecutionTransaction, RuntimeHealth,
@@ -7,16 +8,22 @@ use super::transaction::{
 use crate::{
     ActiveRuntimeEffectPhase, ActorBehaviorDriver, CapabilityKernel, HostCallPolicy,
     HostInterfaceCatalog, HostRegistry, IdGenerator, MechStore, ModuleBuilder, RuntimeConfig,
-    RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeId, RuntimeResourceRegistry, Scheduler,
-    SchedulerPolicy, SourceResolver, TransactionId,
+    RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeId, RuntimeLiveResourceBinding,
+    RuntimeResourceRegistry, Scheduler, SchedulerPolicy, SourceResolver, TransactionId,
 };
 use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog};
-use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId};
+use mech_engine::{MechProgram, MechProgramConfig};
 use std::cell::Cell;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
 use std::sync::Arc;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeExecutionMode {
+    Execute,
+    Plan,
+}
 
 pub(in crate::runtime) struct ScopedRuntimeState<T: Copy> {
     state: Rc<Cell<Option<T>>>,
@@ -41,6 +48,7 @@ pub struct MechRuntime {
     pub(super) id: RuntimeId,
     pub(super) event_sequence: u64,
     pub(super) config: RuntimeConfig,
+    pub(super) execution_mode: RuntimeExecutionMode,
     pub(super) function_catalog: Arc<FunctionCatalog>,
     pub(super) program: MechProgram,
     pub(super) id_generator: Box<dyn IdGenerator>,
@@ -60,12 +68,13 @@ pub struct MechRuntime {
     pub(super) module_builder: ModuleBuilder,
     pub(super) resources: RuntimeResourceRegistry,
     pub(super) resource_bindings: HashMap<String, RuntimeResourceBinding>,
+    pub(super) external_requirements: ExternalRequirementCatalog,
     pub(super) live_registration_mode: LiveRegistrationMode,
-    pub(super) live_input_bindings: HashMap<crate::RuntimeHostInputSource, Vec<ProgramInputId>>,
+    pub(super) live_input_bindings:
+        BTreeMap<crate::RuntimeHostInputSource, Vec<RuntimeLiveResourceBinding>>,
     pub(super) host_input_queue: RuntimeHostInputQueue,
     pub(super) input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
     pub(super) attached_input_driver_count: usize,
-    pub(super) persistent_sends: Vec<RuntimePersistentSend>,
     pub(super) live_context_template: Option<RuntimeLiveContextTemplate>,
     pub(super) input_driver_cleanup_armed: bool,
     pub(super) host_interfaces: HostInterfaceCatalog,
@@ -78,6 +87,7 @@ impl std::fmt::Debug for MechRuntime {
             .field("id", &self.id)
             .field("event_sequence", &self.event_sequence)
             .field("config", &self.config)
+            .field("execution_mode", &self.execution_mode)
             .field("function_catalog", &"<FunctionCatalog>")
             .field("program", &"<MechProgram>")
             .field("id_generator", &"<dyn IdGenerator>")
@@ -96,7 +106,6 @@ impl std::fmt::Debug for MechRuntime {
             .field("resource_bindings", &self.resource_bindings)
             .field("live_input_bindings", &self.live_input_bindings)
             .field("input_drivers", &self.input_drivers.len())
-            .field("persistent_sends", &self.persistent_sends.len())
             .field("live_context_template", &self.live_context_template)
             .field("host_interfaces", &self.host_interfaces)
             .field("module_manifests", &self.module_manifests)
@@ -119,6 +128,14 @@ impl MechRuntime {
 
     pub fn config(&self) -> &RuntimeConfig {
         &self.config
+    }
+
+    pub fn execution_mode(&self) -> RuntimeExecutionMode {
+        self.execution_mode
+    }
+
+    pub fn external_requirements(&self) -> &ExternalRequirementCatalog {
+        &self.external_requirements
     }
 
     pub(crate) fn program(&self) -> &MechProgram {

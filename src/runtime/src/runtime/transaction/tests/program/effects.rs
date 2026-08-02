@@ -1,4 +1,4 @@
-use super::support::CommitDecisionEffect;
+use super::support::{CommitDecisionEffect, invoke_host_callback};
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
@@ -6,7 +6,7 @@ use crate::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEventKind, RuntimePreparedHostCall,
     RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, RuntimeValueSnapshot,
 };
-use mech_core::Value;
+use mech_core::{MResult, MechSourceCode, Value};
 use std::sync::{Arc, Mutex};
 
 fn snapshot(value: Value) -> RuntimeValueSnapshot {
@@ -86,12 +86,19 @@ fn committed_implicit_participant_failure_never_rolls_back_program() {
     }
     let mut context = runtime.runtime_context().unwrap();
 
-    let error = runtime
-    .run_string_with_context(
-      &mut context,
-      "participant-commit-symbol := 41\nfirst-result := participant-commit/first()\nsecond-result := participant-commit/second()",
-    )
-    .unwrap_err();
+    let operation: MResult<()> = runtime.with_atomic_program_operation(
+        &mut context,
+        "participant_commit_failure_test",
+        |runtime, context| {
+            runtime.program.run_source(&MechSourceCode::String(
+                "participant-commit-symbol := 41".to_string(),
+            ))?;
+            invoke_host_callback(runtime, context, "participant-commit/first")?;
+            invoke_host_callback(runtime, context, "participant-commit/second")?;
+            Ok(())
+        },
+    );
+    let error = operation.unwrap_err();
 
     assert_eq!(error.kind_name(), "RuntimeExternalCommitIndeterminate");
     assert_eq!(

@@ -62,20 +62,13 @@ impl MechRuntime {
             context,
             "apply_host_input_with_context",
             |program, services, finalize| {
-                program.update_inputs_and_advance_turn_coordinated(
+                program.update_cells_and_advance_turn_coordinated(
                     &prepared.updates,
                     services,
                     |turn| finalize(turn),
                 )
             },
-            move |runtime, context, turn| {
-                runtime.enforce_turn_duration(turn_started)?;
-                #[cfg(feature = "source")]
-                runtime.execute_persistent_sends(context, turn)?;
-                #[cfg(not(feature = "source"))]
-                let _ = (context, turn);
-                Ok(())
-            },
+            move |runtime, _context, _turn| runtime.enforce_turn_duration(turn_started),
         )?;
         Ok(crate::RuntimeHostInputOutcome {
             update_count: prepared.update_count,

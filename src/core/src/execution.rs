@@ -1,14 +1,11 @@
 //! Explicit services supplied while Mech functions execute.
 
-use crate::{MResult, MechError, MechErrorKind, Value};
+use crate::{MResult, MechError, MechErrorKind, ValRef, Value};
 
 #[cfg(feature = "no_std")]
-use alloc::{
-    format,
-    string::{String, ToString},
-};
+use alloc::{format, string::String};
 #[cfg(not(feature = "no_std"))]
-use std::string::{String, ToString};
+use std::string::String;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
@@ -68,17 +65,75 @@ pub enum ApplicationRequirement {
 }
 
 pub trait MechExecutionServices {
-    fn invoke_native(&mut self, name: &str, arguments: &[Value]) -> MResult<Value>;
+    fn invoke_host_function(
+        &mut self,
+        request: &ExecutionHostFunctionRequest,
+        arguments: &[Value],
+    ) -> MResult<Value>;
+
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value>;
+
+    fn write_resource(&mut self, request: &ExecutionResourceRequest, value: &Value) -> MResult<()>;
+
+    /// Retains a live delivery target. Repeating the same interpreter, request,
+    /// and target binding must be idempotent.
+    fn bind_live_resource(
+        &mut self,
+        interpreter_id: u64,
+        request: &ExecutionResourceRequest,
+        target: ValRef,
+    ) -> MResult<()>;
 }
 
 #[derive(Debug, Default)]
 pub struct NoMechExecutionServices;
 
 impl MechExecutionServices for NoMechExecutionServices {
-    fn invoke_native(&mut self, name: &str, _arguments: &[Value]) -> MResult<Value> {
+    fn invoke_host_function(
+        &mut self,
+        request: &ExecutionHostFunctionRequest,
+        _arguments: &[Value],
+    ) -> MResult<Value> {
         Err(MechError::new(
-            MechExecutionUnsupportedError {
-                function: name.to_string(),
+            HostFunctionExecutionUnsupported {
+                request: request.clone(),
+            },
+            None,
+        ))
+    }
+
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+        Err(MechError::new(
+            ResourceReadExecutionUnsupported {
+                request: request.clone(),
+            },
+            None,
+        ))
+    }
+
+    fn write_resource(
+        &mut self,
+        request: &ExecutionResourceRequest,
+        _value: &Value,
+    ) -> MResult<()> {
+        Err(MechError::new(
+            ResourceWriteExecutionUnsupported {
+                request: request.clone(),
+            },
+            None,
+        ))
+    }
+
+    fn bind_live_resource(
+        &mut self,
+        interpreter_id: u64,
+        request: &ExecutionResourceRequest,
+        _target: ValRef,
+    ) -> MResult<()> {
+        Err(MechError::new(
+            LiveResourceBindingUnsupported {
+                interpreter_id,
+                request: request.clone(),
             },
             None,
         ))
@@ -86,19 +141,144 @@ impl MechExecutionServices for NoMechExecutionServices {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MechExecutionUnsupportedError {
-    pub function: String,
+pub struct HostFunctionExecutionUnsupported {
+    pub request: ExecutionHostFunctionRequest,
 }
 
-impl MechErrorKind for MechExecutionUnsupportedError {
+impl MechErrorKind for HostFunctionExecutionUnsupported {
     fn name(&self) -> &str {
-        "MechExecutionUnsupported"
+        "HostFunctionExecutionUnsupported"
     }
 
     fn message(&self) -> String {
         format!(
-            "native function `{}` requires execution services",
-            self.function,
+            "host-function request {:?} requires execution services",
+            self.request,
         )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ResourceReadExecutionUnsupported {
+    pub request: ExecutionResourceRequest,
+}
+
+impl MechErrorKind for ResourceReadExecutionUnsupported {
+    fn name(&self) -> &str {
+        "ResourceReadExecutionUnsupported"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "resource-read request {:?} requires execution services",
+            self.request,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ResourceWriteExecutionUnsupported {
+    pub request: ExecutionResourceRequest,
+}
+
+impl MechErrorKind for ResourceWriteExecutionUnsupported {
+    fn name(&self) -> &str {
+        "ResourceWriteExecutionUnsupported"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "resource-write request {:?} requires execution services",
+            self.request,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LiveResourceBindingUnsupported {
+    pub interpreter_id: u64,
+    pub request: ExecutionResourceRequest,
+}
+
+impl MechErrorKind for LiveResourceBindingUnsupported {
+    fn name(&self) -> &str {
+        "LiveResourceBindingUnsupported"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "live-resource binding request {:?} for interpreter {} requires execution services",
+            self.request, self.interpreter_id,
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Ref;
+
+    fn resource_request() -> ExecutionResourceRequest {
+        ExecutionResourceRequest {
+            base_uri: "test://resource".into(),
+            path: "items/0".into(),
+            context_name: "input".into(),
+            operation: "read".into(),
+            intent: ResourceIntent::Read,
+            delivery: ResourceDelivery::Live,
+        }
+    }
+
+    #[test]
+    fn no_services_reports_structured_errors_with_complete_requests() {
+        let mut services = NoMechExecutionServices;
+        let host_request = ExecutionHostFunctionRequest {
+            name: "test/host".into(),
+        };
+        let resource_request = resource_request();
+
+        let host_error = services
+            .invoke_host_function(&host_request, &[])
+            .unwrap_err();
+        assert_eq!(host_error.kind_name(), "HostFunctionExecutionUnsupported");
+        assert_eq!(
+            host_error
+                .kind_as::<HostFunctionExecutionUnsupported>()
+                .unwrap()
+                .request,
+            host_request,
+        );
+
+        let read_error = services.read_resource(&resource_request).unwrap_err();
+        assert_eq!(read_error.kind_name(), "ResourceReadExecutionUnsupported");
+        assert_eq!(
+            read_error
+                .kind_as::<ResourceReadExecutionUnsupported>()
+                .unwrap()
+                .request,
+            resource_request,
+        );
+
+        let write_error = services
+            .write_resource(&resource_request, &Value::Empty)
+            .unwrap_err();
+        assert_eq!(write_error.kind_name(), "ResourceWriteExecutionUnsupported");
+        assert_eq!(
+            write_error
+                .kind_as::<ResourceWriteExecutionUnsupported>()
+                .unwrap()
+                .request,
+            resource_request,
+        );
+
+        let bind_error = services
+            .bind_live_resource(17, &resource_request, Ref::new(Value::Empty))
+            .unwrap_err();
+        assert_eq!(bind_error.kind_name(), "LiveResourceBindingUnsupported");
+        let binding = bind_error
+            .kind_as::<LiveResourceBindingUnsupported>()
+            .unwrap();
+        assert_eq!(binding.interpreter_id, 17);
+        assert_eq!(binding.request, resource_request);
     }
 }
