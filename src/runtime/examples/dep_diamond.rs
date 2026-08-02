@@ -5,9 +5,10 @@ use std::sync::{Arc, Mutex};
 use mech_core::{MResult, MechSourceCode};
 
 use mech_runtime::{
-    ModuleBuildOptions, ResolvedSource, RuntimeBuilder, SourceKind, SourceRequest, SourceResolver,
-    TaskRecord,
+    ModuleBuildOptions, ResolvedSource, SourceKind, SourceRequest, SourceResolver, TaskRecord,
 };
+
+mod support;
 
 #[derive(Debug, Clone)]
 struct DiamondSourceResolver {
@@ -145,7 +146,9 @@ fn main() -> MResult<()> {
     let resolver = DiamondSourceResolver::new();
     let counts = resolver.counts();
 
-    let mut runtime = RuntimeBuilder::new().source_resolver(resolver).build()?;
+    let mut runtime = support::source_runtime_builder()
+        .source_resolver(resolver)
+        .build()?;
 
     println!("runtime: {}", short(runtime.id()));
 

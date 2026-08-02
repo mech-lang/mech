@@ -5,8 +5,10 @@ use mech_core::{MResult, Value};
 
 use mech_runtime::{
     BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
-    CapabilityId, DeterministicHostFunction, RuntimeBuilder, TaskRecord,
+    CapabilityId, DeterministicHostFunction, TaskRecord,
 };
+
+mod support;
 
 use mech_runtime::host::*;
 
@@ -54,7 +56,7 @@ fn assert_string(value: Value, expected: &str) {
 }
 
 fn main() -> MResult<()> {
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = support::source_runtime_builder()
         .capability_kernel(BasicCapabilityKernel::new())
         .host_function(DeterministicHostFunction::new(
             "demo/value/wrap",

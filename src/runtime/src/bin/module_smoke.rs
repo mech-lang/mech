@@ -1,13 +1,13 @@
-use mech_runtime::{
-    FileSourceResolver, ModuleBuildOptions, RuntimeBuilder, module_namespace_for_import,
-};
+use mech_runtime::{FileSourceResolver, ModuleBuildOptions, module_namespace_for_import};
+
+mod support;
 
 fn main() {
     let root = std::env::current_dir()
         .unwrap()
         .join("src/runtime/examples/modules");
     println!("root path: {}", root.display());
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = support::source_runtime_builder()
         .source_resolver(FileSourceResolver::new(&root))
         .build()
         .unwrap();

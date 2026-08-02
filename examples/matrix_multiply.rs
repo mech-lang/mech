@@ -44,6 +44,7 @@ fn main() -> MResult<()> {
     let v1_host = v1.clone();
     let v2_host = v2.clone();
     let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
         .capability_kernel(BasicCapabilityKernel::new())
         .host_function(DeterministicHostFunction::new(
             "demo/matrix/v1",

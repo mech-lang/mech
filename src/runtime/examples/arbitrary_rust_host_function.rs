@@ -5,8 +5,10 @@ use mech_core::{MResult, Ref, Value};
 
 use mech_runtime::{
     BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
-    CapabilityId, DeterministicHostFunction, RuntimeBuilder, TaskRecord,
+    CapabilityId, DeterministicHostFunction, TaskRecord,
 };
+
+mod support;
 
 use mech_runtime::arg::host_arg_string;
 
@@ -32,7 +34,7 @@ fn fmt_value(value: &Value) -> String {
 }
 
 fn main() -> MResult<()> {
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = support::source_runtime_builder()
         .capability_kernel(BasicCapabilityKernel::new())
         .host_function(DeterministicHostFunction::new(
             "demo/echo",

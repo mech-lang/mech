@@ -216,109 +216,104 @@ web-time = "1.1.0"
 [[bin]]
 name = "address_target_diagnostics"
 path = "src/bin/address_target_diagnostics.rs"
-required-features = ["program", "bool"]
+required-features = ["source_default"]
 
 [[bin]]
 name = "module_smoke"
 path = "src/bin/module_smoke.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "actor_context_host"
 path = "examples/actor_context_host.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "actor_state_host"
 path = "examples/actor_state_host.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "arbitrary_rust_host_function"
 path = "examples/arbitrary_rust_host_function.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "arbitrary_rust_host_functions2"
 path = "examples/arbitrary_rust_host_functions2.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "basic_runtime"
 path = "examples/basic_runtime.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "dep_cycle"
 path = "examples/dep_cycle.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "dep_diamond"
 path = "examples/dep_diamond.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "host_value_roundtrip"
 path = "examples/host_value_roundtrip.rs"
-required-features = ["program"]
-
-[[example]]
-name = "matrix_multiply"
-path = "examples/matrix_multiply.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "runtime_dep_src"
 path = "examples/runtime_dep_src.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "runtime_services_host"
 path = "examples/runtime_services_host.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "scheduled_actor_native_functions"
 path = "examples/scheduled_actor_native_functions.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "scheduled_actor_state_host"
 path = "examples/scheduled_actor_state_host.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "scheduled_runtime"
 path = "examples/scheduled_runtime.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "source_import_dependency"
 path = "examples/source_import_dependency.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[example]]
 name = "transactional_runtime"
 path = "examples/transactional_runtime.rs"
-required-features = ["program"]
+required-features = ["runtime_default"]
 
 [[test]]
 name = "config_profile"
 path = "tests/config_profile.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[test]]
 name = "module_smoke"
 path = "tests/module_smoke.rs"
-required-features = ["program"]
+required-features = ["source_default"]
 
 [[bench]]
 name = "program_transaction"
 harness = false
-required-features = ["baselib"]
+required-features = ["source_default"]
 
 [[bench]]
 name = "reactive_transaction"
 harness = false
-required-features = ["baselib"]
+required-features = ["source_default"]

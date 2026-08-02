@@ -1,12 +1,14 @@
 use mech_core::{Ref, Value};
 use mech_runtime::{
     CapabilityId, FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions,
-    PreparedRuntimeEffect, ResourcePathCapability, RuntimeBuilder, RuntimeCapabilityOperation,
-    RuntimeConfigSpec, RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec,
-    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
-    RuntimeResourceWriteRequest, SourceScope,
+    PreparedRuntimeEffect, ResourcePathCapability, RuntimeCapabilityOperation, RuntimeConfigSpec,
+    RuntimeInMemoryDocsResourceSpec, RuntimeResourceConfigSpec, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    SourceScope,
 };
 use std::sync::Arc;
+
+mod support;
 
 fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::PathBuf {
     let case_root = root.join(name);
@@ -33,7 +35,8 @@ fn run_case(
     println!("case: {name}");
     println!("root path: {}", case_root.display());
 
-    let mut builder = RuntimeBuilder::new().source_resolver(FileSourceResolver::new(&case_root));
+    let mut builder =
+        support::source_runtime_builder().source_resolver(FileSourceResolver::new(&case_root));
     if let Some(provider) = docs {
         builder = builder.in_memory_docs(provider);
     }

@@ -448,4 +448,29 @@ mod tests {
         assert_eq!(runtime.function_catalog.intrinsic_specializer_count(), 0);
         assert_eq!(runtime.function_catalog.all_exports().len(), 0);
     }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn bare_runtime_rejects_source_catalog_operations() {
+        let mut runtime = RuntimeBuilder::new().build().unwrap();
+
+        let error = runtime.run_string("x := 1").unwrap_err();
+
+        assert_eq!(error.kind_name(), "FunctionOperationUnavailable");
+        assert!(error.kind_message().contains("var/define"));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn injected_intrinsic_catalog_executes_source() {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_runtime(&mut catalog).unwrap();
+        mech_engine::install_intrinsic_source(&mut catalog).unwrap();
+        let mut runtime = RuntimeBuilder::new()
+            .function_catalog(Arc::new(catalog.build().unwrap()))
+            .build()
+            .unwrap();
+
+        runtime.run_string("x := 1\nx").unwrap();
+    }
 }
