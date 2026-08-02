@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::runtime::test_support::capabilities::grant_host_call;
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     CapabilityId, HostCall, MechRuntime, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeCallContext, RuntimePreparedHostCall, RuntimeValueSnapshot,
@@ -58,7 +59,7 @@ fn staged_host_call_returns_value_before_effect_delivery() {
 fn staged_planning_does_not_create_effects() {
     let lifecycle = Arc::new(Mutex::new(Vec::new()));
     let effect_log = lifecycle.clone();
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = test_runtime_builder()
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged-lifecycle",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {

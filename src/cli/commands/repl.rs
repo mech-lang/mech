@@ -442,17 +442,23 @@ pub(crate) fn run(startup: ReplStartup) -> MResult<CliOutcome> {
     #[cfg(all(feature = "repl", feature = "run"))]
     let mut repl = match startup.runtime {
         Some(runtime) => MechRepl::from_runtime(runtime),
-        None => MechRepl::from(MechProgram::new(MechProgramConfig {
-            name: format!("repl-{}", generate_uuid()),
-            environment: MechProgramEnvironment::default(),
-        })),
+        None => MechRepl::from(MechProgram::with_function_catalog(
+            MechProgramConfig {
+                name: format!("repl-{}", generate_uuid()),
+                environment: MechProgramEnvironment::default(),
+            },
+            mech_stdlib::source_catalog(),
+        )),
     };
 
     #[cfg(all(feature = "repl", not(feature = "run")))]
-    let mut repl = MechRepl::from(MechProgram::new(MechProgramConfig {
-        name: format!("repl-{}", generate_uuid()),
-        environment: MechProgramEnvironment::default(),
-    }));
+    let mut repl = MechRepl::from(MechProgram::with_function_catalog(
+        MechProgramConfig {
+            name: format!("repl-{}", generate_uuid()),
+            environment: MechProgramEnvironment::default(),
+        },
+        mech_stdlib::source_catalog(),
+    ));
 
     #[cfg(feature = "run")]
     if repl.is_runtime_backed() {

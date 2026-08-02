@@ -1,6 +1,6 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
-use mech_core::MResult;
+use mech_core::{FunctionCatalog, MResult};
 
 use crate::{
     DefaultIdGenerator, EventSink, FileSourceResolver, IdGenerator, MechRuntime,
@@ -25,8 +25,25 @@ impl ServerWorkspaceSession {
         folders: Vec<RuntimeWorkspaceFolder>,
         options: ModuleBuildOptions,
     ) -> MResult<Self> {
+        Self::open_with_function_catalog(
+            root,
+            targets,
+            folders,
+            options,
+            mech_engine::empty_function_catalog(),
+        )
+    }
+
+    pub fn open_with_function_catalog(
+        root: impl Into<PathBuf>,
+        targets: Vec<RuntimeWorkspaceTarget>,
+        folders: Vec<RuntimeWorkspaceFolder>,
+        options: ModuleBuildOptions,
+        function_catalog: Arc<FunctionCatalog>,
+    ) -> MResult<Self> {
         let root = root.into();
         let mut runtime = RuntimeBuilder::new()
+            .function_catalog(function_catalog)
             .source_resolver(FileSourceResolver::new(&root))
             .build()?;
         let mut config = RuntimeWorkspaceConfig::new(&root);
@@ -80,10 +97,33 @@ impl ServerWorkspaceSession {
         capability_subject: impl Into<String>,
         runtime_config: RuntimeConfig,
     ) -> MResult<Self> {
+        Self::open_with_capabilities_config_and_function_catalog(
+            root,
+            targets,
+            folders,
+            options,
+            capability_kernel,
+            capability_subject,
+            runtime_config,
+            mech_engine::empty_function_catalog(),
+        )
+    }
+
+    pub fn open_with_capabilities_config_and_function_catalog(
+        root: impl Into<PathBuf>,
+        targets: Vec<RuntimeWorkspaceTarget>,
+        folders: Vec<RuntimeWorkspaceFolder>,
+        options: ModuleBuildOptions,
+        capability_kernel: SharedCapabilityKernel,
+        capability_subject: impl Into<String>,
+        runtime_config: RuntimeConfig,
+        function_catalog: Arc<FunctionCatalog>,
+    ) -> MResult<Self> {
         let root = root.into();
         let capability_subject = capability_subject.into();
         let mut runtime = RuntimeBuilder::new()
             .config(runtime_config)
+            .function_catalog(function_catalog)
             .capability_kernel(capability_kernel.clone())
             .source_resolver(
                 FileSourceResolver::new(&root)
@@ -346,6 +386,28 @@ mod tests {
                 .as_ref()
                 == Some(&main_path)
         }));
+    }
+
+    #[test]
+    fn server_workspace_session_accepts_an_explicit_function_catalog() {
+        let root = setup_session_root();
+        std::fs::write(root.join("main.mec"), "true\n").unwrap();
+        let mut builder = mech_core::FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+        mech_engine::install_intrinsic_source(&mut builder).unwrap();
+        let catalog = Arc::new(builder.build().unwrap());
+
+        let mut session = ServerWorkspaceSession::open_with_function_catalog(
+            &root,
+            vec![main_target()],
+            vec![recursive_root_folder()],
+            module_options(),
+            catalog,
+        )
+        .unwrap();
+
+        let result = session.runtime_mut().run_string("result := true").unwrap();
+        assert!(matches!(result.into_value(), mech_core::Value::Bool(_)));
     }
 
     #[test]

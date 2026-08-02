@@ -85,10 +85,13 @@ fn runtime_repl_load_request(source_path: &str) -> MResult<mech_runtime::SourceR
 impl MechRepl {
     pub fn new() -> MechRepl {
         let intrp_id = generate_uuid();
-        let retained_program = MechProgram::new(MechProgramConfig {
-            name: format!("repl-{}", intrp_id),
-            environment: MechProgramEnvironment::default(),
-        });
+        let retained_program = MechProgram::with_function_catalog(
+            MechProgramConfig {
+                name: format!("repl-{}", intrp_id),
+                environment: MechProgramEnvironment::default(),
+            },
+            mech_stdlib::source_catalog(),
+        );
         let mut programs = HashMap::new();
         programs.insert(intrp_id, retained_program);
         MechRepl {
@@ -252,10 +255,13 @@ impl MechRepl {
             ReplCommand::Clear(name) => {
                 // Drop the old program and replace it with a new one
                 let id = self.active;
-                *prgrm = MechProgram::new(MechProgramConfig {
-                    name: format!("repl-{}", id),
-                    environment: MechProgramEnvironment::default(),
-                });
+                *prgrm = MechProgram::with_function_catalog(
+                    MechProgramConfig {
+                        name: format!("repl-{}", id),
+                        environment: MechProgramEnvironment::default(),
+                    },
+                    mech_stdlib::source_catalog(),
+                );
                 return Ok("".to_string());
             }
             ReplCommand::Ls => {

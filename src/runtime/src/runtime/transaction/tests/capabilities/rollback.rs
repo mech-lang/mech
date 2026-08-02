@@ -116,9 +116,7 @@ fn capability_check_panic_is_converted_without_poisoning() {
     assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
     assert!(format!("{error:?}").contains("deliberate capability check panic"));
     assert!(!runtime.is_poisoned());
-    runtime
-        .run_string("capability-check-recovery := 1.0")
-        .unwrap();
+    runtime.list_events(None).unwrap();
 }
 
 #[test]

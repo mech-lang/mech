@@ -5,18 +5,23 @@ use std::sync::{
 
 use mech_core::{MResult, Ref, Value};
 
-use super::super::{RuntimeBuilder, RuntimeHealth};
+use super::super::RuntimeHealth;
 use crate::runtime::test_support::{
-    capabilities::{CapabilityUseProbe, grant_host_call_with_limit, grant_read, grant_write},
+    capabilities::{
+        CapabilityUseProbe, grant_host_call, grant_host_call_with_limit, grant_read, grant_write,
+    },
     events::{assert_event_before, events_since},
-    providers::{TestResourceProvider, test_provider_with, test_runtime_with_output},
+    providers::{
+        TestResourceProvider, test_provider_with, test_runtime_builder,
+        test_runtime_with_output_host,
+    },
     stores::StoreCommitProbe,
     values::{bool_value, f64_value, host_f64_argument, source_value, symbol_value},
 };
 use crate::{
-    CapabilityId, PlannedStagedHostFunction, PreparedRuntimeEffect, RuntimeCallContext,
-    RuntimeEffectMetadata, RuntimeEffectSource, RuntimeEventKind, RuntimeHostInput,
-    RuntimeHostInputSource, RuntimeHostInputValue, RuntimePreparedHostCall,
+    CapabilityId, PlannedPureHostFunction, PlannedStagedHostFunction, PreparedRuntimeEffect,
+    RuntimeCallContext, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeEventKind,
+    RuntimeHostInput, RuntimeHostInputSource, RuntimeHostInputValue, RuntimePreparedHostCall,
     RuntimeTransactionalEffect, RuntimeValueSnapshot, SharedCapabilityKernel,
 };
 
@@ -25,6 +30,22 @@ const TEST_OUTPUT_BASE_URI: &str = "test://effects/output";
 
 fn snapshot(value: Value) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+}
+
+fn target_safety_host() -> PlannedPureHostFunction {
+    PlannedPureHostFunction::new(
+        "test/target-safe",
+        |_context, arguments| {
+            Ok(snapshot(Value::Bool(Ref::new(
+                host_f64_argument(&arguments[0]) <= 120.0,
+            ))))
+        },
+        |_context, arguments| {
+            Ok(snapshot(Value::Bool(Ref::new(
+                host_f64_argument(&arguments[0]) <= 120.0,
+            ))))
+        },
+    )
 }
 
 #[derive(Debug, Default)]
@@ -138,12 +159,13 @@ impl RuntimeTransactionalEffect for ReceiverTransactionalEffect {
 #[test]
 fn integrity_invalid_host_input_is_restored_before_output_audit_and_recovery() {
     let provider = test_provider_with(TEST_CLOCK_BASE_URI, "value", 90.0);
-    let (mut runtime, output) = test_runtime_with_output(provider);
+    let (mut runtime, output) = test_runtime_with_output_host(provider, target_safety_host());
     grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
     grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+    grant_host_call(&mut runtime, CapabilityId(969), "test/target-safe");
     runtime
     .run_string(
-      "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\ntarget := @pulse/value\nmaximum-target := 120.0\ncontroller-command := target\nsafe-target! := target <= maximum-target\n@out/line <- controller-command",
+      "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\ntarget := @pulse/value\nmaximum-target := 120.0\ncontroller-command := target\nsafe-target! := test/target-safe(target)\n@out/line <- controller-command",
     )
     .unwrap();
     let source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
@@ -172,8 +194,8 @@ fn integrity_invalid_host_input_is_restored_before_output_audit_and_recovery() {
         .kind_as::<mech_engine::IntegrityConstraintViolationSet>()
         .unwrap();
     assert_eq!(failures.violations.len(), 1);
-    assert_eq!(failures.violations[0].actual.as_deref(), Some("150"));
-    assert_eq!(failures.violations[0].expected.as_deref(), Some("120"));
+    assert_eq!(failures.violations[0].actual.as_deref(), Some("false"));
+    assert_eq!(failures.violations[0].expected.as_deref(), Some("true"));
     assert_eq!(f64_value(&source_value(&runtime, &source)), 100.0);
     assert_eq!(f64_value(&symbol_value(&runtime, "target")), 100.0);
     assert_eq!(
@@ -192,8 +214,8 @@ fn integrity_invalid_host_input_is_restored_before_output_audit_and_recovery() {
             _ => None,
         })
         .expect("invalid candidate emits a detached integrity audit");
-    assert_eq!(audit.actual.as_deref(), Some("150"));
-    assert_eq!(audit.expected.as_deref(), Some("120"));
+    assert_eq!(audit.actual.as_deref(), Some("false"));
+    assert_eq!(audit.expected.as_deref(), Some("true"));
 
     runtime
         .apply_host_input(RuntimeHostInput::single(
@@ -245,11 +267,13 @@ fn integrity_invalid_host_input_aborts_staged_receiver_before_commit() {
         "value",
         Value::F64(Ref::new(90.0)),
     );
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = test_runtime_builder()
         .store(store)
         .capability_kernel(kernel)
         .resource_provider(Box::new(provider))
         .host_function(receiver_host)
+        .unwrap()
+        .host_function(target_safety_host())
         .unwrap()
         .build()
         .unwrap();
@@ -261,6 +285,7 @@ fn integrity_invalid_host_input_aborts_staged_receiver_before_commit() {
         "test/receiver-send",
         8,
     );
+    grant_host_call(&mut runtime, CapabilityId(971), "test/target-safe");
     let capability_use_probe = CapabilityUseProbe::new(observed_kernel, receiver_capability_id);
     runtime
         .run_string(
@@ -271,7 +296,7 @@ maximum-target := 120.0
 
 receiver-result := test/receiver-send(target)
 
-safe-target! := receiver-result <= maximum-target
+safe-target! := test/target-safe(receiver-result)
 "#,
         )
         .unwrap();
@@ -394,8 +419,8 @@ safe-target! := receiver-result <= maximum-target
         violation.reason,
         mech_engine::IntegrityConstraintFailureReason::EvaluatedFalse,
     );
-    assert_eq!(violation.actual.as_deref(), Some("150"));
-    assert_eq!(violation.expected.as_deref(), Some("120"));
+    assert_eq!(violation.actual.as_deref(), Some("false"));
+    assert_eq!(violation.expected.as_deref(), Some("true"));
     let after_150 = receiver_snapshot(&receiver);
     let staged = &after_150.staged_payloads[before_150.staged_payloads.len()..];
     let prepared = &after_150.prepared_payloads[before_150.prepared_payloads.len()..];
@@ -465,8 +490,8 @@ safe-target! := receiver-result <= maximum-target
             _ => None,
         })
         .unwrap();
-    assert_eq!(audit.actual.as_deref(), Some("150"));
-    assert_eq!(audit.expected.as_deref(), Some("120"));
+    assert_eq!(audit.actual.as_deref(), Some("false"));
+    assert_eq!(audit.expected.as_deref(), Some("true"));
     assert_eq!(f64_value(&symbol_value(&runtime, "target")), 100.0);
     assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
     assert!(!runtime.is_poisoned());

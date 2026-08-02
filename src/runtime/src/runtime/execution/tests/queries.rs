@@ -32,9 +32,11 @@ fn runtime_output_value_for_interpreter_returns_value_after_run_string() {
 
 #[test]
 fn runtime_run_tree_defers_inline_document_expression_in_the_formatter_root_namespace() {
-    let tree =
-        parser::parse("The document evaluates {answer + 1} inline.\n\nanswer := 41").unwrap();
-    let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+    let tree = parser::parse("The document evaluates {answer} inline.\n\nanswer := 41").unwrap();
+    let mut runtime = crate::runtime::test_support::providers::test_runtime_builder()
+        .config(RuntimeConfig::default())
+        .build()
+        .unwrap();
 
     runtime.run_tree(&tree).unwrap();
 
@@ -45,12 +47,14 @@ fn runtime_run_tree_defers_inline_document_expression_in_the_formatter_root_name
         .output_value_for_interpreter(root_id, output_id)
         .unwrap()
         .expect("expected inline document output");
-    assert_eq!(f64_value(&output.to_value()), 42.0);
+    assert_eq!(f64_value(&output.to_value()), 41.0);
 }
 
 #[test]
 fn runtime_delegates_root_symbol_value() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = crate::runtime::test_support::providers::test_runtime_builder()
+        .build()
+        .unwrap();
     runtime.run_string("answer := 42.0").unwrap();
     assert_eq!(
         f64_value(&runtime.root_symbol_value("answer").unwrap().to_value(),),
@@ -60,7 +64,9 @@ fn runtime_delegates_root_symbol_value() {
 
 #[test]
 fn runtime_delegates_root_symbol_values() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = crate::runtime::test_support::providers::test_runtime_builder()
+        .build()
+        .unwrap();
     runtime.run_string("a := 1.0\nb := 2.0").unwrap();
     let rows = runtime.root_symbol_values(&["b", "a"]).unwrap();
     assert_eq!(rows[0].0, "b");

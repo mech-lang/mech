@@ -9,10 +9,27 @@ extern crate mech_syntax;
 use indexmap::set::IndexSet;
 use mech_core::matrix::Matrix;
 use mech_core::*;
-use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
+use mech_engine::{MechProgram as EngineMechProgram, MechProgramConfig, MechProgramEnvironment};
 use mech_syntax::*;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+/// Root bytecode tests compile against the standard distribution. Bare and
+/// custom-catalog bytecode behavior lives in `bytecode/catalog`.
+struct MechProgram;
+
+impl MechProgram {
+    fn new(config: MechProgramConfig) -> EngineMechProgram {
+        #[cfg(feature = "standard_source")]
+        {
+            EngineMechProgram::with_function_catalog(config, mech::stdlib::source_catalog())
+        }
+        #[cfg(not(feature = "standard_source"))]
+        {
+            EngineMechProgram::new(config)
+        }
+    }
+}
 
 macro_rules! bytecode_test {
     ($name:ident, $code:expr, $expected:expr) => {
@@ -140,7 +157,7 @@ bytecode_test!(
     "[1 2; 3 4]",
     Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_compiler")]
 bytecode_test!(
     bytecode_combinatorics_n_choose_k,
     "+> combinatorics\ncombinatorics/n-choose-k(10,2)",
@@ -163,25 +180,25 @@ bytecode_test!(
     Value::Bool(Ref::new(true))
 );
 bytecode_test!(bytecode_logic_not, "!true", Value::Bool(Ref::new(false)));
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_compiler")]
 bytecode_test!(
     bytecode_math_cos,
     "+> math\nmath/cos(0)",
     Value::F64(Ref::new(1.0))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_compiler")]
 bytecode_test!(
     bytecode_math_sin,
     "+> math\nmath/sin(0)",
     Value::F64(Ref::new(0.0))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_compiler")]
 bytecode_test!(
     bytecode_math_atan2,
     "+> math\nmath/atan2(1, 1)",
     Value::F64(Ref::new(std::f64::consts::FRAC_PI_4))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_compiler")]
 bytecode_test!(
     bytecode_math_atan22,
     "+> math\nmath/atan(1, 1)",
@@ -217,7 +234,7 @@ bytecode_test!(
     "1..5",
     Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 1, 4))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_compiler")]
 bytecode_test!(
     bytecode_stats_sum_column,
     "+> stats\nstats/sum/column([1 2 3])",
@@ -467,7 +484,7 @@ bytecode_test!(
     r#"ix1 := [false, false, true]; ix2 := [1,2,3,3]; x := [1 2 3; 4 5 6; 7 8 9]; x[ix1,ix2]"#,
     Value::MatrixF64(Matrix::from_vec(vec![7.0, 8.0, 9.0, 9.0], 1, 4))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_compiler")]
 bytecode_test!(
     bytecode_math_sqrt,
     "+> math\nmath/sqrt(9)",
@@ -493,7 +510,7 @@ bytecode_test!(
         Value::F64(Ref::new(4.0))
     ])))
 );
-#[cfg(feature = "linked_stdlib")]
+#[cfg(feature = "standard_compiler")]
 bytecode_test!(
     bytecode_math_abs,
     "+> math\nmath/abs(-10)",

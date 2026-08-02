@@ -85,6 +85,7 @@ impl BrowserDomBackend for FakeDomHost {
 
 fn runtime_with_browser_provider(authority: BrowserAuthority, host: FakeDomHost) -> MechRuntime {
     RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
         .resource_provider(Box::new(BrowserResourceProvider::new(authority, host)))
         .build()
         .unwrap()

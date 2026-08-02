@@ -39,11 +39,30 @@ source_default = [
   "statements_default",
   "subscript_default",
   "state_machines",
+  "variables",
+  "access",
+  "assign",
+  "convert",
+  # Operation features in mech-engine are distribution-neutral syntax markers.
+  # Concrete implementations still come only from an injected catalog.
+  "mech-engine/matrix_comprehensions",
+  "mech-engine/matrix_horzcat",
+  "mech-engine/matrix_vertcat",
+  "mech-engine/set_comprehensions",
+  "mech-engine/math_default",
+  "mech-engine/compare_default",
+  "mech-engine/logic_default",
+  "mech-engine/range_default",
+  "mech-engine/matrix_default",
+  "mech-engine/set_default",
+  "mech-engine/string_default",
+  "mech-engine/stats_default",
+  "mech-engine/combinatorics_default",
   "watcher",
 ]
 compiler_default = ["source_default", "compiler"]
 default = ["source_default"]
-base = ["source_default", "mech-core/base", "mech-engine/base"]
+base = ["compiler_default", "mech-core/base", "mech-engine/base"]
 
 async = ["mech-engine/async"]
 watcher = ["ignore", "notify"]
@@ -97,6 +116,10 @@ formulas = ["mech-core/formulas", "mech-engine/formulas"]
 functions = ["symbol_table", "mech-core/functions", "mech-engine/functions"]
 state_machines = ["functions", "mech-engine/state_machines"]
 symbol_table = ["mech-core/symbol_table", "mech-engine/symbol_table"]
+
+access = ["functions", "mech-engine/access"]
+assign = ["functions", "mech-engine/assign"]
+convert = ["functions", "mech-engine/convert"]
 
 bool = ["mech-core/bool", "mech-engine/bool"]
 string = ["mech-core/string", "mech-engine/string"]

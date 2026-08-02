@@ -1,12 +1,16 @@
 use std::sync::Arc;
 
-use mech::{MechProgram, MechProgramConfig, default_function_catalog};
+use mech::{MechProgram, MechProgramConfig};
 use mech_core::{
     FunctionCatalogBuilder, FunctionSpecializer, MResult, MechFunction, OperationId, Value,
     hash_str,
 };
 
 const ADD_SOURCE: &str = "result := 1.0 + 2.0\nresult";
+
+fn standard_program() -> MechProgram {
+    MechProgram::with_function_catalog(MechProgramConfig::default(), mech::stdlib::source_catalog())
+}
 
 struct UnreachableSpecializer;
 
@@ -44,7 +48,7 @@ fn assert_f64(value: Value, expected: f64) {
 
 #[test]
 fn standard_catalog_source_addition_uses_catalog_specializer() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = standard_program();
     assert_math_add_is_catalog_owned(&program);
 
     let result = program
@@ -56,7 +60,7 @@ fn standard_catalog_source_addition_uses_catalog_specializer() {
 
 #[test]
 fn explicitly_injected_catalog_source_addition_uses_catalog_specializer() {
-    let catalog = default_function_catalog();
+    let catalog = mech::stdlib::source_catalog();
     let mut program =
         MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
     assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
@@ -100,7 +104,7 @@ fn non_visible_catalog_operation_reports_its_name_and_id() {
 
 #[test]
 fn named_math_add_uses_catalog() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = standard_program();
     assert_math_add_is_catalog_owned(&program);
 
     let result = program
@@ -112,7 +116,7 @@ fn named_math_add_uses_catalog() {
 
 #[test]
 fn user_definition_shadows_named_catalog_binding_but_not_the_add_operator() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = standard_program();
     let result = program
         .run_string(
             r#"math/add(left<f64>, right<f64>) => <f64>

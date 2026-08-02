@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use mech_core::MResult;
 
-use crate::runtime::test_support::providers::TestAfterCommitEffect;
+use crate::runtime::test_support::providers::{TestAfterCommitEffect, test_runtime_builder};
 use crate::{
     BasicCapability, CapabilityId, CapabilityRequest, InMemorySourceResolver, MechRuntime,
     ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeConfig, RuntimeEffectMetadata,
@@ -51,7 +51,7 @@ pub(super) fn runtime_builder_with_sources(sources: &[(&str, &str)]) -> RuntimeB
     for (specifier, source) in sources {
         resolver.insert_string(*specifier, *source).unwrap();
     }
-    MechRuntime::builder()
+    test_runtime_builder()
         .config(RuntimeConfig::default())
         .source_resolver(resolver)
 }

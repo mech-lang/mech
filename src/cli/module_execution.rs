@@ -166,6 +166,7 @@ fn execute_source_module_roots_internal(
     }
 
     let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
         .config(config)
         .source_resolver(resolver)
         .build()?;

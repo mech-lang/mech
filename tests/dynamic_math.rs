@@ -1,16 +1,18 @@
 extern crate mech_core;
 
-use mech::{MechProgram, MechProgramConfig};
+#[path = "support/intrinsic_catalog.rs"]
+mod intrinsic_catalog;
+
 use mech_core::{Value, structures::matrix::Matrix};
 
 fn run(source: &str) -> bool {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     program.run_string(source).is_ok()
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn run_matrix_round(source: &str) {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let result = program.run_string(source).unwrap();
 
     let detached = match result {
@@ -26,7 +28,7 @@ fn run_matrix_round(source: &str) {
 
 #[cfg(feature = "dynamic-modules")]
 fn run_scalar_f64(source: &str, expected: f64) {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let result = program.run_string(source).unwrap();
 
     let detached = match result {
@@ -42,7 +44,7 @@ fn run_scalar_f64(source: &str, expected: f64) {
 
 #[cfg(feature = "dynamic-modules")]
 fn run_matrix_f64(source: &str, expected: Vec<f64>, rows: usize, cols: usize) {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let result = program.run_string(source).unwrap();
 
     let detached = match result {

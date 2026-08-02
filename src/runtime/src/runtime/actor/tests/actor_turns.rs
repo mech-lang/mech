@@ -48,7 +48,7 @@ fn actor_driver_panic_is_converted_and_driver_is_restored() {
         "RuntimeExtensionPanicked",
     );
     assert!(!runtime.is_poisoned());
-    runtime.run_string("actor-panic-recovery := 1.0").unwrap();
+    runtime.list_events(None).unwrap();
 }
 
 #[test]

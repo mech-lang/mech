@@ -77,15 +77,6 @@ profile = []
 native = ["functions", "kind_annotation", "tuple", "convert"]
 dynamic-modules = ["dep:libloading", "dep:mech-abi"]
 
-# Transitional markers retained for the next stacked commit's root-feature
-# rerouting. They install no machines and carry no dependencies.
-linked_math = []
-linked_combinatorics = []
-linked_compare = []
-linked_stats = []
-linked_string = []
-linked_stdlib = []
-
 prelude_default = [
   "set_prelude",
   "math_prelude",

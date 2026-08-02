@@ -5,10 +5,11 @@ use std::sync::{
 
 use mech_core::{Ref, Value, hash_str};
 
-use super::super::RuntimeBuilder;
 use crate::runtime::test_support::{
     capabilities::{grant_host_call, grant_read},
-    providers::{TestResourceProvider, test_provider_with, test_runtime_with_host},
+    providers::{
+        TestResourceProvider, test_provider_with, test_runtime_builder, test_runtime_with_host,
+    },
     values::{f64_value, host_f64_argument, source_cell, source_value, string_value, symbol_value},
 };
 use crate::{
@@ -53,7 +54,7 @@ fn live_input_recomputes_runtime_host_function() {
         )))
         .unwrap();
     let mut context = runtime.runtime_context().unwrap();
-    runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\noutput := demo/live-plus-one(@pulse/value) + 0").unwrap();
+    runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\noutput := demo/live-plus-one(@pulse/value)").unwrap();
     let initial_calls = calls.load(Ordering::SeqCst);
     assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
 
@@ -84,7 +85,7 @@ fn runtime_reactive_host_input_executes_only_reachable_branch() {
     let right_calls = Arc::new(AtomicUsize::new(0));
     let left_host_calls = left_calls.clone();
     let right_host_calls = right_calls.clone();
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = test_runtime_builder()
         .resource_provider(Box::new(provider))
         .host_function(PlannedPureHostFunction::new(
             "demo/left-branch",
@@ -259,7 +260,7 @@ fn live_host_output_kind_change_preserves_previous_output() {
     grant_read(&mut runtime, "test://clock/ticks", "value");
     grant_host_call(&mut runtime, CapabilityId(46), "demo/kind-change");
     let mut context = runtime.runtime_context().unwrap();
-    runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\nhost-result := demo/kind-change(@pulse/value)\noutput := host-result + 0").unwrap();
+    runtime.run_string_with_context(&mut context, "@pulse := test://clock/ticks{:read(value)}\nhost-result := demo/kind-change(@pulse/value)\noutput := host-result").unwrap();
     assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0);
     assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
     let host_result = runtime

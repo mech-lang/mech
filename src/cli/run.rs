@@ -504,7 +504,9 @@ fn cli_runtime_builder(
         }
     }
 
-    let builder = RuntimeBuilder::new().config(config);
+    let builder = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .config(config);
     let (mut builder, registered_providers) =
         crate::cli::host_factories::register_cli_host_factories(builder)?;
 

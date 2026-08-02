@@ -1,8 +1,8 @@
 use std::collections::BTreeSet;
 
 use mech_core::{MechSourceCode, OperationId, RuntimeFunctionId, Value};
-use mech_engine::default_function_catalog;
 use mech_runtime::{RuntimeBuilder, RuntimeValueSnapshot};
+use mech_stdlib::source_catalog;
 use mech_wasm as _;
 use serde::Deserialize;
 use wasm_bindgen_test::*;
@@ -122,10 +122,14 @@ fn assert_f64_snapshot(snapshot: RuntimeValueSnapshot, expected: f64) {
     assert_eq!(*actual.borrow(), expected);
 }
 
+fn browser_runtime_builder() -> RuntimeBuilder {
+    RuntimeBuilder::new().function_catalog(source_catalog())
+}
+
 #[wasm_bindgen_test]
 fn cross_target_source_contract() {
     for case in &corpus().cross_target {
-        let mut runtime = RuntimeBuilder::new().build().unwrap_or_else(|error| {
+        let mut runtime = browser_runtime_builder().build().unwrap_or_else(|error| {
             panic!("failed to build runtime for `{}`: {error:?}", case.name)
         });
         let snapshot = runtime
@@ -137,7 +141,7 @@ fn cross_target_source_contract() {
 
 #[wasm_bindgen_test]
 fn enabled_standard_profile_is_fully_catalog_owned() {
-    let catalog = default_function_catalog();
+    let catalog = source_catalog();
 
     assert!(catalog.specializer_count() > 1);
     assert!(catalog.intrinsic_specializer_count() > 0);
@@ -169,7 +173,7 @@ fn enabled_standard_profile_is_fully_catalog_owned() {
 
 #[wasm_bindgen_test]
 fn scalar_source_addition_uses_the_explicit_catalog() {
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = browser_runtime_builder()
         .build()
         .expect("standard WASM runtime must build");
 
@@ -182,7 +186,7 @@ fn scalar_source_addition_uses_the_explicit_catalog() {
 
 #[wasm_bindgen_test]
 fn checked_in_scalar_add_bytecode_uses_the_explicit_catalog() {
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = browser_runtime_builder()
         .build()
         .expect("standard WASM runtime must build");
     let source = MechSourceCode::ByteCode(SCALAR_ADD_BYTECODE.to_vec());

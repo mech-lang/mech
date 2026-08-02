@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::runtime::test_support::capabilities::grant_host_call_with_limit;
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     CapabilityId, HostCall, MechRuntime, PlannedPureHostFunction,
     PlannedRuntimeManagedHostFunction, PlannedStagedHostFunction, PreparedRuntimeEffect,
@@ -19,7 +20,7 @@ fn snapshot(value: Value) -> RuntimeValueSnapshot {
 fn pure_host_planning_does_not_consume_single_use_capability() {
     let calls = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = test_runtime_builder()
         .host_function(PlannedPureHostFunction::new(
             "demo/pure-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
@@ -51,7 +52,7 @@ fn pure_host_planning_does_not_consume_single_use_capability() {
 fn runtime_managed_planning_does_not_consume_single_use_capability() {
     let calls = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = test_runtime_builder()
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "demo/managed-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
@@ -85,7 +86,7 @@ fn staged_planning_does_not_consume_single_use_capability() {
     let deliveries = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
     let delivered = deliveries.clone();
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = test_runtime_builder()
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {

@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::runtime::host::RuntimeHostFunctionSpecializer;
 use crate::runtime::test_support::capabilities::grant_host_call;
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     CapabilityId, MechRuntime, ObjectRecord, PlannedPureHostFunction,
     PlannedRuntimeManagedHostFunction, RuntimeCallContext, RuntimeValueSnapshot,
@@ -17,7 +18,7 @@ fn snapshot(value: Value) -> RuntimeValueSnapshot {
 fn planned_pure_host_runs_inside_implicit_and_explicit_transactions() {
     let calls = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
-    let runtime = MechRuntime::builder()
+    let runtime = test_runtime_builder()
         .host_function(PlannedPureHostFunction::new(
             "demo/pure",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
@@ -70,7 +71,7 @@ fn planning_never_invokes_a_host_callback() {
 fn runtime_managed_planning_does_not_duplicate_staged_mutation() {
     let observed_ids = Arc::new(Mutex::new(Vec::new()));
     let callback_ids = observed_ids.clone();
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = test_runtime_builder()
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "demo/runtime-managed",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
