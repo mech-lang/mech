@@ -44,7 +44,8 @@ fn assert_alias_node(plan: &Plan, name: &str, output: &Value, container: &Value)
 #[test]
 fn record_field_access_registers_structural_node() {
     let tree = mech_syntax::parser::parse("record := {field: 2}; record.field").unwrap();
-    let mut interpreter = Interpreter::new(0, 10_000);
+    let mut interpreter =
+        Interpreter::with_function_catalog(0, 10_000, crate::test_function_catalog());
     let output = interpreter.interpret(&tree).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
     assert_alias_node(
@@ -58,7 +59,8 @@ fn record_field_access_registers_structural_node() {
 #[test]
 fn tuple_element_access_registers_structural_node() {
     let tree = mech_syntax::parser::parse("tuple := (1, 2); tuple.2").unwrap();
-    let mut interpreter = Interpreter::new(0, 10_000);
+    let mut interpreter =
+        Interpreter::with_function_catalog(0, 10_000, crate::test_function_catalog());
     let output = interpreter.interpret(&tree).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
     assert_alias_node(
@@ -72,7 +74,8 @@ fn tuple_element_access_registers_structural_node() {
 #[test]
 fn record_field_consumer_depends_on_member_cell() {
     let tree = mech_syntax::parser::parse("record := {field: 2}; record.field + 1").unwrap();
-    let mut interpreter = Interpreter::new(0, 10_000);
+    let mut interpreter =
+        Interpreter::with_function_catalog(0, 10_000, crate::test_function_catalog());
     let output = interpreter.interpret(&tree).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 3.0);
     let record = symbol(&interpreter, "record");

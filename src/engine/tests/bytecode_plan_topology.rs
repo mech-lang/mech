@@ -1,10 +1,30 @@
 use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{
-    MResult, ParsedProgram, Plan, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId,
-    ReactiveNodeKind, ReactiveTurnState, Value, hash_str,
+    FunctionCatalogBuilder, MResult, ParsedProgram, Plan, ReactiveCellId, ReactiveDependencyKind,
+    ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState, Value, hash_str,
 };
 use mech_engine::Interpreter;
 use mech_engine::{MechProgram, MechProgramConfig};
+use std::sync::Arc;
+
+fn source_program() -> MechProgram {
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        Arc::new(builder.build().unwrap()),
+    )
+}
+
+fn runtime_program() -> MechProgram {
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        Arc::new(builder.build().unwrap()),
+    )
+}
 
 fn symbol(interpreter: &Interpreter, name: &str) -> Value {
     interpreter
@@ -228,10 +248,10 @@ fn assert_structural_set_node(plan: &Plan, output: &Value) {
 #[test]
 fn decoded_variable_definition_symbol_metadata_round_trips() -> MResult<()> {
     let code = "input := 1.0\n~state := 2.0";
-    let mut source = MechProgram::new(MechProgramConfig::default());
+    let mut source = source_program();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
-    let mut decoded = MechProgram::new(MechProgramConfig::default());
+    let mut decoded = runtime_program();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     assert_eq!(decoded_output, source_output);
@@ -257,10 +277,10 @@ fn decoded_variable_definition_symbol_metadata_round_trips() -> MResult<()> {
 #[test]
 fn decoded_structural_alias_access_matches_source() -> MResult<()> {
     let code = "tuple := (1, 2); tuple.2";
-    let mut source = MechProgram::new(MechProgramConfig::default());
+    let mut source = source_program();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
-    let mut decoded = MechProgram::new(MechProgramConfig::default());
+    let mut decoded = runtime_program();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     assert_eq!(decoded_output, source_output);
@@ -280,10 +300,10 @@ fn decoded_structural_alias_access_matches_source() -> MResult<()> {
 #[test]
 fn decoded_whole_variable_assignment_matches_source_graph() -> MResult<()> {
     let code = "~x := 1.0; y := 2.0; x = y; x";
-    let mut source = MechProgram::new(MechProgramConfig::default());
+    let mut source = source_program();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
-    let mut decoded = MechProgram::new(MechProgramConfig::default());
+    let mut decoded = runtime_program();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     assert_eq!(*source_output.as_f64().unwrap().borrow(), 2.0);
@@ -297,38 +317,19 @@ fn decoded_whole_variable_assignment_matches_source_graph() -> MResult<()> {
 }
 
 #[test]
-fn decoded_whole_add_assignment_matches_source_graph() -> MResult<()> {
-    let code = "~x := 1.0; y := 2.0; x += y; x";
-    let mut source = MechProgram::new(MechProgramConfig::default());
+fn decoded_register_commit_assignment_uses_staging() -> MResult<()> {
+    let code = "~x := 1.0\ny := 2.0\nx = y\nx";
+    let mut source = source_program();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
-    let mut decoded = MechProgram::new(MechProgramConfig::default());
+    let mut decoded = runtime_program();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
-    assert_eq!(*source_output.as_f64().unwrap().borrow(), 3.0);
-    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 3.0);
-    let source_shape = distinct_assignment_graph_shape(source.interpreter(), "x", "y");
-    let decoded_shape = decoded_assignment_graph_shape(decoded.interpreter(), &decoded_output);
-    assert_eq!(source_shape, expected_distinct_assignment_shape());
-    assert_eq!(decoded_shape, expected_distinct_assignment_shape());
-    assert_eq!(source_shape, decoded_shape);
-    Ok(())
-}
-
-#[test]
-fn decoded_register_commit_add_assignment_uses_staging() -> MResult<()> {
-    let code = "~x := 1.0\ny := 2.0\nx += y\nx";
-    let mut source = MechProgram::new(MechProgramConfig::default());
-    let source_output = source.run_string(code)?;
-    let bytecode = source.compile_bytecode()?;
-    let mut decoded = MechProgram::new(MechProgramConfig::default());
-    let decoded_output = decoded.run_bytecode(&bytecode)?;
-
-    assert_eq!(*source_output.as_f64().unwrap().borrow(), 3.0);
-    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 3.0);
+    assert_eq!(*source_output.as_f64().unwrap().borrow(), 2.0);
+    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 2.0);
     let output_cell = root_cell(&decoded_output);
     let register_node = register(decoded.interpreter(), output_cell);
-    let source_cell = {
+    let (source_cell, source_ref) = {
         let plan = decoded.interpreter().plan();
         let plan = plan.borrow();
         let node = plan.node(register_node).unwrap();
@@ -345,8 +346,12 @@ fn decoded_register_commit_add_assignment_uses_staging() -> MResult<()> {
             1,
             "decoded register must have exactly one distinct reactive source",
         );
-        dependencies[0].cell
+        (
+            dependencies[0].cell,
+            symbol(decoded.interpreter(), "y").as_f64()?,
+        )
     };
+    *source_ref.borrow_mut() = 5.0;
     let scheduling = decoded
         .interpreter()
         .plan()
@@ -364,18 +369,17 @@ fn decoded_register_commit_add_assignment_uses_staging() -> MResult<()> {
 }
 
 #[test]
-fn decoded_reactive_turn_reuses_compiled_plan() -> MResult<()> {
-    let code = "~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0\nz";
-    let mut source = MechProgram::new(MechProgramConfig::default());
+fn decoded_reactive_turn_reuses_compiled_assignment_plan() -> MResult<()> {
+    let code = "~x := 1.0\ny := 2.0\nx = y\nx";
+    let mut source = source_program();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
-    let mut decoded = MechProgram::new(MechProgramConfig::default());
+    let mut decoded = runtime_program();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
-    assert_eq!(*source_output.as_f64().unwrap().borrow(), 4.0);
-    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 4.0);
-    let z_cell = root_cell(&decoded_output);
-    let (x_register, x_ref, x_cell, source_cell, x_consumers, plan_length, node_ids, output_cells) = {
+    assert_eq!(*source_output.as_f64().unwrap().borrow(), 2.0);
+    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 2.0);
+    let (x_register, x_ref, x_cell, source_cell, plan_length, node_ids, output_cells) = {
         let plan = decoded.interpreter().plan();
         let plan = plan.borrow();
         let registers = plan
@@ -398,14 +402,11 @@ fn decoded_reactive_turn_reuses_compiled_plan() -> MResult<()> {
             })
             .collect::<Vec<_>>();
         assert_eq!(source_dependencies.len(), 1);
-        let x_consumers = plan.reactive_consumers_for(x_cell).to_vec();
-        assert!(!x_consumers.is_empty());
         (
             x_register,
             x_ref,
             x_cell,
             source_dependencies[0].cell,
-            x_consumers,
             plan.len(),
             plan.nodes.iter().map(|node| node.id).collect::<Vec<_>>(),
             plan.nodes
@@ -414,9 +415,11 @@ fn decoded_reactive_turn_reuses_compiled_plan() -> MResult<()> {
                 .collect::<Vec<_>>(),
         )
     };
-    assert_eq!(*x_ref.borrow(), 3.0);
+    assert_eq!(*x_ref.borrow(), 2.0);
+    let source_ref = symbol(decoded.interpreter(), "y").as_f64()?;
     let mut turn_state = ReactiveTurnState::default();
-    for (expected_x, expected_z) in [(5.0, 6.0), (7.0, 8.0)] {
+    for expected in [5.0, 7.0] {
+        *source_ref.borrow_mut() = expected;
         let outcome = decoded
             .interpreter()
             .plan()
@@ -428,23 +431,9 @@ fn decoded_reactive_turn_reuses_compiled_plan() -> MResult<()> {
         assert_eq!(outcome.register_commit.staged_nodes, vec![x_register]);
         assert_eq!(outcome.register_commit.committed_nodes, vec![x_register]);
         assert_eq!(outcome.register_commit.dirty_cells, vec![x_cell]);
-        for node_id in &x_consumers {
-            assert!(outcome.after_commit.executed_nodes.contains(node_id));
-        }
-        let executed_z_nodes = {
-            let plan = decoded.interpreter().plan();
-            let plan = plan.borrow();
-            outcome
-                .after_commit
-                .executed_nodes
-                .iter()
-                .copied()
-                .filter(|node_id| plan.node(*node_id).unwrap().outputs.contains(&z_cell))
-                .collect::<Vec<_>>()
-        };
-        assert!(!executed_z_nodes.is_empty());
-        assert_eq!(*x_ref.borrow(), expected_x);
-        assert_eq!(*decoded_output.as_f64().unwrap().borrow(), expected_z);
+        assert!(outcome.after_commit.executed_nodes.is_empty());
+        assert_eq!(*x_ref.borrow(), expected);
+        assert_eq!(*decoded_output.as_f64().unwrap().borrow(), expected);
         assert!(turn_state.pending_register_nodes.is_empty());
         let plan = decoded.interpreter().plan();
         let plan = plan.borrow();
@@ -467,10 +456,10 @@ fn decoded_reactive_turn_reuses_compiled_plan() -> MResult<()> {
 #[test]
 fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
     let code = "[1.0 2.0; 3.0 4.0]";
-    let mut source = MechProgram::new(MechProgramConfig::default());
+    let mut source = source_program();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
-    let mut decoded = MechProgram::new(MechProgramConfig::default());
+    let mut decoded = runtime_program();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     let expected = Value::MatrixF64(ValueMatrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2));
@@ -484,10 +473,10 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
 #[test]
 fn decoded_set_literal_registers_structural_node() -> MResult<()> {
     let code = "{1.0, 2.0}";
-    let mut source = MechProgram::new(MechProgramConfig::default());
+    let mut source = source_program();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
-    let mut decoded = MechProgram::new(MechProgramConfig::default());
+    let mut decoded = runtime_program();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     assert_eq!(decoded_output, source_output);

@@ -9,7 +9,8 @@ use crate::{Interpreter, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnS
 fn whole_variable_assignment_registers_state_node() {
     let source = "~x := 1.0; y := 2.0; x = y; x";
     let tree = mech_syntax::parser::parse(source).unwrap();
-    let mut interpreter = Interpreter::new(0, 10_000);
+    let mut interpreter =
+        Interpreter::with_function_catalog(0, 10_000, crate::test_function_catalog());
     let output = interpreter.interpret(&tree).unwrap();
     assert_eq!(*output.as_f64().unwrap().borrow(), 2.0);
     assert_eq!(
@@ -23,7 +24,8 @@ fn whole_variable_assignment_registers_state_node() {
 fn whole_matrix_assignment_uses_root_cells() {
     let source = "~x := [1.0 2.0]; y := [3.0 4.0]; x = y; x";
     let tree = mech_syntax::parser::parse(source).unwrap();
-    let mut interpreter = Interpreter::new(0, 10_000);
+    let mut interpreter =
+        Interpreter::with_function_catalog(0, 10_000, crate::test_function_catalog());
     let output = interpreter.interpret(&tree).unwrap();
     let x = symbol(&interpreter, "x");
     let y = symbol(&interpreter, "y");

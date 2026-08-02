@@ -2373,6 +2373,9 @@ dependencies = [
  "mech-set",
  "mech-stats",
  "mech-string",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]

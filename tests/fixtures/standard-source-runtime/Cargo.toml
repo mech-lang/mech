@@ -1,20 +1,26 @@
 [package]
-name = "bytecode-runtime-consumer"
+name = "standard-source-runtime"
 version = "0.0.0"
 edition = "2024"
 publish = false
 
 [dependencies]
+mech-core = {
+  path = "../../../src/core",
+  default-features = false,
+}
 mech-engine = {
   path = "../../../src/engine",
   default-features = false,
-  features = ["runtime", "f64"],
+  features = ["source"],
 }
 mech-stdlib = {
   path = "../../../src/stdlib",
   default-features = false,
-  features = ["runtime", "f64", "math_add"],
+  features = ["standard_source"],
 }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [patch.crates-io]
 mech-core = { path = "../../../src/core" }
