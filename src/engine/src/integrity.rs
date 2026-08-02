@@ -556,7 +556,7 @@ mod tests {
     fn program_with_constraint(source: &str) -> MechProgram {
         let mut program = MechProgram::with_function_catalog(
             MechProgramConfig::default(),
-            crate::test_function_catalog(),
+            crate::test_support::catalog::function_catalog(),
         );
         program.run_string(source).unwrap();
         program
@@ -709,15 +709,18 @@ mod tests {
         let root_id = program.interpreter().id;
         let child_id = root_id.wrapping_add(101);
         let grandchild_id = root_id.wrapping_add(202);
-        let mut child =
-            Interpreter::with_function_catalog(child_id, 10_000, crate::test_function_catalog());
+        let mut child = Interpreter::with_function_catalog(
+            child_id,
+            10_000,
+            crate::test_support::catalog::function_catalog(),
+        );
         child
             .interpret(&parser::parse("shared! := false").unwrap())
             .unwrap();
         let mut grandchild = Interpreter::with_function_catalog(
             grandchild_id,
             10_000,
-            crate::test_function_catalog(),
+            crate::test_support::catalog::function_catalog(),
         );
         grandchild
             .interpret(&parser::parse("nested! := false").unwrap())
@@ -1022,7 +1025,7 @@ mod tests {
     fn invalid_reactive_candidate_rolls_back_and_later_valid_turn_succeeds() {
         let mut program = MechProgram::with_function_catalog(
             MechProgramConfig::default(),
-            crate::test_function_catalog(),
+            crate::test_support::catalog::function_catalog(),
         );
         let interpreter_id = program.interpreter().id;
         let input = program

@@ -112,7 +112,7 @@ pub mod browser;
 pub mod error;
 pub mod execution;
 #[cfg(feature = "functions")]
-pub mod function_catalog;
+pub mod function;
 pub mod kind;
 pub mod nodes;
 #[cfg(feature = "functions")]
@@ -124,8 +124,6 @@ mod value_snapshot;
 pub use self::value_snapshot::{
     ValueSnapshotBorrowConflict, ValueSnapshotCollectionCollision, ValueSnapshotCycleUnsupported,
 };
-#[cfg(feature = "functions")]
-pub mod functions;
 #[cfg(feature = "mika")]
 pub mod mika;
 pub mod program;
@@ -136,9 +134,7 @@ pub use self::browser::*;
 pub use self::error::*;
 pub use self::execution::*;
 #[cfg(feature = "functions")]
-pub use self::function_catalog::*;
-#[cfg(feature = "functions")]
-pub use self::functions::*;
+pub use self::function::*;
 pub use self::kind::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;

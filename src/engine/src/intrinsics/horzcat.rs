@@ -886,7 +886,7 @@ where
 ))]
 mod compiler_tests {
     use super::*;
-    use crate::bytecode_test_context::RecordingBytecodeCompilerContext;
+    use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;
 
     fn matrix() -> Ref<DMatrix<i64>> {
         Ref::new(DMatrix::from_vec(1, 1, vec![7i64]))

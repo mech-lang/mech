@@ -30,7 +30,7 @@ macro_rules! trace_println {
 }
 
 #[cfg(feature = "functions")]
-use crate::functions::*;
+use crate::function::*;
 #[cfg(feature = "access")]
 use crate::intrinsics::access::*;
 #[cfg(feature = "assign")]
@@ -75,20 +75,10 @@ use std::time::Duration;
 
 #[cfg(all(feature = "source", feature = "functions", feature = "symbol_table"))]
 pub mod activation;
-#[cfg(all(test, feature = "compiler"))]
-mod bytecode_test_context;
 #[cfg(feature = "source")]
 pub mod expressions;
 #[cfg(feature = "functions")]
-pub mod function_catalog;
-#[cfg(feature = "functions")]
-pub mod function_environment;
-#[cfg(feature = "functions")]
-pub mod function_extensions;
-#[cfg(feature = "functions")]
-pub mod function_resolver;
-#[cfg(feature = "functions")]
-pub mod functions;
+pub mod function;
 #[cfg(all(feature = "source", feature = "invariant_define"))]
 pub mod integrity;
 pub mod interpreter;
@@ -97,21 +87,18 @@ pub mod intrinsics;
 pub mod literals;
 #[cfg(feature = "source")]
 pub mod mechdown;
-#[cfg(all(feature = "source", feature = "functions"))]
-pub mod modules;
-#[cfg(all(feature = "source", feature = "native"))]
-pub mod native;
 #[cfg(feature = "source")]
 pub mod patterns;
-#[cfg(feature = "program")]
 pub mod program;
-pub mod program_state;
 #[cfg(all(feature = "source", feature = "state_machines"))]
 pub mod state_machines;
 #[cfg(feature = "source")]
 pub mod statements;
 #[cfg(feature = "source")]
 pub mod structures;
+#[cfg(test)]
+#[path = "../tests/support/mod.rs"]
+pub(crate) mod test_support;
 pub mod tracing;
 
 pub use mech_core::*;
@@ -119,15 +106,7 @@ pub use mech_core::*;
 #[cfg(feature = "source")]
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
-pub use crate::function_catalog::*;
-#[cfg(feature = "functions")]
-pub use crate::function_environment::*;
-#[cfg(feature = "functions")]
-pub use crate::function_extensions::*;
-#[cfg(feature = "functions")]
-pub use crate::function_resolver::*;
-#[cfg(feature = "functions")]
-pub use crate::functions::*;
+pub use crate::function::*;
 #[cfg(all(feature = "source", feature = "invariant_define"))]
 pub use crate::integrity::*;
 pub use crate::interpreter::*;
@@ -135,15 +114,9 @@ pub use crate::interpreter::*;
 pub use crate::literals::*;
 #[cfg(feature = "source")]
 pub use crate::mechdown::*;
-#[cfg(all(feature = "source", feature = "functions"))]
-pub use crate::modules::*;
-#[cfg(all(feature = "source", feature = "native"))]
-pub use crate::native::*;
 #[cfg(feature = "source")]
 pub use crate::patterns::*;
-#[cfg(feature = "program")]
 pub use crate::program::*;
-pub use crate::program_state::*;
 #[cfg(all(feature = "source", feature = "state_machines"))]
 pub use crate::state_machines::*;
 #[cfg(feature = "source")]

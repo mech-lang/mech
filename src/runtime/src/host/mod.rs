@@ -33,10 +33,16 @@ use crate::{PreparedRuntimeEffect, RuntimeValueSnapshot, TryIntoRuntimeValueSnap
 #[cfg(feature = "string")]
 pub mod actor;
 pub mod arg;
+#[cfg(feature = "host_delegation")]
+pub mod delegation;
+pub mod interface;
 
 #[cfg(feature = "string")]
 pub use self::actor::*;
 pub use self::arg::*;
+#[cfg(feature = "host_delegation")]
+pub use self::delegation::*;
+pub use self::interface::*;
 
 // -----------------------------------------------------------------------------
 // Host Function Planning and Invocation

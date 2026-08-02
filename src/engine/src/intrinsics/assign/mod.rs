@@ -471,7 +471,7 @@ mod tests {
     #[cfg(feature = "compiler")]
     #[test]
     fn empty_stable_assignment_bytecode_compile_returns_error() {
-        use crate::bytecode_test_context::RecordingBytecodeCompilerContext;
+        use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;
 
         let assignment = AssignEmpty;
         let mut context = RecordingBytecodeCompilerContext::default();

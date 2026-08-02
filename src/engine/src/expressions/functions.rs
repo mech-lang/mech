@@ -67,8 +67,7 @@ pub fn function_call(
                 || input_arg_values
                     .iter()
                     .any(|value| string_access_input_is_live(value, p));
-            let output =
-                crate::functions::execute_user_function(&definition, &input_arg_values, p)?;
+            let output = crate::function::execute_user_function(&definition, &input_arg_values, p)?;
             #[cfg(feature = "subscript_formula")]
             if output_is_live {
                 mark_current_string_access_expression_live(p);

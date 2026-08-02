@@ -72,7 +72,7 @@ pub(super) fn elaborate_patterned_arm_guard(
         let _deferred_expression_solves =
             crate::expressions::DeferredExpressionSolveScope::enter(interpreter);
         let _persistent_user_function_plan =
-            crate::functions::PersistentUserFunctionPlanScope::enter(interpreter);
+            crate::function::PersistentUserFunctionPlanScope::enter(interpreter);
         let guard_value = crate::expression(guard, None, interpreter)?;
         let guard_ref = crate::expressions::validate_guard_expression_result(
             guard_value.clone(),
