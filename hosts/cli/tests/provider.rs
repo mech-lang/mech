@@ -93,6 +93,24 @@ fn env_read_returns_fake_value_and_missing_errors() {
 }
 
 #[test]
+fn env_plan_read_returns_an_empty_string_without_touching_the_backend() {
+    let provider = CliResourceProvider::new(FakeCliBackend {
+        env_error: Some("backend must not be called while planning".to_string()),
+        ..FakeCliBackend::default()
+    });
+
+    let value = provider
+        .plan_read(RuntimeResourceReadRequest {
+            base_uri: "cli://env".to_string(),
+            path: "HOME".to_string(),
+            context_name: "env".to_string(),
+        })
+        .unwrap();
+
+    assert_eq!(value, str_value(""));
+}
+
+#[test]
 fn env_read_rejects_invalid_env_keys() {
     let provider = CliResourceProvider::new(FakeCliBackend::default());
 
@@ -104,6 +122,29 @@ fn env_read_rejects_invalid_env_keys() {
         });
         assert!(result.is_err(), "expected invalid env path to fail: {path}");
     }
+}
+
+#[test]
+fn env_plan_read_validates_keys_and_other_cli_resources_are_not_plannable() {
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
+
+    for path in ["", "1HOME", "HOME/PATH", "HOME-PATH"] {
+        let result = provider.plan_read(RuntimeResourceReadRequest {
+            base_uri: "cli://env".to_string(),
+            path: path.to_string(),
+            context_name: "env".to_string(),
+        });
+        assert!(result.is_err(), "expected invalid env path to fail: {path}");
+    }
+
+    let error = provider
+        .plan_read(RuntimeResourceReadRequest {
+            base_uri: "cli://stdout".to_string(),
+            path: "line".to_string(),
+            context_name: "stdout".to_string(),
+        })
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "RuntimeResourceReadNotPlannable");
 }
 
 #[test]

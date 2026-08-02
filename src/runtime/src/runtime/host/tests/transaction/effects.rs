@@ -60,6 +60,7 @@ fn staged_planning_does_not_create_effects() {
     let lifecycle = Arc::new(Mutex::new(Vec::new()));
     let effect_log = lifecycle.clone();
     let mut runtime = test_runtime_builder()
+        .planning()
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged-lifecycle",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
@@ -86,8 +87,5 @@ fn staged_planning_does_not_create_effects() {
         .run_string("staged-lifecycle-result := demo/staged-lifecycle()")
         .unwrap();
 
-    assert_eq!(
-        lifecycle.lock().unwrap().as_slice(),
-        &["prepare".to_string(), "commit".to_string()],
-    );
+    assert!(lifecycle.lock().unwrap().is_empty());
 }

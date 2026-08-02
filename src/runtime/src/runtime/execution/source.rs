@@ -1,13 +1,12 @@
-use super::{
-    RuntimeProgramTarget, identifier_from_str, resolve_runtime_value, single_code_program,
-};
+use super::RuntimeProgramTarget;
 use crate::event::RuntimeEventKind;
 use crate::resolver::SourceScope;
 #[cfg(feature = "compiler")]
 use crate::runtime::RuntimeProgramBusy;
+use crate::runtime::live_state::LiveRegistrationMode;
 use crate::runtime::{MechRuntime, RuntimeInvalidOperationError};
 use crate::{ResourceBudgetExceededError, RuntimeContext, RuntimeValueSnapshot};
-use mech_core::{MResult, MechError, MechSourceCode, ValRef, Value, hash_str};
+use mech_core::{MResult, MechError, MechSourceCode, Value};
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
@@ -108,59 +107,6 @@ impl MechRuntime {
         Ok(result)
     }
 
-    pub(super) fn evaluate_expression_on_program(
-        &mut self,
-        context: &mut RuntimeContext,
-        target: &mut RuntimeProgramTarget<'_>,
-        expression: &mech_core::Expression,
-    ) -> MResult<Value> {
-        let single = single_code_program(mech_core::MechCode::Expression(expression.clone()), None);
-        self.execute_program_target_tree(context, target, &single)
-            .map(resolve_runtime_value)
-    }
-
-    pub(super) fn bind_persistent_send_value_on_program(
-        &mut self,
-        context: &mut RuntimeContext,
-        target: &mut RuntimeProgramTarget<'_>,
-        expression: mech_core::Expression,
-    ) -> MResult<ValRef> {
-        let name = format!(
-            "mech-internal-persistent-send-{}",
-            self.persistent_sends.len()
-        );
-        let id = hash_str(&name);
-        let var_def = mech_core::VariableDefine {
-            mutable: false,
-            var: mech_core::Var {
-                name: identifier_from_str(&name),
-                context: None,
-                kind: None,
-            },
-            expression,
-        };
-        let single = single_code_program(
-            mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)),
-            None,
-        );
-        self.execute_program_target_tree(context, target, &single)?;
-        self.program_target_ref(target)
-            .interpreter()
-            .symbols()
-            .borrow()
-            .get(id)
-            .ok_or_else(|| {
-                MechError::new(
-                    RuntimeInvalidOperationError {
-                        operation: "persistent_context_send",
-                        reason: "failed to bind persistent send expression to an output cell"
-                            .to_string(),
-                    },
-                    None,
-                )
-            })
-    }
-
     pub fn run_string(&mut self, source: &str) -> MResult<RuntimeValueSnapshot> {
         let mut context = self.runtime_context()?;
         self.run_string_with_context(&mut context, source)
@@ -256,6 +202,10 @@ impl MechRuntime {
 
         let result = result.and_then(|value| {
             self.enforce_turn_duration(turn_started)?;
+            if self.has_live_input_bindings() {
+                self.validate_live_context_candidate(context)?;
+                self.commit_live_context_candidate(context);
+            }
             Ok(value)
         });
         if result.is_ok() {
@@ -303,48 +253,55 @@ impl MechRuntime {
         }
     }
 
-    pub fn run_bytecode_with_context(
+    pub fn evaluate_bytecode_once_with_context(
         &mut self,
         context: &mut RuntimeContext,
         bytecode: &[u8],
     ) -> MResult<RuntimeValueSnapshot> {
-        self.run_bytecode_with_context_map(context, bytecode, |value| {
+        self.evaluate_bytecode_once_with_context_map(context, bytecode, |value| {
             RuntimeValueSnapshot::try_capture(&value)
         })
     }
 
-    fn run_bytecode_value_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        bytecode: &[u8],
-    ) -> MResult<Value> {
-        self.run_bytecode_with_context_map(context, bytecode, Ok)
-    }
-
-    fn run_bytecode_with_context_map<T>(
+    fn evaluate_bytecode_once_with_context_map<T>(
         &mut self,
         context: &mut RuntimeContext,
         bytecode: &[u8],
         finish: impl FnOnce(Value) -> MResult<T>,
     ) -> MResult<T> {
         let turn_started = Instant::now();
-        self.validate_context_for_runtime(context)?;
-        let source_bytes = u64::try_from(bytecode.len()).map_err(|_| {
-            MechError::new(
-                ResourceBudgetExceededError {
-                    resource: "source_bytes",
-                    used: u64::MAX,
-                    requested: 1,
-                    max: None,
-                },
-                None,
-            )
-        })?;
-        self.enforce_source_byte_count(context, source_bytes)?;
-        self.run_bytecode_with_context_inner_map(context, bytecode, turn_started, finish)
+        let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
+        let result = self.with_atomic_program_operation(
+            context,
+            "evaluate_bytecode_once_with_context",
+            |runtime, context| {
+                let source_bytes = u64::try_from(bytecode.len()).map_err(|_| {
+                    MechError::new(
+                        ResourceBudgetExceededError {
+                            resource: "source_bytes",
+                            used: u64::MAX,
+                            requested: 1,
+                            max: None,
+                        },
+                        None,
+                    )
+                })?;
+                runtime.enforce_source_byte_count(context, source_bytes)?;
+                runtime.evaluate_bytecode_once_with_context_inner_map(
+                    context,
+                    bytecode,
+                    turn_started,
+                    finish,
+                )
+            },
+        );
+        if let Err(error) = &result {
+            self.emit_program_failure_audit(context, error, profile_started);
+        }
+        result
     }
 
-    fn run_bytecode_with_context_inner_map<T>(
+    fn evaluate_bytecode_once_with_context_inner_map<T>(
         &mut self,
         context: &mut RuntimeContext,
         bytecode: &[u8],
@@ -365,11 +322,15 @@ impl MechRuntime {
         let mut bytecode_program = self.new_program(self.program.config.clone());
 
         let live_state_before = self.live_state_snapshot();
-        let result = (|| {
-            self.register_runtime_program_host_functions(context, &mut bytecode_program)?;
-
-            bytecode_program.run_bytecode(bytecode)
-        })();
+        let result =
+            self.with_live_registration_mode(LiveRegistrationMode::IsolatedSnapshot, |runtime| {
+                runtime.register_runtime_program_host_functions(context, &mut bytecode_program)?;
+                runtime.with_isolated_program_execution_session(
+                    context,
+                    &mut bytecode_program,
+                    |program, services| program.run_bytecode_with_services(bytecode, services),
+                )
+            });
 
         let result = result.and_then(|value| {
             self.enforce_turn_duration(turn_started)?;
@@ -420,6 +381,82 @@ impl MechRuntime {
         result
     }
 
+    pub fn install_bytecode_with_context(
+        &mut self,
+        context: &mut RuntimeContext,
+        bytecode: &[u8],
+    ) -> MResult<RuntimeValueSnapshot> {
+        let turn_started = Instant::now();
+        let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
+        let result = self.with_atomic_program_operation(
+            context,
+            "install_bytecode_with_context",
+            |runtime, context| {
+                let source_bytes = u64::try_from(bytecode.len()).map_err(|_| {
+                    MechError::new(
+                        ResourceBudgetExceededError {
+                            resource: "source_bytes",
+                            used: u64::MAX,
+                            requested: 1,
+                            max: None,
+                        },
+                        None,
+                    )
+                })?;
+                runtime.enforce_source_byte_count(context, source_bytes)?;
+                context.charge_step()?;
+                runtime.emit_event_to_context(
+                    context,
+                    RuntimeEventKind::ProgramStarted {
+                        task_id: context.task,
+                    },
+                )?;
+
+                // A retained bytecode install replaces the root plan. Its live
+                // bindings must therefore replace, rather than append to, the
+                // targets retained by the previous root plan. The surrounding
+                // atomic operation restores both collections on every failure.
+                runtime.live_input_bindings.clear();
+                runtime.live_context_template = None;
+                let mut replacement = runtime.new_program(runtime.program.config.clone());
+                runtime.register_runtime_program_host_functions(context, &mut replacement)?;
+                let value = runtime.with_isolated_program_execution_session(
+                    context,
+                    &mut replacement,
+                    |program, services| program.run_bytecode_with_services(bytecode, services),
+                )?;
+                runtime.enforce_turn_duration(turn_started)?;
+                if runtime.has_live_input_bindings() {
+                    runtime.commit_live_context_candidate(context);
+                }
+                let snapshot = RuntimeValueSnapshot::try_capture(&value)?;
+                let transaction_id = Self::context_transaction_id(context)?;
+                runtime.replace_retained_program(transaction_id, replacement)?;
+
+                runtime.emit_event_to_context(
+                    context,
+                    RuntimeEventKind::ProgramCompleted {
+                        task_id: context.task,
+                    },
+                )?;
+                if let Some(started) = profile_started {
+                    runtime.emit_event_to_context(
+                        context,
+                        RuntimeEventKind::ProgramProfiled {
+                            task_id: context.task,
+                            duration_ns: started.elapsed().as_nanos(),
+                        },
+                    )?;
+                }
+                Ok(snapshot)
+            },
+        );
+        if let Err(error) = &result {
+            self.emit_program_failure_audit(context, error, profile_started);
+        }
+        result
+    }
+
     pub fn run_source_with_context(
         &mut self,
         context: &mut RuntimeContext,
@@ -451,7 +488,7 @@ impl MechRuntime {
     ) -> MResult<T> {
         let turn_started = Instant::now();
         if let MechSourceCode::ByteCode(bytes) = source {
-            return self.run_bytecode_with_context_map(context, bytes, finish);
+            return self.evaluate_bytecode_once_with_context_map(context, bytes, finish);
         }
 
         let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
@@ -482,7 +519,7 @@ impl MechRuntime {
             }
             MechSourceCode::Tree(tree) => self.run_tree_operation(context, tree, turn_started),
             MechSourceCode::ByteCode(bytes) => {
-                self.run_bytecode_with_context_inner_map(context, bytes, turn_started, Ok)
+                self.evaluate_bytecode_once_with_context_inner_map(context, bytes, turn_started, Ok)
             }
             MechSourceCode::Program(sources) => {
                 let mut value = Value::Empty;
@@ -580,6 +617,10 @@ impl MechRuntime {
 
         let result = result.and_then(|value| {
             self.enforce_turn_duration(turn_started)?;
+            if self.has_live_input_bindings() {
+                self.validate_live_context_candidate(context)?;
+                self.commit_live_context_candidate(context);
+            }
             Ok(value)
         });
         if result.is_ok() {

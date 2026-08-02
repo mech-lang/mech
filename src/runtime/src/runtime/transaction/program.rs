@@ -15,14 +15,14 @@ use crate::{
     ActiveRuntimeEffectPhase, RuntimeContext, RuntimeEffectId, RuntimeEffectOperationReentrant,
     RuntimeEventKind, RuntimeHealth, RuntimeInvalidOperationError, RuntimePoisonRecord,
     RuntimePoisoned, RuntimeProgramBusy, RuntimeProgramOperationReentrant,
-    RuntimeProgramRollbackFailed, TaskId, TransactionId,
+    RuntimeProgramRollbackFailed, TransactionId,
 };
 #[cfg(feature = "invariant_define")]
-use crate::{RuntimeIntegrityConstraintFailureReason, RuntimeIntegrityConstraintViolation};
+use crate::{RuntimeIntegrityConstraintFailureReason, RuntimeIntegrityConstraintViolation, TaskId};
 use mech_core::{MResult, MechError};
-use mech_engine::MechProgramCheckpoint;
 #[cfg(feature = "invariant_define")]
 use mech_engine::{IntegrityConstraintFailureReason, IntegrityConstraintViolationSet};
+use mech_engine::{MechProgram, MechProgramCheckpoint};
 use std::collections::HashSet;
 
 #[cfg(feature = "invariant_define")]
@@ -215,6 +215,7 @@ impl MechRuntime {
             .program = Some(RuntimeProgramBaseline {
             program: program.clone(),
             live: live.clone(),
+            replacement_predecessors: Vec::new(),
         });
         self.program_transaction_owner = Some(transaction_id);
         Ok(RuntimeProgramOwnershipAcquisition::NewlyAcquired { program, live })
@@ -448,6 +449,12 @@ impl MechRuntime {
     ) -> Vec<String> {
         let mut failures = Vec::new();
 
+        if let Err(error) = self
+            .restore_retained_program_replacement_depth(transaction_id, savepoint.replacement_depth)
+        {
+            failures.push(format!("program replacement restore failed: {:?}", error));
+        }
+
         if let Err(error) = self.program.restore(savepoint.program.clone()) {
             failures.push(format!("program restore failed: {:?}", error));
         }
@@ -459,6 +466,96 @@ impl MechRuntime {
             &savepoint.runtime,
         ));
         failures
+    }
+
+    /// Replaces the retained root while preserving every predecessor object
+    /// in the owning transaction. Structural replacement cannot use
+    /// `MechProgramCheckpoint`: checkpoints intentionally require the
+    /// function identities captured at savepoint time to remain installed.
+    pub(in crate::runtime) fn replace_retained_program(
+        &mut self,
+        transaction_id: TransactionId,
+        replacement: MechProgram,
+    ) -> MResult<()> {
+        if self.program_transaction_owner != Some(transaction_id) {
+            return self.coordinator_invariant_failure(
+                "replace_retained_program",
+                Some(transaction_id),
+                format!(
+                    "transaction {} cannot replace a retained program owned by {:?}",
+                    transaction_id, self.program_transaction_owner,
+                ),
+            );
+        }
+        if self
+            .active_execution_transaction(transaction_id)?
+            .program
+            .is_none()
+        {
+            return self.coordinator_invariant_failure(
+                "replace_retained_program",
+                Some(transaction_id),
+                "program replacement requires an owned transaction baseline",
+            );
+        }
+
+        let predecessor = std::mem::replace(&mut self.program, replacement);
+        self.active_execution_transaction_mut(transaction_id)?
+            .program
+            .as_mut()
+            .expect("program baseline was validated before replacement")
+            .replacement_predecessors
+            .push(predecessor);
+        Ok(())
+    }
+
+    pub(in crate::runtime) fn restore_retained_program_replacement_depth(
+        &mut self,
+        transaction_id: TransactionId,
+        replacement_depth: usize,
+    ) -> MResult<()> {
+        loop {
+            let predecessor = {
+                let baseline = self
+                    .active_execution_transaction_mut(transaction_id)?
+                    .program
+                    .as_mut()
+                    .ok_or_else(|| {
+                        MechError::new(
+                            RuntimeInvalidOperationError {
+                                operation: "restore_retained_program_replacement_depth",
+                                reason: format!(
+                                    "transaction {} has no retained-program baseline",
+                                    transaction_id,
+                                ),
+                            },
+                            None,
+                        )
+                    })?;
+                if baseline.replacement_predecessors.len() < replacement_depth {
+                    return Err(MechError::new(
+                        RuntimeInvalidOperationError {
+                            operation: "restore_retained_program_replacement_depth",
+                            reason: format!(
+                                "replacement depth {} exceeds retained predecessor depth {}",
+                                replacement_depth,
+                                baseline.replacement_predecessors.len(),
+                            ),
+                        },
+                        None,
+                    ));
+                }
+                if baseline.replacement_predecessors.len() == replacement_depth {
+                    None
+                } else {
+                    baseline.replacement_predecessors.pop()
+                }
+            };
+            let Some(predecessor) = predecessor else {
+                return Ok(());
+            };
+            self.program = predecessor;
+        }
     }
 
     #[cfg(test)]
@@ -538,6 +635,7 @@ impl MechRuntime {
                 .program = Some(RuntimeProgramBaseline {
                 program: program_checkpoint.clone(),
                 live: live_checkpoint.clone(),
+                replacement_predecessors: Vec::new(),
             });
             self.program_transaction_owner = Some(transaction_id);
             (transaction_id, program_checkpoint, live_checkpoint)
@@ -556,9 +654,16 @@ impl MechRuntime {
             }
         };
 
+        let replacement_depth = self
+            .active_execution_transaction(transaction_id)?
+            .program
+            .as_ref()
+            .map(|baseline| baseline.replacement_predecessors.len())
+            .unwrap_or(0);
         let savepoint = RuntimeProgramOperationSavepoint {
             program: program_checkpoint,
             live: live_checkpoint,
+            replacement_depth,
             runtime: self.capture_runtime_operation_savepoint(context, transaction_id)?,
         };
 

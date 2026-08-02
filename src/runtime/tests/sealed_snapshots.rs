@@ -1,13 +1,18 @@
+#[cfg(feature = "compiler")]
 use std::cell::RefCell;
 use std::sync::Arc;
 
-use mech_core::{FunctionCatalogBuilder, Ref, Value};
+#[cfg(feature = "compiler")]
+use mech_core::Ref;
+use mech_core::{FunctionCatalogBuilder, Value};
+#[cfg(feature = "compiler")]
 use mech_runtime::{
-    BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, MechRuntime,
-    ModuleBuildOptions, PlannedPureHostFunction, RuntimeBuilder, RuntimeCallContext,
-    RuntimeValueSnapshot,
+    BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
+    PlannedPureHostFunction, RuntimeCallContext, RuntimeValueSnapshot,
 };
+use mech_runtime::{MechRuntime, ModuleBuildOptions, RuntimeBuilder};
 
+#[cfg(feature = "compiler")]
 thread_local! {
   static RETAINED_HOST_ARGUMENT: RefCell<Option<RuntimeValueSnapshot>> =
     const { RefCell::new(None) };
@@ -40,6 +45,7 @@ fn source_runtime_builder() -> RuntimeBuilder {
     RuntimeBuilder::new().function_catalog(Arc::new(catalog.build().unwrap()))
 }
 
+#[cfg(feature = "compiler")]
 fn grant_host_call(runtime: &mut MechRuntime, name: &str) {
     let subject = runtime.runtime_context().unwrap().subject().to_string();
     runtime
@@ -92,6 +98,7 @@ fn mutating_module_result_snapshot_does_not_change_module_exports() {
 }
 
 #[test]
+#[cfg(feature = "compiler")]
 fn retained_host_snapshots_cannot_mutate_program_inputs_or_outputs() {
     RETAINED_HOST_ARGUMENT.with(|slot| slot.borrow_mut().take());
     RETAINED_HOST_RESULT.with(|slot| slot.borrow_mut().take());
@@ -99,7 +106,7 @@ fn retained_host_snapshots_cannot_mutate_program_inputs_or_outputs() {
     let function = PlannedPureHostFunction::new(
         "sealed/snapshot",
         |_context: &RuntimeCallContext, _arguments: &[RuntimeValueSnapshot]| {
-            RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(5.0)))
+            RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(4.0)))
         },
         |_context: &RuntimeCallContext, arguments: Vec<RuntimeValueSnapshot>| {
             RETAINED_HOST_ARGUMENT.with(|slot| {
@@ -120,6 +127,11 @@ fn retained_host_snapshots_cannot_mutate_program_inputs_or_outputs() {
     grant_host_call(&mut runtime, "sealed/snapshot");
     runtime
         .run_string("sealed-input := 1.0\nsealed-output := sealed/snapshot(sealed-input)")
+        .unwrap();
+    let bytecode = runtime.compile_program_bytecode().unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime
+        .install_bytecode_with_context(&mut context, &bytecode)
         .unwrap();
 
     RETAINED_HOST_ARGUMENT.with(|slot| {

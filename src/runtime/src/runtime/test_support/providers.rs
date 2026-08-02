@@ -10,8 +10,9 @@ use super::super::{MechRuntime, RuntimeBuilder};
 use crate::{
     PlannedPureHostFunction, PreparedRuntimeEffect, RegisteredHostFunction,
     RuntimeAfterCommitEffect, RuntimeCallContext, RuntimeEffectMetadata, RuntimeEffectSource,
-    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
-    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, RuntimeValueSnapshot,
+    RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeIngress, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeResourceWriteRequest, RuntimeValueSnapshot,
 };
 
 pub(crate) const TEST_OUTPUT_BASE_URI: &str = "test://effects/output";
@@ -99,6 +100,16 @@ impl RuntimeResourceProvider for TestResourceProvider {
     }
 
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        self.planned_value(request)
+    }
+
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        self.planned_value(request)
+    }
+}
+
+impl TestResourceProvider {
+    fn planned_value(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.values
             .get(&request.base_uri)
             .and_then(|paths| paths.get(&request.path))
@@ -219,11 +230,42 @@ pub(crate) fn test_provider_with(base_uri: &str, path: &str, value: f64) -> Test
     TestResourceProvider::new().with_value(base_uri, path, Value::F64(Ref::new(value)))
 }
 
+#[derive(Debug, Default)]
+struct TestLiveInputDriver {
+    live: bool,
+}
+
+impl RuntimeHostInputDriver for TestLiveInputDriver {
+    fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+        source.base_uri().starts_with("test://")
+    }
+
+    fn attach(&mut self, _ingress: RuntimeIngress) -> MResult<()> {
+        Ok(())
+    }
+
+    fn start(&mut self) -> MResult<()> {
+        self.live = true;
+        Ok(())
+    }
+
+    fn stop(&mut self) -> MResult<()> {
+        self.live = false;
+        Ok(())
+    }
+
+    fn is_live(&self) -> bool {
+        self.live
+    }
+}
+
 pub(crate) fn test_runtime_builder() -> RuntimeBuilder {
     let mut catalog = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_runtime(&mut catalog).unwrap();
     mech_engine::install_intrinsic_source(&mut catalog).unwrap();
-    RuntimeBuilder::new().function_catalog(std::sync::Arc::new(catalog.build().unwrap()))
+    RuntimeBuilder::new()
+        .function_catalog(std::sync::Arc::new(catalog.build().unwrap()))
+        .test_input_driver(TestLiveInputDriver::default())
 }
 
 pub(crate) fn test_runtime(provider: TestResourceProvider) -> MechRuntime {

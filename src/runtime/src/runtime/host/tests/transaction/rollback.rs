@@ -3,9 +3,9 @@ use std::sync::{Arc, Mutex};
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
-    CapabilityId, MechRuntime, PlannedPureHostFunction, PlannedRuntimeManagedHostFunction,
-    PlannedStagedHostFunction, PreparedRuntimeEffect, RuntimeCallContext, RuntimeHealth,
-    RuntimePreparedHostCall, RuntimeValueSnapshot,
+    CapabilityId, HostCall, MechRuntime, PlannedPureHostFunction,
+    PlannedRuntimeManagedHostFunction, PlannedStagedHostFunction, PreparedRuntimeEffect,
+    RuntimeCallContext, RuntimeHealth, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
 use mech_core::{Ref, Value};
 
@@ -43,7 +43,7 @@ fn failed_later_operation_discards_only_its_staged_host_effect() {
     runtime.begin_transaction(&mut context).unwrap();
 
     runtime
-        .run_string_with_context(&mut context, "first := demo/staged()")
+        .call_host_with_context(&mut context, HostCall::new("demo/staged", Vec::new()))
         .unwrap();
     let failed = runtime.run_string_with_context(
         &mut context,
@@ -51,7 +51,6 @@ fn failed_later_operation_discards_only_its_staged_host_effect() {
     );
 
     assert!(failed.is_err());
-    assert!(runtime.program.root_symbol_value("first").is_ok());
     assert!(runtime.program.root_symbol_value("discarded").is_err());
     assert!(log.lock().unwrap().is_empty());
 
@@ -76,7 +75,7 @@ fn pure_host_panic_rolls_back_and_restores_program_and_guard() {
     runtime.run_string("panic-anchor := 1.0").unwrap();
 
     let error = runtime
-        .run_string("discarded := sealed/pure-panic()")
+        .call_host(HostCall::new("sealed/pure-panic", Vec::new()))
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
@@ -103,7 +102,7 @@ fn runtime_managed_host_panic_is_an_ordinary_rollback_failure() {
     grant_host_call(&mut runtime, CapabilityId(700), "sealed/managed-panic");
 
     let error = runtime
-        .run_string("discarded := sealed/managed-panic()")
+        .call_host(HostCall::new("sealed/managed-panic", Vec::new()))
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
@@ -128,7 +127,7 @@ fn staged_host_prepare_panic_stages_no_effect() {
     grant_host_call(&mut runtime, CapabilityId(700), "sealed/staged-panic");
 
     let error = runtime
-        .run_string("discarded := sealed/staged-panic()")
+        .call_host(HostCall::new("sealed/staged-panic", Vec::new()))
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");

@@ -1,4 +1,4 @@
-use super::support::{CommitDecisionEffect, savepoint_effect};
+use super::support::{CommitDecisionEffect, invoke_host_callback, savepoint_effect};
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::runtime::test_support::ids::ScriptedEventIdGenerator;
 use crate::runtime::test_support::providers::test_runtime_builder;
@@ -7,7 +7,7 @@ use crate::{
     CapabilityId, EventId, PlannedStagedHostFunction, PreparedRuntimeEffect, RuntimeEventKind,
     RuntimeIntegrityConstraintFailureReason, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
-use mech_core::{Value, hash_str};
+use mech_core::{MechSourceCode, Value, hash_str};
 use std::sync::{Arc, Mutex};
 
 #[test]
@@ -263,7 +263,17 @@ fn invalid_explicit_integrity_suffix_discards_only_its_effects() {
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
 
     runtime
-        .run_string_with_context(&mut context, "a-result := integrity/a()\na-safe! := true")
+        .with_atomic_program_operation(
+            &mut context,
+            "valid_integrity_prefix_test",
+            |runtime, context| {
+                runtime.program.run_source(&MechSourceCode::String(
+                    "a-result := 1.0\na-safe! := true".to_string(),
+                ))?;
+                invoke_host_callback(runtime, context, "integrity/a")?;
+                Ok(())
+            },
+        )
         .unwrap();
     assert_eq!(
         runtime
@@ -275,7 +285,17 @@ fn invalid_explicit_integrity_suffix_discards_only_its_effects() {
     );
 
     let error = runtime
-        .run_string_with_context(&mut context, "b-result := integrity/b()\nb-safe! := false")
+        .with_atomic_program_operation(
+            &mut context,
+            "invalid_integrity_suffix_test",
+            |runtime, context| {
+                runtime.program.run_source(&MechSourceCode::String(
+                    "b-result := 1.0\nb-safe! := false".to_string(),
+                ))?;
+                invoke_host_callback(runtime, context, "integrity/b")?;
+                Ok(())
+            },
+        )
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
@@ -295,7 +315,17 @@ fn invalid_explicit_integrity_suffix_discards_only_its_effects() {
     assert!(!runtime.is_poisoned());
 
     runtime
-        .run_string_with_context(&mut context, "c-result := integrity/c()\nc-safe! := true")
+        .with_atomic_program_operation(
+            &mut context,
+            "valid_integrity_suffix_test",
+            |runtime, context| {
+                runtime.program.run_source(&MechSourceCode::String(
+                    "c-result := 1.0\nc-safe! := true".to_string(),
+                ))?;
+                invoke_host_callback(runtime, context, "integrity/c")?;
+                Ok(())
+            },
+        )
         .unwrap();
     runtime.commit_runtime_transaction(&mut context).unwrap();
 

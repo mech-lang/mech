@@ -16,5 +16,6 @@ pub(in crate::runtime) struct RuntimeOperationSavepoint {
 pub(in crate::runtime) struct RuntimeProgramOperationSavepoint {
     pub(in crate::runtime) program: MechProgramCheckpoint,
     pub(in crate::runtime) live: RuntimeLiveStateSnapshot,
+    pub(in crate::runtime) replacement_depth: usize,
     pub(in crate::runtime) runtime: RuntimeOperationSavepoint,
 }

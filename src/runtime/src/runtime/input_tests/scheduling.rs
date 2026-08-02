@@ -1,14 +1,9 @@
-use std::collections::HashSet;
-
 use mech_core::{
     ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveTurnOutcome,
     Ref, Value,
 };
 
 use super::super::MechRuntime;
-use super::super::live_state::RuntimePersistentSendSchedule;
-use super::persistent_send::{publish, runtime_with_console, snapshot};
-use crate::runtime::execution::ACTIVATION_EFFECT_BARRIER_NAME;
 use crate::runtime::test_support::{
     capabilities::{grant_host_call, grant_read, grant_write},
     providers::{
@@ -160,7 +155,7 @@ fn runtime_reactive_host_input_unbound_packet_does_not_advance_pending_registers
             .interpreter()
             .has_pending_reactive_registers()
     );
-    assert_eq!(output.lines().len(), 2);
+    assert_eq!(output.lines().len(), 1);
     let b_before = f64_value(&symbol_value(&runtime, "b"));
     let output_before = f64_value(&symbol_value(&runtime, "output"));
     let lines_before = output.lines();
@@ -262,6 +257,46 @@ fn runtime_reactive_host_input_preserves_deferred_registers_across_packets() {
     );
 }
 
+#[test]
+fn top_level_send_repeats_only_when_its_reactive_input_changes() {
+    let provider = TestResourceProvider::new()
+        .with_value(TEST_SIGNALS_BASE_URI, "sent", Value::F64(Ref::new(1.0)))
+        .with_value(
+            TEST_SIGNALS_BASE_URI,
+            "unrelated",
+            Value::F64(Ref::new(10.0)),
+        );
+    let (mut runtime, output) = test_runtime_with_output(provider);
+    grant_read(&mut runtime, TEST_SIGNALS_BASE_URI, "sent");
+    grant_read(&mut runtime, TEST_SIGNALS_BASE_URI, "unrelated");
+    grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
+
+    runtime
+        .run_string(
+            r#"@signals := test://signals/inputs{:read(sent), :read(unrelated)}
+@out := test://effects/output{:write(line)}
+sent-value := @signals/sent
+unrelated-value := @signals/unrelated
+@out/line <- sent-value
+"#,
+        )
+        .unwrap();
+
+    assert_eq!(output.lines().len(), 1);
+    assert_eq!(recorded_f64(&output, 0), 1.0);
+
+    let unrelated = apply_f64_input(&mut runtime, TEST_SIGNALS_BASE_URI, "unrelated", 20.0);
+    assert!(unrelated.turn.is_some());
+    assert_eq!(f64_value(&symbol_value(&runtime, "unrelated-value")), 20.0);
+    assert_eq!(output.lines().len(), 1);
+
+    let related = apply_f64_input(&mut runtime, TEST_SIGNALS_BASE_URI, "sent", 2.0);
+    assert!(related.turn.is_some());
+    assert_eq!(f64_value(&symbol_value(&runtime, "sent-value")), 2.0);
+    assert_eq!(output.lines().len(), 2);
+    assert_eq!(recorded_f64(&output, 1), 2.0);
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct ActivationPlanSnapshot {
     nodes: Vec<ActivationNodeSnapshot>,
@@ -327,30 +362,6 @@ fn activation_nodes_for_trigger(
         .map(|n| n.id)
         .collect()
 }
-fn activation_barrier_for_trigger(runtime: &MechRuntime, trigger_name: &str) -> ReactiveNodeId {
-    let c = symbol_cell(runtime, trigger_name);
-    let p = runtime.program.interpreter().plan();
-    let barriers = p
-        .borrow()
-        .nodes
-        .iter()
-        .filter(|n| {
-            n.kind == ReactiveNodeKind::Combinational
-                && n.function.to_string() == ACTIVATION_EFFECT_BARRIER_NAME
-                && n.outputs.is_empty()
-                && n.inputs
-                    .iter()
-                    .any(|d| d.cell == c && d.kind == ReactiveDependencyKind::Reactive)
-        })
-        .map(|n| n.id)
-        .collect::<Vec<_>>();
-    assert_eq!(
-        barriers.len(),
-        1,
-        "expected exactly one activation-effect barrier for trigger {trigger_name}"
-    );
-    barriers[0]
-}
 pub(super) fn only_reactive_turn(outcome: &RuntimeHostInputOutcome) -> &ReactiveTurnOutcome {
     let p = outcome
         .turn
@@ -385,12 +396,6 @@ pub(super) fn apply_f64_input(
 }
 pub(super) fn recorded_f64(o: &RecordingTestOutput, i: usize) -> f64 {
     o.lines()[i].trim().parse().unwrap()
-}
-pub(super) fn activation_send_count(r: &MechRuntime) -> usize {
-    r.persistent_sends
-        .iter()
-        .filter(|s| matches!(s.schedule, RuntimePersistentSendSchedule::Activation { .. }))
-        .count()
 }
 
 #[test]
@@ -427,7 +432,6 @@ state = test/plus-one(state)
     let register = register_node_for_symbol(&runtime, "state");
     assert_eq!(f64_value(&symbol_value(&runtime, "state")), 0.0);
     assert!(output.lines().is_empty());
-    assert_eq!(activation_send_count(&runtime), 2);
 
     let first = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
     assert_eq!(
@@ -446,7 +450,6 @@ state = test/plus-one(state)
     assert_eq!(f64_value(&symbol_value(&runtime, "state")), 2.0);
     assert_eq!(output.lines(), vec!["0", "0", "1", "1"]);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
-    assert_eq!(activation_send_count(&runtime), 2);
 }
 
 #[test]
@@ -481,62 +484,19 @@ render-tick := @tick/tick
         output.lines().is_empty(),
         "patterned effects ran during load"
     );
-    assert_eq!(activation_send_count(&runtime), 3);
-    let barriers = runtime
-        .persistent_sends
-        .iter()
-        .map(|send| match send.schedule {
-            RuntimePersistentSendSchedule::Activation {
-                barrier_node_id, ..
-            } => barrier_node_id,
-            RuntimePersistentSendSchedule::EveryAcceptedTurn => {
-                panic!("patterned activation send used top-level schedule")
-            }
-        })
-        .collect::<Vec<_>>();
-    assert_eq!(
-        barriers.iter().copied().collect::<HashSet<_>>().len(),
-        3,
-        "each effectful arm must own a distinct barrier"
-    );
     let plan = activation_plan_snapshot(&runtime);
     let first = apply_f64_input(&mut runtime, "test://render/timer", "tick", 5.0);
-    let turn = only_reactive_turn(&first);
+    only_reactive_turn(&first);
     assert_eq!(output.lines(), vec!["5"]);
-    assert_eq!(
-        (
-            executed_count(turn, barriers[0]),
-            executed_count(turn, barriers[1]),
-            executed_count(turn, barriers[2])
-        ),
-        (0, 0, 1)
-    );
     assert_eq!(activation_plan_snapshot(&runtime), plan);
     let equal = apply_f64_input(&mut runtime, "test://render/timer", "tick", 5.0);
-    let turn = only_reactive_turn(&equal);
+    only_reactive_turn(&equal);
     assert_eq!(output.lines(), vec!["5", "5"]);
-    assert_eq!(
-        (
-            executed_count(turn, barriers[0]),
-            executed_count(turn, barriers[1]),
-            executed_count(turn, barriers[2])
-        ),
-        (0, 0, 1)
-    );
     assert_eq!(activation_plan_snapshot(&runtime), plan);
     let fallback = apply_f64_input(&mut runtime, "test://render/timer", "tick", 7.0);
-    let turn = only_reactive_turn(&fallback);
+    only_reactive_turn(&fallback);
     assert_eq!(output.lines(), vec!["5", "5", "7"]);
-    assert_eq!(
-        (
-            executed_count(turn, barriers[0]),
-            executed_count(turn, barriers[1]),
-            executed_count(turn, barriers[2])
-        ),
-        (0, 1, 0)
-    );
     assert_eq!(activation_plan_snapshot(&runtime), plan);
-    assert_eq!(activation_send_count(&runtime), 3);
 }
 
 #[test]
@@ -564,53 +524,35 @@ scene := @signals/value
         .unwrap();
 
     assert!(output.lines().is_empty());
-    assert_eq!(activation_send_count(&runtime), 1);
-    let barrier = runtime
-        .persistent_sends
-        .iter()
-        .find_map(|send| match send.schedule {
-            RuntimePersistentSendSchedule::Activation {
-                barrier_node_id, ..
-            } => Some(barrier_node_id),
-            RuntimePersistentSendSchedule::EveryAcceptedTurn => None,
-        })
-        .unwrap();
     let plan = activation_plan_snapshot(&runtime);
 
     let scene_only = apply_f64_input(&mut runtime, TEST_SIGNALS_BASE_URI, "value", -1.0);
     assert!(output.lines().is_empty());
-    assert_eq!(executed_count(only_reactive_turn(&scene_only), barrier), 0);
+    only_reactive_turn(&scene_only);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
 
     let first_render = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
     assert_eq!(output.lines(), vec!["-1"]);
-    assert_eq!(
-        executed_count(only_reactive_turn(&first_render), barrier),
-        1
-    );
+    only_reactive_turn(&first_render);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
 
     let scene_only = apply_f64_input(&mut runtime, TEST_SIGNALS_BASE_URI, "value", 10.0);
     assert_eq!(output.lines(), vec!["-1"]);
-    assert_eq!(executed_count(only_reactive_turn(&scene_only), barrier), 0);
+    only_reactive_turn(&scene_only);
 
     let render = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
     assert_eq!(output.lines(), vec!["-1", "10"]);
-    assert_eq!(executed_count(only_reactive_turn(&render), barrier), 1);
+    only_reactive_turn(&render);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
 
     let scene_only = apply_f64_input(&mut runtime, TEST_SIGNALS_BASE_URI, "value", 20.0);
     assert_eq!(output.lines(), vec!["-1", "10"]);
-    assert_eq!(executed_count(only_reactive_turn(&scene_only), barrier), 0);
+    only_reactive_turn(&scene_only);
 
     let equal_render = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
     assert_eq!(output.lines(), vec!["-1", "10", "20"]);
-    assert_eq!(
-        executed_count(only_reactive_turn(&equal_render), barrier),
-        1
-    );
+    only_reactive_turn(&equal_render);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
-    assert_eq!(activation_send_count(&runtime), 1);
 }
 
 #[test]
@@ -642,42 +584,35 @@ x = next-x
         )
         .unwrap();
     let initial_plan = activation_plan_snapshot(&runtime);
-    let render_barrier = activation_barrier_for_trigger(&runtime, "render-tick");
     let physics_combinational_nodes =
         activation_nodes_for_trigger(&runtime, "physics-tick", ReactiveNodeKind::Combinational);
     let x_register = register_node_for_symbol(&runtime, "x");
     assert!(!physics_combinational_nodes.is_empty());
     assert_eq!(f64_value(&symbol_value(&runtime, "x")), 0.0);
     assert!(output.lines().is_empty());
-    assert_eq!(activation_send_count(&runtime), 1);
     let a = apply_f64_input(&mut runtime, "test://physics/timer", "tick", 1.0);
     let t = only_reactive_turn(&a);
     assert_eq!(f64_value(&symbol_value(&runtime, "x")), 1.0);
     assert!(output.lines().is_empty());
-    assert_eq!(executed_count(t, render_barrier), 0);
     for n in &physics_combinational_nodes {
         assert_eq!(executed_count(t, *n), 1)
     }
     assert_eq!(t.register_commit.committed_nodes, vec![x_register]);
     assert_eq!(activation_plan_snapshot(&runtime), initial_plan);
-    assert_eq!(activation_send_count(&runtime), 1);
     let a = apply_f64_input(&mut runtime, "test://physics/timer", "tick", 2.0);
     let t = only_reactive_turn(&a);
     assert_eq!(f64_value(&symbol_value(&runtime, "x")), 2.0);
     assert!(output.lines().is_empty());
-    assert_eq!(executed_count(t, render_barrier), 0);
     for n in &physics_combinational_nodes {
         assert_eq!(executed_count(t, *n), 1)
     }
     assert_eq!(t.register_commit.committed_nodes, vec![x_register]);
     assert_eq!(activation_plan_snapshot(&runtime), initial_plan);
-    assert_eq!(activation_send_count(&runtime), 1);
     let a = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
     let t = only_reactive_turn(&a);
     assert_eq!(f64_value(&symbol_value(&runtime, "x")), 2.0);
     assert_eq!(output.lines().len(), 1);
     assert_eq!(recorded_f64(&output, 0), 2.0);
-    assert_eq!(executed_count(t, render_barrier), 1);
     for n in &physics_combinational_nodes {
         assert_eq!(executed_count(t, *n), 0)
     }
@@ -686,15 +621,13 @@ x = next-x
     assert!(!t.register_commit.committed_nodes.contains(&x_register));
     assert!(!t.after_commit.pending_register_nodes.contains(&x_register));
     assert_eq!(activation_plan_snapshot(&runtime), initial_plan);
-    assert_eq!(activation_send_count(&runtime), 1);
     let a = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
     assert_eq!(f64_value(&symbol_value(&runtime, "x")), 2.0);
     assert_eq!(output.lines().len(), 2);
     assert_eq!(recorded_f64(&output, 0), 2.0);
     assert_eq!(recorded_f64(&output, 1), 2.0);
-    assert_eq!(executed_count(only_reactive_turn(&a), render_barrier), 1);
+    only_reactive_turn(&a);
     assert_eq!(activation_plan_snapshot(&runtime), initial_plan);
-    assert_eq!(activation_send_count(&runtime), 1);
 }
 #[test]
 fn activation_send_samples_latest_value_and_ignores_other_updates() {
@@ -731,103 +664,28 @@ other-result := test/plus-one(sampled-value)
 "#,
     )
     .unwrap();
-    let b = activation_barrier_for_trigger(&r, "render-tick");
     let ns = activation_nodes_for_trigger(&r, "other-tick", ReactiveNodeKind::Combinational);
     assert!(!ns.is_empty());
     assert!(o.lines().is_empty());
     let q = apply_f64_input(&mut r, TEST_SIGNALS_BASE_URI, "value", 10.0);
     assert!(o.lines().is_empty());
-    assert_eq!(executed_count(only_reactive_turn(&q), b), 0);
+    only_reactive_turn(&q);
     let q = apply_f64_input(&mut r, "test://other/timer", "tick", 1.0);
     assert!(o.lines().is_empty());
-    assert_eq!(executed_count(only_reactive_turn(&q), b), 0);
+    only_reactive_turn(&q);
     for n in ns {
         assert_eq!(executed_count(only_reactive_turn(&q), n), 1)
     }
     let q = apply_f64_input(&mut r, "test://render/timer", "tick", 1.0);
     assert_eq!(o.lines().len(), 1);
     assert_eq!(recorded_f64(&o, 0), 10.0);
-    assert_eq!(executed_count(only_reactive_turn(&q), b), 1);
+    only_reactive_turn(&q);
     let q = apply_f64_input(&mut r, TEST_SIGNALS_BASE_URI, "value", 20.0);
     assert_eq!(o.lines().len(), 1);
-    assert_eq!(executed_count(only_reactive_turn(&q), b), 0);
+    only_reactive_turn(&q);
     let q = apply_f64_input(&mut r, "test://render/timer", "tick", 1.0);
     assert_eq!(o.lines().len(), 2);
     assert_eq!(recorded_f64(&o, 0), 10.0);
     assert_eq!(recorded_f64(&o, 1), 20.0);
-    assert_eq!(executed_count(only_reactive_turn(&q), b), 1);
-}
-
-#[test]
-fn activation_send_registers_one_barrier_per_scope_and_replays_equal_triggers() {
-    let (mut runtime, driver, console) = runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
-    runtime
-        .run_string(
-            r#"@out := console://console/output{:write(line)}
-@clock := time://clock/clock{:read(hour)}
-render-tick := @clock/hour
-~> render-tick {
-@out/line <- "first"
-@out/line <- "second"
-@out/line <- "third"
-}
-"#,
-        )
-        .unwrap();
-
-    // Activation effects are registered, rather than evaluated, during load.
-    assert!(console.lines().is_empty());
-    assert_eq!(runtime.persistent_send_count(), 3);
-    let schedules: Vec<_> = runtime
-        .persistent_sends
-        .iter()
-        .map(|send| match send.schedule {
-            RuntimePersistentSendSchedule::Activation {
-                barrier_node_id, ..
-            } => barrier_node_id,
-            RuntimePersistentSendSchedule::EveryAcceptedTurn => {
-                panic!("activation send used top-level schedule")
-            }
-        })
-        .collect();
-    assert!(schedules.windows(2).all(|ids| ids[0] == ids[1]));
-    let barriers = runtime
-        .program
-        .interpreter()
-        .plan()
-        .borrow()
-        .nodes
-        .iter()
-        .filter(|node| {
-            node.kind == mech_core::ReactiveNodeKind::Combinational
-                && node.function.to_string() == ACTIVATION_EFFECT_BARRIER_NAME
-                && node.outputs.is_empty()
-        })
-        .count();
-    assert_eq!(barriers, 1);
-
-    // Equal admitted values still execute the barrier and replay every send.
-    publish(&mut runtime, &driver, snapshot(5.0, 2.0, 3.0, 4.0));
-    publish(&mut runtime, &driver, snapshot(5.0, 2.0, 3.0, 4.0));
-    assert_eq!(
-        console.lines(),
-        vec![
-            "\"first\"",
-            "\"second\"",
-            "\"third\"",
-            "\"first\"",
-            "\"second\"",
-            "\"third\""
-        ]
-    );
-}
-
-#[test]
-fn activation_internal_barrier_is_not_user_callable() {
-    let (mut runtime, _driver, _console) =
-        runtime_with_console(snapshot(1.0, 2.0, 3.0, 4.0), false);
-    let error = runtime
-        .run_string("mech/runtime/activation-effect-barrier()")
-        .unwrap_err();
-    assert!(format!("{error:?}").contains("MissingFunction"));
+    only_reactive_turn(&q);
 }

@@ -1,12 +1,12 @@
 #[cfg(feature = "compiler")]
 use super::super::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use super::super::{CapabilityId, MResult, MechFunctionImpl, MechRuntime, RuntimeConfig, Value};
-use crate::runtime::host::RuntimeHostNativeFunction;
 use crate::{
     BasicCapability, BasicOperation, BasicResource, BasicSubject, PlannedPureHostFunction,
     RuntimeCallContext, RuntimeValueSnapshot,
 };
-use mech_core::Ref;
+use mech_core::{ExecutionHostFunctionRequest, InitialSolvePolicy, Ref};
+use mech_engine::ExternalHostCallFunction;
 use std::sync::{
     Arc,
     atomic::{AtomicUsize, Ordering},
@@ -103,11 +103,13 @@ fn step_with_context_recomputes_runtime_host_function_with_provided_context() {
         calls: second_calls.clone(),
         output: Ref::new(0),
     }));
-    plan.add_function(Box::new(RuntimeHostNativeFunction {
-        name: "demo/echo".to_string(),
-        host_name: "demo/echo".to_string(),
+    plan.add_function(Box::new(ExternalHostCallFunction {
+        request: ExecutionHostFunctionRequest {
+            name: "demo/echo".to_string(),
+        },
         arguments: vec![Value::F64(Ref::new(2.0))],
-        value: host_output.clone(),
+        output: host_output.clone(),
+        initial_solve_policy: InitialSolvePolicy::Solve,
     }));
 
     runtime.step_with_context(&mut context, 3).unwrap();

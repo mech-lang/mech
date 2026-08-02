@@ -4,8 +4,48 @@ mod catalog;
 mod dynamic_matrix_factory;
 
 use mech_core::matrix::Matrix;
-use mech_core::{BytecodeInstruction, MResult, ParsedProgram, Ref, Value};
+use mech_core::{
+    BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult,
+    MechExecutionServices, ParsedProgram, Ref, ValRef, Value,
+};
 use mech_engine::{MechProgram, MechProgramConfig};
+
+#[derive(Default)]
+struct RecordingExecutionServices {
+    writes: Vec<Value>,
+}
+
+impl MechExecutionServices for RecordingExecutionServices {
+    fn invoke_host_function(
+        &mut self,
+        _request: &ExecutionHostFunctionRequest,
+        _arguments: &[Value],
+    ) -> MResult<Value> {
+        panic!("mixed-program test did not expect a host call")
+    }
+
+    fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<Value> {
+        panic!("mixed-program test did not expect a resource read")
+    }
+
+    fn write_resource(
+        &mut self,
+        _request: &ExecutionResourceRequest,
+        value: &Value,
+    ) -> MResult<()> {
+        self.writes.push(value.clone());
+        Ok(())
+    }
+
+    fn bind_live_resource(
+        &mut self,
+        _interpreter_id: u64,
+        _request: &ExecutionResourceRequest,
+        _target: ValRef,
+    ) -> MResult<()> {
+        panic!("mixed-program test did not expect a live resource binding")
+    }
+}
 
 fn standard_program() -> MechProgram {
     MechProgram::with_function_catalog(MechProgramConfig::default(), mech::stdlib::source_catalog())
@@ -92,6 +132,36 @@ fn mixed_program_reuses_trailing_symbol_producer_register() -> MResult<()> {
     let (parsed, value) = run_compiled_source("x := 1.0 + 2.0\nx")?;
     assert_eq!(value, Value::F64(Ref::new(3.0)));
     assert_eq!(return_register(&parsed), final_binary_register(&parsed));
+    Ok(())
+}
+
+#[test]
+fn mixed_program_returns_literal_after_external_send() -> MResult<()> {
+    let source = "@out/line <- \"message\"\n\"final\"";
+    let message = Value::String(Ref::new("message".to_string()));
+    let final_value = Value::String(Ref::new("final".to_string()));
+
+    let mut source_program = standard_program();
+    source_program.run_string("@out := test://effects/output{:write(line)}")?;
+    let mut source_services = RecordingExecutionServices::default();
+    assert_eq!(
+        source_program.run_string_with_services(source, &mut source_services)?,
+        final_value,
+    );
+    assert_eq!(source_services.writes, vec![message.clone()]);
+
+    let parsed = ParsedProgram::from_bytes(&source_program.compile_bytecode()?)?;
+    assert!(
+        parsed
+            .instructions
+            .iter()
+            .any(|instruction| matches!(instruction, BytecodeInstruction::ResourceSend { .. }))
+    );
+    let mut compiled_services = RecordingExecutionServices::default();
+    let compiled_value =
+        standard_program().run_bytecode_program_with_services(&parsed, &mut compiled_services)?;
+    assert_eq!(compiled_value, final_value);
+    assert_eq!(compiled_services.writes, vec![message]);
     Ok(())
 }
 

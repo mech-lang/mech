@@ -17,7 +17,7 @@ fn snapshot(value: Value) -> RuntimeValueSnapshot {
 }
 
 #[test]
-fn pure_host_planning_does_not_consume_single_use_capability() {
+fn pure_host_source_execution_consumes_single_use_capability() {
     let calls = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
     let mut runtime = test_runtime_builder()
@@ -49,7 +49,7 @@ fn pure_host_planning_does_not_consume_single_use_capability() {
 }
 
 #[test]
-fn runtime_managed_planning_does_not_consume_single_use_capability() {
+fn runtime_managed_source_execution_consumes_single_use_capability() {
     let calls = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
     let mut runtime = test_runtime_builder()
@@ -81,7 +81,7 @@ fn runtime_managed_planning_does_not_consume_single_use_capability() {
 }
 
 #[test]
-fn staged_planning_does_not_consume_single_use_capability() {
+fn staged_source_execution_consumes_single_use_capability() {
     let calls = Arc::new(AtomicUsize::new(0));
     let deliveries = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
@@ -150,7 +150,7 @@ fn custom_capability_without_preview_contract_fails_closed() {
         }))
         .unwrap();
     let error = runtime
-        .run_string("unsupported-preview-result := demo/unsupported-preview()")
+        .call_host(HostCall::new("demo/unsupported-preview", Vec::new()))
         .unwrap_err();
 
     assert_eq!(error.kind_name(), "TransactionStateUnsupported");

@@ -2,8 +2,8 @@ use super::super::{register_expression_function_batch, register_initialized_expr
 #[cfg(feature = "compiler")]
 use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use crate::{
-    MResult, MechFunction, MechFunctionImpl, Plan, ReactiveCellId, ReactiveDependencyKind, Ref,
-    Value,
+    InitialSolvePolicy, MResult, MechFunction, MechFunctionImpl, Plan, ReactiveCellId,
+    ReactiveDependencyKind, Ref, Value,
 };
 use std::sync::{
     Arc,
@@ -13,6 +13,7 @@ use std::sync::{
 struct IndexedExpressionTestFunction {
     output: Value,
     solve_calls: Arc<AtomicUsize>,
+    initial_solve_policy: InitialSolvePolicy,
 }
 
 impl MechFunctionImpl for IndexedExpressionTestFunction {
@@ -22,6 +23,10 @@ impl MechFunctionImpl for IndexedExpressionTestFunction {
 
     fn out(&self) -> Value {
         self.output.clone()
+    }
+
+    fn initial_solve_policy(&self) -> InitialSolvePolicy {
+        self.initial_solve_policy
     }
 
     fn to_string(&self) -> String {
@@ -50,6 +55,15 @@ fn function(output: Value, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
     Box::new(IndexedExpressionTestFunction {
         output,
         solve_calls: calls,
+        initial_solve_policy: InitialSolvePolicy::Solve,
+    })
+}
+
+fn preserving_function(output: Value, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
+    Box::new(IndexedExpressionTestFunction {
+        output,
+        solve_calls: calls,
+        initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
     })
 }
 
@@ -104,6 +118,25 @@ fn indexed_expression_registration_deduplicates_aliases() {
     assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert_eq!(plan.node(0).unwrap().inputs.len(), 1);
     assert_eq!(plan.reactive_consumers_for(cell), &[0]);
+}
+
+#[test]
+fn indexed_expression_registration_preserves_planned_output_when_requested() {
+    let plan = Plan::new();
+    let (input, _) = scalar(1.0);
+    let (output, output_cell) = scalar(2.0);
+    let calls = Arc::new(AtomicUsize::new(0));
+
+    let result = register_initialized_expression_function(
+        &plan,
+        preserving_function(output, calls.clone()),
+        &[input],
+    )
+    .unwrap();
+
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    assert_eq!(result.reactive_cell_ids(), vec![output_cell]);
+    assert_eq!(plan.len(), 1);
 }
 
 #[test]

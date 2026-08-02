@@ -1900,6 +1900,16 @@ impl Interpreter {
         self.registers = vec![Value::Empty; program.header.register_count as usize];
         // Load the constants
         self.constants = program.decode_constants()?;
+        // A source symbol is a stable outer Value cell around its register
+        // value. Allocate those cells before rebuilding nodes so external
+        // consumers can retain the same recursive dependency shape as source
+        // execution: symbol wrapper followed by the producing register cell.
+        // Symbols that intentionally share a register share one outer cell.
+        let mut register_symbol_cells =
+            vec![None::<ValRef>; program.header.register_count as usize];
+        for register in program.symbols.values() {
+            register_symbol_cells[*register as usize].get_or_insert_with(|| Ref::new(Value::Empty));
+        }
         // Load the instructions
         {
             let function_catalog = Arc::clone(&self.function_catalog);
@@ -1908,8 +1918,15 @@ impl Interpreter {
                 let instr = &program.instructions[self.ip];
                 match instr {
                     BytecodeInstruction::ConstLoad { dst, constant } => {
-                        let value = self.constants[*constant as usize].clone();
-                        self.registers[*dst as usize] = value;
+                        // Equal constants are deduplicated in the bytecode table, but
+                        // distinct destination registers still represent distinct
+                        // runtime cells. Detach each load so equal initial values do
+                        // not accidentally alias after reconstruction.
+                        let value = self.constants[*constant as usize].try_deep_snapshot()?;
+                        self.registers[*dst as usize] = value.clone();
+                        if let Some(symbol_cell) = &register_symbol_cells[*dst as usize] {
+                            *symbol_cell.borrow_mut() = value;
+                        }
                     }
                     BytecodeInstruction::RuntimeNullary { function, dst } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
@@ -2074,20 +2091,106 @@ impl Interpreter {
                             }
                         }
                     }
+                    BytecodeInstruction::HostCall {
+                        requirement,
+                        dst,
+                        arguments,
+                    } => {
+                        let request =
+                            bytecode_host_function_request(program, *requirement, "HostCall")?;
+                        let argument_values = arguments
+                            .iter()
+                            .map(|register| {
+                                bytecode_external_input(
+                                    &self.registers,
+                                    &register_symbol_cells,
+                                    *register,
+                                )
+                            })
+                            .collect::<Vec<Value>>();
+                        let output = Ref::new(self.registers[*dst as usize].clone());
+                        self.out = register_bytecode_node(
+                            &state_brrw,
+                            Box::new(ExternalHostCallFunction {
+                                request,
+                                arguments: argument_values.clone(),
+                                output,
+                                initial_solve_policy: InitialSolvePolicy::Solve,
+                            }),
+                            &argument_values,
+                        )?;
+                    }
+                    BytecodeInstruction::ResourceRead { requirement, dst } => {
+                        let request = bytecode_resource_request(
+                            program,
+                            *requirement,
+                            "ResourceRead",
+                            ResourceIntent::Read,
+                        )?;
+                        let output = Ref::new(self.registers[*dst as usize].clone());
+                        self.out = register_bytecode_node(
+                            &state_brrw,
+                            Box::new(ExternalResourceReadFunction {
+                                interpreter_id: self.id,
+                                request,
+                                output,
+                                initial_solve_policy: InitialSolvePolicy::Solve,
+                            }),
+                            &[],
+                        )?;
+                    }
+                    BytecodeInstruction::ResourceWrite {
+                        requirement,
+                        dst,
+                        src,
+                    } => {
+                        let request = bytecode_resource_request(
+                            program,
+                            *requirement,
+                            "ResourceWrite",
+                            ResourceIntent::Assign,
+                        )?;
+                        let input =
+                            bytecode_external_input(&self.registers, &register_symbol_cells, *src);
+                        let output = Ref::new(self.registers[*dst as usize].clone());
+                        self.out = register_bytecode_node(
+                            &state_brrw,
+                            Box::new(ExternalResourceWriteFunction {
+                                request,
+                                input: input.clone(),
+                                output,
+                                initial_solve_policy: InitialSolvePolicy::Solve,
+                            }),
+                            &[input],
+                        )?;
+                    }
+                    BytecodeInstruction::ResourceSend {
+                        requirement,
+                        dst,
+                        src,
+                    } => {
+                        let request = bytecode_resource_request(
+                            program,
+                            *requirement,
+                            "ResourceSend",
+                            ResourceIntent::Send,
+                        )?;
+                        let input =
+                            bytecode_external_input(&self.registers, &register_symbol_cells, *src);
+                        let output = Ref::new(self.registers[*dst as usize].clone());
+                        self.out = register_bytecode_node(
+                            &state_brrw,
+                            Box::new(ExternalResourceWriteFunction {
+                                request,
+                                input: input.clone(),
+                                output,
+                                initial_solve_policy: InitialSolvePolicy::Solve,
+                            }),
+                            &[input],
+                        )?;
+                    }
                     BytecodeInstruction::Return { src } => {
                         self.out = self.registers[*src as usize].clone();
-                    }
-                    BytecodeInstruction::HostCall { .. }
-                    | BytecodeInstruction::ResourceRead { .. }
-                    | BytecodeInstruction::ResourceWrite { .. }
-                    | BytecodeInstruction::ResourceSend { .. } => {
-                        return Err(MechError::new(
-                            UnknownInstructionError {
-                                instr: format!("{:?}", instr),
-                            },
-                            None,
-                        )
-                        .with_compiler_loc());
                     }
                 }
                 self.ip += 1;
@@ -2101,8 +2204,10 @@ impl Interpreter {
             *symbol_table = SymbolTable::new();
             state_brrw.dictionary.borrow_mut().clear();
             for (id, register) in &program.symbols {
-                let value = self.registers[*register as usize].clone();
-                symbol_table.insert(*id, value, program.mutable_symbols.contains(id));
+                let cell = register_symbol_cells[*register as usize]
+                    .clone()
+                    .expect("symbol registers receive a stable cell before reconstruction");
+                symbol_table.insert_cell(*id, cell, program.mutable_symbols.contains(id));
             }
             for (id, name) in &program.dictionary {
                 symbol_table
@@ -2139,11 +2244,90 @@ fn register_bytecode_function(
 ) -> MResult<Value> {
     let input_values = function_args.input_values();
     let function = factory(function_args)?;
+    register_bytecode_node(state, function, &input_values)
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn register_bytecode_node(
+    state: &ProgramState,
+    function: Box<dyn MechFunction>,
+    input_values: &[Value],
+) -> MResult<Value> {
     let output = function.out();
-
-    state.plan.register_function(function, &input_values)?;
-
+    state.plan.register_function(function, input_values)?;
     Ok(output)
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn bytecode_external_input(
+    registers: &[Value],
+    register_symbol_cells: &[Option<ValRef>],
+    register: u32,
+) -> Value {
+    match &register_symbol_cells[register as usize] {
+        Some(symbol_cell) => Value::MutableReference(symbol_cell.clone()),
+        None => registers[register as usize].clone(),
+    }
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn bytecode_host_function_request(
+    program: &ParsedProgram,
+    requirement: u32,
+    instruction: &'static str,
+) -> MResult<ExecutionHostFunctionRequest> {
+    match program.requirements.get(requirement as usize) {
+        Some(ApplicationRequirement::HostFunction(request)) => Ok(request.clone()),
+        actual => Err(bytecode_external_requirement_mismatch(
+            instruction,
+            requirement,
+            "HostFunction",
+            actual,
+        )),
+    }
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn bytecode_resource_request(
+    program: &ParsedProgram,
+    requirement: u32,
+    instruction: &'static str,
+    expected_intent: ResourceIntent,
+) -> MResult<ExecutionResourceRequest> {
+    match program.requirements.get(requirement as usize) {
+        Some(ApplicationRequirement::Resource(request)) if request.intent == expected_intent => {
+            Ok(request.clone())
+        }
+        actual => Err(bytecode_external_requirement_mismatch(
+            instruction,
+            requirement,
+            match expected_intent {
+                ResourceIntent::Read => "Resource(Read)",
+                ResourceIntent::Assign => "Resource(Assign)",
+                ResourceIntent::Send => "Resource(Send)",
+            },
+            actual,
+        )),
+    }
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn bytecode_external_requirement_mismatch(
+    instruction: &'static str,
+    requirement: u32,
+    expected: &'static str,
+    actual: Option<&ApplicationRequirement>,
+) -> MechError {
+    MechError::new(
+        BytecodeExternalRequirementMismatch {
+            instruction,
+            requirement,
+            expected,
+            actual: actual.map(|requirement| format!("{requirement:?}")),
+        },
+        None,
+    )
+    .with_compiler_loc()
 }
 
 #[cfg(test)]
@@ -2156,6 +2340,30 @@ mod tests;
 #[derive(Debug, Clone)]
 pub struct UnknownInstructionError {
     pub instr: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BytecodeExternalRequirementMismatch {
+    pub instruction: &'static str,
+    pub requirement: u32,
+    pub expected: &'static str,
+    pub actual: Option<String>,
+}
+
+impl MechErrorKind for BytecodeExternalRequirementMismatch {
+    fn name(&self) -> &str {
+        "BytecodeExternalRequirementMismatch"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "{} requirement {} must be {}, found {}",
+            self.instruction,
+            self.requirement,
+            self.expected,
+            self.actual.as_deref().unwrap_or("no requirement"),
+        )
+    }
 }
 impl MechErrorKind for UnknownInstructionError {
     fn name(&self) -> &str {

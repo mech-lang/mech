@@ -202,6 +202,12 @@ pub trait MechFunctionFactory {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InitialSolvePolicy {
+    Solve,
+    PreserveSpecializedOutput,
+}
+
 pub trait MechFunctionImpl {
     fn solve(&self);
     fn solve_result(&self) -> MResult<()> {
@@ -222,6 +228,21 @@ pub trait MechFunctionImpl {
     ) -> MResult<ReactiveSolveStatus> {
         let _ = services;
         self.solve_reactive()
+    }
+    fn initial_solve_policy(&self) -> InitialSolvePolicy {
+        InitialSolvePolicy::Solve
+    }
+    /// Performs service-aware initialization that is required even when the
+    /// specialized output itself was produced during deterministic planning.
+    ///
+    /// This hook must not recompute or replace that planned output. Most
+    /// functions need no extra initialization, so the default is a no-op.
+    fn initialize_preserved_output_with(
+        &self,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
+        let _ = services;
+        Ok(())
     }
     fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
         Err(MechError::new(

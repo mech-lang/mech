@@ -54,6 +54,17 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
         Vec::new()
     }
 
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        Err(MechError::new(
+            RuntimeResourceReadNotPlannable {
+                scheme: self.scheme().to_string(),
+                base_uri: request.base_uri,
+                path: request.path,
+            },
+            None,
+        ))
+    }
+
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
@@ -257,6 +268,22 @@ impl RuntimeResourceRegistry {
         })
     }
 
+    pub(crate) fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
+        let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
+            return Err(MechError::new(
+                RuntimeResourceProviderNotFound {
+                    scheme,
+                    uri: request.base_uri,
+                },
+                None,
+            ));
+        };
+        invoke_extension(format!("resource provider `{scheme}`"), "plan_read", || {
+            entry.provider.plan_read(request)
+        })
+    }
+
     pub(crate) fn preflight_write(
         &self,
         request: RuntimeResourceWritePreflightRequest,
@@ -355,21 +382,8 @@ impl InMemoryDocsProvider {
         self.insert(base_uri, path, value)?;
         Ok(self)
     }
-}
 
-impl RuntimeResourceProvider for InMemoryDocsProvider {
-    fn scheme(&self) -> &str {
-        "docs"
-    }
-
-    fn base_uris(&self) -> Vec<String> {
-        self.documents
-            .lock()
-            .map(|documents| documents.keys().cloned().collect())
-            .unwrap_or_default()
-    }
-
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn snapshot_value(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         let documents = self
             .documents
             .lock()
@@ -392,7 +406,31 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
                 None,
             ));
         };
-        Ok(value.clone())
+        value.try_deep_snapshot()
+    }
+}
+
+impl RuntimeResourceProvider for InMemoryDocsProvider {
+    fn scheme(&self) -> &str {
+        "docs"
+    }
+
+    fn base_uris(&self) -> Vec<String> {
+        self.documents
+            .lock()
+            .map(|documents| documents.keys().cloned().collect())
+            .unwrap_or_default()
+    }
+
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        self.snapshot_value(request)
+    }
+
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        // In-memory documents are deterministic build inputs. Planning reads a
+        // detached snapshot directly from the configured document set without
+        // entering the provider's runtime `read` operation.
+        self.snapshot_value(request)
     }
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
@@ -742,6 +780,26 @@ pub struct RuntimeResourceWriteUnsupported {
     pub path: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct RuntimeResourceReadNotPlannable {
+    pub scheme: String,
+    pub base_uri: String,
+    pub path: String,
+}
+
+impl MechErrorKind for RuntimeResourceReadNotPlannable {
+    fn name(&self) -> &str {
+        "RuntimeResourceReadNotPlannable"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "runtime resource provider for scheme `{}` cannot plan a read of `{}` under `{}`",
+            self.scheme, self.path, self.base_uri,
+        )
+    }
+}
+
 impl MechErrorKind for RuntimeResourceWriteUnsupported {
     fn name(&self) -> &str {
         "RuntimeResourceWriteUnsupported"
@@ -816,7 +874,160 @@ impl MechErrorKind for RuntimeResourceCapabilityDenied {
 mod tests {
     use super::*;
     use mech_core::Ref;
-    use std::sync::Arc;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+
+    #[derive(Debug)]
+    struct DefaultPlanningProvider {
+        reads: Arc<AtomicUsize>,
+    }
+
+    impl RuntimeResourceProvider for DefaultPlanningProvider {
+        fn scheme(&self) -> &str {
+            "default-plan"
+        }
+
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+            self.reads.fetch_add(1, Ordering::SeqCst);
+            Ok(Value::F64(Ref::new(1.0)))
+        }
+    }
+
+    #[test]
+    fn default_plan_read_is_structured_and_never_calls_read() {
+        let reads = Arc::new(AtomicUsize::new(0));
+        let provider = DefaultPlanningProvider {
+            reads: Arc::clone(&reads),
+        };
+
+        let error = provider
+            .plan_read(RuntimeResourceReadRequest {
+                base_uri: "default-plan://clock".to_string(),
+                path: "value".to_string(),
+                context_name: "clock".to_string(),
+            })
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "RuntimeResourceReadNotPlannable");
+        assert_eq!(reads.load(Ordering::SeqCst), 0);
+    }
+
+    #[derive(Debug, Default)]
+    struct PlanningProviderCounters {
+        planned_reads: AtomicUsize,
+        reads: AtomicUsize,
+        preflight_writes: AtomicUsize,
+        prepared_writes: AtomicUsize,
+    }
+
+    #[derive(Debug)]
+    struct SyntheticLivePlanningProvider {
+        counters: Arc<PlanningProviderCounters>,
+    }
+
+    impl RuntimeResourceProvider for SyntheticLivePlanningProvider {
+        fn scheme(&self) -> &str {
+            "synthetic-live"
+        }
+
+        fn base_uris(&self) -> Vec<String> {
+            vec!["synthetic-live://clock/clock".to_string()]
+        }
+
+        fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+            assert_eq!(request.path, "value");
+            self.counters.planned_reads.fetch_add(1, Ordering::SeqCst);
+            Ok(Value::F64(Ref::new(0.0)))
+        }
+
+        fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+            assert_eq!(request.path, "value");
+            self.counters.reads.fetch_add(1, Ordering::SeqCst);
+            Ok(Value::F64(Ref::new(7.0)))
+        }
+
+        fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+            assert_eq!(request.path, "value");
+            self.counters
+                .preflight_writes
+                .fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        }
+
+        fn prepare_write(
+            &self,
+            _request: RuntimeResourceWriteRequest,
+        ) -> MResult<PreparedRuntimeEffect> {
+            self.counters.prepared_writes.fetch_add(1, Ordering::SeqCst);
+            panic!("planning must not prepare resource effects")
+        }
+    }
+
+    fn grant_synthetic_live(runtime: &mut crate::MechRuntime, operation: &str) {
+        let subject = runtime.runtime_context().unwrap().subject().to_string();
+        let capability = crate::ResourcePathCapability::wildcard(
+            runtime.next_capability_id(),
+            subject,
+            "synthetic-live://clock/clock",
+            [operation],
+        )
+        .unwrap();
+        runtime.grant_capability(Arc::new(capability)).unwrap();
+    }
+
+    #[test]
+    fn planning_runtime_uses_only_provider_planning_and_preflight_methods() {
+        let counters = Arc::new(PlanningProviderCounters::default());
+        let provider = SyntheticLivePlanningProvider {
+            counters: Arc::clone(&counters),
+        };
+        let mut runtime = crate::RuntimeBuilder::new()
+            .planning()
+            .resource_provider(Box::new(provider))
+            .build()
+            .unwrap();
+        grant_synthetic_live(&mut runtime, "read");
+        grant_synthetic_live(&mut runtime, "write");
+
+        let planned = runtime
+            .read_resource(RuntimeResourceReadRequest {
+                base_uri: "synthetic-live://clock/clock".to_string(),
+                path: "value".to_string(),
+                context_name: "clock".to_string(),
+            })
+            .unwrap()
+            .to_value();
+        assert_eq!(planned, Value::F64(Ref::new(0.0)));
+
+        runtime
+            .write_resource(RuntimeResourceWriteRequest {
+                base_uri: "synthetic-live://clock/clock".to_string(),
+                path: "value".to_string(),
+                context_name: "clock".to_string(),
+                operation: RuntimeCapabilityOperation::Write,
+                value: Value::F64(Ref::new(9.0)),
+                intent: RuntimeResourceWriteIntent::Assign,
+            })
+            .unwrap();
+
+        runtime
+            .write_resource(RuntimeResourceWriteRequest {
+                base_uri: "synthetic-live://clock/clock".to_string(),
+                path: "value".to_string(),
+                context_name: "clock".to_string(),
+                operation: RuntimeCapabilityOperation::Write,
+                value: Value::F64(Ref::new(10.0)),
+                intent: RuntimeResourceWriteIntent::Send,
+            })
+            .unwrap();
+
+        assert_eq!(counters.planned_reads.load(Ordering::SeqCst), 1);
+        assert_eq!(counters.reads.load(Ordering::SeqCst), 0);
+        assert_eq!(counters.preflight_writes.load(Ordering::SeqCst), 2);
+        assert_eq!(counters.prepared_writes.load(Ordering::SeqCst), 0);
+    }
 
     #[derive(Debug)]
     struct EquivalentBaseProvider {

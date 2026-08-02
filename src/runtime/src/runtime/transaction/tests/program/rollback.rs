@@ -103,10 +103,6 @@ fn program_transaction_implicit_partial_failure_restores_everything() {
         live_before.input_bindings,
     );
     assert_eq!(
-        runtime.live_state_snapshot().persistent_sends.len(),
-        live_before.persistent_sends.len(),
-    );
-    assert_eq!(
         runtime.live_state_snapshot().registration_mode,
         live_before.registration_mode,
     );

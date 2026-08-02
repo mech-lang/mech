@@ -8,7 +8,7 @@ mod context;
 mod destructure;
 mod integrity;
 
-pub use context::context_declaration;
+pub use context::{context_declaration, context_send};
 #[cfg(feature = "tuple")]
 pub use destructure::tuple_destructure;
 #[cfg(feature = "invariant_define")]
@@ -70,6 +70,7 @@ pub fn statement(
         Statement::ImportDeclaration(_) => Ok(Value::Empty),
         Statement::ExportDeclaration(_) => Ok(Value::Empty),
         Statement::ContextDeclaration(ctx) => context_declaration(ctx, p),
+        Statement::ContextSend(send) => context_send(send, p),
         #[cfg(feature = "tuple")]
         Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
         #[cfg(feature = "invariant_define")]

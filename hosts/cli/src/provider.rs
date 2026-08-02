@@ -8,9 +8,9 @@ use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
-    RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
-    materialize_host_manifest,
+    RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadNotPlannable,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeResourceWriteRequest, materialize_host_manifest,
 };
 
 pub trait CliBackend: std::fmt::Debug {
@@ -139,6 +139,21 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         } else {
             Err(cli_error(request.base_uri, "unsupported cli resource"))
         }
+    }
+
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        if self.matches_base(&request.base_uri, "env") {
+            validate_env_key(&request.path)?;
+            return Ok(Value::String(Ref::new(String::new())));
+        }
+        Err(MechError::new(
+            RuntimeResourceReadNotPlannable {
+                scheme: self.scheme().to_string(),
+                base_uri: request.base_uri,
+                path: request.path,
+            },
+            None,
+        ))
     }
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {

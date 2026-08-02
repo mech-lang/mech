@@ -591,17 +591,17 @@ where
     }
 }
 
-#[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "i64"))]
+#[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "f64"))]
 mod compiler_tests {
     use super::*;
     use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;
 
     #[test]
     fn vertical_concatenate_n_args_reuses_repeated_matrix_register() {
-        let matrix = Ref::new(DMatrix::from_vec(1, 1, vec![7i64]));
+        let matrix = Ref::new(DMatrix::from_vec(1, 1, vec![7.0]));
         let function = VerticalConcatenateNArgs {
             e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
-            out: Ref::new(DMatrix::from_element(2, 1, 0i64)),
+            out: Ref::new(DMatrix::from_element(2, 1, 0.0)),
         };
         let mut context = RecordingBytecodeCompilerContext::default();
 

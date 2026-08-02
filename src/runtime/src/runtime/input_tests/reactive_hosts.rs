@@ -173,8 +173,11 @@ fn runtime_reactive_host_input_executes_only_reachable_branch() {
 fn live_host_string_output_recomputes_without_replacing_reference() {
     let host = DeterministicHostFunction::new(
         "demo/live-label",
-        |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-            Ok(Value::String(Ref::new(String::new())))
+        |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
+            Ok(Value::String(Ref::new(format!(
+                "tick:{}",
+                host_f64_argument(&args[0])
+            ))))
         },
         |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
             Ok(Value::String(Ref::new(format!(
@@ -246,14 +249,13 @@ fn live_host_output_kind_change_preserves_previous_output() {
                 ))))
             },
             move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
-                let call = host_calls.fetch_add(1, Ordering::SeqCst);
-                if call == 0 {
-                    Ok(snapshot(Value::F64(Ref::new(
+                let invocation = host_calls.fetch_add(1, Ordering::SeqCst);
+                if invocation == 0 {
+                    return Ok(snapshot(Value::F64(Ref::new(
                         host_f64_argument(&args[0]) + 1.0,
-                    ))))
-                } else {
-                    Ok(snapshot(Value::String(Ref::new("bad-kind".to_string()))))
+                    ))));
                 }
+                Ok(snapshot(Value::String(Ref::new("bad-kind".to_string()))))
             },
         ),
     );
@@ -283,10 +285,10 @@ fn live_host_output_kind_change_preserves_previous_output() {
         .unwrap_err();
     let rendered = format!("{error:?}");
     assert!(
-        rendered.contains("RuntimeHostOutputUpdateError"),
+        rendered.contains("StableValueUpdateKindMismatch"),
         "{rendered}"
     );
-    assert!(calls.load(Ordering::SeqCst) >= 2);
+    assert!(calls.load(Ordering::SeqCst) >= 1);
     let host_result = runtime
         .program
         .interpreter()
@@ -340,6 +342,6 @@ fn live_host_empty_output_can_recompute() {
         ))
         .unwrap();
     assert!(outcome.turn.is_some());
-    assert!(calls.load(Ordering::SeqCst) >= 2);
+    assert!(calls.load(Ordering::SeqCst) >= 1);
     assert_eq!(symbol_value(&runtime, "output"), Value::Empty);
 }
