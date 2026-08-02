@@ -1,11 +1,8 @@
 use std::sync::Arc;
 
 use mech_core::structures::Matrix as ValueMatrix;
-use mech_core::{
-    FunctionArgs, FunctionCatalogBuilder, MResult, MechFunction, ParsedProgram, RuntimeFunctionId,
-    Value, hash_str,
-};
-use mech_engine::{FunctionSystem, LegacyFunctionBoundaryBuilder, MechProgram, MechProgramConfig};
+use mech_core::{FunctionCatalogBuilder, MResult, ParsedProgram, RuntimeFunctionId, Value};
+use mech_engine::{MechProgram, MechProgramConfig};
 
 const SCALAR_ADD_BYTECODE: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -29,27 +26,12 @@ fn parse(bytecode: &[u8]) -> ParsedProgram {
 }
 
 fn assert_catalog_factory_owned(program: &MechProgram, name: &str) {
-    let id = hash_str(name);
-    let functions = program.interpreter().functions();
-    assert!(
-        !functions.borrow().functions.contains_key(&id),
-        "standard runtime factory {name} must not be copied into the mutable legacy table",
-    );
     assert!(
         program
             .function_catalog()
             .runtime_factory(RuntimeFunctionId::from_name(name))
             .is_some(),
         "explicit catalog did not contain {name}",
-    );
-}
-
-fn assert_legacy_factory_absent(program: &MechProgram, name: &str) {
-    let id = hash_str(name);
-    let functions = program.interpreter().functions();
-    assert!(
-        !functions.borrow().functions.contains_key(&id),
-        "legacy table unexpectedly contained {name}",
     );
 }
 
@@ -60,19 +42,9 @@ fn assert_f64(value: Value, expected: f64) {
     assert_eq!(*actual.borrow(), expected);
 }
 
-fn legacy_add_factory_must_not_run(_: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    panic!("legacy AddSS<f64> factory ran before the explicit catalog")
-}
-
 #[test]
-fn scalar_add_bytecode_uses_catalog_without_legacy_factory() {
+fn scalar_add_bytecode_uses_catalog_factory() {
     let mut program = full_program();
-    assert!(
-        program
-            .function_system()
-            .legacy_boundary()
-            .owns_runtime_function(RuntimeFunctionId::from_name("AddSS<f64>"))
-    );
     assert_catalog_factory_owned(&program, "AddSS<f64>");
 
     let value = program
@@ -83,18 +55,14 @@ fn scalar_add_bytecode_uses_catalog_without_legacy_factory() {
 }
 
 #[test]
-fn scalar_add_bytecode_does_not_use_legacy_fallback_when_catalog_omits_add() {
+fn scalar_add_bytecode_fails_when_catalog_omits_add() {
     const FACTORY_NAME: &str = "AddSS<f64>";
 
     let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
     let runtime_id = RuntimeFunctionId::from_name(FACTORY_NAME);
-    let mut boundary = LegacyFunctionBoundaryBuilder::new();
-    boundary.claim_runtime_function(runtime_id);
-    let function_system = FunctionSystem::new(Arc::clone(&catalog), Arc::new(boundary.build()));
     let mut program =
-        MechProgram::with_function_system(MechProgramConfig::default(), function_system);
+        MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
 
-    assert_legacy_factory_absent(&program, FACTORY_NAME);
     assert!(
         catalog.runtime_factory(runtime_id).is_none(),
         "empty custom catalog unexpectedly contains {FACTORY_NAME}",
@@ -102,53 +70,13 @@ fn scalar_add_bytecode_does_not_use_legacy_fallback_when_catalog_omits_add() {
 
     let error = program
         .run_bytecode_program(&parse(SCALAR_ADD_BYTECODE))
-        .expect_err("migrated add bytecode must not fall through to the legacy table");
+        .expect_err("bytecode must fail when its runtime factory is absent from the catalog");
 
-    assert_eq!(error.kind_name(), "RuntimeFunctionUnavailable");
+    assert_eq!(error.kind_name(), "UnknownBinaryFunction");
     assert_eq!(
         error.kind_message(),
-        format!(
-            "runtime function 0x{:016x} is unavailable in the catalog",
-            runtime_id.raw(),
-        ),
+        format!("Unknown binary function ID: {}", runtime_id.raw()),
     );
-}
-
-#[test]
-fn scalar_add_bytecode_uses_explicit_legacy_fallback_when_boundary_is_empty() {
-    const FACTORY_NAME: &str = "AddSS<f64>";
-
-    let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
-    let function_system = FunctionSystem::from_catalog(Arc::clone(&catalog));
-    assert!(
-        !function_system
-            .legacy_boundary()
-            .owns_runtime_function(RuntimeFunctionId::from_name(FACTORY_NAME))
-    );
-    let mut program =
-        MechProgram::with_function_system(MechProgramConfig::default(), function_system);
-    assert_legacy_factory_absent(&program, FACTORY_NAME);
-
-    let fallback = full_program()
-        .function_catalog()
-        .runtime_factory(RuntimeFunctionId::from_name(FACTORY_NAME))
-        .expect("standard catalog must contain the test fallback factory");
-    assert!(
-        program
-            .interpreter()
-            .functions()
-            .borrow_mut()
-            .functions
-            .insert(hash_str(FACTORY_NAME), fallback)
-            .is_none(),
-        "custom program must begin without an implicit legacy stdlib",
-    );
-
-    let value = program
-        .run_bytecode_program(&parse(SCALAR_ADD_BYTECODE))
-        .expect("an explicitly installed, unclaimed runtime ID remains eligible for fallback");
-
-    assert_f64(value, 3.0);
 }
 
 #[test]
@@ -169,7 +97,7 @@ fn matrix_scalar_add_bytecode_uses_catalog_for_every_static_factory() {
 }
 
 #[test]
-fn dynamic_matrix_add_bytecode_uses_catalog_without_legacy_factory() -> MResult<()> {
+fn dynamic_matrix_add_bytecode_uses_catalog_factory() -> MResult<()> {
     const FACTORY_NAME: &str = "AddMDMD<f64>";
 
     let mut source = full_program();
@@ -195,7 +123,7 @@ fn dynamic_matrix_add_bytecode_uses_catalog_without_legacy_factory() -> MResult<
 }
 
 #[test]
-fn non_add_bytecode_uses_the_catalog_without_legacy_fallback() {
+fn non_add_bytecode_uses_the_catalog() {
     const FACTORY_NAME: &str = "ConcatSS<string>";
 
     let mut program = full_program();
@@ -208,27 +136,4 @@ fn non_add_bytecode_uses_the_catalog_without_legacy_fallback() {
         panic!("string concatenation must return a string");
     };
     assert_eq!(&*value.borrow(), "abc");
-}
-
-#[test]
-fn bytecode_prefers_catalog_factory_over_same_id_legacy_entry() {
-    const FACTORY_NAME: &str = "AddSS<f64>";
-
-    let mut program = full_program();
-    let id = hash_str(FACTORY_NAME);
-    let functions = program.interpreter().functions();
-    assert!(
-        functions
-            .borrow_mut()
-            .functions
-            .insert(id, legacy_add_factory_must_not_run)
-            .is_none(),
-        "standard programs must not preload a legacy AddSS<f64> entry",
-    );
-
-    let value = program
-        .run_bytecode_program(&parse(SCALAR_ADD_BYTECODE))
-        .expect("catalog must take precedence over the legacy table");
-
-    assert_f64(value, 3.0);
 }

@@ -75,13 +75,6 @@ impl MechFunctionCompiler for SetProperSubsetFxn {
     }
 }
 
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetProperSubsetFxn",
-    ptr: SetProperSubsetFxn::new,
-  }
-}
-
 fn set_proper_subset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetProperSubsetFxn {
@@ -101,8 +94,8 @@ fn set_proper_subset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction
 }
 
 pub struct SetProperSubset {}
-impl NativeFunctionCompiler for SetProperSubset {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetProperSubset {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -138,11 +131,4 @@ impl NativeFunctionCompiler for SetProperSubset {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/proper_subset",
-    ptr: &SetProperSubset{},
-  }
 }

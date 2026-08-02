@@ -69,8 +69,8 @@ fn impl_exp2_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathExp2 {}
 
-impl NativeFunctionCompiler for MathExp2 {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathExp2 {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -97,18 +97,4 @@ impl NativeFunctionCompiler for MathExp2 {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/exp2",
-    ptr: &MathExp2{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "exp2",
-  }
 }

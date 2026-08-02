@@ -1,37 +1,6 @@
 #[macro_use]
 use crate::stdlib::*;
 
-macro_rules! register_horizontal_concatenate_fxn {
-    ($name:ident) => {
-        register_fxn_descriptor!(
-            $name, bool, "bool", String, "string", u8, "u8", u16, "u16", u32, "u32", u64, "u64",
-            u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32",
-            f64, "f64", C64, "c64", R64, "r64"
-        );
-    };
-}
-
-macro_rules! register_fxns {
-    ($op:ident) => {
-        $op!(bool, "bool");
-        $op!(String, "string");
-        $op!(u8, "u8");
-        $op!(u16, "u16");
-        $op!(u32, "u32");
-        $op!(u64, "u64");
-        $op!(u128, "u128");
-        $op!(i8, "i8");
-        $op!(i16, "i16");
-        $op!(i32, "i32");
-        $op!(i64, "i64");
-        $op!(i128, "i128");
-        $op!(f64, "f64");
-        $op!(f32, "f32");
-        $op!(R64, "r64");
-        $op!(C64, "c64");
-    };
-}
-
 // Horizontal Concatenate -----------------------------------------------------
 
 macro_rules! horizontal_concatenate {
@@ -87,7 +56,6 @@ macro_rules! horizontal_concatenate {
           compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
         }
       }
-      register_horizontal_concatenate_fxn!($name);
     }
   };
 }
@@ -174,7 +142,6 @@ macro_rules! horzcat_two_args {
                 );
             }
         }
-        register_horizontal_concatenate_fxn!($fxn);
     };
 }
 
@@ -265,7 +232,6 @@ macro_rules! horzcat_three_args {
                 );
             }
         }
-        register_horizontal_concatenate_fxn!($fxn);
     };
 }
 
@@ -367,7 +333,6 @@ macro_rules! horzcat_four_args {
                 );
             }
         }
-        register_horizontal_concatenate_fxn!($fxn);
     };
 }
 
@@ -455,8 +420,6 @@ where
         Ok(registers[0])
     }
 }
-#[cfg(feature = "matrixd")]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateTwoArgs);
 
 // HorizontalConcatenateThreeArgs ---------------------------------------------
 
@@ -546,8 +509,6 @@ where
         Ok(registers[0])
     }
 }
-#[cfg(feature = "matrixd")]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateThreeArgs);
 
 // HorizontalConcatenateFourArgs ----------------------------------------------
 
@@ -800,8 +761,6 @@ where
         );
     }
 }
-#[cfg(feature = "row_vectord")]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateRD);
 
 // HorizontalConcatenateRDN ---------------------------------------------------
 
@@ -917,8 +876,6 @@ where
         Ok(registers[0])
     }
 }
-#[cfg(feature = "row_vectord")]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateRDN);
 
 #[cfg(all(
     test,
@@ -1144,8 +1101,6 @@ where
         );
     }
 }
-#[cfg(feature = "matrixd")]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateS1D);
 
 // HorizontalConcatenateS1 ----------------------------------------------------
 
@@ -1221,8 +1176,6 @@ where
         );
     }
 }
-#[cfg(feature = "matrix1")]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateS1);
 
 // HorizontalConcatenateS2 --------------------------------------------------
 
@@ -1302,8 +1255,6 @@ where
         );
     }
 }
-#[cfg(feature = "row_vector2")]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateS2);
 
 // HorizontalConcatenateS3 --------------------------------------------------
 
@@ -1387,8 +1338,6 @@ where
         );
     }
 }
-#[cfg(feature = "row_vector3")]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateS3);
 
 // HorizontalConcatenateS4 --------------------------------------------------
 
@@ -1482,8 +1431,6 @@ where
         );
     }
 }
-#[cfg(feature = "row_vector4")]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateS4);
 
 // HorizontalConcatenateR2 ----------------------------------------------------
 
@@ -1566,8 +1513,6 @@ where
         );
     }
 }
-#[cfg(feature = "row_vectord")]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSD);
 
 // HorizontalConcatenate for single argument types ----------------------------
 
@@ -1633,7 +1578,6 @@ macro_rules! horzcat_single {
                 );
             }
         }
-        register_horizontal_concatenate_fxn!($name);
     };
 }
 
@@ -1741,8 +1685,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSR2);
 
 // HorizontalConcatenateR2S --------------------------------------------------
 
@@ -1824,8 +1766,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateR2S);
 // HorizontalConcatenateSM1 ---------------------------------------------------
 
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
@@ -1906,8 +1846,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1);
 
 // HorizontalConcatenateM1S ---------------------------------------------------
 
@@ -1989,8 +1927,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1S);
 
 // HorizontalConcatenateSSSM1 -------------------------------------------------
 
@@ -2088,8 +2024,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSSSM1);
 
 // HorizontalConcatenateSSM1S -------------------------------------------------
 
@@ -2187,8 +2121,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSSM1S);
 
 // HorizontalConcatenateSM1SS -------------------------------------------------
 
@@ -2286,8 +2218,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1SS);
 
 // HorizontalConcatenateM1SSS -------------------------------------------------
 
@@ -2385,8 +2315,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SSS);
 
 // HorizontalConcatenateSR3 -------------------------------------------------
 
@@ -2470,8 +2398,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSR3);
 
 // HorizontalConcatenateR3S -------------------------------------------------
 
@@ -2555,8 +2481,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateR3S);
 
 // HorizontalConcatenateSSM1 -------------------------------------------------
 
@@ -2643,8 +2567,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSSM1);
 
 // HorizontalConcatenateSM1S -------------------------------------------------
 
@@ -2731,8 +2653,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1S);
 
 // HorizontalConcatenateM1SS -------------------------------------------------
 
@@ -2819,8 +2739,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SS);
 
 // HorizontalConcatenateSSR2 -------------------------------------------------
 
@@ -2908,8 +2826,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSSR2);
 
 // HorizontalConcatenateSR2S -------------------------------------------------
 
@@ -2997,8 +2913,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSR2S);
 
 // HorizontalConcatenateR2SS -------------------------------------------------
 
@@ -3086,8 +3000,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateR2SS);
 
 // HorizontalConcatenateM1M1S -------------------------------------------------
 
@@ -3174,8 +3086,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1M1S);
 
 // HorizontalConcatenateM1M1 -------------------------------------------------
 
@@ -3279,8 +3189,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SM1);
 
 // HorizontalConcatenateSM1M1 -------------------------------------------------
 
@@ -3367,8 +3275,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1M1);
 
 // HorizontalConcatenateR2R2 -------------------------------------------------
 
@@ -3513,8 +3419,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1R2);
 
 // HorizontalConcatenateM1SR2 -------------------------------------------------
 
@@ -3602,8 +3506,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SR2);
 
 // HorizontalConcatenateSM1SM1 -------------------------------------------------
 
@@ -3701,8 +3603,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1SM1);
 
 // HorizontalConcatenateM1R2S -------------------------------------------------
 
@@ -3790,8 +3690,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1R2S);
 
 // HorizontalConcatenateR2M1S -------------------------------------------------
 
@@ -3879,8 +3777,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateR2M1S);
 
 // HorizontalConcatenateR2SM1 -------------------------------------------------
 
@@ -3968,8 +3864,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateR2SM1);
 
 // HorizontalConcatenateSR2M1 -------------------------------------------------
 
@@ -4057,8 +3951,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSR2M1);
 
 // HorizontalConcatenateSSM1M1 ------------------------------------------------
 
@@ -4156,8 +4048,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSSM1M1);
 
 // HorizontalConcatenateM1M1SS ------------------------------------------------
 
@@ -4255,8 +4145,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1M1SS);
 
 // HorizontalConcatenateSM1M1S ------------------------------------------------
 
@@ -4354,8 +4242,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1M1S);
 
 // HorizontalConcatenateM1SSM1 ------------------------------------------------
 
@@ -4453,8 +4339,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SSM1);
 
 // HorizontalConcatenateM1SM1S ------------------------------------------------
 
@@ -4552,8 +4436,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SM1S);
 
 // HorizontalConcatenateM1R2 --------------------------------------------------
 
@@ -4764,8 +4646,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1M1M1);
 
 // HorizontalConcatenateM1SM1M1 -----------------------------------------------
 
@@ -4863,8 +4743,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SM1M1);
 
 // HorizontalConcatenateM1M1SM1 -----------------------------------------------
 
@@ -4961,8 +4839,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1M1SM1);
 
 // HorizontalConcatenateM1M1M1S -----------------------------------------------
 
@@ -5059,8 +4935,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1M1M1S);
 
 // HorizontalConcatenateM1M1M1S -----------------------------------------------
 
@@ -5157,8 +5031,6 @@ where
         );
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-register_horizontal_concatenate_fxn!(HorizontalConcatenateM1M1M1M1);
 
 // HorizontalConcatenateV2V2 -------------------------------------------------
 
@@ -6118,7 +5990,7 @@ macro_rules! impl_horzcat_arms {
         }
   }}}}
 
-pub(crate) fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+pub(crate) fn impl_horzcat_fxn(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
     // are they all the same?
     //let same = kinds.iter().all(|x| *x == target_kind);
     let kinds: Vec<ValueKind> = arguments
@@ -6450,17 +6322,10 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 }
 
 pub struct MatrixHorzCat {}
-impl NativeFunctionCompiler for MatrixHorzCat {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MatrixHorzCat {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         impl_horzcat_fxn(arguments)
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "matrix/horzcat",
-    ptr: &MatrixHorzCat{},
-  }
 }
 
 #[derive(Debug, Clone)]
@@ -6473,52 +6338,5 @@ impl MechErrorKind for HorizontalConcatenateDimensionMismatchError {
         format!(
             "Cannot horizontally concatenate matrices/vectors with dimensions that do not align."
         )
-    }
-}
-
-#[cfg(all(test, not(target_arch = "wasm32")))]
-mod runtime_catalog_tests {
-    use super::*;
-    use mech_core::{FunctionDescriptor, RuntimeFunctionId};
-    use std::collections::{BTreeMap, BTreeSet};
-
-    #[test]
-    fn explicit_runtime_catalog_matches_legacy_inventory() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_runtime(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
-        let explicit = catalog
-            .runtime_entries()
-            .map(|entry| (entry.name.clone(), entry.factory as usize))
-            .collect::<BTreeMap<_, _>>();
-        let mut legacy = BTreeMap::new();
-        for descriptor in inventory::iter::<FunctionDescriptor>
-            .into_iter()
-            .filter(|descriptor| descriptor.name.starts_with("HorizontalConcatenate"))
-        {
-            if let Some(existing) = legacy.insert(descriptor.name, descriptor.ptr as usize) {
-                assert_eq!(existing, descriptor.ptr as usize, "{0}", descriptor.name);
-            }
-        }
-
-        assert_eq!(
-            explicit.keys().cloned().collect::<BTreeSet<_>>(),
-            legacy
-                .keys()
-                .map(ToString::to_string)
-                .collect::<BTreeSet<_>>()
-        );
-        for (name, pointer) in legacy {
-            let id = RuntimeFunctionId::from_name(name);
-            let entry = catalog
-                .runtime_entry(id)
-                .unwrap_or_else(|| panic!("missing explicit horzcat factory {name}"));
-            assert_eq!(entry.id, id, "runtime ID mismatch for {name}");
-            assert_eq!(entry.name, name);
-            assert_eq!(
-                entry.factory as usize, pointer,
-                "factory mismatch for {name}"
-            );
-        }
     }
 }

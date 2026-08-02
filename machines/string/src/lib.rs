@@ -136,7 +136,6 @@ macro_rules! impl_string_binop {
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
             }
         }
-        register_fxn_descriptor!($struct_name, String, "string");
     };
 }
 

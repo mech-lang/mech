@@ -75,8 +75,8 @@ pub fn add_assign_math_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFu
 }
 
 pub struct AddAssignMath {}
-impl NativeFunctionCompiler for AddAssignMath {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AddAssignMath {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -112,13 +112,6 @@ impl NativeFunctionCompiler for AddAssignMath {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/add-assign",
-    ptr: &AddAssignMath{},
-  }
 }
 
 // x[1..3] += 1 ----------------------------------------------------------------
@@ -179,8 +172,8 @@ impl_add_assign_range_fxn_v!(AddAssign1DRVB, add_assign_1d_range_vec_b, bool);
 op_assign_range_fxn!(add_assign_range_fxn, AddAssign1DR);
 
 pub struct AddAssignRange {}
-impl NativeFunctionCompiler for AddAssignRange {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AddAssignRange {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -193,7 +186,7 @@ impl NativeFunctionCompiler for AddAssignRange {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match add_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (&sink, &ixes, &source) {
@@ -225,13 +218,6 @@ impl NativeFunctionCompiler for AddAssignRange {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/add-assign/range",
-    ptr: &AddAssignRange{},
-  }
 }
 
 // x[1..3,:] += 1 ------------------------------------------------------------------
@@ -300,8 +286,8 @@ impl_add_assign_range_fxn_v!(AddAssign2DRAVB, add_assign_2d_vector_all_mat_b, bo
 op_assign_range_all_fxn!(add_assign_range_all_fxn, AddAssign2DRA);
 
 pub struct AddAssignRangeAll {}
-impl NativeFunctionCompiler for AddAssignRangeAll {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for AddAssignRangeAll {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -314,7 +300,7 @@ impl NativeFunctionCompiler for AddAssignRangeAll {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match add_assign_range_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (sink, ixes, source) {
@@ -346,11 +332,4 @@ impl NativeFunctionCompiler for AddAssignRangeAll {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/add-assign/range-all",
-    ptr: &AddAssignRangeAll{},
-  }
 }

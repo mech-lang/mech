@@ -159,8 +159,8 @@ fn impl_access_column_table_fxn(source: Value, key: Value) -> MResult<Box<dyn Me
 }
 
 pub struct TableAccessColumn {}
-impl NativeFunctionCompiler for TableAccessColumn {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for TableAccessColumn {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -280,8 +280,8 @@ impl MechFunctionCompiler for TableAccessScalarF {
 
 pub struct TableAccessScalar {}
 
-impl NativeFunctionCompiler for TableAccessScalar {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for TableAccessScalar {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -488,8 +488,8 @@ impl MechFunctionCompiler for TableAccessRangeBool {
 
 pub struct TableAccessRange {}
 
-impl NativeFunctionCompiler for TableAccessRange {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for TableAccessRange {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -500,7 +500,7 @@ impl NativeFunctionCompiler for TableAccessRange {
             )
             .with_compiler_loc());
         }
-        let ixes = arguments.clone().split_off(1);
+        let ixes = arguments[1..].to_vec();
         let tbl = arguments[0].clone();
         match (tbl.clone(), ixes.as_slice()) {
             #[cfg(all(feature = "table", feature = "matrix"))]

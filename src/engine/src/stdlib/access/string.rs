@@ -156,8 +156,8 @@ impl MechFunctionCompiler for StringAccessElement {
 }
 
 pub struct StringAccessScalar {}
-impl NativeFunctionCompiler for StringAccessScalar {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for StringAccessScalar {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

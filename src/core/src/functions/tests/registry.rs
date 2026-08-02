@@ -1,9 +1,7 @@
 use super::super::{
-    FunctionArgs, FunctionCompilerDescriptor, FunctionDefinition, FunctionDescriptor,
-    GuardFunctionSafety, MechFunction, ModuleItemDescriptor, NativeFunctionCompiler,
-    StaticNativeFunctionCompiler, UserFunctionTable,
+    FunctionArgs, FunctionDefinition, FunctionSpecializer, GuardFunctionSafety, MechFunction,
+    UserFunctionTable,
 };
-use super::support::PureStaticTestCompiler;
 #[cfg(feature = "f64")]
 use super::support::scalar;
 use crate::{FunctionDefine, MResult, Value, hash_str, internal_pattern_value_identifier};
@@ -22,38 +20,19 @@ fn user_definition(name: &str) -> FunctionDefinition {
     )
 }
 
-fn assert_send_sync<T: Send + Sync>() {}
+struct DefaultTestSpecializer;
 
-struct DefaultTestCompiler;
-
-impl NativeFunctionCompiler for DefaultTestCompiler {
-    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        unreachable!("safety metadata test must not compile the function")
+impl FunctionSpecializer for DefaultTestSpecializer {
+    fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        unreachable!("safety metadata test must not specialize the function")
     }
 }
 
-static PURE_STATIC_TEST_COMPILER: PureStaticTestCompiler = PureStaticTestCompiler;
-
 #[test]
-fn native_compiler_descriptors_are_send_and_sync_without_manual_promises() {
-    assert_send_sync::<FunctionDescriptor>();
-    assert_send_sync::<FunctionCompilerDescriptor>();
-    assert_send_sync::<ModuleItemDescriptor>();
-    assert_send_sync::<StaticNativeFunctionCompiler>();
-}
+fn function_specializer_guard_safety_defaults_to_unsupported() {
+    let specializer = DefaultTestSpecializer;
 
-#[test]
-fn native_compiler_guard_safety_defaults_to_unsupported() {
-    let compiler = DefaultTestCompiler;
-
-    assert_eq!(compiler.guard_safety(), GuardFunctionSafety::Unsupported);
-}
-
-#[test]
-fn static_native_compiler_preserves_guard_safety_metadata() {
-    let compiler = StaticNativeFunctionCompiler::new(&PURE_STATIC_TEST_COMPILER);
-
-    assert_eq!(compiler.guard_safety(), GuardFunctionSafety::PureStatic);
+    assert_eq!(specializer.guard_safety(), GuardFunctionSafety::Unsupported);
 }
 
 #[cfg(feature = "f64")]
@@ -124,7 +103,7 @@ fn user_function_table_rejects_a_distinct_name_at_one_forced_id() {
     let error = definitions.insert_or_replace(incoming).unwrap_err();
 
     assert_eq!(error.kind_name(), "UserFunctionIdCollision");
-    assert_eq!(definitions.get(&id).unwrap().name, "first");
+    assert_eq!(definitions.definitions.get(&id).unwrap().name, "first");
 }
 
 #[test]

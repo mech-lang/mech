@@ -611,8 +611,8 @@ fn impl_fdim_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFu
 
 pub struct MathFdim {}
 
-impl NativeFunctionCompiler for MathFdim {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathFdim {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

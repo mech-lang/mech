@@ -1,9 +1,8 @@
 #[cfg(feature = "compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{
-    GuardFunctionSafety, MechFunction, MechFunctionImpl, NativeFunctionCompiler,
-    ReactiveDependencyKind, ReactiveDependencyScope, ReactiveNodeId, ReactiveNodeKind,
-    ReactivePlan, ReactiveRegisterCommit, reactive_register_sealed,
+    MechFunctionImpl, ReactiveDependencyKind, ReactiveDependencyScope, ReactiveNodeId,
+    ReactiveNodeKind, ReactivePlan, ReactiveRegisterCommit, reactive_register_sealed,
 };
 #[cfg(all(feature = "set", feature = "f64"))]
 use crate::MechSet;
@@ -11,17 +10,6 @@ use crate::MechSet;
 use crate::{BytecodeCompilerContext, Register};
 use crate::{GenericError, MResult, MechError, ReactiveCellId, Ref, ToValue, Value, ValueKind};
 use std::{cell::RefCell, rc::Rc};
-
-pub(super) struct PureStaticTestCompiler;
-impl NativeFunctionCompiler for PureStaticTestCompiler {
-    fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        unreachable!("safety metadata test must not compile the function")
-    }
-
-    fn guard_safety(&self) -> GuardFunctionSafety {
-        GuardFunctionSafety::PureStatic
-    }
-}
 
 pub(super) struct TestFunction {
     name: &'static str,

@@ -2,9 +2,9 @@
 use crate::stdlib::define::VarDefine;
 use crate::*;
 use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, MResult, NativeFunctionCompiler,
-    legacy_source_specializer,
+    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
 };
+use std::sync::Arc;
 
 fn install_named<T>(
     builder: &mut FunctionCatalogBuilder,
@@ -15,10 +15,9 @@ fn install_named<T>(
     compiler: T,
 ) -> MResult<()>
 where
-    T: NativeFunctionCompiler + 'static,
+    T: FunctionSpecializer + 'static,
 {
-    let operation =
-        builder.insert_specializer(canonical_name, legacy_source_specializer(compiler))?;
+    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -34,10 +33,10 @@ fn install_intrinsic<T>(
     compiler: T,
 ) -> MResult<()>
 where
-    T: NativeFunctionCompiler + 'static,
+    T: FunctionSpecializer + 'static,
 {
     builder
-        .insert_intrinsic_specializer(canonical_name, legacy_source_specializer(compiler))
+        .insert_intrinsic_specializer(canonical_name, Arc::new(compiler))
         .map(|_| ())
 }
 
@@ -89,37 +88,25 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     )?;
 
     #[cfg(feature = "table")]
-    for (canonical_name, compiler) in [
-        ("table/join", legacy_source_specializer(TableInnerJoin {})),
-        (
-            "table/left-outer-join",
-            legacy_source_specializer(TableLeftOuterJoin {}),
-        ),
-        (
-            "table/right-outer-join",
-            legacy_source_specializer(TableRightOuterJoin {}),
-        ),
-        (
-            "table/full-outer-join",
-            legacy_source_specializer(TableFullOuterJoin {}),
-        ),
-        (
-            "table/left-semi-join",
-            legacy_source_specializer(TableLeftSemiJoin {}),
-        ),
-        (
-            "table/left-anti-join",
-            legacy_source_specializer(TableLeftAntiJoin {}),
-        ),
-    ] {
-        let operation = builder.insert_specializer(canonical_name, compiler)?;
-        builder.insert_export(FunctionExport {
-            operation,
-            canonical_name: canonical_name.to_string(),
-            module: None,
-            item: None,
-            exposure: FunctionExposure::Internal,
-        })?;
+    {
+        let table_specializers: [(&str, Arc<dyn FunctionSpecializer>); 6] = [
+            ("table/join", Arc::new(TableInnerJoin {})),
+            ("table/left-outer-join", Arc::new(TableLeftOuterJoin {})),
+            ("table/right-outer-join", Arc::new(TableRightOuterJoin {})),
+            ("table/full-outer-join", Arc::new(TableFullOuterJoin {})),
+            ("table/left-semi-join", Arc::new(TableLeftSemiJoin {})),
+            ("table/left-anti-join", Arc::new(TableLeftAntiJoin {})),
+        ];
+        for (canonical_name, compiler) in table_specializers {
+            let operation = builder.insert_specializer(canonical_name, compiler)?;
+            builder.insert_export(FunctionExport {
+                operation,
+                canonical_name: canonical_name.to_string(),
+                module: None,
+                item: None,
+                exposure: FunctionExposure::Internal,
+            })?;
+        }
     }
 
     #[cfg(feature = "access")]
@@ -135,8 +122,6 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         install_intrinsic(builder, "assign/column", AssignColumn {})?;
         install_intrinsic(builder, "assign/add", AddAssignValue {})?;
     }
-    #[cfg(feature = "math_mul_assign")]
-    install_intrinsic(builder, "math/mul-assign", mech_math::MulAssignValue {})?;
     #[cfg(feature = "convert")]
     install_intrinsic(builder, "convert/kind", ConvertKind {})?;
     #[cfg(feature = "variable_define")]

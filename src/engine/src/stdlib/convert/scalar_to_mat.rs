@@ -145,8 +145,8 @@ fn impl_conversion_scalar_to_mat_fxn(
 
 pub struct ConvertScalarToMat {}
 
-impl NativeFunctionCompiler for ConvertScalarToMat {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for ConvertScalarToMat {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

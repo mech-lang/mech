@@ -31,10 +31,6 @@ macro_rules! impl_dot {
             dot_op,
             FeatureFlag::Builtin(FeatureKind::Dot)
         );
-        register_fxn_descriptor!(
-            $name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16,
-            "i16", i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64"
-        );
     };
 }
 
@@ -46,11 +42,6 @@ impl_binop!(
     mul_op,
     FeatureFlag::Builtin(FeatureKind::Dot)
 );
-register_fxn_descriptor!(
-    DotScalar, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16",
-    i32, "i32", i64, "i64", i128, "i128", f32, "f32", f64, "f64"
-);
-
 #[cfg(all(feature = "row_vector2", feature = "row_vector2"))]
 impl_dot!(DotR2R2, RowVector2<T>, RowVector2<T>, T);
 #[cfg(all(feature = "vector2", feature = "vector2"))]

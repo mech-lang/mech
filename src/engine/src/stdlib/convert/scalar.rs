@@ -53,14 +53,6 @@ impl MechFunctionCompiler for ConvertSEnum {
         );
     }
 }
-#[cfg(feature = "enum")]
-register_descriptor! {
-  FunctionDescriptor {
-    name: "ConvertSEnum<enum>",
-    ptr: ConvertSEnum::new,
-  }
-}
-
 #[derive(Debug)]
 struct ConvertSEmpty {
     out: Ref<Value>,
@@ -107,13 +99,6 @@ impl MechFunctionCompiler for ConvertSEmpty {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "ConvertSEmpty<empty>",
-    ptr: convert_empty_factory,
-  }
-}
-
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "enum")]
     builder.insert_runtime_factory("ConvertSEnum<enum>", ConvertSEnum::new)?;
@@ -733,8 +718,8 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
 
 pub struct ConvertKind {}
 
-impl NativeFunctionCompiler for ConvertKind {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for ConvertKind {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -765,9 +750,9 @@ impl NativeFunctionCompiler for ConvertKind {
                         source => source.kind(),
                     };
                     if matches!(source_kind, ValueKind::Matrix(_, _)) {
-                        return ConvertMatToMat {}.compile(arguments);
+                        return ConvertMatToMat {}.specialize(arguments);
                     }
-                    return ConvertScalarToMat {}.compile(arguments);
+                    return ConvertScalarToMat {}.specialize(arguments);
                 }
 
                 match source_value {

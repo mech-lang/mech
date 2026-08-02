@@ -83,12 +83,6 @@ impl MechFunctionCompiler for SetRemoveFxn {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetRemoveFxn",
-    ptr: SetRemoveFxn::new,
-  }
-}
 
 fn set_remove_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
     match (arg1, arg2) {
@@ -112,8 +106,8 @@ fn set_remove_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
 }
 
 pub struct SetRemove {}
-impl NativeFunctionCompiler for SetRemove {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetRemove {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -149,11 +143,4 @@ impl NativeFunctionCompiler for SetRemove {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/remove",
-    ptr: &SetRemove{},
-  }
 }

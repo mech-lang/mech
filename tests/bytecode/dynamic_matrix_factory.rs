@@ -40,24 +40,12 @@ fn dynamic_matrix_addition_bytecode_reconstructs_from_full_runtime() -> MResult<
             panic!("fresh full runtime failed to reconstruct {FACTORY_NAME}: {error:?}")
         });
 
+    let runtime_id = RuntimeFunctionId::from_raw(factory_id);
     let catalog_entry = decoded
         .function_catalog()
-        .runtime_entry(RuntimeFunctionId::from_raw(factory_id))
+        .runtime_entry(runtime_id)
         .expect("standard catalog must contain the decoded runtime factory");
     assert_eq!(catalog_entry.name, FACTORY_NAME);
-
-    let functions_ref = decoded.interpreter().functions();
-    let functions = functions_ref.borrow();
-    assert!(
-        !functions.functions.contains_key(&factory_id),
-        "standard runtime factory {FACTORY_NAME} must not be copied into the mutable legacy table",
-    );
-    assert_eq!(
-        functions.dictionary.borrow().get(&factory_id).cloned(),
-        None,
-        "the mutable legacy dictionary must not advertise catalog-owned factories",
-    );
-    drop(functions);
 
     let decoded_output = decoded.solve_plan()?.value;
 

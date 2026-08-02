@@ -79,13 +79,6 @@ impl MechFunctionCompiler for SetNotElementOfFxn {
     }
 }
 
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetNotElementOfFxn",
-    ptr: SetNotElementOfFxn::new,
-  }
-}
-
 fn set_not_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFunction>> {
     match (elem, set) {
         (elem, Value::Set(set)) => Ok(Box::new(SetNotElementOfFxn {
@@ -105,8 +98,8 @@ fn set_not_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFuncti
 }
 
 pub struct SetNotElementOf {}
-impl NativeFunctionCompiler for SetNotElementOf {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetNotElementOf {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -142,11 +135,4 @@ impl NativeFunctionCompiler for SetNotElementOf {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/not-element-of",
-    ptr: &SetNotElementOf{},
-  }
 }

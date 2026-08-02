@@ -354,19 +354,12 @@ impl MechFunctionCompiler for ValueSet {
 }
 #[cfg(feature = "set")]
 #[cfg(feature = "functions")]
-register_descriptor! {
-  FunctionDescriptor {
-    name: "set/define",
-    ptr: ValueSet::new,
-  }
-}
-
 #[cfg(feature = "set")]
 pub struct SetDefine {}
 #[cfg(feature = "set")]
 #[cfg(feature = "functions")]
-impl NativeFunctionCompiler for SetDefine {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetDefine {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         let mut element_kind = arguments
             .first()
             .map(Value::kind)
@@ -387,20 +380,13 @@ impl NativeFunctionCompiler for SetDefine {
                     })?;
             }
         }
-        let mut set = MechSet::from_vec(arguments.clone());
+        let mut set = MechSet::from_vec(arguments.to_vec());
         set.kind = element_kind;
         Ok(Box::new(ValueSet { out: Ref::new(set) }))
     }
 }
 #[cfg(feature = "set")]
 #[cfg(feature = "functions")]
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/define",
-    ptr: &SetDefine{},
-  }
-}
-
 #[cfg(feature = "set")]
 pub fn set(m: &Set, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
     let plan = p.plan();

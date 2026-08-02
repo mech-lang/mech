@@ -95,8 +95,6 @@ where
         );
     }
 }
-register_fxn_descriptor!(NotS, bool, "bool");
-
 // NotV -----------------------------------------------------------------------
 
 #[derive(Debug)]

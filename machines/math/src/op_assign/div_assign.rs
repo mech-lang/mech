@@ -77,8 +77,8 @@ fn div_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunct
 }
 
 pub struct DivAssignValue {}
-impl NativeFunctionCompiler for DivAssignValue {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for DivAssignValue {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -114,13 +114,6 @@ impl NativeFunctionCompiler for DivAssignValue {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/div-assign",
-    ptr: &DivAssignValue{},
-  }
 }
 
 // x[1..3] /= 1 ----------------------------------------------------------------
@@ -181,8 +174,8 @@ impl_div_assign_range_fxn_v!(DivAssign1DRVB, div_assign_1d_range_vec_b, bool);
 op_assign_range_fxn!(div_assign_range_fxn, DivAssign1DR);
 
 pub struct DivAssignRange {}
-impl NativeFunctionCompiler for DivAssignRange {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for DivAssignRange {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -195,7 +188,7 @@ impl NativeFunctionCompiler for DivAssignRange {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match div_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (&sink, &ixes, &source) {
@@ -227,13 +220,6 @@ impl NativeFunctionCompiler for DivAssignRange {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/div-assign/range",
-    ptr: &DivAssignRange{},
-  }
 }
 
 // x[1..3,:] /= 1 ------------------------------------------------------------------
@@ -300,8 +286,8 @@ impl_div_assign_range_fxn_v!(DivAssign2DRAVB, div_assign_2d_vector_all_mat_b, bo
 op_assign_range_all_fxn!(div_assign_range_all_fxn, DivAssign2DRA);
 
 pub struct DivAssignRangeAll {}
-impl NativeFunctionCompiler for DivAssignRangeAll {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for DivAssignRangeAll {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -314,7 +300,7 @@ impl NativeFunctionCompiler for DivAssignRangeAll {
         }
         let sink: Value = arguments[0].clone();
         let source: Value = arguments[1].clone();
-        let ixes = arguments.clone().split_off(2);
+        let ixes = arguments[2..].to_vec();
         match div_assign_range_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (&sink, &ixes, &source) {
@@ -346,11 +332,4 @@ impl NativeFunctionCompiler for DivAssignRangeAll {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/div-assign/range-all",
-    ptr: &DivAssignRangeAll{},
-  }
 }

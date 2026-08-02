@@ -53,9 +53,9 @@ cargo +nightly-2026-03-03 run \
   --check-runtime tests/architecture/function-system
 ```
 
-While legacy descriptors remain, both runtime commands require exact factory
-name, ID, and function-pointer equality between every explicit catalog
-fragment and the linked `FunctionDescriptor` inventory.
+Both runtime commands require exact factory name, ID, ownership, and
+function-pointer equality between every explicit catalog fragment and the
+composed standard catalog.
 
 Run the complete native compatibility contract, including all standalone
 standard machines and the compiler-free bytecode consumer, with:

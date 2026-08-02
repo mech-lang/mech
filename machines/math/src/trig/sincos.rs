@@ -47,8 +47,8 @@ fn impl_sincos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathSincos {}
 
-impl NativeFunctionCompiler for MathSincos {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathSincos {
+  fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
       return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
@@ -66,19 +66,5 @@ impl NativeFunctionCompiler for MathSincos {
         }
       }
     }
-  }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/sincos",
-    ptr: &MathSincos{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "sincos",
   }
 }

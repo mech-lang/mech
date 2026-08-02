@@ -47,8 +47,8 @@ fn impl_ilogb_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathIlogb {}
 
-impl NativeFunctionCompiler for MathIlogb {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathIlogb {
+  fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
       return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() }, None).with_compiler_loc());
     }
@@ -66,19 +66,5 @@ impl NativeFunctionCompiler for MathIlogb {
         }
       }
     }
-  }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/ilogb",
-    ptr: &MathIlogb{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "ilogb",
   }
 }

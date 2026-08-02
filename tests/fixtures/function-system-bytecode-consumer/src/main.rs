@@ -1,6 +1,6 @@
 use mech_core::{DecodedInstr, ParsedProgram, RuntimeFunctionId, Value, hash_str};
-use mech_engine::{MechProgram, MechProgramConfig};
 use mech_engine as _;
+use mech_engine::{MechProgram, MechProgramConfig};
 use mech_math as _;
 use mech_range as _;
 use mech_string as _;
@@ -116,9 +116,6 @@ fn run() -> Result<(), String> {
 
 fn enforce_dispatch_boundary(case: &Case, program: &MechProgram) -> Result<(), String> {
     let catalog = program.function_catalog();
-    let boundary = program.function_system().legacy_boundary();
-    let functions_ref = program.interpreter().functions();
-    let functions = functions_ref.borrow();
 
     for expected in &case.runtime_factory_ids {
         let id = RuntimeFunctionId::from_name(&expected.name);
@@ -135,18 +132,6 @@ fn enforce_dispatch_boundary(case: &Case, program: &MechProgram) -> Result<(), S
                 format_id(id.raw()),
                 entry.name,
                 expected.name,
-            ));
-        }
-        if !boundary.owns_runtime_function(id) {
-            return Err(format!(
-                "{}: static factory {:?} is not catalog-owned by the transition boundary",
-                case.name, expected.name,
-            ));
-        }
-        if functions.functions.contains_key(&id.raw()) {
-            return Err(format!(
-                "{}: catalog-owned factory {:?} was copied into the mutable legacy table",
-                case.name, expected.name,
             ));
         }
     }
@@ -184,15 +169,16 @@ fn validate_runtime_factories(
                 ));
             }
         };
+        let runtime_id = RuntimeFunctionId::from_raw(id);
         let entry = catalog
-            .runtime_entry(RuntimeFunctionId::from_raw(id))
+            .runtime_entry(runtime_id)
             .ok_or_else(|| {
-            format!(
-                "{}: bytecode references runtime factory ID {} that is absent from the catalog",
-                case.name,
-                format_id(id),
-            )
-        })?;
+                format!(
+                    "{}: bytecode references runtime factory ID {} that is absent from the catalog",
+                    case.name,
+                    format_id(id),
+                )
+            })?;
         if hash_str(&entry.name) != id {
             return Err(format!(
                 "{}: runtime factory name {:?} does not hash to ID {}",

@@ -69,8 +69,8 @@ fn impl_log1p_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathLog1p {}
 
-impl NativeFunctionCompiler for MathLog1p {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathLog1p {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -97,18 +97,4 @@ impl NativeFunctionCompiler for MathLog1p {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/log1p",
-    ptr: &MathLog1p{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "log1p",
-  }
 }

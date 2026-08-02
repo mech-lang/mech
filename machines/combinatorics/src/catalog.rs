@@ -1,6 +1,5 @@
-use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, MResult, legacy_source_specializer,
-};
+use mech_core::{FunctionCatalogBuilder, FunctionExport, FunctionExposure, MResult};
+use std::sync::Arc;
 
 #[cfg(feature = "n_choose_k")]
 use crate::CombinatoricsNChooseK;
@@ -87,10 +86,8 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "n_choose_k")]
     {
         let canonical_name = "combinatorics/n-choose-k";
-        let operation = builder.insert_specializer(
-            canonical_name,
-            legacy_source_specializer(CombinatoricsNChooseK {}),
-        )?;
+        let operation =
+            builder.insert_specializer(canonical_name, Arc::new(CombinatoricsNChooseK {}))?;
         builder.insert_export(FunctionExport {
             operation,
             canonical_name: canonical_name.to_string(),
@@ -116,44 +113,6 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_runtime(builder)?;
     install_source(builder)
-}
-
-#[cfg(all(test, feature = "n_choose_k", not(target_arch = "wasm32")))]
-mod runtime_tests {
-    use super::*;
-    use mech_core::FunctionDescriptor;
-    use std::collections::BTreeMap;
-
-    #[test]
-    fn explicit_runtime_factories_match_the_linked_combinatorics_inventory() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_runtime(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
-
-        let mut legacy = BTreeMap::new();
-        for descriptor in inventory::iter::<FunctionDescriptor>
-            .into_iter()
-            .filter(|descriptor| descriptor.name.starts_with("NChooseK"))
-        {
-            assert!(legacy.insert(descriptor.name, descriptor.ptr).is_none());
-        }
-
-        assert_eq!(catalog.runtime_factory_count(), legacy.len());
-        for entry in catalog.runtime_entries() {
-            let legacy_factory = legacy
-                .remove(entry.name.as_str())
-                .unwrap_or_else(|| panic!("missing legacy combinatorics factory {}", entry.name));
-            assert_eq!(
-                entry.factory as usize, legacy_factory as usize,
-                "{}",
-                entry.name
-            );
-        }
-        assert!(
-            legacy.is_empty(),
-            "unmigrated legacy combinatorics factories: {legacy:?}"
-        );
-    }
 }
 
 #[cfg(all(test, feature = "n_choose_k"))]

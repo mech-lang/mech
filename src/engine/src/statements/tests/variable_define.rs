@@ -1,5 +1,5 @@
 use crate::stdlib::define::VarDefine;
-use crate::{NativeFunctionCompiler, Plan, ReactiveCellId, Ref, Value};
+use crate::{FunctionSpecializer, Plan, ReactiveCellId, Ref, Value};
 
 #[test]
 fn var_define_registration_has_no_reactive_inputs() {
@@ -11,7 +11,7 @@ fn var_define_registration_has_no_reactive_inputs() {
         Value::String(Ref::new("defined value".to_string())),
         Value::Bool(Ref::new(false)),
     ];
-    let function = VarDefine {}.compile(&arguments).unwrap();
+    let function = VarDefine {}.specialize(&arguments).unwrap();
 
     plan.register_function(function, &[]).unwrap();
 

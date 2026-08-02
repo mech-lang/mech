@@ -3,7 +3,6 @@ use crate::tracing::{
     summarize_values_with_kinds,
 };
 use crate::*;
-use crate::*;
 #[cfg(all(feature = "kind_annotation", feature = "enum"))]
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -78,8 +77,8 @@ pub fn function_define(
             .insert(output_arg.name.hash(), output_arg.kind.clone());
     }
 
-    // User definitions are checkpointed program state, separate from legacy
-    // runtime factories and native compiler registries.
+    // User definitions are checkpointed program state, separate from the
+    // immutable runtime catalog.
     let mut state = p.state.borrow_mut();
     state.user_functions.insert_or_replace(new_fxn.clone())?;
     state
@@ -93,20 +92,20 @@ pub fn function_define(
 // Calls
 // ----------------------------------------------------------------------------
 
-// Asks a native function compiler to select the right concrete implementation
+// Asks a function specializer to select the right concrete implementation
 // for the given argument types, runs it once to produce an initial value, then
 // pushes it onto the reactive plan so it re-runs when its inputs change.
-pub fn execute_native_function_compiler(
-    fxn_compiler: Arc<dyn NativeFunctionCompiler>,
+pub fn execute_function_specializer(
+    specializer: Arc<dyn FunctionSpecializer>,
     input_arg_values: &Vec<Value>,
     p: &InterpreterExecution<'_>,
 ) -> MResult<Value> {
-    let new_fxn = fxn_compiler.compile(input_arg_values)?;
+    let new_fxn = specializer.specialize(input_arg_values)?;
     execute_specialized_function(new_fxn, input_arg_values, p)
 }
 
 /// Runs and registers a function selected by either the explicit catalog or a
-/// legacy native compiler.
+/// program-local function extension.
 pub fn execute_specialized_function(
     new_fxn: Box<dyn MechFunction>,
     input_arg_values: &Vec<Value>,
@@ -148,11 +147,11 @@ pub fn execute_specialized_function(
 pub fn execute_initialized_indexed_compiler_with_registration_arguments(
     p: &InterpreterExecution<'_>,
     plan: &Plan,
-    compiler: &dyn NativeFunctionCompiler,
+    compiler: &dyn FunctionSpecializer,
     compile_arguments: Vec<Value>,
     registration_arguments: Vec<Value>,
 ) -> MResult<Value> {
-    let function = compiler.compile(&compile_arguments)?;
+    let function = compiler.specialize(&compile_arguments)?;
     if !plan.activation_registration_active() {
         p.with_services(|services| function.solve_result_with(services))?;
     }
@@ -164,7 +163,7 @@ pub fn execute_initialized_indexed_compiler_with_registration_arguments(
 pub(crate) fn execute_initialized_indexed_compiler(
     p: &InterpreterExecution<'_>,
     plan: &Plan,
-    compiler: &dyn NativeFunctionCompiler,
+    compiler: &dyn FunctionSpecializer,
     arguments: Vec<Value>,
 ) -> MResult<Value> {
     let registration_arguments = arguments.clone();
@@ -1003,8 +1002,8 @@ mod native_dependency_tests {
 
     struct NativeDependencyTestCompiler;
 
-    impl NativeFunctionCompiler for NativeDependencyTestCompiler {
-        fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    impl FunctionSpecializer for NativeDependencyTestCompiler {
+        fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
             Ok(Box::new(NativeDependencyTestFunction {
                 output: Value::F64(Ref::new(2.0)),
             }))
@@ -1048,8 +1047,8 @@ mod native_dependency_tests {
         solve_calls: Arc<AtomicUsize>,
     }
 
-    impl NativeFunctionCompiler for IndexedInitializedCompiler {
-        fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    impl FunctionSpecializer for IndexedInitializedCompiler {
+        fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
             Ok(Box::new(IndexedInitializedFunction {
                 output: Value::F64(Ref::new(self.output)),
                 solve_calls: self.solve_calls.clone(),
@@ -1147,8 +1146,8 @@ mod native_dependency_tests {
         solve_calls: Arc<std::sync::atomic::AtomicUsize>,
     }
 
-    impl NativeFunctionCompiler for DeferredNativeSolveCompiler {
-        fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    impl FunctionSpecializer for DeferredNativeSolveCompiler {
+        fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
             Ok(Box::new(DeferredNativeSolveFunction {
                 output: Value::F64(Ref::new(2.0)),
                 solve_calls: self.solve_calls.clone(),
@@ -1192,7 +1191,7 @@ mod native_dependency_tests {
         let solve_calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let plan = interpreter.plan();
         plan.push_activation_registration_scope(vec![input_cell]);
-        let result = execute_native_function_compiler(
+        let result = execute_function_specializer(
             Arc::new(DeferredNativeSolveCompiler {
                 solve_calls: solve_calls.clone(),
             }),
@@ -1234,7 +1233,7 @@ mod native_dependency_tests {
         let input_cell = ReactiveCellId::new(input.id());
         let arguments = vec![Value::F64(input)];
 
-        let result = execute_native_function_compiler(
+        let result = execute_function_specializer(
             Arc::new(NativeDependencyTestCompiler),
             &arguments,
             &execution,
@@ -1278,8 +1277,8 @@ mod native_initialization_failure_tests {
         output: Ref<f64>,
     }
 
-    impl NativeFunctionCompiler for FailingInitializationCompiler {
-        fn compile(&self, _arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    impl FunctionSpecializer for FailingInitializationCompiler {
+        fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
             Ok(Box::new(FailingInitializationFunction {
                 solve_calls: self.solve_calls.clone(),
                 solve_result_calls: self.solve_result_calls.clone(),
@@ -1326,7 +1325,7 @@ mod native_initialization_failure_tests {
     fn failing_compiler(
         solve_calls: Arc<AtomicUsize>,
         solve_result_calls: Arc<AtomicUsize>,
-    ) -> Arc<dyn NativeFunctionCompiler> {
+    ) -> Arc<dyn FunctionSpecializer> {
         Arc::new(FailingInitializationCompiler {
             solve_calls,
             solve_result_calls,
@@ -1343,7 +1342,7 @@ mod native_initialization_failure_tests {
         let solve_result_calls = Arc::new(AtomicUsize::new(0));
         let plan_len = interpreter.plan().len();
 
-        let error = execute_native_function_compiler(
+        let error = execute_function_specializer(
             failing_compiler(solve_calls.clone(), solve_result_calls.clone()),
             &arguments,
             &execution,
@@ -1373,7 +1372,7 @@ mod native_initialization_failure_tests {
         let plan_len = plan.len();
 
         plan.push_activation_registration_scope(vec![ReactiveCellId::new(input.id())]);
-        let result = execute_native_function_compiler(
+        let result = execute_function_specializer(
             failing_compiler(solve_calls.clone(), solve_result_calls.clone()),
             &arguments,
             &execution,

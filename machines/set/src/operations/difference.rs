@@ -81,12 +81,6 @@ impl MechFunctionCompiler for SetDifferenceFxn {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetDifferenceFxn",
-    ptr: SetDifferenceFxn::new,
-  }
-}
 
 fn set_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
@@ -110,8 +104,8 @@ fn set_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> 
 }
 
 pub struct SetDifference {}
-impl NativeFunctionCompiler for SetDifference {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetDifference {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -147,11 +141,4 @@ impl NativeFunctionCompiler for SetDifference {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/difference",
-    ptr: &SetDifference{},
-  }
 }

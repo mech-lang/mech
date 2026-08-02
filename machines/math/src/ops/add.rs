@@ -109,7 +109,6 @@ fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
 
     impl_binop_match_arms!(
       Add,
-      register_fxn_descriptor_inner,
       (lhs_value, rhs_value),
       I8,   i8,   "i8";
       I16,  i16,  "i16";
@@ -180,12 +179,6 @@ fn specialize_math_add(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathAdd {}
 
-impl NativeFunctionCompiler for MathAdd {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        specialize_math_add(arguments)
-    }
-}
-
 impl FunctionSpecializer for MathAdd {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         specialize_math_add(arguments)
@@ -195,14 +188,6 @@ impl FunctionSpecializer for MathAdd {
         // Mixed-kind coercion reads live values, so this cannot honestly claim
         // the `PureStatic` contract even though same-kind selection is static.
         GuardFunctionSafety::Unsupported
-    }
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-inventory::submit! {
-    FunctionCompilerDescriptor {
-        name: "math/add",
-        ptr: &MathAdd {},
     }
 }
 
@@ -246,7 +231,6 @@ pub fn install_math_add_catalog(builder: &mut FunctionCatalogBuilder) -> MResult
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::BTreeMap;
 
     fn explicit_runtime_catalog() -> FunctionCatalog {
         let mut builder = FunctionCatalogBuilder::new();
@@ -462,64 +446,6 @@ mod tests {
         let _ = expected_runtime_name;
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    fn is_legacy_add_runtime_name(name: &str) -> bool {
-        const SCALARS: &[&str] = &[
-            "i8", "i16", "i32", "i64", "i128", "u8", "u16", "u32", "u64", "u128", "f32", "f64",
-            "r64", "c64",
-        ];
-        const SHAPES: &[&str] = &[
-            "M1", "M2", "M3", "M4", "M2x3", "M3x2", "MD", "R2", "R3", "R4", "RD", "V2", "V3", "V4",
-            "VD",
-        ];
-        const CROSS_SHAPES: &[(&str, &str)] = &[
-            ("M2", "V2"),
-            ("M3", "V3"),
-            ("M4", "V4"),
-            ("M2x3", "V2"),
-            ("M3x2", "V3"),
-            ("MD", "VD"),
-            ("MD", "V2"),
-            ("MD", "V3"),
-            ("MD", "V4"),
-            ("M2", "R2"),
-            ("M3", "R3"),
-            ("M4", "R4"),
-            ("M2x3", "R3"),
-            ("M3x2", "R2"),
-            ("MD", "RD"),
-            ("MD", "R2"),
-            ("MD", "R3"),
-            ("MD", "R4"),
-        ];
-
-        let Some(rest) = name.strip_prefix("Add") else {
-            return false;
-        };
-        let Some((family, scalar)) = rest.split_once('<') else {
-            return false;
-        };
-        let Some(scalar) = scalar.strip_suffix('>') else {
-            return false;
-        };
-        if !SCALARS.contains(&scalar) {
-            return false;
-        }
-        if family == "SS" {
-            return true;
-        }
-        if SHAPES.iter().any(|shape| {
-            family == format!("S{shape}")
-                || family == format!("{shape}S")
-                || family == format!("{shape}{shape}")
-        }) {
-            return true;
-        }
-        CROSS_SHAPES.iter().any(|(left, right)| {
-            family == format!("{left}{right}") || family == format!("{right}{left}")
-        })
-    }
-
     #[test]
     fn installs_every_factory_enabled_by_the_current_feature_set() {
         let catalog = explicit_runtime_catalog();
@@ -527,45 +453,6 @@ mod tests {
             catalog.runtime_factory_count(),
             enabled_scalar_type_count() * enabled_shape_family_count()
         );
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    #[test]
-    fn explicit_runtime_names_match_unique_legacy_add_inventory() {
-        let catalog = explicit_runtime_catalog();
-        let explicit = catalog
-            .runtime_entries()
-            .map(|entry| {
-                assert_eq!(RuntimeFunctionId::from_name(&entry.name), entry.id);
-                (entry.id.raw(), entry.name.as_str())
-            })
-            .collect::<BTreeMap<_, _>>();
-        let mut legacy = BTreeMap::<u64, &'static str>::new();
-
-        for descriptor in inventory::iter::<FunctionDescriptor> {
-            if is_legacy_add_runtime_name(descriptor.name) {
-                let id = hash_str(descriptor.name);
-                if let Some(previous) = legacy.insert(id, descriptor.name) {
-                    assert_eq!(previous, descriptor.name, "legacy add runtime ID collision");
-                }
-            }
-        }
-
-        assert_eq!(catalog.runtime_factory_count(), explicit.len());
-        assert_eq!(explicit, legacy);
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    #[test]
-    fn legacy_parity_filter_accepts_only_concrete_add_family_names() {
-        assert!(is_legacy_add_runtime_name("AddSS<f64>"));
-        assert!(is_legacy_add_runtime_name("AddM2x3R3<c64>"));
-        assert!(is_legacy_add_runtime_name("AddR3M2x3<i128>"));
-        assert!(is_legacy_add_runtime_name("AddMDV4<r64>"));
-        assert!(!is_legacy_add_runtime_name("AddAssignSS<f64>"));
-        assert!(!is_legacy_add_runtime_name("AddSomething<f64>"));
-        assert!(!is_legacy_add_runtime_name("AddM2M3<f64>"));
-        assert!(!is_legacy_add_runtime_name("MathAdd<f64>"));
     }
 
     #[cfg(all(feature = "f64", feature = "matrixd"))]
@@ -680,16 +567,13 @@ mod tests {
 
     #[cfg(feature = "f64")]
     #[test]
-    fn native_and_catalog_specializers_share_mutable_reference_behavior() {
+    fn catalog_specializer_preserves_mutable_reference_behavior() {
         let left = Value::MutableReference(Ref::new(Value::from(1.0_f64)));
         let right = Value::MutableReference(Ref::new(Value::from(2.0_f64)));
         let arguments = vec![left, right];
 
-        let native = NativeFunctionCompiler::compile(&MathAdd {}, &arguments).unwrap();
-        let catalog = FunctionSpecializer::specialize(&MathAdd {}, &arguments).unwrap();
-        native.solve();
-        catalog.solve();
-        assert_eq!(native.out().as_f64().unwrap().borrow().clone(), 3.0);
-        assert_eq!(catalog.out().as_f64().unwrap().borrow().clone(), 3.0);
+        let function = FunctionSpecializer::specialize(&MathAdd {}, &arguments).unwrap();
+        function.solve();
+        assert_eq!(function.out().as_f64().unwrap().borrow().clone(), 3.0);
     }
 }

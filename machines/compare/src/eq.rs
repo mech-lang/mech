@@ -237,12 +237,6 @@ fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFuncti
     match (&lhs_value, &rhs_value) {
         #[cfg(all(feature = "table"))]
         (Value::Table(lhs), Value::Table(rhs)) => {
-            register_descriptor! {
-              FunctionDescriptor {
-                name: "TableEq",
-                ptr: TableEq::new,
-              }
-            }
             return Ok(Box::new(TableEq {
                 lhs: lhs.clone(),
                 rhs: rhs.clone(),
@@ -251,12 +245,6 @@ fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFuncti
         }
         #[cfg(feature = "atom")]
         (Value::Atom(lhs), Value::Atom(rhs)) => {
-            register_descriptor! {
-              FunctionDescriptor {
-                name: "AtomEq",
-                ptr: AtomEq::new,
-              }
-            }
             return Ok(Box::new(AtomEq {
                 lhs: lhs.clone(),
                 rhs: rhs.clone(),
@@ -267,7 +255,6 @@ fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFuncti
     }
     impl_binop_match_arms!(
       EQ,
-      register_fxn_descriptor_inner,
       (lhs_value, rhs_value),
       Bool, bool, "bool";
       I8,   bool, "i8";

@@ -1,8 +1,9 @@
 use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, MResult, MechFunctionFactory,
-    NativeFunctionCompiler, legacy_source_specializer,
+    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
+    MechFunctionFactory,
 };
 use paste::paste;
+use std::sync::Arc;
 
 fn install_operation<T>(
     builder: &mut FunctionCatalogBuilder,
@@ -10,10 +11,9 @@ fn install_operation<T>(
     compiler: T,
 ) -> MResult<()>
 where
-    T: NativeFunctionCompiler + 'static,
+    T: FunctionSpecializer + 'static,
 {
-    let operation =
-        builder.insert_specializer(canonical_name, legacy_source_specializer(compiler))?;
+    let operation = builder.insert_specializer(canonical_name, Arc::new(compiler))?;
     builder.insert_export(FunctionExport {
         operation,
         canonical_name: canonical_name.to_string(),
@@ -153,8 +153,7 @@ pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{FunctionDescriptor, OperationId};
-    use std::collections::BTreeMap;
+    use mech_core::OperationId;
 
     fn expected_operations() -> Vec<&'static str> {
         let mut expected = Vec::new();
@@ -194,65 +193,5 @@ mod tests {
                 }],
             );
         }
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    #[test]
-    fn runtime_catalog_matches_legacy_inventory_names_ids_and_pointers() {
-        let mut builder = FunctionCatalogBuilder::new();
-        install_runtime(&mut builder).unwrap();
-        let catalog = builder.build().unwrap();
-        let explicit: BTreeMap<_, _> = catalog
-            .runtime_entries()
-            .map(|entry| (entry.name.clone(), entry.factory as usize))
-            .collect();
-        let mut legacy = BTreeMap::new();
-        for descriptor in inventory::iter::<FunctionDescriptor> {
-            let stem = descriptor.name.split('<').next().unwrap_or(descriptor.name);
-            if matches!(stem, "AndSS" | "NotS")
-                || ["And", "Or", "Xor"]
-                    .iter()
-                    .any(|prefix| stem.starts_with(prefix))
-            {
-                if let Some(existing) = legacy.insert(descriptor.name, descriptor.ptr as usize) {
-                    assert_eq!(existing, descriptor.ptr as usize);
-                }
-            }
-        }
-
-        assert_eq!(explicit.len(), legacy.len());
-        for (name, pointer) in legacy {
-            let entry = catalog
-                .runtime_entry(mech_core::RuntimeFunctionId::from_name(name))
-                .unwrap_or_else(|| panic!("missing explicit runtime factory {name}"));
-            assert_eq!(entry.name, name);
-            assert_eq!(
-                entry.factory as usize, pointer,
-                "factory mismatch for {name}"
-            );
-        }
-
-        #[cfg(all(
-            feature = "and",
-            feature = "or",
-            feature = "xor",
-            feature = "not",
-            feature = "matrixd",
-            feature = "vectord",
-            feature = "row_vectord",
-            not(feature = "matrix1"),
-            not(feature = "matrix2"),
-            not(feature = "matrix3"),
-            not(feature = "matrix4"),
-            not(feature = "matrix2x3"),
-            not(feature = "matrix3x2"),
-            not(feature = "vector2"),
-            not(feature = "vector3"),
-            not(feature = "vector4"),
-            not(feature = "row_vector2"),
-            not(feature = "row_vector3"),
-            not(feature = "row_vector4"),
-        ))]
-        assert_eq!(explicit.len(), 43);
     }
 }

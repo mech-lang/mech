@@ -4,8 +4,8 @@ use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::V
 use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    FunctionArgs, GuardFunctionSafety, MResult, MechError, MechErrorKind, MechFunction,
-    NativeFunctionCompiler, Value, hash_str,
+    FunctionArgs, GuardFunctionSafety, MResult, MechError, MechErrorKind, MechFunction, Value,
+    hash_str,
 };
 
 #[repr(transparent)]
@@ -52,41 +52,6 @@ pub trait FunctionSpecializer: Send + Sync {
     fn guard_safety(&self) -> GuardFunctionSafety {
         GuardFunctionSafety::Unsupported
     }
-}
-
-/// Transitional adapter used while static source compilers move from the
-/// legacy registry into explicit catalog fragments.
-///
-/// PR2 deletes this adapter together with [`NativeFunctionCompiler`] after all
-/// concrete specializers implement the catalog interface directly.
-pub struct LegacySourceSpecializer<T> {
-    compiler: T,
-}
-
-impl<T> LegacySourceSpecializer<T> {
-    pub fn new(compiler: T) -> Self {
-        Self { compiler }
-    }
-}
-
-impl<T> FunctionSpecializer for LegacySourceSpecializer<T>
-where
-    T: NativeFunctionCompiler,
-{
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
-        self.compiler.compile(&arguments.to_vec())
-    }
-
-    fn guard_safety(&self) -> GuardFunctionSafety {
-        self.compiler.guard_safety()
-    }
-}
-
-pub fn legacy_source_specializer<T>(compiler: T) -> Arc<dyn FunctionSpecializer>
-where
-    T: NativeFunctionCompiler + 'static,
-{
-    Arc::new(LegacySourceSpecializer::new(compiler))
 }
 
 #[derive(Clone)]
@@ -428,24 +393,6 @@ impl MechErrorKind for FunctionOperationUnavailable {
                 self.operation.raw(),
             ),
         }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeFunctionUnavailable {
-    pub id: RuntimeFunctionId,
-}
-
-impl MechErrorKind for RuntimeFunctionUnavailable {
-    fn name(&self) -> &str {
-        "RuntimeFunctionUnavailable"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "runtime function 0x{:016x} is unavailable in the catalog",
-            self.id.raw(),
-        )
     }
 }
 

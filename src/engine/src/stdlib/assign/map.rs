@@ -127,8 +127,8 @@ fn impl_set_map_value_fxn(
 
 pub struct MapAssignScalar {}
 
-impl NativeFunctionCompiler for MapAssignScalar {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MapAssignScalar {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {

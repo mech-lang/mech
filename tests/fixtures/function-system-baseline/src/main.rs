@@ -1,8 +1,7 @@
 use mech_core::matrix::Matrix as MechMatrix;
 use mech_core::{
-    DecodedInstr, FunctionCatalog, FunctionCatalogBuilder, FunctionCompilerDescriptor,
-    FunctionDescriptor, FunctionExposure, MechSet, NativeFunctionCompiler, ParsedProgram, Ref,
-    RuntimeFunctionId, Value, ValueKind, hash_str,
+    DecodedInstr, FunctionCatalog, FunctionCatalogBuilder, FunctionExposure, MechSet,
+    OperationId, ParsedProgram, Ref, RuntimeFunctionId, Value, ValueKind, hash_str,
 };
 use mech_engine as _;
 use mech_engine::{
@@ -12,7 +11,7 @@ use nalgebra::{DMatrix, DVector};
 #[cfg(feature = "fixed-specialization-cases")]
 use nalgebra::{Matrix2, Vector2};
 use serde::Serialize;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -130,127 +129,20 @@ struct LegacyManifest {
     cases: Vec<LegacyCase>,
 }
 
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-struct DuplicateRegistration {
-    registry: &'static str,
-    name: String,
-    id: u64,
-    count: usize,
-}
-
-struct RegistryInventory {
-    runtime_names: BTreeMap<u64, BTreeSet<String>>,
-    runtime_factories: BTreeMap<u64, (&'static str, usize)>,
-    source_names: BTreeMap<u64, BTreeSet<String>>,
-    duplicates: Vec<DuplicateRegistration>,
-}
-
-impl RegistryInventory {
-    fn collect() -> AppResult<Self> {
-        let mut runtime_names = BTreeMap::<u64, BTreeSet<String>>::new();
-        let mut runtime_counts = BTreeMap::<(u64, String), usize>::new();
-        let mut runtime_factories = BTreeMap::<u64, (&'static str, usize)>::new();
-        for descriptor in inventory::iter::<FunctionDescriptor> {
-            let id = hash_str(descriptor.name);
-            runtime_names
-                .entry(id)
-                .or_default()
-                .insert(descriptor.name.to_string());
-            let incoming = (descriptor.name, descriptor.ptr as usize);
-            if let Some(existing) = runtime_factories.insert(id, incoming)
-                && existing != incoming
-            {
-                return Err(format!(
-                    "conflicting legacy runtime factory registration for {}: name/pointer {:?} versus {:?}",
-                    format_id(id),
-                    existing,
-                    incoming,
-                ));
-            }
-            *runtime_counts
-                .entry((id, descriptor.name.to_string()))
-                .or_default() += 1;
-        }
-
-        let mut source_names = BTreeMap::<u64, BTreeSet<String>>::new();
-        let mut source_counts = BTreeMap::<(u64, String), usize>::new();
-        for descriptor in inventory::iter::<FunctionCompilerDescriptor> {
-            let id = hash_str(descriptor.name);
-            source_names
-                .entry(id)
-                .or_default()
-                .insert(descriptor.name.to_string());
-            *source_counts
-                .entry((id, descriptor.name.to_string()))
-                .or_default() += 1;
-        }
-
-        validate_distinct_name_collisions("runtime factory", &runtime_names)?;
-        validate_distinct_name_collisions("source specializer", &source_names)?;
-
-        let mut duplicates = Vec::new();
-        for ((id, name), count) in runtime_counts {
-            if count > 1 {
-                duplicates.push(DuplicateRegistration {
-                    registry: "runtime factory",
-                    name,
-                    id,
-                    count,
-                });
-            }
-        }
-        for ((id, name), count) in source_counts {
-            if count > 1 {
-                duplicates.push(DuplicateRegistration {
-                    registry: "source specializer",
-                    name,
-                    id,
-                    count,
-                });
-            }
-        }
-        duplicates.sort();
-
-        Ok(Self {
-            runtime_names,
-            runtime_factories,
-            source_names,
-            duplicates,
-        })
-    }
-
-    fn print_duplicate_diagnostics(&self) {
-        for duplicate in &self.duplicates {
-            eprintln!(
-                "duplicate {} registration: {} ({}, {}) x{}",
-                duplicate.registry,
-                duplicate.name,
-                format_id(duplicate.id),
-                duplicate.id,
-                duplicate.count,
-            );
-        }
-    }
-
-    fn runtime_factory(&self, id: u64) -> AppResult<RuntimeFactory> {
-        let names = self.runtime_names.get(&id).ok_or_else(|| {
+fn runtime_factory(catalog: &FunctionCatalog, id: u64) -> AppResult<RuntimeFactory> {
+    let runtime_id = RuntimeFunctionId::from_raw(id);
+    let entry = catalog
+        .runtime_entry(runtime_id)
+        .ok_or_else(|| {
             format!(
-                "bytecode references unknown runtime factory ID {}",
+                "bytecode references unknown catalog runtime factory ID {}",
                 format_id(id)
             )
         })?;
-        if names.len() != 1 {
-            return Err(format!(
-                "runtime factory ID {} maps to conflicting names: {}",
-                format_id(id),
-                names.iter().cloned().collect::<Vec<_>>().join(", "),
-            ));
-        }
-        Ok(RuntimeFactory {
-            name: names.iter().next().expect("one name was required").clone(),
-            id_hex: format_id(id),
-        })
-    }
+    Ok(RuntimeFactory {
+        name: entry.name.clone(),
+        id_hex: format_id(id),
+    })
 }
 
 struct CaseInput {
@@ -273,13 +165,6 @@ fn main() {
 }
 
 fn run() -> AppResult<()> {
-    // This machine is discovered only through inventory in the frozen baseline.
-    // Referencing a concrete compiler symbol prevents the native linker from
-    // discarding its inventory registrations as an otherwise-unused rlib.
-    std::hint::black_box(
-        <mech_combinatorics::CombinatoricsNChooseK as NativeFunctionCompiler>::compile,
-    );
-
     let arguments = env::args().skip(1).collect::<Vec<_>>();
     if arguments.len() != 2 {
         return Err(USAGE.to_string());
@@ -287,12 +172,11 @@ fn run() -> AppResult<()> {
 
     let command = arguments[0].as_str();
     let output = PathBuf::from(&arguments[1]);
-    let inventory = RegistryInventory::collect()?;
+    let catalog = default_function_catalog();
 
     match command {
         "--write" => {
-            inventory.print_duplicate_diagnostics();
-            let (surface, cases) = generate_json_baselines(&inventory)?;
+            let (surface, cases) = generate_json_baselines(&catalog)?;
             fs::create_dir_all(&output).map_err(|error| {
                 format!(
                     "failed to create baseline directory {}: {error}",
@@ -304,14 +188,14 @@ fn run() -> AppResult<()> {
             Ok(())
         }
         "--check" => {
-            let (surface, cases) = generate_json_baselines(&inventory)?;
+            let (surface, cases) = generate_json_baselines(&catalog)?;
             check_json(&output.join("function-surface.json"), &surface)?;
             check_json(&output.join("specialization-cases.json"), &cases)?;
             Ok(())
         }
         "--write-runtime" => {
             require_dynamic_runtime_profile()?;
-            let surface = generate_runtime_factory_surface(&inventory)?;
+            let surface = generate_runtime_factory_surface()?;
             fs::create_dir_all(&output).map_err(|error| {
                 format!(
                     "failed to create baseline directory {}: {error}",
@@ -327,7 +211,7 @@ fn run() -> AppResult<()> {
         }
         "--check-runtime" => {
             require_dynamic_runtime_profile()?;
-            let surface = generate_runtime_factory_surface(&inventory)?;
+            let surface = generate_runtime_factory_surface()?;
             check_json(&output.join(RUNTIME_SURFACE_FILE), &surface)?;
             println!(
                 "checked {} runtime factories for profile {RUNTIME_SURFACE_PROFILE}",
@@ -335,7 +219,7 @@ fn run() -> AppResult<()> {
             );
             Ok(())
         }
-        "--write-bytecode" => write_legacy_bytecode(&output, &inventory),
+        "--write-bytecode" => write_legacy_bytecode(&output, &catalog),
         _ => Err(USAGE.to_string()),
     }
 }
@@ -362,9 +246,7 @@ struct OwnedRuntimeFactory {
     owner: &'static str,
 }
 
-fn generate_runtime_factory_surface(
-    inventory: &RegistryInventory,
-) -> AppResult<RuntimeFactorySurface> {
+fn generate_runtime_factory_surface() -> AppResult<RuntimeFactorySurface> {
     let fragments: [(&str, RuntimeInstaller); 10] = [
         (
             "mech-engine::stdlib",
@@ -412,8 +294,6 @@ fn generate_runtime_factory_surface(
     }
 
     validate_composed_runtime_catalog(&explicit)?;
-    validate_legacy_runtime_inventory(&explicit, inventory)?;
-
     let mut runtime_factories = explicit
         .into_values()
         .map(|entry| RuntimeFactorySurfaceEntry {
@@ -480,94 +360,11 @@ fn validate_composed_runtime_catalog(
     Ok(())
 }
 
-fn validate_legacy_runtime_inventory(
-    explicit: &BTreeMap<RuntimeFunctionId, OwnedRuntimeFactory>,
-    inventory: &RegistryInventory,
-) -> AppResult<()> {
-    let mut failures = Vec::new();
-
-    for (id, entry) in explicit {
-        match inventory.runtime_factories.get(&id.raw()) {
-            None => failures.push(format!(
-                "explicit-only {} ({}) owned by {}",
-                entry.name,
-                format_id(id.raw()),
-                entry.owner,
-            )),
-            Some((legacy_name, legacy_pointer))
-                if *legacy_name != entry.name || *legacy_pointer != entry.pointer =>
-            {
-                failures.push(format!(
-                    "mismatch for {} ({}): explicit owner {}, legacy name {:?}, factory pointers {:#x} versus {:#x}",
-                    entry.name,
-                    format_id(id.raw()),
-                    entry.owner,
-                    legacy_name,
-                    entry.pointer,
-                    legacy_pointer,
-                ));
-            }
-            Some(_) => {}
-        }
-    }
-
-    for (id, (name, _)) in &inventory.runtime_factories {
-        if !explicit.contains_key(&RuntimeFunctionId::from_raw(*id)) {
-            failures.push(format!("legacy-only {name} ({})", format_id(*id)));
-        }
-    }
-
-    if failures.is_empty() {
-        Ok(())
-    } else {
-        const DIAGNOSTIC_LIMIT: usize = 25;
-        let omitted = failures.len().saturating_sub(DIAGNOSTIC_LIMIT);
-        failures.truncate(DIAGNOSTIC_LIMIT);
-        let mut message = format!(
-            "explicit runtime fragments do not exactly match the legacy FunctionDescriptor inventory ({} explicit, {} legacy):\n- {}",
-            explicit.len(),
-            inventory.runtime_factories.len(),
-            failures.join("\n- "),
-        );
-        if omitted > 0 {
-            message.push_str(&format!("\n- ... and {omitted} more mismatch(es)"));
-        }
-        Err(message)
-    }
-}
-
-fn validate_distinct_name_collisions(
-    registry: &str,
-    names_by_id: &BTreeMap<u64, BTreeSet<String>>,
-) -> AppResult<()> {
-    let collisions = names_by_id
-        .iter()
-        .filter(|(_, names)| names.len() > 1)
-        .map(|(id, names)| {
-            format!(
-                "{} => {}",
-                format_id(*id),
-                names.iter().cloned().collect::<Vec<_>>().join(", "),
-            )
-        })
-        .collect::<Vec<_>>();
-
-    if collisions.is_empty() {
-        Ok(())
-    } else {
-        Err(format!(
-            "distinct-name hash collision(s) in {registry} registry: {}",
-            collisions.join("; "),
-        ))
-    }
-}
-
 fn generate_json_baselines(
-    inventory: &RegistryInventory,
+    catalog: &Arc<FunctionCatalog>,
 ) -> AppResult<(FunctionSurface, SpecializationCases)> {
-    let catalog = default_function_catalog();
     let program = MechProgram::new(MechProgramConfig::default());
-    if !Arc::ptr_eq(&catalog, program.function_catalog()) {
+    if !Arc::ptr_eq(catalog, program.function_catalog()) {
         return Err("fresh standard program did not retain the composed standard catalog".into());
     }
     let function_environment = program
@@ -576,16 +373,14 @@ fn generate_json_baselines(
         .borrow()
         .function_environment
         .clone();
-    validate_default_function_environment(&catalog, &function_environment)?;
+    validate_default_function_environment(catalog, &function_environment)?;
 
-    let full_source_specializers = effective_source_specializers(&catalog);
-    validate_effective_source_names(&full_source_specializers, &inventory.source_names)?;
+    let full_source_specializers = effective_source_specializers(catalog);
 
-    let prelude_source_specializers =
-        prelude_source_specializers(&catalog, &function_environment)?;
+    let prelude_source_specializers = prelude_source_specializers(catalog, &function_environment)?;
 
-    let module_exports = collect_module_exports(&catalog)?;
-    let cases = collect_specialization_cases(&catalog, inventory)?;
+    let module_exports = collect_module_exports(catalog)?;
+    let cases = collect_specialization_cases(catalog)?;
 
     Ok((
         FunctionSurface {
@@ -666,7 +461,10 @@ fn validate_default_function_environment(
                 format_id(intrinsic.operation.raw()),
             ));
         }
-        if environment.resolve_name(&intrinsic.canonical_name).is_some() {
+        if environment
+            .resolve_name(&intrinsic.canonical_name)
+            .is_some()
+        {
             return Err(format!(
                 "fresh standard FunctionEnvironment exposed intrinsic {} as a named function",
                 intrinsic.canonical_name,
@@ -710,28 +508,15 @@ fn validate_default_function_environment(
         }
     }
 
-    Ok(())
-}
-
-fn validate_effective_source_names(
-    effective: &[SourceSpecializer],
-    raw_names: &BTreeMap<u64, BTreeSet<String>>,
-) -> AppResult<()> {
-    for specializer in effective {
-        let id = hash_str(&specializer.name);
-        let Some(names) = raw_names.get(&id) else {
-            return Err(format!(
-                "effective source specializer {} ({}) has no raw descriptor",
-                specializer.name, specializer.id_hex,
-            ));
-        };
-        if !names.contains(&specializer.name) {
-            return Err(format!(
-                "effective source specializer {} ({}) does not match its raw descriptor",
-                specializer.name, specializer.id_hex,
-            ));
-        }
+    let expected = FunctionEnvironment::from_catalog_defaults(catalog)
+        .map_err(|error| format!("failed to derive the default FunctionEnvironment: {error:?}"))?;
+    if environment != &expected {
+        return Err(
+            "fresh standard FunctionEnvironment contains unexpected bindings or enabled operations"
+                .to_string(),
+        );
     }
+
     Ok(())
 }
 
@@ -760,10 +545,7 @@ fn collect_module_exports(catalog: &FunctionCatalog) -> AppResult<Vec<ModuleExpo
     Ok(exports)
 }
 
-fn collect_specialization_cases(
-    catalog: &FunctionCatalog,
-    inventory: &RegistryInventory,
-) -> AppResult<Vec<SpecializationCase>> {
+fn collect_specialization_cases(catalog: &FunctionCatalog) -> AppResult<Vec<SpecializationCase>> {
     let mut inputs = vec![
         CaseInput {
             name: "math_add_f64_f64",
@@ -868,7 +650,7 @@ fn collect_specialization_cases(
     let mut cases = Vec::with_capacity(inputs.len());
     let mut failures = Vec::new();
     for input in inputs {
-        match compile_specialization_case(catalog, inventory, input) {
+        match compile_specialization_case(catalog, input) {
             Ok(case) => cases.push(case),
             Err(error) => failures.push(error),
         }
@@ -895,18 +677,18 @@ fn collect_specialization_cases(
 
 fn compile_specialization_case(
     catalog: &FunctionCatalog,
-    inventory: &RegistryInventory,
     input: CaseInput,
 ) -> AppResult<SpecializationCase> {
-    let operation_id = hash_str(input.operation);
+    let raw_operation_id = hash_str(input.operation);
+    let operation_id = OperationId::from_raw(raw_operation_id);
     let specializer = catalog
-        .specializer(mech_core::OperationId::from_raw(operation_id))
+        .specializer(operation_id)
         .ok_or_else(|| {
             format!(
                 "specialization case {} cannot find source operation {} ({})",
                 input.name,
                 input.operation,
-                format_id(operation_id),
+                format_id(raw_operation_id),
             )
         })?;
     let argument_specs = input
@@ -918,13 +700,13 @@ fn compile_specialization_case(
         .specializer
         .specialize(&input.arguments)
         .map_err(|error| {
-        format!(
-            "specialization case {} failed to compile {}: {}",
-            input.name,
-            input.operation,
-            error.full_chain_message(),
-        )
-    })?;
+            format!(
+                "specialization case {} failed to compile {}: {}",
+                input.name,
+                input.operation,
+                error.full_chain_message(),
+            )
+        })?;
     let output = value_spec(&function.out())?;
 
     let mut context = mech_bytecode::CompileCtx::new();
@@ -950,7 +732,7 @@ fn compile_specialization_case(
         )
     })?;
     validate_bytecode_version(&parsed, input.name)?;
-    let mut runtime_factories = runtime_factories_from_program(&parsed, inventory, input.name)?;
+    let mut runtime_factories = runtime_factories_from_program(&parsed, catalog, input.name)?;
     if runtime_factories.len() != 1 {
         return Err(format!(
             "specialization case {} emitted {} operation instructions; expected exactly one",
@@ -963,7 +745,7 @@ fn compile_specialization_case(
     Ok(SpecializationCase {
         name: input.name.to_string(),
         operation: input.operation.to_string(),
-        operation_id_hex: format_id(operation_id),
+        operation_id_hex: format_id(raw_operation_id),
         arguments: argument_specs,
         output,
         runtime_factories,
@@ -972,7 +754,7 @@ fn compile_specialization_case(
 
 fn runtime_factories_from_program(
     parsed: &ParsedProgram,
-    inventory: &RegistryInventory,
+    catalog: &FunctionCatalog,
     case_name: &str,
 ) -> AppResult<Vec<RuntimeFactory>> {
     let mut ids = Vec::new();
@@ -997,9 +779,7 @@ fn runtime_factories_from_program(
     }
     ids.into_iter()
         .map(|id| {
-            inventory
-                .runtime_factory(id)
-                .map_err(|error| format!("case {case_name}: {error}"))
+            runtime_factory(catalog, id).map_err(|error| format!("case {case_name}: {error}"))
         })
         .collect()
 }
@@ -1057,7 +837,7 @@ fn value_spec(value: &Value) -> AppResult<ValueSpec> {
     }
 }
 
-fn write_legacy_bytecode(output: &Path, inventory: &RegistryInventory) -> AppResult<()> {
+fn write_legacy_bytecode(output: &Path, catalog: &FunctionCatalog) -> AppResult<()> {
     let mut inputs = vec![
         LegacyInput {
             name: "scalar-add",
@@ -1123,8 +903,7 @@ fn write_legacy_bytecode(output: &Path, inventory: &RegistryInventory) -> AppRes
             )
         })?;
         validate_bytecode_version(&parsed, input.name)?;
-        let mut runtime_factory_ids =
-            runtime_factories_from_program(&parsed, inventory, input.name)?;
+        let mut runtime_factory_ids = runtime_factories_from_program(&parsed, catalog, input.name)?;
         runtime_factory_ids.sort();
         let file = format!("{}.mecb", input.name);
         generated.push((

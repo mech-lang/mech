@@ -70,13 +70,6 @@ impl MechFunctionCompiler for SetSizeFxn {
     }
 }
 
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetSizeFxn",
-    ptr: SetSizeFxn::new,
-  }
-}
-
 fn set_size_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
     match input {
         Value::Set(s) => Ok(Box::new(SetSizeFxn {
@@ -95,8 +88,8 @@ fn set_size_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
 }
 
 pub struct SetSize {}
-impl NativeFunctionCompiler for SetSize {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetSize {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -123,11 +116,4 @@ impl NativeFunctionCompiler for SetSize {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/size",
-    ptr: &SetSize{},
-  }
 }

@@ -367,7 +367,7 @@ fn lhs_only_row(lhs: &MechTable, lhs_row: usize) -> HashMap<u64, Value> {
         .collect()
 }
 
-fn compile_table_join(arguments: &Vec<Value>, mode: JoinMode) -> MResult<Box<dyn MechFunction>> {
+fn compile_table_join(arguments: &[Value], mode: JoinMode) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
         return Err(MechError::new(
             IncorrectNumberOfArguments {
@@ -419,80 +419,43 @@ fn compile_table_join(arguments: &Vec<Value>, mode: JoinMode) -> MResult<Box<dyn
 }
 
 pub struct TableInnerJoin {}
-impl NativeFunctionCompiler for TableInnerJoin {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for TableInnerJoin {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::Inner)
     }
 }
 
 pub struct TableLeftOuterJoin {}
-impl NativeFunctionCompiler for TableLeftOuterJoin {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for TableLeftOuterJoin {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::LeftOuter)
     }
 }
 
 pub struct TableRightOuterJoin {}
-impl NativeFunctionCompiler for TableRightOuterJoin {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for TableRightOuterJoin {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::RightOuter)
     }
 }
 
 pub struct TableFullOuterJoin {}
-impl NativeFunctionCompiler for TableFullOuterJoin {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for TableFullOuterJoin {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::FullOuter)
     }
 }
 
 pub struct TableLeftSemiJoin {}
-impl NativeFunctionCompiler for TableLeftSemiJoin {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for TableLeftSemiJoin {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::LeftSemi)
     }
 }
 
 pub struct TableLeftAntiJoin {}
-impl NativeFunctionCompiler for TableLeftAntiJoin {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for TableLeftAntiJoin {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::LeftAnti)
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "table/join",
-    ptr: &TableInnerJoin{},
-  }
-}
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "table/left-outer-join",
-    ptr: &TableLeftOuterJoin{},
-  }
-}
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "table/right-outer-join",
-    ptr: &TableRightOuterJoin{},
-  }
-}
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "table/full-outer-join",
-    ptr: &TableFullOuterJoin{},
-  }
-}
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "table/left-semi-join",
-    ptr: &TableLeftSemiJoin{},
-  }
-}
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "table/left-anti-join",
-    ptr: &TableLeftAntiJoin{},
-  }
 }

@@ -611,8 +611,8 @@ fn impl_fmod_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFu
 
 pub struct MathFmod {}
 
-impl NativeFunctionCompiler for MathFmod {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathFmod {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -648,18 +648,4 @@ impl NativeFunctionCompiler for MathFmod {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/fmod",
-    ptr: &MathFmod{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "fmod",
-  }
 }

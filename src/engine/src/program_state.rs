@@ -6,8 +6,6 @@ pub struct ProgramState {
     #[cfg(feature = "symbol_table")]
     pub environment: Option<SymbolTableRef>,
     #[cfg(feature = "functions")]
-    pub legacy_functions: FunctionsRef,
-    #[cfg(feature = "functions")]
     pub function_environment: FunctionEnvironment,
     #[cfg(feature = "functions")]
     pub function_extensions: FunctionExtensions,
@@ -30,8 +28,6 @@ impl Clone for ProgramState {
             symbol_table: self.symbol_table.clone(),
             #[cfg(feature = "symbol_table")]
             environment: self.environment.clone(),
-            #[cfg(feature = "functions")]
-            legacy_functions: self.legacy_functions.clone(),
             #[cfg(feature = "functions")]
             function_environment: self.function_environment.clone(),
             #[cfg(feature = "functions")]
@@ -58,8 +54,6 @@ impl ProgramState {
             #[cfg(feature = "symbol_table")]
             environment: None,
             #[cfg(feature = "functions")]
-            legacy_functions: Ref::new(Functions::new()),
-            #[cfg(feature = "functions")]
             function_environment: FunctionEnvironment::default(),
             #[cfg(feature = "functions")]
             function_extensions: FunctionExtensions::default(),
@@ -84,10 +78,6 @@ impl ProgramState {
         {
             output.push_str("Symbol Table:\n");
             output.push_str(&self.symbol_table.borrow().pretty_print());
-        }
-        #[cfg(feature = "functions")]
-        {
-            output.push_str(&self.legacy_functions.borrow().pretty_print());
         }
         #[cfg(feature = "functions")]
         {
@@ -153,16 +143,6 @@ impl ProgramState {
     pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
         let mut plan_brrw = self.plan.borrow_mut();
         plan_brrw.push(step);
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn insert_function(&self, fxn: FunctionDescriptor) {
-        let mut fxns_brrw = self.legacy_functions.borrow_mut();
-        let id = hash_str(&fxn.name);
-        fxns_brrw.functions.insert(id, fxn.ptr);
-        self.dictionary
-            .borrow_mut()
-            .insert(id, fxn.name.to_string());
     }
 
     #[cfg(feature = "symbol_table")]
