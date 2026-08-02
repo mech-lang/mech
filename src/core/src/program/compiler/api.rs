@@ -1,14 +1,24 @@
-use crate::*;
+use crate::{ApplicationRequirement, EncodedConstant, MResult};
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "no_std")]
+use alloc::vec::Vec;
+
+use super::Register;
+
 pub trait BytecodeCompilerContext {
     fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool);
 
-    fn compile_const(&mut self, bytes: &[u8], kind: ValueKind) -> MResult<u32>;
+    fn intern_constant(&mut self, constant: EncodedConstant) -> MResult<u32>;
 
-    fn define_symbol(&mut self, pointer: usize, register: Register, name: &str, mutable: bool);
+    fn define_symbol(
+        &mut self,
+        pointer: usize,
+        register: Register,
+        name: &str,
+        mutable: bool,
+    ) -> MResult<()>;
 
-    fn require(&mut self, requirement: FeatureFlag);
+    fn intern_requirement(&mut self, requirement: ApplicationRequirement) -> MResult<u32>;
 
     fn emit_const_load(&mut self, destination: Register, constant: u32);
 
@@ -39,5 +49,11 @@ pub trait BytecodeCompilerContext {
 
     fn emit_varop(&mut self, function: u64, destination: Register, arguments: Vec<Register>);
 
-    fn emit_ret(&mut self, source: Register);
+    fn emit_host_call(&mut self, requirement: u32, destination: Register, arguments: Vec<Register>);
+
+    fn emit_resource_read(&mut self, requirement: u32, destination: Register);
+
+    fn emit_resource_write(&mut self, requirement: u32, destination: Register, source: Register);
+
+    fn emit_resource_send(&mut self, requirement: u32, destination: Register, source: Register);
 }

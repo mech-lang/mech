@@ -45,7 +45,7 @@ macro_rules! impl_col_set_fxn {
     {
       fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{},{}>", stringify!($fxn_name), $vector_size_in::<$out_type>::as_value_kind(), $vector_size_out::<Value>::as_value_kind());
-        compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+        compile_unop!(name, self.sink, self.source, ctx );
       }
     }
   }
@@ -238,13 +238,7 @@ impl MechFunctionImpl for TableAppendRecord {
 impl MechFunctionCompiler for TableAppendRecord {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableAppendRecord");
-        compile_unop!(
-            name,
-            self.sink,
-            self.source,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Assign)
-        );
+        compile_unop!(name, self.sink, self.source, ctx);
     }
 }
 
@@ -276,13 +270,7 @@ impl MechFunctionImpl for TableAppendTable {
 impl MechFunctionCompiler for TableAppendTable {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableAppendTable");
-        compile_unop!(
-            name,
-            self.sink,
-            self.source,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Table)
-        );
+        compile_unop!(name, self.sink, self.source, ctx);
     }
 }
 

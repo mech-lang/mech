@@ -86,14 +86,7 @@ where
             T::as_value_kind(),
             MatA::as_na_kind()
         );
-        compile_binop!(
-            name,
-            self.var,
-            self.name,
-            self.mutable,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::VariableDefine)
-        );
+        compile_binop!(name, self.var, self.name, self.mutable, ctx);
     }
 }
 
@@ -143,7 +136,7 @@ macro_rules! impl_variable_define_fxn {
           let variable_mutable = *self.mutable.borrow();
           ctx.define_symbol(self.var.addr(), variable_register, &variable_name, variable_mutable);
           let name = format!(stringify!([<VariableDefine $kind:camel>]));
-          compile_binop!(name, self.var, self.name, self.mutable, ctx, FeatureFlag::Builtin(FeatureKind::VariableDefine) );
+          compile_binop!(name, self.var, self.name, self.mutable, ctx );
         }
       }
     }
@@ -254,14 +247,7 @@ impl MechFunctionCompiler for VariableDefineEmpty {
             variable_mutable,
         );
         let name = "VariableDefineEmpty".to_string();
-        compile_binop!(
-            name,
-            self.var,
-            self.name,
-            self.mutable,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::VariableDefine)
-        );
+        compile_binop!(name, self.var, self.name, self.mutable, ctx);
     }
 }
 

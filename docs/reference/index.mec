@@ -50,7 +50,6 @@ Concrete host provider behavior is documented in each host crate under `hosts/*/
 --------------------------------------------------------------------------------
 
 - [`mech`](/reference/commands/mech.html)
-- [`mechc`](/reference/commands/mechc.html)
 - [`mech run`](/reference/commands/run.html)
 - [`mech test`](/reference/commands/test.html)
 - [`mech serve`](/reference/commands/serve.html)
@@ -73,7 +72,6 @@ Concrete host provider behavior is documented in each host crate under `hosts/*/
 - [Command Line](/reference/deployment/command-line.html)
 - [Web Server](/reference/deployment/web-server.html)
 - [Static Web Bundles](/reference/deployment/static-web-bundles.html)
-- [Executables](/reference/deployment/executables.html)
 - [WASM](/reference/deployment/wasm.html)
 
 7. Host Providers

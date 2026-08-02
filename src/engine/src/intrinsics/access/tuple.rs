@@ -47,8 +47,6 @@ impl MechFunctionCompiler for TupleAccessElement {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0];
         registers[0] = compile_register!(self.out, ctx);
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Tuple));
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
         ctx.emit_nullop(hash_str("TupleAccessElement"), registers[0]);
         return Ok(registers[0]);
     }

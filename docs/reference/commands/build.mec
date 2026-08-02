@@ -10,7 +10,7 @@ mech build main.mec --out build-output
 1. Output
 -------------------------------------------------------------------------------
 
-The current `mech build` flow writes bytecode output. Use `mechc build` when you want the executable packaging flow.
+The current `mech build` flow writes bytecode output.
 
 2. Examples
 -------------------------------------------------------------------------------

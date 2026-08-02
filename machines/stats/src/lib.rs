@@ -143,13 +143,7 @@ macro_rules! impl_stats_unop {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-                compile_unop!(
-                    name,
-                    self.out,
-                    self.arg,
-                    ctx,
-                    FeatureFlag::Custom(hash_str("stats/sum"))
-                );
+                compile_unop!(name, self.out, self.arg, ctx);
             }
         }
     };

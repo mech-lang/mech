@@ -75,14 +75,7 @@ macro_rules! vertcat_two_args {
                     stringify!($e0),
                     stringify!($e1)
                 );
-                compile_binop!(
-                    name,
-                    self.out,
-                    self.e0,
-                    self.e1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::VertCat)
-                );
+                compile_binop!(name, self.out, self.e0, self.e1, ctx);
             }
         }
     };
@@ -156,15 +149,7 @@ macro_rules! vertcat_three_args {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
-                compile_ternop!(
-                    name,
-                    self.out,
-                    self.e0,
-                    self.e1,
-                    self.e2,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::VertCat)
-                );
+                compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
             }
         }
     };
@@ -247,16 +232,7 @@ macro_rules! vertcat_four_args {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
-                compile_quadop!(
-                    name,
-                    self.out,
-                    self.e0,
-                    self.e1,
-                    self.e2,
-                    self.e3,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::VertCat)
-                );
+                compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
             }
         }
     };
@@ -330,8 +306,6 @@ where
         registers[0] = compile_register!(self.out, ctx);
         registers[1] = compile_register_mat!(self.e0, ctx);
         registers[2] = compile_register_mat!(self.e1, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
 
         ctx.emit_binop(
             hash_str(&format!(
@@ -419,8 +393,6 @@ where
         registers[1] = compile_register_mat!(self.e0, ctx);
         registers[2] = compile_register_mat!(self.e1, ctx);
         registers[3] = compile_register_mat!(self.e2, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
 
         ctx.emit_ternop(
             hash_str(&format!(
@@ -519,8 +491,6 @@ where
         registers[3] = compile_register_mat!(self.e2, ctx);
         registers[4] = compile_register_mat!(self.e3, ctx);
 
-        ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
-
         ctx.emit_quadop(
             hash_str(&format!(
                 "VerticalConcatenateFourArgs<{}>",
@@ -612,7 +582,6 @@ where
         for e in &self.e0 {
             mat_regs.push(compile_register_mat!(e, ctx));
         }
-        ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
         ctx.emit_varop(
             hash_str(&format!("VerticalConcatenateNArgs<{}>", T::as_value_kind())),
             registers[0],
@@ -646,7 +615,7 @@ mod compiler_tests {
                 .filter(|instruction| {
                     matches!(
                       instruction,
-                      EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register
+                      BytecodeInstruction::ConstLoad { dst, .. } if *dst == matrix_register
                     )
                 })
                 .count(),
@@ -654,19 +623,9 @@ mod compiler_tests {
         );
         assert!(matches!(
           context.instructions.last(),
-          Some(EncodedInstr::VarArg { args, .. })
-            if args == &vec![matrix_register, matrix_register]
+          Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
+            if arguments == &vec![matrix_register, matrix_register]
         ));
-        assert!(
-            context
-                .requirements
-                .contains(&FeatureFlag::Builtin(FeatureKind::VertCat)),
-        );
-        assert!(
-            !context
-                .requirements
-                .contains(&FeatureFlag::Builtin(FeatureKind::HorzCat)),
-        );
     }
 }
 
@@ -717,7 +676,7 @@ macro_rules! vertical_concatenate {
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
-          compile_unop!(name, self.out, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
+          compile_unop!(name, self.out, self.out, ctx);
         }
       }
     }
@@ -792,8 +751,6 @@ where
 
         registers[1] = compile_register_mat!(self.e0, ctx);
         registers[2] = compile_register_mat!(self.e1, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
         ctx.emit_binop(
             hash_str(&format!("VerticalConcatenateVD2<{}>", T::as_value_kind())),
@@ -878,8 +835,6 @@ where
         registers[1] = compile_register_mat!(self.e0, ctx);
         registers[2] = compile_register_mat!(self.e1, ctx);
         registers[3] = compile_register_mat!(self.e2, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
         ctx.emit_ternop(
             hash_str(&format!("VerticalConcatenateVD3<{}>", T::as_value_kind())),
@@ -974,8 +929,6 @@ where
         registers[2] = compile_register_mat!(self.e1, ctx);
         registers[3] = compile_register_mat!(self.e2, ctx);
         registers[4] = compile_register_mat!(self.e3, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
         ctx.emit_quadop(
             hash_str(&format!("VerticalConcatenateVD4<{}>", T::as_value_kind())),
@@ -1082,7 +1035,6 @@ where
         for (e, _) in &self.matrix {
             mat_regs.push(compile_register_mat!(e, ctx));
         }
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
         ctx.emit_varop(
             hash_str(&format!("VerticalConcatenateVDN<{}>", T::as_value_kind())),
             registers[0],
@@ -1150,12 +1102,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("VerticalConcatenateS1<{}>", T::as_value_kind());
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::VertCat)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 
@@ -1281,12 +1228,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("VerticalConcatenateSD<{}>", T::as_value_kind());
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::VertCat)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 
@@ -1562,16 +1504,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("VerticalConcatenateM1M1M1M1<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::VertCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 

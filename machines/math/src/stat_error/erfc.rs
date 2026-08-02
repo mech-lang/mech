@@ -44,19 +44,9 @@ macro_rules! erfcf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathErfc,
-    f32,
-    erfcf,
-    FeatureFlag::Custom(hash_str("math/erfc"))
-);
+impl_math_unop!(MathErfc, f32, erfcf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathErfc,
-    f64,
-    erfc,
-    FeatureFlag::Custom(hash_str("math/erfc"))
-);
+impl_math_unop!(MathErfc, f64, erfc);
 
 #[cfg(feature = "source")]
 fn impl_erfc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

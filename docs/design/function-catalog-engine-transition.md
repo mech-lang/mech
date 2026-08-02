@@ -91,9 +91,8 @@ through child interpreters, module operations, clear operations, and rollback.
 
 ## Compatibility and composition
 
-Bytecode remains version 1. Canonical operation names, concrete runtime factory
-names and IDs, the frozen source surface, specialization selections, and the
-checked-in pre-rewrite bytecode artifacts remain unchanged.
+Canonical operation names, concrete runtime factory names and IDs, the frozen
+source surface, and specialization selections remain unchanged.
 
 PR3 completed the composition transition. `mech-engine` has no dependency on a
 standard machine and no standard-catalog constructor or fallback.

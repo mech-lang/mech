@@ -44,19 +44,9 @@ macro_rules! sqrtf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathSqrt,
-    f32,
-    sqrtf,
-    FeatureFlag::Custom(hash_str("math/sqrt"))
-);
+impl_math_unop!(MathSqrt, f32, sqrtf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathSqrt,
-    f64,
-    sqrt,
-    FeatureFlag::Custom(hash_str("math/sqrt"))
-);
+impl_math_unop!(MathSqrt, f64, sqrt);
 
 #[cfg(feature = "source")]
 fn impl_sqrt_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

@@ -44,19 +44,9 @@ macro_rules! exponentialf_vec_op {
 }
 
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathExp,
-    f64,
-    exponential,
-    FeatureFlag::Custom(hash_str("math/exp"))
-);
+impl_math_unop!(MathExp, f64, exponential);
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathExp,
-    f32,
-    exponentialf,
-    FeatureFlag::Custom(hash_str("math/exp"))
-);
+impl_math_unop!(MathExp, f32, exponentialf);
 
 #[cfg(feature = "source")]
 fn impl_exponential_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

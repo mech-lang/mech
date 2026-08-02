@@ -1,6 +1,6 @@
 # Function-system compatibility baseline
 
-This baseline records the language-visible and bytecode-visible behavior of the
+This baseline records the language-visible and runtime-linkage behavior of the
 function subsystem before the function-catalog rewrite. It is a compatibility
 contract for the rewrite, not a contract for the descriptors, inventories, or
 registries that currently implement that behavior.
@@ -17,14 +17,12 @@ The checked-in fixtures freeze:
 - exact linked-module exports;
 - representative type-and-shape specialization choices;
 - selected concrete runtime factory names and IDs;
-- bytecode version 1 compatibility for the checked-in fixtures;
 - native and browser source behavior;
 - native linked-module behavior; and
 - standalone active-machine health.
 
 The JSON snapshots are deterministic and describe semantic identities rather
-than registration order. The legacy `.mecb` files are pre-rewrite artifacts
-that must remain executable by a compiler-free runtime consumer.
+than registration order.
 
 ## Deliberately not frozen
 
@@ -43,8 +41,7 @@ This baseline does not freeze:
 - raw bytecode serialization order;
 - binary size;
 - compile time;
-- WASM linked-module support; or
-- `mechc` behavior.
+- WASM linked-module support.
 
 These mechanisms may change during the catalog rewrite as long as the frozen
 observable contracts remain intact or an intentional compatibility decision is
@@ -60,11 +57,6 @@ this command. An intentional change to a source-visible operation name or a
 concrete runtime factory ID must explain the compatibility decision that made
 the change necessary. Ownership-only refactors should not alter these
 baselines.
-
-`--write-bytecode` is a deliberate compatibility-fixture operation. The
-checked-in `.mecb` files must not be casually regenerated during the catalog
-rewrite: doing so would replace the pre-rewrite artifacts whose compatibility
-the consumer is meant to prove.
 
 The exact maintenance and validation commands are recorded beside the JSON
 snapshots in `tests/architecture/function-system/README.md`.

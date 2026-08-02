@@ -1875,46 +1875,44 @@ impl Interpreter {
             )
             .with_compiler_loc(),
         })??;
-        match self.state.borrow().plan.borrow().last() {
-            Some(last_step) => self.out = last_step.out().clone(),
-            None => self.out = Value::Empty,
-        }
+        // The interpreter output is the final source value, which may differ
+        // from the last planned node (for example, `x := 1 + 2; 42`).
+        self.out = result.clone();
         Ok(result)
     }
 
     #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
     pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
+        let mut services = NoMechExecutionServices;
+        self.run_program_with_services(program, &mut services)
+    }
+
+    #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+    pub fn run_program_with_services(
+        &mut self,
+        program: &ParsedProgram,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<Value> {
         // Reset the instruction pointer
         self.ip = 0;
+        self.clear_plan();
         // Resize the registers and constant table
-        self.registers = vec![Value::Empty; program.header.reg_count as usize];
-        self.constants = vec![Value::Empty; program.const_entries.len()];
+        self.registers = vec![Value::Empty; program.header.register_count as usize];
         // Load the constants
-        self.constants = program.decode_const_entries()?;
-        // Load the symbol table
-        {
-            let mut state_brrw = self.state.borrow_mut();
-            let mut symbol_table = state_brrw.symbol_table.borrow_mut();
-            for (id, reg) in program.symbols.iter() {
-                let constant = self.constants[*reg as usize].clone();
-                self.out = constant.clone();
-                let mutable = program.mutable_symbols.contains(id);
-                symbol_table.insert(*id, constant, mutable);
-            }
-        }
+        self.constants = program.decode_constants()?;
         // Load the instructions
         {
             let function_catalog = Arc::clone(&self.function_catalog);
             let state_brrw = self.state.borrow();
-            while self.ip < program.instrs.len() {
-                let instr = &program.instrs[self.ip];
+            while self.ip < program.instructions.len() {
+                let instr = &program.instructions[self.ip];
                 match instr {
-                    DecodedInstr::ConstLoad { dst, const_id } => {
-                        let value = self.constants[*const_id as usize].clone();
+                    BytecodeInstruction::ConstLoad { dst, constant } => {
+                        let value = self.constants[*constant as usize].clone();
                         self.registers[*dst as usize] = value;
                     }
-                    DecodedInstr::NullOp { fxn_id, dst } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                    BytecodeInstruction::RuntimeNullary { function, dst } => {
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_factory(runtime_id) {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
@@ -1927,15 +1925,15 @@ impl Interpreter {
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownNullaryFunctionError { fxn_id: *fxn_id },
+                                    UnknownNullaryFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::UnOp { fxn_id, dst, src } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                    BytecodeInstruction::RuntimeUnary { function, dst, src } => {
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_factory(runtime_id) {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
@@ -1949,20 +1947,20 @@ impl Interpreter {
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownUnaryFunctionError { fxn_id: *fxn_id },
+                                    UnknownUnaryFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::BinOp {
-                        fxn_id,
+                    BytecodeInstruction::RuntimeBinary {
+                        function,
                         dst,
                         lhs,
                         rhs,
                     } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_factory(runtime_id) {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
@@ -1977,21 +1975,21 @@ impl Interpreter {
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownBinaryFunctionError { fxn_id: *fxn_id },
+                                    UnknownBinaryFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::TernOp {
-                        fxn_id,
+                    BytecodeInstruction::RuntimeTernary {
+                        function,
                         dst,
                         a,
                         b,
                         c,
                     } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_factory(runtime_id) {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
@@ -2007,22 +2005,22 @@ impl Interpreter {
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownTernaryFunctionError { fxn_id: *fxn_id },
+                                    UnknownTernaryFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::QuadOp {
-                        fxn_id,
+                    BytecodeInstruction::RuntimeQuaternary {
+                        function,
                         dst,
                         a,
                         b,
                         c,
                         d,
                     } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_factory(runtime_id) {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
@@ -2040,19 +2038,23 @@ impl Interpreter {
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownQuadFunctionError { fxn_id: *fxn_id },
+                                    UnknownQuadFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::VarArg { fxn_id, dst, args } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                    BytecodeInstruction::RuntimeVariadic {
+                        function,
+                        dst,
+                        arguments,
+                    } => {
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_factory(runtime_id) {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
-                                let argument_values = args
+                                let argument_values = arguments
                                     .iter()
                                     .map(|register| self.registers[*register as usize].clone())
                                     .collect::<Vec<Value>>();
@@ -2065,20 +2067,23 @@ impl Interpreter {
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownVariadicFunctionError { fxn_id: *fxn_id },
+                                    UnknownVariadicFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::Ret { src } => {
-                        todo!();
+                    BytecodeInstruction::Return { src } => {
+                        self.out = self.registers[*src as usize].clone();
                     }
-                    x => {
+                    BytecodeInstruction::HostCall { .. }
+                    | BytecodeInstruction::ResourceRead { .. }
+                    | BytecodeInstruction::ResourceWrite { .. }
+                    | BytecodeInstruction::ResourceSend { .. } => {
                         return Err(MechError::new(
                             UnknownInstructionError {
-                                instr: format!("{:?}", x),
+                                instr: format!("{:?}", instr),
                             },
                             None,
                         )
@@ -2088,10 +2093,17 @@ impl Interpreter {
                 self.ip += 1;
             }
         }
-        // Load the dictionary
+        // Bind symbols to the decoded register values, then load the exact
+        // checked dictionary. A bytecode install replaces these tables.
         {
-            let mut state_brrw = self.state.borrow_mut();
+            let state_brrw = self.state.borrow_mut();
             let mut symbol_table = state_brrw.symbol_table.borrow_mut();
+            *symbol_table = SymbolTable::new();
+            state_brrw.dictionary.borrow_mut().clear();
+            for (id, register) in &program.symbols {
+                let value = self.registers[*register as usize].clone();
+                symbol_table.insert(*id, value, program.mutable_symbols.contains(id));
+            }
             for (id, name) in &program.dictionary {
                 symbol_table
                     .dictionary
@@ -2100,6 +2112,21 @@ impl Interpreter {
                 state_brrw.dictionary.borrow_mut().insert(*id, name.clone());
             }
         }
+
+        if self.plan_len() > 0 {
+            self.solve_plan_with_services(services)?;
+        }
+
+        let Some(BytecodeInstruction::Return { src }) = program.instructions.last() else {
+            return Err(MechError::new(
+                UnknownInstructionError {
+                    instr: "validated bytecode has no final Return".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        };
+        self.out = self.registers[*src as usize].clone();
         Ok(self.out.clone())
     }
 }

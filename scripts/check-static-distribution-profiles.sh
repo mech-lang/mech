@@ -496,11 +496,11 @@ check_selected_runtime() {
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$manifest" \
     --target-dir "$scratch/selected-runtime-target" \
-    -- "$repository_root/tests/architecture/legacy-bytecode/scalar-add.mecb"
+    -- "$repository_root/tests/architecture/bytecode-v1/phase1/scalar-add-f64.mecb"
 }
 
 check_standard_runtime() {
-  manifest="$repository_root/tests/fixtures/function-system-bytecode-consumer/Cargo.toml"
+  manifest="$repository_root/tests/fixtures/standard-bytecode-runtime/Cargo.toml"
   capture_fixture_profile "$manifest" "$scratch/standard-runtime.tree"
   for package in mech-core mech-engine mech-stdlib mech-math mech-compare mech-logic mech-range mech-matrix mech-set mech-string mech-stats mech-combinatorics
   do
@@ -524,7 +524,8 @@ check_standard_runtime() {
     --target-dir "$scratch/standard-runtime-target"
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$manifest" \
-    --target-dir "$scratch/standard-runtime-target"
+    --target-dir "$scratch/standard-runtime-target" \
+    -- "$repository_root/tests/architecture/bytecode-v1/phase1/scalar-add-f64.mecb"
 }
 
 check_standard_source() {

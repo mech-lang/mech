@@ -50,13 +50,7 @@ where
             F::as_value_kind(),
             T::as_value_kind()
         );
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 

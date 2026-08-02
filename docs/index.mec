@@ -74,7 +74,6 @@ Mech Documentation
 -------------------------------------------------------------------------------
 
 - [`mech`](/reference/commands/mech.html)
-- [`mechc`](/reference/commands/mechc.html)
 - [`mech run`](/reference/commands/run.html)
 - [`mech test`](/reference/commands/test.html)
 - [`mech serve`](/reference/commands/serve.html)
@@ -97,7 +96,6 @@ Mech Documentation
 - [Command Line](/reference/deployment/command-line.html)
 - [Web Server](/reference/deployment/web-server.html)
 - [Static Web Bundles](/reference/deployment/static-web-bundles.html)
-- [Executables](/reference/deployment/executables.html)
 - [WASM](/reference/deployment/wasm.html)
 
 8. Standard Library
@@ -131,7 +129,6 @@ Mech Documentation
 - [Robot Arm Demo](/guides/robot-arm-demo.html)
 - [Browser DOM Demo](/guides/browser-dom-demo.html)
 - [First Web Bundle](/guides/first-web-bundle.html)
-- [Executable Build](/guides/executable-build.html)
 - [Writing a Host](/guides/writing-a-host.html)
 - [Tutorials](/guides/tutorials.html) `todo`
 

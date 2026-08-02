@@ -22,11 +22,6 @@ name = "mech"
 path = "src/bin/mech.rs"
 required-features = ["cli_core"]
 
-[[bin]]
-name = "mechc"
-path = "src/bin/mechc.rs"
-required-features = ["compiler", "standard_compiler"]
-
 [[example]]
 name = "matrix_multiply"
 path = "examples/matrix_multiply.rs"
@@ -233,7 +228,7 @@ baselib = ["bool", "string",
       "functions", "formulas",
     ]
 
-compiler = ["anyhow", "console", "tempfile", "zip", "mech-core/compiler", "mech-engine/compiler", "mech-syntax/compiler", "mech-runtime?/compiler"]
+compiler = ["mech-core/compiler", "mech-engine/compiler", "mech-syntax/compiler", "mech-runtime?/compiler"]
 program = ["mech-core/program", "mech-engine/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-engine/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-engine/serde", "mech-syntax/serde"]
@@ -324,6 +319,7 @@ matrix_vertcat = ["matrix", "mech-stdlib/matrix_vertcat"]
 [dev-dependencies]
 nalgebra = "0.34.1"
 indicatif = { version = "0.18.4", features = ["in_memory"] }
+tempfile = "3.26.0"
 
 [target.'cfg(unix)'.dev-dependencies]
 libc = "0.2"
@@ -369,11 +365,6 @@ warp = { version = "0.3.7", features = ["compression"]}
 tokio = { version = "1.50.0", features = ["full"]}
 include_dir = {version = "0.7.4", features = ["glob"]}
 indicatif = { version = "0.18.4"}
-
-anyhow = { version = "1.0.102", optional = true }
-console = { version = "0.16.2", optional = true }
-tempfile = { version = "3.26.0", optional = true }
-zip = { version =  "5.1.1", optional = true }
 
 [workspace]
 members = [

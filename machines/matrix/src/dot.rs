@@ -23,25 +23,11 @@ macro_rules! dot_op {
 
 macro_rules! impl_dot {
     ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
-        impl_binop!(
-            $name,
-            $type1,
-            $type2,
-            $out_type,
-            dot_op,
-            FeatureFlag::Builtin(FeatureKind::Dot)
-        );
+        impl_binop!($name, $type1, $type2, $out_type, dot_op);
     };
 }
 
-impl_binop!(
-    DotScalar,
-    T,
-    T,
-    T,
-    mul_op,
-    FeatureFlag::Builtin(FeatureKind::Dot)
-);
+impl_binop!(DotScalar, T, T, T, mul_op);
 #[cfg(all(feature = "row_vector2", feature = "row_vector2"))]
 impl_dot!(DotR2R2, RowVector2<T>, RowVector2<T>, T);
 #[cfg(all(feature = "vector2", feature = "vector2"))]

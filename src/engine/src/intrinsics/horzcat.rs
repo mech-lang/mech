@@ -53,7 +53,7 @@ macro_rules! horizontal_concatenate {
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}<{}{}>", stringify!($name), T::as_value_kind(), stringify!([<RowVector $vec_size>]));
-          compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+          compile_nullop!(name, self.out, ctx);
         }
       }
     }
@@ -132,14 +132,7 @@ macro_rules! horzcat_two_args {
                     stringify!($e0),
                     stringify!($e1)
                 );
-                compile_binop!(
-                    name,
-                    self.out,
-                    self.e0,
-                    self.e1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::HorzCat)
-                );
+                compile_binop!(name, self.out, self.e0, self.e1, ctx);
             }
         }
     };
@@ -221,15 +214,7 @@ macro_rules! horzcat_three_args {
                     stringify!($e1),
                     stringify!($e2)
                 );
-                compile_ternop!(
-                    name,
-                    self.out,
-                    self.e0,
-                    self.e1,
-                    self.e2,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::HorzCat)
-                );
+                compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
             }
         }
     };
@@ -321,16 +306,7 @@ macro_rules! horzcat_four_args {
                     stringify!($e2),
                     stringify!($e3)
                 );
-                compile_quadop!(
-                    name,
-                    self.out,
-                    self.e0,
-                    self.e1,
-                    self.e2,
-                    self.e3,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::HorzCat)
-                );
+                compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
             }
         }
     };
@@ -404,8 +380,6 @@ where
         registers[0] = compile_register!(self.out, ctx);
         registers[1] = compile_register_mat!(self.e0, ctx);
         registers[2] = compile_register_mat!(self.e1, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
         ctx.emit_binop(
             hash_str(&format!(
@@ -493,8 +467,6 @@ where
         registers[1] = compile_register_mat!(self.e0, ctx);
         registers[2] = compile_register_mat!(self.e1, ctx);
         registers[3] = compile_register_mat!(self.e2, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
         ctx.emit_ternop(
             hash_str(&format!(
@@ -593,8 +565,6 @@ where
             compile_register_mat!(self.e3, ctx),
         ];
 
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
-
         ctx.emit_quadop(
             hash_str(&format!(
                 "HorizontalConcatenateFourArgs<{}>",
@@ -685,7 +655,6 @@ where
         for e in &self.e0 {
             mat_regs.push(compile_register_mat!(e, ctx));
         }
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
         ctx.emit_varop(
             hash_str("HorizontalConcatenateNArgs"),
             registers[0],
@@ -753,12 +722,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateRD<{}>", T::as_value_kind());
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 
@@ -865,8 +829,6 @@ where
         all_regs.extend(mat_regs);
         all_regs.extend(scalar_regs);
 
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
-
         ctx.emit_varop(
             hash_str(&format!("HorizontalConcatenateRDN<{}>", T::as_value_kind())),
             registers[0],
@@ -904,7 +866,7 @@ mod compiler_tests {
                 .filter(|instruction| {
                     matches!(
                       instruction,
-                      EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register
+                      BytecodeInstruction::ConstLoad { dst, .. } if *dst == matrix_register
                     )
                 })
                 .count(),
@@ -913,21 +875,8 @@ mod compiler_tests {
         matrix_register
     }
 
-    fn assert_horzcat_requirement(context: &RecordingBytecodeCompilerContext) {
-        assert!(
-            context
-                .requirements
-                .contains(&FeatureFlag::Builtin(FeatureKind::HorzCat)),
-        );
-        assert!(
-            !context
-                .requirements
-                .contains(&FeatureFlag::Builtin(FeatureKind::VertCat)),
-        );
-    }
-
     #[test]
-    fn pointer_register_matrix_initializes_once() {
+    fn pointer_register_matrix_initializes_once() -> MResult<()> {
         let mut context = RecordingBytecodeCompilerContext::default();
         let context = &mut context;
         let matrix_a = matrix();
@@ -945,7 +894,7 @@ mod compiler_tests {
                 .instructions
                 .iter()
                 .filter(|instruction| {
-                    matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == register_a)
+                    matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == register_a)
                 })
                 .count(),
             1,
@@ -955,11 +904,12 @@ mod compiler_tests {
                 .instructions
                 .iter()
                 .filter(|instruction| {
-                    matches!(instruction, EncodedInstr::ConstLoad { dst, .. } if *dst == register_b)
+                    matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == register_b)
                 })
                 .count(),
             1,
         );
+        Ok(())
     }
 
     #[test]
@@ -978,10 +928,9 @@ mod compiler_tests {
         let matrix_register = assert_single_matrix_load(&context, &matrix);
         assert!(matches!(
           context.instructions.last(),
-          Some(EncodedInstr::QuadOp { a, b, c, d, .. })
+          Some(BytecodeInstruction::RuntimeQuaternary { a, b, c, d, .. })
             if [*a, *b, *c, *d] == [matrix_register; 4]
         ));
-        assert_horzcat_requirement(&context);
     }
 
     #[test]
@@ -997,10 +946,9 @@ mod compiler_tests {
         let matrix_register = assert_single_matrix_load(&context, &matrix);
         assert!(matches!(
           context.instructions.last(),
-          Some(EncodedInstr::VarArg { args, .. })
-            if args == &vec![matrix_register, matrix_register]
+          Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
+            if arguments == &vec![matrix_register, matrix_register]
         ));
-        assert_horzcat_requirement(&context);
     }
 
     #[test]
@@ -1020,10 +968,9 @@ mod compiler_tests {
         let scalar_register = context.reg_map[&scalar_address];
         assert!(matches!(
           context.instructions.last(),
-          Some(EncodedInstr::VarArg { args, .. })
-            if args == &vec![matrix_register, matrix_register, scalar_register]
+          Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
+            if arguments == &vec![matrix_register, matrix_register, scalar_register]
         ));
-        assert_horzcat_requirement(&context);
     }
 }
 
@@ -1092,13 +1039,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateS1D<{}>", T::as_value_kind());
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 
@@ -1167,13 +1108,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateS1<{}>", T::as_value_kind());
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 
@@ -1245,14 +1180,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateS2<{}>", T::as_value_kind());
-        compile_binop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_binop!(name, self.out, self.e0, self.e1, ctx);
     }
 }
 
@@ -1327,15 +1255,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateS3<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -1419,16 +1339,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateS4<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -1505,12 +1416,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSD<{}>", T::as_value_kind());
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 
@@ -1570,12 +1476,7 @@ macro_rules! horzcat_single {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
-                compile_nullop!(
-                    name,
-                    self.out,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::HorzCat)
-                );
+                compile_nullop!(name, self.out, ctx);
             }
         }
     };
@@ -1675,14 +1576,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSR2<{}>", T::as_value_kind());
-        compile_binop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_binop!(name, self.out, self.e0, self.e1, ctx);
     }
 }
 
@@ -1756,14 +1650,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateR2S<{}>", T::as_value_kind());
-        compile_binop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_binop!(name, self.out, self.e0, self.e1, ctx);
     }
 }
 // HorizontalConcatenateSM1 ---------------------------------------------------
@@ -1836,14 +1723,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSM1<{}>", T::as_value_kind());
-        compile_binop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_binop!(name, self.out, self.e0, self.e1, ctx);
     }
 }
 
@@ -1917,14 +1797,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1S<{}>", T::as_value_kind());
-        compile_binop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_binop!(name, self.out, self.e0, self.e1, ctx);
     }
 }
 
@@ -2012,16 +1885,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSSSM1<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -2109,16 +1973,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSSM1S<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -2206,16 +2061,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSM1SS<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -2303,16 +2149,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1SSS<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -2388,14 +2225,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSR3<{}>", T::as_value_kind());
-        compile_binop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_binop!(name, self.out, self.e0, self.e1, ctx);
     }
 }
 
@@ -2471,14 +2301,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateR3S<{}>", T::as_value_kind());
-        compile_binop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_binop!(name, self.out, self.e0, self.e1, ctx);
     }
 }
 
@@ -2556,15 +2379,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSSM1<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -2642,15 +2457,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSM1S<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -2728,15 +2535,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1SS<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -2815,15 +2614,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSSR2<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -2902,15 +2693,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSR2S<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -2989,15 +2772,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateR2SS<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -3075,15 +2850,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1M1S<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -3178,15 +2945,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1SM1<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -3264,15 +3023,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSM1M1<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -3408,15 +3159,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSM1R2<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -3495,15 +3238,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1SR2<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -3591,16 +3326,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSM1SM1<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -3679,15 +3405,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1R2S<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -3766,15 +3484,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateR2M1S<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -3853,15 +3563,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateR2SM1<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -3940,15 +3642,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSR2M1<{}>", T::as_value_kind());
-        compile_ternop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
     }
 }
 
@@ -4036,16 +3730,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSSM1M1<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -4133,16 +3818,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1M1SS<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -4230,16 +3906,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSM1M1S<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -4327,16 +3994,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1SSM1<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -4424,16 +4082,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1SM1S<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -4634,16 +4283,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateSM1M1M1<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -4731,16 +4371,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1SM1M1<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -4827,16 +4458,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1M1SM1<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -4923,16 +4545,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1M1M1S<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -5019,16 +4632,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("HorizontalConcatenateM1M1M1M1<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::HorzCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 

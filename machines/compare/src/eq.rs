@@ -159,14 +159,7 @@ impl MechFunctionImpl for AtomEq {
 impl MechFunctionCompiler for AtomEq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("AtomEq");
-        compile_binop!(
-            name,
-            self.out,
-            self.lhs,
-            self.rhs,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Atom)
-        );
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
 }
 
@@ -224,14 +217,7 @@ impl MechFunctionImpl for TableEq {
 impl MechFunctionCompiler for TableEq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableEq");
-        compile_binop!(
-            name,
-            self.out,
-            self.lhs,
-            self.rhs,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Table)
-        );
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
 }
 

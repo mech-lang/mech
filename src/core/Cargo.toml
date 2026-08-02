@@ -61,7 +61,7 @@ baselib = ["bool", "string",
       "functions", "formulas"
     ]
 
-compiler = ["byteorder"]
+compiler = ["program"]
 program = ["crc32fast", "byteorder"]
 pretty_print = ["tabled", "serde_json"]
 serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]

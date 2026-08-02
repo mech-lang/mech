@@ -45,12 +45,7 @@ impl MechFunctionImpl for ConvertSEnum {
 impl MechFunctionCompiler for ConvertSEnum {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertSEnum<enum>");
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 #[derive(Debug)]
@@ -91,12 +86,7 @@ impl MechFunctionImpl for ConvertSEmpty {
 impl MechFunctionCompiler for ConvertSEmpty {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertSEmpty<empty>");
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -169,8 +159,6 @@ where
 
         registers[0] = compile_register_brrw!(self.out, ctx);
         registers[1] = compile_register!(self.arg, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Convert));
 
         ctx.emit_unop(hash_str("ConvertMat2Table"), registers[0], registers[1]);
 
@@ -303,12 +291,7 @@ impl MechFunctionImpl for ConvertMatToSet {
 impl MechFunctionCompiler for ConvertMatToSet {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertMatToSet");
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 
@@ -343,13 +326,7 @@ impl MechFunctionImpl for ConvertSRationalToF64 {
 impl MechFunctionCompiler for ConvertSRationalToF64 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertSRationalToF64<f64>");
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 
@@ -504,13 +481,7 @@ where
             F::as_value_kind(),
             T::as_value_kind()
         );
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 
@@ -558,13 +529,7 @@ where
             F::as_value_kind(),
             T::as_value_kind()
         );
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 

@@ -64,14 +64,7 @@ impl MechFunctionCompiler for SetProperSubsetFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = "SetProperSubsetFxn".to_string();
         // Builtin operator ⊊
-        compile_binop!(
-            name,
-            self.out,
-            self.lhs,
-            self.rhs,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::ProperSubset)
-        );
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
 }
 

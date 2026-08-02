@@ -104,14 +104,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NChooseK<{}>", T::as_value_kind());
-        compile_binop!(
-            name,
-            self.out,
-            self.n,
-            self.k,
-            ctx,
-            FeatureFlag::Custom(hash_str("combinatorics/n-choose-k"))
-        );
+        compile_binop!(name, self.out, self.n, self.k, ctx);
     }
 }
 #[cfg(feature = "matrix")]
@@ -234,14 +227,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NChooseKMatrix<{}>", T::as_value_kind());
-        compile_binop!(
-            name,
-            self.out,
-            self.n,
-            self.k,
-            ctx,
-            FeatureFlag::Custom(hash_str("combinatorics/n-choose-k"))
-        );
+        compile_binop!(name, self.out, self.n, self.k, ctx);
     }
 }
 #[cfg(all(test, feature = "matrix", feature = "f64"))]

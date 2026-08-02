@@ -44,19 +44,9 @@ macro_rules! roundevenf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathRoundeven,
-    f32,
-    roundevenf,
-    FeatureFlag::Custom(hash_str("math/roundeven"))
-);
+impl_math_unop!(MathRoundeven, f32, roundevenf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathRoundeven,
-    f64,
-    roundeven,
-    FeatureFlag::Custom(hash_str("math/roundeven"))
-);
+impl_math_unop!(MathRoundeven, f64, roundeven);
 
 #[cfg(feature = "source")]
 fn impl_roundeven_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

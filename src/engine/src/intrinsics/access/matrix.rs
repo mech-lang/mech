@@ -518,7 +518,7 @@ macro_rules! impl_access_all_fxn_v {
     {
       fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
-        compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
+        compile_binop!(name, self.sink, self.source, self.ixes, ctx);
       }
     }
   };}*/
@@ -590,14 +590,7 @@ macro_rules! impl_access_fxn {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-                compile_binop!(
-                    name,
-                    self.out,
-                    self.source,
-                    self.ixes,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Access)
-                );
+                compile_binop!(name, self.out, self.source, self.ixes, ctx);
             }
         }
     };
@@ -674,15 +667,7 @@ macro_rules! impl_access_fxn2 {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-                compile_ternop!(
-                    name,
-                    self.out,
-                    self.source,
-                    self.ix1,
-                    self.ix2,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Access)
-                );
+                compile_ternop!(name, self.out, self.source, self.ix1, self.ix2, ctx);
             }
         }
     };
@@ -1017,7 +1002,6 @@ impl MechFunctionCompiler for MatrixAccessScalarValueF {
         registers[0] = compile_register_brrw!(self.out, ctx);
         registers[1] = compile_register!(self.source, ctx);
         registers[2] = compile_register_brrw!(self.ix, ctx);
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
         ctx.emit_binop(
             hash_str("MatrixAccessScalarValueF"),
             registers[0],

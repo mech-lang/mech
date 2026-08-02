@@ -43,19 +43,9 @@ macro_rules! coshf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathCosh,
-    f32,
-    coshf,
-    FeatureFlag::Custom(hash_str("math/cosh"))
-);
+impl_math_unop!(MathCosh, f32, coshf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathCosh,
-    f64,
-    cosh,
-    FeatureFlag::Custom(hash_str("math/cosh"))
-);
+impl_math_unop!(MathCosh, f64, cosh);
 
 #[cfg(feature = "source")]
 fn impl_cosh_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

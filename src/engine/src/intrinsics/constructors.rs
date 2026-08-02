@@ -65,12 +65,7 @@ impl MechFunctionFactory for ValueSet {
 #[cfg(all(feature = "set", feature = "compiler"))]
 impl MechFunctionCompiler for ValueSet {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!(
-            "set/define",
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Set)
-        );
+        compile_nullop!("set/define", self.out, ctx);
     }
 }
 
@@ -156,12 +151,7 @@ impl MechFunctionFactory for ValueSetComprehension {
 #[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
 impl MechFunctionCompiler for ValueSetComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!(
-            "set/comprehension",
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::SetComprehensions)
-        );
+        compile_nullop!("set/comprehension", self.out, ctx);
     }
 }
 
@@ -230,11 +220,6 @@ impl MechFunctionFactory for ValueMatrixComprehension {
 #[cfg(all(feature = "matrix_comprehensions", feature = "compiler"))]
 impl MechFunctionCompiler for ValueMatrixComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!(
-            "matrix/comprehension",
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::MatrixComprehensions)
-        );
+        compile_nullop!("matrix/comprehension", self.out, ctx);
     }
 }

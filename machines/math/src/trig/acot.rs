@@ -44,19 +44,9 @@ macro_rules! acotf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathAcot,
-    f32,
-    acotf,
-    FeatureFlag::Custom(hash_str("math/acot"))
-);
+impl_math_unop!(MathAcot, f32, acotf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathAcot,
-    f64,
-    acot,
-    FeatureFlag::Custom(hash_str("math/acot"))
-);
+impl_math_unop!(MathAcot, f64, acot);
 
 #[cfg(feature = "source")]
 fn impl_acot_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use mech_core::{MechSourceCode, OperationId, RuntimeFunctionId, Value};
+use mech_core::{OperationId, RuntimeFunctionId, Value};
 use mech_runtime::{RuntimeBuilder, RuntimeValueSnapshot};
 use mech_stdlib::source_catalog;
 use mech_wasm as _;
@@ -12,10 +12,6 @@ wasm_bindgen_test_configure!(run_in_browser);
 const SOURCE_CASES: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../tests/architecture/function-system/source-cases.json"
-));
-const SCALAR_ADD_BYTECODE: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../tests/architecture/legacy-bytecode/scalar-add.mecb"
 ));
 
 #[derive(Debug, Deserialize)]
@@ -180,20 +176,6 @@ fn scalar_source_addition_uses_the_explicit_catalog() {
     let snapshot = runtime
         .run_string("1.0 + 2.0")
         .expect("scalar source addition must specialize through the catalog");
-
-    assert_f64_snapshot(snapshot, 3.0);
-}
-
-#[wasm_bindgen_test]
-fn checked_in_scalar_add_bytecode_uses_the_explicit_catalog() {
-    let mut runtime = browser_runtime_builder()
-        .build()
-        .expect("standard WASM runtime must build");
-    let source = MechSourceCode::ByteCode(SCALAR_ADD_BYTECODE.to_vec());
-
-    let snapshot = runtime
-        .run_source(&source)
-        .expect("checked-in scalar-add bytecode must reconstruct through the catalog");
 
     assert_f64_snapshot(snapshot, 3.0);
 }

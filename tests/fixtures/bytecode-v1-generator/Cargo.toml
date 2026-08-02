@@ -1,0 +1,16 @@
+[package]
+name = "bytecode-v1-generator"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+mech-core = {
+  path = "../../../src/core",
+  default-features = false,
+  features = ["program"],
+}
+serde_json = "1.0.149"
+sha2 = "0.10"
+
+[workspace]

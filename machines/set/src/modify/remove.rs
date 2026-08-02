@@ -73,14 +73,7 @@ impl MechFunctionImpl for SetRemoveFxn {
 impl MechFunctionCompiler for SetRemoveFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("SetRemoveFxn");
-        compile_binop!(
-            name,
-            self.out,
-            self.arg1,
-            self.arg2,
-            ctx,
-            FeatureFlag::Custom(hash_str("set/remove"))
-        );
+        compile_binop!(name, self.out, self.arg1, self.arg2, ctx);
     }
 }
 

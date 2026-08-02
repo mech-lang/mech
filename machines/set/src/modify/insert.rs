@@ -92,14 +92,7 @@ impl MechFunctionImpl for SetInsertFxn {
 impl MechFunctionCompiler for SetInsertFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("SetInsertFxn");
-        compile_binop!(
-            name,
-            self.out,
-            self.arg1,
-            self.arg2,
-            ctx,
-            FeatureFlag::Custom(hash_str("set/insert"))
-        );
+        compile_binop!(name, self.out, self.arg1, self.arg2, ctx);
     }
 }
 

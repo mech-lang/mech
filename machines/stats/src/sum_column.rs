@@ -134,13 +134,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!(StatsSumColumnRD2), T::as_value_kind());
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Custom(hash_str("stats/sum"))
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 #[cfg(feature = "source")]

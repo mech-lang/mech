@@ -44,9 +44,9 @@ macro_rules! j1f_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathJ1, f32, j1f, FeatureFlag::Custom(hash_str("math/j1")));
+impl_math_unop!(MathJ1, f32, j1f);
 #[cfg(feature = "f64")]
-impl_math_unop!(MathJ1, f64, j1, FeatureFlag::Custom(hash_str("math/j1")));
+impl_math_unop!(MathJ1, f64, j1);
 
 #[cfg(feature = "source")]
 fn impl_j1_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

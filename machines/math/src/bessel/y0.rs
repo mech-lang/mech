@@ -44,9 +44,9 @@ macro_rules! y0f_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathY0, f32, y0f, FeatureFlag::Custom(hash_str("math/y0")));
+impl_math_unop!(MathY0, f32, y0f);
 #[cfg(feature = "f64")]
-impl_math_unop!(MathY0, f64, y0, FeatureFlag::Custom(hash_str("math/y0")));
+impl_math_unop!(MathY0, f64, y0);
 
 #[cfg(feature = "source")]
 fn impl_y0_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

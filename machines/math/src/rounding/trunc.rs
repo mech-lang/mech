@@ -44,19 +44,9 @@ macro_rules! truncf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathTrunc,
-    f32,
-    truncf,
-    FeatureFlag::Custom(hash_str("math/trunc"))
-);
+impl_math_unop!(MathTrunc, f32, truncf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathTrunc,
-    f64,
-    trunc,
-    FeatureFlag::Custom(hash_str("math/trunc"))
-);
+impl_math_unop!(MathTrunc, f64, trunc);
 
 #[cfg(feature = "source")]
 fn impl_trunc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
