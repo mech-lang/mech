@@ -12,13 +12,13 @@ struct ConvertSEnum {
 impl MechFunctionFactory for ConvertSEnum {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Unary(out, _) => {
+            FunctionArgs::Nullary(out) => {
                 let out: Ref<MechEnum> = unsafe { out.as_unchecked() }.clone();
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
                 IncorrectNumberOfArguments {
-                    expected: 1,
+                    expected: 0,
                     found: args.len(),
                 },
                 None,
@@ -70,6 +70,28 @@ fn convert_empty_factory(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     }
 }
 
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "convert",
+    registration: register_convert_empty,
+    installer: install_convert_empty,
+    name: "ConvertSEmpty<empty>",
+    factory: convert_empty_factory,
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_convert_empty",
+    cargo_features: ["convert", "native-link", "runtime"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "convert", feature = "enum"),
+    registration: register_convert_enum,
+    installer: install_convert_enum,
+    name: "ConvertSEnum<enum>",
+    factory: ConvertSEnum::new,
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_convert_enum",
+    cargo_features: ["convert", "enum", "native-link", "runtime"],
+}
+
 impl MechFunctionImpl for ConvertSEmpty {
     fn solve(&self) {}
     fn out(&self) -> Value {
@@ -91,9 +113,18 @@ impl MechFunctionCompiler for ConvertSEmpty {
 }
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "enum")]
-    builder.insert_runtime_factory("ConvertSEnum<enum>", ConvertSEnum::new)?;
-    builder.insert_runtime_factory("ConvertSEmpty<empty>", convert_empty_factory)?;
+    register_convert_enum(builder)?;
+    register_convert_empty(builder)?;
     Ok(())
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    #[cfg(feature = "convert")]
+    pub use super::install_convert_empty;
+    #[cfg(all(feature = "convert", feature = "enum"))]
+    pub use super::install_convert_enum;
 }
 
 #[cfg(test)]

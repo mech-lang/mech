@@ -936,6 +936,80 @@ fn is_cargo_feature_name(name: &str) -> bool {
         && bytes.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
 }
 
+/// Returns a lexicographically canonical feature set for declarative native
+/// factory families. The public linkage validator deliberately still rejects
+/// non-canonical input; this helper lets a declaration family state the union
+/// of its feature sources without duplicating sort-order or de-duplication
+/// logic at every call site.
+#[doc(hidden)]
+pub struct CanonicalNativeCargoFeatures<const N: usize> {
+    values: [&'static str; N],
+    len: usize,
+}
+
+impl<const N: usize> CanonicalNativeCargoFeatures<N> {
+    /// Returns the sorted, duplicate-free Cargo feature set.
+    #[doc(hidden)]
+    pub fn as_slice(&'static self) -> &'static [&'static str] {
+        &self.values[..self.len]
+    }
+}
+
+#[doc(hidden)]
+pub const fn canonical_native_cargo_features<const N: usize>(
+    mut features: [&'static str; N],
+) -> CanonicalNativeCargoFeatures<N> {
+    let mut index = 1;
+    while index < N {
+        let mut cursor = index;
+        while cursor > 0 && native_cargo_feature_compare(features[cursor], features[cursor - 1]) < 0
+        {
+            let previous = features[cursor - 1];
+            features[cursor - 1] = features[cursor];
+            features[cursor] = previous;
+            cursor -= 1;
+        }
+        index += 1;
+    }
+    let mut len = 0;
+    let mut source = 0;
+    while source < N {
+        if source == 0 || native_cargo_feature_compare(features[source - 1], features[source]) != 0
+        {
+            features[len] = features[source];
+            len += 1;
+        }
+        source += 1;
+    }
+
+    CanonicalNativeCargoFeatures {
+        values: features,
+        len,
+    }
+}
+
+const fn native_cargo_feature_compare(left: &str, right: &str) -> i8 {
+    let left_bytes = left.as_bytes();
+    let right_bytes = right.as_bytes();
+    let mut index = 0;
+    while index < left_bytes.len() && index < right_bytes.len() {
+        if left_bytes[index] < right_bytes[index] {
+            return -1;
+        }
+        if left_bytes[index] > right_bytes[index] {
+            return 1;
+        }
+        index += 1;
+    }
+    if left_bytes.len() < right_bytes.len() {
+        -1
+    } else if left_bytes.len() > right_bytes.len() {
+        1
+    } else {
+        0
+    }
+}
+
 /// Declares one runtime factory together with its exact native-build linkage.
 ///
 /// The private registration function is intended for the owner's aggregate
@@ -949,19 +1023,69 @@ macro_rules! declare_native_runtime_factory {
         registration: $registration:ident,
         installer: $installer:ident,
 
-        name: $name:literal,
+        name: $name:expr,
         factory: $factory:expr,
 
         package: $package:literal,
         crate_name: $crate_name:literal,
-        installer_path: $installer_path:literal,
+        installer_path: $installer_path:expr,
 
-        cargo_features: [
-            $($cargo_feature:literal),+ $(,)?
-        ],
+        cargo_features: [$($cargo_feature:expr),* $(,)?],
     ) => {
         #[cfg($cfg)]
-        fn $registration(
+        pub(crate) fn $registration(
+            builder: &mut $crate::FunctionCatalogBuilder,
+        ) -> $crate::MResult<()> {
+            static CARGO_FEATURES: $crate::CanonicalNativeCargoFeatures<{ [$($cargo_feature),*].len() }> =
+                $crate::canonical_native_cargo_features([$($cargo_feature),*]);
+
+            #[cfg(feature = "native-plan")]
+            {
+                return builder.insert_runtime_factory_with_linkage(
+                    $name,
+                    $factory,
+                    $crate::NativeFunctionLinkage {
+                        package: $package,
+                        crate_name: $crate_name,
+                        installer_path: $installer_path,
+                        cargo_features: CARGO_FEATURES.as_slice(),
+                    },
+                );
+            }
+
+            #[cfg(not(feature = "native-plan"))]
+            {
+                builder.insert_runtime_factory($name, $factory)
+            }
+        }
+
+        #[doc(hidden)]
+        #[cfg(feature = "native-link")]
+        #[cfg($cfg)]
+        pub fn $installer(
+            builder: &mut $crate::FunctionCatalogBuilder,
+        ) -> $crate::MResult<()> {
+            builder.insert_runtime_factory($name, $factory)
+        }
+    };
+
+    (
+        cfg: $cfg:meta,
+
+        registration: $registration:ident,
+        installer: $installer:ident,
+
+        name: $name:expr,
+        factory: $factory:expr,
+
+        package: $package:literal,
+        crate_name: $crate_name:literal,
+        installer_path: $installer_path:expr,
+
+        cargo_features: $cargo_features:expr,
+    ) => {
+        #[cfg($cfg)]
+        pub(crate) fn $registration(
             builder: &mut $crate::FunctionCatalogBuilder,
         ) -> $crate::MResult<()> {
             #[cfg(feature = "native-plan")]
@@ -973,7 +1097,7 @@ macro_rules! declare_native_runtime_factory {
                         package: $package,
                         crate_name: $crate_name,
                         installer_path: $installer_path,
-                        cargo_features: &[$($cargo_feature),+],
+                        cargo_features: $cargo_features,
                     },
                 );
             }
@@ -1080,14 +1204,14 @@ mod tests {
         registration: register_macro_factory,
         installer: install_macro_factory,
 
-        name: "MacroFactory<f64>",
+        name: concat!("MacroFactory", "<f64>"),
         factory: <MacroFactory as crate::MechFunctionFactory>::new,
 
         package: "mech-core",
         crate_name: "mech_core",
-        installer_path: "mech_core::__mech_native::install_macro_factory",
+        installer_path: concat!("mech_core::__mech_native::", "install_macro_factory"),
 
-        cargo_features: [
+        cargo_features: &[
             "f64",
             "native-link",
             "runtime",

@@ -134,7 +134,7 @@ impl_atan2!(
   Atan2M2, Matrix2, "matrix2";
   Atan2M3, Matrix3, "matrix3";
   Atan2M2x3, Matrix2x3, "matrix2x3";
-  Atan2M3x2, Matrix3x2, "matrix3";
+  Atan2M3x2, Matrix3x2, "matrix3x2";
   Atan2M4, Matrix4, "matrix4";
   Atan2V2, Vector2, "vector2";
   Atan2V3, Vector3, "vector3";
@@ -153,7 +153,7 @@ impl_atan2!(
   Atan2M2, Matrix2, "matrix2";
   Atan2M3, Matrix3, "matrix3";
   Atan2M2x3, Matrix2x3, "matrix2x3";
-  Atan2M3x2, Matrix3x2, "matrix3";
+  Atan2M3x2, Matrix3x2, "matrix3x2";
   Atan2M4, Matrix4, "matrix4";
   Atan2V2, Vector2, "vector2";
   Atan2V3, Vector3, "vector3";

@@ -2452,12 +2452,60 @@ macro_rules! for_each_access_scalar {
     };
 }
 
+// The access catalog deliberately derives its native declaration and runtime
+// registration from the same scalar traversal.  Keeping the shape and scalar
+// features beside the concrete implementation prevents a native build from
+// silently selecting a broader profile than the factory it installs.
+macro_rules! declare_access_typed_scalar {
+    (
+        $factory:ident,
+        [$($feature:literal),+ $(,)?];
+        $scalar:ident,
+        $runtime_name:literal,
+        $cargo_scalar:literal
+    ) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(
+                    feature = "access",
+                    feature = $cargo_scalar,
+                    $(feature = $feature),+
+                ),
+                registration: [<register_ $factory:snake _ $scalar:lower>],
+                installer: [<install_ $factory:snake _ $scalar:lower>],
+                name: concat!(stringify!($factory), "<", $runtime_name, ">"),
+                factory: <$factory<$scalar> as MechFunctionFactory>::new,
+                package: "mech-engine",
+                crate_name: "mech_engine",
+                installer_path: concat!(
+                    "mech_engine::__mech_native::install_",
+                    stringify!([<$factory:snake>]),
+                    "_",
+                    stringify!([<$scalar:lower>]),
+                ),
+                cargo_features: [
+                    "access",
+                    "native-link",
+                    "runtime",
+                    $cargo_scalar,
+                    $($feature),+
+                ],
+            }
+        }
+    };
+}
+
+macro_rules! declare_access_typed_family {
+    ($factory:ident, [$($feature:literal),+ $(,)?]) => {
+        for_each_access_scalar!(declare_access_typed_scalar, ($factory, [$($feature),+]));
+    };
+}
+
 macro_rules! install_access_typed_scalar {
-    ($builder:expr, $factory:ident; $scalar:ty, $runtime_name:literal, $assign_name:literal) => {
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<", $runtime_name, ">"),
-            <$factory<$scalar> as MechFunctionFactory>::new,
-        )?;
+    ($builder:expr, $factory:ident; $scalar:ident, $runtime_name:literal, $cargo_scalar:literal) => {
+        paste! {
+            crate::intrinsics::access::matrix::native_declarations::[<register_ $factory:snake _ $scalar:lower>]($builder)?;
+        }
     };
 }
 
@@ -2479,6 +2527,72 @@ macro_rules! install_access_shape {
         paste! {
             install_access_typed_scalars!($builder, [<$family $shape>]);
         }
+    };
+}
+
+macro_rules! declare_access_shape {
+    ($family:ident, $shape:ident, $feature:literal) => {
+        paste! {
+            declare_access_typed_family!([<$family $shape>], [$feature]);
+        }
+    };
+}
+
+macro_rules! declare_access_logical_shape {
+    ($family:ident, $shape:ident, $feature:literal) => {
+        paste! {
+            declare_access_typed_family!([<$family $shape>], ["logical_indexing", $feature]);
+        }
+    };
+}
+
+macro_rules! for_each_access_shape {
+    ($callback:ident, ($family:ident)) => {
+        $callback!($family, M1, "matrix1");
+        $callback!($family, M2, "matrix2");
+        $callback!($family, M3, "matrix3");
+        $callback!($family, M4, "matrix4");
+        $callback!($family, M2x3, "matrix2x3");
+        $callback!($family, M3x2, "matrix3x2");
+        $callback!($family, MD, "matrixd");
+        $callback!($family, V2, "vector2");
+        $callback!($family, V3, "vector3");
+        $callback!($family, V4, "vector4");
+        $callback!($family, VD, "vectord");
+        $callback!($family, R2, "row_vector2");
+        $callback!($family, R3, "row_vector3");
+        $callback!($family, R4, "row_vector4");
+        $callback!($family, RD, "row_vectord");
+    };
+}
+
+macro_rules! for_each_access_shape_without_matrix1 {
+    ($callback:ident, ($family:ident)) => {
+        $callback!($family, M2, "matrix2");
+        $callback!($family, M3, "matrix3");
+        $callback!($family, M4, "matrix4");
+        $callback!($family, M2x3, "matrix2x3");
+        $callback!($family, M3x2, "matrix3x2");
+        $callback!($family, MD, "matrixd");
+        $callback!($family, V2, "vector2");
+        $callback!($family, V3, "vector3");
+        $callback!($family, V4, "vector4");
+        $callback!($family, VD, "vectord");
+        $callback!($family, R2, "row_vector2");
+        $callback!($family, R3, "row_vector3");
+        $callback!($family, R4, "row_vector4");
+        $callback!($family, RD, "row_vectord");
+    };
+}
+
+macro_rules! for_each_access_matrix_shape {
+    ($callback:ident, ($family:ident)) => {
+        $callback!($family, M2, "matrix2");
+        $callback!($family, M3, "matrix3");
+        $callback!($family, M4, "matrix4");
+        $callback!($family, M2x3, "matrix2x3");
+        $callback!($family, M3x2, "matrix3x2");
+        $callback!($family, MD, "matrixd");
     };
 }
 
@@ -2532,6 +2646,161 @@ macro_rules! install_access_matrix_shapes {
     };
 }
 
+macro_rules! declare_access_range_range_scalar {
+    (
+        $factory:ident,
+        $output:ident,
+        $input:ident,
+        $ix1:ident,
+        $ix1_scalar:ident,
+        $ix2:ident,
+        $ix2_scalar:ident,
+        [$($feature:literal),+ $(,)?];
+        $scalar:ident,
+        $runtime_name:literal,
+        $cargo_scalar:literal
+    ) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(
+                    feature = "access",
+                    feature = $cargo_scalar,
+                    $(feature = $feature),+
+                ),
+                registration: [<register_ $factory:snake _ $output:snake _ $input:snake _ $ix1:snake _ $ix2:snake _ $scalar:lower>],
+                installer: [<install_ $factory:snake _ $output:snake _ $input:snake _ $ix1:snake _ $ix2:snake _ $scalar:lower>],
+                name: concat!(
+                    stringify!($factory),
+                    "<",
+                    $cargo_scalar,
+                    stringify!($output),
+                    stringify!($input),
+                    stringify!($ix1),
+                    stringify!($ix2),
+                    ">"
+                ),
+                factory: <$factory<
+                    $scalar,
+                    $output<$scalar>,
+                    $input<$scalar>,
+                    $ix1<$ix1_scalar>,
+                    $ix2<$ix2_scalar>,
+                > as MechFunctionFactory>::new,
+                package: "mech-engine",
+                crate_name: "mech_engine",
+                installer_path: concat!(
+                    "mech_engine::__mech_native::install_",
+                    stringify!([<$factory:snake _ $output:snake _ $input:snake _ $ix1:snake _ $ix2:snake _ $scalar:lower>]),
+                ),
+                cargo_features: [
+                    "access",
+                    "native-link",
+                    "runtime",
+                    $cargo_scalar,
+                    $($feature),+
+                ],
+            }
+        }
+    };
+}
+
+macro_rules! declare_access_range_range_family {
+    (
+        $factory:ident,
+        $output:ident,
+        $input:ident,
+        $ix1:ident,
+        $ix1_scalar:ident,
+        $ix2:ident,
+        $ix2_scalar:ident,
+        [$($feature:literal),+ $(,)?]
+    ) => {
+        for_each_access_scalar!(
+            declare_access_range_range_scalar,
+            (
+                $factory,
+                $output,
+                $input,
+                $ix1,
+                $ix1_scalar,
+                $ix2,
+                $ix2_scalar,
+                [$($feature),+]
+            )
+        );
+    };
+}
+
+macro_rules! declare_access_all_range_scalar {
+    (
+        $factory:ident,
+        $output:ident,
+        $input:ident,
+        $ix:ident,
+        $ix_scalar:ident,
+        [$($feature:literal),+ $(,)?];
+        $scalar:ident,
+        $runtime_name:literal,
+        $cargo_scalar:literal
+    ) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(
+                    feature = "access",
+                    feature = $cargo_scalar,
+                    $(feature = $feature),+
+                ),
+                registration: [<register_ $factory:snake _ $output:snake _ $input:snake _ $ix:snake _ $scalar:lower>],
+                installer: [<install_ $factory:snake _ $output:snake _ $input:snake _ $ix:snake _ $scalar:lower>],
+                name: concat!(
+                    stringify!($factory),
+                    "<",
+                    $cargo_scalar,
+                    stringify!($output),
+                    stringify!($input),
+                    stringify!($ix),
+                    ">"
+                ),
+                factory: <$factory<
+                    $scalar,
+                    $output<$scalar>,
+                    $input<$scalar>,
+                    $ix<$ix_scalar>,
+                > as MechFunctionFactory>::new,
+                package: "mech-engine",
+                crate_name: "mech_engine",
+                installer_path: concat!(
+                    "mech_engine::__mech_native::install_",
+                    stringify!([<$factory:snake _ $output:snake _ $input:snake _ $ix:snake _ $scalar:lower>]),
+                ),
+                cargo_features: [
+                    "access",
+                    "native-link",
+                    "runtime",
+                    $cargo_scalar,
+                    $($feature),+
+                ],
+            }
+        }
+    };
+}
+
+macro_rules! declare_access_all_range_family {
+    (
+        $factory:ident,
+        $output:ident,
+        $input:ident,
+        $ix:ident,
+        $ix_scalar:ident,
+        [$($feature:literal),+ $(,)?]
+    ) => {
+        for_each_access_scalar!(
+            declare_access_all_range_scalar,
+            ($factory, $output, $input, $ix, $ix_scalar, [$($feature),+])
+        );
+    };
+}
+
 macro_rules! install_access_range_range_scalar {
     (
         $builder:expr,
@@ -2539,32 +2808,16 @@ macro_rules! install_access_range_range_scalar {
         $output:ident,
         $input:ident,
         $ix1:ident,
-        $ix1_scalar:ty,
+        $ix1_scalar:ident,
         $ix2:ident,
-        $ix2_scalar:ty;
-        $scalar:ty,
+        $ix2_scalar:ident;
+        $scalar:ident,
         $runtime_name:literal,
         $assign_name:literal
     ) => {
-        $builder.insert_runtime_factory(
-            concat!(
-                stringify!($factory),
-                "<",
-                $assign_name,
-                stringify!($output),
-                stringify!($input),
-                stringify!($ix1),
-                stringify!($ix2),
-                ">"
-            ),
-            <$factory<
-                $scalar,
-                $output<$scalar>,
-                $input<$scalar>,
-                $ix1<$ix1_scalar>,
-                $ix2<$ix2_scalar>,
-            > as MechFunctionFactory>::new,
-        )?;
+        paste! {
+            crate::intrinsics::access::matrix::native_declarations::[<register_ $factory:snake _ $output:snake _ $input:snake _ $ix1:snake _ $ix2:snake _ $scalar:lower>]($builder)?;
+        }
     };
 }
 
@@ -2575,23 +2828,14 @@ macro_rules! install_access_all_range_scalar {
         $output:ident,
         $input:ident,
         $ix:ident,
-        $ix_scalar:ty;
-        $scalar:ty,
+        $ix_scalar:ident;
+        $scalar:ident,
         $runtime_name:literal,
         $assign_name:literal
     ) => {
-        $builder.insert_runtime_factory(
-            concat!(
-                stringify!($factory),
-                "<",
-                $assign_name,
-                stringify!($output),
-                stringify!($input),
-                stringify!($ix),
-                ">"
-            ),
-            <$factory<$scalar, $output<$scalar>, $input<$scalar>, $ix<$ix_scalar>> as MechFunctionFactory>::new,
-        )?;
+        paste! {
+            crate::intrinsics::access::matrix::native_declarations::[<register_ $factory:snake _ $output:snake _ $input:snake _ $ix:snake _ $scalar:lower>]($builder)?;
+        }
     };
 }
 
@@ -2801,6 +3045,267 @@ macro_rules! install_access_dynamic_shape {
             install($builder)?;
         }
     }};
+}
+
+macro_rules! declare_access_dynamic_for_shape {
+    ($shape:ident, $shape_feature:literal) => {
+        declare_access_range_range_family!(
+            Access2DRRVUU,
+            DMatrix,
+            $shape,
+            DVector,
+            usize,
+            DVector,
+            usize,
+            ["matrixd", "vectord", $shape_feature]
+        );
+
+        declare_access_range_range_family!(
+            Access2DRRVBB,
+            DMatrix,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "row_vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVBB,
+            DVector,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "row_vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVBB,
+            RowDVector,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "row_vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+
+        declare_access_range_range_family!(
+            Access2DRRVUB,
+            DMatrix,
+            $shape,
+            DVector,
+            usize,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVUB,
+            DVector,
+            $shape,
+            DVector,
+            usize,
+            DVector,
+            bool,
+            ["bool", "vectord", "logical_indexing", $shape_feature]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVUB,
+            RowDVector,
+            $shape,
+            DVector,
+            usize,
+            DVector,
+            bool,
+            [
+                "bool",
+                "vectord",
+                "row_vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+
+        declare_access_range_range_family!(
+            Access2DRRVBU,
+            DMatrix,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            usize,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVBU,
+            DVector,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            usize,
+            ["bool", "vectord", "logical_indexing", $shape_feature]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVBU,
+            RowDVector,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            usize,
+            [
+                "bool",
+                "vectord",
+                "row_vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+
+        declare_access_all_range_family!(
+            Access2DARV,
+            RowDVector,
+            $shape,
+            DVector,
+            usize,
+            ["row_vectord", "vectord", $shape_feature]
+        );
+        declare_access_all_range_family!(
+            Access2DARV,
+            DMatrix,
+            $shape,
+            DVector,
+            usize,
+            ["matrixd", "vectord", $shape_feature]
+        );
+
+        declare_access_all_range_family!(
+            Access2DARVB,
+            RowDVector,
+            $shape,
+            DVector,
+            bool,
+            ["bool", "row_vectord", "vectord", $shape_feature]
+        );
+        declare_access_all_range_family!(
+            Access2DARVB,
+            DVector,
+            $shape,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+        declare_access_all_range_family!(
+            Access2DARVB,
+            DMatrix,
+            $shape,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+    };
+}
+
+pub(crate) mod native_declarations {
+    use super::*;
+
+    for_each_access_shape!(declare_access_shape, (Access1DS));
+    for_each_access_shape_without_matrix1!(declare_access_shape, (Access2DSS));
+    for_each_access_shape!(declare_access_shape, (Access1DVD));
+    for_each_access_shape_without_matrix1!(declare_access_shape, (Access1DA));
+
+    #[cfg(feature = "logical_indexing")]
+    for_each_access_shape!(declare_access_shape, (Access1DVDb));
+
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DAS));
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DVDA));
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DVDS));
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DSVD));
+
+    #[cfg(feature = "logical_indexing")]
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DVDbA));
+    #[cfg(feature = "logical_indexing")]
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DVDbS));
+    #[cfg(feature = "logical_indexing")]
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DSVDb));
+
+    declare_access_typed_family!(Access2DSAM1, ["matrix1"]);
+    declare_access_typed_family!(Access2DSAM2, ["matrix2", "row_vector2"]);
+    declare_access_typed_family!(Access2DSAM3, ["matrix3", "row_vector3"]);
+    declare_access_typed_family!(Access2DSAM4, ["matrix4", "row_vector4"]);
+    declare_access_typed_family!(Access2DSAM2x3, ["matrix2x3", "row_vector3"]);
+    declare_access_typed_family!(Access2DSAM3x2, ["matrix3x2", "row_vector2"]);
+    declare_access_typed_family!(Access2DSAMD, ["matrixd", "row_vectord"]);
+
+    declare_access_dynamic_for_shape!(Matrix1, "matrix1");
+    declare_access_dynamic_for_shape!(Matrix2, "matrix2");
+    declare_access_dynamic_for_shape!(Matrix3, "matrix3");
+    declare_access_dynamic_for_shape!(Matrix4, "matrix4");
+    declare_access_dynamic_for_shape!(Matrix2x3, "matrix2x3");
+    declare_access_dynamic_for_shape!(Matrix3x2, "matrix3x2");
+    declare_access_dynamic_for_shape!(DMatrix, "matrixd");
+    declare_access_dynamic_for_shape!(Vector2, "vector2");
+    declare_access_dynamic_for_shape!(Vector3, "vector3");
+    declare_access_dynamic_for_shape!(Vector4, "vector4");
+    declare_access_dynamic_for_shape!(DVector, "vectord");
+    declare_access_dynamic_for_shape!(RowVector2, "row_vector2");
+    declare_access_dynamic_for_shape!(RowVector3, "row_vector3");
+    declare_access_dynamic_for_shape!(RowVector4, "row_vector4");
+    declare_access_dynamic_for_shape!(RowDVector, "row_vectord");
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    pub use super::native_declarations::*;
 }
 
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {

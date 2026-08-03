@@ -104,25 +104,30 @@ pub mod tracing;
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
+    #[cfg(all(feature = "access", feature = "matrix"))]
+    pub use crate::intrinsics::access::matrix::__mech_native::*;
+    #[cfg(all(feature = "access", feature = "tuple"))]
+    pub use crate::intrinsics::access::tuple::install_tuple_access_element;
+    #[cfg(feature = "assign")]
+    pub use crate::intrinsics::assign::catalog::__mech_native::*;
+    #[cfg(feature = "matrix_comprehensions")]
+    pub use crate::intrinsics::catalog::install_matrix_comprehension;
+    #[cfg(feature = "set_comprehensions")]
+    pub use crate::intrinsics::catalog::install_set_comprehension;
+    #[cfg(feature = "set")]
+    pub use crate::intrinsics::catalog::install_set_define;
+    #[cfg(feature = "convert")]
+    pub use crate::intrinsics::convert::scalar::__mech_native::*;
+    #[cfg(feature = "variable_define")]
+    pub use crate::intrinsics::define::__mech_native::*;
+    #[cfg(all(feature = "variable_define", feature = "matrix"))]
+    pub use crate::intrinsics::define::__mech_native_matrix::*;
     #[cfg(all(feature = "f64", feature = "variable_define"))]
     pub use crate::intrinsics::define::install_variable_define_f64;
-
-    #[cfg(all(feature = "f64", feature = "matrix_horzcat", feature = "row_vectord"))]
-    pub use crate::intrinsics::horzcat::install_horizontal_concatenate_rdn_f64;
-
-    #[cfg(all(feature = "f64", feature = "matrix_horzcat", feature = "row_vector2"))]
-    pub use crate::intrinsics::horzcat::install_horizontal_concatenate_s2_f64;
-
-    #[cfg(all(feature = "f64", feature = "matrix_vertcat", feature = "matrixd"))]
-    pub use crate::intrinsics::vertcat::install_vertical_concatenate_n_args_f64;
-
-    #[cfg(all(
-        feature = "f64",
-        feature = "matrix2",
-        feature = "matrix_vertcat",
-        feature = "row_vector2"
-    ))]
-    pub use crate::intrinsics::vertcat::install_vertical_concatenate_r2_r2_f64;
+    #[cfg(feature = "matrix_horzcat")]
+    pub use crate::intrinsics::horzcat::__mech_native::*;
+    #[cfg(feature = "matrix_vertcat")]
+    pub use crate::intrinsics::vertcat::__mech_native::*;
 }
 
 pub use mech_core::*;

@@ -349,6 +349,1150 @@ macro_rules! impl_unop {
 
 #[doc(hidden)]
 #[macro_export]
+macro_rules! __mech_for_each_exact_binop_runtime_factory_group {
+    (
+        $callback:path,
+        $context:tt,
+        $lib:ident,
+        $scalar:ty,
+        $scalar_name:literal,
+        $scalar_token:ident;
+        $cfg:meta;
+        $shape_features:tt;
+        $($suffix:ident),+ $(,)?
+    ) => {
+        $(
+            #[cfg($cfg)]
+            $callback!(
+                $context,
+                $lib,
+                $suffix,
+                $shape_features,
+                $scalar,
+                $scalar_name,
+                $scalar_token
+            );
+        )+
+    };
+}
+
+/// Enumerates the exact concrete binary-factory surface shared by native
+/// declarations, aggregate registration, and hidden installer exports. The
+/// feature vector records every storage feature retained by a concrete type.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_for_each_exact_binop_runtime_factory_for_type {
+    ($callback:path, $context:tt, $lib:ident, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        $callback!($context, $lib, SS, [], $scalar, $scalar_name, $scalar_token);
+
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix1"; ["matrix1"]; SM1, M1S, M1M1);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix2"; ["matrix2"]; SM2, M2S, M2M2);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix3"; ["matrix3"]; SM3, M3S, M3M3);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix4"; ["matrix4"]; SM4, M4S, M4M4);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix2x3"; ["matrix2x3"]; SM2x3, M2x3S, M2x3M2x3);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrix3x2"; ["matrix3x2"]; SM3x2, M3x2S, M3x2M3x2);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "matrixd"; ["matrixd"]; SMD, MDS, MDMD);
+
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "row_vector2"; ["row_vector2"]; SR2, R2S, R2R2);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "row_vector3"; ["row_vector3"]; SR3, R3S, R3R3);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "row_vector4"; ["row_vector4"]; SR4, R4S, R4R4);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "row_vectord"; ["row_vectord"]; SRD, RDS, RDRD);
+
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vector2"; ["vector2"]; SV2, V2S, V2V2);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vector3"; ["vector3"]; SV3, V3S, V3V3);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vector4"; ["vector4"]; SV4, V4S, V4V4);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; feature = "vectord"; ["vectord"]; SVD, VDS, VDVD);
+
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix2", feature = "vector2"); ["matrix2", "vector2"]; M2V2, V2M2);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix3", feature = "vector3"); ["matrix3", "vector3"]; M3V3, V3M3);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix4", feature = "vector4"); ["matrix4", "vector4"]; M4V4, V4M4);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix2x3", feature = "vector2"); ["matrix2x3", "vector2"]; M2x3V2, V2M2x3);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix3x2", feature = "vector3"); ["matrix3x2", "vector3"]; M3x2V3, V3M3x2);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "vectord"); ["matrixd", "vectord"]; MDVD, VDMD);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "vector2"); ["matrixd", "vector2"]; MDV2, V2MD);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "vector3"); ["matrixd", "vector3"]; MDV3, V3MD);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "vector4"); ["matrixd", "vector4"]; MDV4, V4MD);
+
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix2", feature = "row_vector2"); ["matrix2", "row_vector2"]; M2R2, R2M2);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix3", feature = "row_vector3"); ["matrix3", "row_vector3"]; M3R3, R3M3);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix4", feature = "row_vector4"); ["matrix4", "row_vector4"]; M4R4, R4M4);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix2x3", feature = "row_vector3"); ["matrix2x3", "row_vector3"]; M2x3R3, R3M2x3);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrix3x2", feature = "row_vector2"); ["matrix3x2", "row_vector2"]; M3x2R2, R2M3x2);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "row_vectord"); ["matrixd", "row_vectord"]; MDRD, RDMD);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "row_vector2"); ["matrixd", "row_vector2"]; MDR2, R2MD);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "row_vector3"); ["matrixd", "row_vector3"]; MDR3, R3MD);
+        $crate::__mech_for_each_exact_binop_runtime_factory_group!($callback, $context, $lib, $scalar, $scalar_name, $scalar_token; all(feature = "matrixd", feature = "row_vector4"); ["matrixd", "row_vector4"]; MDR4, R4MD);
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_for_each_binop_runtime_factory_for_type {
+    ($callback:path, $context:tt, $lib:ident, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        $callback!(
+            $context,
+            $lib,
+            SS,
+            none,
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "matrix1")]
+        $callback!(
+            $context,
+            $lib,
+            SM1,
+            "matrix1",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix1")]
+        $callback!(
+            $context,
+            $lib,
+            M1S,
+            "matrix1",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix1")]
+        $callback!(
+            $context,
+            $lib,
+            M1M1,
+            "matrix1",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "matrix2")]
+        $callback!(
+            $context,
+            $lib,
+            SM2,
+            "matrix2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix2")]
+        $callback!(
+            $context,
+            $lib,
+            M2S,
+            "matrix2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix2")]
+        $callback!(
+            $context,
+            $lib,
+            M2M2,
+            "matrix2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "matrix3")]
+        $callback!(
+            $context,
+            $lib,
+            SM3,
+            "matrix3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix3")]
+        $callback!(
+            $context,
+            $lib,
+            M3S,
+            "matrix3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix3")]
+        $callback!(
+            $context,
+            $lib,
+            M3M3,
+            "matrix3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "matrix4")]
+        $callback!(
+            $context,
+            $lib,
+            SM4,
+            "matrix4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix4")]
+        $callback!(
+            $context,
+            $lib,
+            M4S,
+            "matrix4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix4")]
+        $callback!(
+            $context,
+            $lib,
+            M4M4,
+            "matrix4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "matrix2x3")]
+        $callback!(
+            $context,
+            $lib,
+            SM2x3,
+            "matrix2x3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix2x3")]
+        $callback!(
+            $context,
+            $lib,
+            M2x3S,
+            "matrix2x3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix2x3")]
+        $callback!(
+            $context,
+            $lib,
+            M2x3M2x3,
+            "matrix2x3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "matrix3x2")]
+        $callback!(
+            $context,
+            $lib,
+            SM3x2,
+            "matrix3x2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix3x2")]
+        $callback!(
+            $context,
+            $lib,
+            M3x2S,
+            "matrix3x2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrix3x2")]
+        $callback!(
+            $context,
+            $lib,
+            M3x2M3x2,
+            "matrix3x2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "matrixd")]
+        $callback!(
+            $context,
+            $lib,
+            SMD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrixd")]
+        $callback!(
+            $context,
+            $lib,
+            MDS,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "matrixd")]
+        $callback!(
+            $context,
+            $lib,
+            MDMD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "row_vector2")]
+        $callback!(
+            $context,
+            $lib,
+            SR2,
+            "row_vector2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "row_vector2")]
+        $callback!(
+            $context,
+            $lib,
+            R2S,
+            "row_vector2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "row_vector2")]
+        $callback!(
+            $context,
+            $lib,
+            R2R2,
+            "row_vector2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "row_vector3")]
+        $callback!(
+            $context,
+            $lib,
+            SR3,
+            "row_vector3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "row_vector3")]
+        $callback!(
+            $context,
+            $lib,
+            R3S,
+            "row_vector3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "row_vector3")]
+        $callback!(
+            $context,
+            $lib,
+            R3R3,
+            "row_vector3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "row_vector4")]
+        $callback!(
+            $context,
+            $lib,
+            SR4,
+            "row_vector4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "row_vector4")]
+        $callback!(
+            $context,
+            $lib,
+            R4S,
+            "row_vector4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "row_vector4")]
+        $callback!(
+            $context,
+            $lib,
+            R4R4,
+            "row_vector4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "row_vectord")]
+        $callback!(
+            $context,
+            $lib,
+            SRD,
+            "row_vectord",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "row_vectord")]
+        $callback!(
+            $context,
+            $lib,
+            RDS,
+            "row_vectord",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "row_vectord")]
+        $callback!(
+            $context,
+            $lib,
+            RDRD,
+            "row_vectord",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "vector2")]
+        $callback!(
+            $context,
+            $lib,
+            SV2,
+            "vector2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "vector2")]
+        $callback!(
+            $context,
+            $lib,
+            V2S,
+            "vector2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "vector2")]
+        $callback!(
+            $context,
+            $lib,
+            V2V2,
+            "vector2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "vector3")]
+        $callback!(
+            $context,
+            $lib,
+            SV3,
+            "vector3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "vector3")]
+        $callback!(
+            $context,
+            $lib,
+            V3S,
+            "vector3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "vector3")]
+        $callback!(
+            $context,
+            $lib,
+            V3V3,
+            "vector3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "vector4")]
+        $callback!(
+            $context,
+            $lib,
+            SV4,
+            "vector4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "vector4")]
+        $callback!(
+            $context,
+            $lib,
+            V4S,
+            "vector4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "vector4")]
+        $callback!(
+            $context,
+            $lib,
+            V4V4,
+            "vector4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(feature = "vectord")]
+        $callback!(
+            $context,
+            $lib,
+            SVD,
+            "vectord",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "vectord")]
+        $callback!(
+            $context,
+            $lib,
+            VDS,
+            "vectord",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(feature = "vectord")]
+        $callback!(
+            $context,
+            $lib,
+            VDVD,
+            "vectord",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(all(feature = "matrix2", feature = "vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            M2V2,
+            "matrix2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix2", feature = "vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            V2M2,
+            "matrix2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix3", feature = "vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            M3V3,
+            "matrix3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix3", feature = "vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            V3M3,
+            "matrix3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix4", feature = "vector4"))]
+        $callback!(
+            $context,
+            $lib,
+            M4V4,
+            "matrix4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix4", feature = "vector4"))]
+        $callback!(
+            $context,
+            $lib,
+            V4M4,
+            "matrix4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix2x3", feature = "vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            M2x3V2,
+            "matrix2x3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix2x3", feature = "vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            V2M2x3,
+            "matrix2x3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix3x2", feature = "vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            M3x2V3,
+            "matrix3x2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix3x2", feature = "vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            V3M3x2,
+            "matrix3x2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "vectord"))]
+        $callback!(
+            $context,
+            $lib,
+            MDVD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "vectord"))]
+        $callback!(
+            $context,
+            $lib,
+            VDMD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            MDV2,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            V2MD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            MDV3,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            V3MD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "vector4"))]
+        $callback!(
+            $context,
+            $lib,
+            MDV4,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "vector4"))]
+        $callback!(
+            $context,
+            $lib,
+            V4MD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+
+        #[cfg(all(feature = "matrix2", feature = "row_vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            M2R2,
+            "matrix2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix2", feature = "row_vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            R2M2,
+            "matrix2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix3", feature = "row_vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            M3R3,
+            "matrix3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix3", feature = "row_vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            R3M3,
+            "matrix3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
+        $callback!(
+            $context,
+            $lib,
+            M4R4,
+            "matrix4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
+        $callback!(
+            $context,
+            $lib,
+            R4M4,
+            "matrix4",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            M2x3R3,
+            "matrix2x3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            R3M2x3,
+            "matrix2x3",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix3x2", feature = "row_vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            M3x2R2,
+            "matrix3x2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrix3x2", feature = "row_vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            R2M3x2,
+            "matrix3x2",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vectord"))]
+        $callback!(
+            $context,
+            $lib,
+            MDRD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vectord"))]
+        $callback!(
+            $context,
+            $lib,
+            RDMD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            MDR2,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vector2"))]
+        $callback!(
+            $context,
+            $lib,
+            R2MD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            MDR3,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vector3"))]
+        $callback!(
+            $context,
+            $lib,
+            R3MD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vector4"))]
+        $callback!(
+            $context,
+            $lib,
+            MDR4,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+        #[cfg(all(feature = "matrixd", feature = "row_vector4"))]
+        $callback!(
+            $context,
+            $lib,
+            R4MD,
+            "matrixd",
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_declare_native_binop_runtime_factory {
+    (
+        ($cfg:meta; $package:literal; $crate_name:literal; [$($base_feature:literal),* $(,)?]),
+        $lib:ident,
+        $suffix:ident,
+        [$($shape_feature:literal),* $(,)?],
+        $scalar:ty,
+        $scalar_name:literal,
+        $scalar_token:ident
+    ) => {
+        $crate::paste::paste! {
+            $crate::declare_native_runtime_factory! {
+                cfg: $cfg,
+                registration: [<register_ $lib:snake _ $suffix:lower _ $scalar_token>],
+                installer: [<install_ $lib:snake _ $suffix:lower _ $scalar_token>],
+                name: concat!(stringify!($lib), stringify!($suffix), "<", $scalar_name, ">"),
+                factory: <[<$lib $suffix>]<$scalar> as $crate::MechFunctionFactory>::new,
+                package: $package,
+                crate_name: $crate_name,
+                installer_path: concat!(
+                    $crate_name,
+                    "::__mech_native::",
+                    stringify!([<install_ $lib:snake _ $suffix:lower _ $scalar_token>])
+                ),
+                cargo_features: [$($base_feature,)* $($shape_feature),*],
+            }
+        }
+    };
+}
+
+/// Declares every concrete binary runtime factory together with its native
+/// linkage. The shared traversal owns the shape list, so the declaration,
+/// aggregate registration, and native installer export cannot drift.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_declare_native_binop_runtime_factories_for_scalar {
+    (
+        package: $package:literal,
+        crate_name: $crate_name:literal,
+        operation: $operation:ident,
+        operation_feature: $operation_feature:literal,
+        additional_features: [$($additional_feature:literal),* $(,)?],
+        scalar: ($scalar_feature:literal, $scalar:ty, $scalar_name:literal, $scalar_token:ident),
+    ) => {
+        $crate::__mech_for_each_exact_binop_runtime_factory_for_type!(
+            $crate::__mech_declare_native_binop_runtime_factory,
+            (
+                all(feature = $operation_feature, feature = $scalar_feature);
+                $package;
+                $crate_name;
+                [
+                    $operation_feature,
+                    $scalar_feature,
+                    $($additional_feature,)*
+                    "native-link",
+                    "runtime",
+                ]
+            ),
+            $operation,
+            $scalar,
+            $scalar_name,
+            $scalar_token
+        );
+    };
+}
+
+/// Declares every concrete binary runtime factory together with its native
+/// linkage. The shared traversal owns the shape list, so the declaration,
+/// aggregate registration, and native installer export cannot drift.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_declare_native_binop_runtime_factories_each {
+    (
+        package: $package:literal,
+        crate_name: $crate_name:literal,
+        operation: $operation:ident,
+        operation_feature: $operation_feature:literal,
+        additional_features: [$($additional_feature:literal),* $(,)?],
+        scalars:
+            ($scalar_feature:literal, $scalar:ty, $scalar_name:literal, $scalar_token:ident)
+            $(, ($remaining_feature:literal, $remaining_scalar:ty, $remaining_name:literal, $remaining_token:ident))*
+            $(,)?,
+    ) => {
+        $crate::__mech_declare_native_binop_runtime_factories_for_scalar! {
+            package: $package,
+            crate_name: $crate_name,
+            operation: $operation,
+            operation_feature: $operation_feature,
+            additional_features: [$($additional_feature),*],
+            scalar: ($scalar_feature, $scalar, $scalar_name, $scalar_token),
+        }
+        $crate::__mech_declare_native_binop_runtime_factories_each! {
+            package: $package,
+            crate_name: $crate_name,
+            operation: $operation,
+            operation_feature: $operation_feature,
+            additional_features: [$($additional_feature),*],
+            scalars: $(( $remaining_feature, $remaining_scalar, $remaining_name, $remaining_token )),*,
+        }
+    };
+    (
+        package: $package:literal,
+        crate_name: $crate_name:literal,
+        operation: $operation:ident,
+        operation_feature: $operation_feature:literal,
+        additional_features: [$($additional_feature:literal),* $(,)?],
+        scalars:,
+    ) => {};
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! declare_native_binop_runtime_factories {
+    (
+        package: $package:literal,
+        crate_name: $crate_name:literal,
+        operation: $operation:ident,
+        operation_feature: $operation_feature:literal,
+        additional_features: [$($additional_feature:literal),* $(,)?],
+        scalars: $(
+            ($scalar_feature:literal, $scalar:ty, $scalar_name:literal, $scalar_token:ident)
+        ),+ $(,)?
+    ) => {
+        $crate::__mech_declare_native_binop_runtime_factories_each! {
+            package: $package,
+            crate_name: $crate_name,
+            operation: $operation,
+            operation_feature: $operation_feature,
+            additional_features: [$($additional_feature),*],
+            scalars: $(($scalar_feature, $scalar, $scalar_name, $scalar_token)),+,
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_register_native_binop_runtime_factory {
+    (
+        $builder:expr,
+        $lib:ident,
+        $suffix:ident,
+        [$($_shape_feature:literal),* $(,)?],
+        $scalar:ty,
+        $scalar_name:literal,
+        $scalar_token:ident
+    ) => {
+        $crate::paste::paste! {
+            [<register_ $lib:snake _ $suffix:lower _ $scalar_token>]($builder)?;
+        }
+    };
+}
+
+/// Registers a binary factory family previously declared with
+/// [`declare_native_binop_runtime_factories!`].
+#[doc(hidden)]
+#[macro_export]
+macro_rules! install_native_binop_runtime_factories {
+    (
+        $builder:expr,
+        $operation:ident;
+        $(($scalar_feature:literal, $scalar:ty, $scalar_name:literal, $scalar_token:ident)),+
+        $(,)?
+    ) => {{
+        $(
+            #[cfg(feature = $scalar_feature)]
+        $crate::__mech_for_each_exact_binop_runtime_factory_for_type!(
+                $crate::__mech_register_native_binop_runtime_factory,
+                $builder,
+                $operation,
+                $scalar,
+                $scalar_name,
+                $scalar_token
+            );
+        )+
+        Ok::<(), $crate::MechError>(())
+    }};
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __mech_export_native_binop_runtime_factory {
+    (
+        $_context:tt,
+        $lib:ident,
+        $suffix:ident,
+        [$($_shape_feature:literal),* $(,)?],
+        $scalar:ty,
+        $scalar_name:literal,
+        $scalar_token:ident
+    ) => {
+        $crate::paste::paste! {
+            pub use super::[<install_ $lib:snake _ $suffix:lower _ $scalar_token>];
+        }
+    };
+}
+
+/// Reexports exactly the per-factory native installers declared by a binary
+/// family. Invoke this inside an owner's hidden `__mech_native` module.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! export_native_binop_runtime_factories {
+    (
+        operation_feature: $operation_feature:literal,
+        operation: $operation:ident;
+        $(($scalar_feature:literal, $scalar:ty, $scalar_name:literal, $scalar_token:ident)),+
+        $(,)?
+    ) => {
+        $(
+            #[cfg(all(feature = $operation_feature, feature = $scalar_feature))]
+            $crate::__mech_for_each_exact_binop_runtime_factory_for_type!(
+                $crate::__mech_export_native_binop_runtime_factory,
+                (),
+                $operation,
+                $scalar,
+                $scalar_name,
+                $scalar_token
+            );
+        )+
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! __mech_install_binop_runtime_factory {
     ($builder:expr, $lib:ident, $suffix:ident, $scalar:ty, $scalar_name:literal) => {
         paste! {

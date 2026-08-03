@@ -608,7 +608,7 @@ mech_core::declare_native_runtime_factory! {
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_vertical_concatenate_n_args_f64",
 
-    cargo_features: [
+    cargo_features: &[
         "bool",
         "f64",
         "matrix_vertcat",
@@ -1090,13 +1090,13 @@ where
 {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Unary(out, _arg0) => {
+            FunctionArgs::Nullary(out) => {
                 let out: Ref<Matrix1<T>> = unsafe { out.as_unchecked() }.clone();
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
                 IncorrectNumberOfArguments {
-                    expected: 1,
+                    expected: 0,
                     found: args.len(),
                 },
                 None,
@@ -1217,13 +1217,13 @@ where
 {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Unary(out, _arg0) => {
+            FunctionArgs::Nullary(out) => {
                 let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
                 IncorrectNumberOfArguments {
-                    expected: 1,
+                    expected: 0,
                     found: args.len(),
                 },
                 None,
@@ -1574,7 +1574,7 @@ mech_core::declare_native_runtime_factory! {
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_vertical_concatenate_r2_r2_f64",
 
-    cargo_features: [
+    cargo_features: &[
         "bool",
         "f64",
         "matrix2",
@@ -2451,294 +2451,344 @@ fn impl_vertcat_fxn(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
 }
 
 macro_rules! install_vertcat_factories {
-    ($builder:expr, $factory:ident) => {{
-        #[inline(never)]
-        fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-            mech_core::install_typed_runtime_factories!(
-                builder,
-                $factory;
-                ("bool", bool, "bool"),
-                ("string", String, "string"),
-                ("u8", u8, "u8"),
-                ("u16", u16, "u16"),
-                ("u32", u32, "u32"),
-                ("u64", u64, "u64"),
-                ("u128", u128, "u128"),
-                ("i8", i8, "i8"),
-                ("i16", i16, "i16"),
-                ("i32", i32, "i32"),
-                ("i64", i64, "i64"),
-                ("i128", i128, "i128"),
-                ("f32", f32, "f32"),
-                ("f64", f64, "f64"),
-                ("c64", C64, "c64"),
-                ("r64", R64, "r64"),
-            )?;
-            Ok(())
-        }
-        install($builder)?;
-    }};
+    ($builder:ident, $factory:ident) => {
+        install_vertcat_linked_factories!($builder, $factory)?;
+    };
 }
 
 macro_rules! install_vertcat_factories_except_f64 {
-    ($builder:expr, $factory:ident) => {{
-        mech_core::install_typed_runtime_factories!(
-            $builder,
-            $factory;
-            ("bool", bool, "bool"),
-            ("string", String, "string"),
-            ("u8", u8, "u8"),
-            ("u16", u16, "u16"),
-            ("u32", u32, "u32"),
-            ("u64", u64, "u64"),
-            ("u128", u128, "u128"),
-            ("i8", i8, "i8"),
-            ("i16", i16, "i16"),
-            ("i32", i32, "i32"),
-            ("i64", i64, "i64"),
-            ("i128", i128, "i128"),
-            ("f32", f32, "f32"),
-            ("c64", C64, "c64"),
-            ("r64", R64, "r64"),
-        )?;
+    ($builder:ident, $factory:ident) => {
+        install_vertcat_linked_factories_except_f64!($builder, $factory)?;
+    };
+}
+
+macro_rules! for_each_vertcat_scalar {
+    ($callback:ident, ($($context:tt)*)) => {
+        #[cfg(feature = "bool")] $callback!($($context)*; bool, bool, "bool", "bool");
+        #[cfg(feature = "string")] $callback!($($context)*; string, String, "string", "string");
+        #[cfg(feature = "u8")] $callback!($($context)*; u8, u8, "u8", "u8");
+        #[cfg(feature = "u16")] $callback!($($context)*; u16, u16, "u16", "u16");
+        #[cfg(feature = "u32")] $callback!($($context)*; u32, u32, "u32", "u32");
+        #[cfg(feature = "u64")] $callback!($($context)*; u64, u64, "u64", "u64");
+        #[cfg(feature = "u128")] $callback!($($context)*; u128, u128, "u128", "u128");
+        #[cfg(feature = "i8")] $callback!($($context)*; i8, i8, "i8", "i8");
+        #[cfg(feature = "i16")] $callback!($($context)*; i16, i16, "i16", "i16");
+        #[cfg(feature = "i32")] $callback!($($context)*; i32, i32, "i32", "i32");
+        #[cfg(feature = "i64")] $callback!($($context)*; i64, i64, "i64", "i64");
+        #[cfg(feature = "i128")] $callback!($($context)*; i128, i128, "i128", "i128");
+        #[cfg(feature = "f32")] $callback!($($context)*; f32, f32, "f32", "f32");
+        #[cfg(feature = "f64")] $callback!($($context)*; f64, f64, "f64", "f64");
+        #[cfg(feature = "c64")] $callback!($($context)*; c64, C64, "c64", "c64");
+        #[cfg(feature = "r64")] $callback!($($context)*; r64, R64, "r64", "r64");
+    };
+}
+
+macro_rules! declare_vertcat_scalar {
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        paste! { mech_core::declare_native_runtime_factory! {
+            cfg: all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+),
+            registration: [<register_ $factory:snake _ $token>],
+            installer: [<install_ $factory:snake _ $token>],
+            name: concat!(stringify!($factory), "<", $name, ">"),
+            factory: <$factory<$scalar> as MechFunctionFactory>::new,
+            package: "mech-engine", crate_name: "mech_engine",
+            installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token>])),
+            cargo_features: ["matrix_vertcat", "native-link", "runtime", $cargo, $($feature),+],
+        }}
+    };
+}
+
+macro_rules! declare_vertcat_family {
+    ($factory:ident, [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(declare_vertcat_scalar, ($factory, [$($feature),+]));
+    };
+}
+
+macro_rules! declare_vertcat_scalar_except_f64 {
+    ($factory:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        declare_vertcat_scalar!($factory, [$($feature),+]; $token, $scalar, $name, $cargo);
+    };
+}
+
+macro_rules! declare_vertcat_family_except_f64 {
+    ($factory:ident, [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(declare_vertcat_scalar_except_f64, ($factory, [$($feature),+]));
+    };
+}
+
+macro_rules! register_vertcat_scalar {
+    ($builder:ident, $factory:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
+        paste! { [<register_ $factory:snake _ $token>]($builder)?; }
+    };
+}
+
+macro_rules! install_vertcat_linked_factories {
+    ($builder:ident, $factory:ident) => {{
+        for_each_vertcat_scalar!(register_vertcat_scalar, ($builder, $factory));
+        Ok::<(), MechError>(())
     }};
 }
 
-macro_rules! install_vertcat_binary_factory {
-    ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $e0:ident, $e1:ident, $out:ident) => {
-        $builder.insert_runtime_factory(
-            concat!(
-                stringify!($factory),
-                "<",
-                $scalar_name,
-                stringify!($out),
-                stringify!($e0),
-                stringify!($e1),
-                ">"
-            ),
-            <$factory<$scalar> as MechFunctionFactory>::new,
-        )?;
+macro_rules! register_vertcat_scalar_except_f64 {
+    ($builder:ident, $factory:ident; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($builder:ident, $factory:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
+        paste! { [<register_ $factory:snake _ $token>]($builder)?; }
+    };
+}
+
+macro_rules! install_vertcat_linked_factories_except_f64 {
+    ($builder:ident, $factory:ident) => {{
+        for_each_vertcat_scalar!(register_vertcat_scalar_except_f64, ($builder, $factory));
+        Ok::<(), MechError>(())
+    }};
+}
+
+declare_vertcat_family!(VerticalConcatenateMD, ["matrixd"]);
+declare_vertcat_family!(VerticalConcatenateTwoArgs, ["matrixd"]);
+declare_vertcat_family!(VerticalConcatenateThreeArgs, ["matrixd"]);
+declare_vertcat_family!(VerticalConcatenateFourArgs, ["matrixd"]);
+declare_vertcat_family_except_f64!(VerticalConcatenateNArgs, ["matrixd"]);
+declare_vertcat_family!(VerticalConcatenateVD, ["vectord"]);
+declare_vertcat_family!(VerticalConcatenateVD2, ["vectord"]);
+declare_vertcat_family!(VerticalConcatenateVD3, ["vectord"]);
+declare_vertcat_family!(VerticalConcatenateVD4, ["vectord"]);
+declare_vertcat_family!(VerticalConcatenateVDN, ["vectord"]);
+declare_vertcat_family!(VerticalConcatenateSD, ["vectord"]);
+
+// Fixed-shape families share the same scalar traversal as their runtime
+// registration and generated-application exports. Keep the exact storage
+// requirements beside the family so all three consumers stay in lockstep.
+macro_rules! for_each_vertcat_typed_family {
+    ($callback:ident, ($($context:tt)*)) => {
+        #[cfg(feature = "matrix1")] $callback!($($context)*; VerticalConcatenateS1; ["matrix1"]);
+        #[cfg(all(feature = "matrix1", feature = "vector3"))] $callback!($($context)*; VerticalConcatenateM1M1M1; ["matrix1", "vector3"]);
+        #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))] $callback!($($context)*; VerticalConcatenateM1M1V2; ["matrix1", "vector2", "vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))] $callback!($($context)*; VerticalConcatenateM1V2M1; ["matrix1", "vector2", "vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))] $callback!($($context)*; VerticalConcatenateV2M1M1; ["matrix1", "vector2", "vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "vector4"))] $callback!($($context)*; VerticalConcatenateM1M1M1M1; ["matrix1", "vector4"]);
+        #[cfg(all(feature = "row_vector2", feature = "matrix3x2"))] $callback!($($context)*; VerticalConcatenateR2R2R2; ["row_vector2", "matrix3x2"]);
+        #[cfg(all(feature = "row_vector3", feature = "matrix3"))] $callback!($($context)*; VerticalConcatenateR3R3R3; ["row_vector3", "matrix3"]);
+        #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "matrix4"))] $callback!($($context)*; VerticalConcatenateR4R4MD; ["row_vector4", "matrixd", "matrix4"]);
+        #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "matrix4"))] $callback!($($context)*; VerticalConcatenateR4MDR4; ["row_vector4", "matrixd", "matrix4"]);
+        #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "matrix4"))] $callback!($($context)*; VerticalConcatenateMDR4R4; ["row_vector4", "matrixd", "matrix4"]);
+        #[cfg(all(feature = "matrix4", feature = "row_vector4"))] $callback!($($context)*; VerticalConcatenateR4R4R4R4; ["matrix4", "row_vector4"]);
+    };
+}
+
+macro_rules! declare_vertcat_typed_family {
+    (; $factory:ident; [$($feature:literal),+]) => {
+        declare_vertcat_family!($factory, [$($feature),+]);
+    };
+}
+
+for_each_vertcat_typed_family!(declare_vertcat_typed_family, ());
+
+macro_rules! for_each_vertcat_binary_family {
+    ($callback:ident, ($($context:tt)*)) => {
+        #[cfg(all(feature = "matrix1", feature = "vector2"))] $callback!($($context)*; normal; VerticalConcatenateM1M1, Matrix1, Matrix1, Vector2; ["matrix1", "vector2"]);
+        #[cfg(all(feature = "vector2", feature = "vector4"))] $callback!($($context)*; normal; VerticalConcatenateV2V2, Vector2, Vector2, Vector4; ["vector2", "vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))] $callback!($($context)*; normal; VerticalConcatenateM1V3, Matrix1, Vector3, Vector4; ["matrix1", "vector3", "vector4"]);
+        #[cfg(all(feature = "vector3", feature = "matrix1", feature = "vector4"))] $callback!($($context)*; normal; VerticalConcatenateV3M1, Vector3, Matrix1, Vector4; ["matrix1", "vector3", "vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))] $callback!($($context)*; normal; VerticalConcatenateM1V2, Matrix1, Vector2, Vector3; ["matrix1", "vector2", "vector3"]);
+        #[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector3"))] $callback!($($context)*; normal; VerticalConcatenateV2M1, Vector2, Matrix1, Vector3; ["matrix1", "vector2", "vector3"]);
+        #[cfg(all(feature = "row_vector2", feature = "matrix2"))] $callback!($($context)*; except_f64; VerticalConcatenateR2R2, RowVector2, RowVector2, Matrix2; ["row_vector2", "matrix2"]);
+        #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))] $callback!($($context)*; normal; VerticalConcatenateR3R3, RowVector3, RowVector3, Matrix2x3; ["row_vector3", "matrix2x3"]);
+        #[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))] $callback!($($context)*; normal; VerticalConcatenateR2M2, RowVector2, Matrix2, Matrix3x2; ["row_vector2", "matrix2", "matrix3x2"]);
+        #[cfg(all(feature = "matrix2", feature = "row_vector2", feature = "matrix3x2"))] $callback!($($context)*; normal; VerticalConcatenateM2R2, Matrix2, RowVector2, Matrix3x2; ["matrix2", "row_vector2", "matrix3x2"]);
+        #[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))] $callback!($($context)*; normal; VerticalConcatenateM2x3R3, Matrix2x3, RowVector3, Matrix3; ["matrix2x3", "row_vector3", "matrix3"]);
+        #[cfg(all(feature = "row_vector3", feature = "matrix2x3", feature = "matrix3"))] $callback!($($context)*; normal; VerticalConcatenateR3M2x3, RowVector3, Matrix2x3, Matrix3; ["row_vector3", "matrix2x3", "matrix3"]);
+        #[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "matrix4"))] $callback!($($context)*; normal; VerticalConcatenateMDR4, DMatrix, RowVector4, Matrix4; ["matrixd", "row_vector4", "matrix4"]);
+        #[cfg(all(feature = "matrixd", feature = "matrix4"))] $callback!($($context)*; normal; VerticalConcatenateMDMD, DMatrix, DMatrix, Matrix4; ["matrixd", "matrix4"]);
+        #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "row_vector4"))] $callback!($($context)*; normal; VerticalConcatenateR4MD, RowVector4, DMatrix, Matrix4; ["row_vector4", "matrixd", "matrix4"]);
+    };
+}
+
+macro_rules! declare_vertcat_binary_scalar {
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        paste! { mech_core::declare_native_runtime_factory! {
+            cfg: all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+),
+            registration: [<register_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>],
+            installer: [<install_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>],
+            name: concat!(stringify!($factory), "<", $name, stringify!($out), stringify!($e0), stringify!($e1), ">"),
+            factory: <$factory<$scalar> as MechFunctionFactory>::new,
+            package: "mech-engine", crate_name: "mech_engine",
+            installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>])),
+            cargo_features: ["matrix_vertcat", "native-link", "runtime", $cargo, $($feature),+],
+        }}
+    };
+}
+
+macro_rules! declare_vertcat_binary_scalar_except_f64 {
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        declare_vertcat_binary_scalar!($factory, $e0, $e1, $out, [$($feature),+]; $token, $scalar, $name, $cargo);
+    };
+}
+
+macro_rules! declare_vertcat_binary_family {
+    (; normal; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(declare_vertcat_binary_scalar, ($factory, $e0, $e1, $out, [$($feature),+]));
+    };
+    (; except_f64; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(declare_vertcat_binary_scalar_except_f64, ($factory, $e0, $e1, $out, [$($feature),+]));
+    };
+}
+
+for_each_vertcat_binary_family!(declare_vertcat_binary_family, ());
+
+macro_rules! register_vertcat_binary_scalar {
+    ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
+        paste! { [<register_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>]($builder)?; }
+    };
+}
+
+macro_rules! register_vertcat_binary_scalar_except_f64 {
+    ($builder:ident, $_factory:ident, $_e0:ident, $_e1:ident, $_out:ident; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
+        register_vertcat_binary_scalar!($builder, $factory, $e0, $e1, $out; $token, $_scalar, $_name, $_cargo);
     };
 }
 
 macro_rules! install_vertcat_binary_factories {
-    ($builder:expr, $factory:ident, $e0:ident, $e1:ident, $out:ident) => {{
-        #[inline(never)]
-        fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-            #[cfg(feature = "bool")]
-            install_vertcat_binary_factory!(builder, $factory, bool, "bool", $e0, $e1, $out);
-            #[cfg(feature = "string")]
-            install_vertcat_binary_factory!(builder, $factory, String, "string", $e0, $e1, $out);
-            #[cfg(feature = "u8")]
-            install_vertcat_binary_factory!(builder, $factory, u8, "u8", $e0, $e1, $out);
-            #[cfg(feature = "u16")]
-            install_vertcat_binary_factory!(builder, $factory, u16, "u16", $e0, $e1, $out);
-            #[cfg(feature = "u32")]
-            install_vertcat_binary_factory!(builder, $factory, u32, "u32", $e0, $e1, $out);
-            #[cfg(feature = "u64")]
-            install_vertcat_binary_factory!(builder, $factory, u64, "u64", $e0, $e1, $out);
-            #[cfg(feature = "u128")]
-            install_vertcat_binary_factory!(builder, $factory, u128, "u128", $e0, $e1, $out);
-            #[cfg(feature = "i8")]
-            install_vertcat_binary_factory!(builder, $factory, i8, "i8", $e0, $e1, $out);
-            #[cfg(feature = "i16")]
-            install_vertcat_binary_factory!(builder, $factory, i16, "i16", $e0, $e1, $out);
-            #[cfg(feature = "i32")]
-            install_vertcat_binary_factory!(builder, $factory, i32, "i32", $e0, $e1, $out);
-            #[cfg(feature = "i64")]
-            install_vertcat_binary_factory!(builder, $factory, i64, "i64", $e0, $e1, $out);
-            #[cfg(feature = "i128")]
-            install_vertcat_binary_factory!(builder, $factory, i128, "i128", $e0, $e1, $out);
-            #[cfg(feature = "f32")]
-            install_vertcat_binary_factory!(builder, $factory, f32, "f32", $e0, $e1, $out);
-            #[cfg(feature = "f64")]
-            install_vertcat_binary_factory!(builder, $factory, f64, "f64", $e0, $e1, $out);
-            #[cfg(feature = "c64")]
-            install_vertcat_binary_factory!(builder, $factory, C64, "c64", $e0, $e1, $out);
-            #[cfg(feature = "r64")]
-            install_vertcat_binary_factory!(builder, $factory, R64, "r64", $e0, $e1, $out);
-            Ok(())
-        }
-        install($builder)?;
-    }};
+    ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident) => {
+        for_each_vertcat_scalar!(
+            register_vertcat_binary_scalar,
+            ($builder, $factory, $e0, $e1, $out)
+        );
+    };
 }
 
 macro_rules! install_vertcat_binary_factories_except_f64 {
-    ($builder:expr, $factory:ident, $e0:ident, $e1:ident, $out:ident) => {{
-        #[cfg(feature = "bool")]
-        install_vertcat_binary_factory!($builder, $factory, bool, "bool", $e0, $e1, $out);
-        #[cfg(feature = "string")]
-        install_vertcat_binary_factory!($builder, $factory, String, "string", $e0, $e1, $out);
-        #[cfg(feature = "u8")]
-        install_vertcat_binary_factory!($builder, $factory, u8, "u8", $e0, $e1, $out);
-        #[cfg(feature = "u16")]
-        install_vertcat_binary_factory!($builder, $factory, u16, "u16", $e0, $e1, $out);
-        #[cfg(feature = "u32")]
-        install_vertcat_binary_factory!($builder, $factory, u32, "u32", $e0, $e1, $out);
-        #[cfg(feature = "u64")]
-        install_vertcat_binary_factory!($builder, $factory, u64, "u64", $e0, $e1, $out);
-        #[cfg(feature = "u128")]
-        install_vertcat_binary_factory!($builder, $factory, u128, "u128", $e0, $e1, $out);
-        #[cfg(feature = "i8")]
-        install_vertcat_binary_factory!($builder, $factory, i8, "i8", $e0, $e1, $out);
-        #[cfg(feature = "i16")]
-        install_vertcat_binary_factory!($builder, $factory, i16, "i16", $e0, $e1, $out);
-        #[cfg(feature = "i32")]
-        install_vertcat_binary_factory!($builder, $factory, i32, "i32", $e0, $e1, $out);
-        #[cfg(feature = "i64")]
-        install_vertcat_binary_factory!($builder, $factory, i64, "i64", $e0, $e1, $out);
-        #[cfg(feature = "i128")]
-        install_vertcat_binary_factory!($builder, $factory, i128, "i128", $e0, $e1, $out);
-        #[cfg(feature = "f32")]
-        install_vertcat_binary_factory!($builder, $factory, f32, "f32", $e0, $e1, $out);
-        #[cfg(feature = "c64")]
-        install_vertcat_binary_factory!($builder, $factory, C64, "c64", $e0, $e1, $out);
-        #[cfg(feature = "r64")]
-        install_vertcat_binary_factory!($builder, $factory, R64, "r64", $e0, $e1, $out);
-    }};
+    ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident) => {
+        for_each_vertcat_scalar!(
+            register_vertcat_binary_scalar_except_f64,
+            ($builder, $factory, $e0, $e1, $out)
+        );
+    };
+}
+
+macro_rules! install_vertcat_binary_family {
+    ($builder:ident; normal; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($_feature:literal),+]) => {
+        install_vertcat_binary_factories!($builder, $factory, $e0, $e1, $out);
+    };
+    ($builder:ident; except_f64; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($_feature:literal),+]) => {
+        #[cfg(feature = "f64")]
+        paste! { [<register_ $factory:snake _f64>]($builder)?; }
+        install_vertcat_binary_factories_except_f64!($builder, $factory, $e0, $e1, $out);
+    };
+}
+
+macro_rules! install_vertcat_typed_family {
+    ($builder:ident; $factory:ident; [$($_feature:literal),+]) => {
+        install_vertcat_linked_factories!($builder, $factory)?;
+    };
 }
 
 /// Installs every enabled legacy runtime factory emitted by this module.
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrixd")]
     {
-        install_vertcat_factories!(builder, VerticalConcatenateMD);
-        install_vertcat_factories!(builder, VerticalConcatenateTwoArgs);
-        install_vertcat_factories!(builder, VerticalConcatenateThreeArgs);
-        install_vertcat_factories!(builder, VerticalConcatenateFourArgs);
+        install_vertcat_linked_factories!(builder, VerticalConcatenateMD)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateTwoArgs)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateThreeArgs)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateFourArgs)?;
         #[cfg(feature = "f64")]
         register_vertical_concatenate_n_args_f64(builder)?;
-        install_vertcat_factories_except_f64!(builder, VerticalConcatenateNArgs);
+        install_vertcat_linked_factories_except_f64!(builder, VerticalConcatenateNArgs)?;
     }
     #[cfg(feature = "vectord")]
     {
-        install_vertcat_factories!(builder, VerticalConcatenateVD);
-        install_vertcat_factories!(builder, VerticalConcatenateVD2);
-        install_vertcat_factories!(builder, VerticalConcatenateVD3);
-        install_vertcat_factories!(builder, VerticalConcatenateVD4);
-        install_vertcat_factories!(builder, VerticalConcatenateVDN);
-        install_vertcat_factories!(builder, VerticalConcatenateSD);
+        install_vertcat_linked_factories!(builder, VerticalConcatenateVD)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateVD2)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateVD3)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateVD4)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateVDN)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateSD)?;
     }
-    #[cfg(feature = "matrix1")]
-    install_vertcat_factories!(builder, VerticalConcatenateS1);
-
-    #[cfg(all(feature = "matrix1", feature = "vector2"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateM1M1, Matrix1, Matrix1, Vector2);
-    #[cfg(all(feature = "vector2", feature = "vector4"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateV2V2, Vector2, Vector2, Vector4);
-    #[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateM1V3, Matrix1, Vector3, Vector4);
-    #[cfg(all(feature = "vector3", feature = "matrix1", feature = "vector4"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateV3M1, Vector3, Matrix1, Vector4);
-    #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateM1V2, Matrix1, Vector2, Vector3);
-    #[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector3"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateV2M1, Vector2, Matrix1, Vector3);
-    #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
-    {
-        #[cfg(feature = "f64")]
-        register_vertical_concatenate_r2_r2_f64(builder)?;
-        install_vertcat_binary_factories_except_f64!(
-            builder,
-            VerticalConcatenateR2R2,
-            RowVector2,
-            RowVector2,
-            Matrix2
-        );
-    }
-    #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateR3R3,
-        RowVector3,
-        RowVector3,
-        Matrix2x3
-    );
-    #[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateR2M2,
-        RowVector2,
-        Matrix2,
-        Matrix3x2
-    );
-    #[cfg(all(feature = "matrix2", feature = "row_vector2", feature = "matrix3x2"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateM2R2,
-        Matrix2,
-        RowVector2,
-        Matrix3x2
-    );
-    #[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateM2x3R3,
-        Matrix2x3,
-        RowVector3,
-        Matrix3
-    );
-    #[cfg(all(feature = "row_vector3", feature = "matrix2x3", feature = "matrix3"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateR3M2x3,
-        RowVector3,
-        Matrix2x3,
-        Matrix3
-    );
-    #[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "matrix4"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateMDR4,
-        DMatrix,
-        RowVector4,
-        Matrix4
-    );
-    #[cfg(all(feature = "matrixd", feature = "matrix4"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateMDMD, DMatrix, DMatrix, Matrix4);
-    #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "row_vector4"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateR4MD,
-        RowVector4,
-        DMatrix,
-        Matrix4
-    );
-
-    #[cfg(all(feature = "matrix1", feature = "vector3"))]
-    install_vertcat_factories!(builder, VerticalConcatenateM1M1M1);
-    #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
-    {
-        install_vertcat_factories!(builder, VerticalConcatenateM1M1V2);
-        install_vertcat_factories!(builder, VerticalConcatenateM1V2M1);
-        install_vertcat_factories!(builder, VerticalConcatenateV2M1M1);
-    }
-    #[cfg(all(feature = "matrix1", feature = "vector4"))]
-    install_vertcat_factories!(builder, VerticalConcatenateM1M1M1M1);
-    #[cfg(all(feature = "row_vector2", feature = "matrix3x2"))]
-    install_vertcat_factories!(builder, VerticalConcatenateR2R2R2);
-    #[cfg(all(feature = "row_vector3", feature = "matrix3"))]
-    install_vertcat_factories!(builder, VerticalConcatenateR3R3R3);
-    #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "matrix4"))]
-    install_vertcat_factories!(builder, VerticalConcatenateR4R4MD);
-    #[cfg(all(
-        feature = "row_vector4",
-        feature = "matrixd",
-        feature = "row_vector4",
-        feature = "matrix4"
-    ))]
-    install_vertcat_factories!(builder, VerticalConcatenateR4MDR4);
-    #[cfg(all(
-        feature = "matrixd",
-        feature = "row_vector4",
-        feature = "row_vector4",
-        feature = "matrix4"
-    ))]
-    install_vertcat_factories!(builder, VerticalConcatenateMDR4R4);
-    #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
-    install_vertcat_factories!(builder, VerticalConcatenateR4R4R4R4);
+    for_each_vertcat_binary_family!(install_vertcat_binary_family, (builder));
+    for_each_vertcat_typed_family!(install_vertcat_typed_family, (builder));
 
     Ok(())
+}
+
+macro_rules! export_vertcat_scalar {
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
+        #[cfg(all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+))]
+        mech_core::paste::paste! { pub use super::[<install_ $factory:snake _ $token>]; }
+    };
+}
+
+macro_rules! export_vertcat_family {
+    ($factory:ident, [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(export_vertcat_scalar, ($factory, [$($feature),+]));
+    };
+}
+
+macro_rules! export_vertcat_scalar_except_f64 {
+    ($factory:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
+        #[cfg(all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+))]
+        mech_core::paste::paste! { pub use super::[<install_ $factory:snake _ $token>]; }
+    };
+}
+
+macro_rules! export_vertcat_family_except_f64 {
+    ($factory:ident, [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(export_vertcat_scalar_except_f64, ($factory, [$($feature),+]));
+    };
+}
+
+macro_rules! export_vertcat_typed_family {
+    (; $factory:ident; [$($feature:literal),+]) => {
+        export_vertcat_family!($factory, [$($feature),+]);
+    };
+}
+
+macro_rules! export_vertcat_binary_scalar {
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
+        #[cfg(all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+))]
+        mech_core::paste::paste! { pub use super::[<install_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>]; }
+    };
+}
+
+macro_rules! export_vertcat_binary_scalar_except_f64 {
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        export_vertcat_binary_scalar!($factory, $e0, $e1, $out, [$($feature),+]; $token, $scalar, $name, $cargo);
+    };
+}
+
+macro_rules! export_vertcat_binary_family {
+    (; normal; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(export_vertcat_binary_scalar, ($factory, $e0, $e1, $out, [$($feature),+]));
+    };
+    (; except_f64; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(export_vertcat_binary_scalar_except_f64, ($factory, $e0, $e1, $out, [$($feature),+]));
+    };
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    export_vertcat_family!(VerticalConcatenateMD, ["matrixd"]);
+    export_vertcat_family!(VerticalConcatenateTwoArgs, ["matrixd"]);
+    export_vertcat_family!(VerticalConcatenateThreeArgs, ["matrixd"]);
+    export_vertcat_family!(VerticalConcatenateFourArgs, ["matrixd"]);
+    export_vertcat_family_except_f64!(VerticalConcatenateNArgs, ["matrixd"]);
+    export_vertcat_family!(VerticalConcatenateVD, ["vectord"]);
+    export_vertcat_family!(VerticalConcatenateVD2, ["vectord"]);
+    export_vertcat_family!(VerticalConcatenateVD3, ["vectord"]);
+    export_vertcat_family!(VerticalConcatenateVD4, ["vectord"]);
+    export_vertcat_family!(VerticalConcatenateVDN, ["vectord"]);
+    export_vertcat_family!(VerticalConcatenateSD, ["vectord"]);
+    for_each_vertcat_typed_family!(export_vertcat_typed_family, ());
+    for_each_vertcat_binary_family!(export_vertcat_binary_family, ());
+
+    #[cfg(all(feature = "f64", feature = "matrixd"))]
+    pub use super::install_vertical_concatenate_n_args_f64;
+    #[cfg(all(feature = "f64", feature = "matrix2", feature = "row_vector2"))]
+    pub use super::install_vertical_concatenate_r2_r2_f64;
 }
 
 pub struct MatrixVertCat {}

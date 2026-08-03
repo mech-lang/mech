@@ -116,8 +116,9 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-/// Installs the concrete runtime factories for every enabled statistics shape.
-pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+/// Legacy direct-registration implementation retained while the native
+/// declaration traversal below takes ownership of the active runtime path.
+fn install_legacy_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "sum")]
     {
         #[cfg(feature = "matrix1")]
@@ -188,6 +189,111 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     }
 
     Ok(())
+}
+
+macro_rules! for_each_stats_scalar {
+    ($callback:ident, $context:tt; [$cfg:meta]; $module:ident; $factory:ident; [$($shape_feature:literal),* $(,)?]) => {
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "u8"; u8; "u8"; u8);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "u16"; u16; "u16"; u16);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "u32"; u32; "u32"; u32);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "u64"; u64; "u64"; u64);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "u128"; u128; "u128"; u128);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "i8"; i8; "i8"; i8);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "i16"; i16; "i16"; i16);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "i32"; i32; "i32"; i32);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "i64"; i64; "i64"; i64);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "i128"; i128; "i128"; i128);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "f32"; f32; "f32"; f32);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "f64"; f64; "f64"; f64);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "complex"; mech_core::C64; "c64"; c64);
+        $callback!($context; [$cfg]; $module; $factory; [$($shape_feature),*]; feature = "rational"; mech_core::R64; "r64"; r64);
+    };
+}
+
+macro_rules! for_each_stats_family_with_context {
+    ($callback:ident, $context:tt) => {
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix1")]; sum_column; StatsSumColumnM1; ["matrix1"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix2", feature = "vector2")]; sum_column; StatsSumColumnM2; ["matrix2", "vector2"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix3", feature = "vector3")]; sum_column; StatsSumColumnM3; ["matrix3", "vector3"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix4", feature = "vector4")]; sum_column; StatsSumColumnM4; ["matrix4", "vector4"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix2x3", feature = "vector2")]; sum_column; StatsSumColumnM2x3; ["matrix2x3", "vector2"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix3x2", feature = "vector3")]; sum_column; StatsSumColumnM3x2; ["matrix3x2", "vector3"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrixd", feature = "vectord")]; sum_column; StatsSumColumnMD; ["matrixd", "vectord"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "vector2")]; sum_column; StatsSumColumnV2; ["vector2"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "vector3")]; sum_column; StatsSumColumnV3; ["vector3"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "vector4")]; sum_column; StatsSumColumnV4; ["vector4"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "vectord")]; sum_column; StatsSumColumnVD; ["vectord"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "row_vector2", feature = "matrix1")]; sum_column; StatsSumColumnR2; ["matrix1", "row_vector2"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "row_vector3", feature = "matrix1")]; sum_column; StatsSumColumnR3; ["matrix1", "row_vector3"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "row_vector4", feature = "matrix1")]; sum_column; StatsSumColumnR4; ["matrix1", "row_vector4"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "row_vectord", feature = "matrix1")]; sum_column; StatsSumColumnRD; ["matrix1", "row_vectord"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "row_vectord", feature = "matrixd", not(feature = "matrix1"))]; sum_column; StatsSumColumnRD2; ["matrixd", "row_vectord"]);
+
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix1")]; sum_row; StatsSumRowM1; ["matrix1"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix2", feature = "row_vector2")]; sum_row; StatsSumRowM2; ["matrix2", "row_vector2"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix3", feature = "row_vector3")]; sum_row; StatsSumRowM3; ["matrix3", "row_vector3"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix4", feature = "row_vector4")]; sum_row; StatsSumRowM4; ["matrix4", "row_vector4"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix2x3", feature = "row_vector3")]; sum_row; StatsSumRowM2x3; ["matrix2x3", "row_vector3"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrix3x2", feature = "row_vector2")]; sum_row; StatsSumRowM3x2; ["matrix3x2", "row_vector2"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "matrixd", feature = "row_vectord")]; sum_row; StatsSumRowMD; ["matrixd", "row_vectord"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "vector2", feature = "matrix1")]; sum_row; StatsSumRowV2; ["matrix1", "vector2"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "vector3", feature = "matrix1")]; sum_row; StatsSumRowV3; ["matrix1", "vector3"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "vector4", feature = "matrix1")]; sum_row; StatsSumRowV4; ["matrix1", "vector4"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "vectord", feature = "matrix1")]; sum_row; StatsSumRowVD; ["matrix1", "vectord"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "vectord", feature = "matrixd", not(feature = "matrix1"))]; sum_row; StatsSumRowVDMD; ["matrixd", "vectord"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "row_vector2")]; sum_row; StatsSumRowR2; ["row_vector2"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "row_vector3")]; sum_row; StatsSumRowR3; ["row_vector3"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "row_vector4")]; sum_row; StatsSumRowR4; ["row_vector4"]);
+        for_each_stats_scalar!($callback, $context; [all(feature = "sum", feature = "row_vectord")]; sum_row; StatsSumRowRD; ["row_vectord"]);
+    };
+}
+
+macro_rules! for_each_stats_family {
+    ($callback:ident) => { for_each_stats_family_with_context!($callback, ()); };
+    ($callback:ident, $context:tt) => { for_each_stats_family_with_context!($callback, $context); };
+}
+
+macro_rules! declare_stats_runtime_factory {
+    ($_context:tt; [$cfg:meta]; $module:ident; $factory:ident; [$($shape_feature:literal),* $(,)?]; $scalar_feature:meta; $scalar:ty; $scalar_name:literal; $scalar_token:ident) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all($cfg, $scalar_feature),
+                registration: [<register_ $factory:snake _ $scalar_token>],
+                installer: [<install_ $factory:snake _ $scalar_token>],
+                name: concat!(stringify!($factory), "<", $scalar_name, ">"),
+                factory: <crate::$module::$factory<$scalar> as mech_core::MechFunctionFactory>::new,
+                package: "mech-stats", crate_name: "mech_stats",
+                installer_path: concat!("mech_stats::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token>])),
+                cargo_features: ["sum", $scalar_name, $($shape_feature,)* "native-link", "runtime"],
+            }
+        }
+    };
+}
+
+for_each_stats_family!(declare_stats_runtime_factory);
+
+/// Installs every concrete runtime factory declared by the statistics family traversal.
+pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    macro_rules! register_stats_runtime_factory {
+        (($builder:ident); [$cfg:meta]; $_module:ident; $factory:ident; [$($_shape_feature:literal),* $(,)?]; $scalar_feature:meta; $_scalar:ty; $_scalar_name:literal; $scalar_token:ident) => {
+            #[cfg(all($cfg, $scalar_feature))]
+            mech_core::paste::paste! { [<register_ $factory:snake _ $scalar_token>]($builder)?; }
+        };
+    }
+    for_each_stats_family!(register_stats_runtime_factory, (builder));
+    Ok(())
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    macro_rules! export_stats_runtime_factory {
+        ($_context:tt; [$cfg:meta]; $_module:ident; $factory:ident; [$($_shape_feature:literal),* $(,)?]; $scalar_feature:meta; $_scalar:ty; $_scalar_name:literal; $scalar_token:ident) => {
+            #[cfg(all($cfg, $scalar_feature))]
+            mech_core::paste::paste! { pub use super::[<install_ $factory:snake _ $scalar_token>]; }
+        };
+    }
+    for_each_stats_family!(export_stats_runtime_factory);
 }
 
 #[cfg(all(test, feature = "source", feature = "sum"))]

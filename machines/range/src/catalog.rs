@@ -159,8 +159,9 @@ macro_rules! install_range_operation_runtime {
     }};
 }
 
-/// Installs every enabled concrete bytecode factory owned by `mech-range`.
-pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+/// Legacy direct-registration implementation retained while the native
+/// declaration traversal below owns the active runtime path.
+fn install_legacy_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "exclusive")]
     {
         install_range_operation_runtime!(builder, exclusive, RangeExclusiveScalar);
@@ -183,6 +184,91 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         );
     }
     Ok(())
+}
+
+macro_rules! for_each_range_scalar {
+    ($callback:ident, $context:tt; [$cfg:meta]; $module:ident; $factory:ident; $operation_feature:literal; $shape:ident; [$($shape_feature:literal),* $(,)?]) => {
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "f32"; "f32"; f32; f32);
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "f64"; "f64"; f64; f64);
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "i8"; "i8"; i8; i8);
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "i16"; "i16"; i16; i16);
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "i32"; "i32"; i32; i32);
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "i64"; "i64"; i64; i64);
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "i128"; "i128"; i128; i128);
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "u8"; "u8"; u8; u8);
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "u16"; "u16"; u16; u16);
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "u32"; "u32"; u32; u32);
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "u64"; "u64"; u64; u64);
+        $callback!($context; [$cfg]; $module; $factory; $operation_feature; $shape; [$($shape_feature),*]; feature = "u128"; "u128"; u128; u128);
+    };
+}
+
+macro_rules! for_each_range_shape {
+    ($callback:ident, $context:tt; $module:ident; $factory:ident; $operation_feature:literal) => {
+        for_each_range_scalar!($callback, $context; [all(feature = $operation_feature, feature = "matrix1")]; $module; $factory; $operation_feature; Matrix1; ["matrix1"]);
+        for_each_range_scalar!($callback, $context; [all(feature = $operation_feature, not(feature = "matrix1"), feature = "matrixd")]; $module; $factory; $operation_feature; DMatrix; ["matrixd"]);
+        for_each_range_scalar!($callback, $context; [all(feature = $operation_feature, feature = "row_vector2")]; $module; $factory; $operation_feature; RowVector2; ["row_vector2"]);
+        for_each_range_scalar!($callback, $context; [all(feature = $operation_feature, feature = "row_vector3")]; $module; $factory; $operation_feature; RowVector3; ["row_vector3"]);
+        for_each_range_scalar!($callback, $context; [all(feature = $operation_feature, feature = "row_vector4")]; $module; $factory; $operation_feature; RowVector4; ["row_vector4"]);
+        for_each_range_scalar!($callback, $context; [all(feature = $operation_feature, feature = "row_vectord")]; $module; $factory; $operation_feature; RowDVector; ["row_vectord"]);
+    };
+}
+
+macro_rules! for_each_range_family_with_context {
+    ($callback:ident, $context:tt) => {
+        for_each_range_shape!($callback, $context; exclusive; RangeExclusiveScalar; "exclusive");
+        for_each_range_shape!($callback, $context; exclusive_increment; RangeIncrementExclusiveScalar; "exclusive");
+        for_each_range_shape!($callback, $context; inclusive; RangeInclusiveScalar; "inclusive");
+        for_each_range_shape!($callback, $context; inclusive_increment; RangeIncrementInclusiveScalar; "inclusive");
+    };
+}
+
+macro_rules! for_each_range_family {
+    ($callback:ident) => { for_each_range_family_with_context!($callback, ()); };
+    ($callback:ident, $context:tt) => { for_each_range_family_with_context!($callback, $context); };
+}
+
+macro_rules! declare_range_runtime_factory {
+    ($_context:tt; [$cfg:meta]; $module:ident; $factory:ident; $operation_feature:literal; $shape:ident; [$($shape_feature:literal),* $(,)?]; $scalar_cfg:meta; $scalar_feature:literal; $scalar:ty; $scalar_token:ident) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all($cfg, $scalar_cfg),
+                registration: [<register_ $factory:snake _ $scalar_token _ $shape:snake>],
+                installer: [<install_ $factory:snake _ $scalar_token _ $shape:snake>],
+                name: concat!(stringify!($factory), "<", $scalar_feature, stringify!($shape), ">"),
+                factory: <crate::$module::$factory<$scalar, $shape<$scalar>> as MechFunctionFactory>::new,
+                package: "mech-range", crate_name: "mech_range",
+                installer_path: concat!("mech_range::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token _ $shape:snake>])),
+                cargo_features: [$operation_feature, $scalar_feature, $($shape_feature,)* "native-link", "runtime"],
+            }
+        }
+    };
+}
+
+for_each_range_family!(declare_range_runtime_factory);
+
+/// Installs every concrete runtime factory declared by the range family traversal.
+pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    macro_rules! register_range_runtime_factory {
+        (($builder:ident); [$cfg:meta]; $_module:ident; $factory:ident; $_operation_feature:literal; $shape:ident; [$($_shape_feature:literal),* $(,)?]; $scalar_cfg:meta; $_scalar_feature:literal; $_scalar:ty; $scalar_token:ident) => {
+            #[cfg(all($cfg, $scalar_cfg))]
+            mech_core::paste::paste! { [<register_ $factory:snake _ $scalar_token _ $shape:snake>]($builder)?; }
+        };
+    }
+    for_each_range_family!(register_range_runtime_factory, (builder));
+    Ok(())
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    macro_rules! export_range_runtime_factory {
+        ($_context:tt; [$cfg:meta]; $_module:ident; $factory:ident; $_operation_feature:literal; $shape:ident; [$($_shape_feature:literal),* $(,)?]; $scalar_cfg:meta; $_scalar_feature:literal; $_scalar:ty; $scalar_token:ident) => {
+            #[cfg(all($cfg, $scalar_cfg))]
+            mech_core::paste::paste! { pub use super::[<install_ $factory:snake _ $scalar_token _ $shape:snake>]; }
+        };
+    }
+    for_each_range_family!(export_range_runtime_factory);
 }
 
 #[cfg(all(test, feature = "source"))]

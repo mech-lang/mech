@@ -1,5 +1,6 @@
 use super::*;
 use crate::*;
+use num_traits::{FromPrimitive, Signed, ToPrimitive};
 
 // Rational Numbers
 // ----------------------------------------------------------------------------
