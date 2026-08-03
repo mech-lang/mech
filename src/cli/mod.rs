@@ -6,10 +6,12 @@ pub mod bundle_web;
 pub mod capabilities;
 #[cfg(feature = "cli_core")]
 pub mod commands;
-#[cfg(any(feature = "serve", feature = "run"))]
+#[cfg(any(feature = "build", feature = "serve", feature = "run"))]
 pub mod config;
 #[cfg(feature = "cli_core")]
 pub(crate) mod diagnostics;
+#[cfg(any(feature = "build", feature = "run"))]
+pub(crate) mod host_configuration;
 #[cfg(feature = "run")]
 pub mod host_factories;
 #[cfg(feature = "run")]
@@ -39,6 +41,7 @@ pub(crate) fn rounds_per_step_value_parser() -> clap::builder::RangedU64ValuePar
     any(
         feature = "serve",
         feature = "bundle_web",
+        feature = "build",
         feature = "run",
         feature = "formatter",
         feature = "repl",
@@ -51,6 +54,7 @@ pub(crate) static CURRENT_DIR_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new
     any(
         feature = "serve",
         feature = "bundle_web",
+        feature = "build",
         feature = "run",
         feature = "formatter",
         feature = "repl",

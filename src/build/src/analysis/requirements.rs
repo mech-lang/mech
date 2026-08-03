@@ -37,7 +37,9 @@ pub(crate) fn analyze_application_requirements(
     // Validate and normalize every supplied configuration before any
     // requirement-based early return. Scalar runtime settings are part of the
     // frozen plan identity even when no concrete host is selected.
-    let normalized_supplied_config = runtime_config.map(normalize_runtime_config).transpose()?;
+    let normalized_supplied_config = runtime_config
+        .map(normalize_native_runtime_config)
+        .transpose()?;
     let planned_runtime_config = normalized_supplied_config
         .as_ref()
         .map(|config| config.runtime.clone())
@@ -174,7 +176,7 @@ fn exact_resource_grant(
 
 /// Clones and deterministically normalizes the runtime configuration fields
 /// that are permitted to influence a native build plan.
-pub(crate) fn normalize_runtime_config(
+pub fn normalize_native_runtime_config(
     config: &NativeRuntimeConfig,
 ) -> MResult<NativeRuntimeConfig> {
     config.runtime.validate()?;
@@ -525,7 +527,7 @@ mod tests {
             ],
         };
 
-        let normalized = normalize_runtime_config(&config).unwrap();
+        let normalized = normalize_native_runtime_config(&config).unwrap();
         assert_eq!(
             normalized
                 .hosts
@@ -546,7 +548,7 @@ mod tests {
             hosts: vec![host("terminal", "other"), host("terminal", "test")],
             run_grants: Vec::new(),
         };
-        let error = normalize_runtime_config(&config).unwrap_err();
+        let error = normalize_native_runtime_config(&config).unwrap_err();
         assert_eq!(
             error.kind_name(),
             "NativeRuntimeConfigDuplicateHostInstance"
@@ -566,7 +568,7 @@ mod tests {
             run_grants: Vec::new(),
         };
 
-        let normalized = normalize_runtime_config(&config).unwrap();
+        let normalized = normalize_native_runtime_config(&config).unwrap();
         assert_eq!(normalized.runtime, runtime);
     }
 
@@ -574,7 +576,7 @@ mod tests {
     fn invalid_scalar_runtime_config_is_rejected_before_plan_addressing() {
         let mut runtime = RuntimeConfig::default();
         runtime.limits.max_steps_per_turn = Some(0);
-        let error = normalize_runtime_config(&NativeRuntimeConfig {
+        let error = normalize_native_runtime_config(&NativeRuntimeConfig {
             runtime,
             hosts: Vec::new(),
             run_grants: Vec::new(),

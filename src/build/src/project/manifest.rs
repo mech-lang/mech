@@ -234,7 +234,7 @@ pub fn render_native_project_manifest(manifest: &NativeProjectManifest) -> MResu
     Ok(rendered)
 }
 
-/// Validate the exact Phase 1 binary-name grammar.
+/// Validate the exact native-application binary-name grammar.
 pub fn validate_project_binary_name(value: &str) -> MResult<()> {
     if valid_ascii_identifier(value, true) {
         Ok(())
@@ -248,7 +248,7 @@ pub fn validate_project_binary_name(value: &str) -> MResult<()> {
     }
 }
 
-/// Validate the exact Phase 1 target-triple argument grammar.
+/// Validate the exact native-application target-triple argument grammar.
 pub fn validate_project_target_triple(value: &str) -> MResult<()> {
     if !value.is_empty()
         && value.chars().all(|character| {
@@ -266,7 +266,7 @@ pub fn validate_project_target_triple(value: &str) -> MResult<()> {
     }
 }
 
-/// Validate the exact Phase 1 qualified Rust installer-path grammar.
+/// Validate the exact native-application qualified Rust installer-path grammar.
 pub fn validate_project_installer_path(value: &str) -> MResult<()> {
     let segments = value.split("::").collect::<Vec<_>>();
     if segments.len() >= 2
@@ -469,8 +469,8 @@ mod tests {
     #[test]
     fn manifest_rendering_is_toml_edit_backed_and_deterministic() {
         let manifest = NativeProjectManifest::new(
-            "phase1-app",
-            "phase1-app",
+            "native-app",
+            "native-app",
             vec![
                 GeneratedDependency::registry(
                     "mech-math",
