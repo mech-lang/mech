@@ -556,6 +556,27 @@ impl RuntimeContext {
         Ok(())
     }
 
+    /// Starts another operation with the same execution identity and authority.
+    ///
+    /// Runtime budgets, access records, and emitted events are scoped to one
+    /// turn. Long-lived frontends may call this between operations to preserve
+    /// task/module identity without accidentally accumulating turn-local state.
+    pub fn reset_for_next_turn(&mut self) -> MResult<()> {
+        if self.transaction.is_some() {
+            return invalid_context(
+                "transaction",
+                "must be closed before resetting the context for another turn",
+            );
+        }
+        self.access.clear();
+        self.budget.used_steps = 0;
+        self.budget.used_bytes = 0;
+        self.budget.used_items = 0;
+        self.budget.used_messages = 0;
+        self.events.clear();
+        Ok(())
+    }
+
     pub fn is_runtime_subject(&self) -> bool {
         self.subject == format!("runtime:{}", self.runtime)
     }
@@ -1217,5 +1238,62 @@ mod tests {
 
         assert_eq!(events.len(), 1);
         assert!(context.events.is_empty());
+    }
+
+    #[test]
+    fn next_turn_reset_preserves_identity_and_limits_but_clears_turn_state() {
+        use crate::event::RuntimeEventKind;
+
+        let mut context = RuntimeContextBuilder::new(RuntimeId(1))
+            .subject("repl")
+            .module_version(ModuleVersionId(2))
+            .budget(
+                ResourceBudget::default()
+                    .with_max_steps(10)
+                    .with_max_bytes(20)
+                    .with_max_items(30)
+                    .with_max_messages(40),
+            )
+            .build()
+            .unwrap();
+        context.charge_steps(3).unwrap();
+        context.charge_bytes(4).unwrap();
+        context.charge_items(5).unwrap();
+        context.charge_messages(6).unwrap();
+        context.record_read(ObjectId(7));
+        context.record_write(ObjectId(8));
+        context.push_event(RuntimeEvent::new(
+            EventId(9),
+            0,
+            RuntimeEventKind::RuntimeError {
+                message: "previous turn".to_string(),
+            },
+        ));
+
+        context.reset_for_next_turn().unwrap();
+
+        assert_eq!(context.subject(), "repl");
+        assert_eq!(context.module_version(), Some(ModuleVersionId(2)));
+        assert_eq!(context.budget.max_steps, Some(10));
+        assert_eq!(context.budget.max_bytes, Some(20));
+        assert_eq!(context.budget.max_items, Some(30));
+        assert_eq!(context.budget.max_messages, Some(40));
+        assert_eq!(context.budget.used_steps, 0);
+        assert_eq!(context.budget.used_bytes, 0);
+        assert_eq!(context.budget.used_items, 0);
+        assert_eq!(context.budget.used_messages, 0);
+        assert!(context.access.is_empty());
+        assert!(context.events().is_empty());
+    }
+
+    #[test]
+    fn next_turn_reset_rejects_an_open_transaction() {
+        let mut context =
+            RuntimeContext::new(RuntimeId(1), "repl").with_transaction(TransactionId(2));
+
+        let error = context.reset_for_next_turn().unwrap_err();
+
+        assert_eq!(error.kind_name(), "InvalidRuntimeContext");
+        assert_eq!(context.transaction_id(), Some(TransactionId(2)));
     }
 }

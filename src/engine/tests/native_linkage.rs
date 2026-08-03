@@ -23,8 +23,9 @@ fn variable_define_f64_installer_preserves_id_and_rejects_duplicates() {
 
     let catalog = builder.build().unwrap();
     assert_eq!(catalog.runtime_factory_count(), 1);
+    let expected_id = RuntimeFunctionId::from_raw(EXPECTED_ID);
     let entry = catalog
-        .runtime_entry(RuntimeFunctionId::from_raw(EXPECTED_ID))
+        .runtime_entry(expected_id)
         .expect("the exact installer must insert its one factory");
     assert_eq!(entry.name, "VariableDefineF64");
 }
@@ -51,8 +52,9 @@ fn variadic_horzcat_f64_installer_preserves_id_and_rejects_duplicates() {
 
     let catalog = builder.build().unwrap();
     assert_eq!(catalog.runtime_factory_count(), 1);
+    let expected_id = RuntimeFunctionId::from_raw(EXPECTED_ID);
     let entry = catalog
-        .runtime_entry(RuntimeFunctionId::from_raw(EXPECTED_ID))
+        .runtime_entry(expected_id)
         .expect("the exact installer must insert its one factory");
     assert_eq!(entry.name, "HorizontalConcatenateRDN<f64>");
 }

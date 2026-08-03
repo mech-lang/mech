@@ -60,7 +60,10 @@ impl MechRuntime {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        BTreeMap, ExecutionResourceRequest, LiveRegistrationMode, MechRuntime, ResourceDelivery,
+        ResourceIntent, RuntimeExecutionMode, RuntimeHostInputSource,
+    };
     use mech_core::{Ref, Value};
 
     fn live_read_request() -> ExecutionResourceRequest {

@@ -134,8 +134,9 @@ mod tests {
         let catalog = generated_catalog();
         assert_eq!(catalog.runtime_factory_count(), EXPECTED.len());
         for (name, id) in EXPECTED {
+            let runtime_id = RuntimeFunctionId::from_raw(id);
             let entry = catalog
-                .runtime_entry(RuntimeFunctionId::from_raw(id))
+                .runtime_entry(runtime_id)
                 .unwrap_or_else(|| panic!("generated catalog omitted {name}"));
             assert_eq!(entry.name, name);
             assert_eq!(RuntimeFunctionId::from_name(name).raw(), id);

@@ -57,7 +57,8 @@ fn analyze_runtime_entry(
     required_id: RuntimeFunctionId,
     entry: &RuntimeFunctionEntry,
 ) -> MResult<PlannedRuntimeFunction> {
-    let name_id = RuntimeFunctionId::from_raw(hash_str(&entry.name));
+    let raw_name_id = hash_str(&entry.name);
+    let name_id = RuntimeFunctionId::from_raw(raw_name_id);
     if name_id != required_id || entry.id != required_id {
         return Err(native_build_error(
             NativeBuildErrorKind::NativeRuntimeFunctionNameMismatch {

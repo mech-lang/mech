@@ -9,6 +9,7 @@ use mech_core::{
     MechExecutionServices, ParsedProgram, Ref, ValRef, Value,
 };
 use mech_engine::{MechProgram, MechProgramConfig};
+use nalgebra::DMatrix;
 
 #[derive(Default)]
 struct RecordingExecutionServices {
@@ -181,11 +182,15 @@ fn phase1_scalar_constants_round_trip_through_source_compilation() -> MResult<()
 }
 
 #[test]
-fn fixed_f64_matrix_add_round_trips() -> MResult<()> {
+fn dynamic_f64_matrix_add_round_trips() -> MResult<()> {
     let (_, value) = run_compiled_source("[1 2; 3 4] + [5 6; 7 8]")?;
     assert_eq!(
         value,
-        Value::MatrixF64(Matrix::from_vec(vec![6.0, 10.0, 8.0, 12.0], 2, 2)),
+        Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_vec(
+            2,
+            2,
+            vec![6.0, 10.0, 8.0, 12.0],
+        )))),
     );
     Ok(())
 }

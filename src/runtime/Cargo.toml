@@ -192,6 +192,7 @@ host_delegation_signing = ["host_delegation", "dep:ed25519-dalek", "dep:rand_cor
 [dev-dependencies]
 criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
 mech-host-cli = { path = "../../hosts/cli", features = ["provider"] }
+mech-native-live-host-fixture = { path = "../../tests/fixtures/native-live-host" }
 serde_json = "1.0.150"
 trybuild = "1.0.118"
 

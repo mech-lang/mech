@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 use std::path::{Component, Path, PathBuf};
 
 use mech_core::MResult;
+use toml_edit::{Array, ArrayOfTables, DocumentMut, InlineTable, Item, Table, Value, value};
 
 use crate::dependency::validate_exact_registry_version;
 use crate::error::{NativeBuildErrorKind, native_build_error};
@@ -137,6 +138,100 @@ impl NativeProjectManifest {
             dependencies,
         })
     }
+}
+
+/// Render a generated Cargo manifest through `toml_edit` in deterministic
+/// insertion order. No request-controlled value is interpolated into TOML
+/// source directly.
+pub fn render_native_project_manifest(manifest: &NativeProjectManifest) -> MResult<String> {
+    let mut document = DocumentMut::new();
+
+    let mut package = Table::new();
+    package.insert("name", value(&manifest.package_name));
+    package.insert("version", value("0.0.0"));
+    package.insert("edition", value("2024"));
+    package.insert("publish", value(false));
+    document.insert("package", Item::Table(package));
+
+    // An explicit empty workspace prevents Cargo from treating this generated
+    // package as a member of the source workspace that contains it.
+    document.insert("workspace", Item::Table(Table::new()));
+
+    let mut binary = Table::new();
+    binary.insert("name", value(&manifest.binary_name));
+    binary.insert("path", value("src/main.rs"));
+    let mut binaries = ArrayOfTables::new();
+    binaries.push(binary);
+    document.insert("bin", Item::ArrayOfTables(binaries));
+
+    let mut dependencies = Table::new();
+    for dependency in &manifest.dependencies {
+        let mut specification = InlineTable::new();
+        specification.insert("package", Value::from(dependency.package.clone()));
+        match &dependency.source {
+            GeneratedDependencySource::Registry { exact_version } => {
+                specification.insert("version", Value::from(exact_version.clone()));
+            }
+            GeneratedDependencySource::Workspace { relative_path } => {
+                specification.insert("path", Value::from(relative_path.clone()));
+            }
+        }
+        specification.insert("default-features", Value::from(false));
+        let mut features = Array::new();
+        for feature in &dependency.cargo_features {
+            features.push(feature.as_str());
+        }
+        specification.insert("features", Value::Array(features));
+        specification.fmt();
+        dependencies.insert(
+            &dependency.crate_name,
+            Item::Value(Value::InlineTable(specification)),
+        );
+    }
+    document.insert("dependencies", Item::Table(dependencies));
+
+    // Workspace packages depend on one another by version. Patch each selected
+    // package to the same relative source used by the generated application's
+    // direct dependency so Cargo never resolves a second registry copy of a
+    // Mech crate (which would also make shared public types incompatible).
+    let mut patches = Table::new();
+    for dependency in &manifest.dependencies {
+        let GeneratedDependencySource::Workspace { relative_path } = &dependency.source else {
+            continue;
+        };
+        let mut specification = InlineTable::new();
+        specification.insert("path", Value::from(relative_path.clone()));
+        specification.fmt();
+        patches.insert(
+            &dependency.package,
+            Item::Value(Value::InlineTable(specification)),
+        );
+    }
+    if !patches.is_empty() {
+        // `mech-engine` and `mech-runtime` use weak `mech-syntax?/feature`
+        // forwarding. Cargo must still inspect that optional package to resolve
+        // the feature graph, even though runtime/native-link does not activate
+        // it. Point resolution at the workspace copy so offline generation does
+        // not fetch a registry archive. This patch does not add a dependency.
+        let mut syntax = InlineTable::new();
+        syntax.insert(
+            "path",
+            Value::from(generated_dependency_path("src/syntax")?),
+        );
+        syntax.fmt();
+        patches.insert("mech-syntax", Item::Value(Value::InlineTable(syntax)));
+    }
+    if !patches.is_empty() {
+        let mut crates_io = Table::new();
+        crates_io.insert("crates-io", Item::Table(patches));
+        document.insert("patch", Item::Table(crates_io));
+    }
+
+    let mut rendered = document.to_string();
+    if !rendered.ends_with('\n') {
+        rendered.push('\n');
+    }
+    Ok(rendered)
 }
 
 /// Validate the exact Phase 1 binary-name grammar.
@@ -369,5 +464,42 @@ mod tests {
                     .is_err()
             );
         }
+    }
+
+    #[test]
+    fn manifest_rendering_is_toml_edit_backed_and_deterministic() {
+        let manifest = NativeProjectManifest::new(
+            "phase1-app",
+            "phase1-app",
+            vec![
+                GeneratedDependency::registry(
+                    "mech-math",
+                    "mech_math",
+                    "0.3.5",
+                    ["runtime", "add", "f64", "native-link"],
+                )
+                .unwrap(),
+                GeneratedDependency::workspace(
+                    "mech-core",
+                    "mech_core",
+                    "src/core",
+                    ["f64", "program"],
+                )
+                .unwrap(),
+            ],
+        )
+        .unwrap();
+
+        let first = render_native_project_manifest(&manifest).unwrap();
+        let second = render_native_project_manifest(&manifest).unwrap();
+        assert_eq!(first, second);
+        first.parse::<DocumentMut>().unwrap();
+        assert!(first.contains("[workspace]"));
+        assert!(first.contains("version = \"=0.3.5\""));
+        assert!(first.contains("path = \"../../../../src/core\""));
+        assert!(first.contains("[patch.crates-io]"));
+        assert!(first.contains("mech-core = { path = \"../../../../src/core\" }"));
+        assert!(first.contains("default-features = false"));
+        assert!(first.contains("features = [\"add\", \"f64\", \"native-link\", \"runtime\"]"));
     }
 }

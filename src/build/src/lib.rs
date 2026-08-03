@@ -189,30 +189,70 @@ impl NativeApplicationBuilder {
 
     pub fn generate(
         &self,
-        _request: &NativeBuildRequest,
-        _plan: &NativeBuildPlan,
+        request: &NativeBuildRequest,
+        plan: &NativeBuildPlan,
     ) -> MResult<GeneratedNativeProject> {
-        Err(error::native_build_error(
-            error::NativeBuildErrorKind::NativeProjectInvalid {
-                reason: "native project generation is not available before the Phase 1 vertical-slice commit"
-                    .to_owned(),
-            },
-            None,
-        ))
+        let expected = self.plan(request)?;
+        if &expected != plan {
+            return Err(error::native_build_error(
+                error::NativeBuildErrorKind::NativeProjectInvalid {
+                    reason: "native build request and plan do not describe the same application"
+                        .to_owned(),
+                },
+                None,
+            ));
+        }
+
+        let workspace_root = match &self.environment.dependency_source {
+            NativeDependencySource::Workspace { root } => root.clone(),
+            NativeDependencySource::Registry { .. } => {
+                std::env::current_dir().map_err(|error| {
+                    error::native_build_error(
+                        error::NativeBuildErrorKind::NativeProjectInvalid {
+                            reason: format!("failed to resolve the native project root: {error}"),
+                        },
+                        None,
+                    )
+                })?
+            }
+        };
+        let root = project::generated_project_root(&workspace_root, &plan.plan_sha256)?;
+        let project = project::render_generated_native_project(root, request, plan)?;
+        project.materialize()?;
+        cargo::generate_project_lockfile(&project, request.offline)?;
+        Ok(project)
     }
 
     pub fn build(
         &self,
-        _request: &NativeBuildRequest,
-        _plan: &NativeBuildPlan,
+        request: &NativeBuildRequest,
+        plan: &NativeBuildPlan,
     ) -> MResult<NativeBuildArtifact> {
-        Err(error::native_build_error(
-            error::NativeBuildErrorKind::NativeCargoFailed {
-                reason: "native Cargo execution is not available before the Phase 1 vertical-slice commit"
-                    .to_owned(),
-            },
-            None,
-        ))
+        let project = self.generate(request, plan)?;
+
+        let workspace_root = match &self.environment.dependency_source {
+            NativeDependencySource::Workspace { root } => root.clone(),
+            NativeDependencySource::Registry { .. } => {
+                std::env::current_dir().map_err(|error| {
+                    error::native_build_error(
+                        error::NativeBuildErrorKind::NativeCargoFailed {
+                            reason: format!(
+                                "failed to resolve the shared Cargo target root: {error}"
+                            ),
+                        },
+                        None,
+                    )
+                })?
+            }
+        };
+        cargo::build_native_project(
+            &project,
+            &plan.binary_name,
+            plan.target.as_deref(),
+            &project::shared_cargo_target_root(&workspace_root),
+            plan.profile == NativeBuildProfile::Release,
+            request.offline,
+        )
     }
 }
 

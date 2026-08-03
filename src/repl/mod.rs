@@ -2,7 +2,7 @@ use crate::*;
 use mech_core::*;
 use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 #[cfg(feature = "run")]
-use mech_runtime::{FS_LIST, MECH_TOOL_SUBJECT, MechRuntime, fs_request};
+use mech_runtime::{FS_LIST, MECH_TOOL_SUBJECT, MechRuntime, RuntimeContext, fs_request};
 use nom::{
     IResult,
     branch::alt,
@@ -34,6 +34,8 @@ pub struct MechRepl {
     pub programs: HashMap<u64, MechProgram>,
     #[cfg(feature = "run")]
     runtime: Option<MechRuntime>,
+    #[cfg(feature = "run")]
+    runtime_context: Option<RuntimeContext>,
 }
 
 fn repl_error(msg: impl Into<String>) -> MechError {
@@ -101,6 +103,8 @@ impl MechRepl {
             examples: EXAMPLES_DIR.clone(),
             #[cfg(feature = "run")]
             runtime: None,
+            #[cfg(feature = "run")]
+            runtime_context: None,
         }
     }
 
@@ -115,6 +119,8 @@ impl MechRepl {
             programs,
             #[cfg(feature = "run")]
             runtime: None,
+            #[cfg(feature = "run")]
+            runtime_context: None,
         }
     }
 
@@ -126,6 +132,28 @@ impl MechRepl {
             active: 0,
             programs: HashMap::new(),
             runtime: Some(runtime),
+            runtime_context: None,
+        }
+    }
+
+    #[cfg(feature = "run")]
+    fn runtime_with_next_turn_context(
+        &mut self,
+    ) -> MResult<(&mut MechRuntime, &mut RuntimeContext)> {
+        if let Some(context) = self.runtime_context.as_mut() {
+            context.reset_for_next_turn()?;
+        } else {
+            let context = self
+                .runtime
+                .as_ref()
+                .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?
+                .runtime_context()?;
+            self.runtime_context = Some(context);
+        }
+
+        match (&mut self.runtime, &mut self.runtime_context) {
+            (Some(runtime), Some(context)) => Ok((runtime, context)),
+            _ => Err(repl_error("runtime-backed REPL lost its runtime context")),
         }
     }
 
@@ -469,30 +497,24 @@ impl MechRepl {
                 Ok(String::new())
             }
             ReplCommand::Load(paths) => {
-                let runtime = self
-                    .runtime
-                    .as_mut()
-                    .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
                 let mut result = mech_runtime::RuntimeValueSnapshot::empty();
                 for source_path in paths {
                     let request = runtime_repl_load_request(&source_path)?;
-                    let (value, _events) = crate::cli::run::run_cli_root_module_with_events(
-                        runtime,
+                    let (runtime, context) = self.runtime_with_next_turn_context()?;
+                    result = runtime.resolve_and_run_root_module_with_context(
+                        context,
                         request,
                         crate::cli::run::cli_module_options(),
                     )?;
-                    result = value;
                 }
                 Ok(format!("\n{}\n{}\n", result.kind(), result))
             }
             ReplCommand::Code(code) => {
-                let runtime = self
-                    .runtime
-                    .as_mut()
-                    .ok_or_else(|| repl_error("runtime-backed REPL lost its runtime"))?;
                 let mut result = mech_runtime::RuntimeValueSnapshot::empty();
                 for (_, source) in code {
-                    result = runtime.run_string(&source.to_string())?;
+                    let source = source.to_string();
+                    let (runtime, context) = self.runtime_with_next_turn_context()?;
+                    result = runtime.run_string_with_context(context, &source)?;
                 }
                 let kind_formatted = format!("{}", result.kind()).ansi_color(218);
                 Ok(format!("\n{}\n{}\n", kind_formatted, result))

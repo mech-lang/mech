@@ -298,6 +298,10 @@ def verify_feature_graph(feature: str) -> None:
         "mech-bytecode v",
         "mech-syntax v",
     ]
+    if feature in {"installers", "owner-native-link"} or feature.startswith(
+        "installer-"
+    ):
+        forbidden.append('feature "native-plan"')
     for marker in forbidden:
         if marker in graph:
             raise ContractError(
@@ -547,12 +551,19 @@ def build_report(mode: str) -> tuple[dict[str, Any], int]:
     return report, missing_count
 
 
-def write_report(report: dict[str, Any]) -> None:
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text(
-        json.dumps(report, indent=2, sort_keys=False) + "\n",
-        encoding="utf-8",
-    )
+def check_or_write_report(report: dict[str, Any], mode: str) -> None:
+    rendered = json.dumps(report, indent=2, sort_keys=False) + "\n"
+    if mode == "report":
+        REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        REPORT_PATH.write_text(rendered, encoding="utf-8")
+        return
+    if not REPORT_PATH.is_file():
+        raise ContractError(f"committed coverage report is missing: {REPORT_PATH}")
+    if REPORT_PATH.read_text(encoding="utf-8") != rendered:
+        raise ContractError(
+            "committed coverage report is stale; regenerate with "
+            "check-native-linkage-coverage.py report"
+        )
 
 
 def verify_installers() -> None:
@@ -597,14 +608,15 @@ def main() -> int:
                 verify_feature_graph(feature)
 
         report, missing_count = build_report(mode)
-        write_report(report)
+        check_or_write_report(report, mode)
         print(
             "native linkage coverage: "
             f"{report['standard_runtime']['linked_entry_count']} linked standard entries, "
             f"{missing_count} missing, "
             f"{len(report['selected_representative_contracts'])} selected representatives"
         )
-        print(f"wrote {REPORT_PATH.relative_to(REPOSITORY_ROOT)}")
+        report_action = "wrote" if mode == "report" else "validated"
+        print(f"{report_action} {REPORT_PATH.relative_to(REPOSITORY_ROOT)}")
 
         if mode == "strict" and missing_count:
             print(

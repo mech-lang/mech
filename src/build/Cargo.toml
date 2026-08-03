@@ -15,11 +15,11 @@ standard-hosts = ["dep:mech-host-cli"]
 mech-core = { version = "0.3.5", default-features = false, features = ["native-plan", "program", "serde"] }
 mech-runtime = { version = "0.3.5", default-features = false, features = ["runtime", "serde", "string"] }
 mech-host-cli = { version = "0.3.5", default-features = false, features = ["provider"], optional = true }
+cargo_metadata = "0.23"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
+toml_edit = "0.23"
 
 [dev-dependencies]
-mech-engine = { version = "0.3.5", default-features = false, features = ["native-plan", "bool", "f64", "string", "variable_define", "matrix_horzcat", "matrixd"] }
-mech-math = { version = "0.3.5", default-features = false, features = ["native-plan", "add", "f64", "matrix2", "matrixd"] }
 tempfile = "3"

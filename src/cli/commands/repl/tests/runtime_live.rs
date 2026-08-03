@@ -91,6 +91,21 @@ impl RuntimeResourceProvider for TestProvider {
         vec![TEST_BASE_URI.to_string()]
     }
 
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        if request.base_uri == TEST_BASE_URI && request.path == TEST_PATH {
+            return Ok(Value::F64(Ref::new(0.0)));
+        }
+        Err(MechError::new(
+            GenericError {
+                msg: format!(
+                    "unexpected test provider planning read: {}/{}",
+                    request.base_uri, request.path,
+                ),
+            },
+            None,
+        ))
+    }
+
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if request.base_uri == TEST_BASE_URI && request.path == TEST_PATH {
             return Ok(Value::F64(Ref::new(1.0)));

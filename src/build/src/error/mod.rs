@@ -34,6 +34,9 @@ pub enum NativeBuildErrorKind {
     NativeRuntimeConfigDuplicateHostInstance {
         instance: String,
     },
+    NativeRuntimeConfigUnsupported {
+        reason: String,
+    },
     NativeHostInstanceUnknown {
         instance: String,
     },
@@ -122,6 +125,7 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeRuntimeConfigDuplicateHostInstance { .. } => {
                 "NativeRuntimeConfigDuplicateHostInstance"
             }
+            Self::NativeRuntimeConfigUnsupported { .. } => "NativeRuntimeConfigUnsupported",
             Self::NativeHostInstanceUnknown { .. } => "NativeHostInstanceUnknown",
             Self::NativeHostProviderUnknown { .. } => "NativeHostProviderUnknown",
             Self::NativeResourceOwnerAmbiguous { .. } => "NativeResourceOwnerAmbiguous",
@@ -168,6 +172,9 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeRuntimeConfigDuplicateHostInstance { instance } => format!(
                 "native runtime configuration contains duplicate host instance `{instance}`"
             ),
+            Self::NativeRuntimeConfigUnsupported { reason } => {
+                format!("native runtime configuration is unsupported in Phase 1: {reason}")
+            }
             Self::NativeHostInstanceUnknown { instance } => {
                 format!("native host instance `{instance}` is not configured")
             }

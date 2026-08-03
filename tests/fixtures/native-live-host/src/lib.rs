@@ -1,0 +1,298 @@
+#![forbid(unsafe_code)]
+
+use std::collections::BTreeMap;
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, AtomicUsize, Ordering},
+};
+
+use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
+use mech_runtime::{
+    ConfigValue, HostContextManifest, HostManifestConfig, MaterializedHostInterface,
+    RuntimeHostFactory, RuntimeHostInput, RuntimeHostInputDriver, RuntimeHostInputSource,
+    RuntimeHostInputValue, RuntimeHostInstallation, RuntimeIngress, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, materialize_host_manifest,
+};
+
+pub const TEST_LIVE_PROVIDER: &str = "test-live";
+pub const TEST_LIVE_INSTANCE: &str = "clock";
+pub const TEST_LIVE_CONTEXT: &str = "clock";
+pub const TEST_LIVE_BASE_URI: &str = "test-live://clock/clock";
+pub const TEST_LIVE_PATH: &str = "value";
+
+pub fn test_live_manifest() -> MResult<HostManifestConfig> {
+    Ok(HostManifestConfig {
+        provider: TEST_LIVE_PROVIDER.to_owned(),
+        contexts: vec![HostContextManifest {
+            name: TEST_LIVE_CONTEXT.to_owned(),
+            base_uri_template: "test-live://{instance}/clock".to_owned(),
+            operations: vec!["read".to_owned()],
+        }],
+    })
+}
+
+pub fn empty_settings() -> ConfigValue {
+    ConfigValue::Map(BTreeMap::new())
+}
+
+#[derive(Debug, Default)]
+struct DriverState {
+    ingress: Mutex<Option<RuntimeIngress>>,
+    attached: AtomicBool,
+    live: AtomicBool,
+    attach_count: AtomicUsize,
+    start_count: AtomicUsize,
+    stop_count: AtomicUsize,
+    submit_count: AtomicUsize,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct TestLiveDriverHandle {
+    state: Arc<DriverState>,
+}
+
+impl TestLiveDriverHandle {
+    pub fn is_attached(&self) -> bool {
+        self.state.attached.load(Ordering::SeqCst)
+    }
+
+    pub fn is_live(&self) -> bool {
+        self.state.live.load(Ordering::SeqCst)
+    }
+
+    pub fn attach_count(&self) -> usize {
+        self.state.attach_count.load(Ordering::SeqCst)
+    }
+
+    pub fn start_count(&self) -> usize {
+        self.state.start_count.load(Ordering::SeqCst)
+    }
+
+    pub fn stop_count(&self) -> usize {
+        self.state.stop_count.load(Ordering::SeqCst)
+    }
+
+    pub fn submit_count(&self) -> usize {
+        self.state.submit_count.load(Ordering::SeqCst)
+    }
+
+    pub fn submit(&self, value: f64) -> MResult<()> {
+        if !self.is_live() {
+            return Err(error(
+                "TestLiveDriverNotLive",
+                "test-live input driver must be started before submission",
+            ));
+        }
+        let ingress = self
+            .state
+            .ingress
+            .lock()
+            .map_err(|_| {
+                error(
+                    "TestLiveDriverUnavailable",
+                    "test-live ingress lock poisoned",
+                )
+            })?
+            .clone()
+            .ok_or_else(|| {
+                error(
+                    "TestLiveDriverNotAttached",
+                    "test-live input driver has no ingress attachment",
+                )
+            })?;
+        ingress.submit(RuntimeHostInput::single(
+            test_live_source()?,
+            RuntimeHostInputValue::F64(value),
+        ))?;
+        self.state.submit_count.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
+}
+
+pub fn test_live_source() -> MResult<RuntimeHostInputSource> {
+    RuntimeHostInputSource::new(TEST_LIVE_BASE_URI, TEST_LIVE_PATH)
+}
+
+#[derive(Clone, Debug)]
+pub struct TestLiveInputDriver {
+    handle: TestLiveDriverHandle,
+}
+
+impl TestLiveInputDriver {
+    fn new(handle: TestLiveDriverHandle) -> Self {
+        Self { handle }
+    }
+}
+
+impl RuntimeHostInputDriver for TestLiveInputDriver {
+    fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+        source.base_uri() == TEST_LIVE_BASE_URI && source.path() == TEST_LIVE_PATH
+    }
+
+    fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
+        let mut attached = self.handle.state.ingress.lock().map_err(|_| {
+            error(
+                "TestLiveDriverUnavailable",
+                "test-live ingress lock poisoned",
+            )
+        })?;
+        if attached.is_some() {
+            return Err(error(
+                "TestLiveDriverAlreadyAttached",
+                "test-live input driver is already attached",
+            ));
+        }
+        *attached = Some(ingress);
+        self.handle.state.attached.store(true, Ordering::SeqCst);
+        self.handle
+            .state
+            .attach_count
+            .fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
+
+    fn start(&mut self) -> MResult<()> {
+        if !self.handle.is_attached() {
+            return Err(error(
+                "TestLiveDriverNotAttached",
+                "test-live input driver must be attached before start",
+            ));
+        }
+        if !self.handle.state.live.swap(true, Ordering::SeqCst) {
+            self.handle.state.start_count.fetch_add(1, Ordering::SeqCst);
+        }
+        Ok(())
+    }
+
+    fn stop(&mut self) -> MResult<()> {
+        if self.handle.state.live.swap(false, Ordering::SeqCst) {
+            self.handle.state.stop_count.fetch_add(1, Ordering::SeqCst);
+        }
+        Ok(())
+    }
+
+    fn is_live(&self) -> bool {
+        self.handle.is_live()
+    }
+}
+
+#[derive(Debug)]
+struct TestLiveResourceProvider;
+
+impl TestLiveResourceProvider {
+    fn planned_value(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        if request.base_uri != TEST_LIVE_BASE_URI
+            || request.path != TEST_LIVE_PATH
+            || request.context_name != TEST_LIVE_CONTEXT
+        {
+            return Err(error(
+                "TestLiveResourceUnknown",
+                format!(
+                    "unsupported test-live resource {} / {} ({})",
+                    request.base_uri, request.path, request.context_name,
+                ),
+            ));
+        }
+        Ok(Value::F64(Ref::new(0.0)))
+    }
+}
+
+impl RuntimeResourceProvider for TestLiveResourceProvider {
+    fn scheme(&self) -> &str {
+        TEST_LIVE_PROVIDER
+    }
+
+    fn base_uris(&self) -> Vec<String> {
+        vec![TEST_LIVE_BASE_URI.to_owned()]
+    }
+
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        self.planned_value(request)
+    }
+
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        self.planned_value(request)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct TestLiveHostFactory {
+    manifest: HostManifestConfig,
+    driver: TestLiveDriverHandle,
+}
+
+impl TestLiveHostFactory {
+    pub fn new() -> MResult<(Self, TestLiveDriverHandle)> {
+        let driver = TestLiveDriverHandle::default();
+        Ok((
+            Self {
+                manifest: test_live_manifest()?,
+                driver: driver.clone(),
+            },
+            driver,
+        ))
+    }
+
+    fn interface(&self, instance_name: &str) -> MResult<MaterializedHostInterface> {
+        materialize_host_manifest(instance_name, &self.manifest)
+    }
+}
+
+impl RuntimeHostFactory for TestLiveHostFactory {
+    fn provider_name(&self) -> &str {
+        TEST_LIVE_PROVIDER
+    }
+
+    fn manifest(&self) -> &HostManifestConfig {
+        &self.manifest
+    }
+
+    fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
+        match settings {
+            ConfigValue::Map(settings) if settings.is_empty() => Ok(()),
+            _ => Err(error(
+                "TestLiveSettingsInvalid",
+                "test-live settings must be an empty map",
+            )),
+        }
+    }
+
+    fn instantiate(
+        &self,
+        instance_name: &str,
+        settings: &ConfigValue,
+    ) -> MResult<RuntimeHostInstallation> {
+        self.validate_settings(instance_name, settings)?;
+        Ok(RuntimeHostInstallation {
+            interface: self.interface(instance_name)?,
+            resource_providers: vec![Box::new(TestLiveResourceProvider)],
+            input_drivers: vec![Box::new(TestLiveInputDriver::new(self.driver.clone()))],
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
+struct TestLiveHostError {
+    name: &'static str,
+    message: String,
+}
+
+impl MechErrorKind for TestLiveHostError {
+    fn name(&self) -> &str {
+        self.name
+    }
+
+    fn message(&self) -> String {
+        self.message.clone()
+    }
+}
+
+fn error(name: &'static str, message: impl Into<String>) -> MechError {
+    MechError::new(
+        TestLiveHostError {
+            name,
+            message: message.into(),
+        },
+        None,
+    )
+}

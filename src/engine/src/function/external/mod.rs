@@ -29,7 +29,7 @@ pub(super) fn compile_external_value(
     value: &Value,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
-    let pointer = external_value_pointer(value, value as *const Value as usize);
+    let pointer = external_value_pointer(value, std::ptr::from_ref(value).addr());
     let (register, initialize) = context.register_for_ptr_with_initialization_status(pointer);
     if initialize {
         let constant = compile_external_constant(value, context)?;

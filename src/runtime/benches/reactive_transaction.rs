@@ -64,6 +64,21 @@ impl RuntimeResourceProvider for BenchInputProvider {
             None,
         ))
     }
+
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        if request.base_uri == INPUT_BASE_URI && request.path == INPUT_PATH {
+            return Ok(Value::F64(Ref::new(0.0)));
+        }
+        Err(MechError::new(
+            GenericError {
+                msg: format!(
+                    "missing benchmark planning input {} / {}",
+                    request.base_uri, request.path,
+                ),
+            },
+            None,
+        ))
+    }
 }
 
 #[derive(Debug)]
