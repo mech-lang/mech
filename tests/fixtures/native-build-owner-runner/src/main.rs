@@ -30,6 +30,7 @@ struct RunnerResult {
     build_plan_json: Option<String>,
     catalog_source: Option<String>,
     runtime_source: Option<String>,
+    executable: Option<PathBuf>,
     stdout: Option<String>,
     poisoned_output_seed: bool,
     poisoned_output_seed_count: usize,
@@ -38,9 +39,9 @@ struct RunnerResult {
 fn main() -> AppResult<()> {
     let arguments = env::args().skip(1).collect::<Vec<_>>();
     let [action, case, bytecode_path, binary_name, poison] = arguments.as_slice() else {
-        return Err("usage: native-build-owner-runner <plan|generate|build> <case> <bytecode> <binary> <raw|poison>".into());
+        return Err("usage: native-build-owner-runner <plan|generate|build|build-only> <case> <bytecode> <binary> <raw|poison>".into());
     };
-    if action != "plan" && action != "generate" && action != "build" {
+    if action != "plan" && action != "generate" && action != "build" && action != "build-only" {
         return Err(format!("unknown runner action `{action}`").into());
     }
     if poison != "raw" && poison != "poison" {
@@ -77,11 +78,12 @@ fn main() -> AppResult<()> {
         build_plan_json: None,
         catalog_source: None,
         runtime_source: None,
+        executable: None,
         stdout: None,
         poisoned_output_seed,
         poisoned_output_seed_count,
     };
-    if action == "generate" || action == "build" {
+    if action == "generate" || action == "build" || action == "build-only" {
         let project = builder
             .generate(&request, &result.plan)
             .map_err(|error| mech_error("native project generation", error))?;
@@ -91,11 +93,20 @@ fn main() -> AppResult<()> {
         result.catalog_source = project.sources.get("src/catalog.rs").cloned();
         result.runtime_source = project.sources.get("src/runtime.rs").cloned();
     }
-    if action == "build" {
+    if action == "build" || action == "build-only" {
         let artifact = builder
             .build(&request, &result.plan)
             .map_err(|error| mech_error("native project build", error))?;
-        let output = Command::new(artifact.executable()).output()?;
+        result.executable = Some(artifact.executable().to_owned());
+        if action == "build-only" {
+            serde_json::to_writer(std::io::stdout(), &result)?;
+            return Ok(());
+        }
+        let mut command = Command::new(artifact.executable());
+        if case.ends_with("-once") {
+            command.arg("--once");
+        }
+        let output = command.output()?;
         if !output.status.success() {
             return Err(format!(
                 "generated binary failed with {}: stdout={} stderr={}",
@@ -125,7 +136,7 @@ fn request(
 ) -> NativeBuildRequest {
     NativeBuildRequest {
         bytecode,
-        runtime_config: (case == "cli").then(cli_runtime_config),
+        runtime_config: runtime_config(case),
         target: None,
         profile: NativeBuildProfile::Debug,
         binary_name: binary_name.to_owned(),
@@ -135,6 +146,85 @@ fn request(
         emit: NativeEmit::Native,
         keep_project: true,
         offline: true,
+    }
+}
+
+fn runtime_config(case: &str) -> Option<NativeRuntimeConfig> {
+    match case {
+        "cli" => Some(cli_runtime_config()),
+        "console" => Some(single_host_runtime_config(
+            "console",
+            "console",
+            ConfigValue::Map(BTreeMap::new()),
+            "console/output",
+            &["write"],
+            &["line"],
+        )),
+        "time-once" => Some(single_host_runtime_config(
+            "clock",
+            "time",
+            ConfigValue::Map(BTreeMap::new()),
+            "clock/clock",
+            &["read"],
+            &["second"],
+        )),
+        "timer-once" => Some(single_host_runtime_config(
+            "timer",
+            "timer",
+            ConfigValue::Map(BTreeMap::new()),
+            "timer/tick",
+            &["read"],
+            &["tick"],
+        )),
+        "scene" => Some(single_host_runtime_config(
+            "scene",
+            "scene",
+            ConfigValue::Map(BTreeMap::from([
+                (
+                    "renderer".to_owned(),
+                    ConfigValue::String("canvas".to_owned()),
+                ),
+                (
+                    "selector".to_owned(),
+                    ConfigValue::String("#scene".to_owned()),
+                ),
+            ])),
+            "scene/frame",
+            &["write"],
+            &["replace"],
+        )),
+        "robot-arm" => Some(single_host_runtime_config(
+            "arm",
+            "robot-arm",
+            ConfigValue::Map(BTreeMap::new()),
+            "arm/commands",
+            &["move"],
+            &["move"],
+        )),
+        _ => None,
+    }
+}
+
+fn single_host_runtime_config(
+    instance: &str,
+    provider: &str,
+    settings: ConfigValue,
+    target: &str,
+    operations: &[&str],
+    paths: &[&str],
+) -> NativeRuntimeConfig {
+    NativeRuntimeConfig {
+        runtime: RuntimeConfig::new(format!("generated-{provider}-runtime")),
+        hosts: vec![HostInstanceConfig {
+            name: instance.to_owned(),
+            provider: provider.to_owned(),
+            settings,
+        }],
+        run_grants: vec![RunResourceGrantConfig {
+            target: target.to_owned(),
+            operations: operations.iter().map(|value| (*value).to_owned()).collect(),
+            paths: paths.iter().map(|value| (*value).to_owned()).collect(),
+        }],
     }
 }
 
@@ -243,6 +333,26 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
         let output = constants
             .get_mut(usize::try_from(*constant_id)?)
             .ok_or("output seed constant is outside the constant table")?;
+        if matches!(
+            &output.runtime_type,
+            RuntimeType::Set { element, max_len: Some(0) }
+                if **element == RuntimeType::Empty
+        ) {
+            // An empty comprehension has no element from which the compiler
+            // can infer a narrower Set element type. Seed it with a valid,
+            // nonempty Set<f64>; the runtime nullary factory accepts the same
+            // collection kind and must replace it with the calculated empty
+            // set.
+            output.runtime_type = RuntimeType::Set {
+                element: Box::new(RuntimeType::F64),
+                max_len: Some(1),
+            };
+            output.bytes = Vec::with_capacity(16);
+            output.bytes.extend_from_slice(&1_u32.to_le_bytes());
+            output.bytes.extend_from_slice(&8_u32.to_le_bytes());
+            output.bytes.extend_from_slice(&0.0_f64.to_le_bytes());
+            continue;
+        }
         match &output.runtime_type {
             RuntimeType::F64 if output.bytes.len() == 8 => {
                 if output.bytes.iter().all(|byte| *byte == 0) {
@@ -251,8 +361,23 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
                 output.bytes.fill(0);
             }
             RuntimeType::Matrix { element, .. } if **element == RuntimeType::F64 => {
-                if output.bytes.len() < 16 || (output.bytes.len() - 8) % 8 != 0 {
+                if output.bytes.len() < 8 || (output.bytes.len() - 8) % 8 != 0 {
                     return Err("invalid compiler-emitted matrix seed".into());
+                }
+                if output.bytes.len() == 8 {
+                    let rows = u32::from_le_bytes(output.bytes[0..4].try_into()?);
+                    let columns = u32::from_le_bytes(output.bytes[4..8].try_into()?);
+                    if rows != 0 || columns != 0 {
+                        return Err(format!(
+                            "matrix output seed {constant_id} has a non-empty shape but no elements"
+                        )
+                        .into());
+                    }
+                    // A 1x0 dynamic matrix is a valid, kind-compatible but
+                    // deliberately incorrect seed for the calculated 0x0
+                    // nullary-comprehension result.
+                    output.bytes[0..4].copy_from_slice(&1_u32.to_le_bytes());
+                    continue;
                 }
                 if output.bytes[8..].iter().all(|byte| *byte == 0) {
                     return Err(
@@ -260,6 +385,41 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
                     );
                 }
                 output.bytes[8..].fill(0);
+            }
+            RuntimeType::Set { element, max_len }
+                if **element == RuntimeType::F64 && max_len.is_none_or(|limit| limit >= 1) =>
+            {
+                match output.bytes.as_mut_slice() {
+                    bytes if bytes == 0_u32.to_le_bytes() => {
+                        // One f64 element is a valid set with the same runtime
+                        // type, but differs from the empty result the nullary
+                        // comprehension must calculate.
+                        output.bytes = Vec::with_capacity(16);
+                        output.bytes.extend_from_slice(&1_u32.to_le_bytes());
+                        output.bytes.extend_from_slice(&8_u32.to_le_bytes());
+                        output.bytes.extend_from_slice(&0.0_f64.to_le_bytes());
+                    }
+                    bytes
+                        if bytes.len() == 16
+                            && bytes[0..4] == 1_u32.to_le_bytes()
+                            && bytes[4..8] == 8_u32.to_le_bytes() =>
+                    {
+                        if bytes[8..].iter().all(|byte| *byte == 0) {
+                            return Err(format!(
+                                "compiler set output seed {constant_id} was already zero"
+                            )
+                            .into());
+                        }
+                        bytes[8..].fill(0);
+                    }
+                    bytes => {
+                        return Err(format!(
+                            "cannot poison f64 set output seed {constant_id} with {} bytes",
+                            bytes.len()
+                        )
+                        .into());
+                    }
+                }
             }
             runtime_type => {
                 return Err(

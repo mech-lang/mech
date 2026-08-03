@@ -24,6 +24,7 @@ pub enum RunnerAction {
     Plan,
     Generate,
     Build,
+    BuildOnly,
 }
 
 impl RunnerAction {
@@ -32,6 +33,7 @@ impl RunnerAction {
             Self::Plan => "plan",
             Self::Generate => "generate",
             Self::Build => "build",
+            Self::BuildOnly => "build-only",
         }
     }
 }
@@ -44,6 +46,7 @@ pub struct OwnerRunnerResult {
     pub build_plan_json: Option<String>,
     pub catalog_source: Option<String>,
     pub runtime_source: Option<String>,
+    pub executable: Option<PathBuf>,
     pub stdout: Option<String>,
     pub poisoned_output_seed: bool,
     pub poisoned_output_seed_count: usize,
@@ -88,7 +91,7 @@ pub fn run_owner(
         .expect("isolated owner runner must start");
     assert!(
         output.status.success(),
-        "isolated {profile:?} owner runner failed: status={} stdout={} stderr={}",
+        "isolated {profile:?} owner runner failed for {case}: status={} stdout={} stderr={}",
         output.status,
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr),

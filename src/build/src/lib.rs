@@ -9,6 +9,8 @@ pub mod plan;
 pub mod project;
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
+use std::path::Path;
 use std::sync::Arc;
 
 use mech_core::{FunctionCatalog, MResult, ParsedProgram};
@@ -18,6 +20,11 @@ pub use dependency::*;
 pub use host::*;
 pub use plan::*;
 pub use project::*;
+
+/// Exact version used by every component package in a generated registry-mode
+/// native application. The root CLI crate may have a different release
+/// cadence, so it is deliberately never consulted here.
+pub const MECH_COMPONENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Clone)]
 pub struct NativeBuildEnvironment {
@@ -73,6 +80,15 @@ impl NativeApplicationBuilder {
             .iter()
             .cloned()
             .collect::<BTreeSet<_>>();
+        // `mech-engine` retains dynamic row-vector construction through its
+        // matrix-assignment implementation. A program that returns only a
+        // `RowVectorD` therefore still needs this engine-internal closure;
+        // keep it engine-local so the core and runtime type selections remain
+        // the exact bytecode-derived set.
+        if engine_features.contains("row_vectord") {
+            engine_features.insert("bool".to_owned());
+            engine_features.insert("vectord".to_owned());
+        }
         engine_features.insert("runtime".to_owned());
         let mut runtime_features = BTreeSet::new();
         if application_kind == NativeApplicationKind::Hosted {
@@ -298,13 +314,23 @@ fn resolve_packages(
     match source {
         NativeDependencySource::Registry { version } => {
             dependency::validate_exact_registry_version(version)?;
+            if version != MECH_COMPONENT_VERSION {
+                return Err(error::native_build_error(
+                    error::NativeBuildErrorKind::NativeComponentVersionMismatch {
+                        package: "registry selection".to_owned(),
+                        expected: MECH_COMPONENT_VERSION.to_owned(),
+                        actual: version.clone(),
+                    },
+                    None,
+                ));
+            }
             let packages = drafts
                 .into_iter()
                 .map(|(package, draft)| PlannedPackage {
                     package,
                     crate_name: draft.crate_name,
                     source: PlannedPackageSource::Registry {
-                        version: version.clone(),
+                        version: MECH_COMPONENT_VERSION.to_owned(),
                     },
                     cargo_features: draft.features.into_iter().collect(),
                 })
@@ -312,13 +338,14 @@ fn resolve_packages(
             Ok((
                 packages,
                 PlannedDependencySource::Registry {
-                    version: version.clone(),
+                    version: MECH_COMPONENT_VERSION.to_owned(),
                 },
                 None,
             ))
         }
         NativeDependencySource::Workspace { root } => {
             let selected = dependency::resolve_planned_packages(root, drafts.keys())?;
+            validate_component_versions(root, &selected)?;
             let fingerprint = dependency::fingerprint_workspace(root, &selected)?.into_string();
             let selected = selected
                 .into_iter()
@@ -347,4 +374,51 @@ fn resolve_packages(
             ))
         }
     }
+}
+
+fn validate_component_versions(
+    root: &Path,
+    packages: &[dependency::WorkspacePackage],
+) -> MResult<()> {
+    for package in packages {
+        let manifest = root.join(&package.relative_path).join("Cargo.toml");
+        let source = fs::read_to_string(&manifest).map_err(|error| {
+            error::native_build_error(
+                error::NativeBuildErrorKind::NativeWorkspaceInputInvalid {
+                    path: manifest.clone(),
+                    reason: format!("failed to read component manifest: {error}"),
+                },
+                None,
+            )
+        })?;
+        let document = source.parse::<toml_edit::DocumentMut>().map_err(|error| {
+            error::native_build_error(
+                error::NativeBuildErrorKind::NativeWorkspaceInputInvalid {
+                    path: manifest.clone(),
+                    reason: format!("failed to parse component manifest: {error}"),
+                },
+                None,
+            )
+        })?;
+        let actual = document["package"]["version"].as_str().ok_or_else(|| {
+            error::native_build_error(
+                error::NativeBuildErrorKind::NativeWorkspaceInputInvalid {
+                    path: manifest.clone(),
+                    reason: "component package manifest lacks a string package.version".to_owned(),
+                },
+                None,
+            )
+        })?;
+        if actual != MECH_COMPONENT_VERSION {
+            return Err(error::native_build_error(
+                error::NativeBuildErrorKind::NativeComponentVersionMismatch {
+                    package: package.package.clone(),
+                    expected: MECH_COMPONENT_VERSION.to_owned(),
+                    actual: actual.to_owned(),
+                },
+                None,
+            ));
+        }
+    }
+    Ok(())
 }

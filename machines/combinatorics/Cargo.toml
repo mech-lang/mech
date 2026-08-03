@@ -85,7 +85,7 @@ matrixd = ["matrix",  "mech-core/matrixd"]
 
 [dependencies]
 mech-core = { path = "../../src/core", version = "0.3.5", default-features = false, optional = true }
-mech-abi = { path = "../../src/abi", optional = true }
+mech-abi = { path = "../../src/abi", version = "0.3.5", optional = true }
 
 paste = { version = "1.0.15", optional = true }
 nalgebra = {version="0.34.1", optional = true}

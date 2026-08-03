@@ -87,6 +87,11 @@ pub enum NativeBuildErrorKind {
     NativeDependencyInvalid {
         reason: String,
     },
+    NativeComponentVersionMismatch {
+        package: String,
+        expected: String,
+        actual: String,
+    },
     NativeWorkspacePackageUnknown {
         package: String,
     },
@@ -143,6 +148,7 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeBuildTargetInvalid { .. } => "NativeBuildTargetInvalid",
             Self::NativeBuildInstallerPathInvalid { .. } => "NativeBuildInstallerPathInvalid",
             Self::NativeDependencyInvalid { .. } => "NativeDependencyInvalid",
+            Self::NativeComponentVersionMismatch { .. } => "NativeComponentVersionMismatch",
             Self::NativeWorkspacePackageUnknown { .. } => "NativeWorkspacePackageUnknown",
             Self::NativeWorkspacePackageDuplicate { .. } => "NativeWorkspacePackageDuplicate",
             Self::NativeWorkspaceInputInvalid { .. } => "NativeWorkspaceInputInvalid",
@@ -225,6 +231,13 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeDependencyInvalid { reason } => {
                 format!("invalid native dependency: {reason}")
             }
+            Self::NativeComponentVersionMismatch {
+                package,
+                expected,
+                actual,
+            } => format!(
+                "native component package `{package}` has version `{actual}`, expected `{expected}`"
+            ),
             Self::NativeWorkspacePackageUnknown { package } => {
                 format!("workspace package `{package}` is not registered")
             }

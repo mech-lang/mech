@@ -6,74 +6,32 @@ use mech_runtime::LogLevel;
 use support::*;
 
 #[test]
-fn materialize_every_phase_one_generated_project() {
-    let cases: [(OwnerProfile, &str, &str, &str, bool); 6] = [
-        (
-            OwnerProfile::Standard,
-            "literal",
-            "literal-f64.mecb",
-            "phase1_native_literal",
-            false,
-        ),
-        (
-            OwnerProfile::Standard,
-            "scalar",
-            "scalar-add-f64.mecb",
-            "phase1_native_scalar",
-            true,
-        ),
-        (
-            OwnerProfile::Fixed,
-            "fixed",
-            "fixed-matrix-add-f64.mecb",
-            "phase1_native_fixed_matrix",
-            true,
-        ),
-        (
-            OwnerProfile::Standard,
-            "dynamic",
-            "dynamic-matrix-add-f64.mecb",
-            "phase1_native_dynamic_matrix",
-            true,
-        ),
-        (
-            OwnerProfile::Standard,
-            "variadic",
-            "variadic-horzcat-f64.mecb",
-            "phase1_native_variadic",
-            true,
-        ),
-        (
-            OwnerProfile::Standard,
-            "cli",
-            "cli-stdout.mecb",
-            "phase1_native_cli_hosted",
-            false,
-        ),
-    ];
-
-    for (profile, case, fixture, binary_name, poison) in cases {
+fn materialize_every_generated_project() {
+    let temporary = tempfile::tempdir().unwrap();
+    for generated in generated_cases() {
+        let fixture = temporary.path().join(format!("{}.mecb", generated.case));
+        std::fs::write(&fixture, generated.bytecode).unwrap();
         let first = run_owner(
-            profile,
+            generated.profile,
             RunnerAction::Generate,
-            case,
-            fixture_path(fixture),
-            binary_name,
-            poison,
+            generated.case,
+            &fixture,
+            generated.binary_name,
+            false,
         );
         let second = run_owner(
-            profile,
+            generated.profile,
             RunnerAction::Generate,
-            case,
-            fixture_path(fixture),
-            binary_name,
-            poison,
+            generated.case,
+            &fixture,
+            generated.binary_name,
+            false,
         );
         assert_eq!(first, second);
         let project_root = first.project_root.as_ref().unwrap();
         assert!(project_root.join("Cargo.lock").is_file());
 
-        if case == "cli" {
+        if generated.case == "cli" {
             assert_eq!(first.plan.runtime_config.name, "phase1-generated-runtime");
             assert_eq!(
                 first.plan.runtime_config.limits.max_steps_per_turn,

@@ -87,7 +87,7 @@ impl WorkspacePackageRegistry {
     }
 }
 
-/// Construct the closed, trusted Phase 1 package-to-path mapping.
+/// Construct the closed, trusted component package-to-path mapping.
 ///
 /// Package names collected from a plan must resolve through this table. A
 /// runtime string can therefore never introduce a Cargo dependency or choose
@@ -95,11 +95,32 @@ impl WorkspacePackageRegistry {
 pub fn standard_workspace_registry(root: impl Into<PathBuf>) -> MResult<WorkspacePackageRegistry> {
     let mut registry = WorkspacePackageRegistry::new(root);
     for (package, crate_name, relative_path) in [
+        (
+            "mech-combinatorics",
+            "mech_combinatorics",
+            "machines/combinatorics",
+        ),
+        ("mech-compare", "mech_compare", "machines/compare"),
         ("mech-core", "mech_core", "src/core"),
         ("mech-engine", "mech_engine", "src/engine"),
         ("mech-host-cli", "mech_host_cli", "hosts/cli"),
+        ("mech-host-console", "mech_host_console", "hosts/console"),
+        (
+            "mech-host-robot-arm",
+            "mech_host_robot_arm",
+            "hosts/robot-arm",
+        ),
+        ("mech-host-scene", "mech_host_scene", "hosts/scene"),
+        ("mech-host-time", "mech_host_time", "hosts/time"),
+        ("mech-host-timer", "mech_host_timer", "hosts/timer"),
+        ("mech-logic", "mech_logic", "machines/logic"),
         ("mech-math", "mech_math", "machines/math"),
+        ("mech-matrix", "mech_matrix", "machines/matrix"),
+        ("mech-range", "mech_range", "machines/range"),
         ("mech-runtime", "mech_runtime", "src/runtime"),
+        ("mech-set", "mech_set", "machines/set"),
+        ("mech-stats", "mech_stats", "machines/stats"),
+        ("mech-string", "mech_string", "machines/string"),
     ] {
         registry.insert(WorkspacePackage::new(package, crate_name, relative_path)?)?;
     }
@@ -168,7 +189,7 @@ mod tests {
     }
 
     #[test]
-    fn standard_registry_is_closed_over_phase_one_packages() {
+    fn standard_registry_is_closed_over_component_packages() {
         let registry = standard_workspace_registry("/trusted/workspace").unwrap();
         assert_eq!(
             registry
@@ -176,11 +197,24 @@ mod tests {
                 .map(|(name, _)| name)
                 .collect::<Vec<_>>(),
             [
+                "mech-combinatorics",
+                "mech-compare",
                 "mech-core",
                 "mech-engine",
                 "mech-host-cli",
+                "mech-host-console",
+                "mech-host-robot-arm",
+                "mech-host-scene",
+                "mech-host-time",
+                "mech-host-timer",
+                "mech-logic",
                 "mech-math",
+                "mech-matrix",
+                "mech-range",
                 "mech-runtime",
+                "mech-set",
+                "mech-stats",
+                "mech-string",
             ]
         );
         assert!(registry.select(["mech-stdlib"]).is_err());

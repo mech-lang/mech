@@ -233,6 +233,12 @@ impl TestLiveHostFactory {
         ))
     }
 
+    /// Construct the production-shaped factory used by generated native
+    /// applications. Tests that drive live input retain the handle from `new`.
+    pub fn native() -> MResult<Self> {
+        Self::new().map(|(factory, _driver)| factory)
+    }
+
     fn interface(&self, instance_name: &str) -> MResult<MaterializedHostInterface> {
         materialize_host_manifest(instance_name, &self.manifest)
     }
@@ -247,14 +253,8 @@ impl RuntimeHostFactory for TestLiveHostFactory {
         &self.manifest
     }
 
-    fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
-        match settings {
-            ConfigValue::Map(settings) if settings.is_empty() => Ok(()),
-            _ => Err(error(
-                "TestLiveSettingsInvalid",
-                "test-live settings must be an empty map",
-            )),
-        }
+    fn validate_settings(&self, instance_name: &str, settings: &ConfigValue) -> MResult<()> {
+        validate_settings(instance_name, settings)
     }
 
     fn instantiate(
@@ -268,6 +268,16 @@ impl RuntimeHostFactory for TestLiveHostFactory {
             resource_providers: vec![Box::new(TestLiveResourceProvider)],
             input_drivers: vec![Box::new(TestLiveInputDriver::new(self.driver.clone()))],
         })
+    }
+}
+
+pub fn validate_settings(_instance_name: &str, settings: &ConfigValue) -> MResult<()> {
+    match settings {
+        ConfigValue::Map(settings) if settings.is_empty() => Ok(()),
+        _ => Err(error(
+            "TestLiveSettingsInvalid",
+            "test-live settings must be an empty map",
+        )),
     }
 }
 
