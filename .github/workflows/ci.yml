@@ -413,7 +413,7 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
       - name: Generate every native fixture project
         run: |
-          cargo +nightly-2026-03-03 test -p mech-build --all-features
+          cargo +nightly-2026-03-03 test -p mech-build --all-features --test planning
           python3 scripts/check-native-host-catalog.py
           python3 scripts/check-generated-project-determinism.py
           python3 scripts/check-native-application-graphs.py
@@ -445,7 +445,8 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
       - name: Build hosted applications and CLI integration
         run: |
-          cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_cli_hosted --test native_generated_end_to_end
+          cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_cli_hosted
+          MECH_NATIVE_GENERATED_CASE=console cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_generated_end_to_end
           cargo +nightly-2026-03-03 test -p mech --features build --lib cli::app::tests::build_
 
   native-live:
@@ -460,7 +461,9 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
       - name: Validate one-shot live generation and cleanup
-        run: cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test registry_generated_project --test native_generated_end_to_end
+        run: |
+          cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test registry_generated_project
+          cargo +nightly-2026-03-03 test -p mech-runtime --test native_live_resource
 
   native-windows:
     name: Native generated applications (Windows)
