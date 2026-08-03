@@ -44,6 +44,47 @@ extended-engine = [
   "dep:mech-core", "dep:mech-engine", "dep:serde", "dep:serde_json",
   "mech-core/native-plan", "mech-engine/native-plan", "mech-engine/stdlib",
 ]
+# CI partitions the exhaustive engine surface by scalar kind so no single
+# hosted runner must monomorphize every matrix assignment and access factory.
+# Their deterministic union is checked against the same frozen full-surface
+# digest as `extended-engine`.
+extended-engine-shard = [
+  "dep:mech-core", "dep:mech-engine", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-engine/native-plan",
+  "mech-engine/bool", "mech-engine/string",
+  "mech-engine/set", "mech-engine/map", "mech-engine/table",
+  "mech-engine/tuple", "mech-engine/record", "mech-engine/atom", "mech-engine/enum",
+  "mech-engine/matrix1", "mech-engine/matrix2", "mech-engine/matrix3", "mech-engine/matrix4",
+  "mech-engine/matrix2x3", "mech-engine/matrix3x2",
+  "mech-engine/row_vector2", "mech-engine/row_vector3", "mech-engine/row_vector4",
+  "mech-engine/vector2", "mech-engine/vector3", "mech-engine/vector4",
+  "mech-engine/row_vectord", "mech-engine/vectord", "mech-engine/matrixd",
+  "mech-engine/subscript_range", "mech-engine/logical_indexing",
+  "mech-engine/swizzle", "mech-engine/subscript_formula", "mech-engine/dot_indexing",
+  "mech-engine/variable_define", "mech-engine/variable_assign", "mech-engine/kind_define",
+  "mech-engine/kind_annotation", "mech-engine/variables", "mech-engine/functions",
+  "mech-engine/formulas", "mech-engine/access", "mech-engine/assign", "mech-engine/convert",
+]
+extended-engine-shard-unsigned = [
+  "extended-engine-shard",
+  "mech-engine/u8", "mech-engine/u16", "mech-engine/u32", "mech-engine/u64", "mech-engine/u128",
+]
+extended-engine-shard-signed = [
+  "extended-engine-shard",
+  "mech-engine/i8", "mech-engine/i16", "mech-engine/i32", "mech-engine/i64", "mech-engine/i128",
+]
+extended-engine-shard-float = [
+  "extended-engine-shard",
+  "mech-engine/f32", "mech-engine/f64", "mech-engine/c64", "mech-engine/r64",
+]
+extended-engine-shard-convert = [
+  "dep:mech-core", "dep:mech-engine", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-engine/native-plan", "mech-engine/convert",
+  "mech-engine/bool",
+  "mech-engine/u8", "mech-engine/u16", "mech-engine/u32", "mech-engine/u64", "mech-engine/u128",
+  "mech-engine/i8", "mech-engine/i16", "mech-engine/i32", "mech-engine/i64", "mech-engine/i128",
+  "mech-engine/f32", "mech-engine/f64", "mech-engine/c64", "mech-engine/r64",
+]
 extended-math = [
   "dep:mech-core", "dep:mech-math", "dep:serde", "dep:serde_json",
   "mech-core/native-plan", "mech-math/native-plan", "mech-math/runtime_default",

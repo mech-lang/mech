@@ -11,7 +11,7 @@ fn literal_only_native_application_builds_and_runs() {
         RunnerAction::Build,
         "literal",
         fixture_path("literal-f64.mecb"),
-        "phase1_native_literal",
+        "native_literal",
         false,
     );
 

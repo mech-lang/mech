@@ -496,7 +496,7 @@ check_selected_runtime() {
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$manifest" \
     --target-dir "$scratch/selected-runtime-target" \
-    -- "$repository_root/tests/architecture/bytecode-v1/phase1/scalar-add-f64.mecb"
+    -- "$repository_root/tests/architecture/bytecode-v1/scalar-add-f64.mecb"
 }
 
 check_standard_runtime() {
@@ -525,7 +525,7 @@ check_standard_runtime() {
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$manifest" \
     --target-dir "$scratch/standard-runtime-target" \
-    -- "$repository_root/tests/architecture/bytecode-v1/phase1/scalar-add-f64.mecb"
+    -- "$repository_root/tests/architecture/bytecode-v1/scalar-add-f64.mecb"
 }
 
 check_standard_source() {

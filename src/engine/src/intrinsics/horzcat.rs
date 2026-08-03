@@ -6062,8 +6062,6 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     {
         install_horzcat_linked_factories!(builder, HorizontalConcatenateTwoArgs)?;
         install_horzcat_linked_factories!(builder, HorizontalConcatenateThreeArgs)?;
-        install_horzcat_linked_factories!(builder, HorizontalConcatenateFourArgs)?;
-        install_horzcat_linked_factories!(builder, HorizontalConcatenateNArgs)?;
         install_horzcat_linked_factories!(builder, HorizontalConcatenateS1D)?;
         install_horzcat_linked_factories!(builder, HorizontalConcatenateMD)?;
     }

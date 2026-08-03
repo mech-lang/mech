@@ -1,7 +1,21 @@
 use std::sync::{Arc, OnceLock};
 
-use mech_core::{FunctionCatalog, FunctionCatalogBuilder};
+use mech_core::{FunctionCatalog, FunctionCatalogBuilder, IoErrorWrapper, MResult, MechError};
 use mech_runtime::RuntimeBuilder;
+
+// This module is compiled independently into every example binary, while only
+// the filesystem examples need the adapter.
+#[allow(dead_code)]
+pub fn io<T>(result: std::io::Result<T>) -> MResult<T> {
+    result.map_err(|error| {
+        MechError::new(
+            IoErrorWrapper {
+                msg: error.to_string(),
+            },
+            None,
+        )
+    })
+}
 
 pub fn intrinsic_source_catalog() -> Arc<FunctionCatalog> {
     static CATALOG: OnceLock<Arc<FunctionCatalog>> = OnceLock::new();

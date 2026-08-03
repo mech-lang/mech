@@ -72,7 +72,7 @@ then
   fail "active Rust or manifest input still names the obsolete program package"
 fi
 
-legacy_pattern='FunctionDescriptor|FunctionCompilerDescriptor|ModuleItemDescriptor|FunctionSystem|default_function_system|\bFunctionTable\b|FunctionCompilerTable|FunctionsSnapshot|FunctionsRef|(struct|type)[[:space:]]+Functions\b|StaticNativeFunctionCompiler|NativeFunctionCompiler|LegacyFunctionBoundary|LegacySourceSpecializer|legacy_source_specializer|RuntimeFunctionUnavailable|register_descriptor|register_fxn_descriptor|register_assign_|register_define|register_horizontal_concatenate_fxn|register_vertical_concatenate_fxn|legacy_.*fallback|is_prelude_name|load_prelude|load_stdlib|LinkedModuleLoader'
+legacy_pattern='FunctionDescriptor|FunctionCompilerDescriptor|ModuleItemDescriptor|FunctionSystem|default_function_system|\bFunctionTable\b|FunctionCompilerTable|FunctionsSnapshot|FunctionsRef|(struct|type)[[:space:]]+Functions\b|StaticNativeFunctionCompiler|NativeFunctionCompiler|LegacyFunctionBoundary|LegacySourceSpecializer|legacy_source_specializer|RuntimeFunctionUnavailable|register_descriptor|register_fxn_descriptor|register_define|register_horizontal_concatenate_fxn|register_vertical_concatenate_fxn|legacy_.*fallback|is_prelude_name|load_prelude|load_stdlib|LinkedModuleLoader'
 if rg -n -H \
   "$legacy_pattern" \
   "$repository_root/src" \
@@ -81,6 +81,20 @@ if rg -n -H \
   --glob '*.rs'
 then
   fail "legacy function subsystem symbol remains"
+fi
+
+# Assignment's owner-local catalog now emits one deterministic
+# `register_assign_*` function per exact native factory. Keep rejecting the
+# removed aggregate assignment registrars everywhere else.
+if rg -n -H \
+  'register_assign_' \
+  "$repository_root/src" \
+  "$repository_root/machines" \
+  "$repository_root/tests" \
+  --glob '*.rs' \
+  --glob '!**/engine/src/intrinsics/assign/catalog.rs'
+then
+  fail "legacy assignment registrar remains outside its owner-local catalog"
 fi
 
 if rg -n -H \

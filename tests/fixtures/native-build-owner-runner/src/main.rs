@@ -229,7 +229,7 @@ fn single_host_runtime_config(
 }
 
 fn cli_runtime_config() -> NativeRuntimeConfig {
-    let mut runtime = RuntimeConfig::new("phase1-generated-runtime");
+    let mut runtime = RuntimeConfig::new("native-generated-runtime");
     runtime.limits.max_steps_per_turn = Some(321);
     runtime.diagnostics.trace_enabled = true;
     runtime.diagnostics.log_level = mech_runtime::LogLevel::Debug;

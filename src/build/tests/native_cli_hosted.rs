@@ -11,7 +11,7 @@ fn cli_hosted_native_application_builds_and_emits_once() {
         RunnerAction::Build,
         "cli",
         fixture_path("cli-stdout.mecb"),
-        "phase1_native_cli_hosted",
+        "native_cli_hosted",
         false,
     );
 
@@ -19,7 +19,7 @@ fn cli_hosted_native_application_builds_and_emits_once() {
         &result.plan,
         &["mech-core", "mech-engine", "mech-host-cli", "mech-runtime"],
     );
-    assert_eq!(result.plan.runtime_config.name, "phase1-generated-runtime");
+    assert_eq!(result.plan.runtime_config.name, "native-generated-runtime");
     assert_eq!(
         result.plan.runtime_config.limits.max_steps_per_turn,
         Some(321)

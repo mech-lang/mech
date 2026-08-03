@@ -8,17 +8,17 @@ publish = false
 mech-core = {
   path = "../../../src/core",
   default-features = false,
-  features = ["f64", "matrix2", "program", "row_vector2", "vector2"],
+  features = ["enum", "program", "stdlib"],
+}
+mech-build = {
+  path = "../../../src/build",
+  default-features = false,
+  features = ["standard-hosts"],
 }
 mech-engine = {
   path = "../../../src/engine",
   default-features = false,
-  features = ["compiler"],
-}
-mech-host-cli = {
-  path = "../../../hosts/cli",
-  default-features = false,
-  features = ["provider"],
+  features = ["matrix2", "native-plan", "row_vector2"],
 }
 mech-native-live-host-fixture = {
   path = "../native-live-host",
@@ -26,12 +26,17 @@ mech-native-live-host-fixture = {
 mech-runtime = {
   path = "../../../src/runtime",
   default-features = false,
-  features = ["compiler", "f64", "string"],
+  features = ["f64", "runtime", "serde", "string"],
+}
+mech-math = {
+  path = "../../../machines/math",
+  default-features = false,
+  features = ["add", "f64", "matrix2", "native-plan", "row_vector2", "runtime"],
 }
 mech-stdlib = {
   path = "../../../src/stdlib",
   default-features = false,
-  features = ["standard_compiler"],
+  features = ["native-plan", "standard_runtime"],
 }
 serde_json = "1.0.149"
 sha2 = "0.10"
@@ -44,7 +49,14 @@ mech-syntax = { path = "../../../src/syntax" }
 mech-engine = { path = "../../../src/engine" }
 mech-runtime = { path = "../../../src/runtime" }
 mech-stdlib = { path = "../../../src/stdlib" }
+mech-build = { path = "../../../src/build" }
 mech-host-cli = { path = "../../../hosts/cli" }
+mech-host-console = { path = "../../../hosts/console" }
+mech-host-time = { path = "../../../hosts/time" }
+mech-host-timer = { path = "../../../hosts/timer" }
+mech-host-scene = { path = "../../../hosts/scene" }
+mech-host-robot-arm = { path = "../../../hosts/robot-arm" }
+mech-native-live-host-fixture = { path = "../native-live-host" }
 mech-combinatorics = { path = "../../../machines/combinatorics" }
 mech-compare = { path = "../../../machines/compare" }
 mech-logic = { path = "../../../machines/logic" }

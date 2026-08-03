@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the frozen deterministic Phase 1 bytecode-v1 corpus."""
+"""Validate the frozen deterministic bytecode-v1 corpus."""
 
 from __future__ import annotations
 
@@ -12,73 +12,76 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CORPUS = ROOT / "tests/architecture/bytecode-v1/phase1"
+CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
-EXPECTED_FIXTURE_METADATA = {
-    "literal-f64.mecb": {
-        "sha256": "dd9596d0a47e87de8b0a6455bbf0058583649c7db16dab4336a5a91694bcac92",
-        "source": "42.0",
-        "expected_result": 42.0,
-        "runtime_functions": [],
-    },
-    "scalar-add-f64.mecb": {
-        "sha256": "732def592c0ba921b7dd8e782163a2803a0ac21adfa5469c133bbeca5fe0f4f2",
-        "source": "1.0 + 2.0",
-        "expected_result": 3.0,
-        "runtime_functions": ["AddSS<f64>"],
-    },
-    "fixed-matrix-add-f64.mecb": {
-        "sha256": "d60ec57aadbc280bca7a3fa577cc10cc2727acb146193eada141f44c80189227",
-        "source": "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]",
-        "expected_result": [[6.0, 8.0], [10.0, 12.0]],
-        "runtime_functions": [
-            "HorizontalConcatenateS2<f64>",
-            "VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>",
-            "AddM2M2<f64>",
-        ],
-    },
-    "dynamic-matrix-add-f64.mecb": {
-        "sha256": "7355c52b197e169b87bd425a0e147f86dcad744d76f743e716223a23b2890924",
-        "source": (
-            "[1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; "
-            "11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; "
-            "21.0 22.0 23.0 24.0 25.0] + "
-            "[25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; "
-            "15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; "
-            "5.0 4.0 3.0 2.0 1.0]"
-        ),
-        "expected_result": [[26.0] * 5 for _ in range(5)],
-        "runtime_functions": [
-            "HorizontalConcatenateRDN<f64>",
-            "VerticalConcatenateNArgs<f64>",
-            "AddMDMD<f64>",
-        ],
-    },
-    "variadic-horzcat-f64.mecb": {
-        "sha256": "f59cafbed042d33d8ab7ad2e1dc35eb8d25cc556f3d5af3479923c47abd7edaf",
-        "source": "[1.0 2.0 3.0 4.0 5.0]",
-        "expected_result": [[1.0, 2.0, 3.0, 4.0, 5.0]],
-        "runtime_functions": ["HorizontalConcatenateRDN<f64>"],
-    },
-    "cli-stdout.mecb": {
-        "sha256": "295493d90b5b653bfee67763e57a5da60765edfdecd4926ec1227a5b6fc7ae57",
-        "source": '+> @out := cli/stdout\n\n@out/line <- "phase1-hosted-ok"\n\n"done"',
-        "expected_result": "done",
-        "runtime_functions": [],
-    },
-    "synthetic-live-read.mecb": {
-        "sha256": "d4141713973607c9e02cbed6d67b5010022035a95bcd88a7218834606bd35609",
-        "source": (
-            "+> @clock := test-live/clock\n\n"
-            "value := @clock/value\n"
-            "doubled := value + value\n\n"
-            "doubled"
-        ),
-        "expected_result": 0.0,
-        "runtime_functions": ["AddSS<f64>", "VariableDefineF64"],
-    },
+EXPECTED_MANIFEST_SHA256 = "6d8ab3070cad5bc6bb1945723155f9cb6b866ca02caedf2a45f8fa56d025e926"
+EXPECTED_FIXTURE_SHA256 = {
+    "canonical-scalars.mecb": "f470d9afe5397a93dc7f52c88a81d9e72810d6789fbdb1588ec8494277effc88",
+    "canonical-matrices.mecb": "753c19e2b41ad2b7984bb8adc40dd5c3623c2d12aa238cf954a51ad7e723b193",
+    "canonical-composites.mecb": "21b2c1247be183d5b13c5f5c9ed7964a9c7f848cd173824af7185e2240652c02",
+    "literal-f64.mecb": "dd9596d0a47e87de8b0a6455bbf0058583649c7db16dab4336a5a91694bcac92",
+    "scalar-add-f64.mecb": "732def592c0ba921b7dd8e782163a2803a0ac21adfa5469c133bbeca5fe0f4f2",
+    "fixed-matrix-add-f64.mecb": "d60ec57aadbc280bca7a3fa577cc10cc2727acb146193eada141f44c80189227",
+    "dynamic-matrix-add-f64.mecb": "7355c52b197e169b87bd425a0e147f86dcad744d76f743e716223a23b2890924",
+    "variadic-horzcat-f64.mecb": "f59cafbed042d33d8ab7ad2e1dc35eb8d25cc556f3d5af3479923c47abd7edaf",
+    "string.mecb": "54a12c290f5539a774bb3793835416e1ae2d8314141b32f96360163f7b9631f0",
+    "unary.mecb": "8bb13ad22de29f59160ec4ec51f7d04e9491069da710836468c16765487298f2",
+    "ternary.mecb": "5362544462bdc214915c4ae41df632a4b03a189f79324f9e8af2fcdb14e6c575",
+    "quaternary.mecb": "75a23eb4144efcbd6b28fae4ac534cff2dad581bf385cd2114f828f033422dca",
+    "named-module-operation.mecb": "d155bc55b645b9ad23879a3a6233a0717f37f67570b5bf36e1e5a09c0b15833a",
+    "cli-stdout.mecb": "295493d90b5b653bfee67763e57a5da60765edfdecd4926ec1227a5b6fc7ae57",
+    "console.mecb": "9fe9eec36fc808891ff58720b388cdf51611f716a2e7f92e62384a46075cc07e",
+    "time.mecb": "e1fad86d1a908f13477a96e5317596842f74a3d70637f38d7bd0e4ff1396638f",
+    "timer.mecb": "608a2548ee229b03848a959e00ff4e8c314543d74fab8cdb2336fc4021c9fdb4",
+    "scene.mecb": "3d014a27bf8a34a6af74c6a05b14be8656508c2bdbb540c708b1587ef653c30c",
+    "robot-arm.mecb": "a68838c61b23cfe9555ae31c0075015c555e846aaf701f31bf6f783a20098385",
+    "actor-host-function.mecb": "feaec635e1e33399fb4148ec7ec789373b065ca60161c995cbb61b71b2e7d917",
+    "synthetic-live-read.mecb": "d4141713973607c9e02cbed6d67b5010022035a95bcd88a7218834606bd35609",
 }
-EXPECTED_FILES = list(EXPECTED_FIXTURE_METADATA)
+EXPECTED_FILES = [
+    "canonical-scalars.mecb",
+    "canonical-matrices.mecb",
+    "canonical-composites.mecb",
+    "literal-f64.mecb",
+    "scalar-add-f64.mecb",
+    "fixed-matrix-add-f64.mecb",
+    "dynamic-matrix-add-f64.mecb",
+    "variadic-horzcat-f64.mecb",
+    "string.mecb",
+    "unary.mecb",
+    "ternary.mecb",
+    "quaternary.mecb",
+    "named-module-operation.mecb",
+    "cli-stdout.mecb",
+    "console.mecb",
+    "time.mecb",
+    "timer.mecb",
+    "scene.mecb",
+    "robot-arm.mecb",
+    "actor-host-function.mecb",
+    "synthetic-live-read.mecb",
+]
+SOURCE_DIRECTORY = "sources"
+EXPECTED_SOURCE_FILES = [
+    "actor-host-function.mec",
+    "cli-stdout.mec",
+    "console.mec",
+    "dynamic-matrix-add-f64.mec",
+    "fixed-matrix-add-f64.mec",
+    "literal-f64.mec",
+    "named-module-operation.mec",
+    "quaternary.mec",
+    "robot-arm.mec",
+    "scalar-add.mec",
+    "scene.mec",
+    "string.mec",
+    "synthetic-live-read.mec",
+    "ternary.mec",
+    "time.mec",
+    "timer.mec",
+    "unary.mec",
+    "variadic-horzcat-f64.mec",
+]
 HEADER = struct.Struct("<4s6H2I2H3Q12s")
 SECTION = struct.Struct("<HHIQQQ")
 SECTION_NAMES = [
@@ -244,23 +247,57 @@ class Reader:
 
 def decode_types(payload: bytes, count: int, name: str) -> list[dict[str, object]]:
     reader = Reader(payload, f"{name}: types")
-    types: list[dict[str, object]] = []
-    canonical_order: list[tuple[int, bytes]] = []
+    raw_types: list[tuple[int, bytes]] = []
     for type_id in range(count):
         tag = reader.u16()
         flags = reader.u16()
-        body = Reader(reader.read(reader.u32()), f"{name}: type {type_id}")
         require(flags == 0, f"{name}: type {type_id} has nonzero flags")
+        require(tag in TYPE_NAMES or 22 <= tag <= 32, f"{name}: unexpected runtime type tag {tag}")
+        raw_types.append((tag, reader.read(reader.u32())))
+    reader.finish()
+
+    descriptions: list[dict[str, object] | None] = [None] * count
+    resolving: set[int] = set()
+
+    def child(type_id: int, parent: int) -> dict[str, object]:
+        require(type_id < count, f"{name}: runtime type child is out of bounds")
+        require(type_id < parent, f"{name}: runtime type child is not topological")
+        return resolve(type_id)
+
+    def named(tag: int, body: Reader) -> dict[str, object]:
+        identifier = body.u64()
+        value = body.string()
+        require(value and mech_hash(value) == identifier, f"{name}: named runtime type has invalid identity")
+        return {"kind": "enum" if tag == 23 else "atom", "id": identifier, "name": value}
+
+    def fields(body: Reader, parent: int, label: str) -> list[dict[str, object]]:
+        count = body.u32()
+        require(count <= len(raw_types), f"{name}: {label} has an implausible field count")
+        result: list[dict[str, object]] = []
+        names: list[str] = []
+        for _ in range(count):
+            field_name = body.string()
+            require(field_name, f"{name}: {label} has an empty field name")
+            names.append(field_name)
+            result.append({"name": field_name, "type": child(body.u32(), parent)})
+        require(len(set(names)) == len(names), f"{name}: {label} has duplicate field names")
+        return result
+
+    def resolve(type_id: int) -> dict[str, object]:
+        known = descriptions[type_id]
+        if known is not None:
+            return known
+        require(type_id not in resolving, f"{name}: cyclic runtime type graph")
+        resolving.add(type_id)
+        tag, payload = raw_types[type_id]
+        body = Reader(payload, f"{name}: type {type_id}")
         if tag in TYPE_NAMES:
             type_description: dict[str, object] = {"kind": TYPE_NAMES[tag]}
-            dependency_depth = 0
-            canonical_key = struct.pack("<H", tag)
         elif tag == 22:
             element_id = body.u32()
             storage_id = body.u8()
             rows = body.u32()
             cols = body.u32()
-            require(element_id < type_id, f"{name}: matrix child type is not topological")
             require(storage_id in MATRIX_STORAGE_NAMES, f"{name}: unknown matrix storage")
             require(
                 valid_matrix_dimensions(storage_id, rows, cols),
@@ -268,30 +305,202 @@ def decode_types(payload: bytes, count: int, name: str) -> list[dict[str, object
             )
             type_description = {
                 "cols": cols,
-                "element": types[element_id]["type"],
+                "element": child(element_id, type_id),
                 "kind": "matrix",
                 "rows": rows,
                 "storage": MATRIX_STORAGE_NAMES[storage_id],
                 "storage_id": storage_id,
             }
-            child_depth, child_key = canonical_order[element_id]
-            dependency_depth = child_depth + 1
-            canonical_key = (
-                struct.pack("<HBII", tag, storage_id, rows, cols)
-                + struct.pack("<I", len(child_key))
-                + child_key
+        elif tag in {23, 26}:
+            type_description = named(tag, body)
+        elif tag == 24:
+            type_description = {"kind": "record", "fields": fields(body, type_id, "record")}
+        elif tag == 25:
+            type_description = {
+                "kind": "map",
+                "key": child(body.u32(), type_id),
+                "value": child(body.u32(), type_id),
+            }
+        elif tag == 27:
+            columns = fields(body, type_id, "table")
+            primary_key = body.u32()
+            require(
+                not columns or primary_key < len(columns),
+                f"{name}: table primary key is out of range",
             )
+            type_description = {
+                "kind": "table",
+                "columns": columns,
+                "primary_key": primary_key,
+            }
+        elif tag == 28:
+            item_count = body.u32()
+            require(item_count <= len(raw_types), f"{name}: tuple has an implausible element count")
+            type_description = {
+                "kind": "tuple",
+                "elements": [child(body.u32(), type_id) for _ in range(item_count)],
+            }
+        elif tag == 29:
+            type_description = {"kind": "reference", "child": child(body.u32(), type_id)}
+        elif tag == 30:
+            element = child(body.u32(), type_id)
+            has_max_len = body.u8()
+            require(has_max_len in {0, 1}, f"{name}: set limit presence is invalid")
+            type_description = {
+                "kind": "set",
+                "element": element,
+                "max_len": body.u32() if has_max_len else None,
+            }
+        elif tag == 31:
+            type_description = {"kind": "option", "child": child(body.u32(), type_id)}
+        elif tag == 32:
+            require(payload, f"{name}: Kind runtime type has an empty semantic kind")
+            body.read(len(payload))
+            type_description = {"kind": "kind"}
         else:
-            raise ContractError(f"{name}: unexpected Phase 1 runtime type tag {tag}")
+            raise ContractError(f"{name}: unexpected runtime type tag {tag}")
         body.finish()
-        types.append({"id": type_id, "type": type_description})
-        canonical_order.append((dependency_depth, canonical_key))
+        resolving.remove(type_id)
+        descriptions[type_id] = type_description
+        return type_description
+
+    return [{"id": type_id, "type": resolve(type_id)} for type_id in range(count)]
+
+
+def fixed_scalar_width(kind: str) -> int | None:
+    widths = {
+        "u8": 1,
+        "i8": 1,
+        "bool": 1,
+        "u16": 2,
+        "i16": 2,
+        "u32": 4,
+        "i32": 4,
+        "f32": 4,
+        "u64": 8,
+        "i64": 8,
+        "f64": 8,
+        "id": 8,
+        "index": 8,
+        "u128": 16,
+        "i128": 16,
+        "c64": 16,
+        "r64": 16,
+    }
+    return widths.get(kind)
+
+
+def validate_constant_payload(
+    runtime_type: dict[str, object], value: bytes, name: str, depth: int = 0
+) -> None:
+    require(depth <= 256, f"{name}: constant nesting exceeds bytecode v1 limit")
+    kind = runtime_type.get("kind")
+    require(isinstance(kind, str), f"{name}: malformed runtime type metadata")
+    width = fixed_scalar_width(kind)
+    if width is not None:
+        require(len(value) == width, f"{name}: {kind} constant has an invalid byte length")
+        if kind == "bool":
+            require(value in {b"\x00", b"\x01"}, f"{name}: Bool constant is not canonical")
+        if kind == "r64":
+            numerator, denominator = struct.unpack("<qq", value)
+            require(denominator > 0, f"{name}: rational denominator is not positive")
+            require(
+                __import__("math").gcd(abs(numerator), denominator) == 1,
+                f"{name}: rational is not reduced",
+            )
+        return
+    if kind == "string":
+        try:
+            value.decode("utf-8")
+        except UnicodeDecodeError as error:
+            raise ContractError(f"{name}: String constant is not UTF-8") from error
+        return
+    if kind in {"empty", "any", "none", "atom", "kind"}:
+        require(not value, f"{name}: {kind} constant has payload bytes")
+        return
+
+    reader = Reader(value, f"{name}: {kind} constant")
+
+    def typed_child(child_type: object, label: str) -> bytes:
+        require(isinstance(child_type, dict), f"{name}: {label} has malformed child type")
+        child_bytes = reader.read(reader.u32())
+        validate_constant_payload(child_type, child_bytes, name, depth + 1)
+        return child_bytes
+
+    if kind == "matrix":
+        rows = runtime_type.get("rows")
+        cols = runtime_type.get("cols")
+        element = runtime_type.get("element")
+        require(isinstance(rows, int) and isinstance(cols, int), f"{name}: matrix dimensions are malformed")
+        require(isinstance(element, dict), f"{name}: matrix element type is malformed")
+        require((reader.u32(), reader.u32()) == (rows, cols), f"{name}: matrix dimensions disagree with its type")
+        element_kind = element.get("kind")
+        element_width = fixed_scalar_width(element_kind) if isinstance(element_kind, str) else None
+        require(element_width is not None or element_kind == "string", f"{name}: unsupported matrix element type")
+        for _ in range(rows * cols):
+            if element_kind == "string":
+                element_bytes = reader.read(reader.u32())
+                validate_constant_payload(element, element_bytes, name, depth + 1)
+            else:
+                validate_constant_payload(element, reader.read(element_width), name, depth + 1)
+    elif kind in {"tuple", "record"}:
+        children = runtime_type.get("elements") if kind == "tuple" else runtime_type.get("fields")
+        require(isinstance(children, list), f"{name}: {kind} schema is malformed")
+        require(reader.u32() == len(children), f"{name}: {kind} item count disagrees with its type")
+        for child in children:
+            child_type = child if kind == "tuple" else child.get("type") if isinstance(child, dict) else None
+            typed_child(child_type, kind)
+    elif kind == "map":
+        key_type = runtime_type.get("key")
+        value_type = runtime_type.get("value")
+        entries = reader.u32()
+        pairs: list[tuple[bytes, bytes]] = []
+        for _ in range(entries):
+            key = typed_child(key_type, "map key")
+            item = typed_child(value_type, "map value")
+            pairs.append((key, item))
+        require(pairs == sorted(pairs), f"{name}: map entries are not canonical")
+        require(len({key for key, _ in pairs}) == len(pairs), f"{name}: map has duplicate keys")
+    elif kind == "set":
+        element = runtime_type.get("element")
+        values = [typed_child(element, "set element") for _ in range(reader.u32())]
+        max_len = runtime_type.get("max_len")
+        require(max_len is None or len(values) <= max_len, f"{name}: set exceeds its maximum length")
+        require(values == sorted(values) and len(set(values)) == len(values), f"{name}: set elements are not canonical")
+    elif kind == "table":
+        columns = runtime_type.get("columns")
+        require(isinstance(columns, list), f"{name}: table schema is malformed")
+        rows = reader.u32()
+        require(reader.u32() == len(columns), f"{name}: table column count disagrees with its type")
+        for _ in range(rows):
+            for column in columns:
+                child_type = column.get("type") if isinstance(column, dict) else None
+                typed_child(child_type, "table cell")
+    elif kind == "reference":
+        typed_child(runtime_type.get("child"), "reference")
+    elif kind == "option":
+        present = reader.u8()
+        require(present in {0, 1}, f"{name}: option presence tag is invalid")
+        if present:
+            typed_child(runtime_type.get("child"), "option")
+    elif kind == "enum":
+        variants = reader.u32()
+        previous: tuple[int, str] | None = None
+        for _ in range(variants):
+            identifier = reader.u64()
+            variant = reader.string()
+            require(variant and mech_hash(variant) == identifier, f"{name}: enum variant identity is invalid")
+            key = (identifier, variant)
+            require(previous is None or previous < key, f"{name}: enum variants are not canonical")
+            previous = key
+            has_payload = reader.u8()
+            require(has_payload in {0, 1}, f"{name}: enum payload presence tag is invalid")
+            if has_payload:
+                require(reader.read(reader.u32()), f"{name}: enum inline type is empty")
+                require(reader.read(reader.u32()), f"{name}: enum payload is empty")
+    else:
+        raise ContractError(f"{name}: unsupported constant type {kind!r}")
     reader.finish()
-    require(
-        canonical_order == sorted(set(canonical_order)),
-        f"{name}: runtime type IDs are not in canonical deterministic order",
-    )
-    return types
 
 
 def decode_constants(
@@ -322,39 +531,7 @@ def decode_constants(
         value = blob[offset : offset + length]
         runtime_type = types[type_id]["type"]
         require(isinstance(runtime_type, dict), f"{name}: malformed runtime type metadata")
-        kind = runtime_type.get("kind")
-        if kind == "empty":
-            require(not value, f"{name}: Empty constant has payload bytes")
-        elif kind == "bool":
-            require(value in {b"\x00", b"\x01"}, f"{name}: Bool constant is not canonical")
-        elif kind == "string":
-            try:
-                value.decode("utf-8")
-            except UnicodeDecodeError as error:
-                raise ContractError(f"{name}: String constant is not UTF-8") from error
-        elif kind in {"index", "f64"}:
-            require(len(value) == 8, f"{name}: {kind} constant is not eight bytes")
-        elif kind == "matrix":
-            element = runtime_type.get("element")
-            rows = runtime_type.get("rows")
-            cols = runtime_type.get("cols")
-            require(element == {"kind": "f64"}, f"{name}: matrix constant element is not f64")
-            require(
-                isinstance(rows, int) and isinstance(cols, int),
-                f"{name}: matrix constant dimensions are malformed",
-            )
-            expected_length = 8 + rows * cols * 8
-            require(
-                len(value) == expected_length,
-                f"{name}: matrix constant payload length disagrees with its type",
-            )
-            encoded_rows, encoded_cols = struct.unpack_from("<II", value)
-            require(
-                (encoded_rows, encoded_cols) == (rows, cols),
-                f"{name}: matrix constant dimensions disagree with its type",
-            )
-        else:
-            raise ContractError(f"{name}: unsupported Phase 1 constant type {kind!r}")
+        validate_constant_payload(runtime_type, value, name)
         previous_end = offset + length
     reader.finish()
     require(previous_end == len(blob), f"{name}: constant blob has trailing bytes")
@@ -532,23 +709,99 @@ def decode_instructions(
 def validate_fixture(entry: dict[str, object]) -> None:
     name = entry.get("file")
     require(isinstance(name, str), "manifest fixture is missing a file name")
-    expected_metadata = EXPECTED_FIXTURE_METADATA.get(name)
-    require(expected_metadata is not None, f"{name}: fixture is not in the frozen corpus")
+    expected_sha256 = EXPECTED_FIXTURE_SHA256.get(name)
+    require(expected_sha256 is not None, f"{name}: fixture is not in the frozen corpus")
+    origin = entry.get("origin")
+    source = entry.get("source")
+    source_file = entry.get("source_file")
+    construction = entry.get("construction")
+    if origin == "source-compiler":
+        require(isinstance(source, str) and source, f"{name}: source is missing")
+        require(
+            isinstance(source_file, str) and source_file in EXPECTED_SOURCE_FILES,
+            f"{name}: source file is missing or unexpected",
+        )
+        require(construction is None, f"{name}: source fixture has construction metadata")
+        require(
+            (CORPUS / SOURCE_DIRECTORY / source_file).read_text(encoding="utf-8") == source,
+            f"{name}: source file disagrees with the manifest",
+        )
+    elif origin == "constructed-bytecode-program":
+        require(source is None and source_file is None, f"{name}: constructed fixture has source metadata")
+        require(
+            isinstance(construction, str) and construction,
+            f"{name}: construction description is missing",
+        )
+    else:
+        raise ContractError(f"{name}: invalid fixture origin {origin!r}")
+
+    require("expected_output" in entry, f"{name}: expected output is missing")
+    native_plan_sha256 = entry.get("native_plan_sha256")
     require(
-        entry.get("source") == expected_metadata["source"],
-        f"{name}: manifest source is stale",
+        isinstance(native_plan_sha256, str)
+        and len(native_plan_sha256) == 64
+        and all(character in "0123456789abcdef" for character in native_plan_sha256),
+        f"{name}: native plan SHA-256 is malformed",
     )
+    cargo_features = entry.get("cargo_features")
+    require(isinstance(cargo_features, dict), f"{name}: Cargo feature metadata is missing")
+    for package, features in cargo_features.items():
+        require(isinstance(package, str) and package, f"{name}: Cargo feature package is malformed")
+        require(
+            isinstance(features, list)
+            and all(isinstance(feature, str) and feature for feature in features)
+            and features == sorted(set(features)),
+            f"{name}: Cargo features for {package} are not sorted and unique",
+        )
+    packages = entry.get("packages")
+    require(isinstance(packages, list), f"{name}: native package metadata is missing")
+    package_names: list[str] = []
+    for package in packages:
+        require(isinstance(package, dict), f"{name}: native package metadata is malformed")
+        package_name = package.get("package")
+        crate_name = package.get("crate_name")
+        package_features = package.get("cargo_features")
+        package_source = package.get("source")
+        require(
+            isinstance(package_name, str) and package_name,
+            f"{name}: native package name is malformed",
+        )
+        require(
+            isinstance(crate_name, str) and crate_name,
+            f"{name}: native crate name is malformed",
+        )
+        require(
+            isinstance(package_features, list)
+            and all(isinstance(feature, str) and feature for feature in package_features)
+            and package_features == sorted(set(package_features)),
+            f"{name}: native package features are not sorted and unique",
+        )
+        if package_name in cargo_features:
+            require(
+                package_features == cargo_features[package_name],
+                f"{name}: native package features disagree with the feature map",
+            )
+        require(
+            isinstance(package_source, dict)
+            and package_source.get("source") in {"workspace", "registry"}
+            and (
+                isinstance(package_source.get("path"), str)
+                or isinstance(package_source.get("version"), str)
+            ),
+            f"{name}: native package source is malformed",
+        )
+        package_names.append(package_name)
     require(
-        canonical_json(entry.get("expected_result"))
-        == canonical_json(expected_metadata["expected_result"]),
-        f"{name}: manifest expected result is stale",
+        package_names == sorted(set(package_names)),
+        f"{name}: native packages are not sorted and unique",
     )
+
     path = CORPUS / name
     data = path.read_bytes()
     require(len(data) >= 292, f"{name}: file is shorter than the v1 envelope")
     observed_sha256 = hashlib.sha256(data).hexdigest()
     require(
-        observed_sha256 == expected_metadata["sha256"],
+        observed_sha256 == expected_sha256,
         f"{name}: frozen fixture SHA-256 changed",
     )
     require(
@@ -707,10 +960,6 @@ def validate_fixture(entry: dict[str, object]) -> None:
         )
         ids.append(function_id)
         runtime_names.append(function_name)
-    require(
-        runtime_names == expected_metadata["runtime_functions"],
-        f"{name}: runtime function names are stale",
-    )
     require(ids == sorted(set(ids)), f"{name}: runtime function IDs are not sorted and unique")
     require(
         decoded_runtime_ids == set(ids),
@@ -720,13 +969,14 @@ def validate_fixture(entry: dict[str, object]) -> None:
 
 def main() -> int:
     try:
-        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        manifest_bytes = MANIFEST.read_bytes()
+        require(
+            hashlib.sha256(manifest_bytes).hexdigest() == EXPECTED_MANIFEST_SHA256,
+            "frozen manifest SHA-256 changed",
+        )
+        manifest = json.loads(manifest_bytes)
         require(isinstance(manifest, dict), "manifest root must be an object")
         require(manifest.get("format") == "mech-bytecode-v1", "manifest format is stale")
-        require(
-            manifest.get("phase") == 1 and not isinstance(manifest.get("phase"), bool),
-            "manifest phase is stale",
-        )
         fixtures = manifest.get("fixtures")
         require(isinstance(fixtures, list), "manifest fixtures must be a list")
         require(
@@ -738,19 +988,32 @@ def main() -> int:
         disk_entries = sorted(CORPUS.iterdir(), key=lambda path: path.name)
         require(
             [path.name for path in disk_entries]
-            == sorted([*EXPECTED_FILES, MANIFEST.name]),
+            == sorted([*EXPECTED_FILES, MANIFEST.name, SOURCE_DIRECTORY]),
             "fixture corpus membership changed",
         )
         require(
-            all(path.is_file() and not path.is_symlink() for path in disk_entries),
-            "fixture corpus entries must be regular files",
+            all(
+                (path.name == SOURCE_DIRECTORY and path.is_dir() and not path.is_symlink())
+                or (path.is_file() and not path.is_symlink())
+                for path in disk_entries
+            ),
+            "fixture corpus entries must be regular files or the source directory",
+        )
+        source_entries = sorted((CORPUS / SOURCE_DIRECTORY).iterdir(), key=lambda path: path.name)
+        require(
+            [path.name for path in source_entries] == EXPECTED_SOURCE_FILES,
+            "source corpus membership changed",
+        )
+        require(
+            all(path.is_file() and not path.is_symlink() for path in source_entries),
+            "source corpus entries must be regular files",
         )
         for entry in fixtures:
             validate_fixture(entry)
     except (ContractError, OSError, TypeError, ValueError, KeyError, struct.error) as error:
         print(f"bytecode v1 format contract failed: {error}", file=sys.stderr)
         return 1
-    print("bytecode v1 format contract passed (7 deterministic fixtures)")
+    print(f"bytecode v1 format contract passed ({len(EXPECTED_FILES)} deterministic fixtures)")
     return 0
 
 

@@ -30,6 +30,12 @@ required-features = ["standard_source", "project"]
 [profile.release]
 debug = false
 
+[profile.test]
+# The exhaustive native-factory matrix otherwise produces multi-gigabyte
+# test executables that macOS cannot map alongside the shared dyld cache.
+debug = false
+strip = "symbols"
+
 [features]
 no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-stdlib/no_std", "mech-syntax/no_std"]
 

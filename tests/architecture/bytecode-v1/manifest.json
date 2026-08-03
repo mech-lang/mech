@@ -1,0 +1,5175 @@
+{
+  "fixtures": [
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "bool",
+          "c64",
+          "f32",
+          "f64",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "program",
+          "r64",
+          "string",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8"
+        ],
+        "mech-engine": [
+          "bool",
+          "c64",
+          "f32",
+          "f64",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "r64",
+          "runtime",
+          "string",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8"
+        ],
+        "mech-runtime": []
+      },
+      "construction": "authoritative BytecodeProgram containing every canonical scalar constant; returns the String constant",
+      "expected_output": "bytecode-v1 🦀",
+      "file": "canonical-scalars.mecb",
+      "header": {
+        "checksum_offset": 1064,
+        "file_len": 1068,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 2,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 1,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "25c466460df1295ad848783147a236c21da655ecb8618e1ccdd7c3588f58402f",
+      "origin": "constructed-bytecode-program",
+      "packages": [
+        {
+          "cargo_features": [
+            "bool",
+            "c64",
+            "f32",
+            "f64",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "program",
+            "r64",
+            "string",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "c64",
+            "f32",
+            "f64",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "r64",
+            "runtime",
+            "string",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "u8"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "u16"
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "kind": "u32"
+          }
+        },
+        {
+          "id": 3,
+          "type": {
+            "kind": "u64"
+          }
+        },
+        {
+          "id": 4,
+          "type": {
+            "kind": "u128"
+          }
+        },
+        {
+          "id": 5,
+          "type": {
+            "kind": "i8"
+          }
+        },
+        {
+          "id": 6,
+          "type": {
+            "kind": "i16"
+          }
+        },
+        {
+          "id": 7,
+          "type": {
+            "kind": "i32"
+          }
+        },
+        {
+          "id": 8,
+          "type": {
+            "kind": "i64"
+          }
+        },
+        {
+          "id": 9,
+          "type": {
+            "kind": "i128"
+          }
+        },
+        {
+          "id": 10,
+          "type": {
+            "kind": "f32"
+          }
+        },
+        {
+          "id": 11,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 12,
+          "type": {
+            "kind": "c64"
+          }
+        },
+        {
+          "id": 13,
+          "type": {
+            "kind": "r64"
+          }
+        },
+        {
+          "id": 14,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 15,
+          "type": {
+            "kind": "bool"
+          }
+        },
+        {
+          "id": 16,
+          "type": {
+            "kind": "id"
+          }
+        },
+        {
+          "id": 17,
+          "type": {
+            "kind": "index"
+          }
+        },
+        {
+          "id": 18,
+          "type": {
+            "kind": "empty"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 19,
+          "kind": "Types",
+          "length": 152,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 19,
+          "kind": "ConstantTable",
+          "length": 456,
+          "offset": 440,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 152,
+          "offset": 896,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 1048,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 2,
+          "kind": "Instructions",
+          "length": 14,
+          "offset": 1048,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 1064,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 1064,
+          "reserved": 0
+        }
+      ],
+      "sha256": "f470d9afe5397a93dc7f52c88a81d9e72810d6789fbdb1588ec8494277effc88",
+      "source": null,
+      "source_file": null
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "bool",
+          "c64",
+          "f32",
+          "f64",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "matrix1",
+          "matrix2",
+          "matrix2x3",
+          "matrix3",
+          "matrix3x2",
+          "matrix4",
+          "matrixd",
+          "program",
+          "r64",
+          "row_vector2",
+          "row_vector3",
+          "row_vector4",
+          "row_vectord",
+          "string",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8",
+          "vector2",
+          "vector3",
+          "vector4",
+          "vectord"
+        ],
+        "mech-engine": [
+          "bool",
+          "c64",
+          "f32",
+          "f64",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "matrix1",
+          "matrix2",
+          "matrix2x3",
+          "matrix3",
+          "matrix3x2",
+          "matrix4",
+          "matrixd",
+          "r64",
+          "row_vector2",
+          "row_vector3",
+          "row_vector4",
+          "row_vectord",
+          "runtime",
+          "string",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8",
+          "vector2",
+          "vector3",
+          "vector4",
+          "vectord"
+        ],
+        "mech-runtime": []
+      },
+      "construction": "authoritative BytecodeProgram containing every MatrixStorage tag and every matrix element codec family; returns Matrix2<f64>",
+      "expected_output": [
+        [
+          0.0,
+          1.0
+        ],
+        [
+          2.0,
+          3.0
+        ]
+      ],
+      "file": "canonical-matrices.mecb",
+      "header": {
+        "checksum_offset": 2944,
+        "file_len": 2948,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 2,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 1,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "7284ac920a8c76b3aa5c582faccd9f2854aac674d83ed88b52be92898b790a2e",
+      "origin": "constructed-bytecode-program",
+      "packages": [
+        {
+          "cargo_features": [
+            "bool",
+            "c64",
+            "f32",
+            "f64",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "matrix1",
+            "matrix2",
+            "matrix2x3",
+            "matrix3",
+            "matrix3x2",
+            "matrix4",
+            "matrixd",
+            "program",
+            "r64",
+            "row_vector2",
+            "row_vector3",
+            "row_vector4",
+            "row_vectord",
+            "string",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "vector2",
+            "vector3",
+            "vector4",
+            "vectord"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "c64",
+            "f32",
+            "f64",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "matrix1",
+            "matrix2",
+            "matrix2x3",
+            "matrix3",
+            "matrix3x2",
+            "matrix4",
+            "matrixd",
+            "r64",
+            "row_vector2",
+            "row_vector3",
+            "row_vector4",
+            "row_vectord",
+            "runtime",
+            "string",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "vector2",
+            "vector3",
+            "vector4",
+            "vectord"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "u8"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "u16"
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "kind": "u32"
+          }
+        },
+        {
+          "id": 3,
+          "type": {
+            "kind": "u64"
+          }
+        },
+        {
+          "id": 4,
+          "type": {
+            "kind": "u128"
+          }
+        },
+        {
+          "id": 5,
+          "type": {
+            "kind": "i8"
+          }
+        },
+        {
+          "id": 6,
+          "type": {
+            "kind": "i16"
+          }
+        },
+        {
+          "id": 7,
+          "type": {
+            "kind": "i32"
+          }
+        },
+        {
+          "id": 8,
+          "type": {
+            "kind": "i64"
+          }
+        },
+        {
+          "id": 9,
+          "type": {
+            "kind": "i128"
+          }
+        },
+        {
+          "id": 10,
+          "type": {
+            "kind": "f32"
+          }
+        },
+        {
+          "id": 11,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 12,
+          "type": {
+            "kind": "c64"
+          }
+        },
+        {
+          "id": 13,
+          "type": {
+            "kind": "r64"
+          }
+        },
+        {
+          "id": 14,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 15,
+          "type": {
+            "kind": "bool"
+          }
+        },
+        {
+          "id": 16,
+          "type": {
+            "kind": "index"
+          }
+        },
+        {
+          "id": 17,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "Matrix1",
+            "storage_id": 1
+          }
+        },
+        {
+          "id": 18,
+          "type": {
+            "cols": 2,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 2,
+            "storage": "Matrix2",
+            "storage_id": 2
+          }
+        },
+        {
+          "id": 19,
+          "type": {
+            "cols": 3,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 3,
+            "storage": "Matrix3",
+            "storage_id": 3
+          }
+        },
+        {
+          "id": 20,
+          "type": {
+            "cols": 4,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 4,
+            "storage": "Matrix4",
+            "storage_id": 4
+          }
+        },
+        {
+          "id": 21,
+          "type": {
+            "cols": 3,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 2,
+            "storage": "Matrix2x3",
+            "storage_id": 5
+          }
+        },
+        {
+          "id": 22,
+          "type": {
+            "cols": 2,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 3,
+            "storage": "Matrix3x2",
+            "storage_id": 6
+          }
+        },
+        {
+          "id": 23,
+          "type": {
+            "cols": 2,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "RowVector2",
+            "storage_id": 7
+          }
+        },
+        {
+          "id": 24,
+          "type": {
+            "cols": 3,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "RowVector3",
+            "storage_id": 8
+          }
+        },
+        {
+          "id": 25,
+          "type": {
+            "cols": 4,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "RowVector4",
+            "storage_id": 9
+          }
+        },
+        {
+          "id": 26,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 2,
+            "storage": "Vector2",
+            "storage_id": 10
+          }
+        },
+        {
+          "id": 27,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 3,
+            "storage": "Vector3",
+            "storage_id": 11
+          }
+        },
+        {
+          "id": 28,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 4,
+            "storage": "Vector4",
+            "storage_id": 12
+          }
+        },
+        {
+          "id": 29,
+          "type": {
+            "cols": 5,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "RowVectorD",
+            "storage_id": 13
+          }
+        },
+        {
+          "id": 30,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 5,
+            "storage": "VectorD",
+            "storage_id": 14
+          }
+        },
+        {
+          "id": 31,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "u8"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 32,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "u16"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 33,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "u32"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 34,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "u64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 35,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "u128"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 36,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "i8"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 37,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "i16"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 38,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "i32"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 39,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "i64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 40,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "i128"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 41,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "f32"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 42,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 43,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "c64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 44,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "r64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 45,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "string"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 46,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "bool"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 47,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "index"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        },
+        {
+          "id": 48,
+          "type": {
+            "cols": 5,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 2,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 49,
+          "kind": "Types",
+          "length": 808,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 32,
+          "kind": "ConstantTable",
+          "length": 768,
+          "offset": 1096,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 1064,
+          "offset": 1864,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 2928,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 2,
+          "kind": "Instructions",
+          "length": 14,
+          "offset": 2928,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 2944,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 2944,
+          "reserved": 0
+        }
+      ],
+      "sha256": "753c19e2b41ad2b7984bb8adc40dd5c3623c2d12aa238cf954a51ad7e723b193",
+      "source": null,
+      "source_file": null
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "atom",
+          "enum",
+          "i16",
+          "kind_annotation",
+          "map",
+          "program",
+          "record",
+          "set",
+          "string",
+          "table",
+          "tuple",
+          "u8"
+        ],
+        "mech-engine": [
+          "atom",
+          "enum",
+          "i16",
+          "kind_annotation",
+          "map",
+          "record",
+          "runtime",
+          "set",
+          "string",
+          "table",
+          "tuple",
+          "u8"
+        ],
+        "mech-runtime": []
+      },
+      "construction": "authoritative BytecodeProgram containing atom, enum, tuple, record, map, set, table, option-none, option-some, reference, and kind constants",
+      "expected_output": [
+        7,
+        "mech"
+      ],
+      "file": "canonical-composites.mecb",
+      "header": {
+        "checksum_offset": 960,
+        "file_len": 964,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 2,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 1,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "a0a62e7bbae9159abfbaa7b5f89e543b858de32270fae3c635e7654020ff02c8",
+      "origin": "constructed-bytecode-program",
+      "packages": [
+        {
+          "cargo_features": [
+            "atom",
+            "enum",
+            "i16",
+            "kind_annotation",
+            "map",
+            "program",
+            "record",
+            "set",
+            "string",
+            "table",
+            "tuple",
+            "u8"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "atom",
+            "enum",
+            "i16",
+            "kind_annotation",
+            "map",
+            "record",
+            "runtime",
+            "set",
+            "string",
+            "table",
+            "tuple",
+            "u8"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "u8"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "i16"
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 3,
+          "type": {
+            "id": 47063214321796735,
+            "kind": "enum",
+            "name": "status"
+          }
+        },
+        {
+          "id": 4,
+          "type": {
+            "id": 19433895615352993,
+            "kind": "atom",
+            "name": "alpha"
+          }
+        },
+        {
+          "id": 5,
+          "type": {
+            "kind": "kind"
+          }
+        },
+        {
+          "id": 6,
+          "type": {
+            "fields": [
+              {
+                "name": "count",
+                "type": {
+                  "kind": "u8"
+                }
+              },
+              {
+                "name": "delta",
+                "type": {
+                  "kind": "i16"
+                }
+              }
+            ],
+            "kind": "record"
+          }
+        },
+        {
+          "id": 7,
+          "type": {
+            "key": {
+              "kind": "u8"
+            },
+            "kind": "map",
+            "value": {
+              "kind": "string"
+            }
+          }
+        },
+        {
+          "id": 8,
+          "type": {
+            "columns": [
+              {
+                "name": "id",
+                "type": {
+                  "kind": "u8"
+                }
+              },
+              {
+                "name": "name",
+                "type": {
+                  "kind": "string"
+                }
+              }
+            ],
+            "kind": "table",
+            "primary_key": 0
+          }
+        },
+        {
+          "id": 9,
+          "type": {
+            "elements": [
+              {
+                "kind": "u8"
+              },
+              {
+                "kind": "string"
+              }
+            ],
+            "kind": "tuple"
+          }
+        },
+        {
+          "id": 10,
+          "type": {
+            "child": {
+              "kind": "u8"
+            },
+            "kind": "reference"
+          }
+        },
+        {
+          "id": 11,
+          "type": {
+            "element": {
+              "kind": "u8"
+            },
+            "kind": "set",
+            "max_len": 1
+          }
+        },
+        {
+          "id": 12,
+          "type": {
+            "child": {
+              "kind": "u8"
+            },
+            "kind": "option"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 13,
+          "kind": "Types",
+          "length": 245,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 11,
+          "kind": "ConstantTable",
+          "length": 264,
+          "offset": 536,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 137,
+          "offset": 800,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 944,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 2,
+          "kind": "Instructions",
+          "length": 14,
+          "offset": 944,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 960,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 960,
+          "reserved": 0
+        }
+      ],
+      "sha256": "21b2c1247be183d5b13c5f5c9ed7964a9c7f848cd173824af7185e2240652c02",
+      "source": null,
+      "source_file": null
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "f64",
+          "program"
+        ],
+        "mech-engine": [
+          "f64",
+          "runtime"
+        ],
+        "mech-runtime": []
+      },
+      "construction": null,
+      "expected_output": 42.0,
+      "file": "literal-f64.mecb",
+      "header": {
+        "checksum_offset": 344,
+        "file_len": 348,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 2,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 1,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "125c7b64f2d40b4b653b681400a946204bc78d1674f5e5f4471bd2edeb608902",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "f64",
+            "program"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "runtime"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 1,
+          "kind": "Types",
+          "length": 8,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 1,
+          "kind": "ConstantTable",
+          "length": 24,
+          "offset": 296,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 8,
+          "offset": 320,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 328,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 2,
+          "kind": "Instructions",
+          "length": 14,
+          "offset": 328,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 344,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 344,
+          "reserved": 0
+        }
+      ],
+      "sha256": "dd9596d0a47e87de8b0a6455bbf0058583649c7db16dab4336a5a91694bcac92",
+      "source": "42.0",
+      "source_file": "literal-f64.mec"
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "f64",
+          "program"
+        ],
+        "mech-engine": [
+          "f64",
+          "runtime"
+        ],
+        "mech-runtime": []
+      },
+      "construction": null,
+      "expected_output": 3.0,
+      "file": "scalar-add-f64.mecb",
+      "header": {
+        "checksum_offset": 448,
+        "file_len": 452,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 5,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 3,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "a219ef1c4b58d93b43346724e1a4089f0a5be5dd37769ec569573da8a22addeb",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "f64",
+            "program"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "runtime"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "add",
+            "f64",
+            "native-link",
+            "runtime"
+          ],
+          "crate_name": "mech_math",
+          "package": "mech-math",
+          "source": {
+            "path": "machines/math",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 2863641133352691,
+          "id_hex": "000a2c77688486f3",
+          "name": "AddSS<f64>"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 1,
+          "kind": "Types",
+          "length": 8,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 3,
+          "kind": "ConstantTable",
+          "length": 72,
+          "offset": 296,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 24,
+          "offset": 368,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 392,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 5,
+          "kind": "Instructions",
+          "length": 53,
+          "offset": 392,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 448,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 448,
+          "reserved": 0
+        }
+      ],
+      "sha256": "732def592c0ba921b7dd8e782163a2803a0ac21adfa5469c133bbeca5fe0f4f2",
+      "source": "1.0 + 2.0",
+      "source_file": "scalar-add.mec"
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "f64",
+          "matrix2",
+          "program",
+          "row_vector2"
+        ],
+        "mech-engine": [
+          "bool",
+          "f64",
+          "matrix2",
+          "matrix_horzcat",
+          "matrix_vertcat",
+          "native-link",
+          "row_vector2",
+          "runtime",
+          "vector2"
+        ],
+        "mech-runtime": []
+      },
+      "construction": null,
+      "expected_output": [
+        [
+          6.0,
+          8.0
+        ],
+        [
+          10.0,
+          12.0
+        ]
+      ],
+      "file": "fixed-matrix-add-f64.mecb",
+      "header": {
+        "checksum_offset": 1272,
+        "file_len": 1276,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 23,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 15,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "c6c93c6276f4c756bb32f02485599f62c6ba48e7182318c79f58e611e5219aab",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "f64",
+            "matrix2",
+            "program",
+            "row_vector2"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "matrix2",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "native-link",
+            "row_vector2",
+            "runtime",
+            "vector2"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "add",
+            "f64",
+            "matrix2",
+            "native-link",
+            "runtime"
+          ],
+          "crate_name": "mech_math",
+          "package": "mech-math",
+          "source": {
+            "path": "machines/math",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 55079618322224521,
+          "id_hex": "00c3ae9efc75d589",
+          "name": "HorizontalConcatenateS2<f64>"
+        },
+        {
+          "id": 60746095060650569,
+          "id_hex": "00d7d04069950a49",
+          "name": "VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>"
+        },
+        {
+          "id": 66151685366522073,
+          "id_hex": "00eb049b7b90a0d9",
+          "name": "AddM2M2<f64>"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "cols": 2,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 2,
+            "storage": "Matrix2",
+            "storage_id": 2
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "cols": 2,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "RowVector2",
+            "storage_id": 7
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 3,
+          "kind": "Types",
+          "length": 50,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 15,
+          "kind": "ConstantTable",
+          "length": 360,
+          "offset": 344,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 280,
+          "offset": 704,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 984,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 23,
+          "kind": "Instructions",
+          "length": 287,
+          "offset": 984,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 1272,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 1272,
+          "reserved": 0
+        }
+      ],
+      "sha256": "d60ec57aadbc280bca7a3fa577cc10cc2727acb146193eada141f44c80189227",
+      "source": "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]",
+      "source_file": "fixed-matrix-add-f64.mec"
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "f64",
+          "matrixd",
+          "program",
+          "row_vectord"
+        ],
+        "mech-engine": [
+          "bool",
+          "f64",
+          "matrix_horzcat",
+          "matrix_vertcat",
+          "matrixd",
+          "native-link",
+          "row_vectord",
+          "runtime",
+          "vectord"
+        ],
+        "mech-runtime": []
+      },
+      "construction": null,
+      "expected_output": [
+        [
+          26.0,
+          26.0,
+          26.0,
+          26.0,
+          26.0
+        ],
+        [
+          26.0,
+          26.0,
+          26.0,
+          26.0,
+          26.0
+        ],
+        [
+          26.0,
+          26.0,
+          26.0,
+          26.0,
+          26.0
+        ],
+        [
+          26.0,
+          26.0,
+          26.0,
+          26.0,
+          26.0
+        ],
+        [
+          26.0,
+          26.0,
+          26.0,
+          26.0,
+          26.0
+        ]
+      ],
+      "file": "dynamic-matrix-add-f64.mecb",
+      "header": {
+        "checksum_offset": 3600,
+        "file_len": 3604,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 77,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 63,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "5484469c379ce1ce3f1c19e6dfcb0552665020b60c2da093ffc388e918550ba2",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "f64",
+            "matrixd",
+            "program",
+            "row_vectord"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "matrixd",
+            "native-link",
+            "row_vectord",
+            "runtime",
+            "vectord"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "add",
+            "f64",
+            "matrixd",
+            "native-link",
+            "runtime"
+          ],
+          "crate_name": "mech_math",
+          "package": "mech-math",
+          "source": {
+            "path": "machines/math",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 30420938630766444,
+          "id_hex": "006c13aeb8d21f6c",
+          "name": "HorizontalConcatenateRDN<f64>"
+        },
+        {
+          "id": 31066671644372194,
+          "id_hex": "006e5ef927b76ce2",
+          "name": "VerticalConcatenateNArgs<f64>"
+        },
+        {
+          "id": 40434906584433557,
+          "id_hex": "008fa755537dc395",
+          "name": "AddMDMD<f64>"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "cols": 5,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "RowVectorD",
+            "storage_id": 13
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "cols": 5,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 5,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 3,
+          "kind": "Types",
+          "length": 50,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 38,
+          "kind": "ConstantTable",
+          "length": 912,
+          "offset": 344,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 1304,
+          "offset": 1256,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 2560,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 77,
+          "kind": "Instructions",
+          "length": 1037,
+          "offset": 2560,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 3600,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 3600,
+          "reserved": 0
+        }
+      ],
+      "sha256": "7355c52b197e169b87bd425a0e147f86dcad744d76f743e716223a23b2890924",
+      "source": "[1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; 11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; 21.0 22.0 23.0 24.0 25.0] + [25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; 15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; 5.0 4.0 3.0 2.0 1.0]",
+      "source_file": "dynamic-matrix-add-f64.mec"
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "f64",
+          "program",
+          "row_vectord"
+        ],
+        "mech-engine": [
+          "bool",
+          "f64",
+          "matrix_horzcat",
+          "matrixd",
+          "native-link",
+          "row_vectord",
+          "runtime",
+          "vectord"
+        ],
+        "mech-runtime": []
+      },
+      "construction": null,
+      "expected_output": [
+        [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ]
+      ],
+      "file": "variadic-horzcat-f64.mecb",
+      "header": {
+        "checksum_offset": 648,
+        "file_len": 652,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 8,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 6,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "92831b2c28b5d46d5dcf4b30b1122989a3fb5d0f6bbdecbc3efc664fef95c121",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "f64",
+            "program",
+            "row_vectord"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "matrix_horzcat",
+            "matrixd",
+            "native-link",
+            "row_vectord",
+            "runtime",
+            "vectord"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 30420938630766444,
+          "id_hex": "006c13aeb8d21f6c",
+          "name": "HorizontalConcatenateRDN<f64>"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "cols": 5,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "RowVectorD",
+            "storage_id": 13
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 2,
+          "kind": "Types",
+          "length": 29,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 6,
+          "kind": "ConstantTable",
+          "length": 144,
+          "offset": 320,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 88,
+          "offset": 464,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 552,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 8,
+          "kind": "Instructions",
+          "length": 96,
+          "offset": 552,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 648,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 648,
+          "reserved": 0
+        }
+      ],
+      "sha256": "f59cafbed042d33d8ab7ad2e1dc35eb8d25cc556f3d5af3479923c47abd7edaf",
+      "source": "[1.0 2.0 3.0 4.0 5.0]",
+      "source_file": "variadic-horzcat-f64.mec"
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "program",
+          "string"
+        ],
+        "mech-engine": [
+          "runtime",
+          "string"
+        ],
+        "mech-runtime": []
+      },
+      "construction": null,
+      "expected_output": "bytecode-v1",
+      "file": "string.mecb",
+      "header": {
+        "checksum_offset": 352,
+        "file_len": 356,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 2,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 1,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "c5d5180754d350851e93aed5507f6a532220ee50395764bed583849384a880fc",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "program",
+            "string"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "string"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 1,
+          "kind": "Types",
+          "length": 8,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 1,
+          "kind": "ConstantTable",
+          "length": 24,
+          "offset": 296,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 11,
+          "offset": 320,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 336,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 2,
+          "kind": "Instructions",
+          "length": 14,
+          "offset": 336,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 352,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 352,
+          "reserved": 0
+        }
+      ],
+      "sha256": "54a12c290f5539a774bb3793835416e1ae2d8314141b32f96360163f7b9631f0",
+      "source": "\"bytecode-v1\"",
+      "source_file": "string.mec"
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "f64",
+          "matrixd",
+          "program"
+        ],
+        "mech-engine": [
+          "f64",
+          "matrix_horzcat",
+          "matrixd",
+          "native-link",
+          "runtime"
+        ],
+        "mech-runtime": []
+      },
+      "construction": null,
+      "expected_output": [
+        9.0
+      ],
+      "file": "unary.mecb",
+      "header": {
+        "checksum_offset": 432,
+        "file_len": 436,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 4,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 2,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "d0304d5c44d4d683fafacee9abac5536bdd8ad96ef5395f925d00ab99053c3b1",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "f64",
+            "matrixd",
+            "program"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "matrix_horzcat",
+            "matrixd",
+            "native-link",
+            "runtime"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 60835549105971663,
+          "id_hex": "00d8219c0e2d61cf",
+          "name": "HorizontalConcatenateS1D<f64>"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "cols": 1,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 2,
+          "kind": "Types",
+          "length": 29,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 2,
+          "kind": "ConstantTable",
+          "length": 48,
+          "offset": 320,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 24,
+          "offset": 368,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 392,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 4,
+          "kind": "Instructions",
+          "length": 40,
+          "offset": 392,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 432,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 432,
+          "reserved": 0
+        }
+      ],
+      "sha256": "8bb13ad22de29f59160ec4ec51f7d04e9491069da710836468c16765487298f2",
+      "source": "[9.0]",
+      "source_file": "unary.mec"
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "f64",
+          "program",
+          "row_vectord"
+        ],
+        "mech-engine": [
+          "bool",
+          "f64",
+          "row_vectord",
+          "runtime",
+          "vectord"
+        ],
+        "mech-runtime": []
+      },
+      "construction": null,
+      "expected_output": [
+        1.0,
+        2.0,
+        3.0,
+        4.0
+      ],
+      "file": "ternary.mecb",
+      "header": {
+        "checksum_offset": 520,
+        "file_len": 524,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 6,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 4,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "2e1a78d03b1ca093e6412bf420a6eb92bb68e86ca0016bbb90da02cf2626fcdd",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "f64",
+            "program",
+            "row_vectord"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "row_vectord",
+            "runtime",
+            "vectord"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "inclusive",
+            "native-link",
+            "row_vectord",
+            "runtime"
+          ],
+          "crate_name": "mech_range",
+          "package": "mech-range",
+          "source": {
+            "path": "machines/range",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 48650132558719326,
+          "id_hex": "00acd709ad70295e",
+          "name": "RangeIncrementInclusiveScalar<f64RowDVector>"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "cols": 4,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "RowVectorD",
+            "storage_id": 13
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 2,
+          "kind": "Types",
+          "length": 29,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 3,
+          "kind": "ConstantTable",
+          "length": 72,
+          "offset": 320,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 56,
+          "offset": 392,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 448,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 6,
+          "kind": "Instructions",
+          "length": 66,
+          "offset": 448,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 520,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 520,
+          "reserved": 0
+        }
+      ],
+      "sha256": "5362544462bdc214915c4ae41df632a4b03a189f79324f9e8af2fcdb14e6c575",
+      "source": "1.0..1.0..=4.0",
+      "source_file": "ternary.mec"
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "bool",
+          "f64",
+          "matrixd",
+          "program",
+          "row_vectord",
+          "string"
+        ],
+        "mech-engine": [
+          "bool",
+          "f64",
+          "matrix_horzcat",
+          "matrix_vertcat",
+          "matrixd",
+          "native-link",
+          "row_vectord",
+          "runtime",
+          "string",
+          "variable_define",
+          "vectord"
+        ],
+        "mech-runtime": []
+      },
+      "construction": null,
+      "expected_output": [
+        [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0
+        ],
+        [
+          6.0,
+          7.0,
+          8.0,
+          9.0,
+          10.0
+        ],
+        [
+          11.0,
+          12.0,
+          13.0,
+          14.0,
+          15.0
+        ],
+        [
+          16.0,
+          17.0,
+          18.0,
+          19.0,
+          20.0
+        ]
+      ],
+      "file": "quaternary.mecb",
+      "header": {
+        "checksum_offset": 2368,
+        "file_len": 2372,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 47,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 33,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "d2a54b91bdf9d4d05b2470d90c70deeb84cd140aad1964cd0ee7a43d21de5468",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "matrixd",
+            "program",
+            "row_vectord",
+            "string"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "matrixd",
+            "native-link",
+            "row_vectord",
+            "runtime",
+            "string",
+            "variable_define",
+            "vectord"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 8790255417923718,
+          "id_hex": "001f3ab0d3ab9886",
+          "name": "VerticalConcatenateFourArgs<f64>"
+        },
+        {
+          "id": 27160712829295704,
+          "id_hex": "00607e8640095c58",
+          "name": "VariableDefineMatrix<f64RowDVector>"
+        },
+        {
+          "id": 30420938630766444,
+          "id_hex": "006c13aeb8d21f6c",
+          "name": "HorizontalConcatenateRDN<f64>"
+        },
+        {
+          "id": 30596775034153929,
+          "id_hex": "006cb39ad32eebc9",
+          "name": "HorizontalConcatenateRD<f64>"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "kind": "bool"
+          }
+        },
+        {
+          "id": 3,
+          "type": {
+            "cols": 5,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "RowVectorD",
+            "storage_id": 13
+          }
+        },
+        {
+          "id": 4,
+          "type": {
+            "cols": 5,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 4,
+            "storage": "MatrixD",
+            "storage_id": 15
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 5,
+          "kind": "Types",
+          "length": 66,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 30,
+          "kind": "ConstantTable",
+          "length": 720,
+          "offset": 360,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 552,
+          "offset": 1080,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 4,
+          "kind": "Symbols",
+          "length": 64,
+          "offset": 1632,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 47,
+          "kind": "Instructions",
+          "length": 615,
+          "offset": 1696,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 4,
+          "kind": "Dictionary",
+          "length": 52,
+          "offset": 2312,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 2368,
+          "reserved": 0
+        }
+      ],
+      "sha256": "75a23eb4144efcbd6b28fae4ac534cff2dad581bf385cd2114f828f033422dca",
+      "source": "a := [1.0 2.0 3.0 4.0 5.0]; b := [6.0 7.0 8.0 9.0 10.0]; c := [11.0 12.0 13.0 14.0 15.0]; d := [16.0 17.0 18.0 19.0 20.0]; [a; b; c; d]",
+      "source_file": "quaternary.mec"
+    },
+    {
+      "application_requirements": [],
+      "cargo_features": {
+        "mech-core": [
+          "f64",
+          "program"
+        ],
+        "mech-engine": [
+          "f64",
+          "runtime"
+        ],
+        "mech-runtime": []
+      },
+      "construction": null,
+      "expected_output": 0.0,
+      "file": "named-module-operation.mecb",
+      "header": {
+        "checksum_offset": 368,
+        "file_len": 372,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 4,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 2,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "2e291319ff1f873e39f13302a7a050c5ece94c2fad40d4309f933e17b7bd4dfc",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "f64",
+            "program"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "runtime"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "native-link",
+            "runtime",
+            "sin"
+          ],
+          "crate_name": "mech_math",
+          "package": "mech-math",
+          "source": {
+            "path": "machines/math",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 63546043923788401,
+          "id_hex": "00e1c2ca4ef57271",
+          "name": "MathSinF64S"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 1,
+          "kind": "Types",
+          "length": 8,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 1,
+          "kind": "ConstantTable",
+          "length": 24,
+          "offset": 296,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 8,
+          "offset": 320,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 328,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 4,
+          "kind": "Instructions",
+          "length": 40,
+          "offset": 328,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 368,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 368,
+          "reserved": 0
+        }
+      ],
+      "sha256": "d155bc55b645b9ad23879a3a6233a0717f37f67570b5bf36e1e5a09c0b15833a",
+      "source": "+> math\nmath/sin(0.0)",
+      "source_file": "named-module-operation.mec"
+    },
+    {
+      "application_requirements": [
+        {
+          "base_uri": "cli://cli/stdout",
+          "context_name": "out",
+          "delivery": "Snapshot",
+          "delivery_id": 0,
+          "intent": "Send",
+          "intent_id": 3,
+          "kind": "resource",
+          "operation": "write",
+          "path": "line"
+        }
+      ],
+      "cargo_features": {
+        "mech-core": [
+          "program",
+          "string"
+        ],
+        "mech-engine": [
+          "runtime",
+          "string"
+        ],
+        "mech-runtime": [
+          "runtime",
+          "string"
+        ]
+      },
+      "construction": null,
+      "expected_output": "done",
+      "file": "cli-stdout.mecb",
+      "header": {
+        "checksum_offset": 492,
+        "file_len": 496,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 5,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 3,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "9c43b8fe989739a0fb25ed7cb5e42ab4a259eab50d6214739533349edfa381fc",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "program",
+            "string"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "provider"
+          ],
+          "crate_name": "mech_host_cli",
+          "package": "mech-host-cli",
+          "source": {
+            "path": "hosts/cli",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "empty"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 2,
+          "kind": "Types",
+          "length": 16,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 3,
+          "kind": "ConstantTable",
+          "length": 72,
+          "offset": 304,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 20,
+          "offset": 376,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 400,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 5,
+          "kind": "Instructions",
+          "length": 45,
+          "offset": 400,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 448,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 1,
+          "kind": "ApplicationRequirements",
+          "length": 44,
+          "offset": 448,
+          "reserved": 0
+        }
+      ],
+      "sha256": "295493d90b5b653bfee67763e57a5da60765edfdecd4926ec1227a5b6fc7ae57",
+      "source": "+> @out := cli/stdout\n\n@out/line <- \"phase1-hosted-ok\"\n\n\"done\"",
+      "source_file": "cli-stdout.mec"
+    },
+    {
+      "application_requirements": [
+        {
+          "base_uri": "console://console/output",
+          "context_name": "out",
+          "delivery": "Snapshot",
+          "delivery_id": 0,
+          "intent": "Send",
+          "intent_id": 3,
+          "kind": "resource",
+          "operation": "write",
+          "path": "line"
+        }
+      ],
+      "cargo_features": {
+        "mech-core": [
+          "program",
+          "string"
+        ],
+        "mech-engine": [
+          "runtime",
+          "string"
+        ],
+        "mech-runtime": [
+          "runtime",
+          "string"
+        ]
+      },
+      "construction": null,
+      "expected_output": "console-done",
+      "file": "console.mecb",
+      "header": {
+        "checksum_offset": 508,
+        "file_len": 512,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 5,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 3,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "21d91be6888a226fc5e90dd2523f23e554557acafc9f7e4b21355849dd20f8df",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "program",
+            "string"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "native"
+          ],
+          "crate_name": "mech_host_console",
+          "package": "mech-host-console",
+          "source": {
+            "path": "hosts/console",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "empty"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 2,
+          "kind": "Types",
+          "length": 16,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 3,
+          "kind": "ConstantTable",
+          "length": 72,
+          "offset": 304,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 31,
+          "offset": 376,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 408,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 5,
+          "kind": "Instructions",
+          "length": 45,
+          "offset": 408,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 456,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 1,
+          "kind": "ApplicationRequirements",
+          "length": 52,
+          "offset": 456,
+          "reserved": 0
+        }
+      ],
+      "sha256": "9fe9eec36fc808891ff58720b388cdf51611f716a2e7f92e62384a46075cc07e",
+      "source": "@out := console://console/output{:write(line)}\n@out/line <- \"bytecode-v1-console\"\n\"console-done\"",
+      "source_file": "console.mec"
+    },
+    {
+      "application_requirements": [
+        {
+          "base_uri": "time://clock/clock",
+          "context_name": "clock",
+          "delivery": "Live",
+          "delivery_id": 1,
+          "intent": "Read",
+          "intent_id": 1,
+          "kind": "resource",
+          "operation": "read",
+          "path": "second"
+        }
+      ],
+      "cargo_features": {
+        "mech-core": [
+          "bool",
+          "f64",
+          "program",
+          "string"
+        ],
+        "mech-engine": [
+          "bool",
+          "f64",
+          "native-link",
+          "runtime",
+          "string",
+          "variable_define"
+        ],
+        "mech-runtime": [
+          "bool",
+          "f64",
+          "runtime",
+          "string"
+        ]
+      },
+      "construction": null,
+      "expected_output": "time-done",
+      "file": "time.mecb",
+      "header": {
+        "checksum_offset": 593,
+        "file_len": 597,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 7,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 4,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "69008917ed1c018e354381b3dcd3892d2d2e670547fdc2143736fec7d74594d1",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "program",
+            "string"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "native-link",
+            "runtime",
+            "string",
+            "variable_define"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "native"
+          ],
+          "crate_name": "mech_host_time",
+          "package": "mech-host-time",
+          "source": {
+            "path": "hosts/time",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 10052480590566887,
+          "id_hex": "0023b6ad86b655e7",
+          "name": "VariableDefineF64"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "kind": "bool"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 3,
+          "kind": "Types",
+          "length": 24,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 4,
+          "kind": "ConstantTable",
+          "length": 96,
+          "offset": 312,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 24,
+          "offset": 408,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 1,
+          "kind": "Symbols",
+          "length": 16,
+          "offset": 432,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 7,
+          "kind": "Instructions",
+          "length": 71,
+          "offset": 448,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 1,
+          "kind": "Dictionary",
+          "length": 18,
+          "offset": 520,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 1,
+          "kind": "ApplicationRequirements",
+          "length": 49,
+          "offset": 544,
+          "reserved": 0
+        }
+      ],
+      "sha256": "e1fad86d1a908f13477a96e5317596842f74a3d70637f38d7bd0e4ff1396638f",
+      "source": "@clock := time://clock/clock{:read(second)}\nsecond := @clock/second\n\"time-done\"",
+      "source_file": "time.mec"
+    },
+    {
+      "application_requirements": [
+        {
+          "base_uri": "timer://timer/tick",
+          "context_name": "timer",
+          "delivery": "Live",
+          "delivery_id": 1,
+          "intent": "Read",
+          "intent_id": 1,
+          "kind": "resource",
+          "operation": "read",
+          "path": "tick"
+        }
+      ],
+      "cargo_features": {
+        "mech-core": [
+          "bool",
+          "f64",
+          "program",
+          "string"
+        ],
+        "mech-engine": [
+          "bool",
+          "f64",
+          "native-link",
+          "runtime",
+          "string",
+          "variable_define"
+        ],
+        "mech-runtime": [
+          "bool",
+          "f64",
+          "runtime",
+          "string"
+        ]
+      },
+      "construction": null,
+      "expected_output": "timer-done",
+      "file": "timer.mecb",
+      "header": {
+        "checksum_offset": 583,
+        "file_len": 587,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 7,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 4,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "28fb6f630c1d991b33e5b1555a57b162673f7a4002f07e3e1bc6e1c0c892b174",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "program",
+            "string"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "native-link",
+            "runtime",
+            "string",
+            "variable_define"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "native"
+          ],
+          "crate_name": "mech_host_timer",
+          "package": "mech-host-timer",
+          "source": {
+            "path": "hosts/timer",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 10052480590566887,
+          "id_hex": "0023b6ad86b655e7",
+          "name": "VariableDefineF64"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "kind": "bool"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 3,
+          "kind": "Types",
+          "length": 24,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 4,
+          "kind": "ConstantTable",
+          "length": 96,
+          "offset": 312,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 23,
+          "offset": 408,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 1,
+          "kind": "Symbols",
+          "length": 16,
+          "offset": 432,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 7,
+          "kind": "Instructions",
+          "length": 71,
+          "offset": 448,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 1,
+          "kind": "Dictionary",
+          "length": 16,
+          "offset": 520,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 1,
+          "kind": "ApplicationRequirements",
+          "length": 47,
+          "offset": 536,
+          "reserved": 0
+        }
+      ],
+      "sha256": "608a2548ee229b03848a959e00ff4e8c314543d74fab8cdb2336fc4021c9fdb4",
+      "source": "@timer := timer://timer/tick{:read(tick)}\ntick := @timer/tick\n\"timer-done\"",
+      "source_file": "timer.mec"
+    },
+    {
+      "application_requirements": [
+        {
+          "base_uri": "scene://scene/frame",
+          "context_name": "frame",
+          "delivery": "Snapshot",
+          "delivery_id": 0,
+          "intent": "Send",
+          "intent_id": 3,
+          "kind": "resource",
+          "operation": "write",
+          "path": "replace"
+        }
+      ],
+      "cargo_features": {
+        "mech-core": [
+          "bool",
+          "f64",
+          "program",
+          "record",
+          "string"
+        ],
+        "mech-engine": [
+          "bool",
+          "f64",
+          "native-link",
+          "record",
+          "runtime",
+          "string",
+          "variable_define"
+        ],
+        "mech-runtime": [
+          "bool",
+          "f64",
+          "record",
+          "runtime",
+          "string"
+        ]
+      },
+      "construction": null,
+      "expected_output": "scene-done",
+      "file": "scene.mecb",
+      "header": {
+        "checksum_offset": 740,
+        "file_len": 744,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 8,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 5,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "22c25a881b5e539d9dac79d730b3d043da50e98eaf5d42c9d6fce14fa074fa1e",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "program",
+            "record",
+            "string"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "native-link",
+            "record",
+            "runtime",
+            "string",
+            "variable_define"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "native"
+          ],
+          "crate_name": "mech_host_scene",
+          "package": "mech-host-scene",
+          "source": {
+            "path": "hosts/scene",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "record",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 21383818333945017,
+          "id_hex": "004bf8782fbc7cb9",
+          "name": "VariableDefineMechRecord"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "kind": "bool"
+          }
+        },
+        {
+          "id": 3,
+          "type": {
+            "kind": "empty"
+          }
+        },
+        {
+          "id": 4,
+          "type": {
+            "fields": [
+              {
+                "name": "width",
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "name": "height",
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "name": "background",
+                "type": {
+                  "kind": "string"
+                }
+              }
+            ],
+            "kind": "record"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 5,
+          "kind": "Types",
+          "length": 89,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 5,
+          "kind": "ConstantTable",
+          "length": 120,
+          "offset": 384,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 53,
+          "offset": 504,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 1,
+          "kind": "Symbols",
+          "length": 16,
+          "offset": 560,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 8,
+          "kind": "Instructions",
+          "length": 84,
+          "offset": 576,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 1,
+          "kind": "Dictionary",
+          "length": 17,
+          "offset": 664,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 1,
+          "kind": "ApplicationRequirements",
+          "length": 52,
+          "offset": 688,
+          "reserved": 0
+        }
+      ],
+      "sha256": "3d014a27bf8a34a6af74c6a05b14be8656508c2bdbb540c708b1587ef653c30c",
+      "source": "@frame := scene://scene/frame{:write(replace)}\nframe := {width: 640.0, height: 480.0, background: \"black\"}\n@frame/replace <- frame\n\"scene-done\"",
+      "source_file": "scene.mec"
+    },
+    {
+      "application_requirements": [
+        {
+          "base_uri": "robot://arm/commands",
+          "context_name": "arm",
+          "delivery": "Snapshot",
+          "delivery_id": 0,
+          "intent": "Send",
+          "intent_id": 3,
+          "kind": "resource",
+          "operation": "move",
+          "path": "move"
+        }
+      ],
+      "cargo_features": {
+        "mech-core": [
+          "bool",
+          "program",
+          "string"
+        ],
+        "mech-engine": [
+          "bool",
+          "runtime",
+          "string"
+        ],
+        "mech-runtime": [
+          "bool",
+          "runtime",
+          "string"
+        ]
+      },
+      "construction": null,
+      "expected_output": "robot-done",
+      "file": "robot-arm.mecb",
+      "header": {
+        "checksum_offset": 495,
+        "file_len": 499,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 5,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 3,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "b9385c3fdef3ac66e85fa856cec5d6dc607d33a548b332e9a552f4e003c26790",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "bool",
+            "program",
+            "string"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "provider"
+          ],
+          "crate_name": "mech_host_robot_arm",
+          "package": "mech-host-robot-arm",
+          "source": {
+            "path": "hosts/robot-arm",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "bool"
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "kind": "empty"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 3,
+          "kind": "Types",
+          "length": 24,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 3,
+          "kind": "ConstantTable",
+          "length": 72,
+          "offset": 312,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 11,
+          "offset": 384,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 400,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 5,
+          "kind": "Instructions",
+          "length": 45,
+          "offset": 400,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 448,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 1,
+          "kind": "ApplicationRequirements",
+          "length": 47,
+          "offset": 448,
+          "reserved": 0
+        }
+      ],
+      "sha256": "a68838c61b23cfe9555ae31c0075015c555e846aaf701f31bf6f783a20098385",
+      "source": "@arm := robot://arm/commands{:move(move)}\n@arm/move <- true\n\"robot-done\"",
+      "source_file": "robot-arm.mec"
+    },
+    {
+      "application_requirements": [
+        {
+          "kind": "host-function",
+          "name": "actor/state/id"
+        }
+      ],
+      "cargo_features": {
+        "mech-core": [
+          "bool",
+          "program",
+          "string"
+        ],
+        "mech-engine": [
+          "bool",
+          "native-link",
+          "runtime",
+          "string",
+          "variable_define"
+        ],
+        "mech-runtime": [
+          "bool",
+          "native-link",
+          "runtime",
+          "string"
+        ]
+      },
+      "construction": null,
+      "expected_output": "actor-done",
+      "file": "actor-host-function.mecb",
+      "header": {
+        "checksum_offset": 566,
+        "file_len": 570,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 7,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 4,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "cc050d79e111211a8b0c87795b9ba62d24a7376aad38bd172ff5493948fd0003",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "bool",
+            "program",
+            "string"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "path": "src/core",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "native-link",
+            "runtime",
+            "string",
+            "variable_define"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "native-link",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
+            "source": "workspace"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 12526873406711115,
+          "id_hex": "002c811fff8da54b",
+          "name": "VariableDefineString"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "bool"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 2,
+          "kind": "Types",
+          "length": 16,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 4,
+          "kind": "ConstantTable",
+          "length": 96,
+          "offset": 304,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 16,
+          "offset": 400,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 1,
+          "kind": "Symbols",
+          "length": 16,
+          "offset": 416,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 7,
+          "kind": "Instructions",
+          "length": 75,
+          "offset": 432,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 1,
+          "kind": "Dictionary",
+          "length": 17,
+          "offset": 512,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 1,
+          "kind": "ApplicationRequirements",
+          "length": 30,
+          "offset": 536,
+          "reserved": 0
+        }
+      ],
+      "sha256": "feaec635e1e33399fb4148ec7ec789373b065ca60161c995cbb61b71b2e7d917",
+      "source": "state := actor/state/id()\n\"actor-done\"",
+      "source_file": "actor-host-function.mec"
+    },
+    {
+      "application_requirements": [
+        {
+          "base_uri": "test-live://clock/clock",
+          "context_name": "clock",
+          "delivery": "Live",
+          "delivery_id": 1,
+          "intent": "Read",
+          "intent_id": 1,
+          "kind": "resource",
+          "operation": "read",
+          "path": "value"
+        }
+      ],
+      "cargo_features": {
+        "mech-core": [
+          "bool",
+          "f64",
+          "program",
+          "string"
+        ],
+        "mech-engine": [
+          "bool",
+          "f64",
+          "native-link",
+          "runtime",
+          "string",
+          "variable_define"
+        ],
+        "mech-runtime": [
+          "bool",
+          "f64",
+          "runtime",
+          "string"
+        ]
+      },
+      "construction": null,
+      "expected_output": 0.0,
+      "file": "synthetic-live-read.mecb",
+      "header": {
+        "checksum_offset": 693,
+        "file_len": 697,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 11,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 6,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 7,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "native_plan_sha256": "65e93d1821dfaae9e208dc64e7a7aca6488d9596e759929bf36d153cd7bb3709",
+      "origin": "source-compiler",
+      "packages": [
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "program",
+            "string"
+          ],
+          "crate_name": "mech_core",
+          "package": "mech-core",
+          "source": {
+            "source": "registry",
+            "version": "0.3.5"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "native-link",
+            "runtime",
+            "string",
+            "variable_define"
+          ],
+          "crate_name": "mech_engine",
+          "package": "mech-engine",
+          "source": {
+            "source": "registry",
+            "version": "0.3.5"
+          }
+        },
+        {
+          "cargo_features": [
+            "add",
+            "f64",
+            "native-link",
+            "runtime"
+          ],
+          "crate_name": "mech_math",
+          "package": "mech-math",
+          "source": {
+            "source": "registry",
+            "version": "0.3.5"
+          }
+        },
+        {
+          "cargo_features": [],
+          "crate_name": "mech_native_live_host_fixture",
+          "package": "mech-native-live-host-fixture",
+          "source": {
+            "source": "registry",
+            "version": "0.3.5"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "source": "registry",
+            "version": "0.3.5"
+          }
+        }
+      ],
+      "runtime_function_ids": [
+        {
+          "id": 2863641133352691,
+          "id_hex": "000a2c77688486f3",
+          "name": "AddSS<f64>"
+        },
+        {
+          "id": 10052480590566887,
+          "id_hex": "0023b6ad86b655e7",
+          "name": "VariableDefineF64"
+        }
+      ],
+      "runtime_types": [
+        {
+          "id": 0,
+          "type": {
+            "kind": "f64"
+          }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "kind": "bool"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 3,
+          "kind": "Types",
+          "length": 24,
+          "offset": 288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 4,
+          "kind": "ConstantTable",
+          "length": 96,
+          "offset": 312,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 21,
+          "offset": 408,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 2,
+          "kind": "Symbols",
+          "length": 32,
+          "offset": 432,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 11,
+          "kind": "Instructions",
+          "length": 131,
+          "offset": 464,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 2,
+          "kind": "Dictionary",
+          "length": 36,
+          "offset": 600,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 1,
+          "kind": "ApplicationRequirements",
+          "length": 53,
+          "offset": 640,
+          "reserved": 0
+        }
+      ],
+      "sha256": "d4141713973607c9e02cbed6d67b5010022035a95bcd88a7218834606bd35609",
+      "source": "+> @clock := test-live/clock\n\nvalue := @clock/value\ndoubled := value + value\n\ndoubled",
+      "source_file": "synthetic-live-read.mec"
+    }
+  ],
+  "format": "mech-bytecode-v1"
+}

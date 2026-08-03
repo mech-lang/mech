@@ -37,6 +37,26 @@ fn run_build(root: &Path, input: &Path, emit: &str, output: &Path, keep: bool) -
     command.output().unwrap()
 }
 
+fn run_configured_build(root: &Path, input: &Path, config: &Path, output: &Path) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_mech"))
+        .current_dir(root)
+        .arg("--config")
+        .arg(config)
+        .arg("build")
+        .arg(input)
+        .arg("--emit")
+        .arg("cargo-project")
+        .arg("--name")
+        .arg("configured-host-free")
+        .arg("--out")
+        .arg(output)
+        .arg("--workspace-root")
+        .arg(env!("CARGO_MANIFEST_DIR"))
+        .arg("--offline")
+        .output()
+        .unwrap()
+}
+
 fn assert_success(output: Output, label: &str) {
     assert!(
         output.status.success(),
@@ -128,6 +148,43 @@ fn source_and_bytecode_cover_every_authoritative_build_emit() {
         "bytecode to native",
     );
     assert!(bytecode_native.is_file());
+
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn host_free_build_preserves_configured_runtime_settings() {
+    let root = temp_root("host-free-runtime-config");
+    let source = root.join("calculation.mec");
+    std::fs::write(&source, "answer := 42\nanswer\n").unwrap();
+    let config = root.join("application.mcfg");
+    std::fs::write(
+        &config,
+        r#"config := {runtime: {name: "configured-runtime", limits: {max-steps-per-turn: 47}, diagnostics: {trace-enabled: true, log-level: "debug"}}}"#,
+    )
+    .unwrap();
+    let project = root.join("configured.cargo");
+
+    assert_success(
+        run_configured_build(&root, &source, &config, &project),
+        "host-free configured Cargo project",
+    );
+
+    let plan: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(project.join("build-plan.json")).unwrap()).unwrap();
+    assert_eq!(plan["application_kind"], "hosted");
+    assert_eq!(plan["runtime_config"]["name"], "configured-runtime");
+    assert_eq!(plan["runtime_config"]["limits"]["max_steps_per_turn"], 47);
+    assert_eq!(plan["runtime_config"]["diagnostics"]["trace_enabled"], true);
+    assert_eq!(plan["runtime_config"]["diagnostics"]["log_level"], "Debug");
+    assert_eq!(plan["hosts"], serde_json::json!([]));
+    assert_eq!(plan["run_grants"], serde_json::json!([]));
+
+    let runtime = std::fs::read_to_string(project.join("src/runtime.rs")).unwrap();
+    assert!(runtime.contains("\"configured-runtime\".to_string()"));
+    assert!(runtime.contains("max_steps_per_turn: Some(47u64)"));
+    assert!(runtime.contains("trace_enabled: true"));
+    assert!(runtime.contains("log_level: LogLevel::Debug"));
 
     std::fs::remove_dir_all(root).unwrap();
 }

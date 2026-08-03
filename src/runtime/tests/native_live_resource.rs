@@ -25,7 +25,7 @@ use mech_runtime::{
 };
 
 static PROGRAM: &[u8] =
-    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/synthetic-live-read.mecb");
+    include_bytes!("../../../tests/architecture/bytecode-v1/synthetic-live-read.mecb");
 
 static ADD_SHOULD_FAIL: AtomicBool = AtomicBool::new(false);
 static ADD_SOLVE_COUNT: AtomicUsize = AtomicUsize::new(0);

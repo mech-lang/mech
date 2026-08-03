@@ -17,37 +17,29 @@ fn every_generated_application_fixture_builds_and_executes() {
         }
         let fixture = temporary.path().join(format!("{}.mecb", generated.case));
         std::fs::write(&fixture, generated.bytecode).unwrap();
-        let action = if generated.case == "actor" {
-            // Actor host functions execute in an actor turn with a capability
-            // grant; a generated application has no synthetic actor context.
-            // Still build its complete graph to prove native linkage.
-            RunnerAction::BuildOnly
-        } else {
-            RunnerAction::Build
-        };
         let result = run_owner(
             generated.profile,
-            action,
+            RunnerAction::Build,
             generated.case,
             fixture,
             generated.binary_name,
             false,
         );
+        assert_eq!(
+            result.stdout.unwrap().trim(),
+            generated.expected_stdout,
+            "{}",
+            generated.case,
+        );
         if generated.case == "actor" {
-            assert!(result.executable.unwrap().is_file());
-            assert!(
-                result
-                    .runtime_source
-                    .unwrap()
-                    .contains("install_actor_state_id")
-            );
-        } else {
-            assert_eq!(
-                result.stdout.unwrap().trim(),
-                generated.expected_stdout,
-                "{}",
-                generated.case,
-            );
+            let runtime = result.runtime_source.unwrap();
+            for installer in [
+                "install_actor_message_kind",
+                "install_actor_state_get",
+                "install_actor_state_put",
+            ] {
+                assert!(runtime.contains(installer));
+            }
         }
     }
 }

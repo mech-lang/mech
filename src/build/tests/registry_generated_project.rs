@@ -1,10 +1,13 @@
 #![cfg(feature = "standard-hosts")]
 
 use std::fs;
+use std::fs::File;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Child, Command, Stdio};
 use std::sync::Arc;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use mech_build::{
     GeneratedDependencySource, MECH_COMPONENT_VERSION, NativeApplicationBuilder,
@@ -14,15 +17,16 @@ use mech_build::{
 };
 use mech_core::FunctionCatalogBuilder;
 use mech_native_live_host_fixture::{
-    TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_PATH, TEST_LIVE_PROVIDER, empty_settings,
+    TEST_LIVE_CONTEXT, TEST_LIVE_FAIL_AFTER_START_ENV, TEST_LIVE_INSTANCE, TEST_LIVE_PATH,
+    TEST_LIVE_PROVIDER, TEST_LIVE_START_MARKER_ENV, TEST_LIVE_STOP_MARKER_ENV, empty_settings,
     test_live_manifest, validate_settings,
 };
 use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 
 const LITERAL_F64: &[u8] =
-    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/literal-f64.mecb");
+    include_bytes!("../../../tests/architecture/bytecode-v1/literal-f64.mecb");
 const SYNTHETIC_LIVE_READ: &[u8] =
-    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/synthetic-live-read.mecb");
+    include_bytes!("../../../tests/architecture/bytecode-v1/synthetic-live-read.mecb");
 
 #[test]
 fn registry_project_is_exact_unpatched_and_buildable_with_a_test_only_patch() {
@@ -82,7 +86,7 @@ fn registry_project_is_exact_unpatched_and_buildable_with_a_test_only_patch() {
 }
 
 #[test]
-fn live_registry_project_compiles_the_ctrlc_path_and_runs_once() {
+fn live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure() {
     let temporary = tempfile::tempdir().unwrap();
     let workspace = workspace_root();
     let runtime_config = synthetic_live_runtime_config();
@@ -114,10 +118,11 @@ fn live_registry_project_compiles_the_ctrlc_path_and_runs_once() {
     assert!(original.cargo_manifest.contains("version = \"=3.5.2\""));
 
     let target_dir = build_copied_project(&original.root, temporary.path(), &workspace);
-    let output = Command::new(target_dir.join("debug/registry_synthetic_live"))
-        .arg("--once")
-        .output()
-        .unwrap();
+    let executable = target_dir.join("debug").join(format!(
+        "registry_synthetic_live{}",
+        std::env::consts::EXE_SUFFIX
+    ));
+    let output = Command::new(&executable).arg("--once").output().unwrap();
     assert!(
         output.status.success(),
         "live --once project failed: stdout={} stderr={}",
@@ -125,6 +130,182 @@ fn live_registry_project_compiles_the_ctrlc_path_and_runs_once() {
         String::from_utf8_lossy(&output.stderr),
     );
     assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), "0");
+
+    let start_marker = temporary.path().join("ctrlc-started");
+    let stop_marker = temporary.path().join("ctrlc-stopped");
+    let stdout = temporary.path().join("ctrlc.stdout");
+    let stderr = temporary.path().join("ctrlc.stderr");
+    let mut child = spawn_live_process(
+        &executable,
+        &start_marker,
+        &stop_marker,
+        &stdout,
+        &stderr,
+        false,
+    );
+    wait_for_marker(&mut child, &start_marker, &stdout, &stderr);
+    assert!(child.try_wait().unwrap().is_none());
+    send_interrupt(&child).unwrap();
+    let status = wait_for_exit(&mut child, &stdout, &stderr);
+    assert!(status.success(), "Ctrl-C child exited with {status}");
+    assert!(
+        stop_marker.is_file(),
+        "live driver was not stopped after Ctrl-C"
+    );
+    assert!(child.try_wait().unwrap().is_some());
+
+    let failure_start = temporary.path().join("failure-started");
+    let failure_stop = temporary.path().join("failure-stopped");
+    let failure_stdout = temporary.path().join("failure.stdout");
+    let failure_stderr = temporary.path().join("failure.stderr");
+    let mut child = spawn_live_process(
+        &executable,
+        &failure_start,
+        &failure_stop,
+        &failure_stdout,
+        &failure_stderr,
+        true,
+    );
+    let status = wait_for_exit(&mut child, &failure_stdout, &failure_stderr);
+    assert!(
+        !status.success(),
+        "invalid live input should fail execution"
+    );
+    assert!(
+        failure_start.is_file(),
+        "failure path never started its driver"
+    );
+    assert!(
+        failure_stop.is_file(),
+        "failure after driver start did not stop the driver"
+    );
+}
+
+fn spawn_live_process(
+    executable: &Path,
+    start_marker: &Path,
+    stop_marker: &Path,
+    stdout: &Path,
+    stderr: &Path,
+    fail_after_start: bool,
+) -> Child {
+    let mut command = Command::new(executable);
+    command
+        .env(TEST_LIVE_START_MARKER_ENV, start_marker)
+        .env(TEST_LIVE_STOP_MARKER_ENV, stop_marker)
+        .stdout(Stdio::from(File::create(stdout).unwrap()))
+        .stderr(Stdio::from(File::create(stderr).unwrap()));
+    if fail_after_start {
+        command.env(TEST_LIVE_FAIL_AFTER_START_ENV, "1");
+    }
+    configure_child_process_group(&mut command);
+    command.spawn().unwrap()
+}
+
+fn wait_for_marker(child: &mut Child, marker: &Path, stdout: &Path, stderr: &Path) {
+    let deadline = Instant::now() + Duration::from_secs(20);
+    loop {
+        if marker.is_file() {
+            return;
+        }
+        if let Some(status) = child.try_wait().unwrap() {
+            panic_with_process_output(
+                stdout,
+                stderr,
+                format!("live child exited before driver start with {status}"),
+            );
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            panic_with_process_output(stdout, stderr, "timed out waiting for live driver start");
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
+}
+
+fn wait_for_exit(child: &mut Child, stdout: &Path, stderr: &Path) -> std::process::ExitStatus {
+    let deadline = Instant::now() + Duration::from_secs(20);
+    loop {
+        if let Some(status) = child.try_wait().unwrap() {
+            return status;
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            panic_with_process_output(stdout, stderr, "timed out waiting for live child exit");
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
+}
+
+fn panic_with_process_output(stdout: &Path, stderr: &Path, message: impl AsRef<str>) -> ! {
+    panic!(
+        "{}\nstdout:\n{}\nstderr:\n{}",
+        message.as_ref(),
+        fs::read_to_string(stdout).unwrap_or_default(),
+        fs::read_to_string(stderr).unwrap_or_default(),
+    )
+}
+
+#[cfg(unix)]
+fn configure_child_process_group(_command: &mut Command) {}
+
+#[cfg(windows)]
+fn configure_child_process_group(command: &mut Command) {
+    use std::os::windows::process::CommandExt;
+    command.creation_flags(windows_sys::Win32::System::Threading::CREATE_NEW_PROCESS_GROUP);
+}
+
+#[cfg(unix)]
+fn send_interrupt(child: &Child) -> std::io::Result<()> {
+    let status = Command::new("kill")
+        .arg("-INT")
+        .arg(child.id().to_string())
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(std::io::Error::other(format!(
+            "kill -INT exited with {status}"
+        )))
+    }
+}
+
+#[cfg(windows)]
+fn send_interrupt(child: &Child) -> std::io::Result<()> {
+    let script = format!(
+        r#"
+$source = @'
+using System;
+using System.Runtime.InteropServices;
+public static class ConsoleSignal {{
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool GenerateConsoleCtrlEvent(
+        uint ctrlEvent,
+        uint processGroupId
+    );
+}}
+'@
+Add-Type -TypeDefinition $source
+if (-not [ConsoleSignal]::GenerateConsoleCtrlEvent(1, {})) {{
+    exit 1
+}}
+"#,
+        child.id(),
+    );
+    let status = Command::new("powershell.exe")
+        .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(std::io::Error::other(format!(
+            "GenerateConsoleCtrlEvent helper exited with {status}"
+        )))
+    }
 }
 
 fn workspace_root() -> PathBuf {

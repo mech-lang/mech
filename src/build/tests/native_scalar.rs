@@ -11,7 +11,7 @@ fn scalar_add_native_application_uses_only_the_exact_installer() {
         RunnerAction::Build,
         "scalar",
         fixture_path("scalar-add-f64.mecb"),
-        "phase1_native_scalar",
+        "native_scalar",
         true,
     );
 

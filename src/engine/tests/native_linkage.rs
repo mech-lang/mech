@@ -116,7 +116,11 @@ fn native_plan_aggregate_carries_exact_representative_linkage() {
         })
         .collect::<Vec<_>>();
 
-    assert_eq!(linked.len(), 5);
+    assert_eq!(
+        linked.len(),
+        catalog.runtime_factory_count(),
+        "every enabled runtime factory must carry native linkage under native-plan",
+    );
 
     let variable = linked
         .iter()
@@ -250,7 +254,7 @@ fn native_plan_aggregate_carries_exact_representative_linkage() {
     feature = "vectord"
 ))]
 #[test]
-fn generated_catalog_code_can_call_every_engine_phase1_installer() {
+fn generated_catalog_code_can_call_every_engine_native_installer() {
     let mut builder = FunctionCatalogBuilder::new();
     mech_engine::__mech_native::install_variable_define_f64(&mut builder).unwrap();
     mech_engine::__mech_native::install_horizontal_concatenate_rdn_f64(&mut builder).unwrap();

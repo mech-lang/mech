@@ -53,7 +53,11 @@ fn whole_add_assignment_alias_is_sampled_once() {
 #[test]
 fn register_commit_add_assignment_updates_register_only() {
     let t = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap();
-    let mut i = Interpreter::new(0, 10_000);
+    let mut i = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     i.interpret(&t).unwrap();
     assert_eq!((value(&i, "x"), value(&i, "z")), (3., 4.));
     let (x, y) = (cell(&i, "x"), cell(&i, "y"));
@@ -71,7 +75,11 @@ fn register_commit_add_assignment_updates_register_only() {
 #[test]
 fn register_commit_simultaneous_assignments_use_precommit_state() {
     let t = mech_syntax::parser::parse("~x := 1.0\n~y := 2.0\nx += y\ny += x").unwrap();
-    let mut i = Interpreter::new(0, 10_000);
+    let mut i = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     i.interpret(&t).unwrap();
     assert_eq!((value(&i, "x"), value(&i, "y")), (3., 5.));
     let (x, y) = (cell(&i, "x"), cell(&i, "y"));
@@ -89,7 +97,11 @@ fn register_commit_simultaneous_assignments_use_precommit_state() {
 #[test]
 fn reactive_turn_updates_downstream_after_register_commit() {
     let tree = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0").unwrap();
-    let mut interpreter = Interpreter::new(0, 10_000);
+    let mut interpreter = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     interpreter.interpret(&tree).unwrap();
     let (x_cell, y_cell, z_cell) = (
         cell(&interpreter, "x"),

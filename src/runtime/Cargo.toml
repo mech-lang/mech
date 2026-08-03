@@ -14,6 +14,7 @@ edition = "2024"
 rust-version = "1.92"
 
 [features]
+std = ["mech-core/std", "mech-engine/std"]
 no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-syntax?/no_std"]
 
 runtime = ["mech-engine/runtime"]

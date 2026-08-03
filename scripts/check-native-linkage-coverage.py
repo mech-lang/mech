@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from threading import Event, Thread
 from typing import Any
 
 
@@ -38,6 +39,17 @@ OWNERS: dict[str, tuple[Path, str, str]] = {
         "runtime_default",
     ),
 }
+ENGINE_SURFACE_SHARDS = (
+    "extended-engine-shard-unsigned",
+    "extended-engine-shard-signed",
+    "extended-engine-shard-float",
+    "extended-engine-shard-convert",
+)
+CI_EXTENDED_SURFACES = ENGINE_SURFACE_SHARDS + tuple(
+    feature for package, (_, feature, _) in OWNERS.items() if package != "mech-engine"
+)
+CI_SURFACES = ("standard",) + CI_EXTENDED_SURFACES
+SURFACE_DIRECTORY = ROOT / "target/native-linkage/surfaces"
 FEATURE_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 RUST_PATH = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)+$")
 
@@ -63,23 +75,34 @@ def run(command: list[str], *, capture: bool = False, fixture: bool = False) -> 
     # weakening feature, metadata, or runtime-set validation.
     environment.setdefault("CARGO_PROFILE_DEV_DEBUG", "0")
     environment.setdefault("CARGO_PROFILE_DEV_CODEGEN_UNITS", "256")
-    # The coverage fixture executes catalog constructors; it does not inspect
-    # debug information.  Avoid generating symbols for tens of thousands of
-    # monomorphized factory declarations, which otherwise dominates this
-    # validation-only build without changing its observable output.
-    environment.setdefault("CARGO_PROFILE_DEV_DEBUG", "0")
     target = Path(environment.get("CARGO_TARGET_DIR", ROOT / "target"))
     environment["CARGO_TARGET_DIR"] = str(
         target / "native-linkage-fixture" if fixture else target
     )
-    completed = subprocess.run(
-        command,
-        cwd=ROOT,
-        env=environment,
-        check=False,
-        stdout=subprocess.PIPE if capture else None,
-        text=True,
-    )
+    heartbeat_stop = Event()
+
+    def report_progress() -> None:
+        while not heartbeat_stop.wait(60):
+            print(
+                f"native linkage command still running: {' '.join(command)}",
+                file=sys.stderr,
+                flush=True,
+            )
+
+    heartbeat = Thread(target=report_progress, name="native-linkage-heartbeat", daemon=True)
+    heartbeat.start()
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=ROOT,
+            env=environment,
+            check=False,
+            stdout=subprocess.PIPE if capture else None,
+            text=True,
+        )
+    finally:
+        heartbeat_stop.set()
+        heartbeat.join()
     if completed.returncode:
         raise ContractError(f"command failed ({completed.returncode}): {' '.join(command)}")
     return completed.stdout if capture else ""
@@ -88,7 +111,7 @@ def run(command: list[str], *, capture: bool = False, fixture: bool = False) -> 
 def fixture_catalog(feature: str) -> list[dict[str, Any]]:
     output = run(
         [
-            "cargo", "+nightly-2026-03-03", "run", "--quiet",
+            "cargo", "+nightly-2026-03-03", "run",
             "--manifest-path", str(FIXTURE_MANIFEST), "--no-default-features",
             "--features", feature,
         ],
@@ -258,15 +281,10 @@ def verify_standard_surface(entries: list[dict[str, Any]]) -> None:
         raise ContractError("runtime/native-plan drift in the frozen standard surface")
 
 
-def build_report() -> dict[str, Any]:
-    known = manifest_features()
-    standard = validate_catalog(fixture_catalog("standard"), "standard", known)
-    verify_standard_surface(standard)
-    extended_by_owner = [
-        validate_catalog(fixture_catalog(feature), f"{package} extended", known)
-        for package, (_, feature, _) in OWNERS.items()
-    ]
-    extended = merge_surfaces("extended linkage universe", extended_by_owner)
+def assemble_report(
+    standard: list[dict[str, Any]], extended_surfaces: list[list[dict[str, Any]]]
+) -> dict[str, Any]:
+    extended = merge_surfaces("extended linkage universe", extended_surfaces)
     all_entries = merge_surfaces("complete linkage universe", [standard, extended])
     report = {
         "schema": "mech.native-linkage-coverage.v2",
@@ -279,6 +297,79 @@ def build_report() -> dict[str, Any]:
         "sha256": digest(report),
     }
     return report
+
+
+def build_report() -> dict[str, Any]:
+    known = manifest_features()
+    standard = validate_catalog(fixture_catalog("standard"), "standard", known)
+    verify_standard_surface(standard)
+    extended_by_owner = [
+        validate_catalog(fixture_catalog(feature), f"{package} extended", known)
+        for package, (_, feature, _) in OWNERS.items()
+    ]
+    return assemble_report(standard, extended_by_owner)
+
+
+def write_ci_surface(feature: str) -> None:
+    if feature not in CI_SURFACES:
+        raise ContractError(f"unknown CI linkage surface {feature!r}")
+    known = manifest_features()
+    entries = validate_catalog(fixture_catalog(feature), feature, known)
+    if feature == "standard":
+        verify_standard_surface(entries)
+    surface = {
+        "schema": "mech.native-linkage-surface.v1",
+        "feature": feature,
+        "kind": "standard" if feature == "standard" else "extended",
+        "entries": entries,
+    }
+    SURFACE_DIRECTORY.mkdir(parents=True, exist_ok=True)
+    path = SURFACE_DIRECTORY / f"{feature}.json"
+    path.write_text(json.dumps(surface, separators=(",", ":")) + "\n", encoding="utf-8")
+    print(f"wrote {len(entries)} entries to {path.relative_to(ROOT)}")
+
+
+def read_ci_surface(path: Path, feature: str, known: dict[str, set[str]]) -> list[dict[str, Any]]:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict) or value.get("schema") != "mech.native-linkage-surface.v1":
+        raise ContractError(f"{feature}: invalid CI linkage surface schema")
+    expected_kind = "standard" if feature == "standard" else "extended"
+    if value.get("feature") != feature or value.get("kind") != expected_kind:
+        raise ContractError(f"{feature}: CI linkage surface identity changed")
+    entries = value.get("entries")
+    if not isinstance(entries, list) or not all(isinstance(entry, dict) for entry in entries):
+        raise ContractError(f"{feature}: CI linkage surface entries are malformed")
+    raw_entries = [
+        {
+            "name": entry.get("runtime_factory_name"),
+            "id_hex": entry.get("runtime_factory_id"),
+            "package": entry.get("package"),
+            "crate_name": entry.get("crate_name"),
+            "installer_path": entry.get("installer_path"),
+            "cargo_features": entry.get("cargo_features"),
+        }
+        for entry in entries
+    ]
+    return validate_catalog(raw_entries, feature, known)
+
+
+def build_report_from_ci_surfaces() -> dict[str, Any]:
+    observed = {path.stem for path in SURFACE_DIRECTORY.glob("*.json")}
+    expected = set(CI_SURFACES)
+    if observed != expected:
+        missing = sorted(expected - observed)
+        unexpected = sorted(observed - expected)
+        raise ContractError(
+            f"CI linkage surfaces changed: missing={missing}, unexpected={unexpected}"
+        )
+    known = manifest_features()
+    surfaces = {
+        feature: read_ci_surface(SURFACE_DIRECTORY / f"{feature}.json", feature, known)
+        for feature in CI_SURFACES
+    }
+    standard = surfaces.pop("standard")
+    verify_standard_surface(standard)
+    return assemble_report(standard, [surfaces[feature] for feature in CI_EXTENDED_SURFACES])
 
 
 def report_summary(report: dict[str, Any]) -> dict[str, Any]:
@@ -319,15 +410,29 @@ def verify_owner_contracts() -> None:
 
 
 def main() -> int:
+    if len(sys.argv) == 3 and sys.argv[1] == "surface":
+        try:
+            write_ci_surface(sys.argv[2])
+            return 0
+        except (ContractError, OSError, TypeError, ValueError, KeyError) as error:
+            print(f"native linkage coverage failed: {error}", file=sys.stderr)
+            return 1
     mode = sys.argv[1] if len(sys.argv) == 2 else "strict"
-    if mode not in {"report", "strict"}:
-        print("usage: scripts/check-native-linkage-coverage.py [report|strict]", file=sys.stderr)
+    if mode not in {"coverage", "merge", "owners", "report", "strict"}:
+        print(
+            "usage: scripts/check-native-linkage-coverage.py "
+            "[coverage|merge|owners|report|strict|surface FEATURE]",
+            file=sys.stderr,
+        )
         return 2
     try:
-        if mode == "strict":
+        if mode in {"owners", "strict"}:
             verify_owner_contracts()
             verify_owner_native_link_profiles()
-        report = build_report()
+        if mode == "owners":
+            print(f"validated {len(OWNERS)} isolated owner native-link profiles")
+            return 0
+        report = build_report_from_ci_surfaces() if mode == "merge" else build_report()
         summary = report_summary(report)
         rendered = json.dumps(summary, indent=2) + "\n"
         DETAIL_REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
