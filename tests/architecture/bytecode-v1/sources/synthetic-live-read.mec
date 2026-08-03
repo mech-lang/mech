@@ -1,0 +1,6 @@
++> @clock := test-live/clock
+
+value := @clock/value
+doubled := value + value
+
+doubled

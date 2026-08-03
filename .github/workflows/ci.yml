@@ -302,6 +302,259 @@ jobs:
       - name: Run ${{ matrix.slice }} source targets
         run: bash scripts/run-runtime-source-targets.sh "${{ matrix.slice }}"
 
+  bytecode-v1-format:
+    name: Bytecode v1 format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Validate the frozen bytecode corpus
+        run: python3 scripts/check-bytecode-v1-format.py
+
+  bytecode-v1-values:
+    name: Bytecode v1 values
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Test official bytecode value codecs
+        run: cargo +nightly-2026-03-03 test -p mech-core --all-features program::bytecode::tests
+
+  bytecode-v1-determinism:
+    name: Bytecode v1 determinism
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Regenerate bytecode fixtures in fresh processes
+        run: cargo +nightly-2026-03-03 run --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml -- --check
+
+  native-linkage-owners:
+    name: Native linkage owner profiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Check isolated owner native-link profiles
+        run: python3 scripts/check-native-linkage-coverage.py owners
+
+  native-linkage-surfaces:
+    name: Native linkage surface (${{ matrix.surface }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        surface:
+          - standard
+          - extended-engine-shard-unsigned
+          - extended-engine-shard-signed
+          - extended-engine-shard-float
+          - extended-engine-shard-convert
+          - extended-math
+          - extended-compare
+          - extended-logic
+          - extended-range
+          - extended-matrix
+          - extended-set
+          - extended-string
+          - extended-stats
+          - extended-combinatorics
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Generate and validate exact linkage surface
+        run: python3 scripts/check-native-linkage-coverage.py surface "${{ matrix.surface }}"
+      - name: Upload linkage surface
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-linkage-surface-${{ matrix.surface }}
+          path: target/native-linkage/surfaces/${{ matrix.surface }}.json
+          retention-days: 1
+
+  native-linkage:
+    name: Native linkage coverage
+    needs: native-linkage-surfaces
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Download validated linkage surfaces
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-linkage-surface-*
+          path: target/native-linkage/surfaces
+          merge-multiple: true
+      - name: Merge and check exact native linkage coverage
+        run: python3 scripts/check-native-linkage-coverage.py merge
+      - name: Upload full native linkage inventory
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-linkage-coverage
+          path: target/native-linkage/coverage-full.json
+          retention-days: 14
+
+  native-plan:
+    name: Native plan
+    runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked generated-project dependencies
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      - name: Generate every native fixture project
+        run: |
+          cargo +nightly-2026-03-03 test -p mech-build --all-features
+          python3 scripts/check-native-host-catalog.py
+          python3 scripts/check-generated-project-determinism.py
+          python3 scripts/check-native-application-graphs.py
+
+  native-engine:
+    name: Native engine applications
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked generated-project dependencies
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      - name: Build and execute the full generated fixture matrix
+        run: cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_generated_end_to_end -- --nocapture
+
+  native-hosted:
+    name: Native hosted applications
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked generated-project dependencies
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      - name: Build hosted applications and CLI integration
+        run: |
+          cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_cli_hosted --test native_generated_end_to_end
+          cargo +nightly-2026-03-03 test -p mech --features build --lib cli::app::tests::build_
+
+  native-live:
+    name: Native live applications
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked generated-project dependencies
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      - name: Validate one-shot live generation and cleanup
+        run: cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test registry_generated_project --test native_generated_end_to_end
+
+  native-windows:
+    name: Native generated applications (Windows)
+    runs-on: windows-latest
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked generated-project dependencies
+        shell: pwsh
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      - name: Build selected native fixture families
+        shell: pwsh
+        run: |
+          $cases = @("scalar", "fixed-matrix", "dynamic-matrix", "cli", "console", "time-once", "actor")
+          foreach ($case in $cases) {
+            $env:MECH_NATIVE_GENERATED_CASE = $case
+            cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_generated_end_to_end -- --nocapture
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          Remove-Item Env:MECH_NATIVE_GENERATED_CASE -ErrorAction SilentlyContinue
+          cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test registry_generated_project live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure -- --nocapture
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  native-macos:
+    name: Native generated applications (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked generated-project dependencies
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      - name: Build selected native fixture families
+        run: |
+          for case in scalar fixed-matrix dynamic-matrix cli console time-once; do
+            MECH_NATIVE_GENERATED_CASE="$case" \
+              cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_generated_end_to_end -- --nocapture
+          done
+
+  wasm-bytecode-v1:
+    name: WASM bytecode v1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03 and WASM target
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2026-03-03
+      - name: Install wasm-pack
+        env:
+          WASM_PACK_VERSION: v0.15.0
+        run: |
+          curl -fsSL \
+            "https://github.com/wasm-bindgen/wasm-pack/releases/download/${WASM_PACK_VERSION}/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/wasm-pack.tar.gz
+          tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
+          sudo install "/tmp/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
+      - name: Execute the official bytecode-v1 fixtures in Chrome
+        run: |
+          wasm-pack test \
+            --headless \
+            --chrome \
+            src/wasm \
+            --no-default-features \
+            --features "browser_project,set_union,set_element_of" \
+            -- \
+            --nocapture
+
+  package-validation:
+    name: Package validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Validate Cargo package archive contents
+        run: python3 scripts/check-package-archives.py
+      - name: Upload package archive manifests
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-archive-manifests
+          path: target/package-archive-manifests
+          retention-days: 14
+
   cargo:
     name: cargo
     if: ${{ always() }}
@@ -312,6 +565,19 @@ jobs:
       - function-system-contracts
       - runtime-source-targets
       - wasm-source-profile
+      - bytecode-v1-format
+      - bytecode-v1-values
+      - bytecode-v1-determinism
+      - native-linkage-owners
+      - native-linkage
+      - native-plan
+      - native-engine
+      - native-hosted
+      - native-live
+      - native-windows
+      - native-macos
+      - wasm-bytecode-v1
+      - package-validation
     runs-on: ubuntu-latest
     steps:
       - name: Require every Cargo contract shard
@@ -322,6 +588,19 @@ jobs:
           FUNCTION_SYSTEM_RESULT: ${{ needs.function-system-contracts.result }}
           RUNTIME_SOURCE_TARGETS_RESULT: ${{ needs.runtime-source-targets.result }}
           WASM_SOURCE_RESULT: ${{ needs.wasm-source-profile.result }}
+          BYTECODE_FORMAT_RESULT: ${{ needs.bytecode-v1-format.result }}
+          BYTECODE_VALUES_RESULT: ${{ needs.bytecode-v1-values.result }}
+          BYTECODE_DETERMINISM_RESULT: ${{ needs.bytecode-v1-determinism.result }}
+          NATIVE_LINKAGE_OWNERS_RESULT: ${{ needs.native-linkage-owners.result }}
+          NATIVE_LINKAGE_RESULT: ${{ needs.native-linkage.result }}
+          NATIVE_PLAN_RESULT: ${{ needs.native-plan.result }}
+          NATIVE_ENGINE_RESULT: ${{ needs.native-engine.result }}
+          NATIVE_HOSTED_RESULT: ${{ needs.native-hosted.result }}
+          NATIVE_LIVE_RESULT: ${{ needs.native-live.result }}
+          NATIVE_WINDOWS_RESULT: ${{ needs.native-windows.result }}
+          NATIVE_MACOS_RESULT: ${{ needs.native-macos.result }}
+          WASM_BYTECODE_RESULT: ${{ needs.wasm-bytecode-v1.result }}
+          PACKAGE_VALIDATION_RESULT: ${{ needs.package-validation.result }}
         run: |
           test "$DISTRIBUTION_RESULT" = success
           test "$ENGINE_CATALOG_RESULT" = success
@@ -329,6 +608,19 @@ jobs:
           test "$FUNCTION_SYSTEM_RESULT" = success
           test "$RUNTIME_SOURCE_TARGETS_RESULT" = success
           test "$WASM_SOURCE_RESULT" = success
+          test "$BYTECODE_FORMAT_RESULT" = success
+          test "$BYTECODE_VALUES_RESULT" = success
+          test "$BYTECODE_DETERMINISM_RESULT" = success
+          test "$NATIVE_LINKAGE_OWNERS_RESULT" = success
+          test "$NATIVE_LINKAGE_RESULT" = success
+          test "$NATIVE_PLAN_RESULT" = success
+          test "$NATIVE_ENGINE_RESULT" = success
+          test "$NATIVE_HOSTED_RESULT" = success
+          test "$NATIVE_LIVE_RESULT" = success
+          test "$NATIVE_WINDOWS_RESULT" = success
+          test "$NATIVE_MACOS_RESULT" = success
+          test "$WASM_BYTECODE_RESULT" = success
+          test "$PACKAGE_VALIDATION_RESULT" = success
 
   cargo-language:
     name: Cargo language tests

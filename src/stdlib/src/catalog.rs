@@ -4,6 +4,34 @@ use mech_core::{FunctionCatalog, FunctionCatalogBuilder, MResult};
 #[cfg(not(feature = "no_std"))]
 use std::sync::{Arc, OnceLock};
 
+#[cfg(all(not(feature = "no_std"), not(target_family = "wasm")))]
+fn build_catalog_on_large_stack(
+    name: &'static str,
+    build: fn() -> MResult<FunctionCatalog>,
+) -> Arc<FunctionCatalog> {
+    let thread = std::thread::Builder::new()
+        .name(format!("mech-stdlib-{name}-catalog"))
+        .stack_size(64 * 1024 * 1024)
+        .spawn(move || {
+            Arc::new(
+                build().unwrap_or_else(|error| panic!("{name} catalog must be valid: {error:?}")),
+            )
+        })
+        .unwrap_or_else(|error| panic!("failed to start {name} catalog builder: {error}"));
+    match thread.join() {
+        Ok(catalog) => catalog,
+        Err(payload) => std::panic::resume_unwind(payload),
+    }
+}
+
+#[cfg(all(not(feature = "no_std"), target_family = "wasm"))]
+fn build_catalog_on_large_stack(
+    name: &'static str,
+    build: fn() -> MResult<FunctionCatalog>,
+) -> Arc<FunctionCatalog> {
+    Arc::new(build().unwrap_or_else(|error| panic!("{name} catalog must be valid: {error:?}")))
+}
+
 /// Installs the concrete runtime factories selected for this distribution.
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     mech_engine::install_intrinsic_runtime(builder)?;
@@ -108,9 +136,9 @@ pub fn runtime_catalog() -> Arc<FunctionCatalog> {
     #[cfg(not(feature = "no_std"))]
     {
         static CATALOG: OnceLock<Arc<FunctionCatalog>> = OnceLock::new();
-        Arc::clone(CATALOG.get_or_init(|| {
-            Arc::new(build_runtime_catalog().expect("runtime catalog must be valid"))
-        }))
+        Arc::clone(
+            CATALOG.get_or_init(|| build_catalog_on_large_stack("runtime", build_runtime_catalog)),
+        )
     }
     #[cfg(feature = "no_std")]
     {
@@ -127,9 +155,11 @@ pub fn native_plan_catalog() -> Arc<FunctionCatalog> {
     #[cfg(not(feature = "no_std"))]
     {
         static CATALOG: OnceLock<Arc<FunctionCatalog>> = OnceLock::new();
-        Arc::clone(CATALOG.get_or_init(|| {
-            Arc::new(build_native_plan_catalog().expect("native-plan catalog must be valid"))
-        }))
+        Arc::clone(
+            CATALOG.get_or_init(|| {
+                build_catalog_on_large_stack("native-plan", build_native_plan_catalog)
+            }),
+        )
     }
     #[cfg(feature = "no_std")]
     {
@@ -142,9 +172,9 @@ pub fn source_catalog() -> Arc<FunctionCatalog> {
     #[cfg(not(feature = "no_std"))]
     {
         static CATALOG: OnceLock<Arc<FunctionCatalog>> = OnceLock::new();
-        Arc::clone(CATALOG.get_or_init(|| {
-            Arc::new(build_source_catalog().expect("source catalog must be valid"))
-        }))
+        Arc::clone(
+            CATALOG.get_or_init(|| build_catalog_on_large_stack("source", build_source_catalog)),
+        )
     }
     #[cfg(feature = "no_std")]
     {
@@ -191,7 +221,10 @@ mod tests {
 
         let test = std::thread::Builder::new()
             .name("stdlib-native-plan-catalog-test".to_string())
-            .stack_size(1024 * 1024)
+            // The complete standard catalog contains thousands of factory
+            // declarations; construction recursively visits enough generic
+            // metadata that the platform default test stack is insufficient.
+            .stack_size(64 * 1024 * 1024)
             .spawn(|| {
                 let runtime = runtime_catalog();
                 assert_eq!(runtime.runtime_factory_count(), 9_019);

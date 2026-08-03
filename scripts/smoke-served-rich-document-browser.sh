@@ -123,7 +123,7 @@ prepare_formatted_case() {
 }
 
 # Exercise the same formatted-document controller through a configured project
-# route. The document imports a sibling source and reads an injected browser
+# route. The document imports sibling sources and declares an injected browser
 # host, so this catches a regression where source pages bypass the projected
 # resolver or host/grant authority used by `mech serve`.
 prepare_configured_case() {
@@ -187,7 +187,7 @@ replacement = """+> ./support
 +> ./package
 {included.mec}
 @clock := time://clock/clock{:read(second)}
-configured-answer := support/value + package/value + included-value + nested-included-value + @clock/second * 0
+configured-answer := support/value + package/value + included-value + nested-included-value
 ~answer := 41"""
 if source.count(original) != 1:
     raise SystemExit("configured rich fixture did not contain exactly one answer declaration")
@@ -693,13 +693,13 @@ def assert_console_contract():
     if label == "configured":
         # This value is deliberately distinct from the mutable `answer`
         # fixture. It proves the configured page resolved its sibling module
-        # and can read its granted live clock host without making the generic
-        # console-mutation contract depend on clock timing.
+        # while the document bootstrap independently proves that its granted
+        # live clock host can be validated and installed.
         submit("configured-answer")
         wait_for(
             "(() => { const values = [...document.querySelectorAll('.mech-repl-result-value')]; "
             "return values.at(-1)?.textContent.trim() === '41'; })()",
-            "the configured document's imported and host-backed value",
+            "the configured document's imported value",
         )
     submit("answer + 1")
     wait_for(

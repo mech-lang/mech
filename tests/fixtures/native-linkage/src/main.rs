@@ -2,6 +2,8 @@
     feature = "standard",
     feature = "representatives",
     feature = "extended-engine",
+    feature = "extended-engine-shard",
+    feature = "extended-engine-shard-convert",
     feature = "extended-math",
     feature = "extended-compare",
     feature = "extended-logic",
@@ -26,6 +28,8 @@ use mech_core::FunctionCatalog;
 #[cfg(any(
     feature = "representatives",
     feature = "extended-engine",
+    feature = "extended-engine-shard",
+    feature = "extended-engine-shard-convert",
     feature = "extended-math",
     feature = "extended-compare",
     feature = "extended-logic",
@@ -51,6 +55,8 @@ use mech_core::FunctionCatalogBuilder;
     feature = "standard",
     feature = "representatives",
     feature = "extended-engine",
+    feature = "extended-engine-shard",
+    feature = "extended-engine-shard-convert",
     feature = "extended-math",
     feature = "extended-compare",
     feature = "extended-logic",
@@ -77,6 +83,8 @@ use serde::Serialize;
     feature = "standard",
     feature = "representatives",
     feature = "extended-engine",
+    feature = "extended-engine-shard",
+    feature = "extended-engine-shard-convert",
     feature = "extended-math",
     feature = "extended-compare",
     feature = "extended-logic",
@@ -101,6 +109,8 @@ struct LinkageEntry<'a> {
     feature = "standard",
     feature = "representatives",
     feature = "extended-engine",
+    feature = "extended-engine-shard",
+    feature = "extended-engine-shard-convert",
     feature = "extended-math",
     feature = "extended-compare",
     feature = "extended-logic",
@@ -184,6 +194,8 @@ fn main() {
 // process-main stack; the resulting catalog and JSON are otherwise identical.
 #[cfg(any(
     feature = "extended-engine",
+    feature = "extended-engine-shard",
+    feature = "extended-engine-shard-convert",
     feature = "extended-math",
     feature = "extended-compare",
     feature = "extended-logic",
@@ -228,6 +240,14 @@ macro_rules! extended_owner_native_plan_main {
 }
 
 extended_owner_native_plan_main!("extended-engine", mech_engine::install_intrinsic_native_plan);
+extended_owner_native_plan_main!(
+    "extended-engine-shard",
+    mech_engine::install_intrinsic_native_plan
+);
+extended_owner_native_plan_main!(
+    "extended-engine-shard-convert",
+    mech_engine::install_intrinsic_native_plan
+);
 extended_owner_native_plan_main!("extended-math", mech_math::install_runtime);
 extended_owner_native_plan_main!("extended-compare", mech_compare::install_runtime);
 extended_owner_native_plan_main!("extended-logic", mech_logic::install_runtime);
@@ -294,6 +314,8 @@ fn main() {
     not(feature = "installer-profile"),
     not(feature = "owner-native-link"),
     not(feature = "extended-engine"),
+    not(feature = "extended-engine-shard"),
+    not(feature = "extended-engine-shard-convert"),
     not(feature = "extended-math"),
     not(feature = "extended-compare"),
     not(feature = "extended-logic"),

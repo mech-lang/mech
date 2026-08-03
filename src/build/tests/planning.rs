@@ -26,9 +26,8 @@ use isolated::{OwnerProfile, RunnerAction, fixture_path, run_owner};
 use mech_runtime::{HostContextManifest, HostManifestConfig};
 
 const LITERAL_F64: &[u8] =
-    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/literal-f64.mecb");
-const CLI_STDOUT: &[u8] =
-    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/cli-stdout.mecb");
+    include_bytes!("../../../tests/architecture/bytecode-v1/literal-f64.mecb");
+const CLI_STDOUT: &[u8] = include_bytes!("../../../tests/architecture/bytecode-v1/cli-stdout.mecb");
 
 #[cfg(not(feature = "standard-hosts"))]
 fn cli_manifest() -> MResult<HostManifestConfig> {
@@ -102,7 +101,7 @@ fn request(bytecode: &[u8]) -> NativeBuildRequest {
         runtime_config: None,
         target: None,
         profile: NativeBuildProfile::Debug,
-        binary_name: "phase1_app".to_owned(),
+        binary_name: "native_app".to_owned(),
         output: PathBuf::from("ignored-output"),
         emit: NativeEmit::Plan,
         keep_project: false,
@@ -171,7 +170,7 @@ fn assert_owner_runtime_function(
         RunnerAction::Plan,
         case,
         fixture_path(fixture),
-        "phase1_planning",
+        "native_planning",
         false,
     )
     .plan;
@@ -194,7 +193,7 @@ fn literal_only_bytecode_yields_an_engine_plan_without_runtime_config() {
         RunnerAction::Plan,
         "literal",
         fixture_path("literal-f64.mecb"),
-        "phase1_literal_planning",
+        "native_literal_planning",
         false,
     )
     .plan;
@@ -240,7 +239,7 @@ fn host_free_plan_rejects_unaddressed_hosts_and_grants() {
 
 #[test]
 fn host_function_only_plan_rejects_unaddressed_runtime_config() {
-    const HOST_FUNCTION: &str = "phase1-host-function";
+    const HOST_FUNCTION: &str = "native-host-function";
     let mut host_catalog = NativeHostCatalog::new();
     host_catalog
         .insert_function(NativeHostFunctionLinkage {
@@ -248,7 +247,7 @@ fn host_function_only_plan_rejects_unaddressed_runtime_config() {
             package: "mech-host-test",
             crate_name: "mech_host_test",
             cargo_features: &["provider"],
-            installer_path: "mech_host_test::install_phase1_host_function",
+            installer_path: "mech_host_test::install_native_host_function",
         })
         .unwrap();
     let mut build_environment = environment(empty_catalog());
@@ -330,7 +329,7 @@ fn cli_stdout_yields_a_hosted_plan() {
         RunnerAction::Plan,
         "cli",
         fixture_path("cli-stdout.mecb"),
-        "phase1_cli_planning",
+        "native_cli_planning",
         false,
     )
     .plan;
@@ -345,7 +344,7 @@ fn cli_stdout_yields_a_hosted_plan() {
         "mech_host_cli::CliHostFactory::new"
     );
     assert_eq!(plan.run_grants.len(), 1);
-    assert_eq!(plan.runtime_config.name, "phase1-generated-runtime");
+    assert_eq!(plan.runtime_config.name, "native-generated-runtime");
     assert!(
         plan.runtime_features
             .iter()
@@ -505,7 +504,7 @@ fn unrelated_program_types_do_not_become_machine_features() {
         RunnerAction::Plan,
         "synthetic-string-scalar",
         &bytecode,
-        "phase1_synthetic_string_scalar",
+        "native_synthetic_string_scalar",
         false,
     )
     .plan;

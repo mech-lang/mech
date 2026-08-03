@@ -68,7 +68,11 @@ fn whole_matrix_assignment_uses_root_cells() {
 #[test]
 fn register_commit_plain_assignment_updates_register_only() {
     let t = mech_syntax::parser::parse("~x := 1.0\ny := 2.0\nx = y\nz := x + 1.0").unwrap();
-    let mut i = Interpreter::new(0, 10_000);
+    let mut i = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     i.interpret(&t).unwrap();
     assert_eq!((value(&i, "x"), value(&i, "z")), (2., 3.));
     let (x, y) = (cell(&i, "x"), cell(&i, "y"));
@@ -90,7 +94,11 @@ fn register_commit_plain_assignment_updates_register_only() {
 #[test]
 fn reactive_turn_defers_second_register_layer() {
     let tree = mech_syntax::parser::parse("input := 1.0\n~a := 0.0\n~b := 0.0\na = input\nmiddle := a + 1.0\nb = middle\noutput := b + 1.0").unwrap();
-    let mut interpreter = Interpreter::new(0, 10_000);
+    let mut interpreter = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     interpreter.interpret(&tree).unwrap();
     assert_eq!(
         (

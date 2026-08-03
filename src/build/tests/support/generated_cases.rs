@@ -42,10 +42,11 @@ pub fn generated_cases() -> Vec<GeneratedCase> {
             "quaternary",
             "generated_native_quaternary",
             concat!(
-                "a := [1.0; 2.0]; b := [3.0; 4.0]; ",
-                "c := [5.0; 6.0]; d := [7.0; 8.0]; [a b c d]",
+                "a := [1.0 2.0 3.0 4.0 5.0]; b := [6.0 7.0 8.0 9.0 10.0]; ",
+                "c := [11.0 12.0 13.0 14.0 15.0]; ",
+                "d := [16.0 17.0 18.0 19.0 20.0]; [a; b; c; d]",
             ),
-            "[1 3 5 7; 2 4 6 8]",
+            "[1 2 3 4 5; 6 7 8 9 10; 11 12 13 14 15; 16 17 18 19 20]",
         ),
         frozen(
             "variadic",
@@ -187,28 +188,32 @@ fn hosted(
 }
 
 fn actor_case() -> GeneratedCase {
-    let mut runtime = RuntimeBuilder::new()
+    let mut builder = RuntimeBuilder::new()
         .planning()
-        .function_catalog(mech_stdlib::source_catalog())
-        .host_function(PlannedPureHostFunction::new(
-            "actor/state/id",
-            |_context, _arguments| {
-                RuntimeValueSnapshot::try_capture(&Value::String(Ref::new(String::new())))
-            },
-            |_context, _arguments| panic!("actor/state/id executed while planning"),
-        ))
-        .unwrap()
-        .build()
-        .unwrap();
+        .function_catalog(mech_stdlib::source_catalog());
+    for name in ["actor/message/kind", "actor/state/get", "actor/state/put"] {
+        builder = builder
+            .host_function(PlannedPureHostFunction::new(
+                name,
+                |_context, _arguments| {
+                    RuntimeValueSnapshot::try_capture(&Value::String(Ref::new(String::new())))
+                },
+                move |_context, _arguments| panic!("{name} executed while planning"),
+            ))
+            .unwrap();
+    }
+    let mut runtime = builder.build().unwrap();
     runtime
-        .run_string("state := actor/state/id()\n\"actor-done\"")
+        .run_string(
+            "kind := actor/message/kind()\nupdated := actor/state/put(kind)\nactor/state/get()",
+        )
         .unwrap();
     GeneratedCase {
         profile: OwnerProfile::Standard,
         case: "actor",
         binary_name: "generated_native_actor",
         bytecode: runtime.compile_program_bytecode().unwrap(),
-        expected_stdout: "\"actor-done\"",
+        expected_stdout: "\"generated-message\"",
     }
 }
 

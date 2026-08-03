@@ -112,6 +112,24 @@ fn section_length(bytes: &[u8], index: usize) -> usize {
     read_u64(bytes, section_entry_offset(index) + 16) as usize
 }
 
+fn type_entry_offset(bytes: &[u8], index: usize) -> usize {
+    let mut offset = section_offset(bytes, BytecodeSectionKind::Types as usize - 1);
+    for _ in 0..index {
+        offset += 8 + read_u32(bytes, offset + 4) as usize;
+    }
+    offset
+}
+
+fn constant_entry_offset(bytes: &[u8], index: usize) -> usize {
+    section_offset(bytes, BytecodeSectionKind::ConstantTable as usize - 1) + index * 24
+}
+
+fn constant_payload_offset(bytes: &[u8], index: usize) -> usize {
+    let entry = constant_entry_offset(bytes, index);
+    section_offset(bytes, BytecodeSectionKind::ConstantBlob as usize - 1)
+        + read_u64(bytes, entry + 8) as usize
+}
+
 fn refresh_crc(bytes: &mut [u8]) {
     let checksum_offset = read_u64(bytes, HEADER_CHECKSUM_OFFSET) as usize;
     let checksum = crc32fast::hash(&bytes[..checksum_offset]);
@@ -120,6 +138,23 @@ fn refresh_crc(bytes: &mut [u8]) {
 
 fn assert_validation_reason(bytes: &[u8], expected: &str) {
     let error = ParsedProgram::from_bytes(bytes).unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeValidation");
+    assert!(
+        error.kind_message().contains(expected),
+        "expected `{expected}` in `{}`",
+        error.kind_message(),
+    );
+}
+
+fn assert_validation_with_limits(bytes: &[u8], limits: BytecodeReadLimits) {
+    let error = ParsedProgram::from_bytes_with_limits(bytes, limits).unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeValidation");
+}
+
+fn assert_decode_reason(bytes: &[u8], expected: &str) {
+    let error = ParsedProgram::from_bytes(bytes)
+        .and_then(|program| program.decode_constants().map(|_| program))
+        .unwrap_err();
     assert_eq!(error.kind_name(), "BytecodeValidation");
     assert!(
         error.kind_message().contains(expected),
@@ -725,6 +760,56 @@ fn rejects_wrong_magic_version_and_mech_version() {
 }
 
 #[test]
+fn rejects_noncanonical_header_and_section_fields() {
+    let original = write_bytecode(&program(vec![empty_constant()])).unwrap();
+
+    let mut header_size = original.clone();
+    write_u16(&mut header_size, 6, BYTECODE_HEADER_SIZE - 1);
+    refresh_crc(&mut header_size);
+    assert_validation_reason(&header_size, "header size");
+
+    let mut flags = original.clone();
+    write_u16(&mut flags, 14, 1);
+    refresh_crc(&mut flags);
+    assert_validation_reason(&flags, "reserved header fields");
+
+    let mut reserved = original.clone();
+    reserved[52] = 1;
+    refresh_crc(&mut reserved);
+    assert_validation_reason(&reserved, "reserved header fields");
+
+    let mut section_flags = original.clone();
+    write_u16(&mut section_flags, section_entry_offset(0) + 2, 1);
+    refresh_crc(&mut section_flags);
+    assert_validation_reason(&section_flags, "section flags");
+
+    let mut section_reserved = original.clone();
+    write_u64(&mut section_reserved, section_entry_offset(0) + 24, 1);
+    refresh_crc(&mut section_reserved);
+    assert_validation_reason(&section_reserved, "section flags");
+
+    let mut unaligned = original.clone();
+    let second_section_offset = section_offset(&unaligned, 1);
+    write_u64(
+        &mut unaligned,
+        section_entry_offset(1) + 8,
+        (second_section_offset + 1) as u64,
+    );
+    refresh_crc(&mut unaligned);
+    assert_validation_reason(&unaligned, "unaligned");
+
+    let mut padding = original;
+    let instructions = BytecodeSectionKind::Instructions as usize - 1;
+    let dictionary = BytecodeSectionKind::Dictionary as usize - 1;
+    let instruction_end =
+        section_offset(&padding, instructions) + section_length(&padding, instructions);
+    assert!(instruction_end < section_offset(&padding, dictionary));
+    padding[instruction_end] = 1;
+    refresh_crc(&mut padding);
+    assert_validation_reason(&padding, "section padding");
+}
+
+#[test]
 fn rejects_duplicate_missing_unknown_overlapping_and_oob_sections() {
     let original = write_bytecode(&program(vec![empty_constant()])).unwrap();
 
@@ -890,6 +975,244 @@ fn rejects_invalid_utf8_and_dictionary_hashes() {
 }
 
 #[test]
+fn rejects_unknown_out_of_range_cyclic_and_invalid_matrix_types() {
+    let mut unknown = write_bytecode(&program(vec![empty_constant()])).unwrap();
+    let entry = type_entry_offset(&unknown, 0);
+    write_u16(&mut unknown, entry, u16::MAX);
+    refresh_crc(&mut unknown);
+    assert_validation_reason(&unknown, "unknown runtime type tag");
+
+    let matrix = write_bytecode(&program(vec![matrix_constant(
+        MatrixStorage::MatrixD,
+        2,
+        2,
+    )]))
+    .unwrap();
+    let matrix_entry = type_entry_offset(&matrix, 1);
+
+    let mut out_of_range = matrix.clone();
+    write_u32(&mut out_of_range, matrix_entry + 8, 99);
+    refresh_crc(&mut out_of_range);
+    assert_validation_reason(&out_of_range, "out-of-range child");
+
+    let mut cyclic = matrix.clone();
+    write_u32(&mut cyclic, matrix_entry + 8, 1);
+    refresh_crc(&mut cyclic);
+    assert_validation_reason(&cyclic, "cyclic runtime type graph");
+
+    let mut dimensions = matrix;
+    dimensions[matrix_entry + 12] = MatrixStorage::Matrix2 as u8;
+    write_u32(&mut dimensions, matrix_entry + 13, 3);
+    refresh_crc(&mut dimensions);
+    assert_validation_reason(&dimensions, "matrix storage and dimensions disagree");
+
+    let mut deeply_nested = RuntimeType::U8;
+    for _ in 0..300 {
+        deeply_nested = RuntimeType::Reference(Box::new(deeply_nested));
+    }
+    let error = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: deeply_nested,
+        alignment: 1,
+        bytes: Vec::new(),
+    }]))
+    .unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeValidation");
+    assert!(error.kind_message().contains("recursion"));
+}
+
+#[test]
+fn rejects_invalid_constant_table_entries_and_scalar_payloads() {
+    let boolean = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::Bool,
+        alignment: 1,
+        bytes: vec![1],
+    }]))
+    .unwrap();
+    let entry = constant_entry_offset(&boolean, 0);
+
+    let mut encoding = boolean.clone();
+    encoding[entry + 4] = 2;
+    refresh_crc(&mut encoding);
+    assert_validation_reason(&encoding, "invalid constant table entry");
+
+    let mut flags = boolean.clone();
+    write_u16(&mut flags, entry + 6, 1);
+    refresh_crc(&mut flags);
+    assert_validation_reason(&flags, "invalid constant table entry");
+
+    let mut alignment = boolean.clone();
+    alignment[entry + 5] = 3;
+    refresh_crc(&mut alignment);
+    assert_validation_reason(&alignment, "invalid constant table entry");
+
+    let mut payload = boolean;
+    let payload_offset = constant_payload_offset(&payload, 0);
+    payload[payload_offset] = 2;
+    refresh_crc(&mut payload);
+    assert_decode_reason(&payload, "Bool constant must be exactly");
+
+    let mut rational = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::R64,
+        alignment: 8,
+        bytes: [(-3_i64).to_le_bytes(), 7_i64.to_le_bytes()].concat(),
+    }]))
+    .unwrap();
+    let payload_offset = constant_payload_offset(&rational, 0);
+    rational[payload_offset..payload_offset + 8].copy_from_slice(&2_i64.to_le_bytes());
+    rational[payload_offset + 8..payload_offset + 16].copy_from_slice(&4_i64.to_le_bytes());
+    refresh_crc(&mut rational);
+    assert_decode_reason(&rational, "R64 constant is not reduced");
+}
+
+#[test]
+fn rejects_duplicate_map_and_set_payloads_and_invalid_enum_identity() {
+    let mut map_payload = 2_u32.to_le_bytes().to_vec();
+    for value in [1_u8, 10, 2, 20] {
+        append_child_payload(&mut map_payload, &[value]);
+    }
+    let mut map = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::Map {
+            key: Box::new(RuntimeType::U8),
+            value: Box::new(RuntimeType::U8),
+        },
+        alignment: 4,
+        bytes: map_payload,
+    }]))
+    .unwrap();
+    let map_offset = constant_payload_offset(&map, 0);
+    map[map_offset + 18] = 1;
+    refresh_crc(&mut map);
+    assert_decode_reason(&map, "map keys are not in strict canonical payload order");
+
+    let mut set_payload = 2_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut set_payload, &[1]);
+    append_child_payload(&mut set_payload, &[2]);
+    let mut set = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::Set {
+            element: Box::new(RuntimeType::U8),
+            max_len: None,
+        },
+        alignment: 4,
+        bytes: set_payload,
+    }]))
+    .unwrap();
+    let set_offset = constant_payload_offset(&set, 0);
+    set[set_offset + 13] = 1;
+    refresh_crc(&mut set);
+    assert_decode_reason(
+        &set,
+        "set elements are not in strict canonical payload order",
+    );
+
+    let enum_name = "status";
+    let variant_name = "ready";
+    let mut enumeration = 1_u32.to_le_bytes().to_vec();
+    enumeration.extend_from_slice(&hash_str(variant_name).to_le_bytes());
+    enumeration.extend_from_slice(&(variant_name.len() as u32).to_le_bytes());
+    enumeration.extend_from_slice(variant_name.as_bytes());
+    enumeration.push(0);
+    let mut enumeration = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::Enum {
+            id: hash_str(enum_name),
+            name: enum_name.to_owned(),
+        },
+        alignment: 4,
+        bytes: enumeration,
+    }]))
+    .unwrap();
+    let enum_offset = constant_payload_offset(&enumeration, 0);
+    enumeration[enum_offset + 20] ^= 1;
+    refresh_crc(&mut enumeration);
+    assert_decode_reason(
+        &enumeration,
+        "enum variant name does not match its stable ID",
+    );
+}
+
+#[test]
+fn rejects_invalid_and_duplicate_symbols() {
+    let first_name = "alpha";
+    let second_name = "beta";
+    let first = hash_str(first_name);
+    let second = hash_str(second_name);
+    let mut input = program(vec![empty_constant()]);
+    input.register_count = 2;
+    input.symbols.insert(first, 0);
+    input.symbols.insert(second, 1);
+    input.dictionary.insert(first, first_name.to_owned());
+    input.dictionary.insert(second, second_name.to_owned());
+    let symbols = write_bytecode(&input).unwrap();
+    let symbol_offset = section_offset(&symbols, BytecodeSectionKind::Symbols as usize - 1);
+
+    let mut register = symbols.clone();
+    write_u32(&mut register, symbol_offset + 8, 2);
+    refresh_crc(&mut register);
+    assert_validation_reason(&register, "symbol register is out of range");
+
+    let mut duplicate = symbols;
+    let first_id = read_u64(&duplicate, symbol_offset);
+    write_u64(&mut duplicate, symbol_offset + 16, first_id);
+    refresh_crc(&mut duplicate);
+    assert_validation_reason(&duplicate, "symbols are duplicate or unsorted");
+}
+
+#[test]
+fn rejects_unknown_requirement_fields_utf8_opcode_and_trailing_bytes() {
+    let requirement = ApplicationRequirement::Resource(ExecutionResourceRequest {
+        base_uri: "test://clock".to_owned(),
+        path: "value".to_owned(),
+        context_name: "clock".to_owned(),
+        operation: "read".to_owned(),
+        intent: ResourceIntent::Read,
+        delivery: ResourceDelivery::Snapshot,
+    });
+    let mut input = program(vec![empty_constant()]);
+    input.requirements.push(requirement);
+    let requirement = write_bytecode(&input).unwrap();
+    let requirement_offset = section_offset(
+        &requirement,
+        BytecodeSectionKind::ApplicationRequirements as usize - 1,
+    );
+
+    for (byte_offset, value, expected) in [
+        (0, 3, "unknown application requirement kind"),
+        (1, 0, "unknown resource intent"),
+        (2, 2, "unknown resource delivery"),
+        (3, 1, "requirement flags must be zero"),
+    ] {
+        let mut malformed = requirement.clone();
+        malformed[requirement_offset + byte_offset] = value;
+        refresh_crc(&mut malformed);
+        assert_validation_reason(&malformed, expected);
+    }
+
+    let mut utf8 = requirement;
+    utf8[requirement_offset + 16] = 0xff;
+    refresh_crc(&mut utf8);
+    assert_validation_reason(&utf8, "invalid UTF-8 in requirement operation");
+
+    let mut opcode = write_bytecode(&program(vec![empty_constant()])).unwrap();
+    let instruction_offset =
+        section_offset(&opcode, BytecodeSectionKind::Instructions as usize - 1);
+    opcode[instruction_offset] = 0xfe;
+    refresh_crc(&mut opcode);
+    assert_validation_reason(&opcode, "unknown bytecode opcode");
+
+    let mut trailing = write_bytecode(&program(vec![empty_constant()])).unwrap();
+    let checksum_offset = read_u64(&trailing, HEADER_CHECKSUM_OFFSET) as usize;
+    trailing.insert(checksum_offset, 1);
+    let trailing_len = trailing.len() as u64;
+    write_u64(&mut trailing, HEADER_FILE_LEN, trailing_len);
+    write_u64(
+        &mut trailing,
+        HEADER_CHECKSUM_OFFSET,
+        (checksum_offset + 1) as u64,
+    );
+    refresh_crc(&mut trailing);
+    assert_validation_reason(&trailing, "bytes before checksum must be zero padding");
+}
+
+#[test]
 fn rejects_invalid_register_constant_and_requirement_indexes() {
     let original = write_bytecode(&program(vec![empty_constant()])).unwrap();
     let instruction_offset =
@@ -945,20 +1268,61 @@ fn rejects_missing_duplicate_and_nonfinal_return() {
 }
 
 #[test]
-fn representative_read_limits_are_enforced() {
+fn every_read_limit_is_enforced_with_a_structured_validation_error() {
     let bytes = write_bytecode(&program(vec![empty_constant()])).unwrap();
 
     let mut limits = BytecodeReadLimits::default();
     limits.max_file_bytes = bytes.len() - 1;
-    assert!(ParsedProgram::from_bytes_with_limits(&bytes, limits).is_err());
+    assert_validation_with_limits(&bytes, limits);
 
     let mut limits = BytecodeReadLimits::default();
     limits.max_registers = 0;
-    assert!(ParsedProgram::from_bytes_with_limits(&bytes, limits).is_err());
+    assert_validation_with_limits(&bytes, limits);
+
+    let mut limits = BytecodeReadLimits::default();
+    limits.max_instructions = 0;
+    assert_validation_with_limits(&bytes, limits);
+
+    let mut limits = BytecodeReadLimits::default();
+    limits.max_types = 0;
+    assert_validation_with_limits(&bytes, limits);
 
     let mut limits = BytecodeReadLimits::default();
     limits.max_constants = 0;
-    assert!(ParsedProgram::from_bytes_with_limits(&bytes, limits).is_err());
+    assert_validation_with_limits(&bytes, limits);
+
+    let mut symbols = program(vec![empty_constant()]);
+    let symbol_name = "answer";
+    let symbol_id = hash_str(symbol_name);
+    symbols.symbols.insert(symbol_id, 0);
+    symbols.dictionary.insert(symbol_id, symbol_name.to_owned());
+    let symbol_bytes = write_bytecode(&symbols).unwrap();
+
+    let mut limits = BytecodeReadLimits::default();
+    limits.max_symbols = 0;
+    assert_validation_with_limits(&symbol_bytes, limits);
+
+    let mut limits = BytecodeReadLimits::default();
+    limits.max_dictionary_entries = 0;
+    assert_validation_with_limits(&symbol_bytes, limits);
+
+    let mut limits = BytecodeReadLimits::default();
+    limits.max_dictionary_bytes = 0;
+    assert_validation_with_limits(&symbol_bytes, limits);
+
+    let mut requirements = program(vec![empty_constant()]);
+    requirements
+        .requirements
+        .push(ApplicationRequirement::HostFunction(
+            ExecutionHostFunctionRequest {
+                name: "host".into(),
+            },
+        ));
+    let requirement_bytes = write_bytecode(&requirements).unwrap();
+
+    let mut limits = BytecodeReadLimits::default();
+    limits.max_requirements = 0;
+    assert_validation_with_limits(&requirement_bytes, limits);
 
     let mut input = program(vec![empty_constant()]);
     input.instructions = vec![
@@ -972,7 +1336,7 @@ fn representative_read_limits_are_enforced() {
     let variadic = write_bytecode(&input).unwrap();
     let mut limits = BytecodeReadLimits::default();
     limits.max_variadic_arguments = 0;
-    assert!(ParsedProgram::from_bytes_with_limits(&variadic, limits).is_err());
+    assert_validation_with_limits(&variadic, limits);
 }
 
 #[test]

@@ -34,7 +34,7 @@ def generate() -> dict[str, Path]:
             "--features",
             "standard-hosts",
             "--test",
-            "generate_phase1_projects",
+            "generate_native_projects",
             "--",
             "--nocapture",
             "--test-threads=1",

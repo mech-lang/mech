@@ -167,7 +167,7 @@ fn mixed_program_returns_literal_after_external_send() -> MResult<()> {
 }
 
 #[test]
-fn phase1_scalar_constants_round_trip_through_source_compilation() -> MResult<()> {
+fn scalar_constants_round_trip_through_source_compilation() -> MResult<()> {
     for (source, expected) in [
         ("true", Value::Bool(Ref::new(true))),
         (

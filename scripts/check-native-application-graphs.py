@@ -30,7 +30,7 @@ EXPECTED_FEATURES = {
         "mech-range": {"f64", "inclusive", "native-link", "row_vectord", "runtime"},
     },
     "generated_native_quaternary": {
-        "mech-core": {"bool", "f64", "matrixd", "program", "string", "vectord"},
+        "mech-core": {"bool", "f64", "matrixd", "program", "row_vectord", "string"},
         "mech-engine": {
             "bool",
             "f64",
@@ -38,6 +38,7 @@ EXPECTED_FEATURES = {
             "matrix_vertcat",
             "matrixd",
             "native-link",
+            "row_vectord",
             "runtime",
             "string",
             "variable_define",
@@ -139,7 +140,7 @@ EXPECTED_FEATURES = {
 }
 EXPECTED = {binary: set(packages) for binary, packages in EXPECTED_FEATURES.items()}
 EXPECTED_RESOLVED_FEATURES = {
-    "phase1_native_literal": {
+    "native_literal": {
         "mech-core": {
             "byteorder",
             "crc32fast",
@@ -163,7 +164,7 @@ EXPECTED_RESOLVED_FEATURES = {
             "symbol_table",
         },
     },
-    "phase1_native_scalar": {
+    "native_scalar": {
         "mech-core": {
             "byteorder",
             "crc32fast",
@@ -197,7 +198,7 @@ EXPECTED_RESOLVED_FEATURES = {
             "runtime",
         },
     },
-    "phase1_native_fixed_matrix": {
+    "native_fixed_matrix": {
         "mech-core": {
             "bool",
             "byteorder",
@@ -249,7 +250,7 @@ EXPECTED_RESOLVED_FEATURES = {
             "runtime",
         },
     },
-    "phase1_native_dynamic_matrix": {
+    "native_dynamic_matrix": {
         "mech-core": {
             "bool",
             "byteorder",
@@ -301,7 +302,7 @@ EXPECTED_RESOLVED_FEATURES = {
             "runtime",
         },
     },
-    "phase1_native_variadic": {
+    "native_variadic": {
         "mech-core": {
             "bool",
             "byteorder",
@@ -340,7 +341,7 @@ EXPECTED_RESOLVED_FEATURES = {
             "vectord",
         },
     },
-    "phase1_native_cli_hosted": {
+    "native_cli_hosted": {
         "mech-core": {
             "byteorder",
             "crc32fast",
@@ -396,7 +397,7 @@ def materialize_projects() -> list[Path]:
             "--features",
             "standard-hosts",
             "--test",
-            "generate_phase1_projects",
+            "generate_native_projects",
             "--",
             "--nocapture",
             "--test-threads=1",

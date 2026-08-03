@@ -18,6 +18,7 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [features]
+std = ["mech-core/std"]
 no_std = ["mech-core/no_std", "mech-syntax?/no_std"]
 
 runtime = ["program", "functions"]

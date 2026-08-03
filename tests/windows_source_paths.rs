@@ -186,14 +186,19 @@ fn windows_build_executes_source_module_graph() {
     let fixture = TestDirectory::new("build module graph");
     let project = fixture.path().join("source tree").join("nested # %");
     let output_dir = fixture.path().join("output tree").join("compiled ü # %");
+    let bytecode = output_dir.join("output.mecb");
     let root = write_module_graph(&project, false);
 
     let mut command = mech_command(fixture.path(), "build");
-    command.arg(&root).arg(OsStr::new("--out")).arg(&output_dir);
+    command
+        .arg(&root)
+        .arg("--emit")
+        .arg("bytecode")
+        .arg(OsStr::new("--out"))
+        .arg(&bytecode);
     let output = run_command(command, "Windows build module graph");
     assert_command_success("Windows build module graph", &output);
 
-    let bytecode = output_dir.join("output.mecb");
     assert!(
         bytecode
             .metadata()

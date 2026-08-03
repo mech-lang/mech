@@ -54,7 +54,7 @@ pub struct OwnerRunnerResult {
 
 pub fn fixture_path(file: &str) -> PathBuf {
     workspace_root()
-        .join("tests/architecture/bytecode-v1/phase1")
+        .join("tests/architecture/bytecode-v1")
         .join(file)
 }
 
@@ -76,7 +76,7 @@ pub fn run_owner(
         .arg("--manifest-path")
         .arg(workspace.join("tests/fixtures/native-build-owner-runner/Cargo.toml"))
         .arg("--target-dir")
-        .arg(workspace.join("target/phase1-fixtures/cargo-target"))
+        .arg(workspace.join("target/bytecode-v1-fixtures/cargo-target"))
         .arg("--no-default-features")
         .arg("--features")
         .arg(profile.cargo_feature())

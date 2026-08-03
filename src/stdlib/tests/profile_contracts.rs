@@ -1,5 +1,6 @@
 #[cfg(feature = "standard_runtime")]
 use std::collections::BTreeMap;
+use std::sync::Mutex;
 
 use mech_core::{FunctionCatalog, FunctionExposure};
 #[cfg(feature = "standard_runtime")]
@@ -8,6 +9,8 @@ use sha2::{Digest, Sha256};
 
 #[cfg(feature = "standard_runtime")]
 const EXPECTED_RUNTIME_FACTORIES: usize = 9_019;
+#[cfg(feature = "standard_runtime")]
+const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 119_771;
 #[cfg(feature = "standard_source")]
 const EXPECTED_NAMED_SPECIALIZERS: usize = 119;
 #[cfg(feature = "standard_source")]
@@ -21,6 +24,11 @@ const EXPECTED_ALL_EXPORTS: usize = 120;
 #[cfg(feature = "standard_runtime")]
 const EXPECTED_RUNTIME_SURFACE_DIGEST: &str =
     "b9db9003bb9da704d5b61a5a6a3d5fcc6438ef7e433f49fc1918c466fc2fcc62";
+#[cfg(feature = "standard_runtime")]
+const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
+    "adba5528babe462cd80a138e849c1ee1d203083bfac3780b6f498355843cc6d9";
+
+static CATALOG_TEST_LOCK: Mutex<()> = Mutex::new(());
 
 #[cfg(feature = "standard_runtime")]
 const RUNTIME_SURFACE: &[u8] = include_bytes!(concat!(
@@ -89,12 +97,17 @@ fn canonical_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
 }
 
 fn with_catalog_test_stack(test: impl FnOnce() + Send + 'static) {
+    let _guard = CATALOG_TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let test = std::thread::Builder::new()
         .name("stdlib-profile-contract".to_string())
         // Native-linkage registration now follows the complete owner-local
         // factory surface.  Keep the contract test isolated from the small
         // platform default thread stack while it constructs that catalog.
-        .stack_size(8 * 1024 * 1024)
+        // Match the exhaustive native-linkage fixture: all-features expands
+        // the owner-local catalog far beyond the frozen standard profile.
+        .stack_size(64 * 1024 * 1024)
         .spawn(test)
         .expect("profile contract thread must spawn");
     if let Err(payload) = test.join() {
@@ -166,7 +179,20 @@ fn distribution_size_report_catalog_counts() {
 
 #[cfg(feature = "standard_runtime")]
 fn assert_runtime_surface(catalog: &FunctionCatalog) {
-    assert_eq!(catalog.runtime_factory_count(), EXPECTED_RUNTIME_FACTORIES);
+    let count = catalog.runtime_factory_count();
+    if count == EXPECTED_EXTENDED_RUNTIME_FACTORIES {
+        assert_eq!(
+            canonical_runtime_surface_digest(catalog),
+            EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST,
+            "extended runtime catalog diverged from the exhaustive all-features contract",
+        );
+        return;
+    }
+
+    assert_eq!(
+        count, EXPECTED_RUNTIME_FACTORIES,
+        "selected runtime catalog is neither the frozen standard nor exhaustive profile",
+    );
 
     let frozen: FrozenRuntimeSurface =
         serde_json::from_slice(RUNTIME_SURFACE).expect("frozen runtime surface must be valid JSON");
@@ -264,7 +290,7 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
 
 #[cfg(feature = "standard_runtime")]
 #[test]
-fn standard_runtime_matches_the_frozen_runtime_surface() {
+fn selected_runtime_matches_a_frozen_runtime_surface() {
     with_catalog_test_stack(|| {
         let catalog = mech_stdlib::runtime_catalog();
         assert_runtime_surface(&catalog);
@@ -276,7 +302,7 @@ fn standard_runtime_matches_the_frozen_runtime_surface() {
 
 #[cfg(feature = "standard_source")]
 #[test]
-fn standard_source_matches_the_frozen_source_surface() {
+fn selected_source_matches_the_frozen_source_surface() {
     with_catalog_test_stack(|| {
         let catalog = mech_stdlib::source_catalog();
         assert_runtime_surface(&catalog);
@@ -286,7 +312,7 @@ fn standard_source_matches_the_frozen_source_surface() {
 
 #[cfg(feature = "standard_compiler")]
 #[test]
-fn standard_compiler_preserves_the_standard_source_catalog() {
+fn selected_compiler_preserves_the_frozen_source_catalog() {
     with_catalog_test_stack(|| {
         let catalog = mech_stdlib::source_catalog();
         assert_runtime_surface(&catalog);

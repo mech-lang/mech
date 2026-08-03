@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 use std::collections::BTreeMap;
+use std::fs;
 use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, AtomicUsize, Ordering},
@@ -19,6 +20,21 @@ pub const TEST_LIVE_INSTANCE: &str = "clock";
 pub const TEST_LIVE_CONTEXT: &str = "clock";
 pub const TEST_LIVE_BASE_URI: &str = "test-live://clock/clock";
 pub const TEST_LIVE_PATH: &str = "value";
+pub const TEST_LIVE_START_MARKER_ENV: &str = "MECH_TEST_LIVE_START_MARKER";
+pub const TEST_LIVE_STOP_MARKER_ENV: &str = "MECH_TEST_LIVE_STOP_MARKER";
+pub const TEST_LIVE_FAIL_AFTER_START_ENV: &str = "MECH_TEST_LIVE_FAIL_AFTER_START";
+
+fn write_process_marker(variable: &str) -> MResult<()> {
+    let Some(path) = std::env::var_os(variable) else {
+        return Ok(());
+    };
+    fs::write(&path, b"observed\n").map_err(|failure| {
+        error(
+            "TestLiveMarkerFailed",
+            format!("failed to write {}: {failure}", path.to_string_lossy()),
+        )
+    })
+}
 
 pub fn test_live_manifest() -> MResult<HostManifestConfig> {
     Ok(HostManifestConfig {
@@ -161,12 +177,38 @@ impl RuntimeHostInputDriver for TestLiveInputDriver {
         if !self.handle.state.live.swap(true, Ordering::SeqCst) {
             self.handle.state.start_count.fetch_add(1, Ordering::SeqCst);
         }
+        write_process_marker(TEST_LIVE_START_MARKER_ENV)?;
+        if std::env::var_os(TEST_LIVE_FAIL_AFTER_START_ENV).is_some() {
+            let ingress = self
+                .handle
+                .state
+                .ingress
+                .lock()
+                .map_err(|_| {
+                    error(
+                        "TestLiveDriverUnavailable",
+                        "test-live ingress lock poisoned",
+                    )
+                })?
+                .clone()
+                .ok_or_else(|| {
+                    error(
+                        "TestLiveDriverNotAttached",
+                        "test-live input driver has no ingress attachment",
+                    )
+                })?;
+            ingress.submit(RuntimeHostInput::single(
+                test_live_source()?,
+                RuntimeHostInputValue::String("deliberately-invalid-live-input".to_owned()),
+            ))?;
+        }
         Ok(())
     }
 
     fn stop(&mut self) -> MResult<()> {
         if self.handle.state.live.swap(false, Ordering::SeqCst) {
             self.handle.state.stop_count.fetch_add(1, Ordering::SeqCst);
+            write_process_marker(TEST_LIVE_STOP_MARKER_ENV)?;
         }
         Ok(())
     }

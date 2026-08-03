@@ -29,17 +29,17 @@ fn main() -> MResult<()> {
     let root = std::env::temp_dir().join("mech-runtime-dependency-source-demo");
 
     let _ = fs::remove_dir_all(&root);
-    fs::create_dir_all(&root)?;
+    support::io(fs::create_dir_all(&root))?;
 
     let dep_path = root.join("dep.mec");
 
-    fs::write(
+    support::io(fs::write(
         &dep_path,
         r#"
       y := 42
       y
     "#,
-    )?;
+    ))?;
 
     println!("root: {}", root.display());
     println!("dep:  {}", dep_path.display());
