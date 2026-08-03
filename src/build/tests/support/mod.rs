@@ -4,6 +4,8 @@ use mech_build::NativeBuildPlan;
 
 mod isolated;
 pub use isolated::*;
+mod generated_cases;
+pub use generated_cases::*;
 
 pub fn assert_exact_mech_packages(plan: &NativeBuildPlan, expected: &[&str]) {
     let actual = plan

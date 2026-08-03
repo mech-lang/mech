@@ -2,10 +2,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
-use mech_core::{MResult, ResourceDelivery};
+use mech_core::{ExecutionResourceRequest, MResult, ResourceDelivery};
 use mech_runtime::{ConfigValue, LogLevel, RuntimeConfig};
 
-use crate::analysis::requirements::normalize_runtime_config;
+use crate::analysis::requirements::{grant_covers_resource, normalize_runtime_config};
 use crate::error::{NativeBuildErrorKind, native_build_error};
 use crate::plan::{
     NATIVE_BUILD_PLAN_SCHEMA, NativeApplicationKind, NativeBuildPlan, NativeBuildRequest,
@@ -75,6 +75,14 @@ pub fn generated_dependencies_from_plan(
             )?,
         };
         dependencies.push(dependency);
+    }
+    if plan.live {
+        dependencies.push(GeneratedDependency::registry(
+            "ctrlc",
+            "ctrlc",
+            "3.5.2",
+            std::iter::empty::<&str>(),
+        )?);
     }
     dependencies.sort_by(|left, right| {
         left.crate_name
@@ -184,21 +192,42 @@ fn validate_runtime_config_implications(
             "a request with runtime configuration requires a hosted native plan",
         );
     }
-    let resources = plan
+    let resource_requirements = plan
         .application_requirements
         .iter()
         .filter_map(|requirement| match requirement {
-            PlannedApplicationRequirement::Resource { delivery, .. } => Some(*delivery),
+            PlannedApplicationRequirement::Resource {
+                base_uri,
+                path,
+                context_name,
+                operation,
+                intent,
+                delivery,
+                host_instance,
+                ..
+            } => Some((
+                base_uri,
+                path,
+                context_name,
+                operation,
+                *intent,
+                *delivery,
+                host_instance,
+            )),
             PlannedApplicationRequirement::HostFunction { .. } => None,
         })
         .collect::<Vec<_>>();
-    if plan.live != resources.contains(&ResourceDelivery::Live) {
+    if plan.live
+        != resource_requirements
+            .iter()
+            .any(|(_, _, _, _, _, delivery, _)| *delivery == ResourceDelivery::Live)
+    {
         return project_invalid(
             "native build plan live mode contradicts its resource requirements",
         );
     }
 
-    if resources.is_empty() {
+    if resource_requirements.is_empty() {
         if !plan.hosts.is_empty() || !plan.run_grants.is_empty() {
             return project_invalid(
                 "a plan without resource requirements may not select hosts or run grants",
@@ -217,21 +246,85 @@ fn validate_runtime_config_implications(
             "resource project generation requires runtime config",
         ));
     }
-    if normalized_config.run_grants != plan.run_grants {
-        return project_invalid("request run grants do not match the normalized build plan");
+    let required_host_names = resource_requirements
+        .iter()
+        .map(|(_, _, _, _, _, _, host_instance)| (*host_instance).clone())
+        .collect::<BTreeSet<_>>();
+    let planned_host_names = plan
+        .hosts
+        .iter()
+        .map(|host| host.name.clone())
+        .collect::<BTreeSet<_>>();
+    if planned_host_names != required_host_names || planned_host_names.len() != plan.hosts.len() {
+        return project_invalid("native build plan hosts are not the exact resource-owner set");
     }
-    if normalized_config.hosts.len() != plan.hosts.len()
-        || normalized_config
+    for planned in &plan.hosts {
+        let Some(configured) = normalized_config
             .hosts
             .iter()
-            .zip(&plan.hosts)
-            .any(|(configured, planned)| {
-                configured.name != planned.name
-                    || configured.provider != planned.provider
-                    || configured.settings != planned.settings
-            })
-    {
-        return project_invalid("request hosts do not match the normalized build plan");
+            .find(|configured| configured.name == planned.name)
+        else {
+            return project_invalid("native build plan selects an unconfigured host instance");
+        };
+        if configured.provider != planned.provider || configured.settings != planned.settings {
+            return project_invalid("planned host metadata does not match runtime configuration");
+        }
+    }
+
+    let mut expected_grant_keys = BTreeMap::new();
+    for (_, path, _, operation, _, _, host_instance) in &resource_requirements {
+        *expected_grant_keys
+            .entry((
+                (*host_instance).clone(),
+                (*operation).clone(),
+                (*path).clone(),
+            ))
+            .or_insert(0usize) += 1;
+    }
+    let mut actual_grant_keys = BTreeMap::new();
+    for grant in &plan.run_grants {
+        let Some((host_instance, context_name)) = grant.target.split_once('/') else {
+            return project_invalid("planned run grant target is not a host/context pair");
+        };
+        if context_name.is_empty() || grant.operations.len() != 1 || grant.paths.len() != 1 {
+            return project_invalid("planned run grants must contain one exact operation and path");
+        }
+        let Some((base_uri, path, requirement_context, operation, intent, delivery, _)) =
+            resource_requirements
+                .iter()
+                .find(|(_, path, _, operation, _, _, owner)| {
+                    owner.as_str() == host_instance
+                        && **operation == grant.operations[0]
+                        && **path == grant.paths[0]
+                })
+        else {
+            return project_invalid("planned run grant does not belong to a resource requirement");
+        };
+        let request = ExecutionResourceRequest {
+            base_uri: (*base_uri).clone(),
+            path: (*path).clone(),
+            context_name: (*requirement_context).clone(),
+            operation: (*operation).clone(),
+            intent: *intent,
+            delivery: *delivery,
+        };
+        if !normalized_config
+            .run_grants
+            .iter()
+            .any(|configured| grant_covers_resource(configured, &grant.target, &request))
+        {
+            return project_invalid("planned resource is not covered by configured run grants");
+        }
+        *actual_grant_keys
+            .entry((
+                host_instance.to_owned(),
+                grant.operations[0].clone(),
+                grant.paths[0].clone(),
+            ))
+            .or_insert(0usize) += 1;
+    }
+    if actual_grant_keys != expected_grant_keys {
+        return project_invalid("native build plan run grants are not exact resource operations");
     }
     Ok(())
 }
@@ -279,7 +372,8 @@ pub fn render_catalog_source(plan: &NativeBuildPlan) -> MResult<String> {
     Ok(source)
 }
 
-/// Render the exact engine-only entry point from the Phase 1 contract.
+/// Render the engine-only entry point. `--once` is accepted uniformly across
+/// generated executables even though an engine application is already one-shot.
 pub fn render_engine_main_source() -> String {
     String::from(
         r#"mod catalog;
@@ -296,7 +390,20 @@ static PROGRAM: &[u8] =
         "/program.mecb"
     ));
 
-fn run() -> MResult<()> {
+fn parse_once() -> Result<bool, ()> {
+    let mut arguments = std::env::args().skip(1);
+    match (arguments.next(), arguments.next()) {
+        (None, None) => Ok(false),
+        (Some(argument), None) if argument == "--once" => Ok(true),
+        _ => Err(()),
+    }
+}
+
+fn usage() {
+    eprintln!("usage: generated-app [--once]");
+}
+
+fn run(_once: bool) -> MResult<()> {
     let catalog = catalog::function_catalog()?;
 
     let mut program =
@@ -315,7 +422,14 @@ fn run() -> MResult<()> {
 }
 
 fn main() {
-    if let Err(error) = run() {
+    let once = match parse_once() {
+        Ok(once) => once,
+        Err(()) => {
+            usage();
+            std::process::exit(2);
+        }
+    };
+    if let Err(error) = run(once) {
         eprintln!("{}", error.display_message());
         std::process::exit(1);
     }
@@ -324,11 +438,21 @@ fn main() {
     )
 }
 
-/// Render the exact hosted entry point from the Phase 1 contract.
-pub fn render_hosted_main_source() -> String {
-    String::from(
-        r#"mod catalog;
+/// Render a hosted entry point. Live applications add only their exact
+/// Ctrl-C dependency and do not burden one-shot hosted applications.
+pub fn render_hosted_main_source(live: bool) -> String {
+    if live {
+        return String::from(
+            r#"mod catalog;
 mod runtime;
+
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
+use std::time::Duration;
+
+use mech_core::{GenericError, MResult, MechError};
 
 static PROGRAM: &[u8] =
     include_bytes!(concat!(
@@ -336,32 +460,328 @@ static PROGRAM: &[u8] =
         "/program.mecb"
     ));
 
-fn run() -> mech_core::MResult<()> {
-    let catalog = catalog::function_catalog()?;
-    let mut runtime =
-        runtime::runtime_builder(catalog)?.build()?;
+fn generated_error(message: impl Into<String>) -> MechError {
+    MechError::new(GenericError { msg: message.into() }, None)
+}
 
-    let mut context = runtime.runtime_context()?;
-
-    let value = runtime.install_bytecode_with_context(
-        &mut context,
-        PROGRAM,
-    )?;
-
-    if !value.is_empty() {
-        println!("{}", value.into_value());
+fn parse_once() -> Result<bool, ()> {
+    let mut arguments = std::env::args().skip(1);
+    match (arguments.next(), arguments.next()) {
+        (None, None) => Ok(false),
+        (Some(argument), None) if argument == "--once" => Ok(true),
+        _ => Err(()),
     }
+}
 
-    runtime.shutdown()
+fn usage() {
+    eprintln!("usage: generated-app [--once]");
+}
+
+fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
+    let catalog = match catalog::function_catalog() {
+        Ok(catalog) => catalog,
+        Err(error) => return (Err(error), Vec::new()),
+    };
+    let mut runtime = match runtime::runtime_builder(catalog).and_then(|builder| builder.build()) {
+        Ok(runtime) => runtime,
+        Err(error) => return (Err(error), Vec::new()),
+    };
+    let runtime_constructed = true;
+    let mut drivers_started = false;
+    let primary = (|| -> MResult<()> {
+        let mut context = runtime.runtime_context()?;
+        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;
+
+        if !value.is_empty() {
+            println!("{}", value.into_value());
+        }
+
+        if once {
+            return Ok(());
+        }
+
+        let interrupted = Arc::new(AtomicBool::new(false));
+        let handler_flag = Arc::clone(&interrupted);
+        ctrlc::set_handler(move || {
+            handler_flag.store(true, Ordering::SeqCst);
+        })
+        .map_err(|error| generated_error(format!("failed to install Ctrl-C handler: {error}")))?;
+
+        drivers_started = true;
+        runtime.start_input_drivers()?;
+        while !interrupted.load(Ordering::SeqCst) {
+            if runtime.drain_host_inputs(64)?.is_empty() {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+        Ok(())
+    })();
+
+    let mut cleanup = Vec::new();
+    if drivers_started {
+        if let Err(error) = runtime.stop_input_drivers() {
+            cleanup.push(error);
+        }
+    }
+    if runtime_constructed {
+        if let Err(error) = runtime.shutdown() {
+            cleanup.push(error);
+        }
+    }
+    (primary, cleanup)
 }
 
 fn main() {
-    if let Err(error) = run() {
+    let once = match parse_once() {
+        Ok(once) => once,
+        Err(()) => {
+            usage();
+            std::process::exit(2);
+        }
+    };
+    let (primary, cleanup) = run(once);
+    let mut failed = false;
+    if let Err(error) = primary {
         eprintln!("{}", error.display_message());
+        failed = true;
+    }
+    for error in cleanup {
+        eprintln!("cleanup: {}", error.display_message());
+        failed = true;
+    }
+    if failed {
         std::process::exit(1);
     }
 }
 "#,
+        );
+    }
+
+    String::from(
+        r#"mod catalog;
+mod runtime;
+
+use mech_core::{MResult, MechError};
+
+static PROGRAM: &[u8] =
+    include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/program.mecb"
+    ));
+
+fn parse_once() -> Result<bool, ()> {
+    let mut arguments = std::env::args().skip(1);
+    match (arguments.next(), arguments.next()) {
+        (None, None) => Ok(false),
+        (Some(argument), None) if argument == "--once" => Ok(true),
+        _ => Err(()),
+    }
+}
+
+fn usage() {
+    eprintln!("usage: generated-app [--once]");
+}
+
+fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
+    let catalog = match catalog::function_catalog() {
+        Ok(catalog) => catalog,
+        Err(error) => return (Err(error), Vec::new()),
+    };
+    let mut runtime = match runtime::runtime_builder(catalog).and_then(|builder| builder.build()) {
+        Ok(runtime) => runtime,
+        Err(error) => return (Err(error), Vec::new()),
+    };
+    let runtime_constructed = true;
+    let primary = (|| -> MResult<()> {
+        let _ = once;
+        let mut context = runtime.runtime_context()?;
+        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;
+
+        if !value.is_empty() {
+            println!("{}", value.into_value());
+        }
+        Ok(())
+    })();
+
+    let cleanup = if runtime_constructed {
+        runtime.shutdown().err().into_iter().collect()
+    } else {
+        Vec::new()
+    };
+    (primary, cleanup)
+}
+
+fn main() {
+    let once = match parse_once() {
+        Ok(once) => once,
+        Err(()) => {
+            usage();
+            std::process::exit(2);
+        }
+    };
+    let (primary, cleanup) = run(once);
+    let mut failed = false;
+    if let Err(error) = primary {
+        eprintln!("{}", error.display_message());
+        failed = true;
+    }
+    for error in cleanup {
+        eprintln!("cleanup: {}", error.display_message());
+        failed = true;
+    }
+    if failed {
+        std::process::exit(1);
+    }
+}
+"#,
+    )
+}
+
+fn render_hosted_main_source_for_plan(plan: &NativeBuildPlan) -> String {
+    let mut actor_functions = plan
+        .application_requirements
+        .iter()
+        .filter_map(|requirement| match requirement {
+            PlannedApplicationRequirement::HostFunction { name, .. }
+                if name.starts_with("actor/") =>
+            {
+                Some(name.as_str())
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    actor_functions.sort_unstable();
+    actor_functions.dedup();
+
+    let mut source = render_hosted_main_source(plan.live);
+    if actor_functions.is_empty() {
+        return source;
+    }
+
+    let ordinary_install = "        let mut context = runtime.runtime_context()?;\n        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;";
+    assert!(
+        source.contains(ordinary_install),
+        "hosted main template must retain the program-install seam"
+    );
+    source = source.replace(
+        ordinary_install,
+        "        let value = install_actor_bytecode(&mut runtime)?;",
+    );
+    let seam = "fn parse_once() -> Result<bool, ()> {";
+    assert!(
+        source.contains(seam),
+        "hosted main template lost parse seam"
+    );
+    source.replace(
+        seam,
+        &format!(
+            "{}\n\n{seam}",
+            render_actor_install_source(&actor_functions)
+        ),
+    )
+}
+
+fn render_actor_install_source(actor_functions: &[&str]) -> String {
+    let verifies_state_mutation = actor_functions.contains(&"actor/state/put");
+    let actor_functions = actor_functions
+        .iter()
+        .map(|name| rust_string_literal(name))
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!(
+        r#"fn actor_error(message: impl Into<String>) -> mech_core::MechError {{
+    mech_core::MechError::new(
+        mech_core::GenericError {{ msg: message.into() }},
+        None,
+    )
+}}
+
+fn install_actor_bytecode(
+    runtime: &mut mech_runtime::MechRuntime,
+) -> mech_core::MResult<mech_runtime::RuntimeValueSnapshot> {{
+    const REQUIRED_ACTOR_FUNCTIONS: &[&str] = &[{actor_functions}];
+    const VERIFIES_STATE_MUTATION: bool = {verifies_state_mutation};
+
+    let subject_name = "actor:generated-native";
+    let subject = mech_runtime::BasicSubject::new(subject_name);
+    let initial_state = runtime.next_object_id();
+    runtime.put_object(mech_runtime::ObjectRecord::text(
+        initial_state,
+        "actor-state",
+        "generated-initial-state",
+    ))?;
+
+    let mut capabilities = Vec::with_capacity(REQUIRED_ACTOR_FUNCTIONS.len());
+    for function in REQUIRED_ACTOR_FUNCTIONS {{
+        let id = runtime.next_capability_id();
+        runtime.grant_capability(std::sync::Arc::new(
+            mech_runtime::BasicCapability::new(
+                id,
+                &subject,
+                &mech_runtime::BasicResource::new(format!("host:{{function}}")),
+                [mech_runtime::BasicOperation::new("call")],
+            ),
+        ))?;
+        capabilities.push(id);
+    }}
+
+    let actor = runtime.create_actor(
+        subject_name,
+        None,
+        Some(initial_state),
+        capabilities,
+    )?;
+    runtime.send_message(
+        actor,
+        "generated-message",
+        b"generated-payload".to_vec(),
+    )?;
+    let actor_record = runtime
+        .get_actor(actor)?
+        .ok_or_else(|| actor_error("generated actor bootstrap record is missing"))?;
+    let message = runtime
+        .peek_message(actor)?
+        .ok_or_else(|| actor_error("generated actor bootstrap message is missing"))?;
+    let turn = mech_runtime::ActorTurn::new(actor_record, message)?;
+    let mut context = runtime.context_for_actor_turn(&turn)?;
+    runtime.begin_transaction(&mut context)?;
+    let evaluation = (|| {{
+        runtime
+            .next_actor_turn_with_context(&mut context, actor)?
+            .ok_or_else(|| actor_error("generated actor turn was not available"))?;
+        runtime.install_bytecode_with_context(&mut context, PROGRAM)
+    }})();
+
+    match evaluation {{
+        Ok(value) => {{
+            runtime.commit_runtime_transaction(&mut context)?;
+            if runtime.peek_message(actor)?.is_some() {{
+                return Err(actor_error(
+                    "generated actor message acknowledgement did not commit",
+                ));
+            }}
+            if VERIFIES_STATE_MUTATION {{
+                let state = runtime
+                    .get_actor(actor)?
+                    .and_then(|actor| actor.state)
+                    .ok_or_else(|| actor_error("generated actor state is missing after commit"))?;
+                if state == initial_state || runtime.get_object(state)?.is_none() {{
+                    return Err(actor_error(
+                        "generated actor state mutation did not commit",
+                    ));
+                }}
+            }}
+            Ok(value)
+        }}
+        Err(error) => {{
+            runtime.abort_runtime_transaction(
+                &mut context,
+                format!("generated actor execution failed: {{error:?}}"),
+            )?;
+            Err(error)
+        }}
+    }}
+}}"#,
     )
 }
 
@@ -465,7 +885,7 @@ pub fn render_project_sources(
         "src/main.rs",
         match plan.application_kind {
             NativeApplicationKind::Engine => render_engine_main_source(),
-            NativeApplicationKind::Hosted => render_hosted_main_source(),
+            NativeApplicationKind::Hosted => render_hosted_main_source_for_plan(plan),
         },
     )?;
     sources.insert(
@@ -612,6 +1032,7 @@ mod tests {
         NativeBuildProfile, NativeEmit, PlannedHostInstance, PlannedPackage,
         PlannedRuntimeFunction, refresh_plan_sha256,
     };
+    use crate::project::GeneratedDependencySource;
 
     use super::*;
 
@@ -739,9 +1160,38 @@ mod tests {
     }
 
     #[test]
+    fn actor_main_bootstraps_message_state_capabilities_and_transaction() {
+        let mut plan = base_plan(NativeApplicationKind::Hosted);
+        plan.application_requirements =
+            ["actor/message/kind", "actor/state/get", "actor/state/put"]
+                .into_iter()
+                .map(|name| PlannedApplicationRequirement::HostFunction {
+                    name: name.into(),
+                    package: "mech-runtime".into(),
+                    crate_name: "mech_runtime".into(),
+                    installer_path: format!(
+                        "mech_runtime::__mech_native::install_{}",
+                        name.replace('/', "_")
+                    ),
+                    cargo_features: vec!["native-link".into(), "runtime".into(), "string".into()],
+                })
+                .collect();
+
+        let source = render_hosted_main_source_for_plan(&plan);
+        assert!(source.contains("REQUIRED_ACTOR_FUNCTIONS"));
+        assert!(source.contains("actor/message/kind"));
+        assert!(source.contains("runtime.begin_transaction(&mut context)?"));
+        assert!(source.contains("runtime.commit_runtime_transaction(&mut context)?"));
+        assert!(source.contains("runtime.abort_runtime_transaction("));
+        assert!(source.contains("generated actor state mutation did not commit"));
+        assert!(source.contains("BasicCapability::new"));
+        assert!(source.contains("let value = install_actor_bytecode(&mut runtime)?;"));
+    }
+
+    #[test]
     fn both_mains_embed_bytecode_and_only_hosted_main_constructs_runtime() {
         let engine = render_engine_main_source();
-        let hosted = render_hosted_main_source();
+        let hosted = render_hosted_main_source(false);
         for source in [&engine, &hosted] {
             assert!(source.contains("include_bytes!(concat!("));
             assert!(source.contains("env!(\"CARGO_MANIFEST_DIR\")"));
@@ -750,6 +1200,54 @@ mod tests {
         assert!(!engine.contains("mod runtime;"));
         assert!(hosted.contains("mod runtime;"));
         assert!(!engine.contains("pretty_print"));
+    }
+
+    #[test]
+    fn every_generated_main_accepts_only_the_once_switch() {
+        for source in [
+            render_engine_main_source(),
+            render_hosted_main_source(false),
+            render_hosted_main_source(true),
+        ] {
+            assert!(source.contains("Some(argument), None) if argument == \"--once\""));
+            assert!(source.contains("usage: generated-app [--once]"));
+            assert!(source.contains("std::process::exit(2)"));
+        }
+    }
+
+    #[test]
+    fn live_projects_have_an_exact_ctrlc_dependency_and_bounded_shutdown_loop() {
+        let mut live_plan = base_plan(NativeApplicationKind::Hosted);
+        live_plan.live = true;
+        let dependencies = generated_dependencies_from_plan(&live_plan).unwrap();
+        let ctrlc = dependencies
+            .iter()
+            .find(|dependency| dependency.package == "ctrlc")
+            .unwrap();
+        assert_eq!(ctrlc.crate_name, "ctrlc");
+        assert!(matches!(
+            &ctrlc.source,
+            GeneratedDependencySource::Registry { exact_version } if exact_version == "=3.5.2"
+        ));
+
+        let live_source = render_hosted_main_source(true);
+        assert!(live_source.contains("AtomicBool"));
+        assert!(live_source.contains("Ordering::SeqCst"));
+        assert!(live_source.contains("runtime.drain_host_inputs(64)?"));
+        assert!(live_source.contains("Duration::from_millis(10)"));
+        assert!(live_source.contains("runtime.stop_input_drivers()"));
+        assert!(live_source.contains("runtime.shutdown()"));
+        assert!(live_source.contains("runtime_constructed"));
+        assert!(live_source.contains("drivers_started"));
+
+        let one_shot_dependencies =
+            generated_dependencies_from_plan(&base_plan(NativeApplicationKind::Hosted)).unwrap();
+        assert!(
+            one_shot_dependencies
+                .iter()
+                .all(|dependency| dependency.package != "ctrlc")
+        );
+        assert!(!render_hosted_main_source(false).contains("ctrlc::set_handler"));
     }
 
     #[test]

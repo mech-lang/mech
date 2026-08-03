@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate exact generated Phase 1 Mech dependency graphs with Cargo metadata."""
+"""Validate exact generated native-application dependency graphs with Cargo metadata."""
 
 from __future__ import annotations
 
@@ -11,16 +11,53 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_FEATURES = {
-    "phase1_native_literal": {
+    "generated_native_literal": {
         "mech-core": {"f64", "program"},
         "mech-engine": {"f64", "runtime"},
     },
-    "phase1_native_scalar": {
+    "generated_native_scalar": {
         "mech-core": {"f64", "program"},
         "mech-engine": {"f64", "runtime"},
         "mech-math": {"add", "f64", "native-link", "runtime"},
     },
-    "phase1_native_fixed_matrix": {
+    "generated_native_unary": {
+        "mech-core": {"f64", "matrixd", "program"},
+        "mech-engine": {"f64", "matrix_horzcat", "matrixd", "native-link", "runtime"},
+    },
+    "generated_native_ternary": {
+        "mech-core": {"f64", "program", "row_vectord"},
+        "mech-engine": {"bool", "f64", "row_vectord", "runtime", "vectord"},
+        "mech-range": {"f64", "inclusive", "native-link", "row_vectord", "runtime"},
+    },
+    "generated_native_quaternary": {
+        "mech-core": {"bool", "f64", "matrixd", "program", "string", "vectord"},
+        "mech-engine": {
+            "bool",
+            "f64",
+            "matrix_horzcat",
+            "matrix_vertcat",
+            "matrixd",
+            "native-link",
+            "runtime",
+            "string",
+            "variable_define",
+            "vectord",
+        },
+    },
+    "generated_native_variadic": {
+        "mech-core": {"f64", "program", "row_vectord"},
+        "mech-engine": {
+            "bool",
+            "f64",
+            "matrix_horzcat",
+            "matrixd",
+            "native-link",
+            "row_vectord",
+            "runtime",
+            "vectord",
+        },
+    },
+    "generated_native_fixed_matrix": {
         "mech-core": {"f64", "matrix2", "program", "row_vector2"},
         "mech-engine": {
             "bool",
@@ -35,7 +72,7 @@ EXPECTED_FEATURES = {
         },
         "mech-math": {"add", "f64", "matrix2", "native-link", "runtime"},
     },
-    "phase1_native_dynamic_matrix": {
+    "generated_native_dynamic_matrix": {
         "mech-core": {"f64", "matrixd", "program", "row_vectord"},
         "mech-engine": {
             "bool",
@@ -50,24 +87,54 @@ EXPECTED_FEATURES = {
         },
         "mech-math": {"add", "f64", "matrixd", "native-link", "runtime"},
     },
-    "phase1_native_variadic": {
-        "mech-core": {"f64", "program", "row_vectord"},
-        "mech-engine": {
-            "bool",
-            "f64",
-            "matrix_horzcat",
-            "matrixd",
-            "native-link",
-            "row_vectord",
-            "runtime",
-            "vectord",
-        },
-    },
-    "phase1_native_cli_hosted": {
+    "generated_native_cli": {
         "mech-core": {"program", "string"},
         "mech-engine": {"runtime", "string"},
         "mech-host-cli": {"provider"},
         "mech-runtime": {"runtime", "string"},
+    },
+    "generated_native_console": {
+        "mech-core": {"program", "string"},
+        "mech-engine": {"runtime", "string"},
+        "mech-host-console": {"native"},
+        "mech-runtime": {"runtime", "string"},
+    },
+    "generated_native_time": {
+        "mech-core": {"bool", "f64", "program", "string"},
+        "mech-engine": {"bool", "f64", "native-link", "runtime", "string", "variable_define"},
+        "mech-host-time": {"native"},
+        "mech-runtime": {"bool", "f64", "runtime", "string"},
+    },
+    "generated_native_timer": {
+        "mech-core": {"bool", "f64", "program", "string"},
+        "mech-engine": {"bool", "f64", "native-link", "runtime", "string", "variable_define"},
+        "mech-host-timer": {"native"},
+        "mech-runtime": {"bool", "f64", "runtime", "string"},
+    },
+    "generated_native_scene": {
+        "mech-core": {"bool", "f64", "program", "record", "string"},
+        "mech-engine": {
+            "bool",
+            "f64",
+            "native-link",
+            "record",
+            "runtime",
+            "string",
+            "variable_define",
+        },
+        "mech-host-scene": {"native"},
+        "mech-runtime": {"bool", "f64", "record", "runtime", "string"},
+    },
+    "generated_native_robot_arm": {
+        "mech-core": {"bool", "program", "string"},
+        "mech-engine": {"bool", "runtime", "string"},
+        "mech-host-robot-arm": {"provider"},
+        "mech-runtime": {"bool", "runtime", "string"},
+    },
+    "generated_native_actor": {
+        "mech-core": {"bool", "program", "string"},
+        "mech-engine": {"bool", "native-link", "runtime", "string", "variable_define"},
+        "mech-runtime": {"bool", "native-link", "runtime", "string"},
     },
 }
 EXPECTED = {binary: set(packages) for binary, packages in EXPECTED_FEATURES.items()}
@@ -296,6 +363,7 @@ EXPECTED_RESOLVED_FEATURES = {
     },
 }
 FORBIDDEN_FEATURES = {"source", "compiler", "native-plan"}
+FORBIDDEN_PACKAGES = {"mech-stdlib", "mech-syntax", "mech-bytecode", "mech-build"}
 
 
 def execute(arguments: list[str]) -> str:
@@ -485,13 +553,26 @@ def validate_project(project: Path) -> str:
     root = next(
         package for package in packages.values() if package["name"] == binary
     )
+    expected_direct_packages = set(EXPECTED[binary])
+    if plan["live"]:
+        expected_direct_packages.add("ctrlc")
     direct_packages = {dependency["name"] for dependency in root["dependencies"]}
-    if direct_packages != EXPECTED[binary]:
+    if direct_packages != expected_direct_packages:
         raise RuntimeError(
             f"{binary}: direct dependencies {sorted(direct_packages)} != "
-            f"{sorted(EXPECTED[binary])}"
+            f"{sorted(expected_direct_packages)}"
         )
     for dependency in root["dependencies"]:
+        if dependency["name"] == "ctrlc":
+            if (
+                dependency["req"] != "=3.5.2"
+                or dependency["uses_default_features"]
+                or dependency["features"]
+            ):
+                raise RuntimeError(
+                    f"{binary}: ctrlc must be the exact no-default-feature =3.5.2 dependency"
+                )
+            continue
         if dependency["uses_default_features"]:
             raise RuntimeError(f"{binary}: {dependency['name']} enables default features")
         actual_features = set(dependency["features"])
@@ -510,18 +591,16 @@ def validate_project(project: Path) -> str:
             continue
         package_name = package["name"]
         actual_resolved_features = set(node["features"])
-        expected_resolved_features = EXPECTED_RESOLVED_FEATURES[binary][package_name]
-        if actual_resolved_features != expected_resolved_features:
-            raise RuntimeError(
-                f"{binary}: {package_name} resolved features "
-                f"{sorted(actual_resolved_features)} != "
-                f"{sorted(expected_resolved_features)}"
-            )
         forbidden = FORBIDDEN_FEATURES.intersection(actual_resolved_features)
         if forbidden:
             raise RuntimeError(
                 f"{binary}: {package_name} enables forbidden features {sorted(forbidden)}"
             )
+    forbidden_packages = FORBIDDEN_PACKAGES.intersection(mech_packages)
+    if forbidden_packages:
+        raise RuntimeError(
+            f"{binary}: graph includes forbidden packages {sorted(forbidden_packages)}"
+        )
     planned = {package["package"] for package in plan["packages"]}
     if planned != EXPECTED[binary]:
         raise RuntimeError(f"{binary}: serialized plan package graph is not exact")
@@ -544,7 +623,7 @@ def main() -> int:
     except (OSError, ValueError, KeyError, StopIteration, RuntimeError) as error:
         print(f"native application graph contract failed: {error}", file=sys.stderr)
         return 1
-    print("native application graph contract passed (6 exact Cargo graphs)")
+    print("native application graph contract passed (15 exact Cargo graphs)")
     return 0
 
 

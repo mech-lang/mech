@@ -427,6 +427,39 @@ fn registry_dependency_source_requires_an_exact_version() {
 }
 
 #[test]
+fn registry_dependency_source_must_match_the_component_release() {
+    let mut environment = environment(empty_catalog());
+    environment.dependency_source = NativeDependencySource::Registry {
+        version: "0.3.6".to_owned(),
+    };
+    let error = NativeApplicationBuilder::new(environment)
+        .plan(&request(LITERAL_F64))
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeComponentVersionMismatch");
+}
+
+#[test]
+fn workspace_component_version_mismatch_blocks_generation() {
+    let temporary = tempfile::tempdir().unwrap();
+    let core = temporary.path().join("src/core");
+    fs::create_dir_all(&core).unwrap();
+    fs::write(
+        core.join("Cargo.toml"),
+        "[package]\nname = \"mech-core\"\nversion = \"0.0.0\"\n",
+    )
+    .unwrap();
+
+    let mut environment = environment(empty_catalog());
+    environment.dependency_source = NativeDependencySource::Workspace {
+        root: temporary.path().to_path_buf(),
+    };
+    let error = NativeApplicationBuilder::new(environment)
+        .plan(&request(LITERAL_F64))
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeComponentVersionMismatch");
+}
+
+#[test]
 fn missing_run_grants_fail_before_generation() {
     let mut request = request(CLI_STDOUT);
     let mut config = cli_runtime_config("cli", &["write"], &["line"]);

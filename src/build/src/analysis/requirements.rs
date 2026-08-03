@@ -87,17 +87,13 @@ pub(crate) fn analyze_application_requirements(
         Some(config) => materialize_configured_hosts(config, host_catalog, target)?,
         None => Vec::new(),
     };
-    let mut hosts = materialized
-        .iter()
-        .map(MaterializedConfiguredHost::planned)
-        .collect::<Vec<_>>();
-    hosts.sort_by(|lhs, rhs| (&lhs.name, &lhs.provider).cmp(&(&rhs.name, &rhs.provider)));
-
-    let run_grants = normalized_config
+    let configured_run_grants = normalized_config
         .as_ref()
         .map(|config| config.run_grants.clone())
         .unwrap_or_default();
     let mut planned = Vec::with_capacity(requirements.len());
+    let mut selected_host_instances = BTreeSet::new();
+    let mut run_grants = Vec::new();
     let mut live = false;
 
     for requirement in requirements {
@@ -125,7 +121,10 @@ pub(crate) fn analyze_application_requirements(
             }
             ApplicationRequirement::Resource(request) => {
                 let owner = resolve_resource_owner(request, &materialized)?;
-                validate_resource_requirement(request, owner, &run_grants)?;
+                let grant_target =
+                    validate_resource_requirement(request, owner, &configured_run_grants)?;
+                selected_host_instances.insert(owner.config.name.clone());
+                run_grants.push(exact_resource_grant(request, grant_target));
                 live |= request.delivery == ResourceDelivery::Live;
                 planned.push(PlannedApplicationRequirement::Resource {
                     base_uri: request.base_uri.clone(),
@@ -143,6 +142,16 @@ pub(crate) fn analyze_application_requirements(
 
     planned.sort();
     planned.dedup();
+    let mut hosts = materialized
+        .iter()
+        .filter(|host| selected_host_instances.contains(&host.config.name))
+        .map(MaterializedConfiguredHost::planned)
+        .collect::<Vec<_>>();
+    hosts.sort_by(|lhs, rhs| (&lhs.name, &lhs.provider).cmp(&(&rhs.name, &rhs.provider)));
+    run_grants.sort_by(|lhs, rhs| {
+        (&lhs.target, &lhs.operations, &lhs.paths).cmp(&(&rhs.target, &rhs.operations, &rhs.paths))
+    });
+    run_grants.dedup();
     Ok(ApplicationRequirementAnalysis {
         runtime_config: planned_runtime_config,
         application_requirements: planned,
@@ -150,6 +159,17 @@ pub(crate) fn analyze_application_requirements(
         run_grants,
         live,
     })
+}
+
+fn exact_resource_grant(
+    request: &ExecutionResourceRequest,
+    target: String,
+) -> RunResourceGrantConfig {
+    RunResourceGrantConfig {
+        target,
+        operations: vec![request.operation.clone()],
+        paths: vec![request.path.clone()],
+    }
 }
 
 /// Clones and deterministically normalizes the runtime configuration fields
@@ -337,7 +357,7 @@ fn validate_resource_requirement(
     request: &ExecutionResourceRequest,
     owner: &MaterializedConfiguredHost<'_>,
     run_grants: &[RunResourceGrantConfig],
-) -> MResult<()> {
+) -> MResult<String> {
     let context = owner
         .interface
         .contexts
@@ -392,7 +412,7 @@ fn validate_resource_requirement(
             None,
         ));
     }
-    Ok(())
+    Ok(context_target)
 }
 
 fn resource_authority(base_uri: &str) -> Option<&str> {
@@ -596,11 +616,11 @@ mod tests {
     }
 
     #[test]
-    fn exact_resource_requirement_selects_trusted_provider_metadata() {
+    fn exact_resource_requirement_prunes_unused_hosts_and_narrows_grants() {
         let config = NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
-            hosts: vec![host("terminal", "test")],
-            run_grants: vec![grant("terminal/output", &["write"], &["line"])],
+            hosts: vec![host("unused", "test"), host("terminal", "test")],
+            run_grants: vec![grant("terminal/output", &["read", "write"], &["*", "line"])],
         };
         let analysis = analyze_application_requirements(
             &[ApplicationRequirement::Resource(request("write", "line"))],
@@ -611,8 +631,12 @@ mod tests {
         .unwrap();
 
         assert_eq!(analysis.hosts.len(), 1);
+        assert_eq!(analysis.hosts[0].name, "terminal");
         assert_eq!(analysis.hosts[0].package, "mech-host-test");
-        assert_eq!(analysis.run_grants, config.run_grants);
+        assert_eq!(
+            analysis.run_grants,
+            [grant("terminal/output", &["write"], &["line"])]
+        );
         assert!(!analysis.live);
         assert!(matches!(
             &analysis.application_requirements[0],

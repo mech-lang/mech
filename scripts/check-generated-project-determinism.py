@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate every Phase 1 Cargo project twice and compare frozen files."""
+"""Generate every native Cargo project twice and compare frozen files."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ FILES = [
 ]
 EXPECTED_LAYOUT = set(FILES + ["Cargo.lock"])
 EXPECTED_ENTRIES = EXPECTED_LAYOUT | {"src"}
+EXPECTED_PROJECT_COUNT = 15
 
 
 def generate() -> dict[str, Path]:
@@ -61,8 +62,10 @@ def generate() -> dict[str, Path]:
                 f"{plan['binary_name']}: project root {path} != {expected_path}"
             )
         projects[plan["binary_name"]] = path
-    if len(projects) != 6:
-        raise RuntimeError(f"expected six generated projects, found {len(projects)}")
+    if len(projects) != EXPECTED_PROJECT_COUNT:
+        raise RuntimeError(
+            f"expected {EXPECTED_PROJECT_COUNT} generated projects, found {len(projects)}"
+        )
     return projects
 
 
@@ -123,7 +126,10 @@ def main() -> int:
     except (OSError, ValueError, KeyError, RuntimeError) as error:
         print(f"generated project determinism contract failed: {error}", file=sys.stderr)
         return 1
-    print("generated project determinism contract passed (6 projects, 2 processes)")
+    print(
+        "generated project determinism contract passed "
+        f"({EXPECTED_PROJECT_COUNT} projects, 2 processes)"
+    )
     return 0
 
 

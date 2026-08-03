@@ -1413,6 +1413,12 @@ impl Value {
             Value::Table(r) => &*(r as *const Ref<MechTable> as *const Ref<T>),
             #[cfg(feature = "tuple")]
             Value::Tuple(r) => &*(r as *const Ref<MechTuple> as *const Ref<T>),
+            #[cfg(feature = "record")]
+            Value::Record(r) => &*(r as *const Ref<MechRecord> as *const Ref<T>),
+            #[cfg(feature = "map")]
+            Value::Map(r) => &*(r as *const Ref<MechMap> as *const Ref<T>),
+            #[cfg(feature = "atom")]
+            Value::Atom(r) => &*(r as *const Ref<MechAtom> as *const Ref<T>),
             x => panic!("Unsupported type for as_unchecked: {:?}.", x),
         }
     }

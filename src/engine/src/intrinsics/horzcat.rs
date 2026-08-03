@@ -5937,6 +5937,8 @@ macro_rules! install_horzcat_linked_factories_except_f64 {
 
 declare_horzcat_family!(HorizontalConcatenateTwoArgs, ["matrixd"]);
 declare_horzcat_family!(HorizontalConcatenateThreeArgs, ["matrixd"]);
+declare_horzcat_family!(HorizontalConcatenateFourArgs, ["matrixd"]);
+declare_horzcat_family!(HorizontalConcatenateNArgs, ["matrixd"]);
 declare_horzcat_family!(HorizontalConcatenateS1D, ["matrixd"]);
 declare_horzcat_family!(HorizontalConcatenateMD, ["matrixd"]);
 declare_horzcat_family!(HorizontalConcatenateRD, ["row_vectord"]);
@@ -6060,6 +6062,8 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     {
         install_horzcat_linked_factories!(builder, HorizontalConcatenateTwoArgs)?;
         install_horzcat_linked_factories!(builder, HorizontalConcatenateThreeArgs)?;
+        install_horzcat_linked_factories!(builder, HorizontalConcatenateFourArgs)?;
+        install_horzcat_linked_factories!(builder, HorizontalConcatenateNArgs)?;
         install_horzcat_linked_factories!(builder, HorizontalConcatenateS1D)?;
         install_horzcat_linked_factories!(builder, HorizontalConcatenateMD)?;
     }
@@ -6273,6 +6277,8 @@ macro_rules! export_horzcat_legacy_family {
 pub mod __mech_native {
     export_horzcat_family!(HorizontalConcatenateTwoArgs, ["matrixd"]);
     export_horzcat_family!(HorizontalConcatenateThreeArgs, ["matrixd"]);
+    export_horzcat_family!(HorizontalConcatenateFourArgs, ["matrixd"]);
+    export_horzcat_family!(HorizontalConcatenateNArgs, ["matrixd"]);
     export_horzcat_family!(HorizontalConcatenateS1D, ["matrixd"]);
     export_horzcat_family!(HorizontalConcatenateMD, ["matrixd"]);
     export_horzcat_family!(HorizontalConcatenateRD, ["row_vectord"]);

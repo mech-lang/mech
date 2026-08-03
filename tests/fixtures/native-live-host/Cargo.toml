@@ -1,6 +1,6 @@
 [package]
 name = "mech-native-live-host-fixture"
-version = "0.0.0"
+version = "0.3.5"
 edition = "2024"
 rust-version = "1.92"
 license = "Apache-2.0"
