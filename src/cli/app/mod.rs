@@ -3,7 +3,7 @@ use mech_core::*;
 
 #[cfg(any(feature = "serve", feature = "run"))]
 use crate::cli::capabilities;
-#[cfg(any(feature = "serve", feature = "run"))]
+#[cfg(any(feature = "build", feature = "serve", feature = "run"))]
 use crate::cli::config;
 use crate::cli::outcome::{CliOutcome, RootFlags};
 #[cfg(any(feature = "formatter", feature = "serve"))]
@@ -92,7 +92,7 @@ pub(crate) fn build_cli() -> Command {
     let cli_command = cli_command.subcommand(crate::cli::commands::bundle_web::command());
     #[cfg(any(feature = "serve", feature = "run"))]
     let cli_command = capabilities::add_filesystem_capability_args(cli_command);
-    #[cfg(any(feature = "serve", feature = "run"))]
+    #[cfg(any(feature = "build", feature = "serve", feature = "run"))]
     let cli_command = config::add_config_args(cli_command);
     #[cfg(all(feature = "bundle_web", not(feature = "serve")))]
     let cli_command = crate::cli::commands::bundle_web::add_config_args(cli_command);

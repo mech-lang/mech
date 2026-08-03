@@ -272,7 +272,7 @@ mod tests {
     fn build_arguments_match_the_frozen_contract() {
         let invocation = CargoInvocation::build(
             "project/Cargo.toml",
-            "phase1-app",
+            "native-app",
             Some("x86_64-unknown-linux-gnu"),
             "target/mech-native/cargo-target",
             true,
@@ -286,7 +286,7 @@ mod tests {
                 "--manifest-path",
                 "project/Cargo.toml",
                 "--bin",
-                "phase1-app",
+                "native-app",
                 "--message-format=json-render-diagnostics",
                 "--locked",
                 "--target-dir",
@@ -340,7 +340,7 @@ mod tests {
                 "edition = \"2024\"\n",
                 "\n",
                 "[[bin]]\n",
-                "name = \"phase1-cargo-test\"\n",
+                "name = \"native-cargo-test\"\n",
                 "path = \"src/main.rs\"\n",
                 "\n",
                 "[workspace]\n",
@@ -366,7 +366,7 @@ mod tests {
 
         let artifact = build_native_project(
             &project,
-            "phase1-cargo-test",
+            "native-cargo-test",
             None,
             &target_dir,
             false,

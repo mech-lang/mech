@@ -15,6 +15,7 @@ use std::sync::Arc;
 
 use mech_core::{FunctionCatalog, MResult, ParsedProgram};
 
+pub use analysis::requirements::normalize_native_runtime_config;
 pub use cargo::*;
 pub use dependency::*;
 pub use host::*;

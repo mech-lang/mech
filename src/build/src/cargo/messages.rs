@@ -140,33 +140,33 @@ mod tests {
             artifacts: vec![
                 artifact("dependency", &["lib"], None),
                 artifact("other", &["bin"], Some("target/other")),
-                artifact("phase1", &["bin"], Some("target/nonstandard/phase1")),
+                artifact("native", &["bin"], Some("target/nonstandard/native")),
             ],
             rendered_diagnostics: Vec::new(),
             build_finished: Some(true),
         };
         assert_eq!(
-            messages.select_binary("phase1").unwrap().executable,
-            PathBuf::from("target/nonstandard/phase1")
+            messages.select_binary("native").unwrap().executable,
+            PathBuf::from("target/nonstandard/native")
         );
     }
 
     #[test]
     fn missing_and_ambiguous_artifacts_are_structured_errors() {
         let missing = CargoBuildMessages::default()
-            .select_binary("phase1")
+            .select_binary("native")
             .unwrap_err();
         assert_eq!(missing.kind_name(), "NativeCargoArtifactMissing");
 
         let messages = CargoBuildMessages {
             artifacts: vec![
-                artifact("phase1", &["bin"], Some("target/one")),
-                artifact("phase1", &["bin"], Some("target/two")),
+                artifact("native", &["bin"], Some("target/one")),
+                artifact("native", &["bin"], Some("target/two")),
             ],
             rendered_diagnostics: Vec::new(),
             build_finished: Some(true),
         };
-        let ambiguous = messages.select_binary("phase1").unwrap_err();
+        let ambiguous = messages.select_binary("native").unwrap_err();
         assert_eq!(ambiguous.kind_name(), "NativeCargoArtifactAmbiguous");
     }
 
@@ -177,19 +177,19 @@ mod tests {
             "\"package_id\":\"path+file:///tmp/generated#0.0.0\",",
             "\"manifest_path\":\"/tmp/generated/Cargo.toml\",",
             "\"target\":{\"kind\":[\"bin\"],\"crate_types\":[\"bin\"],",
-            "\"name\":\"phase1\",\"src_path\":\"/tmp/generated/src/main.rs\",",
+            "\"name\":\"native\",\"src_path\":\"/tmp/generated/src/main.rs\",",
             "\"edition\":\"2024\",\"doc\":true,\"doctest\":false,\"test\":true},",
             "\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,",
             "\"overflow_checks\":true,\"test\":false},",
-            "\"features\":[],\"filenames\":[\"/tmp/target/phase1\"],",
-            "\"executable\":\"/tmp/nonstandard/phase1\",\"fresh\":false}\n",
+            "\"features\":[],\"filenames\":[\"/tmp/target/native\"],",
+            "\"executable\":\"/tmp/nonstandard/native\",\"fresh\":false}\n",
             "{\"reason\":\"build-finished\",\"success\":true}\n",
         );
         let messages = parse_cargo_build_messages(std::io::Cursor::new(stream)).unwrap();
         assert_eq!(messages.build_finished, Some(true));
         assert_eq!(
-            messages.select_binary("phase1").unwrap().executable,
-            PathBuf::from("/tmp/nonstandard/phase1")
+            messages.select_binary("native").unwrap().executable,
+            PathBuf::from("/tmp/nonstandard/native")
         );
     }
 }

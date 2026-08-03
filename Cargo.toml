@@ -66,12 +66,23 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
 cli_core = []
 cli = ["cli_core", "build", "formatter", "serve", "bundle_web", "run", "test", "repl"]
 formatter_core = ["serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
-build = ["cli_core", "standard_compiler", "compiler", "mech-runtime", "mech-runtime/default"]
+build = [
+      "cli_core", "standard_compiler", "compiler",
+      "dep:mech-build", "mech-build/standard-hosts",
+      "mech-stdlib/native-plan",
+      "mech-runtime", "mech-runtime/compiler", "mech-runtime/native-link", "mech-runtime/serde",
+      "dep:mech-host-cli", "mech-host-cli/provider",
+      "dep:mech-host-console", "mech-host-console/native",
+      "dep:mech-host-time", "mech-host-time/native",
+      "dep:mech-host-timer", "mech-host-timer/native",
+      "dep:mech-host-scene", "mech-host-scene/native",
+      "dep:mech-host-robot-arm", "mech-host-robot-arm/provider",
+      ]
 repl = ["cli_core", "standard_source", "program"]
 run = ["cli_core", "standard_source", "cli_host", "time_host_native", "timer_host_native", "console_host_native", "scene_host_native", "project"]
 test = ["cli_core", "standard_source", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/default"]
 project = ["standard_source", "mech-runtime", "mech-runtime/default"]
-cli_host = ["mech-runtime", "mech-runtime/default", "mech-host-cli", "mech-host-cli/provider"]
+cli_host = ["mech-runtime", "mech-runtime/default", "dep:mech-host-cli", "mech-host-cli/provider"]
 web_host = ["mech-runtime", "mech-runtime/default", "mech-host-browser", "mech-host-browser/serde", "mech-host-browser/provider", "dep:mech-host-time", "dep:mech-host-timer", "dep:mech-host-console", "dep:mech-host-scene"]
 bundle_web_core = ["project", "web_host", "formatter_core", "serde", "mech-runtime", "mech-runtime/default"]
 bundle_web = ["cli_core", "bundle_web_core"]
@@ -333,12 +344,14 @@ mech-syntax      = { version = "0.3.5", default-features = false }
 mech-engine = { version = "0.3.5", default-features = false }
 mech-stdlib = { version = "0.3.5", default-features = false }
 mech-runtime = { version = "0.3.5", default-features = false, optional = true }
+mech-build = { version = "0.3.5", default-features = false, optional = true }
 mech-host-browser = { version = "0.3.5", default-features = false, optional = true }
 mech-host-cli = { version = "0.3.5", default-features = false, optional = true }
 mech-host-time = { version = "0.3.5", path = "hosts/time", default-features = false, optional = true }
 mech-host-console = { version = "0.3.5", path = "hosts/console", default-features = false, optional = true }
 mech-host-timer = { version = "0.3.5", path = "hosts/timer", default-features = false, optional = true }
 mech-host-scene = { version = "0.3.5", path = "hosts/scene", default-features = false, optional = true }
+mech-host-robot-arm = { version = "0.3.5", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"

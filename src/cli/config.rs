@@ -24,6 +24,7 @@ pub fn add_config_args(command: Command) -> Command {
                 .long("config")
                 .value_name("PATH")
                 .num_args(1)
+                .conflicts_with("no_config")
                 .global(true)
                 .help("Load configuration from a Mech config file."),
         )
@@ -31,6 +32,7 @@ pub fn add_config_args(command: Command) -> Command {
             Arg::new("no_config")
                 .long("no-config")
                 .action(ArgAction::SetTrue)
+                .conflicts_with("config")
                 .global(true)
                 .help("Disable automatic Mech config loading."),
         )

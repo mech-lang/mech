@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use mech_core::{ExecutionResourceRequest, MResult, ResourceDelivery};
 use mech_runtime::{ConfigValue, LogLevel, RuntimeConfig};
 
-use crate::analysis::requirements::{grant_covers_resource, normalize_runtime_config};
+use crate::analysis::requirements::{grant_covers_resource, normalize_native_runtime_config};
 use crate::error::{NativeBuildErrorKind, native_build_error};
 use crate::plan::{
     NATIVE_BUILD_PLAN_SCHEMA, NativeApplicationKind, NativeBuildPlan, NativeBuildRequest,
@@ -177,7 +177,7 @@ fn validate_runtime_config_implications(
     // Rendering is public independently of planning, so enforce the same
     // addressability rule here even for host-free and host-function-only plans.
     let normalized_config = runtime_config
-        .map(normalize_runtime_config)
+        .map(normalize_native_runtime_config)
         .transpose()?
         .unwrap_or(NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
@@ -1075,7 +1075,7 @@ mod tests {
             plan_sha256: String::new(),
             target: None,
             profile: NativeBuildProfile::Debug,
-            binary_name: "phase1-app".into(),
+            binary_name: "native-app".into(),
             runtime_functions: Vec::new(),
             runtime_types: vec![RuntimeType::F64],
             application_requirements: Vec::new(),
@@ -1103,7 +1103,7 @@ mod tests {
             runtime_config: None,
             target: None,
             profile: NativeBuildProfile::Debug,
-            binary_name: "phase1-app".into(),
+            binary_name: "native-app".into(),
             output: PathBuf::from("ignored"),
             emit: NativeEmit::CargoProject,
             keep_project: true,
@@ -1253,7 +1253,7 @@ mod tests {
     #[test]
     fn runtime_source_constructs_config_hosts_factories_and_grants_directly() {
         let mut plan = base_plan(NativeApplicationKind::Hosted);
-        plan.runtime_config.name = "phase1-native-runtime".into();
+        plan.runtime_config.name = "native-runtime".into();
         plan.runtime_config.limits.max_steps_per_turn = Some(321);
         plan.runtime_config.diagnostics.trace_enabled = true;
         plan.runtime_config.diagnostics.log_level = LogLevel::Debug;
@@ -1303,7 +1303,7 @@ mod tests {
 
         let source = render_runtime_source(&plan, Some(&config)).unwrap();
         assert!(source.contains("RuntimeConfig {"));
-        assert!(source.contains("\"phase1-native-runtime\".to_string()"));
+        assert!(source.contains("\"native-runtime\".to_string()"));
         assert!(source.contains("max_steps_per_turn: Some(321u64)"));
         assert!(source.contains("trace_enabled: true"));
         assert!(source.contains("log_level: LogLevel::Debug"));

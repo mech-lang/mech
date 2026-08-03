@@ -8,6 +8,8 @@ use mech_runtime::{
     FileSourceResolver, MechRuntime, ModuleBuildOptions, RuntimeBuilder, RuntimeConfig,
     SourceRequest,
 };
+#[cfg(feature = "build")]
+use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig};
 
 #[cfg(feature = "test")]
 pub(crate) struct SourceModuleExecution {
@@ -144,6 +146,44 @@ pub(crate) fn execute_source_module_roots(
     execute_source_module_roots_internal(config, roots).map(|execution| execution.runtime)
 }
 
+/// Compile trusted local roots in plan mode for the build command. This shares
+/// the resolver and module execution path with source commands, but installs
+/// only effect-free planning hosts and never starts input drivers.
+#[cfg(feature = "build")]
+pub(crate) fn execute_planning_source_module_roots(
+    config: RuntimeConfig,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    roots: &[PathBuf],
+) -> MResult<MechRuntime> {
+    let (builder, canonical_roots) = source_module_runtime_builder(config, roots)?;
+    let mut builder = builder.planning();
+    let providers = crate::cli::host_configuration::configured_provider_names(configured_hosts);
+    for provider in &providers {
+        builder = builder.host_factory(mech_build::standard_planning_host_factory(provider)?)?;
+    }
+    (builder, _) = crate::cli::host_configuration::materialize_host_configuration(
+        builder,
+        configured_hosts,
+        run_grants,
+        &providers,
+    )?;
+    builder = mech_runtime::__mech_native::install_actor_message_kind(builder)?;
+    builder = mech_runtime::__mech_native::install_actor_message_payload(builder)?;
+    builder = mech_runtime::__mech_native::install_actor_state_get(builder)?;
+    builder = mech_runtime::__mech_native::install_actor_state_id(builder)?;
+    builder = mech_runtime::__mech_native::install_actor_state_put(builder)?;
+
+    let mut runtime = builder.build()?;
+    for root in canonical_roots {
+        runtime.resolve_and_run_root_module(
+            SourceRequest::from_filesystem_path(&root)?,
+            module_build_options(),
+        )?;
+    }
+    Ok(runtime)
+}
+
 #[cfg(feature = "test")]
 pub(crate) fn execute_source_module_roots_with_report(
     config: RuntimeConfig,
@@ -159,17 +199,8 @@ fn execute_source_module_roots_internal(
     config: RuntimeConfig,
     roots: &[PathBuf],
 ) -> MResult<SourceModuleExecutionInternal> {
-    let canonical_roots = canonical_source_roots(roots)?;
-    let mut resolver = FileSourceResolver::empty();
-    for root in resolver_roots(&canonical_roots)? {
-        resolver.add_root(root);
-    }
-
-    let mut runtime = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_catalog())
-        .config(config)
-        .source_resolver(resolver)
-        .build()?;
+    let (builder, canonical_roots) = source_module_runtime_builder(config, roots)?;
+    let mut runtime = builder.build()?;
     #[cfg(feature = "test")]
     let mut integrity_evaluations = Vec::new();
     for root in canonical_roots {
@@ -188,6 +219,23 @@ fn execute_source_module_roots_internal(
         #[cfg(feature = "test")]
         integrity: IntegrityConstraintReport::from_evaluations(integrity_evaluations),
     })
+}
+
+fn source_module_runtime_builder(
+    config: RuntimeConfig,
+    roots: &[PathBuf],
+) -> MResult<(RuntimeBuilder, Vec<PathBuf>)> {
+    let canonical_roots = canonical_source_roots(roots)?;
+    let mut resolver = FileSourceResolver::empty();
+    for root in resolver_roots(&canonical_roots)? {
+        resolver.add_root(root);
+    }
+
+    let builder = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .config(config)
+        .source_resolver(resolver);
+    Ok((builder, canonical_roots))
 }
 
 #[cfg(test)]

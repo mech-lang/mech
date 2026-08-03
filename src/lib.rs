@@ -58,7 +58,7 @@ mod bundle_web;
 #[cfg(feature = "cli_core")]
 pub mod cli;
 pub mod fs_paths;
-#[cfg(feature = "project")]
+#[cfg(any(feature = "build", feature = "project"))]
 mod project;
 #[cfg(feature = "repl")]
 mod repl;
@@ -73,7 +73,7 @@ mod web_host;
 
 #[cfg(feature = "bundle_web_core")]
 pub use self::bundle_web::*;
-#[cfg(feature = "project")]
+#[cfg(any(feature = "build", feature = "project"))]
 pub use self::project::*;
 #[cfg(feature = "repl")]
 pub use self::repl::*;

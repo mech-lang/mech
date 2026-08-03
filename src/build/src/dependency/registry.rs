@@ -127,7 +127,7 @@ pub fn standard_workspace_registry(root: impl Into<PathBuf>) -> MResult<Workspac
     Ok(registry)
 }
 
-/// Resolve selected plan package names through the trusted Phase 1 mapping.
+/// Resolve selected plan package names through the trusted native mapping.
 pub fn resolve_planned_packages<I, S>(
     root: impl Into<PathBuf>,
     package_names: I,
@@ -139,7 +139,7 @@ where
     standard_workspace_registry(root)?.select(package_names)
 }
 
-/// Fingerprint selected plan packages through the trusted Phase 1 mapping.
+/// Fingerprint selected plan packages through the trusted native mapping.
 pub fn fingerprint_planned_packages<I, S>(
     root: impl Into<PathBuf>,
     package_names: I,

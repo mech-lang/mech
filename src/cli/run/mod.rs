@@ -5,7 +5,6 @@ use mech_runtime::{
     RuntimeBuilder, RuntimeConfig, RuntimeEvent, RuntimeValueSnapshot, SourceRequest,
     SourceResolver, parse_host_context_target,
 };
-use std::collections::BTreeSet;
 use std::ffi::OsStr;
 use std::path::Path;
 
@@ -490,39 +489,22 @@ fn cli_runtime_builder(
     configured_hosts: &[HostInstanceConfig],
     run_grants: &[RunResourceGrantConfig],
 ) -> MResult<RuntimeBuilder> {
-    for host in configured_hosts {
-        if host.name == "cli" && host.provider != "cli" {
-            return Err(MechError::new(
-                CliRuntimeHostConfigError {
-                    reason: format!(
-                        "host instance `cli` is reserved for provider `cli` and cannot be configured as provider `{}`",
-                        host.provider,
-                    ),
-                },
-                None,
-            ));
-        }
-    }
-
     let builder = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
         .config(config);
     let (mut builder, registered_providers) =
         crate::cli::host_factories::register_cli_host_factories(builder)?;
 
-    let mut saw_cli_instance = false;
-    let mut registered_cli_instances = BTreeSet::new();
-    for host in configured_hosts {
-        if registered_providers.contains(&host.provider) {
-            registered_cli_instances.insert(host.name.clone());
-            if host.name == "cli" {
-                saw_cli_instance = true;
-            }
-            builder = builder.host_instance(host.clone());
-        }
-    }
+    let (next_builder, mut registered_cli_instances) =
+        crate::cli::host_configuration::materialize_host_configuration(
+            builder,
+            configured_hosts,
+            &[],
+            &registered_providers,
+        )?;
+    builder = next_builder;
 
-    if !saw_cli_instance {
+    if !registered_cli_instances.contains("cli") {
         registered_cli_instances.insert("cli".to_string());
         builder = builder.host_instance(HostInstanceConfig {
             name: "cli".to_string(),
@@ -535,29 +517,11 @@ fn cli_runtime_builder(
         builder = builder.run_resource_grant(grant);
     }
 
-    for grant in run_grants {
-        let (instance, _) = parse_host_context_target(&grant.target)?;
-        if registered_cli_instances.contains(instance) {
-            builder = builder.run_resource_grant(grant.clone());
-        }
-    }
-
-    Ok(builder)
-}
-
-#[derive(Debug, Clone)]
-struct CliRuntimeHostConfigError {
-    reason: String,
-}
-
-impl MechErrorKind for CliRuntimeHostConfigError {
-    fn name(&self) -> &str {
-        "CliRuntimeHostConfigError"
-    }
-
-    fn message(&self) -> String {
-        format!("invalid CLI runtime host config: {}", self.reason)
-    }
+    crate::cli::host_configuration::materialize_run_grants(
+        builder,
+        run_grants,
+        &registered_cli_instances,
+    )
 }
 
 pub fn effective_run_runtime_config(

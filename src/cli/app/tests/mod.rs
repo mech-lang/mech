@@ -1,6 +1,8 @@
 use super::*;
 #[cfg(feature = "build")]
-use crate::cli::commands::build::{BuildOptions, run as run_build, validate_build_bytecode_inputs};
+use crate::cli::commands::build::{
+    BuildEmit, BuildOptions, BuildProfile, run as run_build, validate_build_bytecode_inputs,
+};
 use colored::{ColoredString, Colorize};
 use std::path::PathBuf;
 
@@ -234,7 +236,16 @@ mod build_input_tests {
                 .into_iter()
                 .map(|path| path.display().to_string())
                 .collect(),
-            output_path,
+            emit: BuildEmit::Bytecode,
+            name: Some("output".to_string()),
+            output_path: Some(output_path.join("output.mecb")),
+            target: None,
+            profile: BuildProfile::Release,
+            config_path: None,
+            no_config: true,
+            workspace_root: None,
+            keep_project: false,
+            offline: true,
             debug: false,
             trace: false,
             time: false,
@@ -264,6 +275,14 @@ mod build_input_tests {
             .unwrap_err()
             .full_chain_message();
         assert!(error.contains("Cannot combine multiple bytecode"));
+    }
+
+    #[test]
+    fn build_rejects_empty_inputs() {
+        let error = validate_build_bytecode_inputs(&[])
+            .unwrap_err()
+            .full_chain_message();
+        assert!(error.contains("no build inputs supplied"));
     }
 
     #[test]
@@ -363,6 +382,126 @@ mod build_input_tests {
 
         assert!(output.join("output.mecb").metadata().unwrap().len() > 0);
         std::fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[cfg(all(test, feature = "build"))]
+mod build_argument_tests {
+    use super::*;
+
+    fn options(arguments: &[&str]) -> MResult<BuildOptions> {
+        let matches = super::super::build_cli()
+            .try_get_matches_from(arguments)
+            .unwrap();
+        let build_matches = matches.subcommand_matches("build").unwrap();
+        BuildOptions::from_matches(super::super::root_flags(&matches), &matches, build_matches)
+    }
+
+    #[test]
+    fn build_defaults_to_native_release() {
+        let options = options(&["mech", "build"]).unwrap();
+        assert_eq!(options.emit, BuildEmit::Native);
+        assert_eq!(options.profile, BuildProfile::Release);
+        assert!(options.target.is_none());
+        assert!(options.workspace_root.is_none());
+    }
+
+    #[test]
+    fn build_accepts_every_emit_mode() {
+        for (value, expected) in [
+            ("native", BuildEmit::Native),
+            ("bytecode", BuildEmit::Bytecode),
+            ("cargo-project", BuildEmit::CargoProject),
+            ("plan", BuildEmit::Plan),
+        ] {
+            assert_eq!(
+                options(&["mech", "build", "demo.mec", "--emit", value])
+                    .unwrap()
+                    .emit,
+                expected,
+                "{value}"
+            );
+        }
+    }
+
+    #[test]
+    fn build_rejects_invalid_emit_and_profile() {
+        for arguments in [
+            ["mech", "build", "demo.mec", "--emit", "zip"].as_slice(),
+            ["mech", "build", "demo.mec", "--profile", "fast"].as_slice(),
+        ] {
+            assert!(
+                super::super::build_cli()
+                    .try_get_matches_from(arguments)
+                    .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn build_rejects_invalid_name_target_and_conflicting_project_flags() {
+        assert!(options(&["mech", "build", "demo.mec", "--name", "not valid"]).is_err());
+        assert!(options(&["mech", "build", "demo.mec", "--target", "bad target"]).is_err());
+        assert!(
+            options(&[
+                "mech",
+                "build",
+                "demo.mec",
+                "--emit",
+                "cargo-project",
+                "--keep-project",
+            ])
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn build_records_workspace_root_and_offline_without_changing_emit_defaults() {
+        let options = options(&[
+            "mech",
+            "build",
+            "demo.mec",
+            "--workspace-root",
+            "workspace",
+            "--offline",
+        ])
+        .unwrap();
+        assert_eq!(options.workspace_root, Some(PathBuf::from("workspace")));
+        assert!(options.offline);
+        assert_eq!(options.emit, BuildEmit::Native);
+    }
+
+    #[test]
+    fn build_records_exact_output_and_keep_project() {
+        let options = options(&[
+            "mech",
+            "build",
+            "demo.mec",
+            "--emit",
+            "plan",
+            "--out",
+            "dist/exact.json",
+            "--keep-project",
+        ])
+        .unwrap();
+        assert_eq!(options.output_path, Some(PathBuf::from("dist/exact.json")));
+        assert!(options.keep_project);
+    }
+
+    #[test]
+    fn build_config_flags_remain_mutually_exclusive() {
+        assert!(
+            super::super::build_cli()
+                .try_get_matches_from([
+                    "mech",
+                    "--config",
+                    "mech.mcfg",
+                    "--no-config",
+                    "build",
+                    "demo.mec",
+                ])
+                .is_err()
+        );
     }
 }
 
