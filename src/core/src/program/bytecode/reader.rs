@@ -487,42 +487,7 @@ fn validate_constant_entries(
 }
 
 fn validate_constant_payload(ty: &RuntimeType, bytes: &[u8]) -> MResult<()> {
-    match ty {
-        RuntimeType::Empty if bytes.is_empty() => Ok(()),
-        RuntimeType::Bool if matches!(bytes, [0] | [1]) => Ok(()),
-        RuntimeType::String => core::str::from_utf8(bytes)
-            .map(|_| ())
-            .map_err(|_| invalid::<()>("invalid UTF-8 String constant").unwrap_err()),
-        RuntimeType::Index | RuntimeType::F64 if bytes.len() == 8 => Ok(()),
-        RuntimeType::Matrix {
-            element,
-            storage,
-            rows,
-            cols,
-        } if **element == RuntimeType::F64 => {
-            let row_count = checked_item_count(*rows, "matrix constant row count")?;
-            let column_count = checked_item_count(*cols, "matrix constant column count")?;
-            let expected = 8usize
-                .checked_add(
-                    row_count
-                        .checked_mul(column_count)
-                        .and_then(|count| count.checked_mul(8))
-                        .ok_or_else(|| {
-                            invalid::<()>("matrix constant size overflow").unwrap_err()
-                        })?,
-                )
-                .ok_or_else(|| invalid::<()>("matrix constant size overflow").unwrap_err())?;
-            if bytes.len() != expected || !storage.validate_dimensions(*rows, *cols) {
-                return invalid("invalid F64 matrix constant payload");
-            }
-            let mut r = ByteReader::new(bytes);
-            if r.read_u32("matrix rows")? != *rows || r.read_u32("matrix cols")? != *cols {
-                return invalid("matrix constant dimensions disagree with runtime type");
-            }
-            Ok(())
-        }
-        _ => invalid(format!("unsupported Phase 1 constant payload for {ty:?}")),
-    }
+    super::constants::validate_constant_value_payload(ty, bytes)
 }
 
 fn parse_symbols(

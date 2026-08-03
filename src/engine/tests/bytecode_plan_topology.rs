@@ -1,6 +1,6 @@
 use mech_core::{
     FunctionCatalogBuilder, MResult, ParsedProgram, Plan, ReactiveCellId, ReactiveDependencyKind,
-    ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState, Value, hash_str,
+    ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState, RuntimeType, Value, hash_str,
 };
 use mech_engine::Interpreter;
 use mech_engine::{MechProgram, MechProgramConfig};
@@ -274,7 +274,7 @@ fn decoded_variable_definition_symbol_metadata_round_trips() -> MResult<()> {
 }
 
 #[test]
-fn phase1_tuple_constant_reports_the_frozen_unsupported_error() -> MResult<()> {
+fn tuple_constant_round_trips_through_bytecode() -> MResult<()> {
     let code = "tuple := (1, 2); tuple.2";
     let mut source = source_program();
     let source_output = source.run_string(code)?;
@@ -283,8 +283,17 @@ fn phase1_tuple_constant_reports_the_frozen_unsupported_error() -> MResult<()> {
         "TupleAccessElement",
         &source_output,
     );
-    let error = source.compile_bytecode().unwrap_err();
-    assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
+    let bytecode = source.compile_bytecode()?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    assert!(
+        parsed
+            .types
+            .iter()
+            .any(|ty| matches!(ty, RuntimeType::Tuple(_)))
+    );
+    let mut decoded = runtime_program();
+    let decoded_output = decoded.run_bytecode(&bytecode)?;
+    assert_eq!(decoded_output, source_output);
     Ok(())
 }
 
@@ -468,12 +477,21 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
 }
 
 #[test]
-fn phase1_set_constant_reports_the_frozen_unsupported_error() -> MResult<()> {
+fn set_constant_round_trips_through_bytecode() -> MResult<()> {
     let code = "{1.0, 2.0}";
     let mut source = source_program();
     let source_output = source.run_string(code)?;
     assert_structural_set_node(&source.interpreter().plan(), &source_output);
-    let error = source.compile_bytecode().unwrap_err();
-    assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
+    let bytecode = source.compile_bytecode()?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    assert!(
+        parsed
+            .types
+            .iter()
+            .any(|ty| matches!(ty, RuntimeType::Set { .. }))
+    );
+    let mut decoded = runtime_program();
+    let decoded_output = decoded.run_bytecode(&bytecode)?;
+    assert_eq!(decoded_output, source_output);
     Ok(())
 }

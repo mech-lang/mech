@@ -8,7 +8,7 @@ publish = false
 mech-core = {
   path = "../../../src/core",
   default-features = false,
-  features = ["program"],
+  features = ["f64", "matrix2", "program", "row_vector2", "vector2"],
 }
 mech-engine = {
   path = "../../../src/engine",

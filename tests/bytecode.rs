@@ -6,7 +6,7 @@ mod dynamic_matrix_factory;
 use mech_core::matrix::Matrix;
 use mech_core::{
     BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult,
-    MechExecutionServices, ParsedProgram, Ref, ValRef, Value,
+    MechExecutionServices, ParsedProgram, Ref, RuntimeType, ValRef, Value,
 };
 use mech_engine::{MechProgram, MechProgramConfig};
 use nalgebra::DMatrix;
@@ -224,13 +224,16 @@ fn source_compilation_is_byte_for_byte_deterministic() -> MResult<()> {
 }
 
 #[test]
-fn unsupported_phase1_source_constant_is_structured_error() -> MResult<()> {
+fn tuple_source_constant_is_encoded_by_bytecode_v1() -> MResult<()> {
     let mut program = standard_program();
     program.run_string("(1, 2)")?;
-    let error = program
-        .compile_bytecode()
-        .expect_err("tuple constants are frozen for Phase 2, not encoded by Phase 1");
-    assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
-    assert!(error.kind_message().contains("Tuple"));
+    let compiled = program.compile_bytecode()?;
+    let parsed = ParsedProgram::from_bytes(&compiled)?;
+    assert!(
+        parsed
+            .types
+            .iter()
+            .any(|ty| matches!(ty, RuntimeType::Tuple(_)))
+    );
     Ok(())
 }

@@ -3,6 +3,44 @@ use super::*;
 use crate::structures::Matrix;
 use crate::*;
 
+#[cfg(all(feature = "compiler", feature = "no_std"))]
+use alloc::collections::BTreeSet;
+#[cfg(all(feature = "compiler", not(feature = "no_std")))]
+use std::collections::BTreeSet;
+
+#[cfg(feature = "compiler")]
+const MAX_CONSTANT_NESTING: usize = 256;
+
+#[cfg(feature = "compiler")]
+struct ConstantCodecContext {
+    active_references: BTreeSet<usize>,
+    depth: usize,
+}
+
+#[cfg(feature = "compiler")]
+impl ConstantCodecContext {
+    fn new() -> Self {
+        Self {
+            active_references: BTreeSet::new(),
+            depth: 0,
+        }
+    }
+
+    fn nested<T>(&mut self, encode: impl FnOnce(&mut Self) -> MResult<T>) -> MResult<T> {
+        if self.depth >= MAX_CONSTANT_NESTING {
+            return Err(depth_exceeded(MAX_CONSTANT_NESTING));
+        }
+        self.depth += 1;
+        let result = encode(self);
+        self.depth -= 1;
+        result
+    }
+
+    fn encode_child(&mut self, value: &Value) -> MResult<EncodedConstant> {
+        self.nested(|context| encode_constant_value(value, context))
+    }
+}
+
 #[cfg(feature = "compiler")]
 fn runtime_type_from_value_kind(kind: &ValueKind) -> MResult<RuntimeType> {
     Ok(match kind {
@@ -184,142 +222,808 @@ pub trait CompileConst {
 }
 
 #[cfg(feature = "compiler")]
+struct CapturingConstantContext {
+    constant: Option<EncodedConstant>,
+}
+
+#[cfg(feature = "compiler")]
+impl BytecodeCompilerContext for CapturingConstantContext {
+    fn register_for_ptr_with_initialization_status(&mut self, _pointer: usize) -> (Register, bool) {
+        (0, false)
+    }
+
+    fn intern_constant(&mut self, constant: EncodedConstant) -> MResult<u32> {
+        if self.constant.replace(constant).is_some() {
+            return invalid("a constant encoder attempted to intern more than one constant");
+        }
+        Ok(0)
+    }
+
+    fn define_symbol(
+        &mut self,
+        _pointer: usize,
+        _register: Register,
+        _name: &str,
+        _mutable: bool,
+    ) -> MResult<()> {
+        Ok(())
+    }
+    fn intern_requirement(&mut self, _requirement: ApplicationRequirement) -> MResult<u32> {
+        Ok(0)
+    }
+    fn emit_const_load(&mut self, _destination: Register, _constant: u32) {}
+    fn emit_nullop(&mut self, _function: u64, _destination: Register) {}
+    fn emit_unop(&mut self, _function: u64, _destination: Register, _source: Register) {}
+    fn emit_binop(
+        &mut self,
+        _function: u64,
+        _destination: Register,
+        _lhs: Register,
+        _rhs: Register,
+    ) {
+    }
+    fn emit_ternop(
+        &mut self,
+        _function: u64,
+        _destination: Register,
+        _a: Register,
+        _b: Register,
+        _c: Register,
+    ) {
+    }
+    fn emit_quadop(
+        &mut self,
+        _function: u64,
+        _destination: Register,
+        _a: Register,
+        _b: Register,
+        _c: Register,
+        _d: Register,
+    ) {
+    }
+    fn emit_varop(&mut self, _function: u64, _destination: Register, _arguments: Vec<Register>) {}
+    fn emit_host_call(
+        &mut self,
+        _requirement: u32,
+        _destination: Register,
+        _arguments: Vec<Register>,
+    ) {
+    }
+    fn emit_resource_read(&mut self, _requirement: u32, _destination: Register) {}
+    fn emit_resource_write(
+        &mut self,
+        _requirement: u32,
+        _destination: Register,
+        _source: Register,
+    ) {
+    }
+    fn emit_resource_send(&mut self, _requirement: u32, _destination: Register, _source: Register) {
+    }
+}
+
+#[cfg(feature = "compiler")]
+fn capture_constant<T: CompileConst + ?Sized>(value: &T) -> MResult<EncodedConstant> {
+    let mut context = CapturingConstantContext { constant: None };
+    value.compile_const(&mut context)?;
+    context
+        .constant
+        .ok_or_else(|| invalid::<()>("constant encoder did not intern a constant").unwrap_err())
+}
+
+#[cfg(feature = "compiler")]
+fn encoded_constant(runtime_type: RuntimeType, alignment: u8, bytes: Vec<u8>) -> EncodedConstant {
+    EncodedConstant {
+        runtime_type,
+        alignment,
+        bytes,
+    }
+}
+
+#[cfg(feature = "compiler")]
+fn encode_constant_value(
+    value: &Value,
+    context: &mut ConstantCodecContext,
+) -> MResult<EncodedConstant> {
+    let _ = context;
+    match value {
+        #[cfg(any(feature = "bool", feature = "variable_define"))]
+        Value::Bool(value) => Ok(encoded_constant(
+            RuntimeType::Bool,
+            1,
+            vec![if *value.borrow() { 1 } else { 0 }],
+        )),
+        #[cfg(any(feature = "string", feature = "variable_define"))]
+        Value::String(value) => Ok(encoded_constant(
+            RuntimeType::String,
+            1,
+            value.borrow().as_bytes().to_vec(),
+        )),
+        #[cfg(feature = "u8")]
+        Value::U8(value) => Ok(encoded_constant(
+            RuntimeType::U8,
+            1,
+            value.borrow().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "u16")]
+        Value::U16(value) => Ok(encoded_constant(
+            RuntimeType::U16,
+            2,
+            value.borrow().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "u32")]
+        Value::U32(value) => Ok(encoded_constant(
+            RuntimeType::U32,
+            4,
+            value.borrow().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "u64")]
+        Value::U64(value) => Ok(encoded_constant(
+            RuntimeType::U64,
+            8,
+            value.borrow().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "u128")]
+        Value::U128(value) => Ok(encoded_constant(
+            RuntimeType::U128,
+            16,
+            value.borrow().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "i8")]
+        Value::I8(value) => Ok(encoded_constant(
+            RuntimeType::I8,
+            1,
+            value.borrow().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "i16")]
+        Value::I16(value) => Ok(encoded_constant(
+            RuntimeType::I16,
+            2,
+            value.borrow().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "i32")]
+        Value::I32(value) => Ok(encoded_constant(
+            RuntimeType::I32,
+            4,
+            value.borrow().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "i64")]
+        Value::I64(value) => Ok(encoded_constant(
+            RuntimeType::I64,
+            8,
+            value.borrow().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "i128")]
+        Value::I128(value) => Ok(encoded_constant(
+            RuntimeType::I128,
+            16,
+            value.borrow().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "f32")]
+        Value::F32(value) => Ok(encoded_constant(
+            RuntimeType::F32,
+            4,
+            value.borrow().to_bits().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "f64")]
+        Value::F64(value) => Ok(encoded_constant(
+            RuntimeType::F64,
+            8,
+            value.borrow().to_bits().to_le_bytes().to_vec(),
+        )),
+        #[cfg(feature = "complex")]
+        Value::C64(value) => Ok(encoded_constant(
+            RuntimeType::C64,
+            8,
+            [
+                value.borrow().0.re.to_bits().to_le_bytes(),
+                value.borrow().0.im.to_bits().to_le_bytes(),
+            ]
+            .concat(),
+        )),
+        #[cfg(feature = "rational")]
+        Value::R64(value) => Ok(encoded_constant(
+            RuntimeType::R64,
+            8,
+            [
+                value.borrow().numer().to_le_bytes(),
+                value.borrow().denom().to_le_bytes(),
+            ]
+            .concat(),
+        )),
+        Value::Id(value) => Ok(encoded_constant(
+            RuntimeType::Id,
+            8,
+            value.to_le_bytes().to_vec(),
+        )),
+        Value::Index(value) => {
+            let index = u64::try_from(*value.borrow()).map_err(|_| {
+                unsupported_constant(
+                    RuntimeType::Index,
+                    ValueKind::Index,
+                    "Index constant cannot be represented as u64",
+                )
+            })?;
+            Ok(encoded_constant(
+                RuntimeType::Index,
+                8,
+                index.to_le_bytes().to_vec(),
+            ))
+        }
+        Value::Empty => Ok(encoded_constant(RuntimeType::Empty, 1, Vec::new())),
+        #[cfg(all(feature = "matrix", feature = "f64"))]
+        Value::MatrixF64(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "f32"))]
+        Value::MatrixF32(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "u8"))]
+        Value::MatrixU8(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "u16"))]
+        Value::MatrixU16(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "u32"))]
+        Value::MatrixU32(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "u64"))]
+        Value::MatrixU64(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "u128"))]
+        Value::MatrixU128(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "i8"))]
+        Value::MatrixI8(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "i16"))]
+        Value::MatrixI16(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "i32"))]
+        Value::MatrixI32(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "i64"))]
+        Value::MatrixI64(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "i128"))]
+        Value::MatrixI128(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "bool"))]
+        Value::MatrixBool(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "rational"))]
+        Value::MatrixR64(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "complex"))]
+        Value::MatrixC64(value) => capture_constant(value),
+        #[cfg(all(feature = "matrix", feature = "string"))]
+        Value::MatrixString(value) => capture_constant(value),
+        #[cfg(feature = "matrix")]
+        Value::MatrixIndex(value) => capture_constant(value),
+        #[cfg(feature = "matrix")]
+        Value::MatrixValue(_) => Err(unsupported_constant(
+            RuntimeType::Any,
+            ValueKind::Any,
+            "MatrixValue constants do not have a bytecode-v1 encoding",
+        )),
+        #[cfg(feature = "tuple")]
+        Value::Tuple(value) => encode_tuple_constant(&value.borrow(), context),
+        #[cfg(feature = "record")]
+        Value::Record(value) => encode_record_constant(&value.borrow(), context),
+        #[cfg(feature = "map")]
+        Value::Map(value) => encode_map_constant(&value.borrow(), context),
+        #[cfg(feature = "set")]
+        Value::Set(value) => encode_set_constant(&value.borrow(), context),
+        #[cfg(feature = "table")]
+        Value::Table(value) => encode_table_constant(&value.borrow(), context),
+        #[cfg(feature = "atom")]
+        Value::Atom(value) => encode_atom_constant(&value.borrow()),
+        #[cfg(feature = "enum")]
+        Value::Enum(value) => encode_enum_constant(&value.borrow(), context),
+        Value::MutableReference(value) => encode_reference_constant(value, context),
+        Value::Typed(value, kind) => encode_typed_constant(value, kind, context),
+        Value::EmptyKind(kind) => encode_empty_kind_constant(kind),
+        Value::Kind(kind) => Ok(encoded_constant(
+            RuntimeType::Kind(semantic_kind_from_value_kind(kind)?),
+            1,
+            Vec::new(),
+        )),
+        Value::IndexAll => Err(unsupported_constant(
+            RuntimeType::Any,
+            ValueKind::Empty,
+            "IndexAll constants do not have a bytecode-v1 encoding",
+        )),
+        other => {
+            let kind = other.kind();
+            Err(unsupported_constant(
+                runtime_type_from_value_kind(&kind)?,
+                kind,
+                "the constant value is not yet supported by the bytecode-v1 codec",
+            ))
+        }
+    }
+}
+
+#[cfg(feature = "compiler")]
+fn append_child_payload(payload: &mut Vec<u8>, child: &EncodedConstant) -> MResult<()> {
+    let length = u32::try_from(child.bytes.len()).map_err(|_| {
+        unsupported_constant(
+            child.runtime_type.clone(),
+            ValueKind::Any,
+            "nested constant payload length exceeds u32",
+        )
+    })?;
+    payload.extend_from_slice(&length.to_le_bytes());
+    payload.extend_from_slice(&child.bytes);
+    Ok(())
+}
+
+#[cfg(feature = "compiler")]
+fn checked_count(
+    count: usize,
+    runtime_type: RuntimeType,
+    kind: ValueKind,
+    what: &'static str,
+) -> MResult<u32> {
+    u32::try_from(count).map_err(|_| unsupported_constant(runtime_type, kind, what))
+}
+
+#[cfg(all(feature = "tuple", feature = "compiler"))]
+fn encode_tuple_constant(
+    value: &MechTuple,
+    context: &mut ConstantCodecContext,
+) -> MResult<EncodedConstant> {
+    let mut children = Vec::new();
+    children
+        .try_reserve_exact(value.elements.len())
+        .map_err(|_| invalid::<()>("unable to allocate tuple constant children").unwrap_err())?;
+    for element in &value.elements {
+        children.push(context.encode_child(element)?);
+    }
+    let runtime_type = RuntimeType::Tuple(
+        children
+            .iter()
+            .map(|child| child.runtime_type.clone())
+            .collect(),
+    );
+    let kind = value.kind();
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(
+        &checked_count(
+            children.len(),
+            runtime_type.clone(),
+            kind.clone(),
+            "tuple element count exceeds u32",
+        )?
+        .to_le_bytes(),
+    );
+    for child in &children {
+        append_child_payload(&mut bytes, child)?;
+    }
+    Ok(encoded_constant(runtime_type, 4, bytes))
+}
+
+#[cfg(all(feature = "record", feature = "compiler"))]
+fn encode_record_constant(
+    value: &MechRecord,
+    context: &mut ConstantCodecContext,
+) -> MResult<EncodedConstant> {
+    let mut fields = Vec::new();
+    let mut children = Vec::new();
+    for (id, child_value) in &value.data {
+        let name = value.field_names.get(id).ok_or_else(|| {
+            unsupported_constant(
+                RuntimeType::Any,
+                value.kind(),
+                "record field is missing its canonical name",
+            )
+        })?;
+        if hash_str(name) != *id {
+            return Err(unsupported_constant(
+                RuntimeType::Any,
+                value.kind(),
+                "record field name does not match its stable ID",
+            ));
+        }
+        let child = context.encode_child(child_value)?;
+        fields.push((name.clone(), child.runtime_type.clone()));
+        children.push(child);
+    }
+    let runtime_type = RuntimeType::Record(fields);
+    let kind = value.kind();
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(
+        &checked_count(
+            children.len(),
+            runtime_type.clone(),
+            kind,
+            "record field count exceeds u32",
+        )?
+        .to_le_bytes(),
+    );
+    for child in &children {
+        append_child_payload(&mut bytes, child)?;
+    }
+    Ok(encoded_constant(runtime_type, 4, bytes))
+}
+
+#[cfg(all(feature = "map", feature = "compiler"))]
+fn encode_map_constant(
+    value: &MechMap,
+    context: &mut ConstantCodecContext,
+) -> MResult<EncodedConstant> {
+    let key_type = runtime_type_from_value_kind(&value.key_kind)?;
+    let value_type = runtime_type_from_value_kind(&value.value_kind)?;
+    let runtime_type = RuntimeType::Map {
+        key: Box::new(key_type.clone()),
+        value: Box::new(value_type.clone()),
+    };
+    let source_kind = value.kind();
+    let mut entries = Vec::new();
+    for (key, entry_value) in &value.map {
+        let encoded_key = context.encode_child(key)?;
+        let encoded_value = context.encode_child(entry_value)?;
+        if encoded_key.runtime_type != key_type || encoded_value.runtime_type != value_type {
+            return Err(unsupported_constant(
+                runtime_type,
+                source_kind,
+                "map entry type does not match the declared map schema",
+            ));
+        }
+        entries.push((encoded_key.bytes, encoded_value.bytes));
+    }
+    entries.sort();
+    if entries.windows(2).any(|pair| pair[0].0 == pair[1].0) {
+        return Err(unsupported_constant(
+            runtime_type,
+            source_kind,
+            "map contains duplicate canonical key payloads",
+        ));
+    }
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(
+        &checked_count(
+            entries.len(),
+            runtime_type.clone(),
+            source_kind,
+            "map entry count exceeds u32",
+        )?
+        .to_le_bytes(),
+    );
+    for (key, entry_value) in entries {
+        append_child_payload(&mut bytes, &encoded_constant(key_type.clone(), 1, key))?;
+        append_child_payload(
+            &mut bytes,
+            &encoded_constant(value_type.clone(), 1, entry_value),
+        )?;
+    }
+    Ok(encoded_constant(runtime_type, 4, bytes))
+}
+
+#[cfg(all(feature = "set", feature = "compiler"))]
+fn encode_set_constant(
+    value: &MechSet,
+    context: &mut ConstantCodecContext,
+) -> MResult<EncodedConstant> {
+    let element_type = runtime_type_from_value_kind(&value.kind)?;
+    let max_len = Some(checked_count(
+        value.num_elements,
+        RuntimeType::Any,
+        value.kind(),
+        "set maximum length exceeds u32",
+    )?);
+    let runtime_type = RuntimeType::Set {
+        element: Box::new(element_type.clone()),
+        max_len,
+    };
+    let source_kind = value.kind();
+    let mut elements = Vec::new();
+    for element in &value.set {
+        let child = context.encode_child(element)?;
+        if child.runtime_type != element_type {
+            return Err(unsupported_constant(
+                runtime_type,
+                source_kind,
+                "set element type does not match the declared set schema",
+            ));
+        }
+        elements.push(child.bytes);
+    }
+    elements.sort();
+    if elements.windows(2).any(|pair| pair[0] == pair[1]) {
+        return Err(unsupported_constant(
+            runtime_type,
+            source_kind,
+            "set contains duplicate canonical element payloads",
+        ));
+    }
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(
+        &checked_count(
+            elements.len(),
+            runtime_type.clone(),
+            source_kind,
+            "set element count exceeds u32",
+        )?
+        .to_le_bytes(),
+    );
+    for element in elements {
+        append_child_payload(
+            &mut bytes,
+            &encoded_constant(element_type.clone(), 1, element),
+        )?;
+    }
+    Ok(encoded_constant(runtime_type, 4, bytes))
+}
+
+#[cfg(all(feature = "table", feature = "compiler", feature = "vectord"))]
+fn encode_table_constant(
+    value: &MechTable,
+    context: &mut ConstantCodecContext,
+) -> MResult<EncodedConstant> {
+    let mut columns = Vec::new();
+    let mut column_values = Vec::new();
+    for (id, (kind, column)) in &value.data {
+        let name = value.col_names.get(id).ok_or_else(|| {
+            unsupported_constant(
+                RuntimeType::Any,
+                value.kind(),
+                "table column is missing its canonical name",
+            )
+        })?;
+        if hash_str(name) != *id {
+            return Err(unsupported_constant(
+                RuntimeType::Any,
+                value.kind(),
+                "table column name does not match its stable ID",
+            ));
+        }
+        let Matrix::DVector(values) = column else {
+            return Err(unsupported_constant(
+                RuntimeType::Any,
+                value.kind(),
+                "table columns must use dynamic value vectors",
+            ));
+        };
+        if values.borrow().len() != value.rows {
+            return Err(unsupported_constant(
+                RuntimeType::Any,
+                value.kind(),
+                "table column length does not match row count",
+            ));
+        }
+        columns.push((name.clone(), runtime_type_from_value_kind(kind)?));
+        column_values.push((kind.clone(), values.clone()));
+    }
+    let primary_key = 0;
+    let runtime_type = RuntimeType::Table {
+        columns: columns.clone(),
+        primary_key,
+    };
+    let source_kind = value.kind();
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(
+        &checked_count(
+            value.rows,
+            runtime_type.clone(),
+            source_kind.clone(),
+            "table row count exceeds u32",
+        )?
+        .to_le_bytes(),
+    );
+    bytes.extend_from_slice(
+        &checked_count(
+            columns.len(),
+            runtime_type.clone(),
+            source_kind.clone(),
+            "table column count exceeds u32",
+        )?
+        .to_le_bytes(),
+    );
+    for row in 0..value.rows {
+        for ((kind, cells), (_, expected_type)) in column_values.iter().zip(&columns) {
+            let child = context.encode_child(&cells.borrow()[row])?;
+            if child.runtime_type != *expected_type {
+                return Err(unsupported_constant(
+                    runtime_type,
+                    ValueKind::Table(vec![(String::new(), kind.clone())], 0),
+                    "table cell type does not match its declared column type",
+                ));
+            }
+            append_child_payload(&mut bytes, &child)?;
+        }
+    }
+    Ok(encoded_constant(runtime_type, 4, bytes))
+}
+
+#[cfg(all(feature = "table", feature = "compiler", not(feature = "vectord")))]
+fn encode_table_constant(
+    value: &MechTable,
+    _context: &mut ConstantCodecContext,
+) -> MResult<EncodedConstant> {
+    unsupported_value_kind(
+        value.kind(),
+        "table constants require the dynamic vector feature",
+    )
+}
+
+#[cfg(all(feature = "atom", feature = "compiler"))]
+fn encode_atom_constant(value: &MechAtom) -> MResult<EncodedConstant> {
+    let id = value.id();
+    let name = value.name();
+    if hash_str(&name) != id {
+        return Err(unsupported_constant(
+            RuntimeType::Atom { id, name },
+            ValueKind::Atom(id, value.name()),
+            "atom name does not match its stable ID",
+        ));
+    }
+    Ok(encoded_constant(
+        RuntimeType::Atom { id, name },
+        1,
+        Vec::new(),
+    ))
+}
+
+#[cfg(all(feature = "enum", feature = "compiler"))]
+fn encode_enum_constant(
+    value: &MechEnum,
+    context: &mut ConstantCodecContext,
+) -> MResult<EncodedConstant> {
+    let enum_name = value.name();
+    if hash_str(&enum_name) != value.id {
+        return Err(unsupported_constant(
+            RuntimeType::Enum {
+                id: value.id,
+                name: enum_name,
+            },
+            value.kind(),
+            "enum name does not match its stable ID",
+        ));
+    }
+    let runtime_type = RuntimeType::Enum {
+        id: value.id,
+        name: enum_name,
+    };
+    let source_kind = value.kind();
+    let names = value.names.borrow();
+    let mut variants = Vec::new();
+    for (id, payload) in &value.variants {
+        let name = names.get(id).cloned().ok_or_else(|| {
+            unsupported_constant(
+                runtime_type.clone(),
+                source_kind.clone(),
+                "enum variant is missing its canonical name",
+            )
+        })?;
+        if hash_str(&name) != *id {
+            return Err(unsupported_constant(
+                runtime_type,
+                source_kind,
+                "enum variant name does not match its stable ID",
+            ));
+        }
+        let payload = payload
+            .as_ref()
+            .map(|payload| context.encode_child(payload))
+            .transpose()?;
+        variants.push((*id, name, payload));
+    }
+    variants.sort_by_key(|(id, _, _)| *id);
+    if variants.windows(2).any(|pair| pair[0].0 == pair[1].0) {
+        return Err(unsupported_constant(
+            runtime_type,
+            source_kind,
+            "enum contains duplicate variant IDs",
+        ));
+    }
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(
+        &checked_count(
+            variants.len(),
+            runtime_type.clone(),
+            source_kind.clone(),
+            "enum variant count exceeds u32",
+        )?
+        .to_le_bytes(),
+    );
+    for (id, name, payload) in variants {
+        bytes.extend_from_slice(&id.to_le_bytes());
+        let name_length = u32::try_from(name.len()).map_err(|_| {
+            unsupported_constant(
+                runtime_type.clone(),
+                source_kind.clone(),
+                "enum variant name length exceeds u32",
+            )
+        })?;
+        bytes.extend_from_slice(&name_length.to_le_bytes());
+        bytes.extend_from_slice(name.as_bytes());
+        match payload {
+            None => bytes.push(0),
+            Some(payload) => {
+                bytes.push(1);
+                let type_key = crate::program::bytecode::constants::inline_type::encode(
+                    &payload.runtime_type,
+                )?;
+                let key_length = u32::try_from(type_key.len()).map_err(|_| {
+                    unsupported_constant(
+                        runtime_type.clone(),
+                        source_kind.clone(),
+                        "enum inline type key length exceeds u32",
+                    )
+                })?;
+                bytes.extend_from_slice(&key_length.to_le_bytes());
+                bytes.extend_from_slice(&type_key);
+                append_child_payload(&mut bytes, &payload)?;
+            }
+        }
+    }
+    Ok(encoded_constant(runtime_type, 4, bytes))
+}
+
+#[cfg(feature = "compiler")]
+fn encode_reference_constant(
+    value: &MutableReference,
+    context: &mut ConstantCodecContext,
+) -> MResult<EncodedConstant> {
+    let address = value.addr();
+    if !context.active_references.insert(address) {
+        return Err(unsupported_constant(
+            RuntimeType::Any,
+            ValueKind::Any,
+            "cyclic mutable reference graph cannot be encoded",
+        ));
+    }
+    let child = context.encode_child(&value.borrow());
+    context.active_references.remove(&address);
+    let child = child?;
+    let mut bytes = Vec::new();
+    append_child_payload(&mut bytes, &child)?;
+    Ok(encoded_constant(
+        RuntimeType::Reference(Box::new(child.runtime_type)),
+        4,
+        bytes,
+    ))
+}
+
+#[cfg(feature = "compiler")]
+fn encode_empty_kind_constant(kind: &ValueKind) -> MResult<EncodedConstant> {
+    match kind {
+        ValueKind::Any => Ok(encoded_constant(RuntimeType::Any, 1, Vec::new())),
+        ValueKind::None => Ok(encoded_constant(RuntimeType::None, 1, Vec::new())),
+        ValueKind::Option(inner) => Ok(encoded_constant(
+            RuntimeType::Option(Box::new(runtime_type_from_value_kind(inner)?)),
+            1,
+            vec![0],
+        )),
+        _ => Err(unsupported_constant(
+            runtime_type_from_value_kind(kind)?,
+            kind.clone(),
+            "nonempty EmptyKind values do not have a bytecode-v1 encoding",
+        )),
+    }
+}
+
+#[cfg(feature = "compiler")]
+fn encode_typed_constant(
+    value: &Value,
+    kind: &ValueKind,
+    context: &mut ConstantCodecContext,
+) -> MResult<EncodedConstant> {
+    let ValueKind::Option(inner) = kind else {
+        return Err(unsupported_constant(
+            runtime_type_from_value_kind(kind)?,
+            value.kind(),
+            "typed constant annotation does not match its source value kind; only Option wrappers are canonical",
+        ));
+    };
+    let inner_type = runtime_type_from_value_kind(inner)?;
+    let runtime_type = RuntimeType::Option(Box::new(inner_type.clone()));
+    if matches!(value, Value::Empty) {
+        return Ok(encoded_constant(runtime_type, 1, vec![0]));
+    }
+    let child = context.encode_child(value)?;
+    if child.runtime_type != inner_type {
+        return Err(unsupported_constant(
+            runtime_type,
+            value.kind(),
+            "typed option child does not match its declared inner type",
+        ));
+    }
+    let mut bytes = vec![1];
+    append_child_payload(&mut bytes, &child)?;
+    Ok(encoded_constant(runtime_type, 4, bytes))
+}
+
+#[cfg(feature = "compiler")]
 impl CompileConst for Value {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        let reg = match self {
-            #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "u8")]
-            Value::U8(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "u16")]
-            Value::U16(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "u32")]
-            Value::U32(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "u64")]
-            Value::U64(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "u128")]
-            Value::U128(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "i8")]
-            Value::I8(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "i16")]
-            Value::I16(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "i32")]
-            Value::I32(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "i64")]
-            Value::I64(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "i128")]
-            Value::I128(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "f32")]
-            Value::F32(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "f64")]
-            Value::F64(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "atom")]
-            Value::Atom(x) => x.borrow().compile_const(ctx)?,
-            Value::Index(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "complex")]
-            Value::C64(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "rational")]
-            Value::R64(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(x) => x.compile_const(ctx)?,
-            #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(x) => x.compile_const(ctx)?,
-            #[cfg(feature = "matrix")]
-            Value::MatrixIndex(x) => x.compile_const(ctx)?,
-            #[cfg(feature = "matrix")]
-            Value::MatrixValue(x) => x.compile_const(ctx)?,
-            #[cfg(feature = "table")]
-            Value::Table(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "record")]
-            Value::Record(x) => x.borrow().compile_const(ctx)?,
-            #[cfg(feature = "set")]
-            Value::Set(x) => x.borrow().compile_const(ctx)?,
-            Value::Typed(value, kind) => match value.as_ref() {
-                Value::Empty if *kind == ValueKind::Empty => {
-                    ctx.intern_constant(EncodedConstant {
-                        runtime_type: RuntimeType::Empty,
-                        alignment: 1,
-                        bytes: Vec::new(),
-                    })?
-                }
-                Value::Empty => {
-                    return Err(unsupported_constant(
-                        runtime_type_from_value_kind(kind)?,
-                        kind.clone(),
-                        "typed-empty constants do not have a Phase 1 canonical encoding",
-                    ));
-                }
-                _ => {
-                    let source_value_kind = value.kind();
-                    if source_value_kind != *kind {
-                        return Err(unsupported_constant(
-                            runtime_type_from_value_kind(kind)?,
-                            source_value_kind,
-                            "typed constant annotation does not match its source value kind",
-                        ));
-                    }
-                    value.compile_const(ctx)?
-                }
-            },
-            Value::EmptyKind(kind) if *kind == ValueKind::Empty => {
-                ctx.intern_constant(EncodedConstant {
-                    runtime_type: RuntimeType::Empty,
-                    alignment: 1,
-                    bytes: Vec::new(),
-                })?
-            }
-            Value::EmptyKind(kind) => {
-                return Err(unsupported_constant(
-                    runtime_type_from_value_kind(kind)?,
-                    kind.clone(),
-                    "typed-empty constants do not have a Phase 1 canonical encoding",
-                ));
-            }
-            Value::Empty => ctx.intern_constant(EncodedConstant {
-                runtime_type: RuntimeType::Empty,
-                alignment: 1,
-                bytes: Vec::new(),
-            })?,
-            value => {
-                let source_value_kind = value.kind();
-                return Err(unsupported_constant(
-                    runtime_type_from_value_kind(&source_value_kind)?,
-                    source_value_kind,
-                    "the constant codec is not implemented in bytecode v1 Phase 1",
-                ));
-            }
-        };
-        Ok(reg)
+        let mut codec = ConstantCodecContext::new();
+        ctx.intern_constant(encode_constant_value(self, &mut codec)?)
     }
 }
 
@@ -336,31 +1040,34 @@ impl CompileConst for f64 {
 
 #[cfg(all(feature = "f32", feature = "compiler"))]
 impl CompileConst for f32 {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            ValueKind::F32,
-            "F32 constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        ctx.intern_constant(EncodedConstant {
+            runtime_type: RuntimeType::F32,
+            alignment: 4,
+            bytes: self.to_bits().to_le_bytes().to_vec(),
+        })
     }
 }
 
 #[cfg(all(feature = "u8", feature = "compiler"))]
 impl CompileConst for u8 {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            ValueKind::U8,
-            "U8 constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        ctx.intern_constant(EncodedConstant {
+            runtime_type: RuntimeType::U8,
+            alignment: 1,
+            bytes: vec![*self],
+        })
     }
 }
 
 #[cfg(all(feature = "i8", feature = "compiler"))]
 impl CompileConst for i8 {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            ValueKind::I8,
-            "I8 constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        ctx.intern_constant(EncodedConstant {
+            runtime_type: RuntimeType::I8,
+            alignment: 1,
+            bytes: vec![*self as u8],
+        })
     }
 }
 
@@ -383,15 +1090,16 @@ impl CompileConst for usize {
 }
 
 macro_rules! impl_compile_const {
-    ($feature:literal, $t:tt) => {
+    ($feature:literal, $t:tt, $runtime_type:ident, $alignment:literal) => {
         paste! {
           #[cfg(all(feature = $feature, feature = "compiler"))]
           impl CompileConst for $t {
-            fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-              unsupported_value_kind(
-                ValueKind::[<$t:upper>],
-                concat!(stringify!($t), " constant encoding is deferred until bytecode v1 Phase 2"),
-              )
+            fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+              ctx.intern_constant(EncodedConstant {
+                runtime_type: RuntimeType::$runtime_type,
+                alignment: $alignment,
+                bytes: self.to_le_bytes().to_vec(),
+              })
             }
           }
         }
@@ -399,21 +1107,21 @@ macro_rules! impl_compile_const {
 }
 
 #[cfg(feature = "u16")]
-impl_compile_const!("u16", u16);
+impl_compile_const!("u16", u16, U16, 2);
 #[cfg(feature = "u32")]
-impl_compile_const!("u32", u32);
+impl_compile_const!("u32", u32, U32, 4);
 #[cfg(feature = "u64")]
-impl_compile_const!("u64", u64);
+impl_compile_const!("u64", u64, U64, 8);
 #[cfg(feature = "u128")]
-impl_compile_const!("u128", u128);
+impl_compile_const!("u128", u128, U128, 16);
 #[cfg(feature = "i16")]
-impl_compile_const!("i16", i16);
+impl_compile_const!("i16", i16, I16, 2);
 #[cfg(feature = "i32")]
-impl_compile_const!("i32", i32);
+impl_compile_const!("i32", i32, I32, 4);
 #[cfg(feature = "i64")]
-impl_compile_const!("i64", i64);
+impl_compile_const!("i64", i64, I64, 8);
 #[cfg(feature = "i128")]
-impl_compile_const!("i128", i128);
+impl_compile_const!("i128", i128, I128, 16);
 
 #[cfg(all(
     feature = "compiler",
@@ -445,21 +1153,366 @@ impl CompileConst for String {
 
 #[cfg(all(feature = "rational", feature = "compiler"))]
 impl CompileConst for R64 {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            ValueKind::R64,
-            "R64 constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        let numerator = *self.numer();
+        let denominator = *self.denom();
+        ctx.intern_constant(EncodedConstant {
+            runtime_type: RuntimeType::R64,
+            alignment: 8,
+            bytes: [numerator.to_le_bytes(), denominator.to_le_bytes()].concat(),
+        })
     }
 }
 
 #[cfg(all(feature = "complex", feature = "compiler"))]
 impl CompileConst for C64 {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            ValueKind::C64,
-            "C64 constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        ctx.intern_constant(EncodedConstant {
+            runtime_type: RuntimeType::C64,
+            alignment: 8,
+            bytes: [
+                self.0.re.to_bits().to_le_bytes(),
+                self.0.im.to_bits().to_le_bytes(),
+            ]
+            .concat(),
+        })
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+trait MatrixConstantElement: AsValueKind + 'static {
+    fn runtime_type() -> Option<RuntimeType>;
+    fn alignment() -> u8;
+    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()>;
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+macro_rules! impl_matrix_constant_element {
+    ($feature:literal, $type:ty, $runtime_type:ident, $alignment:literal) => {
+        #[cfg(feature = $feature)]
+        impl MatrixConstantElement for $type {
+            fn runtime_type() -> Option<RuntimeType> {
+                Some(RuntimeType::$runtime_type)
+            }
+
+            fn alignment() -> u8 {
+                $alignment
+            }
+
+            fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
+                payload.extend_from_slice(&self.to_le_bytes());
+                Ok(())
+            }
+        }
+    };
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler", feature = "bool"))]
+impl MatrixConstantElement for bool {
+    fn runtime_type() -> Option<RuntimeType> {
+        Some(RuntimeType::Bool)
+    }
+
+    fn alignment() -> u8 {
+        1
+    }
+
+    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
+        payload.push(if *self { 1 } else { 0 });
+        Ok(())
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl_matrix_constant_element!("u8", u8, U8, 1);
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl_matrix_constant_element!("u16", u16, U16, 2);
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl_matrix_constant_element!("u32", u32, U32, 4);
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl_matrix_constant_element!("u64", u64, U64, 8);
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl_matrix_constant_element!("u128", u128, U128, 16);
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl_matrix_constant_element!("i8", i8, I8, 1);
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl_matrix_constant_element!("i16", i16, I16, 2);
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl_matrix_constant_element!("i32", i32, I32, 4);
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl_matrix_constant_element!("i64", i64, I64, 8);
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl_matrix_constant_element!("i128", i128, I128, 16);
+
+#[cfg(all(feature = "matrix", feature = "compiler", feature = "f32"))]
+impl MatrixConstantElement for f32 {
+    fn runtime_type() -> Option<RuntimeType> {
+        Some(RuntimeType::F32)
+    }
+
+    fn alignment() -> u8 {
+        4
+    }
+
+    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
+        payload.extend_from_slice(&self.to_bits().to_le_bytes());
+        Ok(())
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler", feature = "f64"))]
+impl MatrixConstantElement for f64 {
+    fn runtime_type() -> Option<RuntimeType> {
+        Some(RuntimeType::F64)
+    }
+
+    fn alignment() -> u8 {
+        8
+    }
+
+    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
+        payload.extend_from_slice(&self.to_bits().to_le_bytes());
+        Ok(())
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler", feature = "string"))]
+impl MatrixConstantElement for String {
+    fn runtime_type() -> Option<RuntimeType> {
+        Some(RuntimeType::String)
+    }
+
+    fn alignment() -> u8 {
+        4
+    }
+
+    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
+        let length = u32::try_from(self.len()).map_err(|_| {
+            unsupported_constant(
+                RuntimeType::String,
+                ValueKind::String,
+                "String matrix element length exceeds u32",
+            )
+        })?;
+        payload.extend_from_slice(&length.to_le_bytes());
+        payload.extend_from_slice(self.as_bytes());
+        Ok(())
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler", feature = "rational"))]
+impl MatrixConstantElement for R64 {
+    fn runtime_type() -> Option<RuntimeType> {
+        Some(RuntimeType::R64)
+    }
+
+    fn alignment() -> u8 {
+        8
+    }
+
+    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
+        payload.extend_from_slice(&self.numer().to_le_bytes());
+        payload.extend_from_slice(&self.denom().to_le_bytes());
+        Ok(())
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler", feature = "complex"))]
+impl MatrixConstantElement for C64 {
+    fn runtime_type() -> Option<RuntimeType> {
+        Some(RuntimeType::C64)
+    }
+
+    fn alignment() -> u8 {
+        8
+    }
+
+    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
+        payload.extend_from_slice(&self.0.re.to_bits().to_le_bytes());
+        payload.extend_from_slice(&self.0.im.to_bits().to_le_bytes());
+        Ok(())
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl MatrixConstantElement for usize {
+    fn runtime_type() -> Option<RuntimeType> {
+        Some(RuntimeType::Index)
+    }
+
+    fn alignment() -> u8 {
+        8
+    }
+
+    fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()> {
+        let value = u64::try_from(*self).map_err(|_| {
+            unsupported_constant(
+                RuntimeType::Index,
+                ValueKind::Index,
+                "Index matrix element cannot be represented as u64",
+            )
+        })?;
+        payload.extend_from_slice(&value.to_le_bytes());
+        Ok(())
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+impl MatrixConstantElement for Value {
+    fn runtime_type() -> Option<RuntimeType> {
+        None
+    }
+
+    fn alignment() -> u8 {
+        1
+    }
+
+    fn encode_matrix_element(&self, _payload: &mut Vec<u8>) -> MResult<()> {
+        unreachable!("Matrix<Value> constants are rejected before their elements are encoded")
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+fn matrix_element_alignment(element_type: &RuntimeType) -> u8 {
+    match element_type {
+        RuntimeType::Bool | RuntimeType::U8 | RuntimeType::I8 => 1,
+        RuntimeType::U16 | RuntimeType::I16 => 2,
+        RuntimeType::U32 | RuntimeType::I32 | RuntimeType::F32 | RuntimeType::String => 4,
+        RuntimeType::U64
+        | RuntimeType::I64
+        | RuntimeType::F64
+        | RuntimeType::C64
+        | RuntimeType::R64
+        | RuntimeType::Index => 8,
+        RuntimeType::U128 | RuntimeType::I128 => 16,
+        _ => 1,
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "compiler"))]
+fn encode_matrix_element<T: 'static>(
+    element: &T,
+    element_type: &RuntimeType,
+    matrix_type: &RuntimeType,
+    source_value_kind: &ValueKind,
+    payload: &mut Vec<u8>,
+) -> MResult<()> {
+    macro_rules! fixed_element {
+        ($type:ty, $value:ident, $encode:block) => {{
+            let $value = (element as &dyn core::any::Any)
+                .downcast_ref::<$type>()
+                .ok_or_else(|| {
+                    unsupported_constant(
+                        matrix_type.clone(),
+                        source_value_kind.clone(),
+                        "matrix element does not match its declared bytecode runtime type",
+                    )
+                })?;
+            $encode
+            Ok(())
+        }};
+    }
+
+    match element_type {
+        RuntimeType::Bool => fixed_element!(bool, value, {
+            payload.push(if *value { 1 } else { 0 });
+        }),
+        RuntimeType::U8 => fixed_element!(u8, value, {
+            payload.push(*value);
+        }),
+        RuntimeType::U16 => fixed_element!(u16, value, {
+            payload.extend_from_slice(&value.to_le_bytes());
+        }),
+        RuntimeType::U32 => fixed_element!(u32, value, {
+            payload.extend_from_slice(&value.to_le_bytes());
+        }),
+        RuntimeType::U64 => fixed_element!(u64, value, {
+            payload.extend_from_slice(&value.to_le_bytes());
+        }),
+        RuntimeType::U128 => fixed_element!(u128, value, {
+            payload.extend_from_slice(&value.to_le_bytes());
+        }),
+        RuntimeType::I8 => fixed_element!(i8, value, {
+            payload.extend_from_slice(&value.to_le_bytes());
+        }),
+        RuntimeType::I16 => fixed_element!(i16, value, {
+            payload.extend_from_slice(&value.to_le_bytes());
+        }),
+        RuntimeType::I32 => fixed_element!(i32, value, {
+            payload.extend_from_slice(&value.to_le_bytes());
+        }),
+        RuntimeType::I64 => fixed_element!(i64, value, {
+            payload.extend_from_slice(&value.to_le_bytes());
+        }),
+        RuntimeType::I128 => fixed_element!(i128, value, {
+            payload.extend_from_slice(&value.to_le_bytes());
+        }),
+        RuntimeType::F32 => fixed_element!(f32, value, {
+            payload.extend_from_slice(&value.to_bits().to_le_bytes());
+        }),
+        RuntimeType::F64 => fixed_element!(f64, value, {
+            payload.extend_from_slice(&value.to_bits().to_le_bytes());
+        }),
+        RuntimeType::Index => fixed_element!(usize, value, {
+            let index = u64::try_from(*value).map_err(|_| {
+                unsupported_constant(
+                    matrix_type.clone(),
+                    source_value_kind.clone(),
+                    "Index matrix element cannot be represented as u64",
+                )
+            })?;
+            payload.extend_from_slice(&index.to_le_bytes());
+        }),
+        RuntimeType::String => fixed_element!(String, value, {
+            let length = u32::try_from(value.len()).map_err(|_| {
+                unsupported_constant(
+                    matrix_type.clone(),
+                    source_value_kind.clone(),
+                    "String matrix element length exceeds u32",
+                )
+            })?;
+            payload.extend_from_slice(&length.to_le_bytes());
+            payload.extend_from_slice(value.as_bytes());
+        }),
+        RuntimeType::R64 => {
+            #[cfg(feature = "rational")]
+            {
+                fixed_element!(R64, value, {
+                    payload.extend_from_slice(&value.numer().to_le_bytes());
+                    payload.extend_from_slice(&value.denom().to_le_bytes());
+                })
+            }
+            #[cfg(not(feature = "rational"))]
+            {
+                Err(unsupported_constant(
+                    matrix_type.clone(),
+                    source_value_kind.clone(),
+                    "R64 matrix constants are unavailable in this runtime",
+                ))
+            }
+        }
+        RuntimeType::C64 => {
+            #[cfg(feature = "complex")]
+            {
+                fixed_element!(C64, value, {
+                    payload.extend_from_slice(&value.0.re.to_bits().to_le_bytes());
+                    payload.extend_from_slice(&value.0.im.to_bits().to_le_bytes());
+                })
+            }
+            #[cfg(not(feature = "complex"))]
+            {
+                Err(unsupported_constant(
+                    matrix_type.clone(),
+                    source_value_kind.clone(),
+                    "C64 matrix constants are unavailable in this runtime",
+                ))
+            }
+        }
+        _ => Err(unsupported_constant(
+            matrix_type.clone(),
+            source_value_kind.clone(),
+            "MatrixValue and non-scalar matrix constants do not have a bytecode-v1 encoding",
+        )),
     }
 }
 
@@ -497,8 +1550,9 @@ macro_rules! impl_compile_const_matrix {
                     Box::new(T::as_value_kind()),
                     vec![row_count, column_count],
                 );
+                let element_type = runtime_type_from_value_kind(&T::as_value_kind())?;
                 let runtime_type = RuntimeType::Matrix {
-                    element: Box::new(runtime_type_from_value_kind(&T::as_value_kind())?),
+                    element: Box::new(element_type.clone()),
                     storage: $storage,
                     rows,
                     cols,
@@ -510,45 +1564,24 @@ macro_rules! impl_compile_const_matrix {
                         "matrix storage and dimensions do not form a valid bytecode v1 runtime type",
                     ));
                 }
-                if T::as_value_kind() != ValueKind::F64 {
-                    return Err(unsupported_constant(
-                        runtime_type,
-                        source_value_kind,
-                        "only F64 matrix constants are implemented in bytecode v1 Phase 1",
-                    ));
-                }
-                let capacity = row_count
-                    .checked_mul(column_count)
-                    .and_then(|count| count.checked_mul(8))
-                    .and_then(|bytes| bytes.checked_add(8))
-                    .ok_or_else(|| {
-                        unsupported_constant(
-                            runtime_type.clone(),
-                            source_value_kind.clone(),
-                            "matrix constant payload size overflow",
-                        )
-                    })?;
-                let mut payload = Vec::<u8>::with_capacity(capacity);
+                let mut payload = Vec::<u8>::new();
                 payload.extend_from_slice(&rows.to_le_bytes());
                 payload.extend_from_slice(&cols.to_le_bytes());
 
                 for row in 0..row_count {
                     for column in 0..column_count {
-                        let element = (&self[(row, column)] as &dyn core::any::Any)
-                            .downcast_ref::<f64>()
-                            .ok_or_else(|| {
-                                unsupported_constant(
-                                    runtime_type.clone(),
-                                    source_value_kind.clone(),
-                                    "F64 matrix kind did not contain F64 elements",
-                                )
-                            })?;
-                        payload.extend_from_slice(&element.to_bits().to_le_bytes());
+                        encode_matrix_element(
+                            &self[(row, column)],
+                            &element_type,
+                            &runtime_type,
+                            &source_value_kind,
+                            &mut payload,
+                        )?;
                     }
                 }
                 ctx.intern_constant(EncodedConstant {
                     runtime_type,
-                    alignment: 8,
+                    alignment: matrix_element_alignment(&element_type),
                     bytes: payload,
                 })
             }
@@ -660,73 +1693,49 @@ where
 
 #[cfg(all(feature = "record", feature = "compiler"))]
 impl CompileConst for MechRecord {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            self.kind(),
-            "Record constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        Value::Record(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "enum", feature = "compiler"))]
 impl CompileConst for MechEnum {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            ValueKind::Enum(self.id, self.name()),
-            "Enum constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        Value::Enum(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "atom", feature = "compiler"))]
 impl CompileConst for MechAtom {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            ValueKind::Atom(self.id(), self.name().clone()),
-            "Atom constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        Value::Atom(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "set", feature = "compiler"))]
 impl CompileConst for MechSet {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            self.kind(),
-            "Set constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        Value::Set(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "tuple", feature = "compiler"))]
 impl CompileConst for MechTuple {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            self.kind(),
-            "Tuple constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        Value::Tuple(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "table", feature = "compiler"))]
 impl CompileConst for MechTable {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            self.kind(),
-            "Table constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        Value::Table(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "map", feature = "compiler"))]
 impl CompileConst for MechMap {
-    fn compile_const(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        unsupported_value_kind(
-            ValueKind::Map(
-                Box::new(self.key_kind.clone()),
-                Box::new(self.value_kind.clone()),
-            ),
-            "Map constant encoding is deferred until bytecode v1 Phase 2",
-        )
+    fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
+        Value::Map(Ref::new(self.clone())).compile_const(ctx)
     }
 }

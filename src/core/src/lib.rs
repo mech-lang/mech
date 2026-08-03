@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "no_std", no_std)]
+#![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 #![allow(warnings)]
 #![allow(dead_code)]
 #![feature(where_clause_attrs)]
@@ -9,17 +9,17 @@ extern crate seahash;
 #[cfg(feature = "no_std")]
 #[macro_use]
 extern crate alloc;
-#[cfg(not(feature = "no_std"))]
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 extern crate core;
 
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "no_std", not(feature = "std")))]
 use hashbrown::HashMap as HashBrownMap;
-#[cfg(not(feature = "no_std"))]
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::collections::HashMap;
 
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "no_std", not(feature = "std")))]
 use alloc::fmt::{self, Debug, Display};
-#[cfg(not(feature = "no_std"))]
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::fmt::{self, Debug, Display};
 
 #[cfg(feature = "no_std")]
@@ -27,12 +27,12 @@ use alloc::vec::Vec;
 
 #[cfg(feature = "no_std")]
 use fxhash::FxHasher;
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "no_std", not(feature = "std")))]
 type HashMap<K, V> = HashBrownMap<K, V, core::hash::BuildHasherDefault<FxHasher>>;
 
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "no_std", not(feature = "std")))]
 use embedded_io::{self, Read, Write};
-#[cfg(not(feature = "no_std"))]
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::io::{self, Cursor, Error as ioError, Read, Write};
 
 #[cfg(feature = "no_std")]

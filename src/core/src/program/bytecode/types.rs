@@ -424,6 +424,159 @@ fn canonical_key(ty: &RuntimeType, depth: usize) -> MResult<Vec<u8>> {
     Ok(out)
 }
 
+pub(crate) fn canonical_runtime_type_key(ty: &RuntimeType) -> MResult<Vec<u8>> {
+    canonical_key(ty, 0)
+}
+
+pub(crate) fn decode_canonical_runtime_type_key(bytes: &[u8]) -> MResult<RuntimeType> {
+    fn decode(reader: &mut ByteReader<'_>, depth: usize) -> MResult<RuntimeType> {
+        if depth > MAX_TYPE_RECURSION {
+            return invalid("canonical runtime type key exceeds bytecode v1 recursion limit");
+        }
+        let tag = RuntimeTypeTag::from_u16(reader.read_u16("canonical runtime type tag")?)
+            .ok_or_else(|| invalid::<()>("unknown canonical runtime type tag").unwrap_err())?;
+        let child =
+            |reader: &mut ByteReader<'_>, depth: usize, what: &str| -> MResult<RuntimeType> {
+                let length = checked_usize(
+                    u64::from(reader.read_u32(&format!("{what} length"))?),
+                    &format!("{what} length"),
+                )?;
+                let bytes = reader.read_exact(length, what)?;
+                let mut nested = ByteReader::new(bytes);
+                let ty = decode(&mut nested, depth + 1)?;
+                if !nested.is_empty() {
+                    return invalid(format!("{what} has trailing bytes"));
+                }
+                Ok(ty)
+            };
+        Ok(match tag {
+            RuntimeTypeTag::U8 => RuntimeType::U8,
+            RuntimeTypeTag::U16 => RuntimeType::U16,
+            RuntimeTypeTag::U32 => RuntimeType::U32,
+            RuntimeTypeTag::U64 => RuntimeType::U64,
+            RuntimeTypeTag::U128 => RuntimeType::U128,
+            RuntimeTypeTag::I8 => RuntimeType::I8,
+            RuntimeTypeTag::I16 => RuntimeType::I16,
+            RuntimeTypeTag::I32 => RuntimeType::I32,
+            RuntimeTypeTag::I64 => RuntimeType::I64,
+            RuntimeTypeTag::I128 => RuntimeType::I128,
+            RuntimeTypeTag::F32 => RuntimeType::F32,
+            RuntimeTypeTag::F64 => RuntimeType::F64,
+            RuntimeTypeTag::C64 => RuntimeType::C64,
+            RuntimeTypeTag::R64 => RuntimeType::R64,
+            RuntimeTypeTag::String => RuntimeType::String,
+            RuntimeTypeTag::Bool => RuntimeType::Bool,
+            RuntimeTypeTag::Id => RuntimeType::Id,
+            RuntimeTypeTag::Index => RuntimeType::Index,
+            RuntimeTypeTag::Empty => RuntimeType::Empty,
+            RuntimeTypeTag::Any => RuntimeType::Any,
+            RuntimeTypeTag::None => RuntimeType::None,
+            RuntimeTypeTag::Matrix => {
+                let storage = MatrixStorage::from_u8(reader.read_u8("canonical matrix storage")?)
+                    .ok_or_else(|| {
+                    invalid::<()>("unknown canonical matrix storage").unwrap_err()
+                })?;
+                let rows = reader.read_u32("canonical matrix rows")?;
+                let cols = reader.read_u32("canonical matrix columns")?;
+                if !storage.validate_dimensions(rows, cols) {
+                    return invalid("canonical matrix storage and dimensions disagree");
+                }
+                RuntimeType::Matrix {
+                    storage,
+                    rows,
+                    cols,
+                    element: Box::new(child(reader, depth, "canonical matrix element type")?),
+                }
+            }
+            RuntimeTypeTag::Enum => RuntimeType::Enum {
+                id: reader.read_u64("canonical enum ID")?,
+                name: reader.read_string("canonical enum name")?,
+            },
+            RuntimeTypeTag::Atom => RuntimeType::Atom {
+                id: reader.read_u64("canonical atom ID")?,
+                name: reader.read_string("canonical atom name")?,
+            },
+            RuntimeTypeTag::Record => {
+                let count = checked_usize(
+                    u64::from(reader.read_u32("canonical record field count")?),
+                    "canonical record field count",
+                )?;
+                let mut fields = try_vec_with_capacity(count, "canonical record fields")?;
+                for _ in 0..count {
+                    fields.push((
+                        reader.read_string("canonical record field name")?,
+                        child(reader, depth, "canonical record field type")?,
+                    ));
+                }
+                RuntimeType::Record(fields)
+            }
+            RuntimeTypeTag::Map => RuntimeType::Map {
+                key: Box::new(child(reader, depth, "canonical map key type")?),
+                value: Box::new(child(reader, depth, "canonical map value type")?),
+            },
+            RuntimeTypeTag::Table => {
+                let count = checked_usize(
+                    u64::from(reader.read_u32("canonical table column count")?),
+                    "canonical table column count",
+                )?;
+                let mut columns = try_vec_with_capacity(count, "canonical table columns")?;
+                for _ in 0..count {
+                    columns.push((
+                        reader.read_string("canonical table column name")?,
+                        child(reader, depth, "canonical table column type")?,
+                    ));
+                }
+                let primary_key = reader.read_u32("canonical table primary key")?;
+                if count > 0 && primary_key as usize >= count {
+                    return invalid("canonical table primary key is out of range");
+                }
+                RuntimeType::Table {
+                    columns,
+                    primary_key,
+                }
+            }
+            RuntimeTypeTag::Tuple => {
+                let count = checked_usize(
+                    u64::from(reader.read_u32("canonical tuple type count")?),
+                    "canonical tuple type count",
+                )?;
+                let mut types = try_vec_with_capacity(count, "canonical tuple types")?;
+                for _ in 0..count {
+                    types.push(child(reader, depth, "canonical tuple child type")?);
+                }
+                RuntimeType::Tuple(types)
+            }
+            RuntimeTypeTag::Reference => RuntimeType::Reference(Box::new(child(
+                reader,
+                depth,
+                "canonical reference child type",
+            )?)),
+            RuntimeTypeTag::Set => {
+                let element = Box::new(child(reader, depth, "canonical set element type")?);
+                let max_len = match reader.read_u8("canonical set limit presence")? {
+                    0 => None,
+                    1 => Some(reader.read_u32("canonical set limit")?),
+                    _ => return invalid("invalid canonical set limit presence"),
+                };
+                RuntimeType::Set { element, max_len }
+            }
+            RuntimeTypeTag::Option => RuntimeType::Option(Box::new(child(
+                reader,
+                depth,
+                "canonical option child type",
+            )?)),
+            RuntimeTypeTag::Kind => RuntimeType::Kind(decode_kind(reader, depth + 1)?),
+        })
+    }
+
+    let mut reader = ByteReader::new(bytes);
+    let ty = decode(&mut reader, 0)?;
+    if !reader.is_empty() {
+        return invalid("canonical runtime type key has trailing bytes");
+    }
+    Ok(ty)
+}
+
 fn dependency_depth(ty: &RuntimeType, depth: usize) -> MResult<usize> {
     if depth > MAX_TYPE_RECURSION {
         return invalid("runtime type recursion exceeds bytecode v1 limit");
