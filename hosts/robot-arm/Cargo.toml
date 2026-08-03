@@ -13,4 +13,7 @@ provider = ["mech-core/string", "mech-core/bool"]
 
 [dependencies]
 mech-core = { version = "0.3.5", default-features = false }
+mech-runtime = { version = "0.3.5", default-features = false, features = ["runtime", "bool", "string"] }
+
+[dev-dependencies]
 mech-runtime = { version = "0.3.5", default-features = false, features = ["source"] }

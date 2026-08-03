@@ -43,6 +43,9 @@ pub enum NativeBuildErrorKind {
     NativeHostProviderUnknown {
         provider: String,
     },
+    NativeHostFunctionLinkageMissing {
+        name: String,
+    },
     NativeResourceOwnerAmbiguous {
         target: String,
         instances: Vec<String>,
@@ -128,6 +131,7 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeRuntimeConfigUnsupported { .. } => "NativeRuntimeConfigUnsupported",
             Self::NativeHostInstanceUnknown { .. } => "NativeHostInstanceUnknown",
             Self::NativeHostProviderUnknown { .. } => "NativeHostProviderUnknown",
+            Self::NativeHostFunctionLinkageMissing { .. } => "NativeHostFunctionLinkageMissing",
             Self::NativeResourceOwnerAmbiguous { .. } => "NativeResourceOwnerAmbiguous",
             Self::NativeTargetUnsupported { .. } => "NativeTargetUnsupported",
             Self::NativeHostSettingsInvalid { .. } => "NativeHostSettingsInvalid",
@@ -164,7 +168,7 @@ impl MechErrorKind for NativeBuildErrorKind {
                 format!("runtime function `{name}` ({id}) has invalid native linkage: {reason}")
             }
             Self::NativeRuntimeTypeUnsupported { runtime_type } => {
-                format!("runtime type `{runtime_type}` is not supported by native Phase 1")
+                format!("runtime type `{runtime_type}` is not supported by native applications")
             }
             Self::NativeRuntimeConfigMissing { requirement } => {
                 format!("native runtime configuration is required for `{requirement}`")
@@ -173,13 +177,16 @@ impl MechErrorKind for NativeBuildErrorKind {
                 "native runtime configuration contains duplicate host instance `{instance}`"
             ),
             Self::NativeRuntimeConfigUnsupported { reason } => {
-                format!("native runtime configuration is unsupported in Phase 1: {reason}")
+                format!("native runtime configuration is unsupported: {reason}")
             }
             Self::NativeHostInstanceUnknown { instance } => {
                 format!("native host instance `{instance}` is not configured")
             }
             Self::NativeHostProviderUnknown { provider } => {
                 format!("native host provider `{provider}` is not trusted")
+            }
+            Self::NativeHostFunctionLinkageMissing { name } => {
+                format!("host function `{name}` has no trusted native linkage")
             }
             Self::NativeResourceOwnerAmbiguous { target, instances } => format!(
                 "resource target `{target}` is owned by multiple host instances: {}",

@@ -105,8 +105,8 @@ pub(crate) fn analyze_application_requirements(
             ApplicationRequirement::HostFunction(request) => {
                 let linkage = host_catalog.function(&request.name).ok_or_else(|| {
                     native_build_error(
-                        NativeBuildErrorKind::NativeHostProviderUnknown {
-                            provider: format!("host-function: {}", request.name),
+                        NativeBuildErrorKind::NativeHostFunctionLinkageMissing {
+                            name: request.name.clone(),
                         },
                         None,
                     )

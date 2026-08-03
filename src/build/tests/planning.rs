@@ -264,6 +264,17 @@ fn host_function_only_plan_rejects_unaddressed_runtime_config() {
     }
 }
 
+#[cfg(feature = "standard-hosts")]
+#[test]
+fn standard_catalog_rejects_untrusted_host_functions() {
+    let error = NativeApplicationBuilder::new(environment(empty_catalog()))
+        .plan(&request(&host_function_only_bytecode(
+            "untrusted/arbitrary/function",
+        )))
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeHostFunctionLinkageMissing");
+}
+
 #[test]
 fn scalar_add_resolves_only_the_exact_scalar_installer() {
     assert_owner_runtime_function(

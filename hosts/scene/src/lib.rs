@@ -11,7 +11,7 @@ pub mod browser;
 pub mod native;
 
 pub use config::{SceneHostSettings, SceneRendererKind, scene_settings_from_config};
-pub use module::{SCENE_HOST_MCFG, scene_host_manifest};
+pub use module::scene_host_manifest;
 pub use provider::{RecordingSceneBackend, SceneBackend, SceneHostFactory, SceneResourceProvider};
 pub use schema::{CircleElement, LineElement, SceneSnapshot};
 

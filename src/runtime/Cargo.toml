@@ -17,6 +17,7 @@ rust-version = "1.92"
 no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-syntax?/no_std"]
 
 runtime = ["mech-engine/runtime"]
+native-link = ["runtime", "string"]
 source = ["runtime", "mech-engine/source", "dep:mech-syntax"]
 compiler = ["source", "mech-engine/compiler"]
 

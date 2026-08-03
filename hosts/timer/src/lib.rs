@@ -15,7 +15,7 @@ pub mod native;
 
 pub use config::{TimerHostSettings, timer_settings_from_config};
 pub use manual::{ManualMonotonicTimerBackend, ManualTimerInputDriver};
-pub use module::{TIMER_HOST_MCFG, timer_host_manifest};
+pub use module::timer_host_manifest;
 pub use provider::TimerResourceProvider;
 pub use scheduler::{FixedStepScheduler, SchedulerEmission};
 pub use snapshot::{
