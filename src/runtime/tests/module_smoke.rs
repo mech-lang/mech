@@ -1011,12 +1011,6 @@ fn retained_root_context_read_creates_live_binding_and_recomputes() {
         runtime.has_live_input_bindings(),
         "root context read should retain live binding"
     );
-    // Root-module loading retains the plan and bindings but does not own the
-    // source API's live-context lifecycle. Prime the same retained execution
-    // identity through that API before exercising host delivery.
-    runtime
-        .run_string_with_context(&mut context, "live-context-ready := true")
-        .unwrap();
     runtime
         .apply_host_input(RuntimeHostInput::single(
             RuntimeHostInputSource::new("docs://numbers", "increment").unwrap(),

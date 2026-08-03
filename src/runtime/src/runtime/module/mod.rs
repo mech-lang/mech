@@ -742,6 +742,10 @@ impl MechRuntime {
                     &mut integrity_evaluations,
                     turn_started,
                 )?;
+                if runtime.has_live_input_bindings() {
+                    runtime.validate_live_context_candidate(context)?;
+                    runtime.commit_live_context_candidate(context);
+                }
                 Ok(RootModuleExecution {
                     result: crate::RuntimeValueSnapshot::try_capture(&result)?,
                     #[cfg(feature = "invariant_define")]

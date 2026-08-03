@@ -8,6 +8,14 @@ use mech_core::{
 
 use crate::RuntimeValueSnapshot;
 
+#[test]
+fn runtime_value_snapshot_is_empty_matches_value_empty() {
+    assert!(RuntimeValueSnapshot::empty().is_empty());
+
+    let non_empty = RuntimeValueSnapshot::try_capture(&Value::Index(Ref::new(0))).unwrap();
+    assert!(!non_empty.is_empty());
+}
+
 fn assert_cycle_error(error: MechError, node: &str) {
     assert_eq!(error.kind_name(), "ValueSnapshotCycleUnsupported",);
     assert!(error.kind_message().contains(node), "{error:?}",);

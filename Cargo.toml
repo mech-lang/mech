@@ -384,6 +384,7 @@ members = [
   "hosts/time",
   "hosts/timer",
   "hosts/scene",
+  "tests/fixtures/native-live-host",
 ]
 
 [build-dependencies]

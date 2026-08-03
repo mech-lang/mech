@@ -19,22 +19,14 @@ use mech_core::{
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 
-#[path = "support/native_linkage.rs"]
-mod native_linkage;
+#[path = "support/isolated.rs"]
+mod isolated;
+use isolated::{OwnerProfile, RunnerAction, fixture_path, run_owner};
 #[cfg(not(feature = "standard-hosts"))]
 use mech_runtime::{HostContextManifest, HostManifestConfig};
-use native_linkage::representative_catalog;
 
 const LITERAL_F64: &[u8] =
     include_bytes!("../../../tests/architecture/bytecode-v1/phase1/literal-f64.mecb");
-const SCALAR_ADD_F64: &[u8] =
-    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/scalar-add-f64.mecb");
-const FIXED_MATRIX_ADD_F64: &[u8] =
-    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/fixed-matrix-add-f64.mecb");
-const DYNAMIC_MATRIX_ADD_F64: &[u8] =
-    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/dynamic-matrix-add-f64.mecb");
-const VARIADIC_HORZCAT_F64: &[u8] =
-    include_bytes!("../../../tests/architecture/bytecode-v1/phase1/variadic-horzcat-f64.mecb");
 const CLI_STDOUT: &[u8] =
     include_bytes!("../../../tests/architecture/bytecode-v1/phase1/cli-stdout.mecb");
 
@@ -161,16 +153,34 @@ fn unaddressed_runtime_configs() -> Vec<NativeRuntimeConfig> {
 }
 
 fn plan(bytecode: &[u8]) -> mech_build::NativeBuildPlan {
-    NativeApplicationBuilder::new(environment(representative_catalog()))
+    NativeApplicationBuilder::new(environment(empty_catalog()))
         .plan(&request(bytecode))
         .unwrap()
 }
 
-fn assert_exact_runtime_function(bytecode: &[u8], name: &str, installer_path: &str, package: &str) {
-    let plan = plan(bytecode);
+fn assert_owner_runtime_function(
+    profile: OwnerProfile,
+    fixture: &str,
+    case: &str,
+    name: &str,
+    installer_path: &str,
+    package: &str,
+) {
+    let plan = run_owner(
+        profile,
+        RunnerAction::Plan,
+        case,
+        fixture_path(fixture),
+        "phase1_planning",
+        false,
+    )
+    .plan;
     assert_eq!(plan.application_kind, NativeApplicationKind::Engine);
-    assert_eq!(plan.runtime_functions.len(), 1);
-    let function = &plan.runtime_functions[0];
+    let function = plan
+        .runtime_functions
+        .iter()
+        .find(|function| function.runtime_name == name)
+        .unwrap_or_else(|| panic!("actual owner catalog did not plan `{name}`"));
     assert_eq!(function.runtime_name, name);
     assert_eq!(function.runtime_id, hash_str(name));
     assert_eq!(function.installer_path, installer_path);
@@ -179,7 +189,15 @@ fn assert_exact_runtime_function(bytecode: &[u8], name: &str, installer_path: &s
 
 #[test]
 fn literal_only_bytecode_yields_an_engine_plan_without_runtime_config() {
-    let plan = plan(LITERAL_F64);
+    let plan = run_owner(
+        OwnerProfile::Standard,
+        RunnerAction::Plan,
+        "literal",
+        fixture_path("literal-f64.mecb"),
+        "phase1_literal_planning",
+        false,
+    )
+    .plan;
 
     assert_eq!(plan.application_kind, NativeApplicationKind::Engine);
     assert!(plan.runtime_functions.is_empty());
@@ -233,7 +251,7 @@ fn host_function_only_plan_rejects_unaddressed_runtime_config() {
             installer_path: "mech_host_test::install_phase1_host_function",
         })
         .unwrap();
-    let mut build_environment = environment(representative_catalog());
+    let mut build_environment = environment(empty_catalog());
     build_environment.host_catalog = Arc::new(host_catalog);
 
     let builder = NativeApplicationBuilder::new(build_environment);
@@ -248,8 +266,10 @@ fn host_function_only_plan_rejects_unaddressed_runtime_config() {
 
 #[test]
 fn scalar_add_resolves_only_the_exact_scalar_installer() {
-    assert_exact_runtime_function(
-        SCALAR_ADD_F64,
+    assert_owner_runtime_function(
+        OwnerProfile::Standard,
+        "scalar-add-f64.mecb",
+        "scalar",
         "AddSS<f64>",
         "mech_math::__mech_native::install_add_ss_f64",
         "mech-math",
@@ -258,8 +278,10 @@ fn scalar_add_resolves_only_the_exact_scalar_installer() {
 
 #[test]
 fn fixed_matrix_add_resolves_the_exact_fixed_matrix_installer() {
-    assert_exact_runtime_function(
-        FIXED_MATRIX_ADD_F64,
+    assert_owner_runtime_function(
+        OwnerProfile::Fixed,
+        "fixed-matrix-add-f64.mecb",
+        "fixed",
         "AddM2M2<f64>",
         "mech_math::__mech_native::install_add_m2m2_f64",
         "mech-math",
@@ -268,8 +290,10 @@ fn fixed_matrix_add_resolves_the_exact_fixed_matrix_installer() {
 
 #[test]
 fn dynamic_matrix_add_resolves_the_exact_dynamic_matrix_installer() {
-    assert_exact_runtime_function(
-        DYNAMIC_MATRIX_ADD_F64,
+    assert_owner_runtime_function(
+        OwnerProfile::Standard,
+        "dynamic-matrix-add-f64.mecb",
+        "dynamic",
         "AddMDMD<f64>",
         "mech_math::__mech_native::install_add_mdmd_f64",
         "mech-math",
@@ -278,22 +302,27 @@ fn dynamic_matrix_add_resolves_the_exact_dynamic_matrix_installer() {
 
 #[test]
 fn variadic_horzcat_resolves_the_exact_variadic_installer() {
-    assert_exact_runtime_function(
-        VARIADIC_HORZCAT_F64,
-        "HorizontalConcatenateNArgs",
-        "mech_engine::__mech_native::install_horizontal_concatenate_n_args_f64",
+    assert_owner_runtime_function(
+        OwnerProfile::Standard,
+        "variadic-horzcat-f64.mecb",
+        "variadic",
+        "HorizontalConcatenateRDN<f64>",
+        "mech_engine::__mech_native::install_horizontal_concatenate_rdn_f64",
         "mech-engine",
     );
 }
 
 #[test]
 fn cli_stdout_yields_a_hosted_plan() {
-    let mut request = request(CLI_STDOUT);
-    request.runtime_config = Some(cli_runtime_config("cli", &["write"], &["line"]));
-
-    let plan = NativeApplicationBuilder::new(environment(representative_catalog()))
-        .plan(&request)
-        .unwrap();
+    let plan = run_owner(
+        OwnerProfile::Standard,
+        RunnerAction::Plan,
+        "cli",
+        fixture_path("cli-stdout.mecb"),
+        "phase1_cli_planning",
+        false,
+    )
+    .plan;
 
     assert_eq!(plan.application_kind, NativeApplicationKind::Hosted);
     assert_eq!(plan.hosts.len(), 1);
@@ -305,6 +334,7 @@ fn cli_stdout_yields_a_hosted_plan() {
         "mech_host_cli::CliHostFactory::new"
     );
     assert_eq!(plan.run_grants.len(), 1);
+    assert_eq!(plan.runtime_config.name, "phase1-generated-runtime");
     assert!(
         plan.runtime_features
             .iter()
@@ -314,7 +344,7 @@ fn cli_stdout_yields_a_hosted_plan() {
 
 #[test]
 fn hosted_bytecode_without_runtime_config_fails_before_generation() {
-    let error = NativeApplicationBuilder::new(environment(representative_catalog()))
+    let error = NativeApplicationBuilder::new(environment(empty_catalog()))
         .plan(&request(CLI_STDOUT))
         .unwrap_err();
     assert_eq!(error.kind_name(), "NativeRuntimeConfigMissing");
@@ -323,7 +353,7 @@ fn hosted_bytecode_without_runtime_config_fails_before_generation() {
 #[test]
 fn unknown_runtime_ids_fail_before_generation() {
     let bytecode = runtime_nullary_bytecode(0x0123_4567_89ab_cdef);
-    let error = NativeApplicationBuilder::new(environment(representative_catalog()))
+    let error = NativeApplicationBuilder::new(environment(empty_catalog()))
         .plan(&request(&bytecode))
         .unwrap_err();
     assert_eq!(error.kind_name(), "NativeRuntimeFunctionUnknown");
@@ -354,7 +384,7 @@ fn unknown_and_browser_providers_fail_before_generation() {
         let mut request = request(CLI_STDOUT);
         request.runtime_config = Some(cli_runtime_config(provider, &["write"], &["line"]));
 
-        let error = NativeApplicationBuilder::new(environment(representative_catalog()))
+        let error = NativeApplicationBuilder::new(environment(empty_catalog()))
             .plan(&request)
             .unwrap_err();
         assert_eq!(error.kind_name(), "NativeHostProviderUnknown");
@@ -367,7 +397,7 @@ fn cli_rejects_an_explicit_unsupported_target_family() {
     request.target = Some("thumbv7em-none-eabihf".to_owned());
     request.runtime_config = Some(cli_runtime_config("cli", &["write"], &["line"]));
 
-    let error = NativeApplicationBuilder::new(environment(representative_catalog()))
+    let error = NativeApplicationBuilder::new(environment(empty_catalog()))
         .plan(&request)
         .unwrap_err();
     assert_eq!(error.kind_name(), "NativeTargetUnsupported");
@@ -375,7 +405,7 @@ fn cli_rejects_an_explicit_unsupported_target_family() {
 
 #[test]
 fn registry_dependency_source_requires_an_exact_version() {
-    let mut environment = environment(representative_catalog());
+    let mut environment = environment(empty_catalog());
     environment.dependency_source = NativeDependencySource::Registry {
         version: "^0.3".to_owned(),
     };
@@ -392,7 +422,7 @@ fn missing_run_grants_fail_before_generation() {
     config.run_grants.clear();
     request.runtime_config = Some(config);
 
-    let error = NativeApplicationBuilder::new(environment(representative_catalog()))
+    let error = NativeApplicationBuilder::new(environment(empty_catalog()))
         .plan(&request)
         .unwrap_err();
     assert_eq!(error.kind_name(), "NativeRunGrantMissing");
@@ -423,7 +453,18 @@ fn bytecode_strings_cannot_select_cargo_packages_or_features() {
 
 #[test]
 fn unrelated_program_types_do_not_become_machine_features() {
-    let plan = plan(&string_and_scalar_add_bytecode());
+    let temporary = tempfile::tempdir().unwrap();
+    let bytecode = temporary.path().join("string-and-scalar-add.mecb");
+    fs::write(&bytecode, string_and_scalar_add_bytecode()).unwrap();
+    let plan = run_owner(
+        OwnerProfile::Standard,
+        RunnerAction::Plan,
+        "synthetic-string-scalar",
+        &bytecode,
+        "phase1_synthetic_string_scalar",
+        false,
+    )
+    .plan;
     assert!(plan.core_features.iter().any(|feature| feature == "string"));
     assert!(
         plan.engine_features
@@ -462,7 +503,7 @@ fn equivalent_normalized_runtime_configs_produce_identical_plans() {
         &["line", "text"],
     ));
 
-    let builder = NativeApplicationBuilder::new(environment(representative_catalog()));
+    let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
     assert_eq!(
         builder.plan(&first).unwrap(),
         builder.plan(&second).unwrap()

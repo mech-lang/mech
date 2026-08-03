@@ -1,4 +1,3 @@
-use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{
     FunctionCatalogBuilder, MResult, ParsedProgram, Plan, ReactiveCellId, ReactiveDependencyKind,
     ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState, Value, hash_str,
@@ -454,9 +453,15 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
     let mut decoded = runtime_program();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
-    let expected = Value::MatrixF64(ValueMatrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2));
-    assert_eq!(source_output, expected);
-    assert_eq!(decoded_output, expected);
+    for output in [&source_output, &decoded_output] {
+        match output {
+            Value::MatrixF64(matrix) => {
+                assert_eq!(matrix.shape(), vec![2, 2]);
+                assert_eq!(matrix.as_vec(), vec![1.0, 3.0, 2.0, 4.0]);
+            }
+            other => panic!("expected f64 matrix literal, got {other:?}"),
+        }
+    }
     assert_matrix_literal_chain(&source.interpreter().plan());
     assert_matrix_literal_chain(&decoded.interpreter().plan());
     Ok(())

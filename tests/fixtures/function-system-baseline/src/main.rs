@@ -120,7 +120,8 @@ struct RuntimeLinkageRecorder {
 
 impl RuntimeLinkageRecorder {
     fn record_runtime(&mut self, function: u64) {
-        self.runtime_ids.push(RuntimeFunctionId::from_raw(function));
+        let runtime_id = RuntimeFunctionId::from_raw(function);
+        self.runtime_ids.push(runtime_id);
     }
 
     fn resolve(self, catalog: &FunctionCatalog, case_name: &str) -> AppResult<Vec<RuntimeFactory>> {

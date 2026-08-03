@@ -242,16 +242,16 @@
       ],
       "file": "fixed-matrix-add-f64.mecb",
       "header": {
-        "checksum_offset": 568,
-        "file_len": 572,
+        "checksum_offset": 1272,
+        "file_len": 1276,
         "flags": 0,
         "header_size": 64,
-        "instruction_count": 5,
+        "instruction_count": 23,
         "magic": "MECH",
         "mech_major": 0,
         "mech_minor": 3,
         "mech_patch": 5,
-        "register_count": 3,
+        "register_count": 15,
         "reserved": [
           0,
           0,
@@ -272,6 +272,16 @@
         "version": 1
       },
       "runtime_function_ids": [
+        {
+          "id": 55079618322224521,
+          "id_hex": "00c3ae9efc75d589",
+          "name": "HorizontalConcatenateS2<f64>"
+        },
+        {
+          "id": 60746095060650569,
+          "id_hex": "00d7d04069950a49",
+          "name": "VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>"
+        },
         {
           "id": 66151685366522073,
           "id_hex": "00eb049b7b90a0d9",
@@ -297,25 +307,38 @@
             "storage": "Matrix2",
             "storage_id": 2
           }
+        },
+        {
+          "id": 2,
+          "type": {
+            "cols": 2,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
+            "rows": 1,
+            "storage": "RowVector2",
+            "storage_id": 7
+          }
         }
       ],
       "sections": [
         {
           "flags": 0,
           "id": 1,
-          "item_count": 2,
+          "item_count": 3,
           "kind": "Types",
-          "length": 29,
+          "length": 50,
           "offset": 288,
           "reserved": 0
         },
         {
           "flags": 0,
           "id": 2,
-          "item_count": 3,
+          "item_count": 15,
           "kind": "ConstantTable",
-          "length": 72,
-          "offset": 320,
+          "length": 360,
+          "offset": 344,
           "reserved": 0
         },
         {
@@ -323,8 +346,8 @@
           "id": 3,
           "item_count": 0,
           "kind": "ConstantBlob",
-          "length": 120,
-          "offset": 392,
+          "length": 280,
+          "offset": 704,
           "reserved": 0
         },
         {
@@ -333,16 +356,16 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 512,
+          "offset": 984,
           "reserved": 0
         },
         {
           "flags": 0,
           "id": 5,
-          "item_count": 5,
+          "item_count": 23,
           "kind": "Instructions",
-          "length": 53,
-          "offset": 512,
+          "length": 287,
+          "offset": 984,
           "reserved": 0
         },
         {
@@ -351,7 +374,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 568,
+          "offset": 1272,
           "reserved": 0
         },
         {
@@ -360,11 +383,11 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 568,
+          "offset": 1272,
           "reserved": 0
         }
       ],
-      "sha256": "e5d7e0f37648141ade51ab12e321262cb732933308f0502f2e28883468d7d935",
+      "sha256": "d60ec57aadbc280bca7a3fa577cc10cc2727acb146193eada141f44c80189227",
       "source": "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]"
     },
     {
@@ -408,16 +431,16 @@
       ],
       "file": "dynamic-matrix-add-f64.mecb",
       "header": {
-        "checksum_offset": 1072,
-        "file_len": 1076,
+        "checksum_offset": 3600,
+        "file_len": 3604,
         "flags": 0,
         "header_size": 64,
-        "instruction_count": 5,
+        "instruction_count": 77,
         "magic": "MECH",
         "mech_major": 0,
         "mech_minor": 3,
         "mech_patch": 5,
-        "register_count": 3,
+        "register_count": 63,
         "reserved": [
           0,
           0,
@@ -439,6 +462,16 @@
       },
       "runtime_function_ids": [
         {
+          "id": 30420938630766444,
+          "id_hex": "006c13aeb8d21f6c",
+          "name": "HorizontalConcatenateRDN<f64>"
+        },
+        {
+          "id": 31066671644372194,
+          "id_hex": "006e5ef927b76ce2",
+          "name": "VerticalConcatenateNArgs<f64>"
+        },
+        {
           "id": 40434906584433557,
           "id_hex": "008fa755537dc395",
           "name": "AddMDMD<f64>"
@@ -459,6 +492,19 @@
               "kind": "f64"
             },
             "kind": "matrix",
+            "rows": 1,
+            "storage": "RowVectorD",
+            "storage_id": 13
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "cols": 5,
+            "element": {
+              "kind": "f64"
+            },
+            "kind": "matrix",
             "rows": 5,
             "storage": "MatrixD",
             "storage_id": 15
@@ -469,19 +515,19 @@
         {
           "flags": 0,
           "id": 1,
-          "item_count": 2,
+          "item_count": 3,
           "kind": "Types",
-          "length": 29,
+          "length": 50,
           "offset": 288,
           "reserved": 0
         },
         {
           "flags": 0,
           "id": 2,
-          "item_count": 3,
+          "item_count": 38,
           "kind": "ConstantTable",
-          "length": 72,
-          "offset": 320,
+          "length": 912,
+          "offset": 344,
           "reserved": 0
         },
         {
@@ -489,8 +535,8 @@
           "id": 3,
           "item_count": 0,
           "kind": "ConstantBlob",
-          "length": 624,
-          "offset": 392,
+          "length": 1304,
+          "offset": 1256,
           "reserved": 0
         },
         {
@@ -499,16 +545,16 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 1016,
+          "offset": 2560,
           "reserved": 0
         },
         {
           "flags": 0,
           "id": 5,
-          "item_count": 5,
+          "item_count": 77,
           "kind": "Instructions",
-          "length": 53,
-          "offset": 1016,
+          "length": 1037,
+          "offset": 2560,
           "reserved": 0
         },
         {
@@ -517,7 +563,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 1072,
+          "offset": 3600,
           "reserved": 0
         },
         {
@@ -526,12 +572,12 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 1072,
+          "offset": 3600,
           "reserved": 0
         }
       ],
-      "sha256": "4c30844a44f1026feb63cd2d485c2a2413102399b6ff8067726ca24a953548bf",
-      "source": "left := [1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; 11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; 21.0 22.0 23.0 24.0 25.0]\nright := [25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; 15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; 5.0 4.0 3.0 2.0 1.0]\nleft + right"
+      "sha256": "7355c52b197e169b87bd425a0e147f86dcad744d76f743e716223a23b2890924",
+      "source": "[1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; 11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; 21.0 22.0 23.0 24.0 25.0] + [25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; 15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; 5.0 4.0 3.0 2.0 1.0]"
     },
     {
       "application_requirements": [],
@@ -577,9 +623,9 @@
       },
       "runtime_function_ids": [
         {
-          "id": 14612335857006074,
-          "id_hex": "0033e9d7901875fa",
-          "name": "HorizontalConcatenateNArgs"
+          "id": 30420938630766444,
+          "id_hex": "006c13aeb8d21f6c",
+          "name": "HorizontalConcatenateRDN<f64>"
         }
       ],
       "runtime_types": [
@@ -598,8 +644,8 @@
             },
             "kind": "matrix",
             "rows": 1,
-            "storage": "MatrixD",
-            "storage_id": 15
+            "storage": "RowVectorD",
+            "storage_id": 13
           }
         }
       ],
@@ -668,7 +714,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "fab96de089b19430a5efeaf368dff4e1a989444fa40aead9423f1608e994d428",
+      "sha256": "f59cafbed042d33d8ab7ad2e1dc35eb8d25cc556f3d5af3479923c47abd7edaf",
       "source": "[1.0 2.0 3.0 4.0 5.0]"
     },
     {
@@ -797,7 +843,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "6c6cdc43181c3e89e70899dd6a65f68ea9348c4eb47f5191b3d43b43879ec6ee",
+      "sha256": "295493d90b5b653bfee67763e57a5da60765edfdecd4926ec1227a5b6fc7ae57",
       "source": "+> @out := cli/stdout\n\n@out/line <- \"phase1-hosted-ok\"\n\n\"done\""
     },
     {
@@ -817,16 +863,16 @@
       "expected_result": 0.0,
       "file": "synthetic-live-read.mecb",
       "header": {
-        "checksum_offset": 469,
-        "file_len": 473,
+        "checksum_offset": 693,
+        "file_len": 697,
         "flags": 0,
         "header_size": 64,
-        "instruction_count": 5,
+        "instruction_count": 11,
         "magic": "MECH",
         "mech_major": 0,
         "mech_minor": 3,
         "mech_patch": 5,
-        "register_count": 2,
+        "register_count": 6,
         "reserved": [
           0,
           0,
@@ -851,6 +897,11 @@
           "id": 2863641133352691,
           "id_hex": "000a2c77688486f3",
           "name": "AddSS<f64>"
+        },
+        {
+          "id": 10052480590566887,
+          "id_hex": "0023b6ad86b655e7",
+          "name": "VariableDefineF64"
         }
       ],
       "runtime_types": [
@@ -859,25 +910,37 @@
           "type": {
             "kind": "f64"
           }
+        },
+        {
+          "id": 1,
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "id": 2,
+          "type": {
+            "kind": "bool"
+          }
         }
       ],
       "sections": [
         {
           "flags": 0,
           "id": 1,
-          "item_count": 1,
+          "item_count": 3,
           "kind": "Types",
-          "length": 8,
+          "length": 24,
           "offset": 288,
           "reserved": 0
         },
         {
           "flags": 0,
           "id": 2,
-          "item_count": 2,
+          "item_count": 4,
           "kind": "ConstantTable",
-          "length": 48,
-          "offset": 296,
+          "length": 96,
+          "offset": 312,
           "reserved": 0
         },
         {
@@ -885,35 +948,35 @@
           "id": 3,
           "item_count": 0,
           "kind": "ConstantBlob",
-          "length": 16,
-          "offset": 344,
+          "length": 21,
+          "offset": 408,
           "reserved": 0
         },
         {
           "flags": 0,
           "id": 4,
-          "item_count": 0,
+          "item_count": 2,
           "kind": "Symbols",
-          "length": 0,
-          "offset": 360,
+          "length": 32,
+          "offset": 432,
           "reserved": 0
         },
         {
           "flags": 0,
           "id": 5,
-          "item_count": 5,
+          "item_count": 11,
           "kind": "Instructions",
-          "length": 53,
-          "offset": 360,
+          "length": 131,
+          "offset": 464,
           "reserved": 0
         },
         {
           "flags": 0,
           "id": 6,
-          "item_count": 0,
+          "item_count": 2,
           "kind": "Dictionary",
-          "length": 0,
-          "offset": 416,
+          "length": 36,
+          "offset": 600,
           "reserved": 0
         },
         {
@@ -922,11 +985,11 @@
           "item_count": 1,
           "kind": "ApplicationRequirements",
           "length": 53,
-          "offset": 416,
+          "offset": 640,
           "reserved": 0
         }
       ],
-      "sha256": "f696eca38bbcd03d12872db2d5cb66dc038bacb42a4a4343d1a13a77d1e0f8a2",
+      "sha256": "d4141713973607c9e02cbed6d67b5010022035a95bcd88a7218834606bd35609",
       "source": "+> @clock := test-live/clock\n\nvalue := @clock/value\ndoubled := value + value\n\ndoubled"
     }
   ],

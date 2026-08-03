@@ -491,10 +491,12 @@ impl MechErrorKind for ExternalRequirementCanonicalizationOverflow {
 mod tests {
     use mech_core::{
         ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest,
-        ResourceDelivery, ResourceIntent,
+        FunctionSpecializer, InitialSolvePolicy, ResourceDelivery, ResourceIntent, Value,
     };
 
-    use super::*;
+    use super::{
+        ExternalRequirementCatalog, RuntimeResourceWriteSpecializer, hidden_external_operation_name,
+    };
 
     fn request(intent: ResourceIntent) -> ApplicationRequirement {
         ApplicationRequirement::Resource(ExecutionResourceRequest {

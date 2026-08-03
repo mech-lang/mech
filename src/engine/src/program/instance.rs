@@ -2183,11 +2183,19 @@ mod live_input_tests {
         }
     }
 
-    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[cfg(all(feature = "matrixd", feature = "f64"))]
     #[test]
-    fn stable_value_update_preserves_matrix_storage() {
-        let sink_matrix = MechMatrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
-        let source_matrix = MechMatrix::from_vec(vec![5.0, 6.0, 7.0, 8.0], 2, 2);
+    fn stable_value_update_preserves_dynamic_matrix_storage() {
+        let sink_matrix = MechMatrix::DMatrix(Ref::new(crate::na::DMatrix::from_vec(
+            2,
+            2,
+            vec![1.0, 2.0, 3.0, 4.0],
+        )));
+        let source_matrix = MechMatrix::DMatrix(Ref::new(crate::na::DMatrix::from_vec(
+            2,
+            2,
+            vec![5.0, 6.0, 7.0, 8.0],
+        )));
         let sink = Ref::new(Value::MatrixF64(sink_matrix));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {

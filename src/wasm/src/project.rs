@@ -2146,7 +2146,7 @@ mod browser_tests {
 
     #[cfg(feature = "served_project_authority")]
     fn served_document_source() -> &'static str {
-        "+> ./math.mec\n@clock := time://clock/clock{:read(second)}\nconfigured-answer := math/value + @clock/second * 0\n~answer := 41\nanswer\n"
+        "+> ./math.mec\n@clock := time://clock/clock{:read(second)}\nconfigured-answer := math/value\n~answer := 41\nanswer\n"
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -2255,6 +2255,21 @@ mod browser_tests {
             Err(MechError::new(
                 ProjectError {
                     message: "missing document test resource".to_string(),
+                },
+                None,
+            ))
+        }
+
+        fn plan_read(
+            &self,
+            request: mech_runtime::RuntimeResourceReadRequest,
+        ) -> mech_core::MResult<mech_core::Value> {
+            if request.base_uri == DOCUMENT_TEST_INPUT_BASE_URI && request.path == "value" {
+                return Ok(mech_core::Value::F64(mech_core::Ref::new(0.0)));
+            }
+            Err(MechError::new(
+                ProjectError {
+                    message: "missing document test planning resource".to_string(),
                 },
                 None,
             ))

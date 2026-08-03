@@ -740,7 +740,7 @@ impl fmt::Display for Value {
             return fmt::Display::fmt(&self.pretty_print(), f);
             fmt::Display::fmt(&"".to_string(), f) // kind of a hack to assuage the compiler
         } else {
-            write!(f, "{:?}", self)
+            f.write_str(&self.format_value_inline())
         }
     }
 }
@@ -2183,14 +2183,10 @@ impl Value {
         let shape = matrix.shape();
         let rows = shape[0];
         let cols = shape[1];
-        let elements = matrix.as_vec();
         let row_strings = (0..rows)
             .map(|r| {
-                let start = r * cols;
-                let end = start + cols;
-                elements[start..end]
-                    .iter()
-                    .map(|v| format!("{}", v))
+                (0..cols)
+                    .map(|c| matrix.index2d(r + 1, c + 1).to_string())
                     .collect::<Vec<_>>()
                     .join(" ")
             })
@@ -3677,6 +3673,74 @@ mod reactive_cell_tests {
 
         assert_eq!(first, second);
         assert_eq!(first, cell_ids(&[scalar.id()]));
+    }
+
+    #[cfg(feature = "f64")]
+    #[test]
+    fn scalar_display_is_distribution_neutral() {
+        assert_eq!(Value::F64(Ref::new(3.0)).to_string(), "3");
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrixd"))]
+    #[test]
+    fn matrix_display_preserves_row_major_value_order() {
+        let matrix = Matrix::DMatrix(Ref::new(na::DMatrix::from_row_slice(
+            2,
+            2,
+            &[1.0, 2.0, 3.0, 4.0],
+        )));
+        assert_eq!(Value::MatrixF64(matrix).format_value_inline(), "[1 2; 3 4]");
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix2", feature = "matrixd"))]
+    #[test]
+    fn deep_snapshot_preserves_dynamic_matrix_storage() {
+        for (rows, cols) in [(2, 2), (1, 5), (5, 1)] {
+            let source = Ref::new(na::DMatrix::from_vec(
+                rows,
+                cols,
+                (0..rows * cols).map(|value| value as f64).collect(),
+            ));
+            let value = Value::MatrixF64(Matrix::DMatrix(source.clone()));
+
+            let snapshot = value.try_deep_snapshot().expect("acyclic matrix fixture");
+            let Value::MatrixF64(Matrix::DMatrix(snapshot)) = snapshot else {
+                panic!("snapshot changed the dynamic {rows}x{cols} matrix storage class");
+            };
+
+            assert_eq!(*snapshot.borrow(), *source.borrow());
+            assert_ne!(snapshot.as_ptr(), source.as_ptr());
+        }
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix2", feature = "matrixd"))]
+    #[test]
+    fn deep_snapshot_preserves_value_matrix_storage() {
+        let live = Ref::new(1.0);
+        let source = Matrix::DMatrix(Ref::new(na::DMatrix::from_vec(
+            2,
+            2,
+            vec![
+                Value::F64(live.clone()),
+                Value::F64(Ref::new(2.0)),
+                Value::F64(Ref::new(3.0)),
+                Value::F64(Ref::new(4.0)),
+            ],
+        )));
+
+        let snapshot = Value::MatrixValue(source)
+            .try_deep_snapshot()
+            .expect("acyclic value-matrix fixture");
+        let Value::MatrixValue(Matrix::DMatrix(snapshot)) = snapshot else {
+            panic!("snapshot changed the dynamic value-matrix storage class");
+        };
+        let snapshot = snapshot.borrow();
+        let Value::F64(first) = &snapshot[0] else {
+            panic!("expected scalar matrix element");
+        };
+
+        assert_eq!(*first.borrow(), 1.0);
+        assert_ne!(first.as_ptr(), live.as_ptr());
     }
 
     #[cfg(feature = "f64")]

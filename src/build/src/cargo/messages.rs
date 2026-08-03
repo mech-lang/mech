@@ -1,6 +1,8 @@
 use std::collections::BTreeSet;
+use std::io::BufRead;
 use std::path::PathBuf;
 
+use cargo_metadata::Message;
 use mech_core::MResult;
 
 use super::NativeBuildArtifact;
@@ -26,6 +28,7 @@ impl CargoCompilerArtifact {
 pub struct CargoBuildMessages {
     pub artifacts: Vec<CargoCompilerArtifact>,
     pub rendered_diagnostics: Vec<String>,
+    pub build_finished: Option<bool>,
 }
 
 impl CargoBuildMessages {
@@ -35,6 +38,15 @@ impl CargoBuildMessages {
 
     pub fn push_rendered_diagnostic(&mut self, diagnostic: impl Into<String>) {
         self.rendered_diagnostics.push(diagnostic.into());
+    }
+
+    pub fn diagnostics_summary(&self) -> String {
+        self.rendered_diagnostics
+            .iter()
+            .map(|diagnostic| diagnostic.trim_end())
+            .filter(|diagnostic| !diagnostic.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     pub fn select_binary(&self, binary_name: &str) -> MResult<NativeBuildArtifact> {
@@ -66,6 +78,50 @@ impl CargoBuildMessages {
     }
 }
 
+/// Parse Cargo's newline-delimited JSON stream using the supported
+/// `cargo_metadata` adapter.
+pub fn parse_cargo_build_messages(reader: impl BufRead) -> MResult<CargoBuildMessages> {
+    let mut messages = CargoBuildMessages::default();
+    for message in Message::parse_stream(reader) {
+        let message = message.map_err(|error| {
+            native_build_error(
+                NativeBuildErrorKind::NativeCargoFailed {
+                    reason: format!("failed to read Cargo JSON messages: {error}"),
+                },
+                None,
+            )
+        })?;
+        match message {
+            Message::CompilerArtifact(artifact) => {
+                messages.push_artifact(CargoCompilerArtifact {
+                    target_name: artifact.target.name,
+                    target_kinds: artifact
+                        .target
+                        .kind
+                        .into_iter()
+                        .map(|kind| kind.to_string())
+                        .collect(),
+                    executable: artifact
+                        .executable
+                        .map(|executable| executable.into_std_path_buf()),
+                });
+            }
+            Message::CompilerMessage(message) => {
+                messages.push_rendered_diagnostic(
+                    message.message.rendered.unwrap_or(message.message.message),
+                );
+            }
+            Message::BuildFinished(finished) => {
+                messages.build_finished = Some(finished.success);
+            }
+            Message::TextLine(line) => messages.push_rendered_diagnostic(line),
+            Message::BuildScriptExecuted(_) => {}
+            _ => {}
+        }
+    }
+    Ok(messages)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -87,6 +143,7 @@ mod tests {
                 artifact("phase1", &["bin"], Some("target/nonstandard/phase1")),
             ],
             rendered_diagnostics: Vec::new(),
+            build_finished: Some(true),
         };
         assert_eq!(
             messages.select_binary("phase1").unwrap().executable,
@@ -107,8 +164,32 @@ mod tests {
                 artifact("phase1", &["bin"], Some("target/two")),
             ],
             rendered_diagnostics: Vec::new(),
+            build_finished: Some(true),
         };
         let ambiguous = messages.select_binary("phase1").unwrap_err();
         assert_eq!(ambiguous.kind_name(), "NativeCargoArtifactAmbiguous");
+    }
+
+    #[test]
+    fn cargo_json_streams_are_parsed_without_deriving_artifact_paths() {
+        let stream = concat!(
+            "{\"reason\":\"compiler-artifact\",",
+            "\"package_id\":\"path+file:///tmp/generated#0.0.0\",",
+            "\"manifest_path\":\"/tmp/generated/Cargo.toml\",",
+            "\"target\":{\"kind\":[\"bin\"],\"crate_types\":[\"bin\"],",
+            "\"name\":\"phase1\",\"src_path\":\"/tmp/generated/src/main.rs\",",
+            "\"edition\":\"2024\",\"doc\":true,\"doctest\":false,\"test\":true},",
+            "\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,",
+            "\"overflow_checks\":true,\"test\":false},",
+            "\"features\":[],\"filenames\":[\"/tmp/target/phase1\"],",
+            "\"executable\":\"/tmp/nonstandard/phase1\",\"fresh\":false}\n",
+            "{\"reason\":\"build-finished\",\"success\":true}\n",
+        );
+        let messages = parse_cargo_build_messages(std::io::Cursor::new(stream)).unwrap();
+        assert_eq!(messages.build_finished, Some(true));
+        assert_eq!(
+            messages.select_binary("phase1").unwrap().executable,
+            PathBuf::from("/tmp/nonstandard/phase1")
+        );
     }
 }

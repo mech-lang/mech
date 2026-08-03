@@ -583,8 +583,14 @@ where
 // HorizontalConcatenateNArgs -------------------------------------------------
 
 #[cfg(feature = "matrixd")]
+enum HorizontalConcatenateInput<T> {
+    Scalar(Ref<T>),
+    Matrix(Box<dyn CopyMat<T>>),
+}
+
+#[cfg(feature = "matrixd")]
 struct HorizontalConcatenateNArgs<T> {
-    e0: Vec<Box<dyn CopyMat<T>>>,
+    e0: Vec<HorizontalConcatenateInput<T>>,
     out: Ref<DMatrix<T>>,
 }
 #[cfg(feature = "matrixd")]
@@ -598,11 +604,15 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Variadic(out, vargs) => {
-                let mut e0: Vec<Box<dyn CopyMat<T>>> = Vec::new();
+                let mut e0 = Vec::with_capacity(vargs.len());
                 for arg in vargs {
-                    let mat: Box<dyn CopyMat<T>> =
-                        unsafe { arg.get_copyable_matrix_unchecked::<T>() };
-                    e0.push(mat);
+                    if arg.is_scalar() {
+                        let scalar = unsafe { arg.as_unchecked::<T>() }.clone();
+                        e0.push(HorizontalConcatenateInput::Scalar(scalar));
+                    } else {
+                        let matrix = unsafe { arg.get_copyable_matrix_unchecked::<T>() };
+                        e0.push(HorizontalConcatenateInput::Matrix(matrix));
+                    }
                 }
                 let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
                 Ok(Box::new(Self { e0, out }))
@@ -627,7 +637,15 @@ where
     fn solve(&self) {
         let mut offset = 0;
         for e in &self.e0 {
-            offset += e.copy_into(&self.out, offset);
+            match e {
+                HorizontalConcatenateInput::Scalar(value) => unsafe {
+                    (&mut *self.out.as_mut_ptr())[offset] = value.borrow().clone();
+                    offset += 1;
+                },
+                HorizontalConcatenateInput::Matrix(matrix) => {
+                    offset += matrix.copy_into(&self.out, offset);
+                }
+            }
         }
     }
     fn out(&self) -> Value {
@@ -651,14 +669,21 @@ where
         let mut registers = [0, 0];
         registers[0] = compile_register!(self.out, ctx);
 
-        let mut mat_regs = Vec::new();
+        let mut input_registers = Vec::new();
         for e in &self.e0 {
-            mat_regs.push(compile_register_mat!(e, ctx));
+            input_registers.push(match e {
+                HorizontalConcatenateInput::Scalar(value) => {
+                    compile_register_brrw!(value, ctx)
+                }
+                HorizontalConcatenateInput::Matrix(matrix) => {
+                    compile_register_mat!(matrix, ctx)
+                }
+            });
         }
         ctx.emit_varop(
             hash_str("HorizontalConcatenateNArgs"),
             registers[0],
-            mat_regs,
+            input_registers,
         );
         Ok(registers[0])
     }
@@ -966,7 +991,10 @@ mod compiler_tests {
     fn horizontal_concatenate_n_args_reuses_repeated_matrix_register() {
         let matrix = matrix();
         let function = HorizontalConcatenateNArgs {
-            e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
+            e0: vec![
+                HorizontalConcatenateInput::Matrix(Box::new(matrix.clone())),
+                HorizontalConcatenateInput::Matrix(Box::new(matrix.clone())),
+            ],
             out: Ref::new(DMatrix::from_element(1, 2, 0.0)),
         };
         let mut context = RecordingBytecodeCompilerContext::default();
@@ -978,6 +1006,33 @@ mod compiler_tests {
           Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
             if arguments == &vec![matrix_register, matrix_register]
         ));
+    }
+
+    #[test]
+    fn horizontal_concatenate_n_args_preserves_scalar_and_matrix_order() {
+        let scalar = Ref::new(9.0);
+        let scalar_address = scalar.addr();
+        let matrix = matrix();
+        let function = HorizontalConcatenateNArgs {
+            e0: vec![
+                HorizontalConcatenateInput::Scalar(scalar),
+                HorizontalConcatenateInput::Matrix(Box::new(matrix.clone())),
+            ],
+            out: Ref::new(DMatrix::from_element(1, 2, 0.0)),
+        };
+        let mut context = RecordingBytecodeCompilerContext::default();
+        function.compile(&mut context).unwrap();
+
+        let scalar_register = context.reg_map[&scalar_address];
+        let matrix_register = assert_single_matrix_load(&context, &matrix);
+        assert!(matches!(
+          context.instructions.last(),
+          Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
+            if arguments == &vec![scalar_register, matrix_register]
+        ));
+
+        function.solve();
+        assert_eq!(function.out.borrow().as_slice(), &[9.0, 7.0]);
     }
 
     #[test]
@@ -5640,7 +5695,7 @@ macro_rules! impl_horzcat_arms {
             let mut args = vec![];
             for arg in arguments {
               let e0 = extract_matrix(&arg)?;
-              args.push(e0);
+              args.push(HorizontalConcatenateInput::Matrix(e0));
             }
             Ok(Box::new(HorizontalConcatenateNArgs{e0: args, out:Ref::new(out.clone())}))
           }

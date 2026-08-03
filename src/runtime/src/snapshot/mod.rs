@@ -38,6 +38,17 @@ impl RuntimeValueSnapshot {
         }
     }
 
+    /// Returns `true` exactly when the detached value is [`Value::Empty`].
+    ///
+    /// ```
+    /// use mech_runtime::RuntimeValueSnapshot;
+    ///
+    /// assert!(RuntimeValueSnapshot::empty().is_empty());
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        matches!(&self.value, Value::Empty)
+    }
+
     pub fn kind(&self) -> ValueKind {
         self.value.kind()
     }

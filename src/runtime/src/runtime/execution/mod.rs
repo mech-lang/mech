@@ -4,6 +4,8 @@
 //! execution, live registration, host input, and input-driver lifecycle each
 //! live in their owning module.
 
+mod audit;
+mod bytecode;
 #[cfg(feature = "source")]
 mod context_preflight;
 mod host_input;

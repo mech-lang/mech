@@ -8,10 +8,16 @@ use std::process::{self, Command};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mech_core::{
-    ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant,
-    ExecutionResourceRequest, MatrixStorage, ParsedProgram, ResourceDelivery, ResourceIntent,
-    RuntimeType, hash_str, write_bytecode,
+    ApplicationRequirement, BytecodeInstruction, ModuleManifestConfig, ModuleManifestExportConfig,
+    ModuleManifestExportKind, ParsedProgram, RuntimeType, hash_str,
 };
+use mech_engine::{MechProgram, MechProgramConfig};
+use mech_host_cli::CliHostFactory;
+use mech_native_live_host_fixture::{
+    TEST_LIVE_BASE_URI, TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_PATH, TEST_LIVE_PROVIDER,
+    TestLiveHostFactory, empty_settings,
+};
+use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder};
 use serde_json::{Value as JsonValue, json};
 use sha2::{Digest, Sha256};
 
@@ -37,12 +43,31 @@ const CORPUS_FILES: [&str; 8] = [
     "manifest.json",
 ];
 const DETERMINISM_RUNS: usize = 5;
+const LITERAL_SOURCE: &str = "42.0";
+const SCALAR_SOURCE: &str = "1.0 + 2.0";
+const FIXED_MATRIX_SOURCE: &str = "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]";
+const DYNAMIC_MATRIX_SOURCE: &str = concat!(
+    "[1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; ",
+    "11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; ",
+    "21.0 22.0 23.0 24.0 25.0] + ",
+    "[25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; ",
+    "15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; ",
+    "5.0 4.0 3.0 2.0 1.0]",
+);
+const VARIADIC_SOURCE: &str = "[1.0 2.0 3.0 4.0 5.0]";
+const CLI_SOURCE: &str = "+> @out := cli/stdout\n\n@out/line <- \"phase1-hosted-ok\"\n\n\"done\"";
+const LIVE_SOURCE: &str = concat!(
+    "+> @clock := test-live/clock\n\n",
+    "value := @clock/value\n",
+    "doubled := value + value\n\n",
+    "doubled",
+);
 
 struct Fixture {
     file: &'static str,
     source: &'static str,
     bytes: Vec<u8>,
-    runtime_functions: &'static [&'static str],
+    runtime_functions: Vec<String>,
     expected_result: JsonValue,
 }
 
@@ -66,305 +91,210 @@ fn corpus_directory() -> PathBuf {
 }
 
 fn fixtures() -> AppResult<Vec<Fixture>> {
-    let scalar_add = hash_str("AddSS<f64>");
-    let fixed_add = hash_str("AddM2M2<f64>");
-    let dynamic_add = hash_str("AddMDMD<f64>");
-    let variadic_horzcat = hash_str("HorizontalConcatenateNArgs");
-
-    let fixed_left = vec![1.0, 2.0, 3.0, 4.0];
-    let fixed_right = vec![5.0, 6.0, 7.0, 8.0];
     let fixed_output = vec![6.0, 8.0, 10.0, 12.0];
-
-    let dynamic_left = (1..=25).map(f64::from).collect::<Vec<_>>();
-    let dynamic_right = (1..=25).rev().map(f64::from).collect::<Vec<_>>();
     let dynamic_output = vec![26.0; 25];
+
+    let literal = compile_standard_source(LITERAL_SOURCE)?;
+    let scalar = compile_standard_source(SCALAR_SOURCE)?;
+    let (fixed, fixed_runtime_functions) = compile_fixed_source(FIXED_MATRIX_SOURCE)?;
+    let dynamic = compile_standard_source(DYNAMIC_MATRIX_SOURCE)?;
+    let variadic = compile_standard_source(VARIADIC_SOURCE)?;
+    let cli = compile_cli_planning_source(CLI_SOURCE)?;
+    let live = compile_live_planning_source(LIVE_SOURCE)?;
 
     Ok(vec![
         Fixture {
             file: "literal-f64.mecb",
-            source: "42.0",
-            bytes: compile_program(
-                vec![f64_constant(42.0)],
-                vec![BytecodeInstruction::ConstLoad {
-                    dst: 0,
-                    constant: 0,
-                }],
-                Vec::new(),
-                0,
-            )?,
-            runtime_functions: &[],
+            source: LITERAL_SOURCE,
+            runtime_functions: runtime_function_names(&literal)?,
+            bytes: literal,
             expected_result: json!(42.0),
         },
         Fixture {
             file: "scalar-add-f64.mecb",
-            source: "1.0 + 2.0",
-            bytes: compile_program(
-                vec![f64_constant(3.0), f64_constant(1.0), f64_constant(2.0)],
-                vec![
-                    const_load(0, 0),
-                    const_load(1, 1),
-                    const_load(2, 2),
-                    BytecodeInstruction::RuntimeBinary {
-                        function: scalar_add,
-                        dst: 0,
-                        lhs: 1,
-                        rhs: 2,
-                    },
-                ],
-                Vec::new(),
-                0,
-            )?,
-            runtime_functions: &["AddSS<f64>"],
+            source: SCALAR_SOURCE,
+            runtime_functions: runtime_function_names(&scalar)?,
+            bytes: scalar,
             expected_result: json!(3.0),
         },
         Fixture {
             file: "fixed-matrix-add-f64.mecb",
-            source: "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]",
-            bytes: compile_program(
-                vec![
-                    matrix_constant(MatrixStorage::Matrix2, 2, 2, &fixed_output)?,
-                    matrix_constant(MatrixStorage::Matrix2, 2, 2, &fixed_left)?,
-                    matrix_constant(MatrixStorage::Matrix2, 2, 2, &fixed_right)?,
-                ],
-                vec![
-                    const_load(0, 0),
-                    const_load(1, 1),
-                    const_load(2, 2),
-                    BytecodeInstruction::RuntimeBinary {
-                        function: fixed_add,
-                        dst: 0,
-                        lhs: 1,
-                        rhs: 2,
-                    },
-                ],
-                Vec::new(),
-                0,
-            )?,
-            runtime_functions: &["AddM2M2<f64>"],
+            source: FIXED_MATRIX_SOURCE,
+            runtime_functions: fixed_runtime_functions,
+            bytes: fixed,
             expected_result: matrix_json(2, 2, &fixed_output),
         },
         Fixture {
             file: "dynamic-matrix-add-f64.mecb",
-            source: concat!(
-                "left := [1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; ",
-                "11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; ",
-                "21.0 22.0 23.0 24.0 25.0]\n",
-                "right := [25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; ",
-                "15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; ",
-                "5.0 4.0 3.0 2.0 1.0]\n",
-                "left + right",
-            ),
-            bytes: compile_program(
-                vec![
-                    matrix_constant(MatrixStorage::MatrixD, 5, 5, &dynamic_output)?,
-                    matrix_constant(MatrixStorage::MatrixD, 5, 5, &dynamic_left)?,
-                    matrix_constant(MatrixStorage::MatrixD, 5, 5, &dynamic_right)?,
-                ],
-                vec![
-                    const_load(0, 0),
-                    const_load(1, 1),
-                    const_load(2, 2),
-                    BytecodeInstruction::RuntimeBinary {
-                        function: dynamic_add,
-                        dst: 0,
-                        lhs: 1,
-                        rhs: 2,
-                    },
-                ],
-                Vec::new(),
-                0,
-            )?,
-            runtime_functions: &["AddMDMD<f64>"],
+            source: DYNAMIC_MATRIX_SOURCE,
+            runtime_functions: runtime_function_names(&dynamic)?,
+            bytes: dynamic,
             expected_result: matrix_json(5, 5, &dynamic_output),
         },
         Fixture {
             file: "variadic-horzcat-f64.mecb",
-            source: "[1.0 2.0 3.0 4.0 5.0]",
-            bytes: compile_program(
-                vec![
-                    matrix_constant(MatrixStorage::MatrixD, 1, 5, &[1.0, 2.0, 3.0, 4.0, 5.0])?,
-                    f64_constant(1.0),
-                    f64_constant(2.0),
-                    f64_constant(3.0),
-                    f64_constant(4.0),
-                    f64_constant(5.0),
-                ],
-                vec![
-                    const_load(0, 0),
-                    const_load(1, 1),
-                    const_load(2, 2),
-                    const_load(3, 3),
-                    const_load(4, 4),
-                    const_load(5, 5),
-                    BytecodeInstruction::RuntimeVariadic {
-                        function: variadic_horzcat,
-                        dst: 0,
-                        arguments: vec![1, 2, 3, 4, 5],
-                    },
-                ],
-                Vec::new(),
-                0,
-            )?,
-            runtime_functions: &["HorizontalConcatenateNArgs"],
+            source: VARIADIC_SOURCE,
+            runtime_functions: runtime_function_names(&variadic)?,
+            bytes: variadic,
             expected_result: matrix_json(1, 5, &[1.0, 2.0, 3.0, 4.0, 5.0]),
         },
         Fixture {
             file: "cli-stdout.mecb",
-            source: "+> @out := cli/stdout\n\n@out/line <- \"phase1-hosted-ok\"\n\n\"done\"",
-            bytes: compile_program(
-                vec![
-                    empty_constant(),
-                    string_constant("phase1-hosted-ok"),
-                    string_constant("done"),
-                ],
-                vec![
-                    const_load(0, 0),
-                    const_load(1, 1),
-                    const_load(2, 2),
-                    BytecodeInstruction::ResourceSend {
-                        requirement: 0,
-                        dst: 0,
-                        src: 1,
-                    },
-                ],
-                vec![ApplicationRequirement::Resource(ExecutionResourceRequest {
-                    base_uri: "cli://cli/stdout".to_string(),
-                    path: "line".to_string(),
-                    context_name: "out".to_string(),
-                    operation: "write".to_string(),
-                    intent: ResourceIntent::Send,
-                    delivery: ResourceDelivery::Snapshot,
-                })],
-                2,
-            )?,
-            runtime_functions: &[],
+            source: CLI_SOURCE,
+            runtime_functions: runtime_function_names(&cli)?,
+            bytes: cli,
             expected_result: json!("done"),
         },
         Fixture {
             file: "synthetic-live-read.mecb",
-            source: concat!(
-                "+> @clock := test-live/clock\n\n",
-                "value := @clock/value\n",
-                "doubled := value + value\n\n",
-                "doubled",
-            ),
-            bytes: compile_program(
-                vec![f64_constant(0.0), f64_constant(0.0)],
-                vec![
-                    const_load(0, 0),
-                    const_load(1, 1),
-                    BytecodeInstruction::ResourceRead {
-                        requirement: 0,
-                        dst: 0,
-                    },
-                    BytecodeInstruction::RuntimeBinary {
-                        function: scalar_add,
-                        dst: 1,
-                        lhs: 0,
-                        rhs: 0,
-                    },
-                ],
-                vec![ApplicationRequirement::Resource(ExecutionResourceRequest {
-                    base_uri: "test-live://clock/clock".to_string(),
-                    path: "value".to_string(),
-                    context_name: "clock".to_string(),
-                    operation: "read".to_string(),
-                    intent: ResourceIntent::Read,
-                    delivery: ResourceDelivery::Live,
-                })],
-                1,
-            )?,
-            runtime_functions: &["AddSS<f64>"],
+            source: LIVE_SOURCE,
+            runtime_functions: runtime_function_names(&live)?,
+            bytes: live,
             expected_result: json!(0.0),
         },
     ])
 }
 
-fn compile_program(
-    constants: Vec<EncodedConstant>,
-    mut instructions: Vec<BytecodeInstruction>,
-    requirements: Vec<ApplicationRequirement>,
-    return_register: u32,
-) -> AppResult<Vec<u8>> {
-    let register_count = constants
-        .len()
-        .try_into()
-        .map_err(|_| io::Error::other("fixture has too many registers"))?;
-    instructions.push(BytecodeInstruction::Return {
-        src: return_register,
-    });
-    let program = BytecodeProgram {
-        register_count,
-        constants,
-        symbols: BTreeMap::new(),
-        mutable_symbols: BTreeSet::new(),
-        instructions,
-        dictionary: BTreeMap::new(),
-        requirements,
-    };
-    let bytes = write_bytecode(&program)
-        .map_err(|error| io::Error::other(format!("bytecode writer failed: {error:?}")))?;
+fn compile_standard_source(source: &str) -> AppResult<Vec<u8>> {
+    let mut program = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        mech_stdlib::source_catalog(),
+    );
+    program
+        .run_string(source)
+        .map_err(|error| mech_error("standard source execution", error))?;
+    program
+        .compile_bytecode()
+        .map_err(|error| mech_error("standard bytecode compilation", error).into())
+}
+
+fn compile_cli_planning_source(source: &str) -> AppResult<Vec<u8>> {
+    let builder = RuntimeBuilder::new()
+        .planning()
+        .function_catalog(mech_stdlib::source_catalog())
+        .host_factory(Box::new(
+            CliHostFactory::new().map_err(|error| mech_error("CLI host construction", error))?,
+        ))
+        .map_err(|error| mech_error("CLI host registration", error))?
+        .host_instance(HostInstanceConfig {
+            name: "cli".to_owned(),
+            provider: "cli".to_owned(),
+            settings: ConfigValue::Map(BTreeMap::new()),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "cli/stdout".to_owned(),
+            operations: vec!["write".to_owned()],
+            paths: vec!["line".to_owned()],
+        });
+    compile_planning_source(builder, source)
+}
+
+fn compile_live_planning_source(source: &str) -> AppResult<Vec<u8>> {
+    let (factory, _driver) =
+        TestLiveHostFactory::new().map_err(|error| mech_error("live host construction", error))?;
+    let builder = RuntimeBuilder::new()
+        .planning()
+        .function_catalog(mech_stdlib::source_catalog())
+        .module_manifest(ModuleManifestConfig {
+            name: TEST_LIVE_PROVIDER.to_owned(),
+            exports: vec![ModuleManifestExportConfig {
+                name: TEST_LIVE_CONTEXT.to_owned(),
+                kind: ModuleManifestExportKind::Context,
+                base_uri: TEST_LIVE_BASE_URI.to_owned(),
+                operations: vec!["read".to_owned()],
+            }],
+        })
+        .map_err(|error| mech_error("live module manifest registration", error))?
+        .host_factory(Box::new(factory))
+        .map_err(|error| mech_error("live host registration", error))?
+        .host_instance(HostInstanceConfig {
+            name: TEST_LIVE_INSTANCE.to_owned(),
+            provider: TEST_LIVE_PROVIDER.to_owned(),
+            settings: empty_settings(),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_CONTEXT}"),
+            operations: vec!["read".to_owned()],
+            paths: vec![TEST_LIVE_PATH.to_owned()],
+        });
+    compile_planning_source(builder, source)
+}
+
+fn compile_planning_source(builder: RuntimeBuilder, source: &str) -> AppResult<Vec<u8>> {
+    let mut runtime = builder
+        .build()
+        .map_err(|error| mech_error("planning runtime construction", error))?;
+    runtime
+        .run_string(source)
+        .map_err(|error| mech_error("planning source execution", error))?;
+    runtime
+        .compile_program_bytecode()
+        .map_err(|error| mech_error("planning bytecode compilation", error).into())
+}
+
+fn compile_fixed_source(source: &str) -> AppResult<(Vec<u8>, Vec<String>)> {
+    let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    let manifest = repository.join("tests/fixtures/bytecode-v1-fixed-generator/Cargo.toml");
+    let temporary = tempfile::tempdir()?;
+    let output = temporary.path().join("fixed-matrix-add-f64.mecb");
+    let functions = temporary.path().join("functions.json");
+    let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let status = Command::new(cargo)
+        .arg("run")
+        .arg("--quiet")
+        .arg("--locked")
+        .arg("--offline")
+        .arg("--manifest-path")
+        .arg(&manifest)
+        .arg("--")
+        .arg(&output)
+        .arg(&functions)
+        .arg(source)
+        .env(
+            "CARGO_TARGET_DIR",
+            repository.join("target/phase1-fixtures/cargo-target"),
+        )
+        .status()?;
+    if !status.success() {
+        return Err(io::Error::other(format!(
+            "isolated fixed-matrix source compiler failed with {status}",
+        ))
+        .into());
+    }
+    let bytes = fs::read(&output)?;
     ParsedProgram::from_bytes(&bytes)
-        .map_err(|error| io::Error::other(format!("bytecode reader rejected output: {error:?}")))?;
-    Ok(bytes)
+        .map_err(|error| mech_error("fixed-matrix bytecode validation", error))?;
+    let runtime_functions = serde_json::from_slice(&fs::read(functions)?)?;
+    Ok((bytes, runtime_functions))
 }
 
-fn const_load(dst: u32, constant: u32) -> BytecodeInstruction {
-    BytecodeInstruction::ConstLoad { dst, constant }
+fn runtime_function_names(bytes: &[u8]) -> AppResult<Vec<String>> {
+    let parsed = ParsedProgram::from_bytes(bytes)
+        .map_err(|error| mech_error("runtime-function inspection", error))?;
+    let catalog = mech_stdlib::runtime_catalog();
+    parsed
+        .instructions
+        .iter()
+        .filter_map(BytecodeInstruction::runtime_function)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .map(|id| {
+            catalog
+                .runtime_entries()
+                .find(|entry| entry.id.raw() == id)
+                .map(|entry| entry.name.clone())
+                .ok_or_else(|| {
+                    io::Error::other(format!(
+                        "real source compiler emitted ID {id:016x} absent from the ordinary runtime catalog",
+                    ))
+                    .into()
+                })
+        })
+        .collect()
 }
 
-fn f64_constant(value: f64) -> EncodedConstant {
-    EncodedConstant {
-        runtime_type: RuntimeType::F64,
-        alignment: 8,
-        bytes: value.to_bits().to_le_bytes().to_vec(),
-    }
-}
-
-fn string_constant(value: &str) -> EncodedConstant {
-    EncodedConstant {
-        runtime_type: RuntimeType::String,
-        alignment: 1,
-        bytes: value.as_bytes().to_vec(),
-    }
-}
-
-fn empty_constant() -> EncodedConstant {
-    EncodedConstant {
-        runtime_type: RuntimeType::Empty,
-        alignment: 1,
-        bytes: Vec::new(),
-    }
-}
-
-fn matrix_constant(
-    storage: MatrixStorage,
-    rows: u32,
-    cols: u32,
-    elements: &[f64],
-) -> AppResult<EncodedConstant> {
-    let expected = usize::try_from(rows)?
-        .checked_mul(usize::try_from(cols)?)
-        .ok_or_else(|| io::Error::other("matrix fixture dimensions overflow"))?;
-    if elements.len() != expected || !storage.validate_dimensions(rows, cols) {
-        return Err(io::Error::other("invalid matrix fixture shape").into());
-    }
-    let mut bytes = Vec::with_capacity(8 + elements.len() * 8);
-    bytes.extend_from_slice(&rows.to_le_bytes());
-    bytes.extend_from_slice(&cols.to_le_bytes());
-    for element in elements {
-        bytes.extend_from_slice(&element.to_bits().to_le_bytes());
-    }
-    Ok(EncodedConstant {
-        runtime_type: RuntimeType::Matrix {
-            element: Box::new(RuntimeType::F64),
-            storage,
-            rows,
-            cols,
-        },
-        alignment: 8,
-        bytes,
-    })
+fn mech_error(context: &str, error: impl std::fmt::Debug) -> io::Error {
+    io::Error::other(format!("{context} failed: {error:?}"))
 }
 
 fn matrix_json(rows: usize, cols: usize, elements: &[f64]) -> JsonValue {
@@ -501,9 +431,27 @@ fn manifest_entry(fixture: &Fixture) -> AppResult<JsonValue> {
 
 fn runtime_type_json(runtime_type: &RuntimeType) -> JsonValue {
     match runtime_type {
+        RuntimeType::U8 => json!({ "kind": "u8" }),
+        RuntimeType::U16 => json!({ "kind": "u16" }),
+        RuntimeType::U32 => json!({ "kind": "u32" }),
+        RuntimeType::U64 => json!({ "kind": "u64" }),
+        RuntimeType::U128 => json!({ "kind": "u128" }),
+        RuntimeType::I8 => json!({ "kind": "i8" }),
+        RuntimeType::I16 => json!({ "kind": "i16" }),
+        RuntimeType::I32 => json!({ "kind": "i32" }),
+        RuntimeType::I64 => json!({ "kind": "i64" }),
+        RuntimeType::I128 => json!({ "kind": "i128" }),
+        RuntimeType::F32 => json!({ "kind": "f32" }),
         RuntimeType::F64 => json!({ "kind": "f64" }),
+        RuntimeType::C64 => json!({ "kind": "c64" }),
+        RuntimeType::R64 => json!({ "kind": "r64" }),
         RuntimeType::String => json!({ "kind": "string" }),
+        RuntimeType::Bool => json!({ "kind": "bool" }),
+        RuntimeType::Id => json!({ "kind": "id" }),
+        RuntimeType::Index => json!({ "kind": "index" }),
         RuntimeType::Empty => json!({ "kind": "empty" }),
+        RuntimeType::Any => json!({ "kind": "any" }),
+        RuntimeType::None => json!({ "kind": "none" }),
         RuntimeType::Matrix {
             element,
             storage,

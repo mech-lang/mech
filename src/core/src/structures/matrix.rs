@@ -698,6 +698,57 @@ impl<T> Matrix<T> {
         }
     }
 
+    /// Rebuilds a detached matrix without changing its concrete storage class.
+    ///
+    /// Shape-based construction intentionally prefers fixed-size storage when
+    /// the corresponding feature is enabled. Snapshotting cannot use that
+    /// policy: changing a `DMatrix` into a `Matrix2`, for example, invalidates
+    /// the exact runtime factory contract associated with the value.
+    pub(crate) fn rebuild_with_same_storage(
+        &self,
+        elements: Vec<T>,
+        rows: usize,
+        cols: usize,
+    ) -> Matrix<T>
+    where
+        T: Debug + Clone + PartialEq + 'static,
+    {
+        match self {
+            #[cfg(feature = "row_vector4")]
+            Matrix::RowVector4(_) => Matrix::RowVector4(Ref::new(RowVector4::from_vec(elements))),
+            #[cfg(feature = "row_vector3")]
+            Matrix::RowVector3(_) => Matrix::RowVector3(Ref::new(RowVector3::from_vec(elements))),
+            #[cfg(feature = "row_vector2")]
+            Matrix::RowVector2(_) => Matrix::RowVector2(Ref::new(RowVector2::from_vec(elements))),
+            #[cfg(feature = "vector4")]
+            Matrix::Vector4(_) => Matrix::Vector4(Ref::new(Vector4::from_vec(elements))),
+            #[cfg(feature = "vector3")]
+            Matrix::Vector3(_) => Matrix::Vector3(Ref::new(Vector3::from_vec(elements))),
+            #[cfg(feature = "vector2")]
+            Matrix::Vector2(_) => Matrix::Vector2(Ref::new(Vector2::from_vec(elements))),
+            #[cfg(feature = "matrix4")]
+            Matrix::Matrix4(_) => Matrix::Matrix4(Ref::new(Matrix4::from_vec(elements))),
+            #[cfg(feature = "matrix3")]
+            Matrix::Matrix3(_) => Matrix::Matrix3(Ref::new(Matrix3::from_vec(elements))),
+            #[cfg(feature = "matrix2")]
+            Matrix::Matrix2(_) => Matrix::Matrix2(Ref::new(Matrix2::from_vec(elements))),
+            #[cfg(feature = "matrix1")]
+            Matrix::Matrix1(_) => Matrix::Matrix1(Ref::new(Matrix1::from_vec(elements))),
+            #[cfg(feature = "matrix3x2")]
+            Matrix::Matrix3x2(_) => Matrix::Matrix3x2(Ref::new(Matrix3x2::from_vec(elements))),
+            #[cfg(feature = "matrix2x3")]
+            Matrix::Matrix2x3(_) => Matrix::Matrix2x3(Ref::new(Matrix2x3::from_vec(elements))),
+            #[cfg(feature = "vectord")]
+            Matrix::DVector(_) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
+            #[cfg(feature = "row_vectord")]
+            Matrix::RowDVector(_) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
+            #[cfg(feature = "matrixd")]
+            Matrix::DMatrix(_) => {
+                Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, elements)))
+            }
+        }
+    }
+
     pub fn addr(&self) -> usize {
         match self {
             #[cfg(feature = "matrix1")]

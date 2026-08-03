@@ -391,7 +391,7 @@ impl ValueSnapshotCloneContext {
         let (values, rows, cols) = source
             .try_clone_parts()
             .map_err(|_| snapshot_borrow_conflict::<Matrix<T>>("clone", "matrix"))?;
-        let snapshot = Matrix::from_vec(values, rows, cols);
+        let snapshot = source.rebuild_with_same_storage(values, rows, cols);
         self.memoize(key, snapshot.clone());
         Ok(snapshot)
     }
@@ -410,7 +410,7 @@ impl ValueSnapshotCloneContext {
         for value in values {
             detached_values.push(self.snapshot_value(&value)?);
         }
-        let snapshot = Matrix::from_vec(detached_values, rows, cols);
+        let snapshot = source.rebuild_with_same_storage(detached_values, rows, cols);
         self.memoize(key, snapshot.clone());
         Ok(snapshot)
     }
