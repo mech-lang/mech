@@ -1,11 +1,9 @@
 use std::collections::BTreeSet;
 
-use mech_core::{MResult, MatrixStorage, MechError, RuntimeType};
+use mech_core::{MResult, MatrixStorage, RuntimeType};
 
-use crate::error::{NativeBuildErrorKind, native_build_error};
-
-/// The exact Phase 1 value and shape features selected by a bytecode type
-/// table.  The same sorted feature vector is applied to `mech-core`,
+/// The exact value and shape features selected by an official bytecode-v1 type
+/// table. The same sorted feature vector is applied to `mech-core`,
 /// `mech-engine`, and (for hosted applications) `mech-runtime`.  Selected
 /// machine packages merge these features with their function linkage features.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -18,11 +16,7 @@ pub(crate) fn analyze_runtime_types(types: &[RuntimeType]) -> MResult<RuntimeTyp
     let runtime_types = types.iter().cloned().collect::<BTreeSet<_>>();
     let mut cargo_features = BTreeSet::new();
     for runtime_type in &runtime_types {
-        cargo_features.extend(
-            features_for_runtime_type(runtime_type)?
-                .iter()
-                .map(|feature| (*feature).to_owned()),
-        );
+        features_for_runtime_type(runtime_type, &mut cargo_features)?;
     }
 
     Ok(RuntimeTypeAnalysis {
@@ -31,42 +25,94 @@ pub(crate) fn analyze_runtime_types(types: &[RuntimeType]) -> MResult<RuntimeTyp
     })
 }
 
-fn features_for_runtime_type(runtime_type: &RuntimeType) -> MResult<&'static [&'static str]> {
+fn features_for_runtime_type(
+    runtime_type: &RuntimeType,
+    features: &mut BTreeSet<String>,
+) -> MResult<()> {
+    let add = |feature: &'static str, features: &mut BTreeSet<String>| {
+        features.insert(feature.to_owned());
+    };
     match runtime_type {
-        RuntimeType::Empty | RuntimeType::Index => Ok(&[]),
-        RuntimeType::Bool => Ok(&["bool"]),
-        RuntimeType::String => Ok(&["string"]),
-        RuntimeType::F64 => Ok(&["f64"]),
+        RuntimeType::Empty
+        | RuntimeType::Any
+        | RuntimeType::None
+        | RuntimeType::Id
+        | RuntimeType::Index => {}
+        RuntimeType::Bool => add("bool", features),
+        RuntimeType::String => add("string", features),
+        RuntimeType::U8 => add("u8", features),
+        RuntimeType::U16 => add("u16", features),
+        RuntimeType::U32 => add("u32", features),
+        RuntimeType::U64 => add("u64", features),
+        RuntimeType::U128 => add("u128", features),
+        RuntimeType::I8 => add("i8", features),
+        RuntimeType::I16 => add("i16", features),
+        RuntimeType::I32 => add("i32", features),
+        RuntimeType::I64 => add("i64", features),
+        RuntimeType::I128 => add("i128", features),
+        RuntimeType::F32 => add("f32", features),
+        RuntimeType::F64 => add("f64", features),
+        RuntimeType::C64 => add("c64", features),
+        RuntimeType::R64 => add("r64", features),
         RuntimeType::Matrix {
             element, storage, ..
-        } if element.as_ref() == &RuntimeType::F64 => Ok(match storage {
-            MatrixStorage::Matrix1 => &["f64", "matrix1"],
-            MatrixStorage::Matrix2 => &["f64", "matrix2"],
-            MatrixStorage::Matrix3 => &["f64", "matrix3"],
-            MatrixStorage::Matrix4 => &["f64", "matrix4"],
-            MatrixStorage::Matrix2x3 => &["f64", "matrix2x3"],
-            MatrixStorage::Matrix3x2 => &["f64", "matrix3x2"],
-            MatrixStorage::RowVector2 => &["f64", "row_vector2"],
-            MatrixStorage::RowVector3 => &["f64", "row_vector3"],
-            MatrixStorage::RowVector4 => &["f64", "row_vector4"],
-            MatrixStorage::Vector2 => &["f64", "vector2"],
-            MatrixStorage::Vector3 => &["f64", "vector3"],
-            MatrixStorage::Vector4 => &["f64", "vector4"],
-            MatrixStorage::RowVectorD => &["f64", "row_vectord"],
-            MatrixStorage::VectorD => &["f64", "vectord"],
-            MatrixStorage::MatrixD => &["f64", "matrixd"],
-        }),
-        _ => Err(unsupported_runtime_type(runtime_type)),
+        } => {
+            add(
+                match storage {
+                    MatrixStorage::Matrix1 => "matrix1",
+                    MatrixStorage::Matrix2 => "matrix2",
+                    MatrixStorage::Matrix3 => "matrix3",
+                    MatrixStorage::Matrix4 => "matrix4",
+                    MatrixStorage::Matrix2x3 => "matrix2x3",
+                    MatrixStorage::Matrix3x2 => "matrix3x2",
+                    MatrixStorage::RowVector2 => "row_vector2",
+                    MatrixStorage::RowVector3 => "row_vector3",
+                    MatrixStorage::RowVector4 => "row_vector4",
+                    MatrixStorage::Vector2 => "vector2",
+                    MatrixStorage::Vector3 => "vector3",
+                    MatrixStorage::Vector4 => "vector4",
+                    MatrixStorage::RowVectorD => "row_vectord",
+                    MatrixStorage::VectorD => "vectord",
+                    MatrixStorage::MatrixD => "matrixd",
+                },
+                features,
+            );
+            features_for_runtime_type(element, features)?;
+        }
+        RuntimeType::Record(fields) => {
+            add("record", features);
+            for (_, child) in fields {
+                features_for_runtime_type(child, features)?;
+            }
+        }
+        RuntimeType::Map { key, value } => {
+            add("map", features);
+            features_for_runtime_type(key, features)?;
+            features_for_runtime_type(value, features)?;
+        }
+        RuntimeType::Set { element, .. } => {
+            add("set", features);
+            features_for_runtime_type(element, features)?;
+        }
+        RuntimeType::Table { columns, .. } => {
+            add("table", features);
+            for (_, child) in columns {
+                features_for_runtime_type(child, features)?;
+            }
+        }
+        RuntimeType::Tuple(children) => {
+            add("tuple", features);
+            for child in children {
+                features_for_runtime_type(child, features)?;
+            }
+        }
+        RuntimeType::Atom { .. } => add("atom", features),
+        RuntimeType::Enum { .. } => add("enum", features),
+        RuntimeType::Reference(child) => features_for_runtime_type(child, features)?,
+        RuntimeType::Option(child) => features_for_runtime_type(child, features)?,
+        RuntimeType::Kind(_) => add("kind_annotation", features),
     }
-}
-
-fn unsupported_runtime_type(runtime_type: &RuntimeType) -> MechError {
-    native_build_error(
-        NativeBuildErrorKind::NativeRuntimeTypeUnsupported {
-            runtime_type: format!("{runtime_type:?}"),
-        },
-        None,
-    )
+    Ok(())
 }
 
 #[cfg(test)]
@@ -116,17 +162,35 @@ mod tests {
                 rows,
                 cols,
             };
+            let mut features = BTreeSet::new();
+            features_for_runtime_type(&runtime_type, &mut features).unwrap();
             assert_eq!(
-                features_for_runtime_type(&runtime_type).unwrap(),
-                ["f64", expected],
+                features.into_iter().collect::<Vec<_>>(),
+                ["f64".to_owned(), expected.to_owned()],
                 "{storage:?}"
             );
         }
     }
 
     #[test]
-    fn official_type_without_phase1_analysis_is_structured() {
-        let error = analyze_runtime_types(&[RuntimeType::F32]).unwrap_err();
-        assert_eq!(error.kind_name(), "NativeRuntimeTypeUnsupported");
+    fn recursively_selects_composite_child_features() {
+        let analysis = analyze_runtime_types(&[RuntimeType::Map {
+            key: Box::new(RuntimeType::U16),
+            value: Box::new(RuntimeType::Tuple(vec![
+                RuntimeType::String,
+                RuntimeType::Matrix {
+                    element: Box::new(RuntimeType::U8),
+                    storage: MatrixStorage::Matrix2,
+                    rows: 2,
+                    cols: 2,
+                },
+            ])),
+        }])
+        .unwrap();
+
+        assert_eq!(
+            analysis.cargo_features,
+            ["map", "matrix2", "string", "tuple", "u16", "u8"]
+        );
     }
 }

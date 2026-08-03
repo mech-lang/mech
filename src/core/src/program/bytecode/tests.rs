@@ -54,6 +54,28 @@ fn matrix_constant(storage: MatrixStorage, rows: u32, cols: u32) -> EncodedConst
     }
 }
 
+fn matrixd_constant(element: RuntimeType, element_bytes: Vec<u8>) -> EncodedConstant {
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(&1_u32.to_le_bytes());
+    bytes.extend_from_slice(&1_u32.to_le_bytes());
+    bytes.extend_from_slice(&element_bytes);
+    EncodedConstant {
+        runtime_type: RuntimeType::Matrix {
+            element: Box::new(element),
+            storage: MatrixStorage::MatrixD,
+            rows: 1,
+            cols: 1,
+        },
+        alignment: 8,
+        bytes,
+    }
+}
+
+fn append_child_payload(bytes: &mut Vec<u8>, child: &[u8]) {
+    bytes.extend_from_slice(&(child.len() as u32).to_le_bytes());
+    bytes.extend_from_slice(child);
+}
+
 fn read_u16(bytes: &[u8], offset: usize) -> u16 {
     u16::from_le_bytes(bytes[offset..offset + 2].try_into().unwrap())
 }
@@ -203,6 +225,163 @@ fn official_v1_layout_is_deterministic_and_round_trips() {
 }
 
 #[test]
+fn every_canonical_scalar_encoding_round_trips_exactly() {
+    let f32_bits = 0x7fc0_1234_u32;
+    let f64_bits = 0x7ff8_0000_0000_1234_u64;
+    let c64_real_bits = (-0.0_f64).to_bits();
+    let c64_imaginary_bits = 0x7ff8_0000_0000_0042_u64;
+    let constants = vec![
+        EncodedConstant {
+            runtime_type: RuntimeType::U8,
+            alignment: 1,
+            bytes: vec![u8::MAX],
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::U16,
+            alignment: 2,
+            bytes: u16::MAX.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::U32,
+            alignment: 4,
+            bytes: u32::MAX.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::U64,
+            alignment: 8,
+            bytes: u64::MAX.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::U128,
+            alignment: 16,
+            bytes: u128::MAX.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::I8,
+            alignment: 1,
+            bytes: i8::MIN.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::I16,
+            alignment: 2,
+            bytes: i16::MIN.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::I32,
+            alignment: 4,
+            bytes: i32::MIN.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::I64,
+            alignment: 8,
+            bytes: i64::MIN.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::I128,
+            alignment: 16,
+            bytes: i128::MIN.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::F32,
+            alignment: 4,
+            bytes: f32_bits.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::F64,
+            alignment: 8,
+            bytes: f64_bits.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::C64,
+            alignment: 8,
+            bytes: [
+                c64_real_bits.to_le_bytes(),
+                c64_imaginary_bits.to_le_bytes(),
+            ]
+            .concat(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::R64,
+            alignment: 8,
+            bytes: [(-3_i64).to_le_bytes(), 7_i64.to_le_bytes()].concat(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::String,
+            alignment: 1,
+            bytes: "bytecode-v1 🦀".as_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Bool,
+            alignment: 1,
+            bytes: vec![1],
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Id,
+            alignment: 8,
+            bytes: 42_u64.to_le_bytes().to_vec(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Index,
+            alignment: 8,
+            bytes: 7_u64.to_le_bytes().to_vec(),
+        },
+        empty_constant(),
+    ];
+
+    let parsed = ParsedProgram::from_bytes(&write_bytecode(&program(constants)).unwrap()).unwrap();
+    let values = parsed.decode_constants().unwrap();
+    assert!(matches!(&values[0], crate::Value::U8(value) if *value.borrow() == u8::MAX));
+    assert!(matches!(&values[4], crate::Value::U128(value) if *value.borrow() == u128::MAX));
+    assert!(matches!(&values[5], crate::Value::I8(value) if *value.borrow() == i8::MIN));
+    assert!(matches!(&values[9], crate::Value::I128(value) if *value.borrow() == i128::MIN));
+    assert!(
+        matches!(&values[10], crate::Value::F32(value) if value.borrow().to_bits() == f32_bits)
+    );
+    assert!(
+        matches!(&values[11], crate::Value::F64(value) if value.borrow().to_bits() == f64_bits)
+    );
+    assert!(matches!(&values[12], crate::Value::C64(value)
+        if value.borrow().0.re.to_bits() == c64_real_bits
+        && value.borrow().0.im.to_bits() == c64_imaginary_bits));
+    assert!(matches!(&values[13], crate::Value::R64(value)
+        if *value.borrow().numer() == -3 && *value.borrow().denom() == 7));
+    assert!(
+        matches!(&values[14], crate::Value::String(value) if value.borrow().as_str() == "bytecode-v1 🦀")
+    );
+    assert!(matches!(&values[15], crate::Value::Bool(value) if *value.borrow()));
+    assert!(matches!(&values[16], crate::Value::Id(42)));
+    assert!(matches!(&values[17], crate::Value::Index(value) if *value.borrow() == 7));
+    assert!(matches!(&values[18], crate::Value::Empty));
+}
+
+#[test]
+fn scalar_decoder_rejects_noncanonical_boolean_and_rational_bytes() {
+    let invalid_boolean = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::Bool,
+        alignment: 1,
+        bytes: vec![2],
+    }]))
+    .unwrap_err();
+    assert!(
+        invalid_boolean
+            .kind_message()
+            .contains("Bool constant must be exactly")
+    );
+
+    let unreduced_rational = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::R64,
+        alignment: 8,
+        bytes: [(2_i64).to_le_bytes(), 4_i64.to_le_bytes()].concat(),
+    }]))
+    .unwrap_err();
+    assert!(
+        unreduced_rational
+            .kind_message()
+            .contains("R64 constant is not reduced")
+    );
+}
+
+#[test]
 fn header_and_section_directory_have_the_exact_v1_bytes() {
     let bytes = write_bytecode(&program(vec![empty_constant()])).unwrap();
     let (mech_major, mech_minor, mech_patch) = MECH_LANGUAGE_RUNTIME_ABI_VERSION;
@@ -252,28 +431,270 @@ fn header_and_section_directory_have_the_exact_v1_bytes() {
 #[test]
 fn every_f64_matrix_storage_tag_is_accepted() {
     let specifications = [
+        #[cfg(feature = "matrix1")]
         (MatrixStorage::Matrix1, 1, 1),
+        #[cfg(feature = "matrix2")]
         (MatrixStorage::Matrix2, 2, 2),
+        #[cfg(feature = "matrix3")]
         (MatrixStorage::Matrix3, 3, 3),
+        #[cfg(feature = "matrix4")]
         (MatrixStorage::Matrix4, 4, 4),
+        #[cfg(feature = "matrix2x3")]
         (MatrixStorage::Matrix2x3, 2, 3),
+        #[cfg(feature = "matrix3x2")]
         (MatrixStorage::Matrix3x2, 3, 2),
+        #[cfg(feature = "row_vector2")]
         (MatrixStorage::RowVector2, 1, 2),
+        #[cfg(feature = "row_vector3")]
         (MatrixStorage::RowVector3, 1, 3),
+        #[cfg(feature = "row_vector4")]
         (MatrixStorage::RowVector4, 1, 4),
+        #[cfg(feature = "vector2")]
         (MatrixStorage::Vector2, 2, 1),
+        #[cfg(feature = "vector3")]
         (MatrixStorage::Vector3, 3, 1),
+        #[cfg(feature = "vector4")]
         (MatrixStorage::Vector4, 4, 1),
+        #[cfg(feature = "row_vectord")]
         (MatrixStorage::RowVectorD, 1, 5),
+        #[cfg(feature = "vectord")]
         (MatrixStorage::VectorD, 5, 1),
+        #[cfg(feature = "matrixd")]
         (MatrixStorage::MatrixD, 2, 5),
     ];
+    let expected_len = specifications.len();
     let constants = specifications
         .into_iter()
         .map(|(storage, rows, cols)| matrix_constant(storage, rows, cols))
         .collect();
     let parsed = ParsedProgram::from_bytes(&write_bytecode(&program(constants)).unwrap()).unwrap();
-    assert_eq!(parsed.constants.len(), MatrixStorage::MatrixD as usize);
+    assert_eq!(parsed.constants.len(), expected_len);
+    assert_eq!(parsed.decode_constants().unwrap().len(), expected_len);
+}
+
+#[test]
+fn every_matrix_element_codec_round_trips_a_dynamic_matrix() {
+    let constants = vec![
+        matrixd_constant(RuntimeType::Index, 5_u64.to_le_bytes().to_vec()),
+        matrixd_constant(RuntimeType::Bool, vec![1]),
+        matrixd_constant(RuntimeType::U8, vec![u8::MAX]),
+        matrixd_constant(RuntimeType::U16, u16::MAX.to_le_bytes().to_vec()),
+        matrixd_constant(RuntimeType::U32, u32::MAX.to_le_bytes().to_vec()),
+        matrixd_constant(RuntimeType::U64, u64::MAX.to_le_bytes().to_vec()),
+        matrixd_constant(RuntimeType::U128, u128::MAX.to_le_bytes().to_vec()),
+        matrixd_constant(RuntimeType::I8, i8::MIN.to_le_bytes().to_vec()),
+        matrixd_constant(RuntimeType::I16, i16::MIN.to_le_bytes().to_vec()),
+        matrixd_constant(RuntimeType::I32, i32::MIN.to_le_bytes().to_vec()),
+        matrixd_constant(RuntimeType::I64, i64::MIN.to_le_bytes().to_vec()),
+        matrixd_constant(RuntimeType::I128, i128::MIN.to_le_bytes().to_vec()),
+        matrixd_constant(RuntimeType::F32, 0x7fc0_1234_u32.to_le_bytes().to_vec()),
+        matrixd_constant(
+            RuntimeType::F64,
+            0x7ff8_0000_0000_1234_u64.to_le_bytes().to_vec(),
+        ),
+        matrixd_constant(
+            RuntimeType::C64,
+            [
+                (-0.0_f64).to_bits().to_le_bytes(),
+                1.5_f64.to_bits().to_le_bytes(),
+            ]
+            .concat(),
+        ),
+        matrixd_constant(
+            RuntimeType::R64,
+            [(-3_i64).to_le_bytes(), 7_i64.to_le_bytes()].concat(),
+        ),
+        matrixd_constant(
+            RuntimeType::String,
+            [4_u32.to_le_bytes(), *b"mech"].concat(),
+        ),
+    ];
+    let parsed = ParsedProgram::from_bytes(&write_bytecode(&program(constants)).unwrap()).unwrap();
+    let values = parsed.decode_constants().unwrap();
+    assert_eq!(values.len(), 17);
+    assert!(matches!(&values[0], crate::Value::MatrixIndex(_)));
+    assert!(matches!(&values[1], crate::Value::MatrixBool(_)));
+    assert!(matches!(&values[2], crate::Value::MatrixU8(_)));
+    assert!(matches!(&values[3], crate::Value::MatrixU16(_)));
+    assert!(matches!(&values[4], crate::Value::MatrixU32(_)));
+    assert!(matches!(&values[5], crate::Value::MatrixU64(_)));
+    assert!(matches!(&values[6], crate::Value::MatrixU128(_)));
+    assert!(matches!(&values[7], crate::Value::MatrixI8(_)));
+    assert!(matches!(&values[8], crate::Value::MatrixI16(_)));
+    assert!(matches!(&values[9], crate::Value::MatrixI32(_)));
+    assert!(matches!(&values[10], crate::Value::MatrixI64(_)));
+    assert!(matches!(&values[11], crate::Value::MatrixI128(_)));
+    assert!(matches!(&values[12], crate::Value::MatrixF32(_)));
+    assert!(matches!(&values[13], crate::Value::MatrixF64(_)));
+    assert!(matches!(&values[14], crate::Value::MatrixC64(_)));
+    assert!(matches!(&values[15], crate::Value::MatrixR64(_)));
+    assert!(matches!(&values[16], crate::Value::MatrixString(_)));
+}
+
+#[test]
+fn every_composite_constant_codec_round_trips() {
+    let mut tuple = 2_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut tuple, &[7]);
+    append_child_payload(&mut tuple, b"mech");
+
+    let mut record = 2_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut record, &[9]);
+    append_child_payload(&mut record, &(-4_i16).to_le_bytes());
+
+    let mut map = 1_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut map, &[3]);
+    append_child_payload(&mut map, b"value");
+
+    let mut set = 1_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut set, &[4]);
+
+    let mut table = Vec::new();
+    table.extend_from_slice(&1_u32.to_le_bytes());
+    table.extend_from_slice(&2_u32.to_le_bytes());
+    append_child_payload(&mut table, &[5]);
+    append_child_payload(&mut table, b"row");
+
+    let mut reference = Vec::new();
+    append_child_payload(&mut reference, &[6]);
+
+    let mut present_option = vec![1];
+    append_child_payload(&mut present_option, &[8]);
+
+    let enum_name = "status";
+    let variant_name = "ready";
+    let enum_id = crate::hash_str(enum_name);
+    let variant_id = crate::hash_str(variant_name);
+    let inline_u8 = types::canonical_runtime_type_key(&RuntimeType::U8).unwrap();
+    let mut enumeration = 1_u32.to_le_bytes().to_vec();
+    enumeration.extend_from_slice(&variant_id.to_le_bytes());
+    enumeration.extend_from_slice(&(variant_name.len() as u32).to_le_bytes());
+    enumeration.extend_from_slice(variant_name.as_bytes());
+    enumeration.push(1);
+    append_child_payload(&mut enumeration, &inline_u8);
+    append_child_payload(&mut enumeration, &[10]);
+
+    let atom_name = "alpha";
+    let atom_id = crate::hash_str(atom_name);
+    let constants = vec![
+        EncodedConstant {
+            runtime_type: RuntimeType::Tuple(vec![RuntimeType::U8, RuntimeType::String]),
+            alignment: 4,
+            bytes: tuple,
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Record(vec![
+                ("count".to_owned(), RuntimeType::U8),
+                ("delta".to_owned(), RuntimeType::I16),
+            ]),
+            alignment: 4,
+            bytes: record,
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Map {
+                key: Box::new(RuntimeType::U8),
+                value: Box::new(RuntimeType::String),
+            },
+            alignment: 4,
+            bytes: map,
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Set {
+                element: Box::new(RuntimeType::U8),
+                max_len: Some(1),
+            },
+            alignment: 4,
+            bytes: set,
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Table {
+                columns: vec![
+                    ("id".to_owned(), RuntimeType::U8),
+                    ("name".to_owned(), RuntimeType::String),
+                ],
+                primary_key: 0,
+            },
+            alignment: 4,
+            bytes: table,
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Reference(Box::new(RuntimeType::U8)),
+            alignment: 4,
+            bytes: reference,
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Option(Box::new(RuntimeType::U8)),
+            alignment: 1,
+            bytes: vec![0],
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Option(Box::new(RuntimeType::U8)),
+            alignment: 4,
+            bytes: present_option,
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Atom {
+                id: atom_id,
+                name: atom_name.to_owned(),
+            },
+            alignment: 1,
+            bytes: Vec::new(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Enum {
+                id: enum_id,
+                name: enum_name.to_owned(),
+            },
+            alignment: 4,
+            bytes: enumeration,
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Kind(crate::kind::Kind::Scalar(crate::hash_str("u8"))),
+            alignment: 1,
+            bytes: Vec::new(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::Any,
+            alignment: 1,
+            bytes: Vec::new(),
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::None,
+            alignment: 1,
+            bytes: Vec::new(),
+        },
+    ];
+
+    let parsed = ParsedProgram::from_bytes(&write_bytecode(&program(constants)).unwrap()).unwrap();
+    let values = parsed.decode_constants().unwrap();
+    assert_eq!(values.len(), 13);
+    assert!(matches!(&values[0], crate::Value::Tuple(_)));
+    assert!(matches!(&values[1], crate::Value::Record(_)));
+    assert!(matches!(&values[2], crate::Value::Map(_)));
+    assert!(matches!(&values[3], crate::Value::Set(_)));
+    assert!(matches!(&values[4], crate::Value::Table(_)));
+    assert!(matches!(&values[5], crate::Value::MutableReference(_)));
+    assert!(matches!(
+        &values[6],
+        crate::Value::EmptyKind(crate::ValueKind::Option(_))
+    ));
+    assert!(matches!(
+        &values[7],
+        crate::Value::Typed(_, crate::ValueKind::Option(_))
+    ));
+    assert!(matches!(&values[8], crate::Value::Atom(_)));
+    assert!(matches!(&values[9], crate::Value::Enum(_)));
+    assert!(matches!(
+        &values[10],
+        crate::Value::Kind(crate::ValueKind::U8)
+    ));
+    assert!(matches!(
+        &values[11],
+        crate::Value::EmptyKind(crate::ValueKind::Any)
+    ));
+    assert!(matches!(
+        &values[12],
+        crate::Value::EmptyKind(crate::ValueKind::None)
+    ));
 }
 
 #[test]
@@ -678,9 +1099,9 @@ mod compiler_tests {
 
     use super::*;
 
-    struct RejectingContext;
+    struct ConstantContext;
 
-    impl BytecodeCompilerContext for RejectingContext {
+    impl BytecodeCompilerContext for ConstantContext {
         fn register_for_ptr_with_initialization_status(
             &mut self,
             _pointer: usize,
@@ -689,7 +1110,7 @@ mod compiler_tests {
         }
 
         fn intern_constant(&mut self, _constant: EncodedConstant) -> MResult<u32> {
-            panic!("unsupported constants must fail before interning")
+            Ok(0)
         }
 
         fn define_symbol(
@@ -768,19 +1189,14 @@ mod compiler_tests {
     }
 
     #[test]
-    fn unsupported_phase1_constant_has_the_named_structured_error() {
-        let error = 1_u8.compile_const(&mut RejectingContext).unwrap_err();
-        assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
-        let detail = error.kind_as::<BytecodeConstantUnsupported>().unwrap();
-        assert_eq!(detail.runtime_type, RuntimeType::U8);
-        assert_eq!(detail.source_value_kind, ValueKind::U8);
-        assert!(!detail.reason.is_empty());
+    fn scalar_constant_is_interned_by_the_v1_codec() {
+        assert_eq!(1_u8.compile_const(&mut ConstantContext).unwrap(), 0);
     }
 
     #[test]
     fn typed_constant_cannot_discard_a_mismatched_declared_type() {
         let value = Value::Typed(Box::new(Value::F64(Ref::new(1.0))), ValueKind::Bool);
-        let error = value.compile_const(&mut RejectingContext).unwrap_err();
+        let error = value.compile_const(&mut ConstantContext).unwrap_err();
         assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
         let detail = error.kind_as::<BytecodeConstantUnsupported>().unwrap();
         assert_eq!(detail.runtime_type, RuntimeType::Bool);

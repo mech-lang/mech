@@ -394,6 +394,7 @@ fn manifest_entry(fixture: &Fixture) -> AppResult<JsonValue> {
 
     Ok(json!({
         "file": fixture.file,
+        "origin": "source-compiler",
         "source": fixture.source,
         "sha256": sha256(&fixture.bytes),
         "header": {

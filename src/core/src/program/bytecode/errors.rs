@@ -37,6 +37,28 @@ pub struct BytecodeConstantUnsupported {
     pub reason: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BytecodeConstantDepthExceeded {
+    pub maximum_depth: usize,
+}
+
+impl MechErrorKind for BytecodeConstantDepthExceeded {
+    fn name(&self) -> &str {
+        "BytecodeConstantDepthExceeded"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "bytecode v1 constant nesting exceeds the maximum depth of {}",
+            self.maximum_depth
+        )
+    }
+}
+
+pub(crate) fn depth_exceeded(maximum_depth: usize) -> MechError {
+    MechError::new(BytecodeConstantDepthExceeded { maximum_depth }, None).with_compiler_loc()
+}
+
 impl MechErrorKind for BytecodeConstantUnsupported {
     fn name(&self) -> &str {
         "BytecodeConstantUnsupported"
