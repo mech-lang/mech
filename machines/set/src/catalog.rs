@@ -187,100 +187,71 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+macro_rules! for_each_set_runtime_factory {
+    ($callback:ident) => {
+        $callback!(feature = "cartesian_product"; register_set_cartesian_product_fxn; install_set_cartesian_product_fxn; "SetCartesianProductFxn"; crate::operations::cartesian_product::SetCartesianProductFxn; ["cartesian_product"]);
+        $callback!(feature = "difference"; register_set_difference_fxn; install_set_difference_fxn; "SetDifferenceFxn"; crate::operations::difference::SetDifferenceFxn; ["difference"]);
+        $callback!(feature = "disjoint"; register_set_disjoint_fxn; install_set_disjoint_fxn; "SetDisjointFxn"; crate::relations::disjoint::SetDisjointFxn; ["disjoint"]);
+        $callback!(feature = "element_of"; register_set_element_of_fxn; install_set_element_of_fxn; "SetElementOfFxn"; crate::membership::element_of::SetElementOfFxn; ["element_of"]);
+        $callback!(feature = "equals"; register_set_equals_fxn; install_set_equals_fxn; "SetEqualsFxn"; crate::relations::equals::SetEqualsFxn; ["equals"]);
+        $callback!(feature = "insert"; register_set_insert_fxn; install_set_insert_fxn; "SetInsertFxn"; crate::modify::insert::SetInsertFxn; ["insert"]);
+        $callback!(feature = "intersection"; register_set_intersection_fxn; install_set_intersection_fxn; "SetIntersectionFxn"; crate::operations::intersection::SetIntersectionFxn; ["intersection"]);
+        $callback!(feature = "not_element_of"; register_set_not_element_of_fxn; install_set_not_element_of_fxn; "SetNotElementOfFxn"; crate::membership::not_element_of::SetNotElementOfFxn; ["not_element_of"]);
+        $callback!(feature = "not_equals"; register_set_not_equals_fxn; install_set_not_equals_fxn; "SetNotEqualsFxn"; crate::relations::not_equals::SetNotEqualsFxn; ["not_equals"]);
+        $callback!(feature = "powerset"; register_set_powerset_fxn; install_set_powerset_fxn; "SetPowersetFxn"; crate::operations::powerset::SetPowersetFxn; ["powerset"]);
+        $callback!(feature = "proper_subset"; register_set_proper_subset_fxn; install_set_proper_subset_fxn; "SetProperSubsetFxn"; crate::relations::proper_subset::SetProperSubsetFxn; ["proper_subset"]);
+        $callback!(feature = "proper_superset"; register_set_proper_superset_fxn; install_set_proper_superset_fxn; "SetProperSupersetFxn"; crate::relations::proper_superset::SetProperSupersetFxn; ["proper_superset"]);
+        $callback!(feature = "remove"; register_set_remove_fxn; install_set_remove_fxn; "SetRemoveFxn"; crate::modify::remove::SetRemoveFxn; ["remove"]);
+        $callback!(all(feature = "size", feature = "u64"); register_set_size_fxn; install_set_size_fxn; "SetSizeFxn"; crate::setdata::size::SetSizeFxn; ["size", "u64"]);
+        $callback!(feature = "subset"; register_set_subset_fxn; install_set_subset_fxn; "SetSubsetFxn"; crate::relations::subset::SetSubsetFxn; ["subset"]);
+        $callback!(feature = "superset"; register_set_superset_fxn; install_set_superset_fxn; "SetSupersetFxn"; crate::relations::superset::SetSupersetFxn; ["superset"]);
+        $callback!(feature = "symmetric_difference"; register_set_symmetric_difference_fxn; install_set_symmetric_difference_fxn; "SetSymDifferenceFxn"; crate::operations::symmetric_difference::SetSymDifferenceFxn; ["symmetric_difference"]);
+        $callback!(feature = "union"; register_set_union_fxn; install_set_union_fxn; "SetUnionFxn"; crate::operations::union::SetUnionFxn; ["union"]);
+    };
+}
+
+macro_rules! declare_set_runtime_factory {
+    ($cfg:meta; $registration:ident; $installer:ident; $name:literal; $factory:path; [$($feature:literal),* $(,)?]) => {
+        mech_core::declare_native_runtime_factory! {
+            cfg: $cfg,
+            registration: $registration,
+            installer: $installer,
+            name: $name,
+            factory: <$factory as MechFunctionFactory>::new,
+            package: "mech-set",
+            crate_name: "mech_set",
+            installer_path: concat!("mech_set::__mech_native::", stringify!($installer)),
+            cargo_features: [$($feature,)* "native-link", "runtime"],
+        }
+    };
+}
+
+for_each_set_runtime_factory!(declare_set_runtime_factory);
+
 /// Installs every concrete runtime factory linked by the enabled set features.
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    #[cfg(feature = "cartesian_product")]
-    builder.insert_runtime_factory(
-        "SetCartesianProductFxn",
-        <crate::operations::cartesian_product::SetCartesianProductFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "difference")]
-    builder.insert_runtime_factory(
-        "SetDifferenceFxn",
-        <crate::operations::difference::SetDifferenceFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "disjoint")]
-    builder.insert_runtime_factory(
-        "SetDisjointFxn",
-        <crate::relations::disjoint::SetDisjointFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "element_of")]
-    builder.insert_runtime_factory(
-        "SetElementOfFxn",
-        <crate::membership::element_of::SetElementOfFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "equals")]
-    builder.insert_runtime_factory(
-        "SetEqualsFxn",
-        <crate::relations::equals::SetEqualsFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "insert")]
-    builder.insert_runtime_factory(
-        "SetInsertFxn",
-        <crate::modify::insert::SetInsertFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "intersection")]
-    builder.insert_runtime_factory(
-        "SetIntersectionFxn",
-        <crate::operations::intersection::SetIntersectionFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "not_element_of")]
-    builder.insert_runtime_factory(
-        "SetNotElementOfFxn",
-        <crate::membership::not_element_of::SetNotElementOfFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "not_equals")]
-    builder.insert_runtime_factory(
-        "SetNotEqualsFxn",
-        <crate::relations::not_equals::SetNotEqualsFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "powerset")]
-    builder.insert_runtime_factory(
-        "SetPowersetFxn",
-        <crate::operations::powerset::SetPowersetFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "proper_subset")]
-    builder.insert_runtime_factory(
-        "SetProperSubsetFxn",
-        <crate::relations::proper_subset::SetProperSubsetFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "proper_superset")]
-    builder.insert_runtime_factory(
-        "SetProperSupersetFxn",
-        <crate::relations::proper_superset::SetProperSupersetFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "remove")]
-    builder.insert_runtime_factory(
-        "SetRemoveFxn",
-        <crate::modify::remove::SetRemoveFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(all(feature = "size", feature = "u64"))]
-    builder.insert_runtime_factory(
-        "SetSizeFxn",
-        <crate::setdata::size::SetSizeFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "subset")]
-    builder.insert_runtime_factory(
-        "SetSubsetFxn",
-        <crate::relations::subset::SetSubsetFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "superset")]
-    builder.insert_runtime_factory(
-        "SetSupersetFxn",
-        <crate::relations::superset::SetSupersetFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "symmetric_difference")]
-    builder.insert_runtime_factory(
-        "SetSymDifferenceFxn",
-        <crate::operations::symmetric_difference::SetSymDifferenceFxn as MechFunctionFactory>::new,
-    )?;
-    #[cfg(feature = "union")]
-    builder.insert_runtime_factory(
-        "SetUnionFxn",
-        <crate::operations::union::SetUnionFxn as MechFunctionFactory>::new,
-    )?;
+    macro_rules! register_set_runtime_factory {
+        ($cfg:meta; $registration:ident; $_installer:ident; $_name:literal; $_factory:path; [$($_feature:literal),* $(,)?]) => {
+            #[cfg($cfg)]
+            $registration(builder)?;
+        };
+    }
 
+    for_each_set_runtime_factory!(register_set_runtime_factory);
     Ok(())
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    macro_rules! export_set_runtime_factory {
+        ($cfg:meta; $_registration:ident; $installer:ident; $_name:literal; $_factory:path; [$($_feature:literal),* $(,)?]) => {
+            #[cfg($cfg)]
+            pub use super::$installer;
+        };
+    }
+
+    for_each_set_runtime_factory!(export_set_runtime_factory);
 }
 
 #[cfg(all(

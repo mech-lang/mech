@@ -91,7 +91,10 @@ fn canonical_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
 fn with_catalog_test_stack(test: impl FnOnce() + Send + 'static) {
     let test = std::thread::Builder::new()
         .name("stdlib-profile-contract".to_string())
-        .stack_size(1024 * 1024)
+        // Native-linkage registration now follows the complete owner-local
+        // factory surface.  Keep the contract test isolated from the small
+        // platform default thread stack while it constructs that catalog.
+        .stack_size(8 * 1024 * 1024)
         .spawn(test)
         .expect("profile contract thread must spawn");
     if let Err(payload) = test.join() {

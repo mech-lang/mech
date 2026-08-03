@@ -63,14 +63,36 @@ pub fn build_runtime_catalog() -> MResult<FunctionCatalog> {
     builder.build()
 }
 
-/// Builds the selected runtime catalog with native-linkage metadata enabled.
+/// Builds the selected catalog for native application planning.
 ///
-/// The executable ID/name surface is identical to [`build_runtime_catalog`];
-/// only the feature-gated metadata on each entry may differ.
+/// It begins with the frozen standard runtime surface and adds only
+/// compiler-emitted factories required to resolve native application
+/// bytecode. Those planning-only entries must not leak into
+/// [`build_runtime_catalog`].
 #[cfg(feature = "native-plan")]
 pub fn build_native_plan_catalog() -> MResult<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
-    install_runtime(&mut builder)?;
+    mech_engine::install_intrinsic_native_plan(&mut builder)?;
+
+    #[cfg(feature = "mech-math")]
+    mech_math::install_runtime(&mut builder)?;
+    #[cfg(feature = "mech-compare")]
+    mech_compare::install_runtime(&mut builder)?;
+    #[cfg(feature = "mech-logic")]
+    mech_logic::install_runtime(&mut builder)?;
+    #[cfg(feature = "mech-range")]
+    mech_range::install_runtime(&mut builder)?;
+    #[cfg(feature = "mech-matrix")]
+    mech_matrix::install_runtime(&mut builder)?;
+    #[cfg(feature = "mech-set")]
+    mech_set::install_runtime(&mut builder)?;
+    #[cfg(feature = "mech-string")]
+    mech_string::install_runtime(&mut builder)?;
+    #[cfg(feature = "mech-stats")]
+    mech_stats::install_runtime(&mut builder)?;
+    #[cfg(feature = "mech-combinatorics")]
+    mech_combinatorics::install_runtime(&mut builder)?;
+
     builder.build()
 }
 
@@ -98,7 +120,7 @@ pub fn runtime_catalog() -> Arc<FunctionCatalog> {
 
 /// Returns the selected runtime catalog with trusted native linkage metadata.
 ///
-/// Phase 1 intentionally permits entries without linkage metadata; native
+/// Source-only catalog entries intentionally omit linkage metadata; native
 /// planning rejects only an actually referenced entry whose metadata is absent.
 #[cfg(feature = "native-plan")]
 pub fn native_plan_catalog() -> Arc<FunctionCatalog> {
@@ -138,7 +160,10 @@ mod tests {
     fn runtime_and_source_catalogs_use_separate_caches() {
         let test = std::thread::Builder::new()
             .name("stdlib-catalog-cache-test".to_string())
-            .stack_size(1024 * 1024)
+            // The complete standard catalog contains thousands of factory
+            // declarations; construction recursively visits enough generic
+            // metadata that the platform default test stack is insufficient.
+            .stack_size(64 * 1024 * 1024)
             .spawn(|| {
                 let runtime = runtime_catalog();
                 let runtime_again = runtime_catalog();
@@ -161,7 +186,7 @@ mod tests {
 
     #[cfg(all(feature = "native-plan", feature = "standard_runtime"))]
     #[test]
-    fn runtime_and_native_plan_catalogs_have_identical_executable_surfaces() {
+    fn native_plan_catalog_adds_only_compiler_emitted_application_factories() {
         use mech_core::RuntimeFunctionId;
 
         let test = std::thread::Builder::new()
@@ -183,13 +208,30 @@ mod tests {
                 );
 
                 let native_plan = native_plan_catalog();
-                assert_eq!(native_plan.runtime_factory_count(), 9_019);
+                assert_eq!(native_plan.runtime_factory_count(), 9_021);
                 assert!(!Arc::ptr_eq(&runtime, &native_plan));
                 let native_plan_entries = native_plan
                     .runtime_entries()
                     .map(|entry| (entry.id, entry.name.clone()))
                     .collect::<Vec<_>>();
-                assert_eq!(runtime_entries, native_plan_entries);
+                assert_eq!(
+                    native_plan_entries
+                        .iter()
+                        .filter(|entry| !runtime_entries.contains(entry))
+                        .map(|(_, name)| name.as_str())
+                        .collect::<Vec<_>>(),
+                    [
+                        "HorizontalConcatenateFourArgs<f64>",
+                        "HorizontalConcatenateNArgs<f64>",
+                    ],
+                );
+                assert!(
+                    runtime
+                        .runtime_entry(RuntimeFunctionId::from_name(
+                            "HorizontalConcatenateFourArgs<f64>",
+                        ))
+                        .is_none()
+                );
                 let entry = native_plan
                     .runtime_entry(RuntimeFunctionId::from_name(
                         "HorizontalConcatenateRDN<f64>",
@@ -202,6 +244,18 @@ mod tests {
                     ))
                     .expect("native-plan catalog must include dynamic matrix construction");
                 assert!(entry.native_linkage.is_some());
+                for name in [
+                    "HorizontalConcatenateFourArgs<f64>",
+                    "HorizontalConcatenateNArgs<f64>",
+                ] {
+                    assert!(
+                        native_plan
+                            .runtime_entry(RuntimeFunctionId::from_name(name))
+                            .expect("native-plan catalog must include compiler-emitted horzcat")
+                            .native_linkage
+                            .is_some()
+                    );
+                }
             })
             .expect("native-plan catalog test thread must spawn");
 

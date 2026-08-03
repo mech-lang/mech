@@ -7,82 +7,63 @@ use std::sync::Arc;
 #[cfg(all(feature = "source", feature = "n_choose_k"))]
 use crate::CombinatoricsNChooseK;
 
-macro_rules! install_numeric_runtime_factories {
-    ($builder:expr, $factory:ident) => {{
-        #[cfg(feature = "u8")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<u8>"),
-            <crate::n_choose_k::$factory<u8> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "i8")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<i8>"),
-            <crate::n_choose_k::$factory<i8> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "u16")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<u16>"),
-            <crate::n_choose_k::$factory<u16> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "i16")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<i16>"),
-            <crate::n_choose_k::$factory<i16> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "u32")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<u32>"),
-            <crate::n_choose_k::$factory<u32> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "i32")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<i32>"),
-            <crate::n_choose_k::$factory<i32> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "u64")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<u64>"),
-            <crate::n_choose_k::$factory<u64> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "i64")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<i64>"),
-            <crate::n_choose_k::$factory<i64> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "u128")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<u128>"),
-            <crate::n_choose_k::$factory<u128> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "i128")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<i128>"),
-            <crate::n_choose_k::$factory<i128> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "f32")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<f32>"),
-            <crate::n_choose_k::$factory<f32> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "f64")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<f64>"),
-            <crate::n_choose_k::$factory<f64> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "r64")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<r64>"),
-            <crate::n_choose_k::$factory<mech_core::R64> as mech_core::MechFunctionFactory>::new,
-        )?;
-        #[cfg(feature = "c64")]
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<c64>"),
-            <crate::n_choose_k::$factory<mech_core::C64> as mech_core::MechFunctionFactory>::new,
-        )?;
-
-        Ok::<(), mech_core::MechError>(())
-    }};
+macro_rules! for_each_combinatorics_scalar {
+    ($callback:ident, $($context:tt)*) => {
+        $callback!($($context)*; feature = "u8"; u8; "u8"; u8);
+        $callback!($($context)*; feature = "i8"; i8; "i8"; i8);
+        $callback!($($context)*; feature = "u16"; u16; "u16"; u16);
+        $callback!($($context)*; feature = "i16"; i16; "i16"; i16);
+        $callback!($($context)*; feature = "u32"; u32; "u32"; u32);
+        $callback!($($context)*; feature = "i32"; i32; "i32"; i32);
+        $callback!($($context)*; feature = "u64"; u64; "u64"; u64);
+        $callback!($($context)*; feature = "i64"; i64; "i64"; i64);
+        $callback!($($context)*; feature = "u128"; u128; "u128"; u128);
+        $callback!($($context)*; feature = "i128"; i128; "i128"; i128);
+        $callback!($($context)*; feature = "f32"; f32; "f32"; f32);
+        $callback!($($context)*; feature = "f64"; f64; "f64"; f64);
+        $callback!($($context)*; feature = "r64"; mech_core::R64; "r64"; r64);
+        $callback!($($context)*; feature = "c64"; mech_core::C64; "c64"; c64);
+    };
 }
+
+macro_rules! declare_n_choose_k_scalar {
+    (; $cfg:meta; $scalar:ty; $scalar_name:literal; $scalar_token:ident) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: $cfg,
+                registration: [<register_n_choose_k_ $scalar_token>],
+                installer: [<install_n_choose_k_ $scalar_token>],
+                name: concat!("NChooseK<", $scalar_name, ">"),
+                factory: <crate::n_choose_k::NChooseK<$scalar> as mech_core::MechFunctionFactory>::new,
+                package: "mech-combinatorics",
+                crate_name: "mech_combinatorics",
+                installer_path: concat!("mech_combinatorics::__mech_native::", stringify!([<install_n_choose_k_ $scalar_token>])),
+                cargo_features: ["n_choose_k", $scalar_name, "native-link", "runtime"],
+            }
+        }
+    };
+}
+
+macro_rules! declare_n_choose_k_matrix {
+    (; $cfg:meta; $scalar:ty; $scalar_name:literal; $scalar_token:ident) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "matrix", $cfg),
+                registration: [<register_n_choose_k_matrix_ $scalar_token>],
+                installer: [<install_n_choose_k_matrix_ $scalar_token>],
+                name: concat!("NChooseKMatrix<", $scalar_name, ">"),
+                factory: <crate::n_choose_k::NChooseKMatrix<$scalar> as mech_core::MechFunctionFactory>::new,
+                package: "mech-combinatorics",
+                crate_name: "mech_combinatorics",
+                installer_path: concat!("mech_combinatorics::__mech_native::", stringify!([<install_n_choose_k_matrix_ $scalar_token>])),
+                cargo_features: ["matrix", "n_choose_k", $scalar_name, "native-link", "runtime"],
+            }
+        }
+    };
+}
+
+for_each_combinatorics_scalar!(declare_n_choose_k_scalar,);
+for_each_combinatorics_scalar!(declare_n_choose_k_matrix,);
 
 /// Installs the frozen named source-specializer surface for the combinatorics machine.
 #[cfg(feature = "source")]
@@ -105,13 +86,46 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 
 /// Installs the concrete scalar and matrix n-choose-k runtime factories.
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    #[cfg(feature = "n_choose_k")]
-    {
-        install_numeric_runtime_factories!(builder, NChooseK)?;
-        #[cfg(feature = "matrix")]
-        install_numeric_runtime_factories!(builder, NChooseKMatrix)?;
+    macro_rules! register_n_choose_k_scalar {
+        (; $cfg:meta; $_scalar:ty; $_scalar_name:literal; $scalar_token:ident) => {
+            #[cfg($cfg)]
+            mech_core::paste::paste! { [<register_n_choose_k_ $scalar_token>](builder)?; }
+        };
     }
+    macro_rules! register_n_choose_k_matrix {
+        (; $cfg:meta; $_scalar:ty; $_scalar_name:literal; $scalar_token:ident) => {
+            #[cfg(all(feature = "matrix", $cfg))]
+            mech_core::paste::paste! { [<register_n_choose_k_matrix_ $scalar_token>](builder)?; }
+        };
+    }
+
+    #[cfg(feature = "n_choose_k")]
+    for_each_combinatorics_scalar!(register_n_choose_k_scalar,);
+    #[cfg(all(feature = "n_choose_k", feature = "matrix"))]
+    for_each_combinatorics_scalar!(register_n_choose_k_matrix,);
     Ok(())
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    macro_rules! export_n_choose_k_scalar {
+        (; $cfg:meta; $_scalar:ty; $_scalar_name:literal; $scalar_token:ident) => {
+            #[cfg($cfg)]
+            mech_core::paste::paste! { pub use super::[<install_n_choose_k_ $scalar_token>]; }
+        };
+    }
+    macro_rules! export_n_choose_k_matrix {
+        (; $cfg:meta; $_scalar:ty; $_scalar_name:literal; $scalar_token:ident) => {
+            #[cfg(all(feature = "matrix", $cfg))]
+            mech_core::paste::paste! { pub use super::[<install_n_choose_k_matrix_ $scalar_token>]; }
+        };
+    }
+
+    #[cfg(feature = "n_choose_k")]
+    for_each_combinatorics_scalar!(export_n_choose_k_scalar,);
+    #[cfg(all(feature = "n_choose_k", feature = "matrix"))]
+    for_each_combinatorics_scalar!(export_n_choose_k_matrix,);
 }
 
 #[cfg(all(test, feature = "source", feature = "n_choose_k"))]

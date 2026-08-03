@@ -4,7 +4,9 @@
 
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
-pub mod __mech_native {}
+pub mod __mech_native {
+    pub use crate::catalog::__mech_native::*;
+}
 
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;

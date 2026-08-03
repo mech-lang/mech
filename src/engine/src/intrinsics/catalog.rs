@@ -139,6 +139,39 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 
 /// Installs the concrete bytecode factories owned by the engine fragment.
 /// Machine-owned factories are installed by their respective machine crates.
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "set",
+    registration: register_set_define,
+    installer: install_set_define,
+    name: "set/define",
+    factory: <ValueSet as MechFunctionFactory>::new,
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_set_define",
+    cargo_features: ["native-link", "runtime", "set"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "set_comprehensions",
+    registration: register_set_comprehension,
+    installer: install_set_comprehension,
+    name: "set/comprehension",
+    factory: <ValueSetComprehension as MechFunctionFactory>::new,
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_set_comprehension",
+    cargo_features: ["native-link", "runtime", "set_comprehensions"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "matrix_comprehensions",
+    registration: register_matrix_comprehension,
+    installer: install_matrix_comprehension,
+    name: "matrix/comprehension",
+    factory: <ValueMatrixComprehension as MechFunctionFactory>::new,
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_matrix_comprehension",
+    cargo_features: ["matrix_comprehensions", "native-link", "runtime"],
+}
+
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "access")]
     super::access::install_runtime(builder)?;
@@ -150,22 +183,26 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     super::define::install_runtime(builder)?;
 
     #[cfg(feature = "set")]
-    builder.insert_runtime_factory("set/define", <ValueSet as MechFunctionFactory>::new)?;
+    register_set_define(builder)?;
     #[cfg(feature = "set_comprehensions")]
-    builder.insert_runtime_factory(
-        "set/comprehension",
-        <ValueSetComprehension as MechFunctionFactory>::new,
-    )?;
+    register_set_comprehension(builder)?;
     #[cfg(feature = "matrix_comprehensions")]
-    builder.insert_runtime_factory(
-        "matrix/comprehension",
-        <ValueMatrixComprehension as MechFunctionFactory>::new,
-    )?;
+    register_matrix_comprehension(builder)?;
 
     #[cfg(feature = "matrix_horzcat")]
     super::horzcat::install_runtime(builder)?;
     #[cfg(feature = "matrix_vertcat")]
     super::vertcat::install_runtime(builder)?;
+
+    Ok(())
+}
+
+/// Installs engine-owned factories that are available only when constructing
+/// native application plans.
+#[cfg(feature = "native-plan")]
+pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "matrix_horzcat")]
+    crate::intrinsics::horzcat::install_native_plan_runtime(builder)?;
 
     Ok(())
 }

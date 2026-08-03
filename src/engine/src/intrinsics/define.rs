@@ -159,7 +159,7 @@ mech_core::declare_native_runtime_factory! {
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_variable_define_f64",
 
-    cargo_features: [
+    cargo_features: &[
         "bool",
         "f64",
         "native-link",
@@ -214,6 +214,672 @@ impl_variable_define_fxn!(MechAtom);
 #[cfg(feature = "enum")]
 impl_variable_define_fxn!(MechEnum);
 
+macro_rules! declare_variable_define_scalar_native {
+    ($feature:literal, $kind:ident, [$($cargo_feature:literal),+ $(,)?]) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "variable_define", feature = $feature),
+                registration: [<register_variable_define_ $kind:lower>],
+                installer: [<install_variable_define_ $kind:lower>],
+                name: stringify!([<VariableDefine $kind:camel>]),
+                factory: <[<VariableDefine $kind:camel>] as MechFunctionFactory>::new,
+                package: "mech-engine",
+                crate_name: "mech_engine",
+                installer_path: concat!(
+                    "mech_engine::__mech_native::install_variable_define_",
+                    stringify!([<$kind:lower>]),
+                ),
+                cargo_features: [$($cargo_feature),+],
+            }
+        }
+    };
+}
+
+declare_variable_define_scalar_native!(
+    "f32",
+    f32,
+    [
+        "bool",
+        "f32",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "u8",
+    u8,
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "u8",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "u16",
+    u16,
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "u16",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "u32",
+    u32,
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "u32",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "u64",
+    u64,
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "u64",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "u128",
+    u128,
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "u128",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "i8",
+    i8,
+    [
+        "bool",
+        "i8",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "i16",
+    i16,
+    [
+        "bool",
+        "i16",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "i32",
+    i32,
+    [
+        "bool",
+        "i32",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "i64",
+    i64,
+    [
+        "bool",
+        "i64",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "i128",
+    i128,
+    [
+        "bool",
+        "i128",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "r64",
+    R64,
+    [
+        "bool",
+        "native-link",
+        "r64",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "c64",
+    C64,
+    [
+        "bool",
+        "c64",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "bool",
+    bool,
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "string",
+    String,
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "table",
+    MechTable,
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "table",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "set",
+    MechSet,
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "set",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "tuple",
+    MechTuple,
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "tuple",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "record",
+    MechRecord,
+    [
+        "bool",
+        "native-link",
+        "record",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "map",
+    MechMap,
+    [
+        "bool",
+        "map",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "atom",
+    MechAtom,
+    [
+        "atom",
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_scalar_native!(
+    "enum",
+    MechEnum,
+    [
+        "bool",
+        "enum",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    #[cfg(feature = "variable_define")]
+    pub use super::install_variable_define_empty;
+
+    macro_rules! export_variable_define_scalar_native {
+        ($feature:literal, $kind:ident) => {
+            #[cfg(all(feature = "variable_define", feature = $feature))]
+            paste::paste! { pub use super::[<install_variable_define_ $kind:lower>]; }
+        };
+    }
+    export_variable_define_scalar_native!("f32", f32);
+    export_variable_define_scalar_native!("u8", u8);
+    export_variable_define_scalar_native!("u16", u16);
+    export_variable_define_scalar_native!("u32", u32);
+    export_variable_define_scalar_native!("u64", u64);
+    export_variable_define_scalar_native!("u128", u128);
+    export_variable_define_scalar_native!("i8", i8);
+    export_variable_define_scalar_native!("i16", i16);
+    export_variable_define_scalar_native!("i32", i32);
+    export_variable_define_scalar_native!("i64", i64);
+    export_variable_define_scalar_native!("i128", i128);
+    export_variable_define_scalar_native!("r64", R64);
+    export_variable_define_scalar_native!("c64", C64);
+    export_variable_define_scalar_native!("bool", bool);
+    export_variable_define_scalar_native!("string", String);
+    export_variable_define_scalar_native!("table", MechTable);
+    export_variable_define_scalar_native!("set", MechSet);
+    export_variable_define_scalar_native!("tuple", MechTuple);
+    export_variable_define_scalar_native!("record", MechRecord);
+    export_variable_define_scalar_native!("map", MechMap);
+    export_variable_define_scalar_native!("atom", MechAtom);
+    export_variable_define_scalar_native!("enum", MechEnum);
+}
+
+macro_rules! for_each_variable_define_matrix_shape {
+    ($callback:path, $context:tt) => {
+        #[cfg(feature = "matrix1")]
+        $callback!($context, Matrix1, "matrix1");
+        #[cfg(feature = "matrix2")]
+        $callback!($context, Matrix2, "matrix2");
+        #[cfg(feature = "matrix2x3")]
+        $callback!($context, Matrix2x3, "matrix2x3");
+        #[cfg(feature = "matrix3x2")]
+        $callback!($context, Matrix3x2, "matrix3x2");
+        #[cfg(feature = "matrix3")]
+        $callback!($context, Matrix3, "matrix3");
+        #[cfg(feature = "matrix4")]
+        $callback!($context, Matrix4, "matrix4");
+        #[cfg(feature = "matrixd")]
+        $callback!($context, DMatrix, "matrixd");
+        #[cfg(feature = "vector2")]
+        $callback!($context, Vector2, "vector2");
+        #[cfg(feature = "vector3")]
+        $callback!($context, Vector3, "vector3");
+        #[cfg(feature = "vector4")]
+        $callback!($context, Vector4, "vector4");
+        #[cfg(feature = "vectord")]
+        $callback!($context, DVector, "vectord");
+        #[cfg(feature = "row_vector2")]
+        $callback!($context, RowVector2, "row_vector2");
+        #[cfg(feature = "row_vector3")]
+        $callback!($context, RowVector3, "row_vector3");
+        #[cfg(feature = "row_vector4")]
+        $callback!($context, RowVector4, "row_vector4");
+        #[cfg(feature = "row_vectord")]
+        $callback!($context, RowDVector, "row_vectord");
+    };
+}
+
+macro_rules! declare_variable_define_matrix_native {
+    (
+        ($value_feature:literal; $kind:ty; $kind_token:ident; $kind_name:literal; [$($cargo_feature:literal),+]),
+        $shape:ident,
+        $shape_feature:literal
+    ) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(
+                    feature = "variable_define",
+                    feature = $value_feature,
+                    feature = $shape_feature
+                ),
+                registration: [<register_variable_define_matrix_ $kind_token:lower _ $shape:lower>],
+                installer: [<install_variable_define_matrix_ $kind_token:lower _ $shape:lower>],
+                name: concat!("VariableDefineMatrix<", $kind_name, stringify!($shape), ">"),
+                factory: VariableDefineMatrix::<$kind, $shape<$kind>>::new,
+                package: "mech-engine",
+                crate_name: "mech_engine",
+                installer_path: concat!(
+                    "mech_engine::__mech_native::install_variable_define_matrix_",
+                    stringify!([<$kind_token:lower>]), "_", stringify!([<$shape:lower>]),
+                ),
+                cargo_features: [$($cargo_feature,)+ $shape_feature],
+            }
+        }
+    };
+}
+
+macro_rules! declare_variable_define_matrix_for_type {
+    ($value_feature:literal, $kind:ty, $kind_token:ident, $kind_name:literal, [$($cargo_feature:literal),+ $(,)?]) => {
+        for_each_variable_define_matrix_shape!(
+            declare_variable_define_matrix_native,
+            ($value_feature; $kind; $kind_token; $kind_name; [$($cargo_feature),+])
+        );
+    };
+}
+
+declare_variable_define_matrix_for_type!(
+    "u8",
+    u8,
+    u8,
+    "u8",
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "u8",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "u16",
+    u16,
+    u16,
+    "u16",
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "u16",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "u32",
+    u32,
+    u32,
+    "u32",
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "u32",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "u64",
+    u64,
+    u64,
+    "u64",
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "u64",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "u128",
+    u128,
+    u128,
+    "u128",
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "u128",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "i8",
+    i8,
+    i8,
+    "i8",
+    [
+        "bool",
+        "i8",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "i16",
+    i16,
+    i16,
+    "i16",
+    [
+        "bool",
+        "i16",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "i32",
+    i32,
+    i32,
+    "i32",
+    [
+        "bool",
+        "i32",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "i64",
+    i64,
+    i64,
+    "i64",
+    [
+        "bool",
+        "i64",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "i128",
+    i128,
+    i128,
+    "i128",
+    [
+        "bool",
+        "i128",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "f32",
+    f32,
+    f32,
+    "f32",
+    [
+        "bool",
+        "f32",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "f64",
+    f64,
+    f64,
+    "f64",
+    [
+        "bool",
+        "f64",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "r64",
+    R64,
+    R64,
+    "rational",
+    [
+        "bool",
+        "native-link",
+        "r64",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "c64",
+    C64,
+    C64,
+    "complex",
+    [
+        "bool",
+        "c64",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "bool",
+    bool,
+    bool,
+    "bool",
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+declare_variable_define_matrix_for_type!(
+    "string",
+    String,
+    String,
+    "string",
+    [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define"
+    ]
+);
+
+macro_rules! register_variable_define_matrix_native {
+    (
+        ($builder:ident; $kind_token:ident),
+        $shape:ident,
+        $_shape_feature:literal
+    ) => {
+        paste! {
+            [<register_variable_define_matrix_ $kind_token:lower _ $shape:lower>]($builder)?;
+        }
+    };
+}
+
+macro_rules! export_variable_define_matrix_native {
+    (($kind_token:ident), $shape:ident, $_shape_feature:literal) => {
+        paste::paste! {
+            pub use super::[<install_variable_define_matrix_ $kind_token:lower _ $shape:lower>];
+        }
+    };
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native_matrix {
+    macro_rules! export_variable_define_matrix_for_type {
+        ($feature:literal, $kind_token:ident) => {
+            #[cfg(all(feature = "variable_define", feature = $feature))]
+            for_each_variable_define_matrix_shape!(
+                export_variable_define_matrix_native,
+                ($kind_token)
+            );
+        };
+    }
+    export_variable_define_matrix_for_type!("u8", u8);
+    export_variable_define_matrix_for_type!("u16", u16);
+    export_variable_define_matrix_for_type!("u32", u32);
+    export_variable_define_matrix_for_type!("u64", u64);
+    export_variable_define_matrix_for_type!("u128", u128);
+    export_variable_define_matrix_for_type!("i8", i8);
+    export_variable_define_matrix_for_type!("i16", i16);
+    export_variable_define_matrix_for_type!("i32", i32);
+    export_variable_define_matrix_for_type!("i64", i64);
+    export_variable_define_matrix_for_type!("i128", i128);
+    export_variable_define_matrix_for_type!("f32", f32);
+    export_variable_define_matrix_for_type!("f64", f64);
+    export_variable_define_matrix_for_type!("r64", R64);
+    export_variable_define_matrix_for_type!("c64", C64);
+    export_variable_define_matrix_for_type!("bool", bool);
+    export_variable_define_matrix_for_type!("string", String);
+}
+
 #[derive(Debug, Clone)]
 pub struct VariableDefineEmpty {
     id: u64,
@@ -245,6 +911,24 @@ fn variable_define_empty_factory(args: FunctionArgs) -> MResult<Box<dyn MechFunc
         )
         .with_compiler_loc()),
     }
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "variable_define",
+    registration: register_variable_define_empty,
+    installer: install_variable_define_empty,
+    name: "VariableDefineEmpty",
+    factory: variable_define_empty_factory,
+    package: "mech-engine",
+    crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_variable_define_empty",
+    cargo_features: [
+        "bool",
+        "native-link",
+        "runtime",
+        "string",
+        "variable_define",
+    ],
 }
 impl MechFunctionImpl for VariableDefineEmpty {
     fn solve(&self) {}
@@ -520,64 +1204,16 @@ fn impl_var_define_fxn(
 macro_rules! install_variable_define_scalar_runtime {
     ($builder:expr, $kind:ident) => {
         paste! {
-            $builder.insert_runtime_factory(
-                stringify!([<VariableDefine $kind:camel>]),
-                [<VariableDefine $kind:camel>]::new,
-            )?;
+            [<register_variable_define_ $kind:lower>]($builder)?;
         }
     };
 }
 
-macro_rules! install_variable_define_matrix_shape {
-    ($builder:expr, $kind:ty, $kind_name:literal, $shape:ident, $shape_feature:literal) => {
-        #[cfg(feature = $shape_feature)]
-        $builder.insert_runtime_factory(
-            concat!("VariableDefineMatrix<", $kind_name, stringify!($shape), ">"),
-            VariableDefineMatrix::<$kind, $shape<$kind>>::new,
-        )?;
-    };
-}
-
 macro_rules! install_variable_define_matrix_runtime {
-    ($builder:expr, $kind:ty, $kind_name:literal) => {
-        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix1, "matrix1");
-        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix2, "matrix2");
-        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix2x3, "matrix2x3");
-        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix3x2, "matrix3x2");
-        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix3, "matrix3");
-        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Matrix4, "matrix4");
-        install_variable_define_matrix_shape!($builder, $kind, $kind_name, DMatrix, "matrixd");
-        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Vector2, "vector2");
-        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Vector3, "vector3");
-        install_variable_define_matrix_shape!($builder, $kind, $kind_name, Vector4, "vector4");
-        install_variable_define_matrix_shape!($builder, $kind, $kind_name, DVector, "vectord");
-        install_variable_define_matrix_shape!(
-            $builder,
-            $kind,
-            $kind_name,
-            RowVector2,
-            "row_vector2"
-        );
-        install_variable_define_matrix_shape!(
-            $builder,
-            $kind,
-            $kind_name,
-            RowVector3,
-            "row_vector3"
-        );
-        install_variable_define_matrix_shape!(
-            $builder,
-            $kind,
-            $kind_name,
-            RowVector4,
-            "row_vector4"
-        );
-        install_variable_define_matrix_shape!(
-            $builder,
-            $kind,
-            $kind_name,
-            RowDVector,
-            "row_vectord"
+    ($builder:ident, $kind_token:ident) => {
+        for_each_variable_define_matrix_shape!(
+            register_variable_define_matrix_native,
+            ($builder; $kind_token)
         );
     };
 }
@@ -589,7 +1225,7 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
             {
                 install_variable_define_scalar_runtime!(builder, $kind_token);
                 #[cfg(feature = "matrix")]
-                install_variable_define_matrix_runtime!(builder, $kind, $kind_name);
+                install_variable_define_matrix_runtime!(builder, $kind_token);
             }
         };
     }
@@ -609,17 +1245,17 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     {
         register_variable_define_f64(builder)?;
         #[cfg(feature = "matrix")]
-        install_variable_define_matrix_runtime!(builder, f64, "f64");
+        install_variable_define_matrix_runtime!(builder, f64);
     }
     #[cfg(feature = "r64")]
     install_variable_define_scalar_runtime!(builder, R64);
     #[cfg(all(feature = "matrix", feature = "rational"))]
-    install_variable_define_matrix_runtime!(builder, R64, "rational");
+    install_variable_define_matrix_runtime!(builder, R64);
 
     #[cfg(feature = "c64")]
     install_variable_define_scalar_runtime!(builder, C64);
     #[cfg(all(feature = "matrix", feature = "complex"))]
-    install_variable_define_matrix_runtime!(builder, C64, "complex");
+    install_variable_define_matrix_runtime!(builder, C64);
 
     install_kind!("bool", bool, bool, "bool");
     install_kind!("string", String, String, "string");
@@ -639,7 +1275,7 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     #[cfg(feature = "enum")]
     install_variable_define_scalar_runtime!(builder, MechEnum);
 
-    builder.insert_runtime_factory("VariableDefineEmpty", variable_define_empty_factory)?;
+    register_variable_define_empty(builder)?;
     Ok(())
 }
 

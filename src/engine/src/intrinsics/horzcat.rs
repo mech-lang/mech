@@ -20,12 +20,12 @@ macro_rules! horizontal_concatenate {
       {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
-            FunctionArgs::Unary(out, _arg0) => {
+            FunctionArgs::Nullary(out) => {
               let out: Ref<[<RowVector $vec_size>]<T>> = unsafe { out.as_unchecked() }.clone();
               Ok(Box::new(Self { out }))
             },
             _ => Err(MechError::new(
-                IncorrectNumberOfArguments { expected: 1, found: args.len() },
+                IncorrectNumberOfArguments { expected: 0, found: args.len() },
                 None
               ).with_compiler_loc()
             ),
@@ -706,13 +706,13 @@ where
 {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Unary(out, _arg0) => {
+            FunctionArgs::Nullary(out) => {
                 let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
                 IncorrectNumberOfArguments {
-                    expected: 1,
+                    expected: 0,
                     found: args.len(),
                 },
                 None,
@@ -881,7 +881,7 @@ mech_core::declare_native_runtime_factory! {
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_horizontal_concatenate_rdn_f64",
 
-    cargo_features: [
+    cargo_features: &[
         "bool",
         "f64",
         "matrix_horzcat",
@@ -1055,6 +1055,20 @@ mod compiler_tests {
           Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
             if arguments == &vec![matrix_register, matrix_register, scalar_register]
         ));
+    }
+
+    #[test]
+    fn horizontal_concatenate_rd_accepts_its_nullary_bytecode_instruction() {
+        let out = Ref::new(RowDVector::from_element(1, 7.0));
+        let function = HorizontalConcatenateRD { out: out.clone() };
+        let mut context = RecordingBytecodeCompilerContext::default();
+        function.compile(&mut context).unwrap();
+        assert!(matches!(
+            context.instructions.last(),
+            Some(BytecodeInstruction::RuntimeNullary { .. })
+        ));
+
+        HorizontalConcatenateRD::<f64>::new(FunctionArgs::Nullary(out.to_value())).unwrap();
     }
 }
 
@@ -1285,7 +1299,7 @@ mech_core::declare_native_runtime_factory! {
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_horizontal_concatenate_s2_f64",
 
-    cargo_features: [
+    cargo_features: &[
         "bool",
         "f64",
         "matrix_horzcat",
@@ -1487,13 +1501,13 @@ where
 {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Unary(out, _arg0) => {
+            FunctionArgs::Nullary(out) => {
                 let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
                 IncorrectNumberOfArguments {
-                    expected: 1,
+                    expected: 0,
                     found: args.len(),
                 },
                 None,
@@ -1549,13 +1563,13 @@ macro_rules! horzcat_single {
         {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
-                    FunctionArgs::Unary(out, _arg0) => {
+                    FunctionArgs::Nullary(out) => {
                         let out: Ref<$shape<T>> = unsafe { out.as_unchecked() }.clone();
                         Ok(Box::new(Self { out }))
                     }
                     _ => Err(MechError::new(
                         IncorrectNumberOfArguments {
-                            expected: 1,
+                            expected: 0,
                             found: args.len(),
                         },
                         None,
@@ -5845,78 +5859,220 @@ pub(crate) fn impl_horzcat_fxn(arguments: &[Value]) -> MResult<Box<dyn MechFunct
 }
 
 macro_rules! install_horzcat_factories {
-    ($builder:expr, $factory:ident) => {{
-        #[inline(never)]
-        fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-            mech_core::install_typed_runtime_factories!(
-                builder,
-                $factory;
-                ("bool", bool, "bool"),
-                ("string", String, "string"),
-                ("u8", u8, "u8"),
-                ("u16", u16, "u16"),
-                ("u32", u32, "u32"),
-                ("u64", u64, "u64"),
-                ("u128", u128, "u128"),
-                ("i8", i8, "i8"),
-                ("i16", i16, "i16"),
-                ("i32", i32, "i32"),
-                ("i64", i64, "i64"),
-                ("i128", i128, "i128"),
-                ("f32", f32, "f32"),
-                ("f64", f64, "f64"),
-                ("c64", C64, "c64"),
-                ("r64", R64, "r64"),
-            )?;
-            Ok(())
+    ($builder:ident, $factory:ident) => {
+        install_horzcat_linked_factories!($builder, $factory)?;
+    };
+}
+
+macro_rules! for_each_horzcat_scalar {
+    ($callback:ident, ($($context:tt)*)) => {
+        #[cfg(feature = "bool")] $callback!($($context)*; bool, bool, "bool", "bool");
+        #[cfg(feature = "string")] $callback!($($context)*; string, String, "string", "string");
+        #[cfg(feature = "u8")] $callback!($($context)*; u8, u8, "u8", "u8");
+        #[cfg(feature = "u16")] $callback!($($context)*; u16, u16, "u16", "u16");
+        #[cfg(feature = "u32")] $callback!($($context)*; u32, u32, "u32", "u32");
+        #[cfg(feature = "u64")] $callback!($($context)*; u64, u64, "u64", "u64");
+        #[cfg(feature = "u128")] $callback!($($context)*; u128, u128, "u128", "u128");
+        #[cfg(feature = "i8")] $callback!($($context)*; i8, i8, "i8", "i8");
+        #[cfg(feature = "i16")] $callback!($($context)*; i16, i16, "i16", "i16");
+        #[cfg(feature = "i32")] $callback!($($context)*; i32, i32, "i32", "i32");
+        #[cfg(feature = "i64")] $callback!($($context)*; i64, i64, "i64", "i64");
+        #[cfg(feature = "i128")] $callback!($($context)*; i128, i128, "i128", "i128");
+        #[cfg(feature = "f32")] $callback!($($context)*; f32, f32, "f32", "f32");
+        #[cfg(feature = "f64")] $callback!($($context)*; f64, f64, "f64", "f64");
+        #[cfg(feature = "c64")] $callback!($($context)*; c64, C64, "c64", "c64");
+        #[cfg(feature = "r64")] $callback!($($context)*; r64, R64, "r64", "r64");
+    };
+}
+
+macro_rules! declare_horzcat_scalar {
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "matrix_horzcat", feature = $cargo, $(feature = $feature),+),
+                registration: [<register_ $factory:snake _ $token>],
+                installer: [<install_ $factory:snake _ $token>],
+                name: concat!(stringify!($factory), "<", $name, ">"),
+                factory: <$factory<$scalar> as MechFunctionFactory>::new,
+                package: "mech-engine", crate_name: "mech_engine",
+                installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token>])),
+                cargo_features: ["matrix_horzcat", "native-link", "runtime", $cargo, $($feature),+],
+            }
         }
-        install($builder)?;
+    };
+}
+
+macro_rules! declare_horzcat_family {
+    ($factory:ident, [$($feature:literal),+]) => {
+        for_each_horzcat_scalar!(declare_horzcat_scalar, ($factory, [$($feature),+]));
+    };
+}
+
+macro_rules! register_horzcat_scalar {
+    ($builder:ident, $factory:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
+        paste! { [<register_ $factory:snake _ $token>]($builder)?; }
+    };
+}
+
+macro_rules! install_horzcat_linked_factories {
+    ($builder:ident, $factory:ident) => {{
+        for_each_horzcat_scalar!(register_horzcat_scalar, ($builder, $factory));
+        Ok::<(), MechError>(())
     }};
 }
 
-macro_rules! install_horzcat_factories_except_f64 {
-    ($builder:expr, $factory:ident) => {{
-        mech_core::install_typed_runtime_factories!(
-            $builder,
-            $factory;
-            ("bool", bool, "bool"),
-            ("string", String, "string"),
-            ("u8", u8, "u8"),
-            ("u16", u16, "u16"),
-            ("u32", u32, "u32"),
-            ("u64", u64, "u64"),
-            ("u128", u128, "u128"),
-            ("i8", i8, "i8"),
-            ("i16", i16, "i16"),
-            ("i32", i32, "i32"),
-            ("i64", i64, "i64"),
-            ("i128", i128, "i128"),
-            ("f32", f32, "f32"),
-            ("c64", C64, "c64"),
-            ("r64", R64, "r64"),
-        )?;
+macro_rules! register_horzcat_scalar_except_f64 {
+    ($builder:ident, $factory:ident; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($builder:ident, $factory:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
+        paste! { [<register_ $factory:snake _ $token>]($builder)?; }
+    };
+}
+
+macro_rules! install_horzcat_linked_factories_except_f64 {
+    ($builder:ident, $factory:ident) => {{
+        for_each_horzcat_scalar!(register_horzcat_scalar_except_f64, ($builder, $factory));
+        Ok::<(), MechError>(())
     }};
+}
+
+declare_horzcat_family!(HorizontalConcatenateTwoArgs, ["matrixd"]);
+declare_horzcat_family!(HorizontalConcatenateThreeArgs, ["matrixd"]);
+declare_horzcat_family!(HorizontalConcatenateS1D, ["matrixd"]);
+declare_horzcat_family!(HorizontalConcatenateMD, ["matrixd"]);
+declare_horzcat_family!(HorizontalConcatenateRD, ["row_vectord"]);
+declare_horzcat_family!(HorizontalConcatenateRDN, ["row_vectord"]);
+declare_horzcat_family!(HorizontalConcatenateSD, ["row_vectord"]);
+declare_horzcat_family!(HorizontalConcatenateVD, ["vectord"]);
+
+// Fixed-shape constructors use the same concrete scalar traversal as the
+// dynamic families above.  Keep their feature requirements beside each
+// factory family so a native plan selects exactly the storage needed by the
+// retained concrete implementation.
+macro_rules! for_each_horzcat_legacy_family {
+    ($callback:ident) => {
+        #[cfg(feature = "matrix1")] $callback!(normal; HorizontalConcatenateS1; ["matrix1"]);
+        #[cfg(feature = "matrix1")] $callback!(normal; HorizontalConcatenateM1; ["matrix1"]);
+        #[cfg(feature = "matrix2")] $callback!(normal; HorizontalConcatenateM2; ["matrix2"]);
+        #[cfg(feature = "matrix3")] $callback!(normal; HorizontalConcatenateM3; ["matrix3"]);
+        #[cfg(feature = "matrix4")] $callback!(normal; HorizontalConcatenateM4; ["matrix4"]);
+        #[cfg(feature = "matrix2x3")] $callback!(normal; HorizontalConcatenateM2x3; ["matrix2x3"]);
+        #[cfg(feature = "matrix3x2")] $callback!(normal; HorizontalConcatenateM3x2; ["matrix3x2"]);
+        #[cfg(feature = "vector2")] $callback!(normal; HorizontalConcatenateV2; ["vector2"]);
+        #[cfg(feature = "vector3")] $callback!(normal; HorizontalConcatenateV3; ["vector3"]);
+        #[cfg(feature = "vector4")] $callback!(normal; HorizontalConcatenateV4; ["vector4"]);
+        #[cfg(feature = "row_vector2")] $callback!(except_f64; HorizontalConcatenateS2; ["row_vector2"]);
+        #[cfg(feature = "row_vector2")] $callback!(normal; HorizontalConcatenateR2; ["row_vector2"]);
+        #[cfg(feature = "row_vector3")] $callback!(normal; HorizontalConcatenateS3; ["row_vector3"]);
+        #[cfg(feature = "row_vector3")] $callback!(normal; HorizontalConcatenateR3; ["row_vector3"]);
+        #[cfg(feature = "row_vector4")] $callback!(normal; HorizontalConcatenateS4; ["row_vector4"]);
+        #[cfg(feature = "row_vector4")] $callback!(normal; HorizontalConcatenateR4; ["row_vector4"]);
+        #[cfg(all(feature = "row_vector2", feature = "row_vector3"))] $callback!(normal; HorizontalConcatenateSR2; ["row_vector2", "row_vector3"]);
+        #[cfg(all(feature = "row_vector2", feature = "row_vector3"))] $callback!(normal; HorizontalConcatenateR2S; ["row_vector2", "row_vector3"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2"))] $callback!(normal; HorizontalConcatenateSM1; ["matrix1", "row_vector2"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2"))] $callback!(normal; HorizontalConcatenateM1S; ["matrix1", "row_vector2"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2"))] $callback!(normal; HorizontalConcatenateM1M1; ["matrix1", "row_vector2"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector3"))] $callback!(normal; HorizontalConcatenateSSM1; ["matrix1", "row_vector3"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector3"))] $callback!(normal; HorizontalConcatenateSM1S; ["matrix1", "row_vector3"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector3"))] $callback!(normal; HorizontalConcatenateM1SS; ["matrix1", "row_vector3"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector3"))] $callback!(normal; HorizontalConcatenateM1M1S; ["matrix1", "row_vector3"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector3"))] $callback!(normal; HorizontalConcatenateM1SM1; ["matrix1", "row_vector3"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector3"))] $callback!(normal; HorizontalConcatenateSM1M1; ["matrix1", "row_vector3"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector3"))] $callback!(normal; HorizontalConcatenateM1M1M1; ["matrix1", "row_vector3"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSSSM1; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSSM1S; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSM1SS; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1SSS; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSM1SM1; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSSM1M1; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1M1SS; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSM1M1S; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1M1M1S; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1SSM1; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1SM1S; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSM1M1M1; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1SM1M1; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1M1SM1; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1M1M1M1; ["matrix1", "row_vector4"]);
+        #[cfg(all(feature = "row_vector3", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSR3; ["row_vector3", "row_vector4"]);
+        #[cfg(all(feature = "row_vector3", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateR3S; ["row_vector3", "row_vector4"]);
+        #[cfg(all(feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSSR2; ["row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSR2S; ["row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateR2SS; ["row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateR2R2; ["row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1R3; ["matrix1", "row_vector3", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateR3M1; ["matrix1", "row_vector3", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSM1R2; ["matrix1", "row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1SR2; ["matrix1", "row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1R2S; ["matrix1", "row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateR2M1S; ["matrix1", "row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateR2SM1; ["matrix1", "row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateSR2M1; ["matrix1", "row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1M1R2; ["matrix1", "row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateM1R2M1; ["matrix1", "row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))] $callback!(normal; HorizontalConcatenateR2M1M1; ["matrix1", "row_vector2", "row_vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector3"))] $callback!(normal; HorizontalConcatenateM1R2; ["matrix1", "row_vector2", "row_vector3"]);
+        #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector3"))] $callback!(normal; HorizontalConcatenateR2M1; ["matrix1", "row_vector2", "row_vector3"]);
+        #[cfg(all(feature = "vector2", feature = "matrix2"))] $callback!(normal; HorizontalConcatenateV2V2; ["vector2", "matrix2"]);
+        #[cfg(all(feature = "vector3", feature = "matrix3x2"))] $callback!(normal; HorizontalConcatenateV3V3; ["vector3", "matrix3x2"]);
+        #[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))] $callback!(normal; HorizontalConcatenateV2M2; ["vector2", "matrix2", "matrix2x3"]);
+        #[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))] $callback!(normal; HorizontalConcatenateM2V2; ["vector2", "matrix2", "matrix2x3"]);
+        #[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))] $callback!(normal; HorizontalConcatenateM3x2V3; ["vector3", "matrix3x2", "matrix3"]);
+        #[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))] $callback!(normal; HorizontalConcatenateV3M3x2; ["vector3", "matrix3x2", "matrix3"]);
+        #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))] $callback!(normal; HorizontalConcatenateV4MD; ["matrixd", "matrix4", "vector4"]);
+        #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))] $callback!(normal; HorizontalConcatenateMDV4; ["matrixd", "matrix4", "vector4"]);
+        #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))] $callback!(normal; HorizontalConcatenateV4V4MD; ["matrixd", "matrix4", "vector4"]);
+        #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))] $callback!(normal; HorizontalConcatenateV4MDV4; ["matrixd", "matrix4", "vector4"]);
+        #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))] $callback!(normal; HorizontalConcatenateMDV4V4; ["matrixd", "matrix4", "vector4"]);
+        #[cfg(all(feature = "matrixd", feature = "matrix4"))] $callback!(normal; HorizontalConcatenateMDMD; ["matrixd", "matrix4"]);
+        #[cfg(all(feature = "vector2", feature = "matrix2x3"))] $callback!(normal; HorizontalConcatenateV2V2V2; ["vector2", "matrix2x3"]);
+        #[cfg(all(feature = "vector3", feature = "matrix3"))] $callback!(normal; HorizontalConcatenateV3V3V3; ["vector3", "matrix3"]);
+        #[cfg(all(feature = "matrix4", feature = "vector4"))] $callback!(normal; HorizontalConcatenateV4V4V4V4; ["matrix4", "vector4"]);
+    };
+}
+
+macro_rules! declare_horzcat_scalar_except_f64 {
+    ($factory:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        declare_horzcat_scalar!($factory, [$($feature),+]; $token, $scalar, $name, $cargo);
+    };
+}
+
+macro_rules! declare_horzcat_legacy_family {
+    (normal; $factory:ident; [$($feature:literal),+]) => {
+        declare_horzcat_family!($factory, [$($feature),+]);
+    };
+    (except_f64; $factory:ident; [$($feature:literal),+]) => {
+        for_each_horzcat_scalar!(declare_horzcat_scalar_except_f64, ($factory, [$($feature),+]));
+    };
+}
+
+for_each_horzcat_legacy_family!(declare_horzcat_legacy_family);
+
+macro_rules! install_horzcat_factories_except_f64 {
+    ($builder:ident, $factory:ident) => {
+        install_horzcat_linked_factories_except_f64!($builder, $factory)?;
+    };
 }
 
 /// Installs every enabled legacy runtime factory emitted by this module.
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrixd")]
     {
-        install_horzcat_factories!(builder, HorizontalConcatenateTwoArgs);
-        install_horzcat_factories!(builder, HorizontalConcatenateThreeArgs);
-        install_horzcat_factories!(builder, HorizontalConcatenateS1D);
-        install_horzcat_factories!(builder, HorizontalConcatenateMD);
+        install_horzcat_linked_factories!(builder, HorizontalConcatenateTwoArgs)?;
+        install_horzcat_linked_factories!(builder, HorizontalConcatenateThreeArgs)?;
+        install_horzcat_linked_factories!(builder, HorizontalConcatenateS1D)?;
+        install_horzcat_linked_factories!(builder, HorizontalConcatenateMD)?;
     }
     #[cfg(feature = "row_vectord")]
     {
-        install_horzcat_factories!(builder, HorizontalConcatenateRD);
+        install_horzcat_linked_factories!(builder, HorizontalConcatenateRD)?;
         #[cfg(feature = "f64")]
         register_horizontal_concatenate_rdn_f64(builder)?;
-        install_horzcat_factories_except_f64!(builder, HorizontalConcatenateRDN);
-        install_horzcat_factories!(builder, HorizontalConcatenateSD);
+        install_horzcat_linked_factories_except_f64!(builder, HorizontalConcatenateRDN)?;
+        install_horzcat_linked_factories!(builder, HorizontalConcatenateSD)?;
     }
     #[cfg(feature = "vectord")]
-    install_horzcat_factories!(builder, HorizontalConcatenateVD);
+    install_horzcat_linked_factories!(builder, HorizontalConcatenateVD)?;
 
     #[cfg(feature = "matrix1")]
     {
@@ -6063,6 +6219,72 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     install_horzcat_factories!(builder, HorizontalConcatenateV4V4V4V4);
 
     Ok(())
+}
+
+/// Installs compiler-emitted factories that belong only to native planning.
+///
+/// The standard runtime catalog intentionally excludes these dynamic f64
+/// horizontal-concatenation specializations to preserve its frozen surface.
+/// Native application planning must still resolve bytecode that the source
+/// compiler emits for four-or-more dynamic matrix inputs.
+#[cfg(feature = "native-plan")]
+pub(super) fn install_native_plan_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(all(feature = "f64", feature = "matrixd"))]
+    {
+        register_horizontal_concatenate_four_args_f64(builder)?;
+        register_horizontal_concatenate_n_args_f64(builder)?;
+    }
+
+    Ok(())
+}
+
+macro_rules! export_horzcat_scalar {
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
+        #[cfg(all(feature = "matrix_horzcat", feature = $cargo, $(feature = $feature),+))]
+        mech_core::paste::paste! { pub use super::[<install_ $factory:snake _ $token>]; }
+    };
+}
+
+macro_rules! export_horzcat_family {
+    ($factory:ident, [$($feature:literal),+]) => {
+        for_each_horzcat_scalar!(export_horzcat_scalar, ($factory, [$($feature),+]));
+    };
+}
+
+macro_rules! export_horzcat_scalar_except_f64 {
+    ($factory:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
+        #[cfg(all(feature = "matrix_horzcat", feature = $cargo, $(feature = $feature),+))]
+        mech_core::paste::paste! { pub use super::[<install_ $factory:snake _ $token>]; }
+    };
+}
+
+macro_rules! export_horzcat_legacy_family {
+    (normal; $factory:ident; [$($feature:literal),+]) => {
+        export_horzcat_family!($factory, [$($feature),+]);
+    };
+    (except_f64; $factory:ident; [$($feature:literal),+]) => {
+        for_each_horzcat_scalar!(export_horzcat_scalar_except_f64, ($factory, [$($feature),+]));
+    };
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    export_horzcat_family!(HorizontalConcatenateTwoArgs, ["matrixd"]);
+    export_horzcat_family!(HorizontalConcatenateThreeArgs, ["matrixd"]);
+    export_horzcat_family!(HorizontalConcatenateS1D, ["matrixd"]);
+    export_horzcat_family!(HorizontalConcatenateMD, ["matrixd"]);
+    export_horzcat_family!(HorizontalConcatenateRD, ["row_vectord"]);
+    export_horzcat_family!(HorizontalConcatenateRDN, ["row_vectord"]);
+    export_horzcat_family!(HorizontalConcatenateSD, ["row_vectord"]);
+    export_horzcat_family!(HorizontalConcatenateVD, ["vectord"]);
+    for_each_horzcat_legacy_family!(export_horzcat_legacy_family);
+
+    #[cfg(all(feature = "f64", feature = "row_vectord"))]
+    pub use super::install_horizontal_concatenate_rdn_f64;
+    #[cfg(all(feature = "f64", feature = "row_vector2"))]
+    pub use super::install_horizontal_concatenate_s2_f64;
 }
 
 pub struct MatrixHorzCat {}

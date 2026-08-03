@@ -64,6 +64,7 @@ extern crate num_traits;
 #[cfg(feature = "serde")]
 extern crate serde;
 
+pub extern crate paste;
 use paste::paste;
 
 #[cfg(feature = "matrixd")]

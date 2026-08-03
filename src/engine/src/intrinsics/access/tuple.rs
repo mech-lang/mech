@@ -38,8 +38,20 @@ impl MechFunctionFactory for TupleAccessElement {
         }
     }
 }
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "access", feature = "tuple"),
+    registration: register_tuple_access_element,
+    installer: install_tuple_access_element,
+    name: "TupleAccessElement",
+    factory: TupleAccessElement::new,
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_tuple_access_element",
+    cargo_features: ["access", "native-link", "runtime", "tuple"],
+}
+
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_runtime_factory("TupleAccessElement", TupleAccessElement::new)
+    register_tuple_access_element(builder)
 }
 
 #[cfg(feature = "compiler")]

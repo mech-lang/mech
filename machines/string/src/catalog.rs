@@ -38,12 +38,31 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 
 /// Installs every concrete string concatenation runtime factory enabled by
 /// the selected value kinds and matrix shapes.
+mech_core::declare_native_binop_runtime_factories! {
+    package: "mech-string",
+    crate_name: "mech_string",
+    operation: Concat,
+    operation_feature: "concat",
+    additional_features: [],
+    scalars: ("string", String, "string", string),
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    mech_core::export_native_binop_runtime_factories! {
+        operation_feature: "concat",
+        operation: Concat;
+        ("string", String, "string", string),
+    }
+}
+
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "concat")]
-    mech_core::install_binop_runtime_factories!(
+    mech_core::install_native_binop_runtime_factories!(
         builder,
         Concat;
-        ("string", String, "string"),
+        ("string", String, "string", string),
     )?;
 
     Ok(())

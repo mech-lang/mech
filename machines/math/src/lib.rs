@@ -107,12 +107,9 @@ pub use self::catalog::*;
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
-    #[cfg(all(feature = "add", feature = "f64", feature = "matrix2"))]
-    pub use crate::ops::add::install_add_m2m2_f64;
-    #[cfg(all(feature = "add", feature = "f64", feature = "matrixd"))]
-    pub use crate::ops::add::install_add_mdmd_f64;
-    #[cfg(all(feature = "add", feature = "f64"))]
-    pub use crate::ops::add::install_add_ss_f64;
+    #[cfg(feature = "add")]
+    pub use crate::ops::add::__mech_native::*;
+    pub use crate::catalog::__mech_native::*;
 }
 
 // ----------------------------------------------------------------------------

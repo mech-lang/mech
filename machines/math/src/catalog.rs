@@ -338,14 +338,267 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+macro_rules! for_each_math_unop_shape {
+    ($callback:path, $context:tt) => {
+        $callback!($context, S, none);
+        #[cfg(feature = "matrix1")]
+        $callback!($context, M1, "matrix1");
+        #[cfg(feature = "matrix2")]
+        $callback!($context, M2, "matrix2");
+        #[cfg(feature = "matrix3")]
+        $callback!($context, M3, "matrix3");
+        #[cfg(feature = "matrix4")]
+        $callback!($context, M4, "matrix4");
+        #[cfg(feature = "matrix2x3")]
+        $callback!($context, M2x3, "matrix2x3");
+        #[cfg(feature = "matrix3x2")]
+        $callback!($context, M3x2, "matrix3x2");
+        #[cfg(feature = "matrixd")]
+        $callback!($context, MD, "matrixd");
+        #[cfg(feature = "row_vector2")]
+        $callback!($context, R2, "row_vector2");
+        #[cfg(feature = "row_vector3")]
+        $callback!($context, R3, "row_vector3");
+        #[cfg(feature = "row_vector4")]
+        $callback!($context, R4, "row_vector4");
+        #[cfg(feature = "row_vectord")]
+        $callback!($context, RD, "row_vectord");
+        #[cfg(feature = "vector2")]
+        $callback!($context, V2, "vector2");
+        #[cfg(feature = "vector3")]
+        $callback!($context, V3, "vector3");
+        #[cfg(feature = "vector4")]
+        $callback!($context, V4, "vector4");
+        #[cfg(feature = "vectord")]
+        $callback!($context, VD, "vectord");
+    };
+}
+
+macro_rules! declare_math_float_unop_factory {
+    (($operation:ident; $operation_feature:literal; $scalar:ident; $scalar_feature:literal), $suffix:ident, none) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = $operation_feature, feature = $scalar_feature),
+                registration: [<register_ $operation:snake _ $suffix:lower _ $scalar:lower>],
+                installer: [<install_ $operation:snake _ $suffix:lower _ $scalar:lower>],
+                name: stringify!([<$operation $scalar:camel $suffix>]),
+                factory: <[<$operation $scalar:camel $suffix>] as MechFunctionFactory>::new,
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _ $suffix:lower _ $scalar:lower>])),
+                cargo_features: [$operation_feature, $scalar_feature, "native-link", "runtime"],
+            }
+        }
+    };
+    (($operation:ident; $operation_feature:literal; $scalar:ident; $scalar_feature:literal), $suffix:ident, $shape_feature:literal) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = $operation_feature, feature = $scalar_feature),
+                registration: [<register_ $operation:snake _ $suffix:lower _ $scalar:lower>],
+                installer: [<install_ $operation:snake _ $suffix:lower _ $scalar:lower>],
+                name: stringify!([<$operation $scalar:camel $suffix>]),
+                factory: <[<$operation $scalar:camel $suffix>] as MechFunctionFactory>::new,
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _ $suffix:lower _ $scalar:lower>])),
+                cargo_features: [$operation_feature, $scalar_feature, $shape_feature, "native-link", "runtime"],
+            }
+        }
+    };
+}
+
+macro_rules! register_math_float_unop_factory {
+    (($builder:ident; $operation:ident; $_operation_feature:literal; $scalar:ident; $_scalar_feature:literal), $suffix:ident, $_shape_feature:tt) => {
+        mech_core::paste::paste! { [<register_ $operation:snake _ $suffix:lower _ $scalar:lower>]($builder)?; }
+    };
+}
+
+macro_rules! export_math_float_unop_factory {
+    (($operation:ident; $_operation_feature:literal; $scalar:ident; $_scalar_feature:literal), $suffix:ident, $_shape_feature:tt) => {
+        mech_core::paste::paste! { pub use super::[<install_ $operation:snake _ $suffix:lower _ $scalar:lower>]; }
+    };
+}
+
+macro_rules! declare_math_float_unop {
+    ($operation:ident, $operation_feature:literal) => {
+        for_each_math_unop_shape!(declare_math_float_unop_factory, ($operation; $operation_feature; f32; "f32"));
+        for_each_math_unop_shape!(declare_math_float_unop_factory, ($operation; $operation_feature; f64; "f64"));
+    };
+}
+
+macro_rules! install_math_float_unop {
+    ($builder:ident, $operation:ident, $operation_feature:literal) => {
+        #[cfg(feature = "f32")]
+        for_each_math_unop_shape!(register_math_float_unop_factory, ($builder; $operation; $operation_feature; f32; "f32"));
+        #[cfg(feature = "f64")]
+        for_each_math_unop_shape!(register_math_float_unop_factory, ($builder; $operation; $operation_feature; f64; "f64"));
+    };
+}
+
+macro_rules! math_float_unop_families {
+    ($callback:ident) => {
+        $callback!(MathJ0, "j0"); $callback!(MathJ1, "j1");
+        $callback!(MathY0, "y0"); $callback!(MathY1, "y1");
+        $callback!(MathLgamma, "lgamma"); $callback!(MathTgamma, "tgamma");
+        $callback!(MathLog, "log"); $callback!(MathLog10, "log10");
+        $callback!(MathLog1p, "log1p"); $callback!(MathLog2, "log2");
+        $callback!(MathCbrt, "cbrt"); $callback!(MathSqrt, "sqrt");
+        $callback!(MathCeil, "ceil"); $callback!(MathFloor, "floor");
+        $callback!(MathRint, "rint"); $callback!(MathRound, "round");
+        $callback!(MathRoundeven, "roundeven"); $callback!(MathTrunc, "trunc");
+        $callback!(MathErf, "erf"); $callback!(MathErfc, "erfc");
+        $callback!(MathAcos, "acos"); $callback!(MathAcosh, "acosh");
+        $callback!(MathAcot, "acot"); $callback!(MathAcsc, "acsc");
+        $callback!(MathAsec, "asec"); $callback!(MathAsin, "asin");
+        $callback!(MathAsinh, "asinh"); $callback!(MathAtan, "atan");
+        $callback!(MathAtanh, "atanh"); $callback!(MathCos, "cos");
+        $callback!(MathCosh, "cosh"); $callback!(MathCot, "cot");
+        $callback!(MathCsc, "csc"); $callback!(MathSec, "sec");
+        $callback!(MathSin, "sin"); $callback!(MathSinh, "sinh");
+        $callback!(MathTan, "tan"); $callback!(MathTanh, "tanh");
+    };
+}
+
+math_float_unop_families!(declare_math_float_unop);
+
+macro_rules! for_each_math_abs_scalar {
+    ($callback:ident, $($context:tt)*) => {
+        $callback!($($context)*; u8; u8; "u8"; "u8");
+        $callback!($($context)*; u16; u16; "u16"; "u16");
+        $callback!($($context)*; u32; u32; "u32"; "u32");
+        $callback!($($context)*; u64; u64; "u64"; "u64");
+        $callback!($($context)*; u128; u128; "u128"; "u128");
+        $callback!($($context)*; i8; i8; "i8"; "i8");
+        $callback!($($context)*; i16; i16; "i16"; "i16");
+        $callback!($($context)*; i32; i32; "i32"; "i32");
+        $callback!($($context)*; i64; i64; "i64"; "i64");
+        $callback!($($context)*; i128; i128; "i128"; "i128");
+        $callback!($($context)*; f32; f32; "f32"; "f32");
+        $callback!($($context)*; f64; f64; "f64"; "f64");
+        $callback!($($context)*; c64; crate::C64; "c64"; "complex");
+        $callback!($($context)*; r64; crate::R64; "r64"; "rational");
+    };
+}
+
+macro_rules! declare_math_abs_factory {
+    (($scalar_token:ident; $scalar:ty; $scalar_cfg:literal; $scalar_feature:literal), $suffix:ident, none) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "abs", feature = $scalar_cfg),
+                registration: [<register_math_abs_ $scalar_token _ $suffix:lower>],
+                installer: [<install_math_abs_ $scalar_token _ $suffix:lower>],
+                name: stringify!([<MathAbs $scalar_token:camel $suffix>]),
+                factory: <[<MathAbs $scalar_token:camel $suffix>] as MechFunctionFactory>::new,
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_math_abs_ $scalar_token _ $suffix:lower>])),
+                cargo_features: ["abs", $scalar_feature, "native-link", "runtime"],
+            }
+        }
+    };
+    (($scalar_token:ident; $scalar:ty; $scalar_cfg:literal; $scalar_feature:literal), $suffix:ident, $shape_feature:literal) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "abs", feature = $scalar_cfg),
+                registration: [<register_math_abs_ $scalar_token _ $suffix:lower>],
+                installer: [<install_math_abs_ $scalar_token _ $suffix:lower>],
+                name: stringify!([<MathAbs $scalar_token:camel $suffix>]),
+                factory: <[<MathAbs $scalar_token:camel $suffix>] as MechFunctionFactory>::new,
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_math_abs_ $scalar_token _ $suffix:lower>])),
+                cargo_features: ["abs", $scalar_feature, $shape_feature, "native-link", "runtime"],
+            }
+        }
+    };
+}
+
+macro_rules! declare_math_abs_for_scalar {
+    (; $scalar_token:ident; $scalar:ty; $scalar_cfg:literal; $scalar_feature:literal) => {
+        for_each_math_unop_shape!(declare_math_abs_factory, ($scalar_token; $scalar; $scalar_cfg; $scalar_feature));
+    };
+}
+
+for_each_math_abs_scalar!(declare_math_abs_for_scalar,);
+
+macro_rules! register_math_abs_factory {
+    (($builder:ident; $scalar_token:ident), $suffix:ident, $_shape_feature:tt) => {
+        mech_core::paste::paste! { [<register_math_abs_ $scalar_token _ $suffix:lower>]($builder)?; }
+    };
+}
+
+macro_rules! export_math_abs_factory {
+    (($scalar_token:ident), $suffix:ident, $_shape_feature:tt) => {
+        mech_core::paste::paste! { pub use super::[<install_math_abs_ $scalar_token _ $suffix:lower>]; }
+    };
+}
+
+macro_rules! install_math_abs_for_scalar {
+    ($builder:ident; $scalar_token:ident; $_scalar:ty; $scalar_cfg:literal; $_scalar_feature:literal) => {
+        #[cfg(feature = $scalar_cfg)]
+        for_each_math_unop_shape!(register_math_abs_factory, ($builder; $scalar_token));
+    };
+}
+
+macro_rules! install_math_abs {
+    ($builder:ident) => {
+        for_each_math_abs_scalar!(install_math_abs_for_scalar, $builder);
+    };
+}
+
+macro_rules! for_each_math_neg_scalar {
+    ($callback:ident, $($context:tt)*) => {
+        $callback!($($context)*; i8; i8; "i8"; "i8");
+        $callback!($($context)*; i16; i16; "i16"; "i16");
+        $callback!($($context)*; i32; i32; "i32"; "i32");
+        $callback!($($context)*; i64; i64; "i64"; "i64");
+        $callback!($($context)*; i128; i128; "i128"; "i128");
+        $callback!($($context)*; f32; f32; "f32"; "f32");
+        $callback!($($context)*; f64; f64; "f64"; "f64");
+        $callback!($($context)*; r64; crate::R64; "r64"; "rational");
+        $callback!($($context)*; c64; crate::C64; "c64"; "complex");
+    };
+}
+
+macro_rules! declare_math_neg_factory {
+    ($_context:tt; $factory:ident; $scalar_token:ident; $scalar:ty; $scalar_cfg:literal; $scalar_feature:literal) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "neg", feature = $scalar_cfg),
+                registration: [<register_ $factory:snake _ $scalar_token>],
+                installer: [<install_ $factory:snake _ $scalar_token>],
+                name: concat!(stringify!($factory), "<", stringify!($scalar_token), ">"),
+                factory: <crate::ops::negate::$factory<$scalar> as MechFunctionFactory>::new,
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token>])),
+                cargo_features: ["neg", $scalar_feature, "native-link", "runtime"],
+            }
+        }
+    };
+}
+
+macro_rules! declare_math_neg_families_for_scalar {
+    (; $scalar_token:ident; $scalar:ty; $scalar_cfg:literal; $scalar_feature:literal) => {
+        declare_math_neg_factory!((); NegateS; $scalar_token; $scalar; $scalar_cfg; $scalar_feature);
+        declare_math_neg_factory!((); NegateV; $scalar_token; $scalar; $scalar_cfg; $scalar_feature);
+    };
+}
+
+for_each_math_neg_scalar!(declare_math_neg_families_for_scalar,);
+
+macro_rules! install_math_neg_for_scalar {
+    ($builder:ident; $scalar_token:ident; $_scalar:ty; $scalar_cfg:literal; $_scalar_feature:literal) => {
+        #[cfg(feature = $scalar_cfg)]
+        mech_core::paste::paste! {
+            [<register_negate_s_ $scalar_token>]($builder)?;
+            [<register_negate_v_ $scalar_token>]($builder)?;
+        }
+    };
+}
+
+macro_rules! install_math_neg {
+    ($builder:ident) => { for_each_math_neg_scalar!(install_math_neg_for_scalar, $builder); };
+}
+
 macro_rules! install_float_unop {
-    ($builder:expr, $family:ident) => {
-        mech_core::install_unop_runtime_factories!(
-            $builder,
-            $family;
-            ("f32", f32),
-            ("f64", f64),
-        )?;
+    ($builder:ident, $family:ident) => {
+        install_math_float_unop!($builder, $family, "");
     };
 }
 
@@ -353,6 +606,376 @@ macro_rules! install_exact_runtime {
     ($builder:expr, $factory:ident) => {
         $builder
             .insert_runtime_factory(stringify!($factory), <$factory as MechFunctionFactory>::new)?;
+    };
+}
+
+// Assignment factories have three independent dimensions (value type, mutable
+// sink storage, and range/index storage).  Keep that traversal owner-local so
+// the runtime catalogue, native-plan linkage, and native-link exports expand
+// from precisely the same concrete factory list.
+#[cfg(feature = "op_assign")]
+macro_rules! for_each_op_assign_scalar {
+    ($callback:ident, $context:tt) => {
+        $callback!($context; u8; u8; "u8"; "u8"; "u8");
+        $callback!($context; u16; u16; "u16"; "u16"; "u16");
+        $callback!($context; u32; u32; "u32"; "u32"; "u32");
+        $callback!($context; u64; u64; "u64"; "u64"; "u64");
+        $callback!($context; u128; u128; "u128"; "u128"; "u128");
+        $callback!($context; i8; i8; "i8"; "i8"; "i8");
+        $callback!($context; i16; i16; "i16"; "i16"; "i16");
+        $callback!($context; i32; i32; "i32"; "i32"; "i32");
+        $callback!($context; i64; i64; "i64"; "i64"; "i64");
+        $callback!($context; i128; i128; "i128"; "i128"; "i128");
+        $callback!($context; f32; f32; "f32"; "f32"; "f32");
+        $callback!($context; f64; f64; "f64"; "f64"; "f64");
+        $callback!($context; r64; crate::R64; "r64"; "r64"; "rational");
+        $callback!($context; c64; crate::C64; "c64"; "c64"; "complex");
+    };
+}
+
+// Range assignment was historically narrower than value assignment: it does
+// not instantiate i128 and its canonical runtime names use the feature
+// spellings for rational and complex values. Keep that fact in this shared
+// traversal instead of approximating it with the value-factory list.
+#[cfg(feature = "op_assign")]
+macro_rules! for_each_op_assign_range_scalar {
+    ($callback:ident, $context:tt) => {
+        $callback!($context; u8; u8; "u8"; "u8"; "u8");
+        $callback!($context; u16; u16; "u16"; "u16"; "u16");
+        $callback!($context; u32; u32; "u32"; "u32"; "u32");
+        $callback!($context; u64; u64; "u64"; "u64"; "u64");
+        $callback!($context; u128; u128; "u128"; "u128"; "u128");
+        $callback!($context; i8; i8; "i8"; "i8"; "i8");
+        $callback!($context; i16; i16; "i16"; "i16"; "i16");
+        $callback!($context; i32; i32; "i32"; "i32"; "i32");
+        $callback!($context; i64; i64; "i64"; "i64"; "i64");
+        $callback!($context; f32; f32; "f32"; "f32"; "f32");
+        $callback!($context; f64; f64; "f64"; "f64"; "f64");
+        $callback!($context; r64; crate::R64; "rational"; "rational"; "rational");
+        $callback!($context; c64; crate::C64; "complex"; "complex"; "complex");
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! for_each_op_assign_shape {
+    ($callback:ident, $context:tt) => {
+        $callback!($context; RowVector4; "row_vector4"; "1,4");
+        $callback!($context; RowVector3; "row_vector3"; "1,3");
+        $callback!($context; RowVector2; "row_vector2"; "1,2");
+        $callback!($context; Vector2; "vector2"; "2,1");
+        $callback!($context; Vector3; "vector3"; "3,1");
+        $callback!($context; Vector4; "vector4"; "4,1");
+        $callback!($context; Matrix1; "matrix1"; "1,1");
+        $callback!($context; Matrix2; "matrix2"; "2,2");
+        $callback!($context; Matrix3; "matrix3"; "3,3");
+        $callback!($context; Matrix4; "matrix4"; "4,4");
+        $callback!($context; Matrix2x3; "matrix2x3"; "2,3");
+        $callback!($context; Matrix3x2; "matrix3x2"; "3,2");
+        $callback!($context; DVector; "vectord"; "0,1");
+        $callback!($context; DMatrix; "matrixd"; "0,0");
+        $callback!($context; RowDVector; "row_vectord"; "1,0");
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! for_each_op_assign_index_shape {
+    ($callback:ident, $context:tt) => {
+        $callback!($context; Matrix1; "matrix1");
+        $callback!($context; Vector2; "vector2");
+        $callback!($context; Vector3; "vector3");
+        $callback!($context; Vector4; "vector4");
+        $callback!($context; DVector; "vectord");
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! for_each_op_assign_vector_range_source {
+    ($callback:ident, $context:tt) => {
+        $callback!($context; feature = "matrix1"; Matrix1; "matrix1"; Matrix1; "matrix1");
+        $callback!($context; all(feature = "matrix2", feature = "vector4"); Matrix2; "matrix2"; Vector4; "vector4");
+        $callback!($context; feature = "matrix3"; Matrix3; "matrix3"; DVector; "vectord");
+        $callback!($context; feature = "matrix4"; Matrix4; "matrix4"; DVector; "vectord");
+        $callback!($context; feature = "matrix2x3"; Matrix2x3; "matrix2x3"; DVector; "vectord");
+        $callback!($context; feature = "matrix3x2"; Matrix3x2; "matrix3x2"; DVector; "vectord");
+        $callback!($context; feature = "matrixd"; DMatrix; "matrixd"; DVector; "vectord");
+        $callback!($context; feature = "vectord"; DVector; "vectord"; DVector; "vectord");
+        $callback!($context; feature = "row_vectord"; RowDVector; "row_vectord"; DVector; "vectord");
+        $callback!($context; feature = "vector2"; Vector2; "vector2"; Vector2; "vector2");
+        $callback!($context; feature = "vector3"; Vector3; "vector3"; Vector3; "vector3");
+        $callback!($context; feature = "vector4"; Vector4; "vector4"; Vector4; "vector4");
+        $callback!($context; feature = "row_vector2"; RowVector2; "row_vector2"; Vector2; "vector2");
+        $callback!($context; feature = "row_vector3"; RowVector3; "row_vector3"; Vector3; "vector3");
+        $callback!($context; feature = "row_vector4"; RowVector4; "row_vector4"; Vector4; "vector4");
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! declare_op_assign_ss {
+    (($operation:ident; $operation_feature:literal); $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = $operation_feature, feature = $scalar_cfg),
+                registration: [<register_ $operation:snake _assign_ss_ $scalar_token>],
+                installer: [<install_ $operation:snake _assign_ss_ $scalar_token>],
+                name: concat!(stringify!($operation), "AssignSS<", $scalar_name, ">"),
+                factory: <[<$operation AssignSS>]<$scalar> as MechFunctionFactory>::new,
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ss_ $scalar_token>])),
+                cargo_features: [$operation_feature, $scalar_feature, "native-link", "runtime"],
+            }
+        }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! declare_op_assign_vv {
+    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal); $shape:ident; $shape_feature:literal; $shape_name:literal) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = $operation_feature, feature = $scalar_cfg, feature = $shape_feature),
+                registration: [<register_ $operation:snake _assign_vv_ $shape:snake _ $scalar_token>],
+                installer: [<install_ $operation:snake _assign_vv_ $shape:snake _ $scalar_token>],
+                name: concat!(stringify!($operation), "AssignVV<[", $scalar_name, "]:", $shape_name, ">"),
+                factory: <[<$operation AssignVV>]<$scalar, $shape<$scalar>, $shape<$scalar>> as MechFunctionFactory>::new,
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_vv_ $shape:snake _ $scalar_token>])),
+                cargo_features: [$operation_feature, $scalar_feature, $shape_feature, "native-link", "runtime"],
+            }
+        }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! declare_op_assign_range_s {
+    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident); $index:ident; $index_feature:literal) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = $operation_feature, feature = $scalar_cfg, feature = $sink_feature, feature = $index_feature),
+                registration: [<register_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>],
+                installer: [<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>],
+                name: concat!(stringify!($operation), stringify!($family), "<", $scalar_name, stringify!($sink), stringify!($index), ">"),
+                factory: <[<$operation $family>]<$scalar, $sink<$scalar>, $index<usize>> as MechFunctionFactory>::new,
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>])),
+                cargo_features: [$operation_feature, $scalar_feature, $sink_feature, $index_feature, "native-link", "runtime"],
+            }
+        }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! declare_op_assign_range_v {
+    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident); $source_cfg:meta; $source:ident; $source_feature:literal; $index:ident; $index_feature:literal) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = $operation_feature, feature = $scalar_cfg, feature = $sink_feature, $source_cfg),
+                registration: [<register_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>],
+                installer: [<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>],
+                name: concat!(stringify!($operation), stringify!($family), "<", $scalar_name, stringify!($sink), stringify!($source), stringify!($index), ">"),
+                factory: <[<$operation $family>]<$scalar, $sink<$scalar>, $source<$scalar>, $index<usize>> as MechFunctionFactory>::new,
+                package: "mech-math", crate_name: "mech_math",
+                installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>])),
+                cargo_features: [$operation_feature, $scalar_feature, $sink_feature, $source_feature, $index_feature, "native-link", "runtime"],
+            }
+        }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! declare_op_assign_ranges_for_sink {
+    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal); $sink:ident; $sink_feature:literal; $_sink_name:literal) => {
+        for_each_op_assign_index_shape!(declare_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRS));
+        for_each_op_assign_vector_range_source!(declare_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRV));
+        for_each_op_assign_index_shape!(declare_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAS));
+        for_each_op_assign_vector_range_source!(declare_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAV));
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! declare_op_assign_value_for_scalar {
+    (($operation:ident; $operation_feature:literal); i128; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        declare_op_assign_ss!(($operation; $operation_feature); i128; $scalar; $scalar_name; $scalar_cfg; $scalar_feature);
+        for_each_op_assign_shape!(declare_op_assign_vv, ($operation; $operation_feature; i128; $scalar; $scalar_name; $scalar_cfg; $scalar_feature));
+    };
+    (($operation:ident; $operation_feature:literal); r64; $scalar:ty; $_scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        declare_op_assign_ss!(($operation; $operation_feature); r64; $scalar; "r64"; $scalar_cfg; $scalar_feature);
+        for_each_op_assign_shape!(declare_op_assign_vv, ($operation; $operation_feature; r64; $scalar; "r64"; $scalar_cfg; $scalar_feature));
+    };
+    (($operation:ident; $operation_feature:literal); c64; $scalar:ty; $_scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        declare_op_assign_ss!(($operation; $operation_feature); c64; $scalar; "c64"; $scalar_cfg; $scalar_feature);
+        for_each_op_assign_shape!(declare_op_assign_vv, ($operation; $operation_feature; c64; $scalar; "c64"; $scalar_cfg; $scalar_feature));
+    };
+    (($operation:ident; $operation_feature:literal); $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        declare_op_assign_ss!(($operation; $operation_feature); $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature);
+        for_each_op_assign_shape!(declare_op_assign_vv, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature));
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! declare_op_assign_range_for_scalar {
+    (($operation:ident; $operation_feature:literal); $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        for_each_op_assign_shape!(declare_op_assign_ranges_for_sink, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature));
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! declare_native_op_assign_runtime_factories {
+    ($operation:ident; $operation_feature:literal) => {
+        for_each_op_assign_scalar!(declare_op_assign_value_for_scalar, ($operation; $operation_feature));
+        for_each_op_assign_range_scalar!(declare_op_assign_range_for_scalar, ($operation; $operation_feature));
+    };
+}
+
+#[cfg(feature = "op_assign")]
+declare_native_op_assign_runtime_factories!(Add; "add_assign");
+#[cfg(feature = "op_assign")]
+declare_native_op_assign_runtime_factories!(Div; "div_assign");
+#[cfg(feature = "op_assign")]
+declare_native_op_assign_runtime_factories!(Mul; "mul_assign");
+#[cfg(feature = "op_assign")]
+declare_native_op_assign_runtime_factories!(Sub; "sub_assign");
+
+#[cfg(feature = "op_assign")]
+macro_rules! register_op_assign_ss {
+    (($builder:ident; $operation:ident; $operation_feature:literal); $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $scalar_cfg:literal; $_scalar_feature:literal) => {
+        #[cfg(feature = $scalar_cfg)]
+        mech_core::paste::paste! { [<register_ $operation:snake _assign_ss_ $scalar_token>]($builder)?; }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! register_op_assign_vv {
+    (($builder:ident; $operation:ident; $_operation_feature:literal; $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $_scalar_cfg:literal; $_scalar_feature:literal); $shape:ident; $shape_feature:literal; $_shape_name:literal) => {
+        #[cfg(feature = $shape_feature)]
+        mech_core::paste::paste! { [<register_ $operation:snake _assign_vv_ $shape:snake _ $scalar_token>]($builder)?; }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! register_op_assign_range_s {
+    (($builder:ident; $operation:ident; $_operation_feature:literal; $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $_scalar_cfg:literal; $_scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident); $index:ident; $index_feature:literal) => {
+        #[cfg(all(feature = $sink_feature, feature = $index_feature))]
+        mech_core::paste::paste! { [<register_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>]($builder)?; }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! register_op_assign_range_v {
+    (($builder:ident; $operation:ident; $_operation_feature:literal; $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $_scalar_cfg:literal; $_scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident); $source_cfg:meta; $source:ident; $_source_feature:literal; $index:ident; $_index_feature:literal) => {
+        #[cfg(all(feature = $sink_feature, $source_cfg))]
+        mech_core::paste::paste! { [<register_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>]($builder)?; }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! register_op_assign_ranges_for_sink {
+    (($builder:ident; $operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal); $sink:ident; $sink_feature:literal; $_sink_name:literal) => {
+        for_each_op_assign_index_shape!(register_op_assign_range_s, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRS));
+        for_each_op_assign_vector_range_source!(register_op_assign_range_v, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRV));
+        for_each_op_assign_index_shape!(register_op_assign_range_s, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAS));
+        for_each_op_assign_vector_range_source!(register_op_assign_range_v, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAV));
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! register_op_assign_value_for_scalar {
+    (($builder:ident; $operation:ident; $operation_feature:literal); i128; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        register_op_assign_ss!(($builder; $operation; $operation_feature); i128; $scalar; $scalar_name; $scalar_cfg; $scalar_feature);
+        #[cfg(feature = $scalar_cfg)]
+        for_each_op_assign_shape!(register_op_assign_vv, ($builder; $operation; $operation_feature; i128; $scalar; $scalar_name; $scalar_cfg; $scalar_feature));
+    };
+    (($builder:ident; $operation:ident; $operation_feature:literal); $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        register_op_assign_ss!(($builder; $operation; $operation_feature); $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature);
+        #[cfg(feature = $scalar_cfg)]
+        {
+            for_each_op_assign_shape!(register_op_assign_vv, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature));
+        }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! register_op_assign_range_for_scalar {
+    (($builder:ident; $operation:ident; $operation_feature:literal); $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        #[cfg(feature = $scalar_cfg)]
+        for_each_op_assign_shape!(register_op_assign_ranges_for_sink, ($builder; $operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature));
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! install_native_op_assign_runtime_factories {
+    ($builder:ident, $operation:ident; $operation_feature:literal) => {{
+        for_each_op_assign_scalar!(register_op_assign_value_for_scalar, ($builder; $operation; $operation_feature));
+        for_each_op_assign_range_scalar!(register_op_assign_range_for_scalar, ($builder; $operation; $operation_feature));
+        Ok::<(), mech_core::MechError>(())
+    }};
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! export_op_assign_ss {
+    (($operation:ident; $operation_feature:literal); $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $scalar_cfg:literal; $_scalar_feature:literal) => {
+        #[cfg(all(feature = $operation_feature, feature = $scalar_cfg))]
+        mech_core::paste::paste! { pub use super::[<install_ $operation:snake _assign_ss_ $scalar_token>]; }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! export_op_assign_vv {
+    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $scalar_cfg:literal; $_scalar_feature:literal); $shape:ident; $shape_feature:literal; $_shape_name:literal) => {
+        #[cfg(all(feature = $operation_feature, feature = $scalar_cfg, feature = $shape_feature))]
+        mech_core::paste::paste! { pub use super::[<install_ $operation:snake _assign_vv_ $shape:snake _ $scalar_token>]; }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! export_op_assign_range_s {
+    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $scalar_cfg:literal; $_scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident); $index:ident; $index_feature:literal) => {
+        #[cfg(all(feature = $operation_feature, feature = $scalar_cfg, feature = $sink_feature, feature = $index_feature))]
+        mech_core::paste::paste! { pub use super::[<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>]; }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! export_op_assign_range_v {
+    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $scalar_cfg:literal; $_scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident); $source_cfg:meta; $source:ident; $_source_feature:literal; $index:ident; $_index_feature:literal) => {
+        #[cfg(all(feature = $operation_feature, feature = $scalar_cfg, feature = $sink_feature, $source_cfg))]
+        mech_core::paste::paste! { pub use super::[<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>]; }
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! export_op_assign_ranges_for_sink {
+    (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal); $sink:ident; $sink_feature:literal; $_sink_name:literal) => {
+        for_each_op_assign_index_shape!(export_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRS));
+        for_each_op_assign_vector_range_source!(export_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRV));
+        for_each_op_assign_index_shape!(export_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAS));
+        for_each_op_assign_vector_range_source!(export_op_assign_range_v, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign2DRAV));
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! export_op_assign_value_for_scalar {
+    (($operation:ident; $operation_feature:literal); i128; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        export_op_assign_ss!(($operation; $operation_feature); i128; $scalar; $scalar_name; $scalar_cfg; $scalar_feature);
+        for_each_op_assign_shape!(export_op_assign_vv, ($operation; $operation_feature; i128; $scalar; $scalar_name; $scalar_cfg; $scalar_feature));
+    };
+    (($operation:ident; $operation_feature:literal); $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        export_op_assign_ss!(($operation; $operation_feature); $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature);
+        for_each_op_assign_shape!(export_op_assign_vv, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature));
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! export_op_assign_range_for_scalar {
+    (($operation:ident; $operation_feature:literal); $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
+        for_each_op_assign_shape!(export_op_assign_ranges_for_sink, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature));
+    };
+}
+
+#[cfg(feature = "op_assign")]
+macro_rules! export_native_op_assign_runtime_factories {
+    ($operation:ident; $operation_feature:literal) => {
+        for_each_op_assign_scalar!(export_op_assign_value_for_scalar, ($operation; $operation_feature));
+        for_each_op_assign_range_scalar!(export_op_assign_range_for_scalar, ($operation; $operation_feature));
     };
 }
 
@@ -908,30 +1531,26 @@ macro_rules! install_op_assign_runtime {
 
 #[cfg(feature = "add_assign")]
 fn install_add_assign_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_op_assign_runtime!(builder, Add);
-    Ok(())
+    install_native_op_assign_runtime_factories!(builder, Add; "add_assign")
 }
 
 #[cfg(feature = "div_assign")]
 fn install_div_assign_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_op_assign_runtime!(builder, Div);
-    Ok(())
+    install_native_op_assign_runtime_factories!(builder, Div; "div_assign")
 }
 
 #[cfg(feature = "mul_assign")]
 fn install_mul_assign_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_op_assign_runtime!(builder, Mul);
-    Ok(())
+    install_native_op_assign_runtime_factories!(builder, Mul; "mul_assign")
 }
 
 #[cfg(feature = "sub_assign")]
 fn install_sub_assign_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_op_assign_runtime!(builder, Sub);
-    Ok(())
+    install_native_op_assign_runtime_factories!(builder, Sub; "sub_assign")
 }
 
 #[cfg(feature = "atan2")]
-fn install_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+fn install_legacy_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     use crate::trig::atan2::*;
 
     #[cfg(feature = "f32")]
@@ -944,9 +1563,9 @@ fn install_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         #[cfg(feature = "matrix3")]
         {
             install_exact_runtime!(builder, Atan2M3F32);
-            // Preserve the legacy generator's matrix3 gate for Matrix3x2.
-            install_exact_runtime!(builder, Atan2M3x2F32);
         }
+        #[cfg(feature = "matrix3x2")]
+        install_exact_runtime!(builder, Atan2M3x2F32);
         #[cfg(feature = "matrix2x3")]
         install_exact_runtime!(builder, Atan2M2x3F32);
         #[cfg(feature = "matrix4")]
@@ -981,8 +1600,9 @@ fn install_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         #[cfg(feature = "matrix3")]
         {
             install_exact_runtime!(builder, Atan2M3F64);
-            install_exact_runtime!(builder, Atan2M3x2F64);
         }
+        #[cfg(feature = "matrix3x2")]
+        install_exact_runtime!(builder, Atan2M3x2F64);
         #[cfg(feature = "matrix2x3")]
         install_exact_runtime!(builder, Atan2M2x3F64);
         #[cfg(feature = "matrix4")]
@@ -1010,6 +1630,246 @@ fn install_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+macro_rules! for_each_atan2_factory {
+    ($callback:ident, $context:tt) => {
+        $callback!($context; feature = "f32"; "f32"; Atan2F32; []);
+        $callback!($context; all(feature = "f32", feature = "matrix1"); "f32"; Atan2M1F32; ["matrix1"]);
+        $callback!($context; all(feature = "f32", feature = "matrix2"); "f32"; Atan2M2F32; ["matrix2"]);
+        $callback!($context; all(feature = "f32", feature = "matrix3"); "f32"; Atan2M3F32; ["matrix3"]);
+        $callback!($context; all(feature = "f32", feature = "matrix3x2"); "f32"; Atan2M3x2F32; ["matrix3x2"]);
+        $callback!($context; all(feature = "f32", feature = "matrix2x3"); "f32"; Atan2M2x3F32; ["matrix2x3"]);
+        $callback!($context; all(feature = "f32", feature = "matrix4"); "f32"; Atan2M4F32; ["matrix4"]);
+        $callback!($context; all(feature = "f32", feature = "vector2"); "f32"; Atan2V2F32; ["vector2"]);
+        $callback!($context; all(feature = "f32", feature = "vector3"); "f32"; Atan2V3F32; ["vector3"]);
+        $callback!($context; all(feature = "f32", feature = "vector4"); "f32"; Atan2V4F32; ["vector4"]);
+        $callback!($context; all(feature = "f32", feature = "row_vector2"); "f32"; Atan2R2F32; ["row_vector2"]);
+        $callback!($context; all(feature = "f32", feature = "row_vector3"); "f32"; Atan2R3F32; ["row_vector3"]);
+        $callback!($context; all(feature = "f32", feature = "row_vector4"); "f32"; Atan2R4F32; ["row_vector4"]);
+        $callback!($context; all(feature = "f32", feature = "row_vectord"); "f32"; Atan2RDF32; ["row_vectord"]);
+        $callback!($context; all(feature = "f32", feature = "vectord"); "f32"; Atan2VDF32; ["vectord"]);
+        $callback!($context; all(feature = "f32", feature = "matrixd"); "f32"; Atan2MDF32; ["matrixd"]);
+        $callback!($context; feature = "f64"; "f64"; Atan2F64; []);
+        $callback!($context; all(feature = "f64", feature = "matrix1"); "f64"; Atan2M1F64; ["matrix1"]);
+        $callback!($context; all(feature = "f64", feature = "matrix2"); "f64"; Atan2M2F64; ["matrix2"]);
+        $callback!($context; all(feature = "f64", feature = "matrix3"); "f64"; Atan2M3F64; ["matrix3"]);
+        $callback!($context; all(feature = "f64", feature = "matrix3x2"); "f64"; Atan2M3x2F64; ["matrix3x2"]);
+        $callback!($context; all(feature = "f64", feature = "matrix2x3"); "f64"; Atan2M2x3F64; ["matrix2x3"]);
+        $callback!($context; all(feature = "f64", feature = "matrix4"); "f64"; Atan2M4F64; ["matrix4"]);
+        $callback!($context; all(feature = "f64", feature = "vector2"); "f64"; Atan2V2F64; ["vector2"]);
+        $callback!($context; all(feature = "f64", feature = "vector3"); "f64"; Atan2V3F64; ["vector3"]);
+        $callback!($context; all(feature = "f64", feature = "vector4"); "f64"; Atan2V4F64; ["vector4"]);
+        $callback!($context; all(feature = "f64", feature = "row_vector2"); "f64"; Atan2R2F64; ["row_vector2"]);
+        $callback!($context; all(feature = "f64", feature = "row_vector3"); "f64"; Atan2R3F64; ["row_vector3"]);
+        $callback!($context; all(feature = "f64", feature = "row_vector4"); "f64"; Atan2R4F64; ["row_vector4"]);
+        $callback!($context; all(feature = "f64", feature = "row_vectord"); "f64"; Atan2RDF64; ["row_vectord"]);
+        $callback!($context; all(feature = "f64", feature = "vectord"); "f64"; Atan2VDF64; ["vectord"]);
+        $callback!($context; all(feature = "f64", feature = "matrixd"); "f64"; Atan2MDF64; ["matrixd"]);
+    };
+}
+
+macro_rules! declare_atan2_factory {
+    ($_context:tt; $cfg:meta; $scalar_feature:literal; $factory:ident; [$($shape_feature:literal),* $(,)?]) => {
+        mech_core::paste::paste! { mech_core::declare_native_runtime_factory! {
+            cfg: all(feature = "atan2", $cfg), registration: [<register_ $factory:snake>], installer: [<install_ $factory:snake>],
+            name: stringify!($factory), factory: <crate::trig::atan2::$factory as MechFunctionFactory>::new,
+            package: "mech-math", crate_name: "mech_math", installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $factory:snake>])),
+            cargo_features: ["atan2", $scalar_feature, $($shape_feature,)* "native-link", "runtime"],
+        }}
+    };
+}
+for_each_atan2_factory!(declare_atan2_factory, ());
+
+#[cfg(feature = "atan2")]
+fn install_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    macro_rules! register_atan2_factory { (($builder:ident); $cfg:meta; $_scalar_feature:literal; $factory:ident; [$($_shape_feature:literal),*]) => { #[cfg(all(feature = "atan2", $cfg))] mech_core::paste::paste! { [<register_ $factory:snake>]($builder)?; } }; }
+    for_each_atan2_factory!(register_atan2_factory, (builder));
+    Ok(())
+}
+
+mech_core::declare_native_binop_runtime_factories! {
+    package: "mech-math",
+    crate_name: "mech_math",
+    operation: Div,
+    operation_feature: "div",
+    additional_features: [],
+    scalars:
+        ("i8", i8, "i8", i8), ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32), ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128), ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16), ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64), ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32), ("f64", f64, "f64", f64),
+        ("rational", crate::R64, "r64", r64),
+        ("complex", crate::C64, "c64", c64),
+}
+
+mech_core::declare_native_binop_runtime_factories! {
+    package: "mech-math",
+    crate_name: "mech_math",
+    operation: Mod,
+    operation_feature: "mod",
+    additional_features: [],
+    scalars:
+        ("i8", i8, "i8", i8), ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32), ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128), ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16), ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64), ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32), ("f64", f64, "f64", f64),
+}
+
+mech_core::declare_native_binop_runtime_factories! {
+    package: "mech-math",
+    crate_name: "mech_math",
+    operation: Mul,
+    operation_feature: "mul",
+    additional_features: [],
+    scalars:
+        ("i8", i8, "i8", i8), ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32), ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128), ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16), ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64), ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32), ("f64", f64, "f64", f64),
+        ("rational", crate::R64, "r64", r64),
+        ("complex", crate::C64, "c64", c64),
+}
+
+mech_core::declare_native_binop_runtime_factories! {
+    package: "mech-math",
+    crate_name: "mech_math",
+    operation: Pow,
+    operation_feature: "pow",
+    additional_features: [],
+    scalars:
+        ("u8", u8, "u8", u8), ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32), ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
+}
+
+mech_core::declare_native_binop_runtime_factories! {
+    package: "mech-math",
+    crate_name: "mech_math",
+    operation: Sub,
+    operation_feature: "sub",
+    additional_features: [],
+    scalars:
+        ("i8", i8, "i8", i8), ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32), ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128), ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16), ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64), ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32), ("f64", f64, "f64", f64),
+        ("rational", crate::R64, "r64", r64),
+        ("complex", crate::C64, "c64", c64),
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    #[cfg(feature = "add_assign")]
+    export_native_op_assign_runtime_factories!(Add; "add_assign");
+    #[cfg(feature = "div_assign")]
+    export_native_op_assign_runtime_factories!(Div; "div_assign");
+    #[cfg(feature = "mul_assign")]
+    export_native_op_assign_runtime_factories!(Mul; "mul_assign");
+    #[cfg(feature = "sub_assign")]
+    export_native_op_assign_runtime_factories!(Sub; "sub_assign");
+
+    macro_rules! export_math_float_unop {
+        ($operation:ident, $operation_feature:literal) => {
+            #[cfg(all(feature = $operation_feature, feature = "f32"))]
+            for_each_math_unop_shape!(
+                export_math_float_unop_factory,
+                ($operation; $operation_feature; f32; "f32")
+            );
+            #[cfg(all(feature = $operation_feature, feature = "f64"))]
+            for_each_math_unop_shape!(
+                export_math_float_unop_factory,
+                ($operation; $operation_feature; f64; "f64")
+            );
+        };
+    }
+
+    math_float_unop_families!(export_math_float_unop);
+
+    macro_rules! export_math_abs_for_scalar {
+        ($_context:tt; $scalar_token:ident; $_scalar:ty; $scalar_cfg:literal; $_scalar_feature:literal) => {
+            #[cfg(all(feature = "abs", feature = $scalar_cfg))]
+            for_each_math_unop_shape!(export_math_abs_factory, ($scalar_token));
+        };
+    }
+
+    for_each_math_abs_scalar!(export_math_abs_for_scalar, ());
+
+    macro_rules! export_math_neg_for_scalar {
+        ($_context:tt; $scalar_token:ident; $_scalar:ty; $scalar_cfg:literal; $_scalar_feature:literal) => {
+            #[cfg(all(feature = "neg", feature = $scalar_cfg))]
+            mech_core::paste::paste! {
+                pub use super::[<install_negate_s_ $scalar_token>];
+                pub use super::[<install_negate_v_ $scalar_token>];
+            }
+        };
+    }
+
+    for_each_math_neg_scalar!(export_math_neg_for_scalar, ());
+
+    macro_rules! export_atan2_factory {
+        ($_context:tt; $cfg:meta; $_scalar_feature:literal; $factory:ident; [$($_shape_feature:literal),* $(,)?]) => {
+            #[cfg(all(feature = "atan2", $cfg))]
+            mech_core::paste::paste! { pub use super::[<install_ $factory:snake>]; }
+        };
+    }
+
+    for_each_atan2_factory!(export_atan2_factory, ());
+
+    mech_core::export_native_binop_runtime_factories! {
+        operation_feature: "div", operation: Div;
+        ("i8", i8, "i8", i8), ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32), ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128), ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16), ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64), ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32), ("f64", f64, "f64", f64),
+        ("rational", crate::R64, "r64", r64), ("complex", crate::C64, "c64", c64),
+    }
+    mech_core::export_native_binop_runtime_factories! {
+        operation_feature: "mod", operation: Mod;
+        ("i8", i8, "i8", i8), ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32), ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128), ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16), ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64), ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32), ("f64", f64, "f64", f64),
+    }
+    mech_core::export_native_binop_runtime_factories! {
+        operation_feature: "mul", operation: Mul;
+        ("i8", i8, "i8", i8), ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32), ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128), ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16), ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64), ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32), ("f64", f64, "f64", f64),
+        ("rational", crate::R64, "r64", r64), ("complex", crate::C64, "c64", c64),
+    }
+    mech_core::export_native_binop_runtime_factories! {
+        operation_feature: "pow", operation: Pow;
+        ("u8", u8, "u8", u8), ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32), ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
+    }
+    mech_core::export_native_binop_runtime_factories! {
+        operation_feature: "sub", operation: Sub;
+        ("i8", i8, "i8", i8), ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32), ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128), ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16), ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64), ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32), ("f64", f64, "f64", f64),
+        ("rational", crate::R64, "r64", r64), ("complex", crate::C64, "c64", c64),
+    }
+}
+
 /// Installs every enabled concrete runtime factory owned by `mech-math`.
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "add")]
@@ -1017,146 +1877,101 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "add_assign")]
     install_add_assign_runtime(builder)?;
     #[cfg(feature = "div")]
-    mech_core::install_binop_runtime_factories!(
+    mech_core::install_native_binop_runtime_factories!(
         builder,
         Div;
-        ("i8", i8, "i8"),
-        ("i16", i16, "i16"),
-        ("i32", i32, "i32"),
-        ("i64", i64, "i64"),
-        ("i128", i128, "i128"),
-        ("u8", u8, "u8"),
-        ("u16", u16, "u16"),
-        ("u32", u32, "u32"),
-        ("u64", u64, "u64"),
-        ("u128", u128, "u128"),
-        ("f32", f32, "f32"),
-        ("f64", f64, "f64"),
-        ("rational", crate::R64, "r64"),
-        ("complex", crate::C64, "c64"),
+        ("i8", i8, "i8", i8),
+        ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32),
+        ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128),
+        ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64),
+        ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
+        ("rational", crate::R64, "r64", r64),
+        ("complex", crate::C64, "c64", c64),
     )?;
     #[cfg(feature = "div_assign")]
     install_div_assign_runtime(builder)?;
     #[cfg(feature = "mod")]
-    mech_core::install_binop_runtime_factories!(
+    mech_core::install_native_binop_runtime_factories!(
         builder,
         Mod;
-        ("i8", i8, "i8"),
-        ("i16", i16, "i16"),
-        ("i32", i32, "i32"),
-        ("i64", i64, "i64"),
-        ("i128", i128, "i128"),
-        ("u8", u8, "u8"),
-        ("u16", u16, "u16"),
-        ("u32", u32, "u32"),
-        ("u64", u64, "u64"),
-        ("u128", u128, "u128"),
-        ("f32", f32, "f32"),
-        ("f64", f64, "f64"),
+        ("i8", i8, "i8", i8),
+        ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32),
+        ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128),
+        ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64),
+        ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
     )?;
     #[cfg(feature = "mul_assign")]
     install_mul_assign_runtime(builder)?;
     #[cfg(feature = "mul")]
-    mech_core::install_binop_runtime_factories!(
+    mech_core::install_native_binop_runtime_factories!(
         builder,
         Mul;
-        ("i8", i8, "i8"),
-        ("i16", i16, "i16"),
-        ("i32", i32, "i32"),
-        ("i64", i64, "i64"),
-        ("i128", i128, "i128"),
-        ("u8", u8, "u8"),
-        ("u16", u16, "u16"),
-        ("u32", u32, "u32"),
-        ("u64", u64, "u64"),
-        ("u128", u128, "u128"),
-        ("f32", f32, "f32"),
-        ("f64", f64, "f64"),
-        ("rational", crate::R64, "r64"),
-        ("complex", crate::C64, "c64"),
+        ("i8", i8, "i8", i8),
+        ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32),
+        ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128),
+        ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64),
+        ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
+        ("rational", crate::R64, "r64", r64),
+        ("complex", crate::C64, "c64", c64),
     )?;
     #[cfg(feature = "sub_assign")]
     install_sub_assign_runtime(builder)?;
     #[cfg(feature = "pow")]
-    mech_core::install_binop_runtime_factories!(
+    mech_core::install_native_binop_runtime_factories!(
         builder,
         Pow;
-        ("u8", u8, "u8"),
-        ("u16", u16, "u16"),
-        ("u32", u32, "u32"),
-        ("f32", f32, "f32"),
-        ("f64", f64, "f64"),
+        ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32),
+        ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
     )?;
     #[cfg(feature = "sub")]
-    mech_core::install_binop_runtime_factories!(
+    mech_core::install_native_binop_runtime_factories!(
         builder,
         Sub;
-        ("i8", i8, "i8"),
-        ("i16", i16, "i16"),
-        ("i32", i32, "i32"),
-        ("i64", i64, "i64"),
-        ("i128", i128, "i128"),
-        ("u8", u8, "u8"),
-        ("u16", u16, "u16"),
-        ("u32", u32, "u32"),
-        ("u64", u64, "u64"),
-        ("u128", u128, "u128"),
-        ("f32", f32, "f32"),
-        ("f64", f64, "f64"),
-        ("rational", crate::R64, "r64"),
-        ("complex", crate::C64, "c64"),
+        ("i8", i8, "i8", i8),
+        ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32),
+        ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128),
+        ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64),
+        ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
+        ("rational", crate::R64, "r64", r64),
+        ("complex", crate::C64, "c64", c64),
     )?;
 
     #[cfg(feature = "neg")]
-    {
-        use crate::ops::negate::{NegateS, NegateV};
-        mech_core::install_typed_runtime_factories!(
-            builder,
-            NegateV;
-            ("i8", i8, "i8"),
-            ("i16", i16, "i16"),
-            ("i32", i32, "i32"),
-            ("i64", i64, "i64"),
-            ("i128", i128, "i128"),
-            ("f32", f32, "f32"),
-            ("f64", f64, "f64"),
-            ("r64", crate::R64, "r64"),
-            ("c64", crate::C64, "c64"),
-        )?;
-        mech_core::install_typed_runtime_factories!(
-            builder,
-            NegateS;
-            ("i8", i8, "i8"),
-            ("i16", i16, "i16"),
-            ("i32", i32, "i32"),
-            ("i64", i64, "i64"),
-            ("i128", i128, "i128"),
-            ("f32", f32, "f32"),
-            ("f64", f64, "f64"),
-            ("r64", crate::R64, "r64"),
-            ("c64", crate::C64, "c64"),
-        )?;
-    }
+    install_math_neg!(builder);
 
     #[cfg(feature = "abs")]
-    mech_core::install_unop_runtime_factories!(
-        builder,
-        MathAbs;
-        ("u8", u8),
-        ("u16", u16),
-        ("u32", u32),
-        ("u64", u64),
-        ("u128", u128),
-        ("i8", i8),
-        ("i16", i16),
-        ("i32", i32),
-        ("i64", i64),
-        ("i128", i128),
-        ("f32", f32),
-        ("f64", f64),
-        ("c64", C64),
-        ("r64", R64),
-    )?;
+    install_math_abs!(builder);
 
     #[cfg(feature = "j0")]
     install_float_unop!(builder, MathJ0);

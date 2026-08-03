@@ -92,69 +92,154 @@ macro_rules! add_scalar_rhs_op {
 
 impl_math_fxns!(Add);
 
-mech_core::declare_native_runtime_factory! {
-    cfg: all(feature = "add", feature = "f64"),
-
-    registration: register_add_ss_f64,
-    installer: install_add_ss_f64,
-
-    name: "AddSS<f64>",
-    factory: <AddSS<f64> as MechFunctionFactory>::new,
-
-    package: "mech-math",
-    crate_name: "mech_math",
-    installer_path: "mech_math::__mech_native::install_add_ss_f64",
-
-    cargo_features: [
-        "add",
-        "f64",
-        "native-link",
-        "runtime",
-    ],
+#[cfg(feature = "f64")]
+fn add_f64_native_features(suffix: &str) -> &'static [&'static str] {
+    match suffix {
+        "SS" => &["add", "f64", "native-link", "runtime"],
+        "SM1" | "M1S" | "M1M1" => &["add", "f64", "matrix1", "native-link", "runtime"],
+        "SM2" | "M2S" | "M2M2" => &["add", "f64", "matrix2", "native-link", "runtime"],
+        "SM3" | "M3S" | "M3M3" => &["add", "f64", "matrix3", "native-link", "runtime"],
+        "SM4" | "M4S" | "M4M4" => &["add", "f64", "matrix4", "native-link", "runtime"],
+        "SM2x3" | "M2x3S" | "M2x3M2x3" => {
+            &["add", "f64", "matrix2x3", "native-link", "runtime"]
+        }
+        "SM3x2" | "M3x2S" | "M3x2M3x2" => {
+            &["add", "f64", "matrix3x2", "native-link", "runtime"]
+        }
+        "SMD" | "MDS" | "MDMD" => &["add", "f64", "matrixd", "native-link", "runtime"],
+        "SR2" | "R2S" | "R2R2" => {
+            &["add", "f64", "native-link", "row_vector2", "runtime"]
+        }
+        "SR3" | "R3S" | "R3R3" => {
+            &["add", "f64", "native-link", "row_vector3", "runtime"]
+        }
+        "SR4" | "R4S" | "R4R4" => {
+            &["add", "f64", "native-link", "row_vector4", "runtime"]
+        }
+        "SRD" | "RDS" | "RDRD" => {
+            &["add", "f64", "native-link", "row_vectord", "runtime"]
+        }
+        "SV2" | "V2S" | "V2V2" => {
+            &["add", "f64", "native-link", "runtime", "vector2"]
+        }
+        "SV3" | "V3S" | "V3V3" => {
+            &["add", "f64", "native-link", "runtime", "vector3"]
+        }
+        "SV4" | "V4S" | "V4V4" => {
+            &["add", "f64", "native-link", "runtime", "vector4"]
+        }
+        "SVD" | "VDS" | "VDVD" => {
+            &["add", "f64", "native-link", "runtime", "vectord"]
+        }
+        "M2V2" | "V2M2" => &["add", "f64", "matrix2", "native-link", "runtime", "vector2"],
+        "M3V3" | "V3M3" => &["add", "f64", "matrix3", "native-link", "runtime", "vector3"],
+        "M4V4" | "V4M4" => &["add", "f64", "matrix4", "native-link", "runtime", "vector4"],
+        "M2x3V2" | "V2M2x3" => {
+            &["add", "f64", "matrix2x3", "native-link", "runtime", "vector2"]
+        }
+        "M3x2V3" | "V3M3x2" => {
+            &["add", "f64", "matrix3x2", "native-link", "runtime", "vector3"]
+        }
+        "MDVD" | "VDMD" => &["add", "f64", "matrixd", "native-link", "runtime", "vectord"],
+        "MDV2" | "V2MD" => &["add", "f64", "matrixd", "native-link", "runtime", "vector2"],
+        "MDV3" | "V3MD" => &["add", "f64", "matrixd", "native-link", "runtime", "vector3"],
+        "MDV4" | "V4MD" => &["add", "f64", "matrixd", "native-link", "runtime", "vector4"],
+        "M2R2" | "R2M2" => {
+            &["add", "f64", "matrix2", "native-link", "row_vector2", "runtime"]
+        }
+        "M3R3" | "R3M3" => {
+            &["add", "f64", "matrix3", "native-link", "row_vector3", "runtime"]
+        }
+        "M4R4" | "R4M4" => {
+            &["add", "f64", "matrix4", "native-link", "row_vector4", "runtime"]
+        }
+        "M2x3R3" | "R3M2x3" => {
+            &["add", "f64", "matrix2x3", "native-link", "row_vector3", "runtime"]
+        }
+        "M3x2R2" | "R2M3x2" => {
+            &["add", "f64", "matrix3x2", "native-link", "row_vector2", "runtime"]
+        }
+        "MDRD" | "RDMD" => {
+            &["add", "f64", "matrixd", "native-link", "row_vectord", "runtime"]
+        }
+        "MDR2" | "R2MD" => {
+            &["add", "f64", "matrixd", "native-link", "row_vector2", "runtime"]
+        }
+        "MDR3" | "R3MD" => {
+            &["add", "f64", "matrixd", "native-link", "row_vector3", "runtime"]
+        }
+        "MDR4" | "R4MD" => {
+            &["add", "f64", "matrixd", "native-link", "row_vector4", "runtime"]
+        }
+        _ => unreachable!("the shared binary-operation traversal only emits known suffixes"),
+    }
 }
 
-mech_core::declare_native_runtime_factory! {
-    cfg: all(feature = "add", feature = "f64", feature = "matrix2"),
+#[cfg(feature = "f64")]
+macro_rules! declare_add_f64_native_runtime_factory {
+    ($_context:tt, $lib:ident, $suffix:ident, $_shape_feature:tt, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "add", feature = "f64"),
 
-    registration: register_add_m2m2_f64,
-    installer: install_add_m2m2_f64,
+                registration: [<register_add_ $suffix:lower _f64>],
+                installer: [<install_add_ $suffix:lower _f64>],
 
-    name: "AddM2M2<f64>",
-    factory: <AddM2M2<f64> as MechFunctionFactory>::new,
+                name: concat!("Add", stringify!($suffix), "<", $scalar_name, ">"),
+                factory: <[<Add $suffix>]<$scalar> as MechFunctionFactory>::new,
 
-    package: "mech-math",
-    crate_name: "mech_math",
-    installer_path: "mech_math::__mech_native::install_add_m2m2_f64",
+                package: "mech-math",
+                crate_name: "mech_math",
+                installer_path: concat!(
+                    "mech_math::__mech_native::",
+                    stringify!([<install_add_ $suffix:lower _f64>])
+                ),
 
-    cargo_features: [
-        "add",
-        "f64",
-        "matrix2",
-        "native-link",
-        "runtime",
-    ],
+                cargo_features: add_f64_native_features(stringify!($suffix)),
+            }
+        }
+    };
 }
 
-mech_core::declare_native_runtime_factory! {
-    cfg: all(feature = "add", feature = "f64", feature = "matrixd"),
+#[cfg(feature = "f64")]
+macro_rules! register_add_f64_native_runtime_factory {
+    ($builder:ident, $lib:ident, $suffix:ident, $_shape_feature:tt, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        paste::paste! {
+            [<register_add_ $suffix:lower _f64>]($builder)?;
+        }
+    };
+}
 
-    registration: register_add_mdmd_f64,
-    installer: install_add_mdmd_f64,
+#[cfg(feature = "f64")]
+mech_core::__mech_for_each_binop_runtime_factory_for_type!(
+    declare_add_f64_native_runtime_factory,
+    (),
+    Add,
+    f64,
+    "f64",
+    f64
+);
 
-    name: "AddMDMD<f64>",
-    factory: <AddMDMD<f64> as MechFunctionFactory>::new,
-
+mech_core::declare_native_binop_runtime_factories! {
     package: "mech-math",
     crate_name: "mech_math",
-    installer_path: "mech_math::__mech_native::install_add_mdmd_f64",
-
-    cargo_features: [
-        "add",
-        "f64",
-        "matrixd",
-        "native-link",
-        "runtime",
-    ],
+    operation: Add,
+    operation_feature: "add",
+    additional_features: [],
+    scalars:
+        ("i8", i8, "i8", i8),
+        ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32),
+        ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128),
+        ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64),
+        ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32),
+        ("rational", R64, "r64", r64),
+        ("complex", C64, "c64", c64),
 }
 
 #[cfg(feature = "source")]
@@ -262,51 +347,58 @@ impl FunctionSpecializer for MathAdd {
 }
 
 #[cfg(feature = "f64")]
-struct AddF64RuntimeRegistrar<'a> {
-    builder: &'a mut FunctionCatalogBuilder,
+fn install_add_f64_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    mech_core::__mech_for_each_binop_runtime_factory_for_type!(
+        register_add_f64_native_runtime_factory,
+        builder,
+        Add,
+        f64,
+        "f64",
+        f64
+    );
+    Ok(())
 }
 
-#[cfg(feature = "f64")]
-impl AddF64RuntimeRegistrar<'_> {
-    fn insert_runtime_factory(
-        &mut self,
-        name: &'static str,
-        factory: mech_core::RuntimeFunctionFactory,
-    ) -> MResult<()> {
-        match name {
-            "AddSS<f64>" => register_add_ss_f64(self.builder),
-            #[cfg(feature = "matrix2")]
-            "AddM2M2<f64>" => register_add_m2m2_f64(self.builder),
-            #[cfg(feature = "matrixd")]
-            "AddMDMD<f64>" => register_add_mdmd_f64(self.builder),
-            _ => self.builder.insert_runtime_factory(name, factory),
-        }
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    mech_core::export_native_binop_runtime_factories! {
+        operation_feature: "add",
+        operation: Add;
+        ("i8", i8, "i8", i8),
+        ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32),
+        ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128),
+        ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64),
+        ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
+        ("rational", R64, "r64", r64),
+        ("complex", C64, "c64", c64),
     }
 }
 
-#[cfg(feature = "f64")]
-fn install_add_f64_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    let mut registrar = AddF64RuntimeRegistrar { builder };
-    mech_core::__mech_install_binop_runtime_factories_for_type!(registrar, Add, f64, "f64")
-}
-
 pub fn install_math_add_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_binop_runtime_factories!(
+    mech_core::install_native_binop_runtime_factories!(
         builder,
         Add;
-        ("i8", i8, "i8"),
-        ("i16", i16, "i16"),
-        ("i32", i32, "i32"),
-        ("i64", i64, "i64"),
-        ("i128", i128, "i128"),
-        ("u8", u8, "u8"),
-        ("u16", u16, "u16"),
-        ("u32", u32, "u32"),
-        ("u64", u64, "u64"),
-        ("u128", u128, "u128"),
-        ("f32", f32, "f32"),
-        ("rational", R64, "r64"),
-        ("complex", C64, "c64"),
+        ("i8", i8, "i8", i8),
+        ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32),
+        ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128),
+        ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64),
+        ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32),
+        ("rational", R64, "r64", r64),
+        ("complex", C64, "c64", c64),
     )?;
     #[cfg(feature = "f64")]
     install_add_f64_runtime(builder)?;
