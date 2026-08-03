@@ -1,0 +1,24 @@
+Native applications
+===============================================================================
+
+`mech build` is the authoritative build command. It accepts one or more
+source roots, or exactly one official `.mecb` file.
+
+~~~sh
+mech build app.mec --workspace-root . --out target/mech/app
+mech build app.mec --emit bytecode --out target/mech/app.mecb
+mech build app.mec --emit plan --workspace-root . --out target/mech/app.build-plan.json
+mech build app.mec --emit cargo-project --workspace-root . --out target/mech/app.cargo
+~~~
+
+The default emit is `native`, the default profile is `release`, and the
+default dependency source is the released registry. Use `--name` to choose a
+binary name, `--target` for a Cargo target triple, `--profile debug|release`
+for a native profile, and `--out` for the exact artifact path.
+
+`--config <MCFG>` supplies runtime host configuration; `--no-config` disables
+discovery. `--workspace-root <PATH>` selects local component paths instead of
+the registry. `--offline` is forwarded to generated Cargo operations.
+`--keep-project` copies the deterministic generated project beside an emitted
+native binary, bytecode file, or plan. `--emit cargo-project` already emits
+the project and cannot be combined with `--keep-project`.

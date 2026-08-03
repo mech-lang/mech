@@ -4,5 +4,5 @@
 Mech applications. It consumes official Mech bytecode plus trusted function,
 host, and dependency catalogs; bytecode never selects Cargo dependencies.
 
-Phase 1 freezes the public build-plan contract and proves a deliberately small
-set of native application vertical slices.
+The public build-plan contract is frozen and the crate covers engine, hosted,
+and live native-application vertical slices.
