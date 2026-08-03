@@ -236,9 +236,9 @@ fn validate_runtime_config_implications(
     Ok(())
 }
 
-/// Render the exact function-catalog reconstruction. Runtime installers are
-/// ordered by numeric runtime ID; host-function installers follow in trusted
-/// requirement-name order.
+/// Render the exact function-catalog reconstruction. Runtime factory installers
+/// are ordered by numeric runtime ID. Host functions belong to RuntimeBuilder
+/// and are installed by `src/runtime.rs`.
 pub fn render_catalog_source(plan: &NativeBuildPlan) -> MResult<String> {
     let mut runtime_functions = plan.runtime_functions.clone();
     runtime_functions.sort_by_key(|function| function.runtime_id);
@@ -253,24 +253,6 @@ pub fn render_catalog_source(plan: &NativeBuildPlan) -> MResult<String> {
     for function in runtime_functions {
         validate_project_installer_path(&function.installer_path)?;
         installers.push(function.installer_path);
-    }
-
-    let mut host_functions = plan
-        .application_requirements
-        .iter()
-        .filter_map(|requirement| match requirement {
-            PlannedApplicationRequirement::HostFunction {
-                name,
-                installer_path,
-                ..
-            } => Some((name, installer_path)),
-            PlannedApplicationRequirement::Resource { .. } => None,
-        })
-        .collect::<Vec<_>>();
-    host_functions.sort();
-    for (_, installer_path) in host_functions {
-        validate_project_installer_path(installer_path)?;
-        installers.push(installer_path.clone());
     }
 
     let mut seen = BTreeSet::new();
@@ -420,6 +402,25 @@ pub fn render_runtime_source(
         render_runtime_config(runtime)
     )
     .expect("writing to String cannot fail");
+
+    let mut host_functions = plan
+        .application_requirements
+        .iter()
+        .filter_map(|requirement| match requirement {
+            PlannedApplicationRequirement::HostFunction {
+                name,
+                installer_path,
+                ..
+            } => Some((name, installer_path)),
+            PlannedApplicationRequirement::Resource { .. } => None,
+        })
+        .collect::<Vec<_>>();
+    host_functions.sort();
+    for (_, installer_path) in host_functions {
+        validate_project_installer_path(installer_path)?;
+        write!(&mut source, "\n    builder = {installer_path}(builder)?;\n")
+            .expect("writing to String cannot fail");
+    }
 
     for factory_path in factories.values() {
         write!(
@@ -716,6 +717,25 @@ mod tests {
         for forbidden in ["install_runtime", "runtime_catalog", "mech_stdlib"] {
             assert!(!source.contains(forbidden));
         }
+    }
+
+    #[test]
+    fn host_function_installers_are_applied_to_runtime_builder_only() {
+        let mut plan = base_plan(NativeApplicationKind::Hosted);
+        plan.application_requirements = vec![PlannedApplicationRequirement::HostFunction {
+            name: "actor/message/kind".into(),
+            package: "mech-runtime".into(),
+            crate_name: "mech_runtime".into(),
+            installer_path: "mech_runtime::__mech_native::install_actor_message_kind".into(),
+            cargo_features: vec!["native-link".into(), "runtime".into(), "string".into()],
+        }];
+
+        let catalog = render_catalog_source(&plan).unwrap();
+        let runtime = render_runtime_source(&plan, None).unwrap();
+        assert!(!catalog.contains("install_actor_message_kind"));
+        assert!(runtime.contains(
+            "builder = mech_runtime::__mech_native::install_actor_message_kind(builder)?;"
+        ));
     }
 
     #[test]

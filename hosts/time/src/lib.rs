@@ -13,7 +13,7 @@ pub mod native;
 
 pub use config::{TimeHostSettings, time_settings_from_config};
 pub use manual::ManualTimeInputDriver;
-pub use module::{TIME_HOST_MCFG, time_host_manifest};
+pub use module::time_host_manifest;
 pub use provider::TimeResourceProvider;
 pub use snapshot::{
     CLOCK_PATHS, SharedTimeSnapshot, TimeBackend, TimeSnapshot, new_shared_snapshot,

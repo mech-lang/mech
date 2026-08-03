@@ -78,3 +78,47 @@ pub use self::store::*;
 pub use self::transaction::*;
 #[cfg(all(feature = "watcher", feature = "source"))]
 pub use self::workspace::*;
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    use std::sync::Arc;
+
+    use mech_core::MResult;
+
+    use crate::{
+        ActorMessageKindHostFunction, ActorMessagePayloadHostFunction, ActorStateGetHostFunction,
+        ActorStateIdHostFunction, ActorStatePutHostFunction, RegisteredHostFunction,
+        RuntimeBuilder,
+    };
+
+    pub fn install_actor_message_kind(builder: RuntimeBuilder) -> MResult<RuntimeBuilder> {
+        builder.host_function(RegisteredHostFunction::Pure(Arc::new(
+            ActorMessageKindHostFunction::new(),
+        )))
+    }
+
+    pub fn install_actor_message_payload(builder: RuntimeBuilder) -> MResult<RuntimeBuilder> {
+        builder.host_function(RegisteredHostFunction::Pure(Arc::new(
+            ActorMessagePayloadHostFunction::new(),
+        )))
+    }
+
+    pub fn install_actor_state_id(builder: RuntimeBuilder) -> MResult<RuntimeBuilder> {
+        builder.host_function(RegisteredHostFunction::Pure(Arc::new(
+            ActorStateIdHostFunction::new(),
+        )))
+    }
+
+    pub fn install_actor_state_get(builder: RuntimeBuilder) -> MResult<RuntimeBuilder> {
+        builder.host_function(RegisteredHostFunction::RuntimeManaged(Arc::new(
+            ActorStateGetHostFunction::new(),
+        )))
+    }
+
+    pub fn install_actor_state_put(builder: RuntimeBuilder) -> MResult<RuntimeBuilder> {
+        builder.host_function(RegisteredHostFunction::RuntimeManaged(Arc::new(
+            ActorStatePutHostFunction::new(),
+        )))
+    }
+}

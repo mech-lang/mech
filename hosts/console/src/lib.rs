@@ -8,7 +8,7 @@ pub mod browser;
 #[cfg(feature = "native")]
 pub mod native;
 
-pub use module::{CONSOLE_HOST_MCFG, console_host_manifest};
+pub use module::console_host_manifest;
 pub use provider::{
     ConsoleBackend, ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend,
     validate_console_settings,

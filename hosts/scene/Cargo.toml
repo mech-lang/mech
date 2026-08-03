@@ -17,7 +17,10 @@ browser = ["dep:wasm-bindgen", "dep:js-sys", "dep:web-sys"]
 
 [dependencies]
 mech-core = { version = "0.3.5", default-features = false, features = ["f64", "string", "record", "table", "tuple", "matrix"] }
-mech-runtime = { version = "0.3.5", default-features = false, features = ["source", "f64", "string"] }
+mech-runtime = { version = "0.3.5", default-features = false, features = ["runtime", "f64", "string"] }
 wasm-bindgen = { version = "0.2.105", optional = true }
 js-sys = { version = "0.3.82", optional = true }
 web-sys = { version = "0.3.82", optional = true, features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "CanvasRenderingContext2d", "SvgElement", "SvgsvgElement", "Node", "NodeList", "DomTokenList", "CssStyleDeclaration"] }
+
+[dev-dependencies]
+mech-runtime = { version = "0.3.5", default-features = false, features = ["source"] }
