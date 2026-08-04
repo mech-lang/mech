@@ -67,10 +67,58 @@ pub trait FunctionSpecializer: Send + Sync {
 pub struct RuntimeFunctionEntry {
     pub id: RuntimeFunctionId,
     pub name: String,
-    pub factory: RuntimeFunctionFactory,
+    factory: RuntimeFunctionFactory,
 
     #[cfg(feature = "native-plan")]
     pub native_linkage: Option<NativeFunctionLinkage>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeFunctionContractViolation {
+    pub id: RuntimeFunctionId,
+    pub name: String,
+    pub reason: String,
+}
+
+impl MechErrorKind for RuntimeFunctionContractViolation {
+    fn name(&self) -> &str {
+        "RuntimeFunctionContractViolation"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "runtime function {} (0x{:016x}) rejected its argument contract: {}",
+            self.name,
+            self.id.raw(),
+            self.reason,
+        )
+    }
+}
+
+impl RuntimeFunctionEntry {
+    fn wrap_contract_error(&self, error: MechError) -> MechError {
+        MechError::new(
+            RuntimeFunctionContractViolation {
+                id: self.id,
+                name: self.name.clone(),
+                reason: error.simple_message(),
+            },
+            None,
+        )
+        .with_source(error)
+        .with_compiler_loc()
+    }
+
+    pub fn validate_args(&self, args: &FunctionArgs) -> MResult<()> {
+        let function =
+            (self.factory)(args.clone()).map_err(|error| self.wrap_contract_error(error))?;
+        drop(function);
+        Ok(())
+    }
+
+    pub fn instantiate(&self, args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        (self.factory)(args).map_err(|error| self.wrap_contract_error(error))
+    }
 }
 
 #[derive(Clone)]
@@ -118,10 +166,6 @@ impl FunctionCatalog {
             exports_by_operation: BTreeMap::new(),
             all_exports: Vec::new(),
         }
-    }
-
-    pub fn runtime_factory(&self, id: RuntimeFunctionId) -> Option<RuntimeFunctionFactory> {
-        self.runtime_factories.get(&id).map(|entry| entry.factory)
     }
 
     pub fn runtime_entry(&self, id: RuntimeFunctionId) -> Option<&RuntimeFunctionEntry> {
@@ -1190,6 +1234,17 @@ mod tests {
         unreachable!("catalog tests do not instantiate runtime functions")
     }
 
+    fn rejecting_factory(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        Err(MechError::new(
+            crate::IncorrectNumberOfArguments {
+                expected: 2,
+                found: args.len(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+
     struct MacroFactory;
 
     impl crate::MechFunctionFactory for MacroFactory {
@@ -1335,6 +1390,31 @@ mod tests {
             .insert_runtime_factory("AddSS<f64>", test_factory)
             .unwrap_err();
         assert_eq!(error.kind_name(), "FunctionCatalogDuplicateRuntimeFactory");
+    }
+
+    #[test]
+    fn runtime_entry_wraps_factory_argument_failures_with_identity() {
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_runtime_factory("RejectingFactory", rejecting_factory)
+            .unwrap();
+        let catalog = builder.build().unwrap();
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_name("RejectingFactory"))
+            .unwrap();
+
+        let error = entry
+            .instantiate(FunctionArgs::Nullary(Value::Empty))
+            .err()
+            .expect("rejecting factory must fail");
+        assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
+        let violation = error.kind_as::<RuntimeFunctionContractViolation>().unwrap();
+        assert_eq!(
+            violation.id,
+            RuntimeFunctionId::from_name("RejectingFactory")
+        );
+        assert_eq!(violation.name, "RejectingFactory");
+        assert!(violation.reason.contains("IncorrectNumberOfArguments"));
     }
 
     #[test]
@@ -1792,7 +1872,7 @@ mod tests {
         assert_eq!(catalog.runtime_factory_count(), 1);
         assert_eq!(catalog.specializer_count(), 1);
         assert_eq!(catalog.runtime_entries().count(), 1);
-        assert!(catalog.runtime_factory(runtime_id).is_some());
+        assert!(catalog.runtime_entry(runtime_id).is_some());
         assert_eq!(
             catalog.runtime_entry(runtime_id).unwrap().name,
             "AddSS<f64>"

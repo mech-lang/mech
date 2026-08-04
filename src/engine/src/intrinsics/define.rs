@@ -24,9 +24,9 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(var, arg1, arg2) => {
-                let var: Ref<MatA> = unsafe { var.as_unchecked() }.clone();
-                let name: Ref<String> = unsafe { arg1.as_unchecked() }.clone();
-                let mutable: Ref<bool> = unsafe { arg2.as_unchecked() }.clone();
+                let var: Ref<MatA> = var.try_function_ref(FunctionArgumentRole::Output)?;
+                let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
                 let id = hash_str(&name.borrow());
                 Ok(Box::new(Self {
                     id,
@@ -105,9 +105,9 @@ macro_rules! impl_variable_define_fxn {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-              let var: Ref<$kind> = unsafe { out.as_unchecked() }.clone();
-              let name: Ref<String> = unsafe { arg1.as_unchecked() }.clone();
-              let mutable: Ref<bool> = unsafe { arg2.as_unchecked() }.clone();
+              let var: Ref<$kind> = out.try_function_ref(FunctionArgumentRole::Output)?;
+              let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+              let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
               let id = hash_str(&name.borrow());
               Ok(Box::new(Self { id, name, mutable, var }))
             },
@@ -891,9 +891,9 @@ pub struct VariableDefineEmpty {
 fn variable_define_empty_factory(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
         FunctionArgs::Binary(var, arg1, arg2) => {
-            let var: Ref<Value> = unsafe { var.as_unchecked() }.clone();
-            let name: Ref<String> = unsafe { arg1.as_unchecked() }.clone();
-            let mutable: Ref<bool> = unsafe { arg2.as_unchecked() }.clone();
+            let var: Ref<Value> = var.try_function_ref(FunctionArgumentRole::Output)?;
+            let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+            let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
             let id = hash_str(&name.borrow());
             Ok(Box::new(VariableDefineEmpty {
                 id,

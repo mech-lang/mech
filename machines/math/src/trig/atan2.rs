@@ -61,9 +61,9 @@ macro_rules! impl_two_arg_fxn {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
-                        let arg1: Ref<$kind1> = unsafe { arg1.as_unchecked().clone() };
-                        let arg2: Ref<$kind2> = unsafe { arg2.as_unchecked().clone() };
-                        let out: Ref<$out_kind> = unsafe { out.as_unchecked().clone() };
+                        let arg1: Ref<$kind1> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let arg2: Ref<$kind2> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let out: Ref<$out_kind> = out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new($struct_name { arg1, arg2, out }))
                     }
                     _ => Err(MechError::new(

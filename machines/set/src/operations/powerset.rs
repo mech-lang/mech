@@ -16,8 +16,8 @@ impl MechFunctionFactory for SetPowersetFxn {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, input) => {
-                let input: Ref<MechSet> = unsafe { input.as_unchecked() }.clone();
-                let out: Ref<MechSet> = unsafe { out.as_unchecked() }.clone();
+                let input: Ref<MechSet> = input.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let out: Ref<MechSet> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(SetPowersetFxn { input, out }))
             }
             _ => Err(MechError::new(

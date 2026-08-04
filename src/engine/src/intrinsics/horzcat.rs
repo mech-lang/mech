@@ -21,7 +21,7 @@ macro_rules! horizontal_concatenate {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Nullary(out) => {
-              let out: Ref<[<RowVector $vec_size>]<T>> = unsafe { out.as_unchecked() }.clone();
+              let out: Ref<[<RowVector $vec_size>]<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
               Ok(Box::new(Self { out }))
             },
             _ => Err(MechError::new(
@@ -78,9 +78,12 @@ macro_rules! horzcat_two_args {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg0, arg1) => {
-                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
-                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        let e0: Ref<$e0<T>> =
+                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let e1: Ref<$e1<T>> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let out: Ref<$out<T>> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self { e0, e1, out }))
                     }
                     _ => Err(MechError::new(
@@ -157,10 +160,14 @@ macro_rules! horzcat_three_args {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
-                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                        let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
-                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        let e0: Ref<$e0<T>> =
+                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let e1: Ref<$e1<T>> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let e2: Ref<$e2<T>> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                        let out: Ref<$out<T>> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self { e0, e1, e2, out }))
                     }
                     _ => Err(MechError::new(
@@ -240,11 +247,16 @@ macro_rules! horzcat_four_args {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
-                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                        let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
-                        let e3: Ref<$e3<T>> = unsafe { arg3.as_unchecked() }.clone();
-                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        let e0: Ref<$e0<T>> =
+                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let e1: Ref<$e1<T>> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let e2: Ref<$e2<T>> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                        let e3: Ref<$e3<T>> =
+                            arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                        let out: Ref<$out<T>> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             e0,
                             e1,
@@ -331,9 +343,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -415,10 +429,13 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let e2: Box<dyn CopyMat<T>> =
+                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -503,11 +520,15 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
-                let e3: Box<dyn CopyMat<T>> = unsafe { arg3.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let e2: Box<dyn CopyMat<T>> =
+                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
+                let e3: Box<dyn CopyMat<T>> =
+                    arg3.try_function_copyable_matrix(FunctionArgumentRole::Input(3))?;
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -605,16 +626,17 @@ where
         match args {
             FunctionArgs::Variadic(out, vargs) => {
                 let mut e0 = Vec::with_capacity(vargs.len());
-                for arg in vargs {
+                for (i, arg) in vargs.into_iter().enumerate() {
                     if arg.is_scalar() {
-                        let scalar = unsafe { arg.as_unchecked::<T>() }.clone();
+                        let scalar = arg.try_function_ref(FunctionArgumentRole::Input(i))?;
                         e0.push(HorizontalConcatenateInput::Scalar(scalar));
                     } else {
-                        let matrix = unsafe { arg.get_copyable_matrix_unchecked::<T>() };
+                        let matrix =
+                            arg.try_function_copyable_matrix(FunctionArgumentRole::Input(i))?;
                         e0.push(HorizontalConcatenateInput::Matrix(matrix));
                     }
                 }
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, out }))
             }
             _ => Err(MechError::new(
@@ -707,7 +729,7 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
-                let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let out: Ref<RowDVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
@@ -775,15 +797,15 @@ where
                 for (i, arg) in vargs.into_iter().enumerate() {
                     let kind = arg.kind();
                     if arg.is_scalar() {
-                        let scalar_ref = unsafe { arg.as_unchecked::<T>() };
-                        scalar.push((scalar_ref.clone(), i));
+                        let scalar_ref = arg.try_function_ref(FunctionArgumentRole::Input(i))?;
+                        scalar.push((scalar_ref, i));
                     } else {
-                        let mat_ref: Box<dyn CopyMat<T>> =
-                            unsafe { arg.get_copyable_matrix_unchecked::<T>() };
+                        let mat_ref =
+                            arg.try_function_copyable_matrix(FunctionArgumentRole::Input(i))?;
                         matrix.push((mat_ref, i));
                     }
                 }
-                let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let out: Ref<RowDVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     scalar,
                     matrix,
@@ -1070,6 +1092,49 @@ mod compiler_tests {
 
         HorizontalConcatenateRD::<f64>::new(FunctionArgs::Nullary(out.to_value())).unwrap();
     }
+
+    #[test]
+    fn constructors_for_every_runtime_arity_reject_incompatible_values_without_mutation() {
+        fn assert_type_mismatch(result: MResult<Box<dyn MechFunction>>) {
+            let error = result.err().expect("incompatible arguments must fail");
+            assert_eq!(error.kind_name(), "FunctionArgumentTypeMismatch");
+        }
+
+        let scalar = Ref::new(7.0_f64).to_value();
+        let output = Ref::new(DMatrix::from_element(1, 4, 19.0));
+        let output_value = output.to_value();
+        let matrix = Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_element(1, 1, 3.0))));
+
+        assert_type_mismatch(HorizontalConcatenateRD::<f64>::new(FunctionArgs::Nullary(
+            scalar.clone(),
+        )));
+        assert_type_mismatch(HorizontalConcatenateS1D::<f64>::new(FunctionArgs::Unary(
+            output_value.clone(),
+            matrix.clone(),
+        )));
+        assert_type_mismatch(HorizontalConcatenateThreeArgs::<f64>::new(
+            FunctionArgs::Ternary(
+                output_value.clone(),
+                matrix.clone(),
+                scalar.clone(),
+                matrix.clone(),
+            ),
+        ));
+        assert_type_mismatch(HorizontalConcatenateFourArgs::<f64>::new(
+            FunctionArgs::Quaternary(
+                output_value.clone(),
+                matrix.clone(),
+                matrix.clone(),
+                scalar.clone(),
+                matrix.clone(),
+            ),
+        ));
+        assert_type_mismatch(HorizontalConcatenateNArgs::<f64>::new(
+            FunctionArgs::Variadic(output_value, vec![matrix, Value::Empty]),
+        ));
+
+        assert_eq!(output.borrow().as_slice(), &[19.0; 4]);
+    }
 }
 
 // HorizontalConcatenateS1D ---------------------------------------------------
@@ -1091,8 +1156,8 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg0) => {
-                let arg: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let arg: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { arg, out }))
             }
             _ => Err(MechError::new(
@@ -1160,8 +1225,8 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg0) => {
-                let arg: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let out: Ref<Matrix1<T>> = unsafe { out.as_unchecked() }.clone();
+                let arg: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let out: Ref<Matrix1<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { arg, out }))
             }
             _ => Err(MechError::new(
@@ -1230,9 +1295,9 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let out: Ref<RowVector2<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<RowVector2<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -1331,10 +1396,10 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -1407,11 +1472,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -1502,7 +1567,7 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
-                let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let out: Ref<RowDVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
@@ -1564,7 +1629,8 @@ macro_rules! horzcat_single {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Nullary(out) => {
-                        let out: Ref<$shape<T>> = unsafe { out.as_unchecked() }.clone();
+                        let out: Ref<$shape<T>> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self { out }))
                     }
                     _ => Err(MechError::new(
@@ -1651,9 +1717,10 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<RowVector2<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<RowVector2<T>> =
+                    arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -1726,9 +1793,10 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<RowVector2<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<RowVector2<T>> =
+                    arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -1799,9 +1867,9 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let out: Ref<RowVector2<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<RowVector2<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -1873,9 +1941,9 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let out: Ref<RowVector2<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<RowVector2<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -1949,11 +2017,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -2037,11 +2105,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -2125,11 +2193,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -2213,11 +2281,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -2299,9 +2367,10 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<RowVector3<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<RowVector3<T>> =
+                    arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -2375,9 +2444,10 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Ref<RowVector3<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<RowVector3<T>> =
+                    arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -2452,10 +2522,10 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -2530,10 +2600,10 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -2608,10 +2678,10 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -2686,10 +2756,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<RowVector2<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<RowVector2<T>> =
+                    arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -2765,10 +2836,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<RowVector2<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<RowVector2<T>> =
+                    arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -2844,10 +2916,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<RowVector2<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<RowVector2<T>> =
+                    arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -2923,10 +2996,10 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -3018,10 +3091,10 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -3096,10 +3169,10 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector3<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -3231,10 +3304,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<RowVector2<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<RowVector2<T>> =
+                    arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -3310,10 +3384,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<RowVector2<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<RowVector2<T>> =
+                    arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -3390,11 +3465,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -3477,10 +3552,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<RowVector2<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<RowVector2<T>> =
+                    arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -3556,10 +3632,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<RowVector2<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<RowVector2<T>> =
+                    arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -3635,10 +3712,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<RowVector2<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<RowVector2<T>> =
+                    arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -3714,10 +3792,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<RowVector2<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<RowVector2<T>> =
+                    arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -3794,11 +3873,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -3882,11 +3961,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -3970,11 +4049,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -4058,11 +4137,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -4146,11 +4225,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -4347,11 +4426,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<T> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -4435,11 +4514,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -4523,11 +4602,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -4610,11 +4689,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<T> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -4697,11 +4776,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<RowVector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,

@@ -49,8 +49,8 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, source) => {
-                let sink: Ref<T> = unsafe { out.as_unchecked() }.clone();
-                let source: Ref<T> = unsafe { source.as_unchecked() }.clone();
+                let sink: Ref<T> = out.try_function_ref(FunctionArgumentRole::Output)?;
+                let source: Ref<T> = source.try_function_ref(FunctionArgumentRole::Input(0))?;
 
                 Ok(Box::new(Self { sink, source }))
             }

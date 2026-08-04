@@ -28,8 +28,8 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg) => {
-                let arg: Ref<T> = unsafe { arg.as_unchecked() }.clone();
-                let out: Ref<T> = unsafe { out.as_unchecked() }.clone();
+                let arg: Ref<T> = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let out: Ref<T> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     arg,
                     out,
@@ -103,8 +103,8 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg) => {
-                let arg: Ref<MatA> = unsafe { arg.as_unchecked() }.clone();
-                let out: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
+                let arg: Ref<MatA> = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let out: Ref<MatA> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     arg,
                     out,

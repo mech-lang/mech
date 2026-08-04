@@ -106,11 +106,13 @@ macro_rules! impl_range_range_fxn_v {
                 match args {
                     FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
                         let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            unsafe { arg1.as_unchecked() }.clone();
-                        let ix1: Ref<IxVec1> = unsafe { arg2.as_unchecked() }.clone();
-                        let ix2: Ref<IxVec2> = unsafe { arg3.as_unchecked() }.clone();
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ix1: Ref<IxVec1> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let ix2: Ref<IxVec2> =
+                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
                         let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            unsafe { out.as_unchecked() }.clone();
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,
@@ -244,10 +246,11 @@ macro_rules! impl_all_fxn_v {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
                         let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            unsafe { arg1.as_unchecked() }.clone();
-                        let ixes: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ixes: Ref<IxVec> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
                         let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            unsafe { out.as_unchecked() }.clone();
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,

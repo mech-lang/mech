@@ -162,7 +162,7 @@ fn enabled_standard_profile_is_fully_catalog_owned() {
     }
     assert!(
         catalog
-            .runtime_factory(RuntimeFunctionId::from_name("AddSS<f64>"))
+            .runtime_entry(RuntimeFunctionId::from_name("AddSS<f64>"))
             .is_some()
     );
 }

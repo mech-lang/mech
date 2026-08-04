@@ -7,8 +7,9 @@
 ))]
 mod bytecode_dependency_tests {
     use super::super::super::{
-        FunctionArgs, MResult, MechFunction, MechFunctionImpl, ProgramState, ReactiveCellId,
-        ReactiveDependencyKind, Ref, Value, register_bytecode_function,
+        FunctionArgs, FunctionCatalogBuilder, MResult, MechFunction, MechFunctionImpl,
+        ProgramState, ReactiveCellId, ReactiveDependencyKind, Ref, RuntimeFunctionId, Value,
+        register_bytecode_function,
     };
 
     #[cfg(feature = "compiler")]
@@ -54,6 +55,20 @@ mod bytecode_dependency_tests {
         Ok(Box::new(BytecodeDependencyTestFunction { output }))
     }
 
+    fn register_dependency_test_function(
+        state: &ProgramState,
+        args: FunctionArgs,
+    ) -> MResult<Value> {
+        const NAME: &str = "BytecodeDependencyTestFunction";
+        let mut builder = FunctionCatalogBuilder::new();
+        builder.insert_runtime_factory(NAME, bytecode_dependency_test_factory)?;
+        let catalog = builder.build()?;
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_name(NAME))
+            .expect("test factory was just registered");
+        register_bytecode_function(state, entry, args)
+    }
+
     fn scalar(value: f64) -> (Value, ReactiveCellId) {
         let cell = Ref::new(value);
         let id = ReactiveCellId::new(cell.id());
@@ -65,12 +80,9 @@ mod bytecode_dependency_tests {
         let state = ProgramState::new();
         let (output, output_cell) = scalar(1.0);
 
-        let result = register_bytecode_function(
-            &state,
-            bytecode_dependency_test_factory,
-            FunctionArgs::Nullary(output.clone()),
-        )
-        .unwrap();
+        let result =
+            register_dependency_test_function(&state, FunctionArgs::Nullary(output.clone()))
+                .unwrap();
 
         let plan = state.plan.borrow();
         let node = plan.node(0).unwrap();
@@ -88,12 +100,7 @@ mod bytecode_dependency_tests {
         let (output, output_cell) = scalar(1.0);
         let (input, input_cell) = scalar(2.0);
 
-        register_bytecode_function(
-            &state,
-            bytecode_dependency_test_factory,
-            FunctionArgs::Unary(output, input),
-        )
-        .unwrap();
+        register_dependency_test_function(&state, FunctionArgs::Unary(output, input)).unwrap();
 
         let plan = state.plan.borrow();
         let node = plan.node(0).unwrap();
@@ -117,12 +124,7 @@ mod bytecode_dependency_tests {
         let (lhs, lhs_cell) = scalar(2.0);
         let (rhs, rhs_cell) = scalar(3.0);
 
-        register_bytecode_function(
-            &state,
-            bytecode_dependency_test_factory,
-            FunctionArgs::Binary(output, lhs, rhs),
-        )
-        .unwrap();
+        register_dependency_test_function(&state, FunctionArgs::Binary(output, lhs, rhs)).unwrap();
 
         let plan = state.plan.borrow();
         let node = plan.node(0).unwrap();
@@ -150,9 +152,8 @@ mod bytecode_dependency_tests {
         let (second, second_cell) = scalar(3.0);
         let (third, third_cell) = scalar(4.0);
 
-        register_bytecode_function(
+        register_dependency_test_function(
             &state,
-            bytecode_dependency_test_factory,
             FunctionArgs::Variadic(output, vec![first, second, third]),
         )
         .unwrap();
@@ -174,9 +175,8 @@ mod bytecode_dependency_tests {
         let (output, _) = scalar(1.0);
         let (input, input_cell) = scalar(2.0);
 
-        register_bytecode_function(
+        register_dependency_test_function(
             &state,
-            bytecode_dependency_test_factory,
             FunctionArgs::Binary(output, input.clone(), input),
         )
         .unwrap();

@@ -3,14 +3,12 @@ machines/combinatorics/src/n_choose_k.rs|typed-machine-kernel|mech-combinatorics
 machines/compare/src/eq.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/gt.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/gte.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/compare/src/lib.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/lt.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/lte.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/max.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/min.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/neq.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/logic/src/and.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/logic/src/lib.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/logic/src/not.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/logic/src/or.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/logic/src/xor.rs|typed-machine-kernel|mech-logic|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
@@ -109,14 +107,10 @@ machines/set/src/relations/superset.rs|typed-machine-kernel|mech-set|macro-selec
 machines/set/src/setdata/size.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/stats/src/sum_column.rs|typed-machine-kernel|mech-stats|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/stats/src/sum_row.rs|typed-machine-kernel|mech-stats|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/stats/src/lib.rs|typed-machine-kernel|mech-stats|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/string/src/concat.rs|typed-machine-kernel|mech-string|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/string/src/lib.rs|typed-machine-kernel|mech-string|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 src/abi/src/lib.rs|ffi|mech-abi|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
-src/core/src/stdlib.rs|value-representation|mech-core|Value variants and matrix element types match every erased reference operation|existing zero-copy value representation
 src/core/src/structures/matrix.rs|value-representation|mech-core|Value variants and matrix element types match every erased reference operation|existing zero-copy value representation
 src/core/src/types/mod.rs|value-representation|mech-core|raw pointers remain process-local observations of an opaque Ref backing cell and never cross transaction boundaries|existing low-level Ref representation
-src/core/src/value.rs|value-representation|mech-core|Value variants and matrix element types match every erased reference operation|existing zero-copy value representation
 src/engine/src/function/module.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/engine/src/intrinsics/access/matrix.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/engine/src/intrinsics/access/table.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
@@ -129,12 +123,10 @@ src/engine/src/intrinsics/assign/tuple.rs|typed-interpreter-kernel|mech-engine|v
 src/engine/src/intrinsics/convert/mat_to_mat.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/engine/src/intrinsics/convert/scalar.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/engine/src/intrinsics/convert/scalar_to_mat.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
-src/engine/src/intrinsics/define.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/engine/src/intrinsics/horzcat.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/engine/src/intrinsics/mod.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/engine/src/intrinsics/table_ops.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/engine/src/intrinsics/vertcat.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
-src/engine/src/intrinsics/constructors.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/wasm/src/websocket.rs|ffi|mech-wasm|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 tests/fixtures/dynamic-status-module/src/lib.rs|ffi|repository-tests|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 tests/mech_repl_ctrlc.rs|ffi|repository-tests|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
