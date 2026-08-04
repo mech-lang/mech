@@ -340,7 +340,6 @@ type RuntimeInstaller = fn(&mut FunctionCatalogBuilder) -> mech_core::MResult<()
 struct OwnedRuntimeFactory {
     name: String,
     id: RuntimeFunctionId,
-    pointer: usize,
     owner: &'static str,
 }
 
@@ -368,7 +367,6 @@ fn generate_runtime_factory_surface() -> AppResult<RuntimeFactorySurface> {
             let incoming = OwnedRuntimeFactory {
                 name: entry.name.clone(),
                 id: entry.id,
-                pointer: entry.factory as usize,
                 owner,
             };
             if RuntimeFunctionId::from_name(&incoming.name) != incoming.id {
@@ -446,7 +444,7 @@ fn validate_composed_runtime_catalog(
                 format_id(entry.id.raw()),
             )
         })?;
-        if entry.name != owned.name || entry.factory as usize != owned.pointer {
+        if entry.name != owned.name {
             return Err(format!(
                 "composed standard catalog factory {} ({}) does not match owning fragment {} exactly",
                 entry.name,

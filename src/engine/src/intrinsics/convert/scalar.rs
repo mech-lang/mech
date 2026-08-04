@@ -13,7 +13,7 @@ impl MechFunctionFactory for ConvertSEnum {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
-                let out: Ref<MechEnum> = unsafe { out.as_unchecked() }.clone();
+                let out: Ref<MechEnum> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
@@ -56,7 +56,7 @@ struct ConvertSEmpty {
 fn convert_empty_factory(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
         FunctionArgs::Nullary(out) => {
-            let out: Ref<Value> = unsafe { out.as_unchecked() }.clone();
+            let out: Ref<Value> = out.try_function_ref(FunctionArgumentRole::Output)?;
             Ok(Box::new(ConvertSEmpty { out }))
         }
         _ => Err(MechError::new(

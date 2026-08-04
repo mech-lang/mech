@@ -43,9 +43,9 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, from, to) => {
-                let from: Ref<T> = unsafe { from.as_unchecked() }.clone();
-                let to: Ref<T> = unsafe { to.as_unchecked() }.clone();
-                let out: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+                let from: Ref<T> = from.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let to: Ref<T> = to.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<naMatrix<T, R1, C1, S1>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     from,
                     to,

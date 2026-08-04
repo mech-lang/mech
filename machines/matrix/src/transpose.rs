@@ -31,8 +31,8 @@ macro_rules! impl_transpose {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Unary(out, arg) => {
-                        let arg: Ref<$arg_type> = unsafe { arg.as_unchecked().clone() };
-                        let out: Ref<$out_type> = unsafe { out.as_unchecked().clone() };
+                        let arg: Ref<$arg_type> = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let out: Ref<$out_type> = out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new($struct_name { arg, out }))
                     }
                     _ => Err(MechError::new(

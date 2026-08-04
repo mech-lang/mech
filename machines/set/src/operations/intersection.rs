@@ -15,9 +15,9 @@ impl MechFunctionFactory for SetIntersectionFxn {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechSet> = unsafe { arg1.as_unchecked() }.clone();
-                let rhs: Ref<MechSet> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<MechSet> = unsafe { out.as_unchecked() }.clone();
+                let lhs: Ref<MechSet> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let rhs: Ref<MechSet> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<MechSet> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(SetIntersectionFxn { lhs, rhs, out }))
             }
             _ => Err(MechError::new(

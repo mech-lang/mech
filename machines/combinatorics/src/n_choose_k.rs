@@ -41,9 +41,9 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let n: Ref<T> = unsafe { arg1.as_unchecked().clone() };
-                let k: Ref<T> = unsafe { arg2.as_unchecked().clone() };
-                let out: Ref<T> = unsafe { out.as_unchecked().clone() };
+                let n: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let k: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<T> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { n, k, out }))
             }
             _ => Err(MechError::new(
@@ -110,9 +110,26 @@ where
 #[cfg(feature = "matrix")]
 #[derive(Debug)]
 pub struct NChooseKMatrix<T> {
-    n: Ref<Matrix<T>>,
+    n: Matrix<T>,
     k: Ref<T>,
-    out: Ref<Matrix<T>>,
+    out: Matrix<T>,
+}
+
+#[cfg(feature = "matrix")]
+fn n_choose_k_matrix_result<T>(n: &Matrix<T>, k: T) -> Matrix<T>
+where
+    T: Copy + Clone + Debug + PartialEq + ToUsize + ToMatrix + 'static,
+{
+    let elements = n.as_vec();
+    let k_usize = k.to_usize();
+    if k_usize > elements.len() {
+        return T::to_matrix(vec![], 0, k_usize);
+    }
+
+    let combinations: Vec<Vec<T>> = elements.iter().copied().combinations(k_usize).collect();
+    let rows = combinations.len();
+    let flat_data: Vec<T> = combinations.into_iter().flatten().collect();
+    T::to_matrix(flat_data, k_usize, rows)
 }
 #[cfg(feature = "matrix")]
 impl<T> MechFunctionFactory for NChooseKMatrix<T>
@@ -143,9 +160,9 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let n: Ref<Matrix<T>> = unsafe { arg1.as_unchecked().clone() };
-                let k: Ref<T> = unsafe { arg2.as_unchecked().clone() };
-                let out: Ref<Matrix<T>> = unsafe { out.as_unchecked().clone() };
+                let n: Matrix<T> = arg1.try_function_matrix(FunctionArgumentRole::Input(0))?;
+                let k: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Matrix<T> = out.try_function_matrix(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { n, k, out }))
             }
             _ => Err(MechError::new(
@@ -183,38 +200,17 @@ where
     Matrix<T>: ToValue,
 {
     fn solve(&self) {
-        let n_matrix = self.n.borrow();
-        let k_scalar = *self.k.borrow();
-        let elements: Vec<T> = n_matrix.as_vec();
-        let k_usize: usize = k_scalar.to_usize();
-        // Check if k is greater than the number of elements. If it is, return an empty matrix.
-        if k_usize > elements.len() {
-            let empty = T::to_matrix(vec![], 0, k_usize);
-            *self.out.borrow_mut() = empty;
-            return;
-        }
-        // Generate combinations
-        let combinations: Vec<Vec<T>> = elements.iter().copied().combinations(k_usize).collect();
-
-        // Reshape into output matrix
-        let rows = combinations.len();
-        let cols = k_usize;
-        let flat_data: Vec<T> = combinations.into_iter().flatten().collect();
-        let result = T::to_matrix(flat_data, cols, rows);
-        *self.out.borrow_mut() = result;
+        let result = n_choose_k_matrix_result(&self.n, *self.k.borrow());
+        assert!(
+            self.out.replace_payload_from(&result),
+            "n-choose-k output storage cannot represent the computed matrix shape"
+        );
     }
     fn out(&self) -> Value {
-        (*self.out.borrow()).to_value()
+        self.out.to_value()
     }
     fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Err(MechError::new(
-            TransactionStateUnsupportedError {
-                function: format!("NChooseKMatrix<{}>", core::any::type_name::<T>()),
-                reason: "the retained outer matrix enum is not a Value-backed cell".to_string(),
-            },
-            None,
-        )
-        .with_compiler_loc())
+        Ok(self.reactive_output_values())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
@@ -227,7 +223,11 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NChooseKMatrix<{}>", T::as_value_kind());
-        compile_binop!(name, self.out, self.n, self.k, ctx);
+        let out = compile_register!(self.out, ctx);
+        let n = compile_register!(self.n, ctx);
+        let k = compile_register_brrw!(self.k, ctx);
+        ctx.emit_binop(hash_str(&name), out, n, k);
+        Ok(out)
     }
 }
 #[cfg(all(test, feature = "matrix", feature = "f64"))]
@@ -235,18 +235,17 @@ mod transaction_state_tests {
     use super::*;
 
     #[test]
-    fn matrix_combinations_decline_unsupported_outer_state_without_borrowing_it() {
+    fn matrix_combinations_expose_value_backed_transaction_state() {
+        let n = f64::to_matrix(vec![1.0, 2.0], 2, 1);
+        let out = f64::to_matrix(vec![1.0], 1, 1);
         let function = NChooseKMatrix {
-            n: Ref::new(f64::to_matrix(vec![1.0, 2.0], 2, 1)),
+            n,
             k: Ref::new(1.0),
-            out: Ref::new(f64::to_matrix(vec![1.0], 1, 1)),
+            out: out.clone(),
         };
-        let held = function.out.borrow();
+        let state = function.transaction_state_values().unwrap();
 
-        let error = function.transaction_state_values().unwrap_err();
-
-        assert_eq!(error.kind_name(), "TransactionStateUnsupported");
-        drop(held);
+        assert_eq!(state, vec![out.to_value()]);
     }
 }
 
@@ -338,89 +337,75 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn Mech
             out: Ref::new(C64::default()),
         })),
         #[cfg(all(feature = "matrix", feature = "u8"))]
-        (Value::MatrixU8(n), Value::U8(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(u8::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixU8(n), Value::U8(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "u16"))]
-        (Value::MatrixU16(n), Value::U16(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(u16::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixU16(n), Value::U16(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "u32"))]
-        (Value::MatrixU32(n), Value::U32(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(u32::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixU32(n), Value::U32(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "u64"))]
-        (Value::MatrixU64(n), Value::U64(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(u64::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixU64(n), Value::U64(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "u128"))]
-        (Value::MatrixU128(n), Value::U128(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(u128::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixU128(n), Value::U128(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "i8"))]
-        (Value::MatrixI8(n), Value::I8(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(i8::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixI8(n), Value::I8(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "i16"))]
-        (Value::MatrixI16(n), Value::I16(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(i16::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixI16(n), Value::I16(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "i32"))]
-        (Value::MatrixI32(n), Value::I32(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(i32::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixI32(n), Value::I32(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "i64"))]
-        (Value::MatrixI64(n), Value::I64(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(i64::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixI64(n), Value::I64(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "i128"))]
-        (Value::MatrixI128(n), Value::I128(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(i128::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixI128(n), Value::I128(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "f32"))]
-        (Value::MatrixF32(n), Value::F32(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(f32::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixF32(n), Value::F32(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "f64"))]
-        (Value::MatrixF64(n), Value::F64(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(f64::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixF64(n), Value::F64(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "rational"))]
-        (Value::MatrixR64(n), Value::R64(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(R64::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixR64(n), Value::R64(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         #[cfg(all(feature = "matrix", feature = "complex"))]
-        (Value::MatrixC64(n), Value::C64(k)) => Ok(Box::new(NChooseKMatrix {
-            n: Ref::new(n),
-            k,
-            out: Ref::new(C64::to_matrix(vec![], 0, 0)),
-        })),
+        (Value::MatrixC64(n), Value::C64(k)) => {
+            let out = n_choose_k_matrix_result(&n, *k.borrow());
+            Ok(Box::new(NChooseKMatrix { n, k, out }))
+        }
         (n, k) => Err(MechError::new(
             UnhandledFunctionArgumentKind2 {
                 arg: (n.kind(), k.kind()),

@@ -474,9 +474,9 @@ macro_rules! impl_access_all_fxn_v {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
           FunctionArgs::Binary(out, arg1, arg2) => {
-            let source: Ref<naMatrix<T, R2, C2, S2>> = unsafe { arg1.as_unchecked() }.clone();
-            let ixes: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
-            let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+            let source: Ref<naMatrix<T, R2, C2, S2>> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+            let ixes: Ref<IxVec> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+            let sink: Ref<naMatrix<T, R1, C1, S1>> = out.try_function_ref(FunctionArgumentRole::Output)?;
             Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
           },
           _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
@@ -541,9 +541,12 @@ macro_rules! impl_access_fxn {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
-                        let n: Ref<$arg_type> = unsafe { arg1.as_unchecked().clone() };
-                        let k: Ref<$ix_type> = unsafe { arg2.as_unchecked().clone() };
-                        let out: Ref<$out_type> = unsafe { out.as_unchecked().clone() };
+                        let n: Ref<$arg_type> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let k: Ref<$ix_type> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let out: Ref<$out_type> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new($struct_name {
                             source: n,
                             ixes: k,
@@ -615,10 +618,14 @@ macro_rules! impl_access_fxn2 {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<$arg_type> = unsafe { arg1.as_unchecked().clone() };
-                        let ix1: Ref<$ix1_type> = unsafe { arg2.as_unchecked().clone() };
-                        let ix2: Ref<$ix2_type> = unsafe { arg3.as_unchecked().clone() };
-                        let out: Ref<$out_type> = unsafe { out.as_unchecked().clone() };
+                        let source: Ref<$arg_type> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ix1: Ref<$ix1_type> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let ix2: Ref<$ix2_type> =
+                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
+                        let out: Ref<$out_type> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new($struct_name {
                             source,
                             ix1,

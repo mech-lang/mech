@@ -76,10 +76,10 @@ macro_rules! impl_op_assign_range_fxn_s {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
-                        let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                        let ixes: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
+                        let source: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ixes: Ref<IxVec> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
                         let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            unsafe { out.as_unchecked() }.clone();
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,
@@ -232,10 +232,10 @@ macro_rules! impl_op_assign_range_fxn_v {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
                         let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            unsafe { arg1.as_unchecked() }.clone();
-                        let ixes: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ixes: Ref<IxVec> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
                         let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            unsafe { out.as_unchecked() }.clone();
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,
@@ -409,8 +409,8 @@ macro_rules! impl_assign_scalar_scalar {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Unary(out, arg1) => {
-              let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-              let sink: Ref<T> = unsafe { out.as_unchecked() }.clone();
+              let source: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+              let sink: Ref<T> = out.try_function_ref(FunctionArgumentRole::Output)?;
               Ok(Box::new(Self { sink, source }))
             },
             _ => Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc())
@@ -489,8 +489,8 @@ macro_rules! impl_assign_vector_vector {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Unary(out, arg1) => {
-              let source: Ref<MatB> = unsafe { arg1.as_unchecked() }.clone();
-              let sink: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
+              let source: Ref<MatB> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+              let sink: Ref<MatA> = out.try_function_ref(FunctionArgumentRole::Output)?;
               Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
             },
             _ => Err(MechError::new(IncorrectNumberOfArguments { expected: 2, found: args.len() }, None).with_compiler_loc())
@@ -578,8 +578,8 @@ macro_rules! impl_assign_vector_scalar {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-              let source: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
-              let sink: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
+              let source: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+              let sink: Ref<MatA> = out.try_function_ref(FunctionArgumentRole::Output)?;
               Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
             },
             _ => Err(MechError::new(

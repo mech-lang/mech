@@ -47,7 +47,7 @@ impl MechFunctionFactory for ValueSet {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
-                let out: Ref<MechSet> = unsafe { out.as_unchecked().clone() };
+                let out: Ref<MechSet> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(ValueSet { out }))
             }
             _ => Err(MechError::new(

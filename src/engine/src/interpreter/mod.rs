@@ -1930,15 +1930,12 @@ impl Interpreter {
                     }
                     BytecodeInstruction::RuntimeNullary { function, dst } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let function_args = FunctionArgs::Nullary(out);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
@@ -1951,16 +1948,13 @@ impl Interpreter {
                     }
                     BytecodeInstruction::RuntimeUnary { function, dst, src } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let input = self.registers[*src as usize].clone();
                                 let function_args = FunctionArgs::Unary(out, input);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
@@ -1978,17 +1972,14 @@ impl Interpreter {
                         rhs,
                     } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let lhs = self.registers[*lhs as usize].clone();
                                 let rhs = self.registers[*rhs as usize].clone();
                                 let function_args = FunctionArgs::Binary(out, lhs, rhs);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
@@ -2007,18 +1998,15 @@ impl Interpreter {
                         c,
                     } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let arg_a = self.registers[*a as usize].clone();
                                 let arg_b = self.registers[*b as usize].clone();
                                 let arg_c = self.registers[*c as usize].clone();
                                 let function_args = FunctionArgs::Ternary(out, arg_a, arg_b, arg_c);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
@@ -2038,8 +2026,8 @@ impl Interpreter {
                         d,
                     } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let arg_a = self.registers[*a as usize].clone();
                                 let arg_b = self.registers[*b as usize].clone();
@@ -2047,11 +2035,8 @@ impl Interpreter {
                                 let arg_d = self.registers[*d as usize].clone();
                                 let function_args =
                                     FunctionArgs::Quaternary(out, arg_a, arg_b, arg_c, arg_d);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
@@ -2068,19 +2053,16 @@ impl Interpreter {
                         arguments,
                     } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let argument_values = arguments
                                     .iter()
                                     .map(|register| self.registers[*register as usize].clone())
                                     .collect::<Vec<Value>>();
                                 let function_args = FunctionArgs::Variadic(out, argument_values);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
@@ -2239,11 +2221,11 @@ impl Interpreter {
 #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
 fn register_bytecode_function(
     state: &ProgramState,
-    factory: fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>,
+    entry: &RuntimeFunctionEntry,
     function_args: FunctionArgs,
 ) -> MResult<Value> {
     let input_values = function_args.input_values();
-    let function = factory(function_args)?;
+    let function = entry.instantiate(function_args)?;
     register_bytecode_node(state, function, &input_values)
 }
 

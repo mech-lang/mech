@@ -21,9 +21,12 @@ macro_rules! vertcat_two_args {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg0, arg1) => {
-                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
-                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        let e0: Ref<$e0<T>> =
+                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let e1: Ref<$e1<T>> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let out: Ref<$out<T>> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self { e0, e1, out }))
                     }
                     _ => Err(MechError::new(
@@ -100,10 +103,14 @@ macro_rules! vertcat_three_args {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
-                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                        let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
-                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        let e0: Ref<$e0<T>> =
+                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let e1: Ref<$e1<T>> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let e2: Ref<$e2<T>> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                        let out: Ref<$out<T>> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self { e0, e1, e2, out }))
                     }
                     _ => Err(MechError::new(
@@ -175,11 +182,16 @@ macro_rules! vertcat_four_args {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
-                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                        let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
-                        let e3: Ref<$e3<T>> = unsafe { arg3.as_unchecked() }.clone();
-                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        let e0: Ref<$e0<T>> =
+                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let e1: Ref<$e1<T>> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let e2: Ref<$e2<T>> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                        let e3: Ref<$e3<T>> =
+                            arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                        let out: Ref<$out<T>> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             e0,
                             e1,
@@ -257,9 +269,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -341,10 +355,13 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let e2: Box<dyn CopyMat<T>> =
+                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -429,11 +446,15 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
-                let e3: Box<dyn CopyMat<T>> = unsafe { arg3.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let e2: Box<dyn CopyMat<T>> =
+                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
+                let e3: Box<dyn CopyMat<T>> =
+                    arg3.try_function_copyable_matrix(FunctionArgumentRole::Input(3))?;
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -525,12 +546,12 @@ where
         match args {
             FunctionArgs::Variadic(out, arg0) => {
                 let mut e0: Vec<Box<dyn CopyMat<T>>> = Vec::new();
-                for arg in arg0 {
+                for (i, arg) in arg0.into_iter().enumerate() {
                     let mat: Box<dyn CopyMat<T>> =
-                        unsafe { arg.get_copyable_matrix_unchecked::<T>() };
+                        arg.try_function_copyable_matrix(FunctionArgumentRole::Input(i))?;
                     e0.push(mat);
                 }
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, out }))
             }
             _ => Err(MechError::new(
@@ -678,7 +699,7 @@ macro_rules! vertical_concatenate {
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Unary(out, _arg0) => {
-              let out: Ref<[<$vec_size>]<T>> = unsafe { out.as_unchecked() }.clone();
+              let out: Ref<[<$vec_size>]<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
               Ok(Box::new(Self { out }))
             },
             _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 1, found: args.len()}, None).with_compiler_loc())
@@ -730,9 +751,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -812,10 +835,13 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let e2: Box<dyn CopyMat<T>> =
+                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
+                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -897,11 +923,15 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
-                let e3: Box<dyn CopyMat<T>> = unsafe { arg3.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let e2: Box<dyn CopyMat<T>> =
+                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
+                let e3: Box<dyn CopyMat<T>> =
+                    arg3.try_function_copyable_matrix(FunctionArgumentRole::Input(3))?;
+                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -995,15 +1025,15 @@ where
                 for (i, arg) in vargs.into_iter().enumerate() {
                     let kind = arg.kind();
                     if arg.is_scalar() {
-                        let scalar_ref = unsafe { arg.as_unchecked::<T>() };
-                        scalar.push((scalar_ref.clone(), i));
+                        let scalar_ref = arg.try_function_ref(FunctionArgumentRole::Input(i))?;
+                        scalar.push((scalar_ref, i));
                     } else {
-                        let mat_ref: Box<dyn CopyMat<T>> =
-                            unsafe { arg.get_copyable_matrix_unchecked::<T>() };
+                        let mat_ref =
+                            arg.try_function_copyable_matrix(FunctionArgumentRole::Input(i))?;
                         matrix.push((mat_ref, i));
                     }
                 }
-                let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     scalar,
                     matrix,
@@ -1091,7 +1121,7 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
-                let out: Ref<Matrix1<T>> = unsafe { out.as_unchecked() }.clone();
+                let out: Ref<Matrix1<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
@@ -1218,7 +1248,7 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
-                let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
@@ -1472,11 +1502,11 @@ where
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<Vector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<Vector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,

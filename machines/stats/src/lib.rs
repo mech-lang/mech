@@ -96,8 +96,8 @@ macro_rules! impl_stats_unop {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Unary(out, arg) => {
-                        let arg = unsafe { arg.as_unchecked().clone() };
-                        let out = unsafe { out.as_unchecked().clone() };
+                        let arg = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let out = out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new($struct_name { arg, out }))
                     }
                     _ => Err(MechError::new(

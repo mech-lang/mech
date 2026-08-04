@@ -7,6 +7,7 @@ use crate::*;
 #[cfg(feature = "rational")]
 use num_rational::Rational64;
 
+use core::any::Any;
 #[cfg(feature = "no_std")]
 use core::hash::BuildHasherDefault;
 #[cfg(feature = "no_std")]
@@ -1256,170 +1257,286 @@ impl Value {
         todo!();
     }
 
-    #[cfg(all(feature = "matrix",))]
-    pub unsafe fn get_copyable_matrix_unchecked<T>(&self) -> Box<dyn CopyMat<T>>
-    where
-        T: AsValueKind + 'static,
-    {
-        match (T::as_value_kind(), self) {
-            #[cfg(all(feature = "matrix", feature = "bool"))]
-            (ValueKind::Bool, Value::MatrixBool(m)) => {
-                let b: Box<dyn CopyMat<bool>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<bool>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "u8"))]
-            (ValueKind::U8, Value::MatrixU8(m)) => {
-                let b: Box<dyn CopyMat<u8>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<u8>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "u16"))]
-            (ValueKind::U16, Value::MatrixU16(m)) => {
-                let b: Box<dyn CopyMat<u16>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<u16>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "u32"))]
-            (ValueKind::U32, Value::MatrixU32(m)) => {
-                let b: Box<dyn CopyMat<u32>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<u32>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "u64"))]
-            (ValueKind::U64, Value::MatrixU64(m)) => {
-                let b: Box<dyn CopyMat<u64>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<u64>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "u128"))]
-            (ValueKind::U128, Value::MatrixU128(m)) => {
-                let b: Box<dyn CopyMat<u128>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<u128>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "i8"))]
-            (ValueKind::I8, Value::MatrixI8(m)) => {
-                let b: Box<dyn CopyMat<i8>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<i8>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "i16"))]
-            (ValueKind::I16, Value::MatrixI16(m)) => {
-                let b: Box<dyn CopyMat<i16>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<i16>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "i32"))]
-            (ValueKind::I32, Value::MatrixI32(m)) => {
-                let b: Box<dyn CopyMat<i32>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<i32>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "i64"))]
-            (ValueKind::I64, Value::MatrixI64(m)) => {
-                let b: Box<dyn CopyMat<i64>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<i64>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "i128"))]
-            (ValueKind::I128, Value::MatrixI128(m)) => {
-                let b: Box<dyn CopyMat<i128>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<i128>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "f32"))]
-            (ValueKind::F32, Value::MatrixF32(m)) => {
-                let b: Box<dyn CopyMat<f32>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<f32>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "f64"))]
-            (ValueKind::F64, Value::MatrixF64(m)) => {
-                let b: Box<dyn CopyMat<f64>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<f64>>, Box<dyn CopyMat<T>>>(b)
-            }
-            #[cfg(all(feature = "matrix", feature = "string"))]
-            (ValueKind::String, Value::MatrixString(m)) => {
-                let b: Box<dyn CopyMat<String>> = m.get_copyable_matrix();
-                std::mem::transmute::<Box<dyn CopyMat<String>>, Box<dyn CopyMat<T>>>(b)
-            }
-            _ => panic!("Unsupported type for get_copyable_matrix_unchecked"),
+    /// Returns the exact `Ref<_>` stored by this value, if it has one.
+    pub(crate) fn exact_ref_any(&self) -> Option<&dyn Any> {
+        match self {
+            #[cfg(feature = "u8")]
+            Value::U8(r) => Some(r),
+            #[cfg(feature = "u16")]
+            Value::U16(r) => Some(r),
+            #[cfg(feature = "u32")]
+            Value::U32(r) => Some(r),
+            #[cfg(feature = "u64")]
+            Value::U64(r) => Some(r),
+            #[cfg(feature = "u128")]
+            Value::U128(r) => Some(r),
+            #[cfg(feature = "i8")]
+            Value::I8(r) => Some(r),
+            #[cfg(feature = "i16")]
+            Value::I16(r) => Some(r),
+            #[cfg(feature = "i32")]
+            Value::I32(r) => Some(r),
+            #[cfg(feature = "i64")]
+            Value::I64(r) => Some(r),
+            #[cfg(feature = "i128")]
+            Value::I128(r) => Some(r),
+            #[cfg(feature = "f32")]
+            Value::F32(r) => Some(r),
+            #[cfg(feature = "f64")]
+            Value::F64(r) => Some(r),
+            #[cfg(any(feature = "string", feature = "variable_define"))]
+            Value::String(r) => Some(r),
+            #[cfg(any(feature = "bool", feature = "variable_define"))]
+            Value::Bool(r) => Some(r),
+            #[cfg(feature = "rational")]
+            Value::R64(r) => Some(r),
+            #[cfg(feature = "complex")]
+            Value::C64(r) => Some(r),
+            #[cfg(all(feature = "f64", feature = "matrix"))]
+            Value::MatrixF64(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "f32", feature = "matrix"))]
+            Value::MatrixF32(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "i8", feature = "matrix"))]
+            Value::MatrixI8(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "i16", feature = "matrix"))]
+            Value::MatrixI16(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "i32", feature = "matrix"))]
+            Value::MatrixI32(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "i64", feature = "matrix"))]
+            Value::MatrixI64(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "i128", feature = "matrix"))]
+            Value::MatrixI128(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "u8", feature = "matrix"))]
+            Value::MatrixU8(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "u16", feature = "matrix"))]
+            Value::MatrixU16(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "u32", feature = "matrix"))]
+            Value::MatrixU32(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "u64", feature = "matrix"))]
+            Value::MatrixU64(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "u128", feature = "matrix"))]
+            Value::MatrixU128(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "bool", feature = "matrix"))]
+            Value::MatrixBool(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "string", feature = "matrix"))]
+            Value::MatrixString(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "rational", feature = "matrix"))]
+            Value::MatrixR64(r) => Some(r.exact_ref_any()),
+            #[cfg(all(feature = "complex", feature = "matrix"))]
+            Value::MatrixC64(r) => Some(r.exact_ref_any()),
+            #[cfg(feature = "matrix")]
+            Value::MatrixIndex(r) => Some(r.exact_ref_any()),
+            #[cfg(feature = "matrix")]
+            Value::MatrixValue(r) => Some(r.exact_ref_any()),
+            Value::Index(r) => Some(r),
+            #[cfg(feature = "enum")]
+            Value::Enum(r) => Some(r),
+            #[cfg(feature = "set")]
+            Value::Set(r) => Some(r),
+            #[cfg(feature = "table")]
+            Value::Table(r) => Some(r),
+            #[cfg(feature = "tuple")]
+            Value::Tuple(r) => Some(r),
+            #[cfg(feature = "record")]
+            Value::Record(r) => Some(r),
+            #[cfg(feature = "map")]
+            Value::Map(r) => Some(r),
+            #[cfg(feature = "atom")]
+            Value::Atom(r) => Some(r),
+            Value::MutableReference(r) => Some(r),
+            Value::Id(_)
+            | Value::Typed(_, _)
+            | Value::Kind(_)
+            | Value::IndexAll
+            | Value::EmptyKind(_)
+            | Value::Empty => None,
         }
     }
 
-    pub unsafe fn as_unchecked<T>(&self) -> &Ref<T> {
+    #[cfg(feature = "matrix")]
+    pub fn exact_matrix_any(&self) -> Option<&dyn Any> {
+        match self {
+            Value::MatrixIndex(matrix) => Some(matrix),
+            #[cfg(feature = "bool")]
+            Value::MatrixBool(matrix) => Some(matrix),
+            #[cfg(feature = "u8")]
+            Value::MatrixU8(matrix) => Some(matrix),
+            #[cfg(feature = "u16")]
+            Value::MatrixU16(matrix) => Some(matrix),
+            #[cfg(feature = "u32")]
+            Value::MatrixU32(matrix) => Some(matrix),
+            #[cfg(feature = "u64")]
+            Value::MatrixU64(matrix) => Some(matrix),
+            #[cfg(feature = "u128")]
+            Value::MatrixU128(matrix) => Some(matrix),
+            #[cfg(feature = "i8")]
+            Value::MatrixI8(matrix) => Some(matrix),
+            #[cfg(feature = "i16")]
+            Value::MatrixI16(matrix) => Some(matrix),
+            #[cfg(feature = "i32")]
+            Value::MatrixI32(matrix) => Some(matrix),
+            #[cfg(feature = "i64")]
+            Value::MatrixI64(matrix) => Some(matrix),
+            #[cfg(feature = "i128")]
+            Value::MatrixI128(matrix) => Some(matrix),
+            #[cfg(feature = "f32")]
+            Value::MatrixF32(matrix) => Some(matrix),
+            #[cfg(feature = "f64")]
+            Value::MatrixF64(matrix) => Some(matrix),
+            #[cfg(feature = "string")]
+            Value::MatrixString(matrix) => Some(matrix),
+            #[cfg(feature = "rational")]
+            Value::MatrixR64(matrix) => Some(matrix),
+            #[cfg(feature = "complex")]
+            Value::MatrixC64(matrix) => Some(matrix),
+            Value::MatrixValue(matrix) => Some(matrix),
+            _ => None,
+        }
+    }
+
+    #[cfg(feature = "matrix")]
+    pub fn try_function_matrix<T: Clone + 'static>(
+        &self,
+        role: FunctionArgumentRole,
+    ) -> MResult<Matrix<T>> {
+        self.exact_matrix_any()
+            .and_then(|matrix| matrix.downcast_ref::<Matrix<T>>())
+            .cloned()
+            .ok_or_else(|| {
+                MechError::new(
+                    FunctionArgumentTypeMismatch {
+                        role,
+                        expected: core::any::type_name::<Matrix<T>>().to_string(),
+                        found: self.exact_runtime_representation_name(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })
+    }
+
+    #[cfg(feature = "matrix")]
+    pub fn try_function_copyable_matrix<T: 'static>(
+        &self,
+        role: FunctionArgumentRole,
+    ) -> MResult<Box<dyn CopyMat<T>>>
+    where
+        T: Clone + AsValueKind,
+        #[cfg(feature = "compiler")]
+        T: CompileConst + ConstElem + Debug + PartialEq,
+    {
+        self.exact_matrix_any()
+            .and_then(|matrix| matrix.downcast_ref::<Matrix<T>>())
+            .map(Matrix::get_copyable_matrix)
+            .ok_or_else(|| {
+                MechError::new(
+                    FunctionArgumentTypeMismatch {
+                        role,
+                        expected: core::any::type_name::<Matrix<T>>().to_string(),
+                        found: self.exact_runtime_representation_name(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })
+    }
+
+    pub fn try_function_ref<T: 'static>(&self, role: FunctionArgumentRole) -> MResult<Ref<T>> {
+        require_function_ref(self, role)
+    }
+
+    pub fn exact_runtime_representation_name(&self) -> String {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(r) => &*(r as *const Ref<u8> as *const Ref<T>),
+            Value::U8(_) => core::any::type_name::<Ref<u8>>().to_string(),
             #[cfg(feature = "u16")]
-            Value::U16(r) => &*(r as *const Ref<u16> as *const Ref<T>),
+            Value::U16(_) => core::any::type_name::<Ref<u16>>().to_string(),
             #[cfg(feature = "u32")]
-            Value::U32(r) => &*(r as *const Ref<u32> as *const Ref<T>),
+            Value::U32(_) => core::any::type_name::<Ref<u32>>().to_string(),
             #[cfg(feature = "u64")]
-            Value::U64(r) => &*(r as *const Ref<u64> as *const Ref<T>),
+            Value::U64(_) => core::any::type_name::<Ref<u64>>().to_string(),
             #[cfg(feature = "u128")]
-            Value::U128(r) => &*(r as *const Ref<u128> as *const Ref<T>),
+            Value::U128(_) => core::any::type_name::<Ref<u128>>().to_string(),
             #[cfg(feature = "i8")]
-            Value::I8(r) => &*(r as *const Ref<i8> as *const Ref<T>),
+            Value::I8(_) => core::any::type_name::<Ref<i8>>().to_string(),
             #[cfg(feature = "i16")]
-            Value::I16(r) => &*(r as *const Ref<i16> as *const Ref<T>),
+            Value::I16(_) => core::any::type_name::<Ref<i16>>().to_string(),
             #[cfg(feature = "i32")]
-            Value::I32(r) => &*(r as *const Ref<i32> as *const Ref<T>),
+            Value::I32(_) => core::any::type_name::<Ref<i32>>().to_string(),
             #[cfg(feature = "i64")]
-            Value::I64(r) => &*(r as *const Ref<i64> as *const Ref<T>),
+            Value::I64(_) => core::any::type_name::<Ref<i64>>().to_string(),
             #[cfg(feature = "i128")]
-            Value::I128(r) => &*(r as *const Ref<i128> as *const Ref<T>),
+            Value::I128(_) => core::any::type_name::<Ref<i128>>().to_string(),
             #[cfg(feature = "f32")]
-            Value::F32(r) => &*(r as *const Ref<f32> as *const Ref<T>),
+            Value::F32(_) => core::any::type_name::<Ref<f32>>().to_string(),
             #[cfg(feature = "f64")]
-            Value::F64(r) => &*(r as *const Ref<f64> as *const Ref<T>),
+            Value::F64(_) => core::any::type_name::<Ref<f64>>().to_string(),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(r) => &*(r as *const Ref<String> as *const Ref<T>),
+            Value::String(_) => core::any::type_name::<Ref<String>>().to_string(),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(r) => &*(r as *const Ref<bool> as *const Ref<T>),
-            #[cfg(feature = "rational")]
-            Value::R64(r) => &*(r as *const Ref<R64> as *const Ref<T>),
-            #[cfg(feature = "complex")]
-            Value::C64(r) => &*(r as *const Ref<C64> as *const Ref<T>),
-            #[cfg(all(feature = "f64", feature = "matrix"))]
-            Value::MatrixF64(r) => r.as_unchecked(),
-            #[cfg(all(feature = "f32", feature = "matrix"))]
-            Value::MatrixF32(r) => r.as_unchecked(),
-            #[cfg(all(feature = "i8", feature = "matrix"))]
-            Value::MatrixI8(r) => r.as_unchecked(),
-            #[cfg(all(feature = "i16", feature = "matrix"))]
-            Value::MatrixI16(r) => r.as_unchecked(),
-            #[cfg(all(feature = "i32", feature = "matrix"))]
-            Value::MatrixI32(r) => r.as_unchecked(),
-            #[cfg(all(feature = "i64", feature = "matrix"))]
-            Value::MatrixI64(r) => r.as_unchecked(),
-            #[cfg(all(feature = "i128", feature = "matrix"))]
-            Value::MatrixI128(r) => r.as_unchecked(),
-            #[cfg(all(feature = "u8", feature = "matrix"))]
-            Value::MatrixU8(r) => r.as_unchecked(),
-            #[cfg(all(feature = "u16", feature = "matrix"))]
-            Value::MatrixU16(r) => r.as_unchecked(),
-            #[cfg(all(feature = "u32", feature = "matrix"))]
-            Value::MatrixU32(r) => r.as_unchecked(),
-            #[cfg(all(feature = "u64", feature = "matrix"))]
-            Value::MatrixU64(r) => r.as_unchecked(),
-            #[cfg(all(feature = "u128", feature = "matrix"))]
-            Value::MatrixU128(r) => r.as_unchecked(),
-            #[cfg(all(feature = "bool", feature = "matrix"))]
-            Value::MatrixBool(r) => r.as_unchecked(),
-            #[cfg(all(feature = "string", feature = "matrix"))]
-            Value::MatrixString(r) => r.as_unchecked(),
-            #[cfg(all(feature = "rational", feature = "matrix"))]
-            Value::MatrixR64(r) => r.as_unchecked(),
-            #[cfg(all(feature = "complex", feature = "matrix"))]
-            Value::MatrixC64(r) => r.as_unchecked(),
-            #[cfg(feature = "matrix")]
-            Value::MatrixIndex(r) => r.as_unchecked(),
-            Value::Index(r) => &*(r as *const Ref<usize> as *const Ref<T>),
-            #[cfg(feature = "enum")]
-            Value::Enum(r) => &*(r as *const Ref<MechEnum> as *const Ref<T>),
-            #[cfg(feature = "set")]
-            Value::Set(r) => &*(r as *const Ref<MechSet> as *const Ref<T>),
-            #[cfg(feature = "table")]
-            Value::Table(r) => &*(r as *const Ref<MechTable> as *const Ref<T>),
-            #[cfg(feature = "tuple")]
-            Value::Tuple(r) => &*(r as *const Ref<MechTuple> as *const Ref<T>),
-            #[cfg(feature = "record")]
-            Value::Record(r) => &*(r as *const Ref<MechRecord> as *const Ref<T>),
-            #[cfg(feature = "map")]
-            Value::Map(r) => &*(r as *const Ref<MechMap> as *const Ref<T>),
+            Value::Bool(_) => core::any::type_name::<Ref<bool>>().to_string(),
             #[cfg(feature = "atom")]
-            Value::Atom(r) => &*(r as *const Ref<MechAtom> as *const Ref<T>),
-            x => panic!("Unsupported type for as_unchecked: {:?}.", x),
+            Value::Atom(_) => core::any::type_name::<Ref<MechAtom>>().to_string(),
+            #[cfg(feature = "complex")]
+            Value::C64(_) => core::any::type_name::<Ref<C64>>().to_string(),
+            #[cfg(feature = "rational")]
+            Value::R64(_) => core::any::type_name::<Ref<R64>>().to_string(),
+            #[cfg(feature = "set")]
+            Value::Set(_) => core::any::type_name::<Ref<MechSet>>().to_string(),
+            #[cfg(feature = "map")]
+            Value::Map(_) => core::any::type_name::<Ref<MechMap>>().to_string(),
+            #[cfg(feature = "record")]
+            Value::Record(_) => core::any::type_name::<Ref<MechRecord>>().to_string(),
+            #[cfg(feature = "table")]
+            Value::Table(_) => core::any::type_name::<Ref<MechTable>>().to_string(),
+            #[cfg(feature = "tuple")]
+            Value::Tuple(_) => core::any::type_name::<Ref<MechTuple>>().to_string(),
+            #[cfg(feature = "enum")]
+            Value::Enum(_) => core::any::type_name::<Ref<MechEnum>>().to_string(),
+            Value::Index(_) => core::any::type_name::<Ref<usize>>().to_string(),
+            Value::MutableReference(_) => core::any::type_name::<Ref<Value>>().to_string(),
+            #[cfg(feature = "matrix")]
+            Value::MatrixIndex(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "bool"))]
+            Value::MatrixBool(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "u8"))]
+            Value::MatrixU8(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "u16"))]
+            Value::MatrixU16(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "u32"))]
+            Value::MatrixU32(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "u64"))]
+            Value::MatrixU64(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "u128"))]
+            Value::MatrixU128(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "i8"))]
+            Value::MatrixI8(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "i16"))]
+            Value::MatrixI16(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "i32"))]
+            Value::MatrixI32(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "i64"))]
+            Value::MatrixI64(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "i128"))]
+            Value::MatrixI128(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "f32"))]
+            Value::MatrixF32(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "f64"))]
+            Value::MatrixF64(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "string"))]
+            Value::MatrixString(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "rational"))]
+            Value::MatrixR64(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(all(feature = "matrix", feature = "complex"))]
+            Value::MatrixC64(matrix) => matrix.exact_runtime_representation_name(),
+            #[cfg(feature = "matrix")]
+            Value::MatrixValue(matrix) => matrix.exact_runtime_representation_name(),
+            Value::Id(_) => "u64 (direct ID value)".to_string(),
+            Value::Typed(_, _) => "Typed".to_string(),
+            Value::Kind(_) => "Kind".to_string(),
+            Value::IndexAll => "IndexAll".to_string(),
+            Value::EmptyKind(_) => "EmptyKind".to_string(),
+            Value::Empty => "Empty".to_string(),
         }
     }
 

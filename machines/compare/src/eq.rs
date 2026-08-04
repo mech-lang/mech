@@ -117,9 +117,9 @@ impl MechFunctionFactory for AtomEq {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechAtom> = unsafe { arg1.as_unchecked() }.clone();
-                let rhs: Ref<MechAtom> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
+                let lhs: Ref<MechAtom> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let rhs: Ref<MechAtom> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(AtomEq { lhs, rhs, out }))
             }
             _ => Err(MechError::new(
@@ -175,9 +175,9 @@ impl MechFunctionFactory for TableEq {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechTable> = unsafe { arg1.as_unchecked() }.clone();
-                let rhs: Ref<MechTable> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
+                let lhs: Ref<MechTable> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let rhs: Ref<MechTable> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(TableEq { lhs, rhs, out }))
             }
             _ => Err(MechError::new(

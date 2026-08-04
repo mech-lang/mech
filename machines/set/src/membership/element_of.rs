@@ -19,9 +19,9 @@ impl MechFunctionFactory for SetElementOfFxn {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let elem: Ref<Value> = unsafe { arg1.as_unchecked() }.clone();
-                let set: Ref<MechSet> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
+                let elem: Ref<Value> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let set: Ref<MechSet> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(SetElementOfFxn { elem, set, out }))
             }
             _ => Err(MechError::new(

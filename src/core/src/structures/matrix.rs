@@ -616,40 +616,76 @@ where
     }
 }
 
-impl<T> Matrix<T> {
-    pub unsafe fn as_unchecked<R>(&self) -> &Ref<R> {
+impl<T: 'static> Matrix<T> {
+    /// Returns the exact shared backing handle without changing its storage
+    /// class or element type.
+    pub(crate) fn exact_ref_any(&self) -> &dyn Any {
         match self {
             #[cfg(feature = "row_vector4")]
-            Matrix::RowVector4(x) => &*(x as *const Ref<RowVector4<T>> as *const Ref<R>),
+            Matrix::RowVector4(x) => x,
             #[cfg(feature = "row_vector3")]
-            Matrix::RowVector3(x) => &*(x as *const Ref<RowVector3<T>> as *const Ref<R>),
+            Matrix::RowVector3(x) => x,
             #[cfg(feature = "row_vector2")]
-            Matrix::RowVector2(x) => &*(x as *const Ref<RowVector2<T>> as *const Ref<R>),
+            Matrix::RowVector2(x) => x,
             #[cfg(feature = "vector4")]
-            Matrix::Vector4(x) => &*(x as *const Ref<Vector4<T>> as *const Ref<R>),
+            Matrix::Vector4(x) => x,
             #[cfg(feature = "vector3")]
-            Matrix::Vector3(x) => &*(x as *const Ref<Vector3<T>> as *const Ref<R>),
+            Matrix::Vector3(x) => x,
             #[cfg(feature = "vector2")]
-            Matrix::Vector2(x) => &*(x as *const Ref<Vector2<T>> as *const Ref<R>),
+            Matrix::Vector2(x) => x,
             #[cfg(feature = "matrix4")]
-            Matrix::Matrix4(x) => &*(x as *const Ref<Matrix4<T>> as *const Ref<R>),
+            Matrix::Matrix4(x) => x,
             #[cfg(feature = "matrix3")]
-            Matrix::Matrix3(x) => &*(x as *const Ref<Matrix3<T>> as *const Ref<R>),
+            Matrix::Matrix3(x) => x,
             #[cfg(feature = "matrix2")]
-            Matrix::Matrix2(x) => &*(x as *const Ref<Matrix2<T>> as *const Ref<R>),
+            Matrix::Matrix2(x) => x,
             #[cfg(feature = "matrix1")]
-            Matrix::Matrix1(x) => &*(x as *const Ref<Matrix1<T>> as *const Ref<R>),
+            Matrix::Matrix1(x) => x,
             #[cfg(feature = "matrix3x2")]
-            Matrix::Matrix3x2(x) => &*(x as *const Ref<Matrix3x2<T>> as *const Ref<R>),
+            Matrix::Matrix3x2(x) => x,
             #[cfg(feature = "matrix2x3")]
-            Matrix::Matrix2x3(x) => &*(x as *const Ref<Matrix2x3<T>> as *const Ref<R>),
+            Matrix::Matrix2x3(x) => x,
             #[cfg(feature = "vectord")]
-            Matrix::DVector(x) => &*(x as *const Ref<DVector<T>> as *const Ref<R>),
+            Matrix::DVector(x) => x,
             #[cfg(feature = "row_vectord")]
-            Matrix::RowDVector(x) => &*(x as *const Ref<RowDVector<T>> as *const Ref<R>),
+            Matrix::RowDVector(x) => x,
             #[cfg(feature = "matrixd")]
-            Matrix::DMatrix(x) => &*(x as *const Ref<DMatrix<T>> as *const Ref<R>),
-            _ => panic!("Unsupported type for as_unchecked"),
+            Matrix::DMatrix(x) => x,
+        }
+    }
+
+    pub(crate) fn exact_runtime_representation_name(&self) -> String {
+        match self {
+            #[cfg(feature = "row_vector4")]
+            Matrix::RowVector4(_) => core::any::type_name::<Ref<RowVector4<T>>>().to_string(),
+            #[cfg(feature = "row_vector3")]
+            Matrix::RowVector3(_) => core::any::type_name::<Ref<RowVector3<T>>>().to_string(),
+            #[cfg(feature = "row_vector2")]
+            Matrix::RowVector2(_) => core::any::type_name::<Ref<RowVector2<T>>>().to_string(),
+            #[cfg(feature = "vector4")]
+            Matrix::Vector4(_) => core::any::type_name::<Ref<Vector4<T>>>().to_string(),
+            #[cfg(feature = "vector3")]
+            Matrix::Vector3(_) => core::any::type_name::<Ref<Vector3<T>>>().to_string(),
+            #[cfg(feature = "vector2")]
+            Matrix::Vector2(_) => core::any::type_name::<Ref<Vector2<T>>>().to_string(),
+            #[cfg(feature = "matrix4")]
+            Matrix::Matrix4(_) => core::any::type_name::<Ref<Matrix4<T>>>().to_string(),
+            #[cfg(feature = "matrix3")]
+            Matrix::Matrix3(_) => core::any::type_name::<Ref<Matrix3<T>>>().to_string(),
+            #[cfg(feature = "matrix2")]
+            Matrix::Matrix2(_) => core::any::type_name::<Ref<Matrix2<T>>>().to_string(),
+            #[cfg(feature = "matrix1")]
+            Matrix::Matrix1(_) => core::any::type_name::<Ref<Matrix1<T>>>().to_string(),
+            #[cfg(feature = "matrix3x2")]
+            Matrix::Matrix3x2(_) => core::any::type_name::<Ref<Matrix3x2<T>>>().to_string(),
+            #[cfg(feature = "matrix2x3")]
+            Matrix::Matrix2x3(_) => core::any::type_name::<Ref<Matrix2x3<T>>>().to_string(),
+            #[cfg(feature = "vectord")]
+            Matrix::DVector(_) => core::any::type_name::<Ref<DVector<T>>>().to_string(),
+            #[cfg(feature = "row_vectord")]
+            Matrix::RowDVector(_) => core::any::type_name::<Ref<RowDVector<T>>>().to_string(),
+            #[cfg(feature = "matrixd")]
+            Matrix::DMatrix(_) => core::any::type_name::<Ref<DMatrix<T>>>().to_string(),
         }
     }
 

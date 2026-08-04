@@ -18,8 +18,8 @@ impl MechFunctionFactory for SetSizeFxn {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg1) => {
-                let input: Ref<MechSet> = unsafe { arg1.as_unchecked() }.clone();
-                let out: Ref<u64> = unsafe { out.as_unchecked() }.clone();
+                let input: Ref<MechSet> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let out: Ref<u64> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(SetSizeFxn { input, out }))
             }
             _ => Err(MechError::new(

@@ -10,7 +10,7 @@ fn assert_catalog_factory_owned(program: &MechProgram, name: &str) {
     assert!(
         program
             .function_catalog()
-            .runtime_factory(RuntimeFunctionId::from_name(name))
+            .runtime_entry(RuntimeFunctionId::from_name(name))
             .is_some(),
         "explicit catalog did not contain {name}",
     );

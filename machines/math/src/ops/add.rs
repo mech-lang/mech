@@ -695,6 +695,71 @@ mod tests {
         assert_catalog_name_and_id(&catalog, "AddM2M2<f64>", 0x00eb_049b_7b90_a0d9);
     }
 
+    #[cfg(all(feature = "f64", feature = "i8", feature = "matrix2", feature = "matrixd"))]
+    #[test]
+    fn runtime_add_factories_reject_incompatible_exact_representations() {
+        fn entry<'a>(catalog: &'a FunctionCatalog, name: &str) -> &'a RuntimeFunctionEntry {
+            catalog
+                .runtime_entry(RuntimeFunctionId::from_name(name))
+                .unwrap()
+        }
+
+        fn assert_contract_error(result: MResult<Box<dyn MechFunction>>, source_kind: &str) {
+            let error = result.err().expect("incompatible arguments must fail");
+            assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
+            assert_eq!(error.source.as_ref().unwrap().kind_name(), source_kind);
+        }
+
+        let catalog = explicit_runtime_catalog();
+        let output = Ref::new(41.0_f64);
+        let lhs = Ref::new(2.0_f64);
+        let rhs = Ref::new(3.0_f64);
+        let wrong = Value::I8(Ref::new(7));
+        let scalar = entry(&catalog, "AddSS<f64>");
+
+        assert_contract_error(
+            scalar.instantiate(FunctionArgs::Binary(
+                output.to_value(),
+                wrong.clone(),
+                rhs.to_value(),
+            )),
+            "FunctionArgumentTypeMismatch",
+        );
+        assert_contract_error(
+            scalar.instantiate(FunctionArgs::Binary(
+                output.to_value(),
+                lhs.to_value(),
+                wrong.clone(),
+            )),
+            "FunctionArgumentTypeMismatch",
+        );
+        assert_contract_error(
+            scalar.instantiate(FunctionArgs::Binary(wrong, lhs.to_value(), rhs.to_value())),
+            "FunctionArgumentTypeMismatch",
+        );
+        assert_contract_error(
+            scalar.instantiate(FunctionArgs::Unary(output.to_value(), lhs.to_value())),
+            "IncorrectNumberOfArguments",
+        );
+        assert_eq!(*output.borrow(), 41.0, "construction must not mutate output");
+
+        let fixed = Value::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::identity())));
+        let dynamic = Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
+        assert_contract_error(
+            entry(&catalog, "AddM2M2<f64>").instantiate(FunctionArgs::Binary(
+                fixed.clone(),
+                dynamic.clone(),
+                fixed.clone(),
+            )),
+            "FunctionArgumentTypeMismatch",
+        );
+        assert_contract_error(
+            entry(&catalog, "AddMDMD<f64>")
+                .instantiate(FunctionArgs::Binary(dynamic, fixed.clone(), fixed)),
+            "FunctionArgumentTypeMismatch",
+        );
+    }
+
     #[cfg(all(
         feature = "native-link",
         feature = "f64",

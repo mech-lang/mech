@@ -1,4 +1,6 @@
+pub mod argument;
 pub mod catalog;
+pub use argument::*;
 pub use catalog::*;
 
 use crate::nodes::*;
@@ -199,6 +201,11 @@ impl FunctionArgs {
 }
 
 pub trait MechFunctionFactory {
+    /// Constructs a runtime function from its authoritative argument contract.
+    ///
+    /// Implementations must be deterministic and side-effect-free, safely
+    /// reject arbitrary incompatible [`FunctionArgs`], validate every exact
+    /// backing extraction, and must not execute or solve the function.
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;
 }
 
