@@ -137,6 +137,14 @@ and incorporates the deterministic workspace fingerprint into the plan.
 Equivalent bytecode and normalized configuration therefore have the same plan
 identity only when their selected dependency source is also the same.
 
+Workspace fingerprint v2 is SHA-256 over a domain-separated, length-framed
+stream. It starts with the ASCII bytes `mech.workspace-fingerprint.v2` and a
+little-endian `u64` entry count. Each entry is sorted by normalized
+workspace-relative UTF-8 path and encoded as tag `0x01`, a little-endian `u64`
+path length, the path bytes, a little-endian `u64` content length, and the
+exact file bytes. Duplicate paths are rejected. Absolute paths, filesystem
+metadata, temporary project paths, and output paths never enter the digest.
+
 The deterministic project cache always remains under the plan digest. Native
 builds reuse the shared Cargo target directory. `--keep-project` copies the
 complete project next to an emitted native, bytecode, or plan artifact; a

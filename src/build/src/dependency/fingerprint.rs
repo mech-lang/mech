@@ -9,6 +9,9 @@ use sha2::{Digest, Sha256};
 use super::{WorkspacePackage, workspace_path_string};
 use crate::error::{NativeBuildErrorKind, native_build_error};
 
+const WORKSPACE_FINGERPRINT_DOMAIN: &[u8] = b"mech.workspace-fingerprint.v2";
+const WORKSPACE_FINGERPRINT_ENTRY_TAG: u8 = 0x01;
+
 /// SHA-256 of the selected, workspace-relative native dependency inputs.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct WorkspaceFingerprint(String);
@@ -64,7 +67,7 @@ pub fn fingerprint_workspace(
         collect_package_inputs(root, package, &mut inputs)?;
     }
 
-    let mut hasher = Sha256::new();
+    let mut entries = Vec::with_capacity(inputs.len());
     for relative_path in inputs {
         let portable_path = workspace_path_string(&relative_path)?;
         let file = resolve_input_file(root, &canonical_root, &relative_path)?;
@@ -74,15 +77,52 @@ pub fn fingerprint_workspace(
                 format!("workspace input cannot be read: {error}"),
             )
         })?;
-        hasher.update(portable_path.as_bytes());
-        hasher.update(bytes);
+        entries.push((portable_path, bytes));
+    }
+
+    Ok(fingerprint_entries(entries.iter().map(
+        |(path, content)| (path.as_str(), content.as_slice()),
+    )))
+}
+
+fn fingerprint_entries<'a>(
+    entries: impl IntoIterator<Item = (&'a str, &'a [u8])>,
+) -> WorkspaceFingerprint {
+    let mut entries = entries.into_iter().collect::<Vec<_>>();
+    entries.sort_by(|left, right| left.0.cmp(right.0));
+    assert!(
+        entries.windows(2).all(|pair| pair[0].0 != pair[1].0),
+        "workspace fingerprint entries contain a duplicate path"
+    );
+
+    let mut hasher = Sha256::new();
+    hasher.update(WORKSPACE_FINGERPRINT_DOMAIN);
+    hasher.update(
+        u64::try_from(entries.len())
+            .expect("workspace fingerprint entry count must fit in u64")
+            .to_le_bytes(),
+    );
+    for (path, content) in entries {
+        hasher.update([WORKSPACE_FINGERPRINT_ENTRY_TAG]);
+        hasher.update(
+            u64::try_from(path.len())
+                .expect("workspace fingerprint path length must fit in u64")
+                .to_le_bytes(),
+        );
+        hasher.update(path.as_bytes());
+        hasher.update(
+            u64::try_from(content.len())
+                .expect("workspace fingerprint content length must fit in u64")
+                .to_le_bytes(),
+        );
+        hasher.update(content);
     }
 
     let mut hexadecimal = String::with_capacity(64);
     for byte in hasher.finalize() {
         write!(&mut hexadecimal, "{byte:02x}").expect("writing to String cannot fail");
     }
-    Ok(WorkspaceFingerprint(hexadecimal))
+    WorkspaceFingerprint(hexadecimal)
 }
 
 fn collect_package_inputs(
@@ -454,6 +494,10 @@ mod tests {
         let left_digest = fingerprint_workspace(&left.0, &[math_package()]).unwrap();
         let right_digest = fingerprint_workspace(&right.0, &[math_package()]).unwrap();
         assert_eq!(left_digest, right_digest);
+        assert_eq!(
+            left_digest.as_str(),
+            "97409e5787610f2f7b28345fcee424f103a827da774de7a4156dc2aaf9fd49d0"
+        );
         assert_eq!(left_digest.as_str().len(), 64);
         assert!(
             left_digest
@@ -461,6 +505,46 @@ mod tests {
                 .chars()
                 .all(|character| character.is_ascii_hexdigit() && !character.is_ascii_uppercase())
         );
+    }
+
+    #[test]
+    fn framed_entries_remove_path_content_boundary_ambiguity() {
+        let left = fingerprint_entries([("a.rs", b"x.rsY".as_slice())]);
+        let right = fingerprint_entries([("a.rsx.rs", b"Y".as_slice())]);
+
+        assert_ne!(left, right);
+        assert_eq!(
+            left.as_str(),
+            "bf2029ea3efa28de4f46f57bae96f337aab9208fb991dde8ec6080c2af65dc8b"
+        );
+    }
+
+    #[test]
+    fn fingerprint_entries_sorts_and_frames_every_field() {
+        let first = ("a.rs", b"alpha".as_slice());
+        let second = ("b.rs", b"beta".as_slice());
+        assert_eq!(
+            fingerprint_entries([first, second]),
+            fingerprint_entries([second, first])
+        );
+
+        assert_ne!(
+            fingerprint_entries([("a.rs", b"same".as_slice())]),
+            fingerprint_entries([("b.rs", b"same".as_slice())])
+        );
+        assert_ne!(
+            fingerprint_entries([("a.rs", b"before".as_slice())]),
+            fingerprint_entries([("a.rs", b"after".as_slice())])
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "workspace fingerprint entries contain a duplicate path")]
+    fn fingerprint_entries_rejects_duplicate_paths() {
+        let _ = fingerprint_entries([
+            ("duplicate.rs", b"first".as_slice()),
+            ("duplicate.rs", b"second".as_slice()),
+        ]);
     }
 
     #[test]
