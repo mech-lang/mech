@@ -671,7 +671,14 @@ jobs:
         run: cargo test -p mech-core
 
       - name: Run complete program library suite
-        run: cargo test -p mech-engine --all-features
+        run: |
+          cargo test -p mech-engine --all-features &
+          engine_test_pid=$!
+          while kill -0 "$engine_test_pid" 2>/dev/null; do
+            sleep 30
+            echo "mech-engine all-features test is still running"
+          done
+          wait "$engine_test_pid"
 
       - name: Run non-UTF-8 source-root regressions
         run: |
