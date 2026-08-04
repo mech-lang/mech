@@ -1394,7 +1394,7 @@ impl Value {
         }
     }
 
-    #[cfg(feature = "matrix")]
+    #[cfg(all(feature = "matrix", feature = "functions"))]
     pub fn try_function_matrix<T: Clone + 'static>(
         &self,
         role: FunctionArgumentRole,
@@ -1415,7 +1415,7 @@ impl Value {
             })
     }
 
-    #[cfg(feature = "matrix")]
+    #[cfg(all(feature = "matrix", feature = "functions"))]
     pub fn try_function_copyable_matrix<T: 'static>(
         &self,
         role: FunctionArgumentRole,
@@ -1441,6 +1441,7 @@ impl Value {
             })
     }
 
+    #[cfg(feature = "functions")]
     pub fn try_function_ref<T: 'static>(&self, role: FunctionArgumentRole) -> MResult<Ref<T>> {
         require_function_ref(self, role)
     }
