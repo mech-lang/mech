@@ -675,7 +675,10 @@ jobs:
 
       - name: Run complete program library suite
         run: |
-          cargo test -p mech-engine --all-features &
+          # The library and test-harness units are both large under the full
+          # feature surface. Serializing them keeps hosted runners below their
+          # memory ceiling without reducing the suite or its feature coverage.
+          CARGO_BUILD_JOBS=1 cargo test -p mech-engine --all-features &
           engine_test_pid=$!
           while kill -0 "$engine_test_pid" 2>/dev/null; do
             sleep 30
