@@ -634,9 +634,6 @@ jobs:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
       CARGO_INCREMENTAL: 0
-      # The exhaustive all-features engine test binary exceeds the hosted
-      # runner's memory budget when rustc codegen runs concurrently.
-      CARGO_BUILD_JOBS: 1
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
