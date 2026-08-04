@@ -673,9 +673,17 @@ jobs:
       - name: Run complete program library suite
         run: |
           # The library and test-harness units are both large under the full
-          # feature surface. Serializing them keeps hosted runners below their
-          # memory ceiling without reducing the suite or its feature coverage.
-          CARGO_BUILD_JOBS=1 cargo test -p mech-engine --all-features &
+          # feature surface. Serialize both Cargo units and LLVM codegen, and
+          # give the ephemeral runner swap headroom for the remaining peak.
+          # This preserves the exact suite and its full feature coverage.
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
+          CARGO_BUILD_JOBS=1 \
+            CARGO_PROFILE_TEST_CODEGEN_UNITS=1 \
+            cargo test -p mech-engine --all-features &
           engine_test_pid=$!
           while kill -0 "$engine_test_pid" 2>/dev/null; do
             sleep 30
