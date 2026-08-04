@@ -42,6 +42,17 @@ impl ConstantCodecContext {
 }
 
 #[cfg(feature = "compiler")]
+fn runtime_table_type_from_columns(columns: &[(String, ValueKind)]) -> MResult<RuntimeType> {
+    Ok(RuntimeType::Table {
+        columns: columns
+            .iter()
+            .map(|(name, kind)| Ok((name.clone(), runtime_type_from_value_kind(kind)?)))
+            .collect::<MResult<_>>()?,
+        primary_key: 0,
+    })
+}
+
+#[cfg(feature = "compiler")]
 fn runtime_type_from_value_kind(kind: &ValueKind) -> MResult<RuntimeType> {
     Ok(match kind {
         ValueKind::U8 => RuntimeType::U8,
@@ -115,19 +126,7 @@ fn runtime_type_from_value_kind(kind: &ValueKind) -> MResult<RuntimeType> {
             id: *id,
             name: name.clone(),
         },
-        ValueKind::Table(columns, primary_key) => RuntimeType::Table {
-            columns: columns
-                .iter()
-                .map(|(name, ty)| Ok((name.clone(), runtime_type_from_value_kind(ty)?)))
-                .collect::<MResult<_>>()?,
-            primary_key: (*primary_key).try_into().map_err(|_| {
-                unsupported_constant(
-                    RuntimeType::Any,
-                    kind.clone(),
-                    "table primary key exceeds u32",
-                )
-            })?,
-        },
+        ValueKind::Table(columns, _row_count) => runtime_table_type_from_columns(columns)?,
         ValueKind::Tuple(types) => RuntimeType::Tuple(
             types
                 .iter()

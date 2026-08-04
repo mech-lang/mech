@@ -1721,12 +1721,26 @@ fn reader_rejects_noncanonical_resource_identities() {
 
 #[cfg(feature = "compiler")]
 mod compiler_tests {
+    #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
+    use std::collections::HashMap;
+
+    #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
+    use indexmap::IndexMap;
+    #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
+    use nalgebra::DVector;
+
     use crate::program::compiler::{BytecodeCompilerContext, CompileConst, Register};
     use crate::{MResult, Ref, Value, ValueKind};
 
+    #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
+    use crate::matrix::Matrix;
+
     use super::*;
 
-    struct ConstantContext;
+    #[derive(Default)]
+    struct ConstantContext {
+        constant: Option<EncodedConstant>,
+    }
 
     impl BytecodeCompilerContext for ConstantContext {
         fn register_for_ptr_with_initialization_status(
@@ -1736,7 +1750,11 @@ mod compiler_tests {
             (0, false)
         }
 
-        fn intern_constant(&mut self, _constant: EncodedConstant) -> MResult<u32> {
+        fn intern_constant(&mut self, constant: EncodedConstant) -> MResult<u32> {
+            assert!(
+                self.constant.replace(constant).is_none(),
+                "a constant encoder must intern exactly one constant"
+            );
             Ok(0)
         }
 
@@ -1815,19 +1833,154 @@ mod compiler_tests {
         }
     }
 
+    fn encode(value: &Value) -> EncodedConstant {
+        let mut context = ConstantContext::default();
+        value.compile_const(&mut context).unwrap();
+        context.constant.unwrap()
+    }
+
     #[test]
     fn scalar_constant_is_interned_by_the_v1_codec() {
-        assert_eq!(1_u8.compile_const(&mut ConstantContext).unwrap(), 0);
+        assert_eq!(
+            1_u8.compile_const(&mut ConstantContext::default()).unwrap(),
+            0
+        );
     }
 
     #[test]
     fn typed_constant_cannot_discard_a_mismatched_declared_type() {
         let value = Value::Typed(Box::new(Value::F64(Ref::new(1.0))), ValueKind::Bool);
-        let error = value.compile_const(&mut ConstantContext).unwrap_err();
+        let error = value
+            .compile_const(&mut ConstantContext::default())
+            .unwrap_err();
         assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
         let detail = error.kind_as::<BytecodeConstantUnsupported>().unwrap();
         assert_eq!(detail.runtime_type, RuntimeType::Bool);
         assert_eq!(detail.source_value_kind, ValueKind::F64);
         assert!(detail.reason.contains("does not match"));
+    }
+
+    #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
+    fn table(rows: usize, columns: &[&str]) -> crate::MechTable {
+        let mut data = IndexMap::new();
+        let mut col_names = HashMap::new();
+        for (column, name) in columns.iter().enumerate() {
+            let id = crate::hash_str(name);
+            let cells = (0..rows)
+                .map(|row| Value::U8(Ref::new((row + column) as u8)))
+                .collect();
+            data.insert(
+                id,
+                (
+                    ValueKind::U8,
+                    Matrix::DVector(Ref::new(DVector::from_vec(cells))),
+                ),
+            );
+            col_names.insert(id, (*name).to_owned());
+        }
+        crate::MechTable::new(rows, columns.len(), data, col_names)
+    }
+
+    #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
+    fn decode_one(constant: &EncodedConstant) -> Value {
+        let parsed =
+            ParsedProgram::from_bytes(&write_bytecode(&program(vec![constant.clone()])).unwrap())
+                .unwrap();
+        parsed.decode_constants().unwrap().pop().unwrap()
+    }
+
+    fn table_type(runtime_type: &RuntimeType) -> (&[(String, RuntimeType)], u32) {
+        let RuntimeType::Table {
+            columns,
+            primary_key,
+        } = runtime_type
+        else {
+            panic!("expected a table RuntimeType, found {runtime_type:?}");
+        };
+        (columns, *primary_key)
+    }
+
+    fn option_table_type(runtime_type: &RuntimeType) -> (&[(String, RuntimeType)], u32) {
+        let RuntimeType::Option(inner) = runtime_type else {
+            panic!("expected an option RuntimeType, found {runtime_type:?}");
+        };
+        table_type(inner)
+    }
+
+    #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
+    #[test]
+    fn present_and_absent_table_options_share_the_same_child_type() {
+        let table = table(3, &["value"]);
+        let option_kind = ValueKind::Option(Box::new(table.kind()));
+        let present = encode(&Value::Typed(
+            Box::new(Value::Table(Ref::new(table))),
+            option_kind.clone(),
+        ));
+        let absent = encode(&Value::EmptyKind(option_kind));
+
+        assert_eq!(present.runtime_type, absent.runtime_type);
+        let (columns, primary_key) = option_table_type(&present.runtime_type);
+        assert_eq!(columns, [("value".to_owned(), RuntimeType::U8)]);
+        assert_eq!(primary_key, 0);
+
+        let Value::Typed(present_value, ValueKind::Option(_)) = decode_one(&present) else {
+            panic!("present table option did not decode as a typed option");
+        };
+        let Value::Table(present_table) = present_value.as_ref() else {
+            panic!("present table option did not preserve its table child");
+        };
+        assert_eq!(present_table.borrow().rows, 3);
+        assert!(matches!(
+            decode_one(&absent),
+            Value::EmptyKind(ValueKind::Option(_))
+        ));
+
+        assert_eq!(present.bytes[0], 1);
+        assert_eq!(
+            u32::from_le_bytes(present.bytes[5..9].try_into().unwrap()),
+            3
+        );
+        assert_eq!(absent.bytes, [0]);
+    }
+
+    #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
+    #[test]
+    fn table_row_count_is_payload_data_and_never_primary_key_metadata() {
+        let cases = [
+            ("zero-row", table(0, &["value"]), 0),
+            ("one-row", table(1, &["value"]), 1),
+            ("more-rows-than-columns", table(3, &["value"]), 3),
+            ("rows-equal-columns", table(2, &["left", "right"]), 2),
+            ("multi-column", table(1, &["left", "middle", "right"]), 1),
+        ];
+
+        let mut one_column_types = Vec::new();
+        for (name, value, expected_rows) in cases {
+            let constant = encode(&Value::Table(Ref::new(value.clone())));
+            let (columns, primary_key) = table_type(&constant.runtime_type);
+            assert_eq!(primary_key, 0, "{name}");
+            assert_eq!(columns.len(), value.cols, "{name}");
+            assert_eq!(
+                u32::from_le_bytes(constant.bytes[0..4].try_into().unwrap()),
+                expected_rows,
+                "{name}"
+            );
+
+            let Value::Table(decoded) = decode_one(&constant) else {
+                panic!("{name} constant did not decode as a table");
+            };
+            assert_eq!(decoded.borrow().rows, expected_rows as usize, "{name}");
+            assert_eq!(decoded.borrow().cols, value.cols, "{name}");
+
+            if value.cols == 1 {
+                one_column_types.push(constant.runtime_type);
+            }
+        }
+
+        assert!(
+            one_column_types
+                .windows(2)
+                .all(|types| types[0] == types[1])
+        );
     }
 }
