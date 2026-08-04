@@ -1893,6 +1893,8 @@ impl Interpreter {
         program: &ParsedProgram,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<Value> {
+        program.validate_runtime_contracts(&self.function_catalog)?;
+
         // Reset the instruction pointer
         self.ip = 0;
         self.clear_plan();

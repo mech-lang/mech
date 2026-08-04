@@ -120,6 +120,17 @@ fn type_entry_offset(bytes: &[u8], index: usize) -> usize {
     offset
 }
 
+fn type_entry_with_tag(bytes: &[u8], tag: RuntimeTypeTag) -> usize {
+    let count = read_u32(
+        bytes,
+        section_entry_offset(BytecodeSectionKind::Types as usize - 1) + 4,
+    ) as usize;
+    (0..count)
+        .map(|index| type_entry_offset(bytes, index))
+        .find(|offset| read_u16(bytes, *offset) == tag as u16)
+        .expect("requested runtime type tag must be present")
+}
+
 fn constant_entry_offset(bytes: &[u8], index: usize) -> usize {
     section_offset(bytes, BytecodeSectionKind::ConstantTable as usize - 1) + index * 24
 }
@@ -204,6 +215,251 @@ fn replace_instruction_section(bytes: &mut Vec<u8>, instructions: &[u8], count: 
     write_u64(bytes, HEADER_FILE_LEN, file_len as u64);
     write_u64(bytes, HEADER_CHECKSUM_OFFSET, checksum_offset as u64);
     refresh_crc(bytes);
+}
+
+fn structural_program(
+    register_count: u32,
+    instructions: Vec<BytecodeInstruction>,
+) -> BytecodeProgram {
+    BytecodeProgram {
+        register_count,
+        constants: vec![empty_constant()],
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions,
+        dictionary: BTreeMap::new(),
+        requirements: Vec::new(),
+    }
+}
+
+#[test]
+fn rejects_uninitialized_instruction_registers_and_duplicate_constant_loads() {
+    fn rejects(input: BytecodeProgram, expected: &str) {
+        let bytes = write_bytecode_without_reader_validation(&input).unwrap();
+        assert_validation_reason(&bytes, expected);
+    }
+
+    rejects(
+        structural_program(
+            2,
+            vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::RuntimeUnary {
+                    function: 1,
+                    dst: 0,
+                    src: 1,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+        ),
+        "instruction 1 register 1 is uninitialized",
+    );
+
+    rejects(
+        structural_program(
+            2,
+            vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 1,
+                    constant: 0,
+                },
+                BytecodeInstruction::RuntimeUnary {
+                    function: 1,
+                    dst: 0,
+                    src: 1,
+                },
+                BytecodeInstruction::Return { src: 1 },
+            ],
+        ),
+        "instruction 1 register 0 is uninitialized",
+    );
+
+    let mut host = structural_program(
+        2,
+        vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
+            BytecodeInstruction::HostCall {
+                requirement: 0,
+                dst: 0,
+                arguments: vec![1],
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+    );
+    host.requirements.push(ApplicationRequirement::HostFunction(
+        ExecutionHostFunctionRequest {
+            name: "test/host".into(),
+        },
+    ));
+    rejects(host, "instruction 1 register 1 is uninitialized");
+
+    let mut resource = structural_program(
+        2,
+        vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
+            BytecodeInstruction::ResourceWrite {
+                requirement: 0,
+                dst: 0,
+                src: 1,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+    );
+    resource
+        .requirements
+        .push(ApplicationRequirement::Resource(ExecutionResourceRequest {
+            base_uri: "test://provider".into(),
+            path: "output".into(),
+            context_name: "test".into(),
+            operation: "write".into(),
+            intent: ResourceIntent::Assign,
+            delivery: ResourceDelivery::Snapshot,
+        }));
+    rejects(resource, "instruction 1 register 1 is uninitialized");
+
+    rejects(
+        structural_program(1, vec![BytecodeInstruction::Return { src: 0 }]),
+        "instruction 0 register 0 is uninitialized",
+    );
+
+    rejects(
+        structural_program(
+            1,
+            vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+        ),
+        "instruction 1 register 0 is initialized more than once",
+    );
+}
+
+#[test]
+fn rejects_symbols_bound_to_uninitialized_registers() {
+    let name = "uninitialized";
+    let id = hash_str(name);
+    let mut input = structural_program(
+        2,
+        vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+    );
+    input.symbols.insert(id, 1);
+    input.dictionary.insert(id, name.into());
+
+    let bytes = write_bytecode_without_reader_validation(&input).unwrap();
+    assert_validation_reason(&bytes, "symbol register 1 is uninitialized");
+}
+
+#[test]
+fn rejects_nonzero_constant_blob_item_count() {
+    let mut bytes = write_bytecode(&program(vec![empty_constant()])).unwrap();
+    let entry = section_entry_offset(BytecodeSectionKind::ConstantBlob as usize - 1);
+    write_u32(&mut bytes, entry + 4, 1);
+    refresh_crc(&mut bytes);
+
+    assert_validation_reason(&bytes, "ConstantBlob item count must be zero");
+}
+
+#[test]
+fn rejects_empty_and_duplicate_record_and_table_schema_names() {
+    for (runtime_type, expected) in [
+        (
+            RuntimeType::Record(vec![(String::new(), RuntimeType::F64)]),
+            "record field name must not be empty",
+        ),
+        (
+            RuntimeType::Record(vec![
+                ("value".into(), RuntimeType::F64),
+                ("value".into(), RuntimeType::F64),
+            ]),
+            "record field schema has duplicate name `value`",
+        ),
+        (
+            RuntimeType::Table {
+                columns: vec![(String::new(), RuntimeType::F64)],
+                primary_key: 0,
+            },
+            "table column name must not be empty",
+        ),
+        (
+            RuntimeType::Table {
+                columns: vec![
+                    ("value".into(), RuntimeType::F64),
+                    ("value".into(), RuntimeType::F64),
+                ],
+                primary_key: 0,
+            },
+            "table column schema has duplicate name `value`",
+        ),
+    ] {
+        let error = finalize_runtime_types([&runtime_type]).unwrap_err();
+        assert_eq!(error.kind_name(), "BytecodeValidation");
+        assert!(error.kind_message().contains(expected));
+    }
+}
+
+#[test]
+fn reader_rejects_duplicate_record_and_table_schema_names_with_valid_checksum() {
+    let mut record_payload = 2_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut record_payload, &[1]);
+    append_child_payload(&mut record_payload, &2_i16.to_le_bytes());
+    let mut record = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::Record(vec![
+            ("count".into(), RuntimeType::U8),
+            ("delta".into(), RuntimeType::I16),
+        ]),
+        alignment: 4,
+        bytes: record_payload,
+    }]))
+    .unwrap();
+    let entry = type_entry_with_tag(&record, RuntimeTypeTag::Record);
+    let payload = entry + 8;
+    record[payload + 21..payload + 26].copy_from_slice(b"count");
+    refresh_crc(&mut record);
+    assert_validation_reason(&record, "record field schema has duplicate name `count`");
+
+    let mut table_payload = 1_u32.to_le_bytes().to_vec();
+    table_payload.extend_from_slice(&2_u32.to_le_bytes());
+    append_child_payload(&mut table_payload, &[1]);
+    append_child_payload(&mut table_payload, b"x");
+    let mut table = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::Table {
+            columns: vec![
+                ("left".into(), RuntimeType::U8),
+                ("rght".into(), RuntimeType::String),
+            ],
+            primary_key: 0,
+        },
+        alignment: 4,
+        bytes: table_payload,
+    }]))
+    .unwrap();
+    let entry = type_entry_with_tag(&table, RuntimeTypeTag::Table);
+    let payload = entry + 8;
+    table[payload + 20..payload + 24].copy_from_slice(b"left");
+    refresh_crc(&mut table);
+    assert_validation_reason(&table, "table column schema has duplicate name `left`");
 }
 
 #[test]
@@ -920,7 +1176,7 @@ fn rejects_impossible_variable_lengths_before_reserving() {
         },
         BytecodeInstruction::Return { src: 0 },
     ];
-    let mut variadic = write_bytecode(&input).unwrap();
+    let mut variadic = write_bytecode_without_reader_validation(&input).unwrap();
     let instruction_offset =
         section_offset(&variadic, BytecodeSectionKind::Instructions as usize - 1);
     write_u32(&mut variadic, instruction_offset + 13, 65_536);
@@ -1141,6 +1397,13 @@ fn rejects_invalid_and_duplicate_symbols() {
     input.symbols.insert(second, 1);
     input.dictionary.insert(first, first_name.to_owned());
     input.dictionary.insert(second, second_name.to_owned());
+    input.instructions.insert(
+        1,
+        BytecodeInstruction::ConstLoad {
+            dst: 1,
+            constant: 0,
+        },
+    );
     let symbols = write_bytecode(&input).unwrap();
     let symbol_offset = section_offset(&symbols, BytecodeSectionKind::Symbols as usize - 1);
 
@@ -1221,7 +1484,7 @@ fn rejects_invalid_register_constant_and_requirement_indexes() {
     let mut register = original.clone();
     write_u32(&mut register, instruction_offset + 1, 1);
     refresh_crc(&mut register);
-    assert_validation_reason(&register, "register is out of range");
+    assert_validation_reason(&register, "register 1 is out of range");
 
     let mut constant = original;
     write_u32(&mut constant, instruction_offset + 5, 1);
@@ -1241,7 +1504,7 @@ fn rejects_invalid_register_constant_and_requirement_indexes() {
         },
         BytecodeInstruction::Return { src: 0 },
     ];
-    let mut requirement = write_bytecode(&input).unwrap();
+    let mut requirement = write_bytecode_without_reader_validation(&input).unwrap();
     let offset = section_offset(&requirement, BytecodeSectionKind::Instructions as usize - 1);
     write_u32(&mut requirement, offset + 1, 1);
     refresh_crc(&mut requirement);
@@ -1333,7 +1596,7 @@ fn every_read_limit_is_enforced_with_a_structured_validation_error() {
         },
         BytecodeInstruction::Return { src: 0 },
     ];
-    let variadic = write_bytecode(&input).unwrap();
+    let variadic = write_bytecode_without_reader_validation(&input).unwrap();
     let mut limits = BytecodeReadLimits::default();
     limits.max_variadic_arguments = 0;
     assert_validation_with_limits(&variadic, limits);

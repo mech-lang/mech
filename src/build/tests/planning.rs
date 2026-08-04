@@ -13,9 +13,11 @@ use mech_build::{
 #[cfg(not(feature = "standard-hosts"))]
 use mech_build::{NativeHostLinkage, NativeTargetFamily};
 use mech_core::{
-    ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant,
-    ExecutionHostFunctionRequest, FunctionArgs, FunctionCatalog, FunctionCatalogBuilder, MResult,
-    MechFunction, RuntimeType, hash_str, write_bytecode,
+    ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
+    EncodedConstant, ExecutionHostFunctionRequest, FunctionArgs, FunctionArgumentRole,
+    FunctionCatalog, FunctionCatalogBuilder, MResult, MechFunction, MechFunctionCompiler,
+    MechFunctionImpl, NativeFunctionLinkage, Ref, Register, RuntimeType, ToValue, Value, hash_str,
+    write_bytecode,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 
@@ -366,11 +368,43 @@ fn unknown_runtime_ids_fail_before_generation() {
     let error = NativeApplicationBuilder::new(environment(empty_catalog()))
         .plan(&request(&bytecode))
         .unwrap_err();
-    assert_eq!(error.kind_name(), "NativeRuntimeFunctionUnknown");
+    assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
 }
 
-fn unused_factory(_arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    panic!("runtime factory must not execute during planning")
+#[derive(Debug)]
+struct PlanningFunction {
+    output: Ref<f64>,
+}
+
+impl MechFunctionImpl for PlanningFunction {
+    fn solve(&self) {}
+
+    fn out(&self) -> Value {
+        self.output.to_value()
+    }
+
+    fn to_string(&self) -> String {
+        "PlanningFunction".into()
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+
+impl MechFunctionCompiler for PlanningFunction {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
+    }
+}
+
+fn unused_factory(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match arguments {
+        FunctionArgs::Nullary(output) => Ok(Box::new(PlanningFunction {
+            output: output.try_function_ref(FunctionArgumentRole::Output)?,
+        })),
+        _ => unreachable!(),
+    }
 }
 
 #[test]
@@ -386,6 +420,38 @@ fn known_runtime_ids_without_native_metadata_fail_before_generation() {
         .plan(&request(&bytecode))
         .unwrap_err();
     assert_eq!(error.kind_name(), "NativeRuntimeFunctionLinkageMissing");
+}
+
+#[test]
+fn malicious_runtime_type_mismatch_fails_before_native_analysis() {
+    const NAME: &str = "LinkedPlanningFunction";
+    let mut catalog = FunctionCatalogBuilder::new();
+    catalog
+        .insert_runtime_factory_with_linkage(
+            NAME,
+            unused_factory,
+            NativeFunctionLinkage {
+                package: "mech-test",
+                crate_name: "mech_test",
+                installer_path: "mech_test::__mech_native::install",
+                cargo_features: &["native-link", "runtime"],
+            },
+        )
+        .unwrap();
+    let bytecode = runtime_nullary_bytecode_with_constant(
+        hash_str(NAME),
+        EncodedConstant {
+            runtime_type: RuntimeType::I8,
+            alignment: 1,
+            bytes: vec![7],
+        },
+    );
+
+    let error = NativeApplicationBuilder::new(environment(Arc::new(catalog.build().unwrap())))
+        .plan(&request(&bytecode))
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
+    assert!(error.kind_message().contains(NAME));
 }
 
 #[test]
@@ -571,12 +637,27 @@ fn absolute_workspace_relocation_does_not_change_the_fingerprint() {
 }
 
 fn runtime_nullary_bytecode(function: u64) -> Vec<u8> {
+    runtime_nullary_bytecode_with_constant(
+        function,
+        EncodedConstant {
+            runtime_type: RuntimeType::F64,
+            alignment: 8,
+            bytes: 0.0_f64.to_bits().to_le_bytes().to_vec(),
+        },
+    )
+}
+
+fn runtime_nullary_bytecode_with_constant(function: u64, output: EncodedConstant) -> Vec<u8> {
     write_bytecode(&BytecodeProgram {
         register_count: 1,
-        constants: Vec::new(),
+        constants: vec![output],
         symbols: BTreeMap::new(),
         mutable_symbols: BTreeSet::new(),
         instructions: vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
             BytecodeInstruction::RuntimeNullary { function, dst: 0 },
             BytecodeInstruction::Return { src: 0 },
         ],
@@ -589,10 +670,18 @@ fn runtime_nullary_bytecode(function: u64) -> Vec<u8> {
 fn host_function_only_bytecode(name: &str) -> Vec<u8> {
     write_bytecode(&BytecodeProgram {
         register_count: 1,
-        constants: Vec::new(),
+        constants: vec![EncodedConstant {
+            runtime_type: RuntimeType::Empty,
+            alignment: 1,
+            bytes: Vec::new(),
+        }],
         symbols: BTreeMap::new(),
         mutable_symbols: BTreeSet::new(),
         instructions: vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
             BytecodeInstruction::HostCall {
                 requirement: 0,
                 dst: 0,
@@ -653,6 +742,11 @@ fn string_and_scalar_add_bytecode() -> Vec<u8> {
                 alignment: 8,
                 bytes: 2.0_f64.to_bits().to_le_bytes().to_vec(),
             },
+            EncodedConstant {
+                runtime_type: RuntimeType::F64,
+                alignment: 8,
+                bytes: 0.0_f64.to_bits().to_le_bytes().to_vec(),
+            },
         ],
         symbols: BTreeMap::new(),
         mutable_symbols: BTreeSet::new(),
@@ -668,6 +762,10 @@ fn string_and_scalar_add_bytecode() -> Vec<u8> {
             BytecodeInstruction::ConstLoad {
                 dst: 2,
                 constant: 2,
+            },
+            BytecodeInstruction::ConstLoad {
+                dst: 3,
+                constant: 3,
             },
             BytecodeInstruction::RuntimeBinary {
                 function: hash_str("AddSS<f64>"),
