@@ -401,6 +401,14 @@ mod tests {
             .collect()
     }
 
+    fn initialize_registers(context: &mut CompileCtx, registers: &[Register]) -> u32 {
+        let constant = context.intern_constant(f64_constant(0.0)).unwrap();
+        for register in registers {
+            context.emit_const_load(*register, constant);
+        }
+        constant
+    }
+
     fn host_requirement(name: &str) -> ApplicationRequirement {
         ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
             name: name.to_owned(),
@@ -467,6 +475,7 @@ mod tests {
         fn compile(reverse: bool) -> Vec<u8> {
             let mut context = CompileCtx::new();
             let registers = allocate_registers(&mut context, 2);
+            initialize_registers(&mut context, &registers);
             let definitions = [
                 (10usize, registers[0], "alpha", false),
                 (20usize, registers[1], "omega", true),
@@ -503,6 +512,7 @@ mod tests {
         fn compile(resource_first: bool) -> Vec<u8> {
             let mut context = CompileCtx::new();
             let registers = allocate_registers(&mut context, 2);
+            initialize_registers(&mut context, &registers);
             let host = host_requirement("cli/stdout");
             let resource = resource_requirement("context://input");
             let (host_id, resource_id) = if resource_first {
@@ -527,11 +537,11 @@ mod tests {
             ApplicationRequirement::HostFunction(_)
         ));
         assert!(matches!(
-            parsed.instructions[0],
+            parsed.instructions[2],
             BytecodeInstruction::HostCall { requirement: 0, .. }
         ));
         assert!(matches!(
-            parsed.instructions[1],
+            parsed.instructions[3],
             BytecodeInstruction::ResourceRead { requirement: 1, .. }
         ));
     }
@@ -540,6 +550,7 @@ mod tests {
     fn finish_appends_one_final_return_and_is_repeatable() {
         let mut context = CompileCtx::new();
         let register = allocate_registers(&mut context, 1)[0];
+        let constant = initialize_registers(&mut context, &[register]);
         let first = context.finish(register).unwrap();
         let second = context.finish(register).unwrap();
         assert_eq!(first, second);
@@ -547,7 +558,13 @@ mod tests {
         let parsed = ParsedProgram::from_bytes(&first).unwrap();
         assert_eq!(
             parsed.instructions,
-            vec![BytecodeInstruction::Return { src: register }],
+            vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: register,
+                    constant,
+                },
+                BytecodeInstruction::Return { src: register },
+            ],
         );
     }
 
@@ -555,7 +572,7 @@ mod tests {
     fn all_instruction_shapes_round_trip() {
         let mut context = CompileCtx::new();
         let registers = allocate_registers(&mut context, 7);
-        let constant = context.intern_constant(f64_constant(1.0)).unwrap();
+        initialize_registers(&mut context, &registers);
         let host = context
             .intern_requirement(host_requirement("cli/stdout"))
             .unwrap();
@@ -563,7 +580,6 @@ mod tests {
             .intern_requirement(resource_requirement("context://input"))
             .unwrap();
 
-        context.emit_const_load(registers[0], constant);
         context.emit_nullop(1, registers[0]);
         context.emit_unop(2, registers[1], registers[0]);
         context.emit_binop(3, registers[2], registers[0], registers[1]);
@@ -583,7 +599,7 @@ mod tests {
         context.emit_resource_send(resource, registers[6], registers[5]);
 
         let parsed = ParsedProgram::from_bytes(&context.finish(registers[6]).unwrap()).unwrap();
-        assert_eq!(parsed.instructions.len(), 12);
+        assert_eq!(parsed.instructions.len(), 18);
         assert_eq!(
             parsed.instructions.last(),
             Some(&BytecodeInstruction::Return { src: registers[6] }),
