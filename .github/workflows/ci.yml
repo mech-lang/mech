@@ -414,7 +414,8 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
       - name: Generate every native fixture project
         run: |
-          cargo +nightly-2026-03-03 test -p mech-build --all-features --test planning
+          cargo +nightly-2026-03-03 test -p mech-build --all-features --test native_host_pruning
+          cargo +nightly-2026-03-03 test -p mech-build --all-features
           python3 scripts/check-native-host-catalog.py
           python3 scripts/check-generated-project-determinism.py
           python3 scripts/check-native-application-graphs.py
@@ -670,7 +671,7 @@ jobs:
         run: cargo test -p mech-core
 
       - name: Run complete program library suite
-        run: cargo test -p mech-engine --lib --tests --features compiler
+        run: cargo test -p mech-engine --all-features
 
       - name: Run non-UTF-8 source-root regressions
         run: |
