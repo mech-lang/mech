@@ -8,7 +8,7 @@ use alloc::{
 #[cfg(not(feature = "no_std"))]
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{MResult, kind::Kind};
+use crate::{MResult, hash_str, kind::Kind};
 
 use super::{
     ByteReader, MAX_TYPE_RECURSION, checked_usize, invalid, write_string, write_u32, write_u64,
@@ -574,6 +574,7 @@ pub(crate) fn decode_canonical_runtime_type_key(bytes: &[u8]) -> MResult<Runtime
     if !reader.is_empty() {
         return invalid("canonical runtime type key has trailing bytes");
     }
+    validate_runtime_type(&ty, 0)?;
     Ok(ty)
 }
 
@@ -632,6 +633,39 @@ pub fn finalize_runtime_types<'a>(
     Ok((types, ids))
 }
 
+fn validate_named_schema<'a>(
+    category: &'static str,
+    names: impl IntoIterator<Item = &'a str>,
+) -> MResult<()> {
+    validate_named_schema_with_hash(category, names, hash_str)
+}
+
+fn validate_named_schema_with_hash<'a>(
+    category: &'static str,
+    names: impl IntoIterator<Item = &'a str>,
+    hash: impl Fn(&str) -> u64,
+) -> MResult<()> {
+    let mut exact_names = BTreeSet::new();
+    let mut names_by_id = BTreeMap::new();
+    for incoming in names {
+        if incoming.is_empty() {
+            return invalid(format!("{category} name must not be empty"));
+        }
+        let stable_id = hash(incoming);
+        if !exact_names.insert(incoming) {
+            return invalid(format!(
+                "{category} schema has duplicate name `{incoming}` (stable ID {stable_id})"
+            ));
+        }
+        if let Some(existing) = names_by_id.insert(stable_id, incoming) {
+            return invalid(format!(
+                "{category} schema name collision: existing `{existing}`, incoming `{incoming}`, stable ID {stable_id}"
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn validate_runtime_type(ty: &RuntimeType, depth: usize) -> MResult<()> {
     if depth > MAX_TYPE_RECURSION {
         return invalid("runtime type recursion exceeds bytecode v1 limit");
@@ -653,6 +687,7 @@ fn validate_runtime_type(ty: &RuntimeType, depth: usize) -> MResult<()> {
                 .len()
                 .try_into()
                 .map_err(|_| invalid::<()>("record field count exceeds u32").unwrap_err())?;
+            validate_named_schema("record field", fields.iter().map(|(name, _)| name.as_str()))?;
         }
         RuntimeType::Table {
             columns,
@@ -665,6 +700,10 @@ fn validate_runtime_type(ty: &RuntimeType, depth: usize) -> MResult<()> {
             if count > 0 && *primary_key >= count {
                 return invalid("table primary key is out of range");
             }
+            validate_named_schema(
+                "table column",
+                columns.iter().map(|(name, _)| name.as_str()),
+            )?;
         }
         RuntimeType::Tuple(types) => {
             let _: u32 = types
@@ -1247,4 +1286,33 @@ fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
         17 => Kind::Kind(Box::new(decode_kind(r, depth + 1)?)),
         _ => return invalid("unknown semantic kind tag"),
     })
+}
+
+#[cfg(test)]
+mod named_schema_tests {
+    use super::*;
+
+    #[test]
+    fn record_field_ids_reject_distinct_name_collisions() {
+        let error = validate_named_schema_with_hash("record field", ["first", "second"], |_| 42)
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "BytecodeValidation");
+        let message = error.kind_message();
+        assert!(message.contains("record field"));
+        assert!(message.contains("first"));
+        assert!(message.contains("second"));
+        assert!(message.contains("42"));
+    }
+
+    #[test]
+    fn table_column_ids_reject_distinct_name_collisions() {
+        let error = validate_named_schema_with_hash("table column", ["first", "second"], |_| 99)
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "BytecodeValidation");
+        let message = error.kind_message();
+        assert!(message.contains("table column"));
+        assert!(message.contains("first"));
+        assert!(message.contains("second"));
+        assert!(message.contains("99"));
+    }
 }

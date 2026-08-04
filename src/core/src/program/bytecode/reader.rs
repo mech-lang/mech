@@ -90,7 +90,11 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         section_bytes(bytes, constants_section)?,
         constants_section.item_count,
     )?;
-    let constant_blob_bytes = section_bytes(bytes, section(BytecodeSectionKind::ConstantBlob))?;
+    let constant_blob_section = section(BytecodeSectionKind::ConstantBlob);
+    if constant_blob_section.item_count != 0 {
+        return invalid("ConstantBlob item count must be zero");
+    }
+    let constant_blob_bytes = section_bytes(bytes, constant_blob_section)?;
     let mut constant_blob = Vec::new();
     constant_blob
         .try_reserve_exact(constant_blob_bytes.len())
@@ -153,7 +157,15 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
             return invalid("symbol dictionary hash mismatch");
         }
     }
-    validate_instructions(&instructions, &header, constants.len(), requirements.len())?;
+    let initialized =
+        validate_instructions(&instructions, &header, constants.len(), requirements.len())?;
+    for register in symbols.values().copied() {
+        if !initialized[register as usize] {
+            return invalid(format!(
+                "symbol register {register} is uninitialized after instruction validation"
+            ));
+        }
+    }
 
     Ok(ParsedProgram {
         header,
@@ -765,12 +777,14 @@ fn validate_instructions(
     header: &BytecodeHeader,
     constant_count: usize,
     requirement_count: usize,
-) -> MResult<()> {
-    let register = |value: u32| {
+) -> MResult<Vec<bool>> {
+    let register = |instruction: usize, value: u32| {
         if value < header.register_count {
-            Ok(())
+            Ok(value as usize)
         } else {
-            invalid("instruction register is out of range")
+            invalid(format!(
+                "instruction {instruction} register {value} is out of range"
+            ))
         }
     };
     let requirement = |value: u32| {
@@ -781,28 +795,35 @@ fn validate_instructions(
             invalid("instruction requirement index is out of range")
         }
     };
+    let mut initialized = vec![false; header.register_count as usize];
     let mut returns = 0;
     for (index, instruction) in instructions.iter().enumerate() {
         match instruction {
             BytecodeInstruction::ConstLoad { dst, constant } => {
-                register(*dst)?;
+                let destination = register(index, *dst)?;
                 let constant = checked_item_count(*constant, "instruction constant index")?;
                 if constant >= constant_count {
                     return invalid("instruction constant index is out of range");
                 }
+                if initialized[destination] {
+                    return invalid(format!(
+                        "instruction {index} register {dst} is initialized more than once"
+                    ));
+                }
+                initialized[destination] = true;
             }
             BytecodeInstruction::RuntimeNullary { function, dst } => {
                 if *function == 0 {
                     return invalid("runtime function ID must be nonzero");
                 }
-                register(*dst)?;
+                require_initialized_register(&register, &initialized, index, *dst)?;
             }
             BytecodeInstruction::RuntimeUnary { function, dst, src } => {
                 if *function == 0 {
                     return invalid("runtime function ID must be nonzero");
                 }
-                register(*dst)?;
-                register(*src)?;
+                require_initialized_register(&register, &initialized, index, *dst)?;
+                require_initialized_register(&register, &initialized, index, *src)?;
             }
             BytecodeInstruction::RuntimeBinary {
                 function,
@@ -813,9 +834,9 @@ fn validate_instructions(
                 if *function == 0 {
                     return invalid("runtime function ID must be nonzero");
                 }
-                register(*dst)?;
-                register(*lhs)?;
-                register(*rhs)?;
+                require_initialized_register(&register, &initialized, index, *dst)?;
+                require_initialized_register(&register, &initialized, index, *lhs)?;
+                require_initialized_register(&register, &initialized, index, *rhs)?;
             }
             BytecodeInstruction::RuntimeTernary {
                 function,
@@ -828,7 +849,7 @@ fn validate_instructions(
                     return invalid("runtime function ID must be nonzero");
                 }
                 for value in [dst, a, b, c] {
-                    register(*value)?;
+                    require_initialized_register(&register, &initialized, index, *value)?;
                 }
             }
             BytecodeInstruction::RuntimeQuaternary {
@@ -843,7 +864,7 @@ fn validate_instructions(
                     return invalid("runtime function ID must be nonzero");
                 }
                 for value in [dst, a, b, c, d] {
-                    register(*value)?;
+                    require_initialized_register(&register, &initialized, index, *value)?;
                 }
             }
             BytecodeInstruction::RuntimeVariadic {
@@ -854,9 +875,9 @@ fn validate_instructions(
                 if *function == 0 {
                     return invalid("runtime function ID must be nonzero");
                 }
-                register(*dst)?;
+                require_initialized_register(&register, &initialized, index, *dst)?;
                 for value in arguments {
-                    register(*value)?;
+                    require_initialized_register(&register, &initialized, index, *value)?;
                 }
             }
             BytecodeInstruction::HostCall {
@@ -865,9 +886,9 @@ fn validate_instructions(
                 arguments,
             } => {
                 requirement(*req)?;
-                register(*dst)?;
+                require_initialized_register(&register, &initialized, index, *dst)?;
                 for value in arguments {
-                    register(*value)?;
+                    require_initialized_register(&register, &initialized, index, *value)?;
                 }
             }
             BytecodeInstruction::ResourceRead {
@@ -875,7 +896,7 @@ fn validate_instructions(
                 dst,
             } => {
                 requirement(*req)?;
-                register(*dst)?;
+                require_initialized_register(&register, &initialized, index, *dst)?;
             }
             BytecodeInstruction::ResourceWrite {
                 requirement: req,
@@ -888,20 +909,36 @@ fn validate_instructions(
                 src,
             } => {
                 requirement(*req)?;
-                register(*dst)?;
-                register(*src)?;
+                require_initialized_register(&register, &initialized, index, *dst)?;
+                require_initialized_register(&register, &initialized, index, *src)?;
             }
             BytecodeInstruction::Return { src } => {
                 returns += 1;
-                register(*src)?;
                 if index + 1 != instructions.len() {
                     return invalid("Return must be the final instruction");
                 }
+                require_initialized_register(&register, &initialized, index, *src)?;
             }
         }
     }
     if returns != 1 {
         return invalid("bytecode must contain exactly one Return instruction");
     }
-    Ok(())
+    Ok(initialized)
+}
+
+fn require_initialized_register(
+    register: &impl Fn(usize, u32) -> MResult<usize>,
+    initialized: &[bool],
+    instruction: usize,
+    value: u32,
+) -> MResult<()> {
+    let register = register(instruction, value)?;
+    if initialized[register] {
+        Ok(())
+    } else {
+        invalid(format!(
+            "instruction {instruction} register {value} is uninitialized"
+        ))
+    }
 }

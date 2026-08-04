@@ -50,6 +50,7 @@ impl NativeApplicationBuilder {
         }
 
         let program = ParsedProgram::from_bytes(&request.bytecode)?;
+        program.validate_runtime_contracts(&self.environment.function_catalog)?;
         let runtime_functions =
             analysis::analyze_runtime_functions(&program, &self.environment.function_catalog)?;
         for function in &runtime_functions {

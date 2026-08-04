@@ -23,6 +23,19 @@ pub struct BytecodeProgram {
 }
 
 pub fn write_bytecode(program: &BytecodeProgram) -> MResult<Vec<u8>> {
+    let output = encode_bytecode(program)?;
+    ParsedProgram::from_bytes(&output)?;
+    Ok(output)
+}
+
+#[cfg(test)]
+pub(crate) fn write_bytecode_without_reader_validation(
+    program: &BytecodeProgram,
+) -> MResult<Vec<u8>> {
+    encode_bytecode(program)
+}
+
+fn encode_bytecode(program: &BytecodeProgram) -> MResult<Vec<u8>> {
     validate_writer_program(program)?;
     let (types, type_ids) = finalize_runtime_types(
         program
@@ -128,7 +141,6 @@ pub fn write_bytecode(program: &BytecodeProgram) -> MResult<Vec<u8>> {
     }
     let checksum = crc32fast::hash(&output);
     write_u32(&mut output, checksum);
-    ParsedProgram::from_bytes(&output)?;
     Ok(output)
 }
 

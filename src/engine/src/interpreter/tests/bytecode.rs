@@ -7,10 +7,14 @@
 ))]
 mod bytecode_dependency_tests {
     use super::super::super::{
-        FunctionArgs, FunctionCatalogBuilder, MResult, MechFunction, MechFunctionImpl,
-        ProgramState, ReactiveCellId, ReactiveDependencyKind, Ref, RuntimeFunctionId, Value,
-        register_bytecode_function,
+        BytecodeInstruction, BytecodeProgram, EncodedConstant, FunctionArgs, FunctionArgumentRole,
+        FunctionCatalogBuilder, Interpreter, MResult, MechError, MechFunction, MechFunctionFactory,
+        MechFunctionImpl, ProgramState, ReactiveCellId, ReactiveDependencyKind, Ref,
+        RuntimeFunctionId, RuntimeType, ToValue, Value, hash_str, register_bytecode_function,
+        write_bytecode,
     };
+    use std::collections::{BTreeMap, BTreeSet};
+    use std::sync::Arc;
 
     #[cfg(feature = "compiler")]
     use super::super::super::{BytecodeCompilerContext, MechFunctionCompiler, Register};
@@ -32,6 +36,51 @@ mod bytecode_dependency_tests {
 
         fn transaction_state_values(&self) -> MResult<Vec<Value>> {
             Ok(self.reactive_output_values())
+        }
+    }
+
+    #[derive(Debug)]
+    struct ExactF64Nullary {
+        output: Ref<f64>,
+    }
+
+    impl MechFunctionFactory for ExactF64Nullary {
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            match args {
+                FunctionArgs::Nullary(output) => Ok(Box::new(Self {
+                    output: output.try_function_ref(FunctionArgumentRole::Output)?,
+                })),
+                _ => Err(MechError::new(
+                    super::super::super::IncorrectNumberOfArguments {
+                        expected: 0,
+                        found: args.len(),
+                    },
+                    None,
+                )),
+            }
+        }
+    }
+
+    impl MechFunctionImpl for ExactF64Nullary {
+        fn solve(&self) {}
+
+        fn out(&self) -> Value {
+            self.output.to_value()
+        }
+
+        fn to_string(&self) -> String {
+            "ExactF64Nullary".into()
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            Ok(self.reactive_output_values())
+        }
+    }
+
+    #[cfg(feature = "compiler")]
+    impl MechFunctionCompiler for ExactF64Nullary {
+        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
         }
     }
 
@@ -186,6 +235,80 @@ mod bytecode_dependency_tests {
         assert_eq!(node.inputs.len(), 1);
         assert_eq!(node.inputs[0].cell, input_cell);
         assert_eq!(plan.reactive_consumers_for(input_cell), &[0]);
+    }
+
+    #[test]
+    fn runtime_contract_preflight_preserves_plan_symbols_dictionary_and_register_state() {
+        const NAME: &str = "ExactF64Nullary";
+        let mut catalog = FunctionCatalogBuilder::new();
+        catalog
+            .insert_runtime_factory(NAME, ExactF64Nullary::new)
+            .unwrap();
+        let mut interpreter =
+            Interpreter::with_function_catalog(7, 100, Arc::new(catalog.build().unwrap()));
+
+        let prior_register = Value::F64(Ref::new(17.0));
+        let prior_constant = Value::F64(Ref::new(23.0));
+        interpreter.ip = 9;
+        interpreter.registers = vec![prior_register.clone()];
+        interpreter.constants = vec![prior_constant.clone()];
+        interpreter.out = Value::F64(Ref::new(31.0));
+        let prior_output = interpreter.out.clone();
+        register_dependency_test_function(
+            &interpreter.state.borrow(),
+            FunctionArgs::Nullary(Value::F64(Ref::new(41.0))),
+        )
+        .unwrap();
+        let symbol_id = hash_str("prior");
+        interpreter
+            .symbols()
+            .borrow_mut()
+            .insert(symbol_id, Value::F64(Ref::new(47.0)), false);
+        interpreter
+            .dictionary()
+            .borrow_mut()
+            .insert(symbol_id, "prior".into());
+
+        let prior_plan_len = interpreter.plan_len();
+        let prior_symbols = interpreter.symbols().borrow().snapshot();
+        let prior_dictionary = interpreter.dictionary().borrow().clone();
+        let program = super::super::super::ParsedProgram::from_bytes(
+            &write_bytecode(&BytecodeProgram {
+                register_count: 1,
+                constants: vec![EncodedConstant {
+                    runtime_type: RuntimeType::I8,
+                    alignment: 1,
+                    bytes: vec![1],
+                }],
+                symbols: BTreeMap::new(),
+                mutable_symbols: BTreeSet::new(),
+                instructions: vec![
+                    BytecodeInstruction::ConstLoad {
+                        dst: 0,
+                        constant: 0,
+                    },
+                    BytecodeInstruction::RuntimeNullary {
+                        function: RuntimeFunctionId::from_name(NAME).raw(),
+                        dst: 0,
+                    },
+                    BytecodeInstruction::Return { src: 0 },
+                ],
+                dictionary: BTreeMap::new(),
+                requirements: Vec::new(),
+            })
+            .unwrap(),
+        )
+        .unwrap();
+
+        let error = interpreter.run_program(&program).unwrap_err();
+        assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
+        assert_eq!(interpreter.ip, 9);
+        assert_eq!(interpreter.registers, vec![prior_register]);
+        assert_eq!(interpreter.constants, vec![prior_constant]);
+        assert_eq!(interpreter.out, prior_output);
+        assert_eq!(interpreter.plan_len(), prior_plan_len);
+        assert_eq!(interpreter.symbols().borrow().snapshot(), prior_symbols);
+        assert_eq!(*interpreter.dictionary().borrow(), prior_dictionary);
     }
 }
 
