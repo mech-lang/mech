@@ -448,7 +448,7 @@ fn rejects_crc_valid_unused_application_requirement_row() {
 fn referenced_runtime_types_include_the_exact_nested_decode_closure() {
     let matrix_type = RuntimeType::Matrix {
         element: Box::new(RuntimeType::U8),
-        storage: MatrixStorage::Matrix2,
+        storage: MatrixStorage::MatrixD,
         rows: 2,
         cols: 2,
     };
