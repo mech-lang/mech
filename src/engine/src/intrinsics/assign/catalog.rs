@@ -156,6 +156,42 @@ macro_rules! assign_matrix_feature {
     };
 }
 
+// These legacy `Set*` kernels mutate only the output register. Their encoded
+// inputs are the source value and indices, so unlike the `Assign*` register
+// families they do not need a general output/input alias exception.
+macro_rules! assign_output_alias_policy {
+    (Set1DAS) => {
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    };
+    (Set2DARB) => {
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    };
+    (Set2DARS) => {
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    };
+    (Set2DARV) => {
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    };
+    (Set2DARVB) => {
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    };
+    (Set2DRAB) => {
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    };
+    (Set2DRAS) => {
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    };
+    (Set2DRAV) => {
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    };
+    (Set2DRAVB) => {
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    };
+    ($_assign:ident) => {
+        RuntimeOutputAliasPolicy::AllowInputAlias
+    };
+}
+
 // All three consumers below are fed by the same concrete-factory traversal:
 // declarations for native plans, direct runtime registrations, and hidden
 // generated-application exports.  This deliberately replaces the historic
@@ -176,7 +212,7 @@ macro_rules! declare_matrix_assign_factory {
                 factory: $factory,
                 contract: RuntimeFunctionContract::custom(
                     "assign_slice",
-                    RuntimeOutputAliasPolicy::AllowInputAlias,
+                    assign_output_alias_policy!($fxn_name),
                     validate_assign_slice_contract,
                 ),
                 package: "mech-engine", crate_name: "mech_engine",

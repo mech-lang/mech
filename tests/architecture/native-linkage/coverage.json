@@ -7,7 +7,10 @@
     "missing_linkage_count": 0,
     "runtime_surface_digest": "dcab66743134ee36a960b13b703c93f737e1bab60f8d9826dc99c5c5fb70ee6c",
     "installer_surface_digest": "4e426baa27b75b3295320ea86966f937272e7ab1bee3b2b7151530769597d5d3",
-    "feature_surface_digest": "ebdef899b74934e42db6b6add4217cfa9f8d755af25147f8ddc876ad88ca41a3"
+    "feature_surface_digest": "fd5bbc04c0ca7be167c4f6ddac1ea1021a112c4399d93133bf1c79da12e29eaf",
+    "runtime_contract_count": 9019,
+    "missing_contract_count": 0,
+    "runtime_contract_surface_digest": "91c4314a39b78c5882aee07d5c544e69448d476001d6f626b6043827a6dbe528"
   },
   "extended": {
     "entry_count": 119771,
@@ -15,11 +18,14 @@
     "missing_linkage_count": 0,
     "runtime_surface_digest": "a2ef330c0fcfb1b911b46ab62e2719a6f9dc5ebc93b48745f70403abc27391fe",
     "installer_surface_digest": "8fbc34a60200e71bd7388f0753e8855d4a13ce797455c1d50019d63a09055363",
-    "feature_surface_digest": "528300f6ee0a84cf02a4d1e7cbdc140cf2df3b36bb75a9fbc5483c5bf120e63d"
+    "feature_surface_digest": "89a20f37db22857d1d68a69e118aaf8fc9cc7b48a5f27c2f31158ec2a574e8c8",
+    "runtime_contract_count": 119771,
+    "missing_contract_count": 0,
+    "runtime_contract_surface_digest": "f982028c6441ef03eefb45c103ecc3242b63ccf0e39662cd280919a6da72c77d"
   },
   "coverage_digest": {
     "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
-    "sha256": "9e55cda920a17cb3a333739987a7ea4d317e70437ab24616f9e504d9c998db79"
+    "sha256": "d44c8ddbb8e6b5c8b31d660f5dff26bc1280b3915b5a20bc1d91397daa668103"
   },
   "detail_artifact": {
     "path": "target/native-linkage/coverage-full.json",

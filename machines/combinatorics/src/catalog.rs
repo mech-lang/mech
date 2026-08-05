@@ -51,7 +51,7 @@ macro_rules! declare_n_choose_k_matrix {
     (; $cfg:meta; $scalar:ty; $scalar_name:literal; $scalar_token:ident) => {
         mech_core::paste::paste! {
             mech_core::declare_native_runtime_factory! {
-                cfg: all(feature = "matrix", $cfg),
+                cfg: all(feature = "matrix", feature = "matrixd", $cfg),
                 registration: [<register_n_choose_k_matrix_ $scalar_token>],
                 installer: [<install_n_choose_k_matrix_ $scalar_token>],
                 name: concat!("NChooseKMatrix<", $scalar_name, ">"),
@@ -64,7 +64,7 @@ macro_rules! declare_n_choose_k_matrix {
                 package: "mech-combinatorics",
                 crate_name: "mech_combinatorics",
                 installer_path: concat!("mech_combinatorics::__mech_native::", stringify!([<install_n_choose_k_matrix_ $scalar_token>])),
-                cargo_features: ["matrix", "n_choose_k", $scalar_name, "native-link", "runtime"],
+                cargo_features: ["matrix", "matrixd", "n_choose_k", $scalar_name, "native-link", "runtime"],
             }
         }
     };
@@ -102,14 +102,14 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     }
     macro_rules! register_n_choose_k_matrix {
         (; $cfg:meta; $_scalar:ty; $_scalar_name:literal; $scalar_token:ident) => {
-            #[cfg(all(feature = "matrix", $cfg))]
+            #[cfg(all(feature = "matrix", feature = "matrixd", $cfg))]
             mech_core::paste::paste! { [<register_n_choose_k_matrix_ $scalar_token>](builder)?; }
         };
     }
 
     #[cfg(feature = "n_choose_k")]
     for_each_combinatorics_scalar!(register_n_choose_k_scalar,);
-    #[cfg(all(feature = "n_choose_k", feature = "matrix"))]
+    #[cfg(all(feature = "n_choose_k", feature = "matrix", feature = "matrixd"))]
     for_each_combinatorics_scalar!(register_n_choose_k_matrix,);
     Ok(())
 }
@@ -125,14 +125,14 @@ pub mod __mech_native {
     }
     macro_rules! export_n_choose_k_matrix {
         (; $cfg:meta; $_scalar:ty; $_scalar_name:literal; $scalar_token:ident) => {
-            #[cfg(all(feature = "matrix", $cfg))]
+            #[cfg(all(feature = "matrix", feature = "matrixd", $cfg))]
             mech_core::paste::paste! { pub use super::[<install_n_choose_k_matrix_ $scalar_token>]; }
         };
     }
 
     #[cfg(feature = "n_choose_k")]
     for_each_combinatorics_scalar!(export_n_choose_k_scalar,);
-    #[cfg(all(feature = "n_choose_k", feature = "matrix"))]
+    #[cfg(all(feature = "n_choose_k", feature = "matrix", feature = "matrixd"))]
     for_each_combinatorics_scalar!(export_n_choose_k_matrix,);
 }
 

@@ -3,13 +3,16 @@ use mech_core::structures::matrix::Matrix;
 use mech_core::value::ToUsize;
 use mech_core::*;
 
+#[cfg(feature = "matrixd")]
+use nalgebra::DMatrix;
+
 use itertools::Itertools;
 use num_traits::{One, Zero};
 use paste::paste;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
 fn checked_combination_count(n: usize, k: usize) -> Option<usize> {
     let k = k.min(n.saturating_sub(k));
     let mut result = 1usize;
@@ -19,7 +22,7 @@ fn checked_combination_count(n: usize, k: usize) -> Option<usize> {
     Some(result)
 }
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
 fn matrix_selection_size(value: &Value) -> Option<usize> {
     match value {
         Value::Index(value) => Some(*value.borrow()),
@@ -55,7 +58,7 @@ fn matrix_selection_size(value: &Value) -> Option<usize> {
     }
 }
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
 pub(crate) fn validate_n_choose_k_matrix_contract(args: &FunctionArgs) -> MResult<()> {
     let contract = "n_choose_k_matrix";
     let input = args
@@ -71,6 +74,15 @@ pub(crate) fn validate_n_choose_k_matrix_contract(args: &FunctionArgs) -> MResul
         .ok_or_else(|| {
             function_shape_contract_violation(contract, "output must be matrix-backed")
         })?;
+    if output.representation != FunctionMatrixRepresentation::MatrixD {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "output must use MatrixD storage, found {:?}",
+                output.representation,
+            ),
+        ));
+    }
     let k = args
         .input_value(1)
         .and_then(matrix_selection_size)
@@ -99,6 +111,72 @@ pub(crate) fn validate_n_choose_k_matrix_contract(args: &FunctionArgs) -> MResul
         ));
     }
     Ok(())
+}
+
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NChooseKMatrixSelectionInvalid {
+    pub available: usize,
+    pub requested: usize,
+}
+
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
+impl MechErrorKind for NChooseKMatrixSelectionInvalid {
+    fn name(&self) -> &str {
+        "NChooseKMatrixSelectionInvalid"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "matrix n-choose-k requested {} elements from {} available; expected 1..={}",
+            self.requested, self.available, self.available,
+        )
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NChooseKMatrixResultTooLarge {
+    pub available: usize,
+    pub requested: usize,
+}
+
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
+impl MechErrorKind for NChooseKMatrixResultTooLarge {
+    fn name(&self) -> &str {
+        "NChooseKMatrixResultTooLarge"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "matrix n-choose-k result for {} choose {} exceeds addressable allocation",
+            self.available, self.requested,
+        )
+    }
+}
+
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
+fn invalid_matrix_selection(available: usize, requested: usize) -> MechError {
+    MechError::new(
+        NChooseKMatrixSelectionInvalid {
+            available,
+            requested,
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
+fn matrix_result_too_large(available: usize, requested: usize) -> MechError {
+    MechError::new(
+        NChooseKMatrixResultTooLarge {
+            available,
+            requested,
+        },
+        None,
+    )
+    .with_compiler_loc()
 }
 
 // Combinatorics N Choose K----------------------------------------------------
@@ -199,31 +277,47 @@ where
         compile_binop!(name, self.out, self.n, self.k, ctx);
     }
 }
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
 #[derive(Debug)]
 pub struct NChooseKMatrix<T> {
     n: Matrix<T>,
     k: Ref<T>,
-    out: Matrix<T>,
+    out: Ref<DMatrix<T>>,
 }
 
-#[cfg(feature = "matrix")]
-fn n_choose_k_matrix_result<T>(n: &Matrix<T>, k: T) -> Matrix<T>
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
+fn n_choose_k_matrix_result<T>(n: &Matrix<T>, k: T) -> MResult<DMatrix<T>>
 where
-    T: Copy + Clone + Debug + PartialEq + ToUsize + ToMatrix + 'static,
+    T: Copy + Clone + Debug + PartialEq + ToUsize + 'static,
 {
     let elements = n.as_vec();
-    let k_usize = k.to_usize();
-    if k_usize > elements.len() {
-        return T::to_matrix(vec![], 0, k_usize);
+    let available = elements.len();
+    let requested = k.to_usize();
+    if requested == 0 || requested > available {
+        return Err(invalid_matrix_selection(available, requested));
     }
-
-    let combinations: Vec<Vec<T>> = elements.iter().copied().combinations(k_usize).collect();
-    let rows = combinations.len();
-    let flat_data: Vec<T> = combinations.into_iter().flatten().collect();
-    T::to_matrix(flat_data, k_usize, rows)
+    let combination_count = checked_combination_count(available, requested)
+        .ok_or_else(|| matrix_result_too_large(available, requested))?;
+    let element_count = requested
+        .checked_mul(combination_count)
+        .ok_or_else(|| matrix_result_too_large(available, requested))?;
+    let mut flat_data = Vec::new();
+    flat_data
+        .try_reserve_exact(element_count)
+        .map_err(|_| matrix_result_too_large(available, requested))?;
+    for combination in elements.iter().copied().combinations(requested) {
+        flat_data.extend(combination);
+    }
+    if flat_data.len() != element_count {
+        return Err(matrix_result_too_large(available, requested));
+    }
+    Ok(DMatrix::from_vec(
+        requested,
+        combination_count,
+        flat_data,
+    ))
 }
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
 impl<T> MechFunctionFactory for NChooseKMatrix<T>
 where
     T: Copy
@@ -242,19 +336,18 @@ where
         + One
         + AsValueKind
         + PartialEq
-        + PartialOrd
-        + ToMatrix,
+        + PartialOrd,
     #[cfg(feature = "compiler")]
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
-    Matrix<T>: ToValue,
+    Ref<DMatrix<T>>: ToValue,
 {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
                 let n: Matrix<T> = arg1.try_function_matrix(FunctionArgumentRole::Input(0))?;
                 let k: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Matrix<T> = out.try_function_matrix(FunctionArgumentRole::Output)?;
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { n, k, out }))
             }
             _ => Err(MechError::new(
@@ -268,7 +361,7 @@ where
         }
     }
 }
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "matrixd"))]
 impl<T> MechFunctionImpl for NChooseKMatrix<T>
 where
     T: Copy
@@ -286,17 +379,17 @@ where
         + Zero
         + One
         + PartialEq
-        + PartialOrd
-        + ToMatrix,
+        + PartialOrd,
     Ref<T>: ToValue,
-    Matrix<T>: ToValue,
+    Ref<DMatrix<T>>: ToValue,
 {
     fn solve(&self) {
-        let result = n_choose_k_matrix_result(&self.n, *self.k.borrow());
-        assert!(
-            self.out.replace_payload_from(&result),
-            "n-choose-k output storage cannot represent the computed matrix shape"
-        );
+        let _ = self.solve_result();
+    }
+    fn solve_result(&self) -> MResult<()> {
+        let next = n_choose_k_matrix_result(&self.n, *self.k.borrow())?;
+        *self.out.borrow_mut() = next;
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -308,7 +401,7 @@ where
         format!("{:#?}", self)
     }
 }
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "matrixd", feature = "compiler"))]
 impl<T> MechFunctionCompiler for NChooseKMatrix<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -322,14 +415,14 @@ where
         Ok(out)
     }
 }
-#[cfg(all(test, feature = "matrix", feature = "f64"))]
+#[cfg(all(test, feature = "matrix", feature = "matrixd", feature = "f64"))]
 mod transaction_state_tests {
     use super::*;
 
     #[test]
     fn matrix_combinations_expose_value_backed_transaction_state() {
         let n = f64::to_matrix(vec![1.0, 2.0], 2, 1);
-        let out = f64::to_matrix(vec![1.0], 1, 1);
+        let out = Ref::new(DMatrix::from_element(1, 1, 0.0));
         let function = NChooseKMatrix {
             n,
             k: Ref::new(1.0),
@@ -339,6 +432,88 @@ mod transaction_state_tests {
 
         assert_eq!(state, vec![out.to_value()]);
     }
+
+    #[test]
+    fn matrix_combinations_reuse_one_output_root_across_shape_changes() {
+        let n = f64::to_matrix(vec![1.0, 2.0, 3.0], 3, 1);
+        let k = Ref::new(1.0);
+        let out = Ref::new(DMatrix::from_element(1, 1, 0.0));
+        let function = NChooseKMatrix {
+            n,
+            k: k.clone(),
+            out: out.clone(),
+        };
+        let output_cell = out.id();
+
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().shape(), (1, 3));
+        assert_eq!(out.borrow().as_slice(), &[1.0, 2.0, 3.0]);
+
+        *k.borrow_mut() = 2.0;
+        function.solve_result().unwrap();
+        assert_eq!(out.id(), output_cell);
+        assert_eq!(out.borrow().shape(), (2, 3));
+        assert_eq!(out.borrow().as_slice(), &[1.0, 2.0, 1.0, 3.0, 2.0, 3.0]);
+
+        *k.borrow_mut() = 3.0;
+        function.solve_result().unwrap();
+        assert_eq!(out.id(), output_cell);
+        assert_eq!(out.borrow().shape(), (3, 1));
+        assert_eq!(out.borrow().as_slice(), &[1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn invalid_matrix_selection_is_structured_and_retains_previous_output() {
+        let n = f64::to_matrix(vec![1.0, 2.0, 3.0], 3, 1);
+        let k = Ref::new(1.0);
+        let out = Ref::new(DMatrix::from_element(1, 1, 0.0));
+        let function = NChooseKMatrix {
+            n,
+            k: k.clone(),
+            out: out.clone(),
+        };
+        function.solve_result().unwrap();
+        let expected = out.borrow().clone();
+
+        for invalid in [0.0, 4.0] {
+            *k.borrow_mut() = invalid;
+            let error = function.solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "NChooseKMatrixSelectionInvalid");
+            assert_eq!(*out.borrow(), expected);
+        }
+    }
+}
+
+#[cfg(all(feature = "source", feature = "matrix", feature = "matrixd"))]
+fn n_choose_k_matrix_specialization<T>(n: Matrix<T>, k: Ref<T>) -> Box<dyn MechFunction>
+where
+    T: Copy
+        + Debug
+        + Clone
+        + Sync
+        + Send
+        + 'static
+        + ToUsize
+        + std::fmt::Display
+        + Add<Output = T>
+        + AddAssign
+        + Sub<Output = T>
+        + Div<Output = T>
+        + Zero
+        + One
+        + AsValueKind
+        + PartialEq
+        + PartialOrd,
+    #[cfg(feature = "compiler")]
+    T: ConstElem + CompileConst,
+    Ref<T>: ToValue,
+    Ref<DMatrix<T>>: ToValue,
+{
+    Box::new(NChooseKMatrix {
+        n,
+        k,
+        out: Ref::new(DMatrix::from_element(1, 1, T::zero())),
+    })
 }
 
 #[cfg(feature = "source")]
@@ -428,76 +603,34 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn Mech
             k: k,
             out: Ref::new(C64::default()),
         })),
-        #[cfg(all(feature = "matrix", feature = "u8"))]
-        (Value::MatrixU8(n), Value::U8(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "u16"))]
-        (Value::MatrixU16(n), Value::U16(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "u32"))]
-        (Value::MatrixU32(n), Value::U32(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "u64"))]
-        (Value::MatrixU64(n), Value::U64(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "u128"))]
-        (Value::MatrixU128(n), Value::U128(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "i8"))]
-        (Value::MatrixI8(n), Value::I8(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "i16"))]
-        (Value::MatrixI16(n), Value::I16(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "i32"))]
-        (Value::MatrixI32(n), Value::I32(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "i64"))]
-        (Value::MatrixI64(n), Value::I64(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "i128"))]
-        (Value::MatrixI128(n), Value::I128(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "f32"))]
-        (Value::MatrixF32(n), Value::F32(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "f64"))]
-        (Value::MatrixF64(n), Value::F64(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "rational"))]
-        (Value::MatrixR64(n), Value::R64(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
-        #[cfg(all(feature = "matrix", feature = "complex"))]
-        (Value::MatrixC64(n), Value::C64(k)) => {
-            let out = n_choose_k_matrix_result(&n, *k.borrow());
-            Ok(Box::new(NChooseKMatrix { n, k, out }))
-        }
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u8"))]
+        (Value::MatrixU8(n), Value::U8(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u16"))]
+        (Value::MatrixU16(n), Value::U16(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u32"))]
+        (Value::MatrixU32(n), Value::U32(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u64"))]
+        (Value::MatrixU64(n), Value::U64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u128"))]
+        (Value::MatrixU128(n), Value::U128(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i8"))]
+        (Value::MatrixI8(n), Value::I8(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i16"))]
+        (Value::MatrixI16(n), Value::I16(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i32"))]
+        (Value::MatrixI32(n), Value::I32(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i64"))]
+        (Value::MatrixI64(n), Value::I64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i128"))]
+        (Value::MatrixI128(n), Value::I128(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "f32"))]
+        (Value::MatrixF32(n), Value::F32(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "f64"))]
+        (Value::MatrixF64(n), Value::F64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "rational"))]
+        (Value::MatrixR64(n), Value::R64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        #[cfg(all(feature = "matrix", feature = "matrixd", feature = "complex"))]
+        (Value::MatrixC64(n), Value::C64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         (n, k) => Err(MechError::new(
             UnhandledFunctionArgumentKind2 {
                 arg: (n.kind(), k.kind()),
