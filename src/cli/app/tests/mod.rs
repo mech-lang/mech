@@ -456,6 +456,38 @@ mod build_argument_tests {
     }
 
     #[test]
+    fn bytecode_only_build_skips_unused_native_identity_validation() {
+        let bytecode = options(&[
+            "mech",
+            "build",
+            "2026-demo.mec",
+            "--emit",
+            "bytecode",
+            "--name",
+            "2026-demo",
+            "--target",
+            "unused target",
+        ])
+        .unwrap();
+        assert_eq!(bytecode.emit, BuildEmit::Bytecode);
+        assert!(!bytecode.keep_project);
+
+        assert!(
+            options(&[
+                "mech",
+                "build",
+                "2026-demo.mec",
+                "--emit",
+                "bytecode",
+                "--name",
+                "2026-demo",
+                "--keep-project",
+            ])
+            .is_err()
+        );
+    }
+
+    #[test]
     fn build_records_workspace_root_and_offline_without_changing_emit_defaults() {
         let options = options(&[
             "mech",

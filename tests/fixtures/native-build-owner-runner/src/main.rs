@@ -359,8 +359,7 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
             .ok_or("output seed constant is outside the constant table")?;
         if matches!(
             &output.runtime_type,
-            RuntimeType::Set { element, max_len: Some(0) }
-                if **element == RuntimeType::Empty
+            RuntimeType::Set { element, .. } if **element == RuntimeType::Empty
         ) {
             // An empty comprehension has no element from which the compiler
             // can infer a narrower Set element type. Seed it with a valid,

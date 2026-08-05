@@ -185,6 +185,7 @@ pub(crate) fn analyze_application_requirements(
                     base_uri: request.base_uri.clone(),
                     path: request.path.clone(),
                     context_name: request.context_name.clone(),
+                    host_context: owner.context.name.clone(),
                     operation: request.operation.clone(),
                     intent: request.intent,
                     delivery: request.delivery,

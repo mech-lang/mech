@@ -239,6 +239,22 @@ little-endian. Argument arrays are a `u32` count followed by `u32` registers.
 All registers and indices are in range, and runtime-function IDs are nonzero.
 There is exactly one `Return`; it is the final instruction.
 
+### Runtime factory contracts
+
+Every trusted runtime-factory entry has an explicit argument contract.
+Before native planning or execution, that contract validates instruction
+arity, each value's exact runtime representation, matrix dimensions,
+cross-argument shape relations, and the output/input alias policy. A valid
+CRC does not bypass these checks: malicious bytecode with mismatched dynamic
+shapes, invalid matrix products or solves, or forbidden output aliases is
+rejected before a factory can mutate program state.
+
+Factories that intentionally update an input register declare that alias
+policy explicitly. Other matrix outputs must not alias any input. Dynamic
+shape-changing functions keep a stable output reference and replace the value
+behind it transactionally. In particular, `NChooseKMatrix` always produces a
+`DMatrix`, including when its row and column counts change reactively.
+
 ## Application requirements
 
 Each requirement has a fixed 16-byte prefix followed by four UTF-8 strings:

@@ -158,6 +158,31 @@ fn assert_workspace_project(project: &Path, cargo_target: &Path) {
 }
 
 #[test]
+fn bytecode_only_build_accepts_a_non_cargo_input_stem() {
+    let root = temp_root("bytecode-non-cargo-stem");
+    let source = root.join("2026-demo.mec");
+    let bytecode = root.join("out.mecb");
+    std::fs::write(&source, "answer := 42\nanswer\n").unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_mech"))
+        .current_dir(&root)
+        .arg("--no-config")
+        .arg("build")
+        .arg(&source)
+        .arg("--emit")
+        .arg("bytecode")
+        .arg("--out")
+        .arg(&bytecode)
+        .arg("--offline")
+        .output()
+        .unwrap();
+    assert_success(output, "bytecode-only build with a non-Cargo input stem");
+    assert!(bytecode.is_file());
+
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn source_and_bytecode_cover_every_authoritative_build_emit() {
     let root = temp_root("all-emits");
     let workspace_export_root = Path::new(env!("CARGO_MANIFEST_DIR"))
