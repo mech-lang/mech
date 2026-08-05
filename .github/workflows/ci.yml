@@ -356,6 +356,33 @@ jobs:
           path: target/native-linkage/coverage-full.json
           retention-days: 14
 
+  native-linkage-closures:
+    name: Exact native closures (${{ matrix.shard }}/8)
+    needs:
+      - native-linkage
+      - cargo-language
+      - cargo-features
+      - cargo-runtime
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target/native-linkage/exact-closures/shard-${{ matrix.shard }}/cargo-target
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Download full native linkage inventory
+        uses: actions/download-artifact@v4
+        with:
+          name: native-linkage-coverage
+          path: target/native-linkage
+      - name: Compile exact minimal feature closures
+        run: python3 scripts/check-native-linkage-coverage.py closure ${{ matrix.shard }}
+
   native-linux:
     name: Representative native applications (Linux)
     runs-on: ubuntu-latest
@@ -612,6 +639,7 @@ jobs:
       - bytecode
       - native-linkage-owners
       - native-linkage
+      - native-linkage-closures
       - native-linux
       - native-windows
       - native-macos
@@ -632,6 +660,7 @@ jobs:
           BYTECODE_RESULT: ${{ needs.bytecode.result }}
           LINKAGE_OWNERS_RESULT: ${{ needs.native-linkage-owners.result }}
           LINKAGE_RESULT: ${{ needs.native-linkage.result }}
+          LINKAGE_CLOSURES_RESULT: ${{ needs.native-linkage-closures.result }}
           NATIVE_LINUX_RESULT: ${{ needs.native-linux.result }}
           NATIVE_WINDOWS_RESULT: ${{ needs.native-windows.result }}
           NATIVE_MACOS_RESULT: ${{ needs.native-macos.result }}
@@ -649,6 +678,7 @@ jobs:
           test "$BYTECODE_RESULT" = success
           test "$LINKAGE_OWNERS_RESULT" = success
           test "$LINKAGE_RESULT" = success
+          test "$LINKAGE_CLOSURES_RESULT" = success
           test "$NATIVE_LINUX_RESULT" = success
           test "$NATIVE_WINDOWS_RESULT" = success
           test "$NATIVE_MACOS_RESULT" = success

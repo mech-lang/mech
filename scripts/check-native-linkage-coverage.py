@@ -19,6 +19,19 @@ FIXTURE_MANIFEST = ROOT / "tests/fixtures/native-linkage/Cargo.toml"
 FROZEN_SURFACE = ROOT / "tests/architecture/function-system/runtime-factory-surface.json"
 REPORT_PATH = ROOT / "tests/architecture/native-linkage/coverage.json"
 DETAIL_REPORT_PATH = ROOT / "target/native-linkage/coverage-full.json"
+EXACT_CLOSURE_DIRECTORY = ROOT / "target/native-linkage/exact-closures"
+EXACT_CLOSURE_SHARDS = 8
+NAMED_EXACT_CLOSURE_REGRESSIONS = {
+    "DotM1M1<f64>",
+    "MatMulR3M3x2<f64>",
+    "MatMulRDVD<f64>",
+    "TransposeM2x3<c64>",
+    "TransposeM2x3<r64>",
+}
+PREFERRED_OWNER_REPRESENTATIVES = {
+    "mech-engine": "VariableDefineF64",
+    "mech-math": "AddSS<f64>",
+}
 EXPECTED_STANDARD_COUNT = 9_019
 EXPECTED_STANDARD_SURFACE_SHA256 = (
     "b9db9003bb9da704d5b61a5a6a3d5fcc6438ef7e433f49fc1918c466fc2fcc62"
@@ -58,6 +71,14 @@ MATRIX_FEATURES = {
     "matrixd", "row_vector2", "row_vector3", "row_vector4", "row_vectord",
     "vector2", "vector3", "vector4", "vectord",
 }
+REPRESENTATION_FEATURES = {
+    "bool", "string",
+    "u8", "u16", "u32", "u64", "u128",
+    "i8", "i16", "i32", "i64", "i128",
+    "f32", "f64", "c64", "r64",
+    *MATRIX_FEATURES,
+    "atom", "enum", "record", "map", "set", "table", "tuple", "kind_annotation",
+}
 MATRIX_MINIMAL_NATIVE_LINK_PROFILES = (
     "dot f64 matrix1 native-link runtime source",
     "matmul f64 matrix3x2 native-link row_vector2 row_vector3 runtime",
@@ -76,7 +97,13 @@ def digest(value: Any) -> str:
     return sha256(canonical_bytes(value)).hexdigest()
 
 
-def run(command: list[str], *, capture: bool = False, fixture: bool = False) -> str:
+def run(
+    command: list[str],
+    *,
+    capture: bool = False,
+    fixture: bool = False,
+    target_directory: Path | None = None,
+) -> str:
     environment = os.environ.copy()
     environment.setdefault("CARGO_INCREMENTAL", "0")
     # The fixture executes catalog construction only; debug information does
@@ -87,7 +114,9 @@ def run(command: list[str], *, capture: bool = False, fixture: bool = False) -> 
     environment.setdefault("CARGO_PROFILE_DEV_CODEGEN_UNITS", "256")
     target = Path(environment.get("CARGO_TARGET_DIR", ROOT / "target"))
     environment["CARGO_TARGET_DIR"] = str(
-        target / "native-linkage-fixture" if fixture else target
+        target_directory
+        if target_directory is not None
+        else target / "native-linkage-fixture" if fixture else target
     )
     heartbeat_stop = Event()
 
@@ -152,12 +181,15 @@ def validate_catalog(
     entries: list[dict[str, Any]], label: str, known_features: dict[str, set[str]]
 ) -> list[dict[str, Any]]:
     by_id: dict[str, str] = {}
+    signatures_by_id: dict[str, str] = {}
     by_name: dict[str, str] = {}
     paths: dict[str, str] = {}
     clean: list[dict[str, Any]] = []
     for value in entries:
         name = value.get("name")
         runtime_id = value.get("id_hex")
+        runtime_signature = value.get("runtime_signature")
+        signature_features = value.get("signature_cargo_features")
         package = value.get("package")
         crate_name = value.get("crate_name")
         installer = value.get("installer_path")
@@ -166,11 +198,29 @@ def validate_catalog(
         output_alias_policy = value.get("output_alias_policy")
         if not isinstance(name, str) or not isinstance(runtime_id, str):
             raise ContractError(f"{label} contains a malformed runtime factory")
+        if not isinstance(runtime_signature, str) or not runtime_signature:
+            raise ContractError(f"{label} factory {name!r} has no runtime signature")
+        if not isinstance(signature_features, list) or not all(
+            isinstance(item, str) for item in signature_features
+        ):
+            raise ContractError(f"{label} factory {name!r} has invalid signature features")
+        if signature_features != sorted(set(signature_features)):
+            raise ContractError(
+                f"{label} factory {name!r} has unsorted or duplicate signature features"
+            )
         if runtime_id in by_id and by_id[runtime_id] != name:
             raise ContractError(f"{label} duplicates runtime ID {runtime_id}")
+        if (
+            runtime_id in signatures_by_id
+            and signatures_by_id[runtime_id] != runtime_signature
+        ):
+            raise ContractError(
+                f"{label} runtime ID {runtime_id} has feature-dependent signatures"
+            )
         if name in by_name and by_name[name] != runtime_id:
             raise ContractError(f"{label} duplicates exact name {name!r}")
         by_id[runtime_id] = name
+        signatures_by_id[runtime_id] = runtime_signature
         by_name[name] = runtime_id
         if not all(isinstance(item, str) for item in (package, crate_name, installer)):
             raise ContractError(f"{label} factory {name!r} has no native linkage")
@@ -192,6 +242,31 @@ def validate_catalog(
             raise ContractError(f"{label} factory {name!r} has invalid features {invalid}")
         if unknown:
             raise ContractError(f"{label} factory {name!r} has unknown features {unknown}")
+        unknown_signature_features = [
+            item for item in signature_features if item not in REPRESENTATION_FEATURES
+        ]
+        if unknown_signature_features:
+            raise ContractError(
+                f"{label} factory {name!r} has unknown representation features "
+                f"{unknown_signature_features}"
+            )
+        linkage_representation_features = set(features).intersection(REPRESENTATION_FEATURES)
+        missing_representation_features = sorted(
+            set(signature_features).difference(linkage_representation_features)
+        )
+        manually_listed_representation_features = sorted(
+            linkage_representation_features.difference(signature_features)
+        )
+        if missing_representation_features:
+            raise ContractError(
+                f"{label} factory {name!r} omits signature-derived representation features "
+                f"{missing_representation_features}"
+            )
+        if manually_listed_representation_features:
+            raise ContractError(
+                f"{label} factory {name!r} manually lists non-signature representation "
+                f"features {manually_listed_representation_features}"
+            )
         required = {"runtime", "native-link"}
         forbidden = {
             "default", "runtime_default", "source", "source_default", "compiler",
@@ -217,6 +292,8 @@ def validate_catalog(
             {
                 "runtime_factory_id": runtime_id,
                 "runtime_factory_name": name,
+                "runtime_signature": runtime_signature,
+                "signature_cargo_features": signature_features,
                 "package": package,
                 "crate_name": crate_name,
                 "installer_path": installer,
@@ -294,6 +371,13 @@ def surface_summary(entries: list[dict[str, Any]]) -> dict[str, Any]:
         }
         for item in entries
     ]
+    signatures = [
+        {
+            "runtime_factory_id": item["runtime_factory_id"],
+            "runtime_signature": item["runtime_signature"],
+        }
+        for item in entries
+    ]
     return {
         "entry_count": len(entries),
         "linked_entry_count": len(entries),
@@ -304,6 +388,9 @@ def surface_summary(entries: list[dict[str, Any]]) -> dict[str, Any]:
         "runtime_contract_count": len(contracts),
         "missing_contract_count": 0,
         "runtime_contract_surface_digest": digest(contracts),
+        "runtime_signature_count": len(signatures),
+        "missing_signature_count": 0,
+        "runtime_signature_surface_digest": digest(signatures),
     }
 
 
@@ -330,7 +417,19 @@ def assemble_report(
         "standard": surface_summary(standard),
         "extended": surface_summary(extended),
         "entries": grouped(all_entries),
+        "signature_invariants": {
+            "same_runtime_id_different_signature_count": 0,
+            "representation_feature_missing_count": 0,
+            "representation_feature_manually_listed_extra_count": 0,
+            "feature_dependent_output_representation_count": 0,
+        },
     }
+    closure_inventory = exact_closures(report)
+    report["signature_invariants"]["exact_closure_count"] = len(closure_inventory)
+    report["signature_invariants"]["exact_closure_shard_counts"] = [
+        sum(closure["shard"] == shard for closure in closure_inventory)
+        for shard in range(EXACT_CLOSURE_SHARDS)
+    ]
     report["coverage_digest"] = {
         "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
         "sha256": digest(report),
@@ -382,6 +481,8 @@ def read_ci_surface(path: Path, feature: str, known: dict[str, set[str]]) -> lis
         {
             "name": entry.get("runtime_factory_name"),
             "id_hex": entry.get("runtime_factory_id"),
+            "runtime_signature": entry.get("runtime_signature"),
+            "signature_cargo_features": entry.get("signature_cargo_features"),
             "package": entry.get("package"),
             "crate_name": entry.get("crate_name"),
             "installer_path": entry.get("installer_path"),
@@ -413,12 +514,255 @@ def build_report_from_ci_surfaces() -> dict[str, Any]:
     return assemble_report(standard, [surfaces[feature] for feature in CI_EXTENDED_SURFACES])
 
 
+def inventory_entries(report: dict[str, Any]) -> list[dict[str, Any]]:
+    entries = [
+        entry
+        for package in report["entries"]
+        for family_entry in package["operations_or_families"]
+        for entry in family_entry["runtime_factories"]
+    ]
+    return sorted(
+        entries,
+        key=lambda entry: (entry["runtime_factory_id"], entry["runtime_factory_name"]),
+    )
+
+
+def exact_closures(report: dict[str, Any]) -> list[dict[str, Any]]:
+    closures: dict[tuple[str, tuple[str, ...]], list[dict[str, Any]]] = {}
+    for entry in inventory_entries(report):
+        key = (entry["package"], tuple(entry["cargo_features"]))
+        closures.setdefault(key, []).append(entry)
+
+    result = []
+    for (package, features), entries in sorted(closures.items()):
+        crate_names = {entry["crate_name"] for entry in entries}
+        if len(crate_names) != 1:
+            raise ContractError(
+                f"exact closure {package} {features} has inconsistent crate names"
+            )
+        installers = [entry["installer_path"] for entry in entries]
+        if len(installers) != len(set(installers)):
+            raise ContractError(
+                f"exact closure {package} {features} contains duplicate installers"
+            )
+        closure_bytes = package.encode() + b"\0" + "\0".join(features).encode()
+        closure_sha256 = sha256(closure_bytes).hexdigest()
+        result.append(
+            {
+                "package": package,
+                "crate_name": next(iter(crate_names)),
+                "cargo_features": list(features),
+                "entries": entries,
+                "sha256": closure_sha256,
+                "shard": int(closure_sha256, 16) % EXACT_CLOSURE_SHARDS,
+            }
+        )
+    return sorted(result, key=lambda closure: closure["sha256"])
+
+
+def require_named_closure_regressions(report: dict[str, Any]) -> None:
+    by_name: dict[str, list[dict[str, Any]]] = {}
+    for entry in inventory_entries(report):
+        by_name.setdefault(entry["runtime_factory_name"], []).append(entry)
+
+    cases = {
+        "DotM1M1<f64>": ({"f64", "matrix1"}, {"matrix2"}),
+        "MatMulR3M3x2<f64>": (
+            {"f64", "row_vector3", "matrix3x2", "row_vector2"},
+            set(),
+        ),
+        "MatMulRDVD<f64>": (
+            {"f64", "row_vectord", "vectord", "matrix1"},
+            {"matrixd"},
+        ),
+        "TransposeM2x3<c64>": ({"c64", "matrix2x3", "matrix3x2"}, set()),
+        "TransposeM2x3<r64>": ({"r64", "matrix2x3", "matrix3x2"}, set()),
+    }
+    for name, (required, forbidden) in cases.items():
+        entries = by_name.get(name, [])
+        if len(entries) != 1:
+            raise ContractError(
+                f"named exact-closure regression {name!r} resolved to {len(entries)} entries"
+            )
+        features = set(entries[0]["cargo_features"])
+        missing = sorted(required.difference(features))
+        unexpected = sorted(forbidden.intersection(features))
+        if missing or unexpected:
+            raise ContractError(
+                f"named exact-closure regression {name!r} has missing={missing}, "
+                f"forbidden={unexpected}, closure={sorted(features)}"
+            )
+
+
+def exact_closure_manifest(closure: dict[str, Any]) -> str:
+    fixture_manifest = FIXTURE_MANIFEST.read_text(encoding="utf-8")
+    dependencies = fixture_manifest[fixture_manifest.index("[dependencies]") :]
+    dependencies = re.sub(
+        r'path = "\.\./\.\./\.\./([^\"]+)"',
+        lambda match: f'path = "{ROOT / match.group(1)}"',
+        dependencies,
+    )
+    feature_edges = [
+        "dep:mech-core",
+        f"dep:{closure['package']}",
+        *(f"{closure['package']}/{feature}" for feature in closure["cargo_features"]),
+    ]
+    rendered_edges = ",\n".join(f"  {json.dumps(edge)}" for edge in feature_edges)
+    return (
+        "[package]\n"
+        f"name = \"native-linkage-closure-{closure['sha256'][:16]}\"\n"
+        "version = \"0.0.0\"\n"
+        "edition = \"2024\"\n"
+        "publish = false\n\n"
+        "[features]\n"
+        "default = []\n"
+        f"exact = [\n{rendered_edges},\n]\n\n"
+        f"{dependencies}"
+    )
+
+
+def exact_closure_source(closure: dict[str, Any]) -> str:
+    installers = "\n".join(
+        f"        {entry['installer_path']}(&mut builder).unwrap();"
+        for entry in closure["entries"]
+    )
+    return f"""fn main() {{
+    std::thread::Builder::new()
+        .name("native-linkage-exact-closure".to_owned())
+        .stack_size(64 * 1024 * 1024)
+        .spawn(|| {{
+            let mut builder = mech_core::FunctionCatalogBuilder::new();
+{installers}
+            let catalog = builder.build().unwrap();
+            for entry in catalog.runtime_entries() {{
+                println!(
+                    "{{:016x}}\\t{{}}\\t{{:?}}",
+                    entry.id.raw(),
+                    entry.name,
+                    entry.signature(),
+                );
+            }}
+        }})
+        .unwrap()
+        .join()
+        .unwrap();
+}}
+"""
+
+
+def materialize_exact_closure(closure: dict[str, Any]) -> Path:
+    project = EXACT_CLOSURE_DIRECTORY / "projects" / closure["sha256"]
+    source_directory = project / "src"
+    source_directory.mkdir(parents=True, exist_ok=True)
+    files = {
+        project / "Cargo.toml": exact_closure_manifest(closure),
+        source_directory / "main.rs": exact_closure_source(closure),
+    }
+    for path, contents in files.items():
+        if not path.is_file() or path.read_text(encoding="utf-8") != contents:
+            path.write_text(contents, encoding="utf-8")
+    return project
+
+
+def validate_exact_closure(closure: dict[str, Any], shard: int) -> None:
+    project = materialize_exact_closure(closure)
+    command = [
+        "cargo", "+nightly-2026-03-03", "run", "--quiet",
+        "--manifest-path", str(project / "Cargo.toml"),
+        "--no-default-features", "--features", "exact", "--offline",
+    ]
+    if (project / "Cargo.lock").is_file():
+        command.append("--locked")
+    output = run(
+        command,
+        capture=True,
+        target_directory=EXACT_CLOSURE_DIRECTORY / f"shard-{shard}" / "cargo-target",
+    )
+    actual = sorted(
+        tuple(line.split("\t", 2))
+        for line in output.splitlines()
+        if line.strip()
+    )
+    expected = sorted(
+        (
+            entry["runtime_factory_id"],
+            entry["runtime_factory_name"],
+            entry["runtime_signature"],
+        )
+        for entry in closure["entries"]
+    )
+    if actual != expected:
+        raise ContractError(
+            f"exact closure {closure['sha256']} for {closure['package']} "
+            "did not install its exact ID/name/signature inventory"
+        )
+
+
+def validate_exact_closure_shard(report: dict[str, Any], shard: int) -> None:
+    if not 0 <= shard < EXACT_CLOSURE_SHARDS:
+        raise ContractError(
+            f"exact closure shard must be in 0..{EXACT_CLOSURE_SHARDS - 1}, found {shard}"
+        )
+    require_named_closure_regressions(report)
+    all_closures = exact_closures(report)
+    closures = [closure for closure in all_closures if closure["shard"] == shard]
+    representatives: dict[str, dict[str, Any]] = {}
+    for closure in all_closures:
+        current = representatives.get(closure["package"])
+        preference = (
+            bool(set(closure["cargo_features"]).intersection(MATRIX_FEATURES)),
+            len(closure["cargo_features"]),
+            closure["sha256"],
+        )
+        if current is None:
+            representatives[closure["package"]] = closure
+            continue
+        current_preference = (
+            bool(set(current["cargo_features"]).intersection(MATRIX_FEATURES)),
+            len(current["cargo_features"]),
+            current["sha256"],
+        )
+        if preference < current_preference:
+            representatives[closure["package"]] = closure
+    for closure in all_closures:
+        preferred_name = PREFERRED_OWNER_REPRESENTATIVES.get(closure["package"])
+        if preferred_name is not None and any(
+            entry["runtime_factory_name"] == preferred_name
+            for entry in closure["entries"]
+        ):
+            representatives[closure["package"]] = closure
+    named = []
+    for closure in all_closures:
+        if any(
+            entry["runtime_factory_name"] in NAMED_EXACT_CLOSURE_REGRESSIONS
+            for entry in closure["entries"]
+        ):
+            named.append(closure)
+    compiled = {
+        closure["sha256"]: closure
+        for closure in [*representatives.values(), *named]
+        if closure["shard"] == shard
+    }
+    for index, closure in enumerate(compiled.values(), start=1):
+        print(
+            f"compiling exact native closure shard {shard}: {index}/{len(compiled)} "
+            f"{closure['package']} {closure['cargo_features']}",
+            flush=True,
+        )
+        validate_exact_closure(closure, shard)
+    print(
+        f"validated {len(closures)} exact native closure inventories and compiled "
+        f"{len(compiled)} owner/named representatives in shard {shard}"
+    )
+
+
 def report_summary(report: dict[str, Any]) -> dict[str, Any]:
     return {
         "schema": "mech.native-linkage-coverage-summary.v1",
         "detail_schema": report["schema"],
         "standard": report["standard"],
         "extended": report["extended"],
+        "signature_invariants": report["signature_invariants"],
         "coverage_digest": report["coverage_digest"],
         "detail_artifact": {
             "path": str(DETAIL_REPORT_PATH.relative_to(ROOT)),
@@ -468,11 +812,22 @@ def main() -> int:
         except (ContractError, OSError, TypeError, ValueError, KeyError) as error:
             print(f"native linkage coverage failed: {error}", file=sys.stderr)
             return 1
+    if len(sys.argv) == 3 and sys.argv[1] == "closure":
+        try:
+            shard = int(sys.argv[2])
+            report = json.loads(DETAIL_REPORT_PATH.read_text(encoding="utf-8"))
+            if report.get("schema") != "mech.native-linkage-coverage.v2":
+                raise ContractError("full native linkage inventory schema changed")
+            validate_exact_closure_shard(report, shard)
+            return 0
+        except (ContractError, OSError, TypeError, ValueError, KeyError) as error:
+            print(f"native exact closure validation failed: {error}", file=sys.stderr)
+            return 1
     mode = sys.argv[1] if len(sys.argv) >= 2 else "strict"
     if mode not in {"coverage", "merge", "owners", "report", "strict"}:
         print(
             "usage: scripts/check-native-linkage-coverage.py "
-            "[coverage|merge|owners [PACKAGE ...]|report|strict|surface FEATURE]",
+            "[closure SHARD|coverage|merge|owners [PACKAGE ...]|report|strict|surface FEATURE]",
             file=sys.stderr,
         )
         return 2
@@ -492,10 +847,14 @@ def main() -> int:
             print(f"validated {len(requested_owners)} isolated owner native-link profiles")
             return 0
         report = build_report_from_ci_surfaces() if mode == "merge" else build_report()
+        require_named_closure_regressions(report)
         summary = report_summary(report)
         rendered = json.dumps(summary, indent=2) + "\n"
         DETAIL_REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-        DETAIL_REPORT_PATH.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        DETAIL_REPORT_PATH.write_text(
+            json.dumps(report, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
         if mode == "report":
             REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
             REPORT_PATH.write_text(rendered, encoding="utf-8")

@@ -91,6 +91,8 @@ the table is topological, so every child precedes its parent.
 Named type and schema names are nonempty and must match their stable hashes.
 Record fields and table columns are ordered and unique. A nonempty table's
 primary-key index must be in range. Runtime-type recursion is limited to 256.
+Every type-table row must be reachable from a constant's root type through
+raw child type IDs. An otherwise valid but unused type row is noncanonical.
 
 ### Matrix storage
 
@@ -123,6 +125,8 @@ The constant table has one 24-byte entry per constant:
 
 Entries do not overlap. Gaps and trailing blob bytes are zero. Recursive
 constant nesting is limited to 256 and uses checked counts and lengths.
+Every constant-table row must be referenced by at least one `ConstLoad`;
+unreferenced constant rows are noncanonical.
 
 ### Scalars
 
@@ -182,6 +186,11 @@ payload.
   retains the concrete runtime representation of its child. An absent option
   uses its declared semantic kind because there is no child representation to
   preserve.
+- During annotated source compilation, a bare `Value::Empty` denotes an
+  absent option only when its declared schema is `Option<T>`. Composite
+  children are collected before their common schema is finalized, so option
+  representation selection is independent of tuple, record, table, or matrix
+  element iteration order.
 - A kind has no constant bytes; its complete semantic kind is carried by the
   `RuntimeType::Kind` payload.
 
@@ -239,6 +248,11 @@ little-endian. Argument arrays are a `u32` count followed by `u32` registers.
 All registers and indices are in range, and runtime-function IDs are nonzero.
 There is exactly one `Return`; it is the final instruction.
 
+Each register owns one stable outer value cell for the program's lifetime.
+Constant loads and external instructions update the value behind that cell;
+symbols, downstream instructions, rollback checkpoints, and `Return` all
+observe the same cell identity.
+
 ### Runtime factory contracts
 
 Every trusted runtime-factory entry has an explicit argument contract.
@@ -248,6 +262,11 @@ cross-argument shape relations, and the output/input alias policy. A valid
 CRC does not bypass these checks: malicious bytecode with mismatched dynamic
 shapes, invalid matrix products or solves, or forbidden output aliases is
 rejected before a factory can mutate program state.
+
+Core bytecode validation and native planning share this one instruction
+contract traversal. Native planning supplies a trusted external-contract
+resolver for host calls and resource operations; it does not replay the
+instruction stream in a second interpreter.
 
 Factories that intentionally update an input register declare that alias
 policy explicitly. Other matrix outputs must not alias any input. Dynamic
@@ -273,6 +292,8 @@ Kind 2 is a resource. Intent is 1 `Read`, 2 `Assign`, or 3 `Send`; delivery is
 0 `Snapshot` or 1 `Live`. Operation, context, and primary base URI are
 nonempty; secondary is the path. URI, operation, context, delivery, and path
 must form a canonical valid execution request. Requirement flags are zero.
+Every application-requirement row must be referenced by at least one host or
+resource instruction; unreferenced requirement rows are noncanonical.
 
 ## Checksum and validation limits
 

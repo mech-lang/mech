@@ -99,6 +99,8 @@ use serde::Serialize;
 struct LinkageEntry<'a> {
     name: &'a str,
     id_hex: String,
+    runtime_signature: String,
+    signature_cargo_features: Vec<&'static str>,
     package: Option<&'static str>,
     crate_name: Option<&'static str>,
     installer_path: Option<&'static str>,
@@ -128,9 +130,18 @@ fn emit(catalog: &FunctionCatalog) {
         .runtime_entries()
         .map(|entry| {
             let linkage = entry.native_linkage.as_ref();
+            let signature = entry.signature();
+            let mut signature_cargo_features = signature
+                .required_native_features()
+                .into_iter()
+                .map(mech_core::NativeValueFeature::cargo_feature)
+                .collect::<Vec<_>>();
+            signature_cargo_features.sort_unstable();
             LinkageEntry {
                 name: &entry.name,
                 id_hex: format!("{:016x}", entry.id.raw()),
+                runtime_signature: format!("{signature:?}"),
+                signature_cargo_features,
                 package: linkage.map(|value| value.package),
                 crate_name: linkage.map(|value| value.crate_name),
                 installer_path: linkage.map(|value| value.installer_path),
@@ -164,6 +175,8 @@ fn emit(catalog: &FunctionCatalog) {
 struct RuntimeEntry<'a> {
     name: &'a str,
     id_hex: String,
+    runtime_signature: String,
+    signature_cargo_features: Vec<&'static str>,
     contract_kind: &'static str,
     output_alias_policy: &'static str,
 }
@@ -183,14 +196,27 @@ struct RuntimeEntry<'a> {
 fn emit_runtime(catalog: &FunctionCatalog) {
     let entries = catalog
         .runtime_entries()
-        .map(|entry| RuntimeEntry {
-            name: &entry.name,
-            id_hex: format!("{:016x}", entry.id.raw()),
-            contract_kind: entry.contract_kind(),
-            output_alias_policy: match entry.output_alias_policy() {
-                mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias => "disallow_input_alias",
-                mech_core::RuntimeOutputAliasPolicy::AllowInputAlias => "allow_input_alias",
-            },
+        .map(|entry| {
+            let signature = entry.signature();
+            let mut signature_cargo_features = signature
+                .required_native_features()
+                .into_iter()
+                .map(mech_core::NativeValueFeature::cargo_feature)
+                .collect::<Vec<_>>();
+            signature_cargo_features.sort_unstable();
+            RuntimeEntry {
+                name: &entry.name,
+                id_hex: format!("{:016x}", entry.id.raw()),
+                runtime_signature: format!("{signature:?}"),
+                signature_cargo_features,
+                contract_kind: entry.contract_kind(),
+                output_alias_policy: match entry.output_alias_policy() {
+                    mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias => {
+                        "disallow_input_alias"
+                    }
+                    mech_core::RuntimeOutputAliasPolicy::AllowInputAlias => "allow_input_alias",
+                },
+            }
         })
         .collect::<Vec<_>>();
     serde_json::to_writer_pretty(std::io::stdout(), &entries).unwrap();

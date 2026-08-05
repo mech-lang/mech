@@ -36,6 +36,22 @@ under an owner's `__mech_native` module inserts exactly one factory. Native
 analysis resolves each bytecode runtime-function ID and exact name through
 this catalog; bytecode cannot supply linkage metadata.
 
+The concrete factory Rust type is authoritative for each runtime function's
+input and output signature. Scalar and exact matrix representation features
+are derived from that signature; declarations list only operation-specific
+extra features. A runtime ID has one feature-invariant signature and cannot
+select a different output representation when unrelated Cargo features are
+enabled. The exact-closure contract treats every unique package/feature
+combination as an inventory identity, rejects any signature/feature mismatch,
+and compares the complete installed ID/name/signature surface. Bounded CI
+compiles one bounded exact closure per owner plus the named cross-shape matrix
+regressions in eight deterministic shards; it does not attempt tens of
+thousands of redundant owner-crate compilations.
+
+`MechFunction::solve_result` is the sole production execution API. Function
+errors propagate through runtime and bytecode execution; production code does
+not discard them behind an infallible `solve` wrapper.
+
 The standard native host catalog is built from the same private registration
 records as source-planning factories. Its exact provider surface is:
 
@@ -106,6 +122,14 @@ against the trusted catalogs and target, and emits schema
 - registry or workspace dependency source, optional workspace fingerprint,
   live status, bytecode SHA-256, and plan SHA-256.
 
+Resource requirements retain two structured identities. The request records
+the originally requested base URI, path, context name, operation, intent, and
+delivery. The trusted owner records the exact host instance, provider, host
+context, and canonical base URI selected during addressability resolution.
+Exact structured grant keys are derived once from those records; the legacy
+slash-delimited runtime target is rendered only at the final runtime-config
+boundary.
+
 Collections are sorted and deduplicated before hashing. The plan digest is the
 SHA-256 of the complete normalized plan except its own digest field. It changes
 when program data, executable behavior, selected code, configuration, target,
@@ -141,6 +165,13 @@ An engine application links `mech-core`, `mech-engine`, and only selected
 machine crates. It excludes `mech-runtime` and all host crates. A hosted
 application adds `mech-runtime` and only the selected native host crates.
 Neither application parses source or configuration at run time.
+
+Bytecode contract validation performs one shared instruction traversal for
+execution and native analysis. The native build supplies the external host and
+resource resolver rather than maintaining another instruction interpreter.
+Every bytecode register is also one stable outer value cell: symbols, external
+outputs, downstream factories, transaction rollback, and the final return
+observe the same identity.
 
 Every generated executable accepts no argument or exactly `--once`; any other
 argument prints usage and exits with status 2. Non-live programs execute once
