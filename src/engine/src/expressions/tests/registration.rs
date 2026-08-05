@@ -2,8 +2,8 @@ use super::super::{register_expression_function_batch, register_initialized_expr
 #[cfg(feature = "compiler")]
 use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use crate::{
-    InitialSolvePolicy, MResult, MechFunction, MechFunctionImpl, Plan, ReactiveCellId,
-    ReactiveDependencyKind, Ref, Value,
+    InitialSolvePolicy, MResult, MechError, MechErrorKind, MechFunction, MechFunctionImpl, Plan,
+    ReactiveCellId, ReactiveDependencyKind, Ref, Value,
 };
 use std::sync::{
     Arc,
@@ -14,6 +14,54 @@ struct IndexedExpressionTestFunction {
     output: Value,
     solve_calls: Arc<AtomicUsize>,
     initial_solve_policy: InitialSolvePolicy,
+}
+
+#[derive(Clone, Debug)]
+struct InitialExpressionSolveFailure;
+
+impl MechErrorKind for InitialExpressionSolveFailure {
+    fn name(&self) -> &str {
+        "InitialExpressionSolveFailure"
+    }
+
+    fn message(&self) -> String {
+        "initial expression solve failed".to_owned()
+    }
+}
+
+struct FailingInitialExpressionFunction {
+    output: Value,
+    solve_result_calls: Arc<AtomicUsize>,
+}
+
+impl MechFunctionImpl for FailingInitialExpressionFunction {
+    fn solve(&self) {
+        panic!("fallible expression initialization must use solve_result")
+    }
+
+    fn solve_result(&self) -> MResult<()> {
+        self.solve_result_calls.fetch_add(1, Ordering::SeqCst);
+        Err(MechError::new(InitialExpressionSolveFailure, None))
+    }
+
+    fn out(&self) -> Value {
+        self.output.clone()
+    }
+
+    fn to_string(&self) -> String {
+        "failing-initial-expression".to_owned()
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for FailingInitialExpressionFunction {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        panic!("failing expression test function must not be compiled")
+    }
 }
 
 impl MechFunctionImpl for IndexedExpressionTestFunction {
@@ -137,6 +185,28 @@ fn indexed_expression_registration_preserves_planned_output_when_requested() {
     assert_eq!(calls.load(Ordering::SeqCst), 0);
     assert_eq!(result.reactive_cell_ids(), vec![output_cell]);
     assert_eq!(plan.len(), 1);
+}
+
+#[test]
+fn indexed_expression_registration_propagates_initial_solve_errors() {
+    let plan = Plan::new();
+    let (input, _) = scalar(1.0);
+    let (output, _) = scalar(2.0);
+    let solve_result_calls = Arc::new(AtomicUsize::new(0));
+
+    let error = register_initialized_expression_function(
+        &plan,
+        Box::new(FailingInitialExpressionFunction {
+            output,
+            solve_result_calls: solve_result_calls.clone(),
+        }),
+        &[input],
+    )
+    .unwrap_err();
+
+    assert_eq!(error.kind_name(), "InitialExpressionSolveFailure");
+    assert_eq!(solve_result_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(plan.len(), 0);
 }
 
 #[test]
