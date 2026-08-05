@@ -1,4 +1,4 @@
-use crate::{ApplicationRequirement, EncodedConstant, MResult};
+use crate::{ApplicationRequirement, EncodedConstant, MResult, ValueKind};
 
 #[cfg(feature = "no_std")]
 use alloc::vec::Vec;
@@ -7,6 +7,18 @@ use super::Register;
 
 pub trait BytecodeCompilerContext {
     fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool);
+
+    /// Resolve a typed view of a reactive cell without collapsing it onto the
+    /// unannotated cell. Compiler contexts that only capture constants may use
+    /// the underlying pointer identity; bytecode-producing contexts override
+    /// this to include the annotation in their register key.
+    fn register_for_typed_ptr_with_initialization_status(
+        &mut self,
+        pointer: usize,
+        _annotation: &ValueKind,
+    ) -> (Register, bool) {
+        self.register_for_ptr_with_initialization_status(pointer)
+    }
 
     fn intern_constant(&mut self, constant: EncodedConstant) -> MResult<u32>;
 

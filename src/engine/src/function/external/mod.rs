@@ -15,8 +15,13 @@ pub(super) fn compile_external_output(
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
     let value = output.borrow();
-    let pointer = external_value_pointer(&value, output.addr());
-    let (register, initialize) = context.register_for_ptr_with_initialization_status(pointer);
+    let (pointer, annotation) = external_value_identity(&value, output.addr());
+    let (register, initialize) = match annotation {
+        Some(annotation) => {
+            context.register_for_typed_ptr_with_initialization_status(pointer, &annotation)
+        }
+        None => context.register_for_ptr_with_initialization_status(pointer),
+    };
     if initialize {
         let constant = compile_external_constant(&value, context)?;
         context.emit_const_load(register, constant);
@@ -29,13 +34,35 @@ pub(super) fn compile_external_value(
     value: &Value,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
-    let pointer = external_value_pointer(value, std::ptr::from_ref(value).addr());
-    let (register, initialize) = context.register_for_ptr_with_initialization_status(pointer);
+    let (pointer, annotation) = external_value_identity(value, std::ptr::from_ref(value).addr());
+    let (register, initialize) = match annotation {
+        Some(annotation) => {
+            context.register_for_typed_ptr_with_initialization_status(pointer, &annotation)
+        }
+        None => context.register_for_ptr_with_initialization_status(pointer),
+    };
     if initialize {
         let constant = compile_external_constant(value, context)?;
         context.emit_const_load(register, constant);
     }
     Ok(register)
+}
+
+#[cfg(feature = "compiler")]
+fn external_value_identity(
+    value: &Value,
+    fallback: usize,
+) -> (usize, Option<mech_core::ValueKind>) {
+    match value {
+        Value::MutableReference(reference) => {
+            external_value_identity(&reference.borrow(), reference.addr())
+        }
+        Value::Typed(value, annotation) => (
+            external_value_pointer(value, fallback),
+            Some(annotation.clone()),
+        ),
+        _ => (external_value_pointer(value, fallback), None),
+    }
 }
 
 #[cfg(feature = "compiler")]
@@ -72,6 +99,7 @@ fn compile_external_constant(
 #[cfg(all(test, feature = "f64"))]
 mod tests {
     use super::*;
+    use mech_bytecode::CompileCtx;
     use mech_core::{
         ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError, InitialSolvePolicy,
         MResult, MechError, MechExecutionServices, MechFunctionImpl, Ref, ResourceDelivery,
@@ -143,6 +171,47 @@ mod tests {
             .into(),
             intent,
             delivery: ResourceDelivery::Snapshot,
+        }
+    }
+
+    #[test]
+    fn typed_external_values_do_not_share_bare_registers_in_either_order() {
+        for typed_first in [false, true] {
+            let scalar = Ref::new(7.0);
+            let bare = Value::F64(scalar.clone());
+            let typed = Value::Typed(
+                Box::new(Value::F64(scalar)),
+                mech_core::ValueKind::Option(Box::new(mech_core::ValueKind::F64)),
+            );
+            let typed_clone = typed.clone();
+            let mut context = CompileCtx::new();
+
+            let (first, second) = if typed_first {
+                (
+                    compile_external_value(&typed, &mut context).unwrap(),
+                    compile_external_value(&bare, &mut context).unwrap(),
+                )
+            } else {
+                (
+                    compile_external_value(&bare, &mut context).unwrap(),
+                    compile_external_value(&typed, &mut context).unwrap(),
+                )
+            };
+
+            assert_ne!(first, second);
+            assert_eq!(
+                compile_external_value(&typed_clone, &mut context).unwrap(),
+                if typed_first { first } else { second },
+            );
+            let parsed =
+                mech_core::ParsedProgram::from_bytes(&context.finish(second).unwrap()).unwrap();
+            assert!(parsed.constants.iter().any(|constant| {
+                parsed.types[constant.type_id as usize] == mech_core::RuntimeType::F64
+            }));
+            assert!(parsed.constants.iter().any(|constant| {
+                parsed.types[constant.type_id as usize]
+                    == mech_core::RuntimeType::Option(Box::new(mech_core::RuntimeType::F64))
+            }));
         }
     }
 

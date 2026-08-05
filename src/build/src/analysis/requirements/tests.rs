@@ -58,7 +58,7 @@ fn request(operation: &str, path: &str) -> ExecutionResourceRequest {
     ExecutionResourceRequest {
         base_uri: "test://terminal/output".to_owned(),
         path: path.to_owned(),
-        context_name: "out".to_owned(),
+        context_name: "output".to_owned(),
         operation: operation.to_owned(),
         intent: ResourceIntent::Send,
         delivery: ResourceDelivery::Snapshot,
@@ -638,6 +638,30 @@ fn exact_resource_requirement_prunes_unused_hosts_and_narrows_grants() {
         &analysis.application_requirements[0],
         PlannedApplicationRequirement::Resource { owner, .. } if owner.provider == "test"
     ));
+}
+
+#[test]
+fn resource_requirement_context_name_must_match_resolved_owner() {
+    let config = NativeRuntimeConfig {
+        runtime: RuntimeConfig::default(),
+        actor_bootstrap: None,
+        hosts: vec![host("terminal", "test")],
+        run_grants: vec![grant("terminal/output", &["write"], &["line"])],
+    };
+    let mut mismatched = request("write", "line");
+    mismatched.context_name = "different-output".to_owned();
+
+    let error = analyze_application_requirements(
+        &[ApplicationRequirement::Resource(mismatched)],
+        Some(&config),
+        &host_catalog(),
+        Some("x86_64-unknown-linux-gnu"),
+    )
+    .unwrap_err();
+
+    assert_eq!(error.kind_name(), "NativeResourceContextInvalid");
+    assert!(error.kind_message().contains("different-output"));
+    assert!(error.kind_message().contains("output"));
 }
 
 #[test]

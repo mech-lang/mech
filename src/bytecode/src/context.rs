@@ -1,14 +1,23 @@
 use core::cmp::Ordering;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
     BytecodeValidationError, CompileConst, EncodedConstant, MResult, MechError, ParsedProgram,
-    Register, Value, compare_application_requirements, hash_str, write_bytecode,
+    Register, Value, ValueKind, compare_application_requirements, hash_str, write_bytecode,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct CanonicalRequirement(ApplicationRequirement);
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+enum RegisterIdentity {
+    Bare(usize),
+    Typed {
+        pointer: usize,
+        annotation: ValueKind,
+    },
+}
 
 impl Ord for CanonicalRequirement {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -24,8 +33,7 @@ impl PartialOrd for CanonicalRequirement {
 
 #[derive(Debug, Default)]
 pub struct CompileCtx {
-    reg_map: HashMap<usize, Register>,
-    initialized_ptrs: HashSet<usize>,
+    reg_map: HashMap<RegisterIdentity, Register>,
     symbols: BTreeMap<u64, Register>,
     symbol_ptrs: BTreeMap<u64, usize>,
     dictionary: BTreeMap<u64, String>,
@@ -53,8 +61,13 @@ impl CompileCtx {
     /// exactly once so `Return` still represents the source block's result.
     pub fn resolve_value_register(&mut self, value: &Value) -> MResult<Register> {
         let fallback = std::ptr::from_ref(value).addr();
-        let pointer = value_pointer(value, fallback);
-        let (register, initialize) = self.register_for_ptr_with_initialization_status(pointer);
+        let (pointer, annotation) = value_register_identity(value, fallback);
+        let (register, initialize) = match annotation {
+            Some(annotation) => {
+                self.register_for_typed_ptr_with_initialization_status(pointer, &annotation)
+            }
+            None => self.register_for_ptr_with_initialization_status(pointer),
+        };
         if initialize {
             let constant = compile_value_constant(value, self)?;
             self.emit_const_load(register, constant);
@@ -113,24 +126,38 @@ impl CompileCtx {
         Ok(bytes)
     }
 
-    fn allocate_register_for_pointer(&mut self, pointer: usize) -> Register {
-        if let Some(&register) = self.reg_map.get(&pointer) {
-            return register;
+    fn register_for_identity(&mut self, identity: RegisterIdentity) -> (Register, bool) {
+        if let Some(&register) = self.reg_map.get(&identity) {
+            return (register, false);
         }
         let register = self.next_register;
         self.next_register = self
             .next_register
             .checked_add(1)
             .expect("bytecode register space exhausted");
-        self.reg_map.insert(pointer, register);
-        register
+        self.reg_map.insert(identity, register);
+        (register, true)
+    }
+}
+
+fn value_register_identity(value: &Value, fallback: usize) -> (usize, Option<ValueKind>) {
+    match value {
+        // Mutable references are transparent in bytecode. Following them
+        // preserves the producer identity of a trailing symbol.
+        Value::MutableReference(reference) => {
+            value_register_identity(&reference.borrow(), reference.addr())
+        }
+        // The annotation is part of register identity, while the child's
+        // reactive pointer preserves producer identity across wrapper clones.
+        Value::Typed(value, annotation) => {
+            (value_pointer(value, fallback), Some(annotation.clone()))
+        }
+        _ => (value_pointer(value, fallback), None),
     }
 }
 
 fn value_pointer(value: &Value, fallback: usize) -> usize {
     match value {
-        // Mutable references and typed wrappers are transparent in bytecode.
-        // Following them preserves the producer identity of a trailing symbol.
         Value::MutableReference(reference) => value_pointer(&reference.borrow(), reference.addr()),
         Value::Typed(value, _) => value_pointer(value, fallback),
         _ => value
@@ -153,9 +180,18 @@ fn compile_value_constant(
 
 impl BytecodeCompilerContext for CompileCtx {
     fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool) {
-        let register = self.allocate_register_for_pointer(pointer);
-        let needs_initialization = self.initialized_ptrs.insert(pointer);
-        (register, needs_initialization)
+        self.register_for_identity(RegisterIdentity::Bare(pointer))
+    }
+
+    fn register_for_typed_ptr_with_initialization_status(
+        &mut self,
+        pointer: usize,
+        annotation: &ValueKind,
+    ) -> (Register, bool) {
+        self.register_for_identity(RegisterIdentity::Typed {
+            pointer,
+            annotation: annotation.clone(),
+        })
     }
 
     fn intern_constant(&mut self, constant: EncodedConstant) -> MResult<u32> {
@@ -444,6 +480,61 @@ mod tests {
             context.register_for_ptr_with_initialization_status(100),
             (0, true),
         );
+    }
+
+    #[test]
+    fn typed_wrappers_do_not_share_registers_with_bare_values() {
+        for typed_first in [false, true] {
+            let scalar = mech_core::Ref::new(7.0);
+            let bare = Value::F64(scalar.clone());
+            let typed = Value::Typed(
+                Box::new(Value::F64(scalar)),
+                mech_core::ValueKind::Option(Box::new(mech_core::ValueKind::F64)),
+            );
+            let typed_clone = typed.clone();
+            let mut context = CompileCtx::new();
+
+            let (first, second) = if typed_first {
+                (
+                    context.resolve_value_register(&typed).unwrap(),
+                    context.resolve_value_register(&bare).unwrap(),
+                )
+            } else {
+                (
+                    context.resolve_value_register(&bare).unwrap(),
+                    context.resolve_value_register(&typed).unwrap(),
+                )
+            };
+            assert_ne!(first, second);
+            assert_eq!(
+                context.resolve_value_register(&typed_clone).unwrap(),
+                if typed_first { first } else { second },
+            );
+
+            let parsed = ParsedProgram::from_bytes(&context.finish(second).unwrap()).unwrap();
+            assert_eq!(parsed.constants.len(), 2);
+            assert!(
+                parsed
+                    .constants
+                    .iter()
+                    .any(|constant| parsed.types[constant.type_id as usize] == RuntimeType::F64)
+            );
+            assert!(parsed.constants.iter().any(|constant| {
+                parsed.types[constant.type_id as usize]
+                    == RuntimeType::Option(Box::new(RuntimeType::F64))
+            }));
+            assert_eq!(
+                parsed
+                    .instructions
+                    .iter()
+                    .filter(|instruction| matches!(
+                        instruction,
+                        BytecodeInstruction::ConstLoad { .. }
+                    ))
+                    .count(),
+                2,
+            );
+        }
     }
 
     #[test]

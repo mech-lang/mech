@@ -1671,6 +1671,24 @@ fn rejects_duplicate_map_and_set_payloads_and_invalid_enum_identity() {
         &enumeration,
         "enum variant name does not match its stable ID",
     );
+
+    let mut empty_variant = 1_u32.to_le_bytes().to_vec();
+    empty_variant.extend_from_slice(&hash_str("").to_le_bytes());
+    empty_variant.extend_from_slice(&0_u32.to_le_bytes());
+    empty_variant.push(0);
+    let constant_entry = constant_entry_offset(&enumeration, 0);
+    write_u64(
+        &mut enumeration,
+        constant_entry + 16,
+        empty_variant.len() as u64,
+    );
+    replace_section_contents(
+        &mut enumeration,
+        BytecodeSectionKind::ConstantBlob as usize - 1,
+        &empty_variant,
+        0,
+    );
+    assert_validation_reason(&enumeration, "enum variant name must not be empty");
 }
 
 #[test]
