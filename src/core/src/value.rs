@@ -820,9 +820,21 @@ impl Hash for Value {
             #[cfg(all(feature = "matrix", feature = "i128"))]
             Value::MatrixI128(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(x) => todo!(),
+            Value::MatrixF32(x) => {
+                core::mem::discriminant(x).hash(state);
+                x.shape().hash(state);
+                for value in x.as_vec() {
+                    value.to_bits().hash(state);
+                }
+            }
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(x) => todo!(),
+            Value::MatrixF64(x) => {
+                core::mem::discriminant(x).hash(state);
+                x.shape().hash(state);
+                for value in x.as_vec() {
+                    value.to_bits().hash(state);
+                }
+            }
             #[cfg(all(feature = "matrix", feature = "string"))]
             Value::MatrixString(x) => x.hash(state),
             #[cfg(feature = "matrix")]
@@ -840,8 +852,7 @@ impl Hash for Value {
             Value::Index(x) => x.borrow().hash(state),
             Value::MutableReference(x) => x.borrow().hash(state),
             Value::EmptyKind(k) => k.hash(state),
-            Value::Empty => Value::Empty.hash(state),
-            Value::IndexAll => Value::IndexAll.hash(state),
+            Value::Empty | Value::IndexAll => core::mem::discriminant(self).hash(state),
         }
     }
 }

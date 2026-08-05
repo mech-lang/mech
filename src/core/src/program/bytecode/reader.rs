@@ -11,7 +11,7 @@ use std::fs;
 #[cfg(not(feature = "no_std"))]
 use std::path::Path;
 
-use crate::{MResult, Value, hash_str};
+use crate::{MResult, MechError, Value, hash_str};
 
 use super::*;
 
@@ -79,7 +79,7 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
     if types_section.item_count > limits.max_types {
         return invalid("runtime type count exceeds read limit");
     }
-    let types = parse_types(
+    let (raw_types, types) = parse_types(
         section_bytes(bytes, types_section)?,
         types_section.item_count,
     )?;
@@ -107,6 +107,7 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         .map_err(|_| invalid::<()>("unable to allocate ConstantBlob").unwrap_err())?;
     constant_blob.extend_from_slice(constant_blob_bytes);
     validate_constant_entries(&types, &constants, &constant_blob)?;
+    validate_type_reachability(&raw_types, &constants)?;
 
     let symbols_section = section(BytecodeSectionKind::Symbols);
     if symbols_section.item_count > limits.max_symbols {
@@ -165,6 +166,11 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
     }
     let initialized =
         validate_instructions(&instructions, &header, constants.len(), requirements.len())?;
+    validate_constant_and_requirement_reachability(
+        &instructions,
+        constants.len(),
+        requirements.len(),
+    )?;
     for register in symbols.values().copied() {
         if !initialized[register as usize] {
             return invalid(format!(
@@ -410,7 +416,7 @@ fn try_vec_with_capacity<T>(capacity: usize, what: &str) -> MResult<Vec<T>> {
     Ok(values)
 }
 
-fn parse_types(bytes: &[u8], count: u32) -> MResult<Vec<RuntimeType>> {
+fn parse_types(bytes: &[u8], count: u32) -> MResult<(Vec<RawRuntimeType>, Vec<RuntimeType>)> {
     let mut r = ByteReader::new(bytes);
     let count = usize::try_from(count)
         .map_err(|_| invalid::<()>("runtime type count exceeds address space").unwrap_err())?;
@@ -438,7 +444,108 @@ fn parse_types(bytes: &[u8], count: u32) -> MResult<Vec<RuntimeType>> {
     if !r.is_empty() {
         return invalid("type section has trailing bytes");
     }
-    resolve_raw_types(&raw)
+    let resolved = resolve_raw_types(&raw)?;
+    Ok((raw, resolved))
+}
+
+fn validate_type_reachability(
+    raw_types: &[RawRuntimeType],
+    constants: &[ConstantEntry],
+) -> MResult<()> {
+    fn visit(type_id: u32, raw_types: &[RawRuntimeType], reachable: &mut [bool]) -> MResult<()> {
+        let index = checked_item_count(type_id, "reachable runtime type ID")?;
+        let Some(raw) = raw_types.get(index) else {
+            return invalid("constant references an out-of-range runtime type");
+        };
+        if reachable[index] {
+            return Ok(());
+        }
+        reachable[index] = true;
+
+        let mut child = |child_id| visit(child_id, raw_types, reachable);
+        match raw {
+            RawRuntimeType::Complete(_) => {}
+            RawRuntimeType::Matrix { element, .. }
+            | RawRuntimeType::Reference(element)
+            | RawRuntimeType::Set { element, .. }
+            | RawRuntimeType::Option(element) => child(*element)?,
+            RawRuntimeType::Record(fields)
+            | RawRuntimeType::Table {
+                columns: fields, ..
+            } => {
+                for (_, child_id) in fields {
+                    child(*child_id)?;
+                }
+            }
+            RawRuntimeType::Map { key, value } => {
+                child(*key)?;
+                child(*value)?;
+            }
+            RawRuntimeType::Tuple(types) => {
+                for child_id in types {
+                    child(*child_id)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    let mut reachable = vec![false; raw_types.len()];
+    for constant in constants {
+        visit(constant.type_id, raw_types, &mut reachable)?;
+    }
+    if let Some(type_id) = reachable.iter().position(|reachable| !reachable) {
+        return Err(MechError::new(
+            BytecodeUnreferencedType {
+                type_id: u32::try_from(type_id).unwrap_or(u32::MAX),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    Ok(())
+}
+
+fn validate_constant_and_requirement_reachability(
+    instructions: &[BytecodeInstruction],
+    constant_count: usize,
+    requirement_count: usize,
+) -> MResult<()> {
+    let mut constants = vec![false; constant_count];
+    let mut requirements = vec![false; requirement_count];
+    for instruction in instructions {
+        match instruction {
+            BytecodeInstruction::ConstLoad { constant, .. } => {
+                constants[*constant as usize] = true;
+            }
+            BytecodeInstruction::HostCall { requirement, .. }
+            | BytecodeInstruction::ResourceRead { requirement, .. }
+            | BytecodeInstruction::ResourceWrite { requirement, .. }
+            | BytecodeInstruction::ResourceSend { requirement, .. } => {
+                requirements[*requirement as usize] = true;
+            }
+            _ => {}
+        }
+    }
+    if let Some(constant) = constants.iter().position(|referenced| !referenced) {
+        return Err(MechError::new(
+            BytecodeUnreferencedConstant {
+                constant: u32::try_from(constant).unwrap_or(u32::MAX),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    if let Some(requirement) = requirements.iter().position(|referenced| !referenced) {
+        return Err(MechError::new(
+            BytecodeUnreferencedRequirement {
+                requirement: u32::try_from(requirement).unwrap_or(u32::MAX),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    Ok(())
 }
 
 fn parse_constants(bytes: &[u8], count: u32) -> MResult<Vec<ConstantEntry>> {

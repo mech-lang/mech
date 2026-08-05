@@ -18,18 +18,22 @@ fn empty_constant() -> EncodedConstant {
 }
 
 fn program(constants: Vec<EncodedConstant>) -> BytecodeProgram {
+    let register_count = constants.len().max(1) as u32;
+    let mut instructions = constants
+        .iter()
+        .enumerate()
+        .map(|(constant, _)| BytecodeInstruction::ConstLoad {
+            dst: constant as u32,
+            constant: constant as u32,
+        })
+        .collect::<Vec<_>>();
+    instructions.push(BytecodeInstruction::Return { src: 0 });
     BytecodeProgram {
-        register_count: 1,
+        register_count,
         constants,
         symbols: BTreeMap::new(),
         mutable_symbols: BTreeSet::new(),
-        instructions: vec![
-            BytecodeInstruction::ConstLoad {
-                dst: 0,
-                constant: 0,
-            },
-            BytecodeInstruction::Return { src: 0 },
-        ],
+        instructions,
         dictionary: BTreeMap::new(),
         requirements: Vec::new(),
     }
@@ -251,6 +255,51 @@ fn replace_instruction_section(bytes: &mut Vec<u8>, instructions: &[u8], count: 
     refresh_crc(bytes);
 }
 
+fn replace_section_contents(bytes: &mut Vec<u8>, index: usize, contents: &[u8], count: u32) {
+    let start = section_offset(bytes, index);
+    let has_following_section = index + 1 < BYTECODE_SECTION_COUNT;
+    let old_next = if has_following_section {
+        section_offset(bytes, index + 1)
+    } else {
+        read_u64(bytes, HEADER_CHECKSUM_OFFSET) as usize
+    };
+    let new_end = start + contents.len();
+    let new_next = if has_following_section {
+        (new_end + 7) / 8 * 8
+    } else {
+        new_end
+    };
+    let mut replacement = contents.to_vec();
+    replacement.resize(new_next - start, 0);
+    bytes.splice(start..old_next, replacement);
+
+    let delta = new_next as i64 - old_next as i64;
+    write_u32(bytes, section_entry_offset(index) + 4, count);
+    write_u64(
+        bytes,
+        section_entry_offset(index) + 16,
+        contents.len() as u64,
+    );
+    for following in index + 1..BYTECODE_SECTION_COUNT {
+        let entry = section_entry_offset(following);
+        let old = read_u64(bytes, entry + 8) as i64;
+        write_u64(bytes, entry + 8, (old + delta) as u64);
+    }
+    let file_len = read_u64(bytes, HEADER_FILE_LEN) as i64 + delta;
+    let checksum_offset = read_u64(bytes, HEADER_CHECKSUM_OFFSET) as i64 + delta;
+    write_u64(bytes, HEADER_FILE_LEN, file_len as u64);
+    write_u64(bytes, HEADER_CHECKSUM_OFFSET, checksum_offset as u64);
+    refresh_crc(bytes);
+}
+
+fn append_section_item(bytes: &mut Vec<u8>, index: usize, item: &[u8], count: u32) {
+    let start = section_offset(bytes, index);
+    let length = section_length(bytes, index);
+    let mut contents = bytes[start..start + length].to_vec();
+    contents.extend_from_slice(item);
+    replace_section_contents(bytes, index, &contents, count);
+}
+
 fn structural_program(
     register_count: u32,
     instructions: Vec<BytecodeInstruction>,
@@ -264,6 +313,185 @@ fn structural_program(
         dictionary: BTreeMap::new(),
         requirements: Vec::new(),
     }
+}
+
+#[test]
+fn rejects_crc_valid_unreferenced_type_rows_without_constants() {
+    let mut bytes = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::F64,
+        alignment: 8,
+        bytes: 1.0_f64.to_bits().to_le_bytes().to_vec(),
+    }]))
+    .unwrap();
+    replace_section_contents(
+        &mut bytes,
+        BytecodeSectionKind::ConstantTable as usize - 1,
+        &[],
+        0,
+    );
+    replace_section_contents(
+        &mut bytes,
+        BytecodeSectionKind::ConstantBlob as usize - 1,
+        &[],
+        0,
+    );
+
+    let error = ParsedProgram::from_bytes(&bytes).unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeUnreferencedType");
+    assert_eq!(
+        error.kind_as::<BytecodeUnreferencedType>().unwrap().type_id,
+        0
+    );
+}
+
+#[test]
+fn rejects_crc_valid_unused_scalar_type_row() {
+    let mut bytes = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::F64,
+        alignment: 8,
+        bytes: 1.0_f64.to_bits().to_le_bytes().to_vec(),
+    }]))
+    .unwrap();
+    let type_count = read_u32(
+        &bytes,
+        section_entry_offset(BytecodeSectionKind::Types as usize - 1) + 4,
+    );
+    let mut boolean_row = Vec::new();
+    boolean_row.extend_from_slice(&(RuntimeTypeTag::Bool as u16).to_le_bytes());
+    boolean_row.extend_from_slice(&0_u16.to_le_bytes());
+    boolean_row.extend_from_slice(&0_u32.to_le_bytes());
+    append_section_item(
+        &mut bytes,
+        BytecodeSectionKind::Types as usize - 1,
+        &boolean_row,
+        type_count + 1,
+    );
+
+    let error = ParsedProgram::from_bytes(&bytes).unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeUnreferencedType");
+    assert_eq!(
+        error.kind_as::<BytecodeUnreferencedType>().unwrap().type_id,
+        type_count
+    );
+}
+
+#[test]
+fn rejects_crc_valid_unused_constant_row() {
+    let mut bytes = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::F64,
+        alignment: 8,
+        bytes: 1.0_f64.to_bits().to_le_bytes().to_vec(),
+    }]))
+    .unwrap();
+    let blob_index = BytecodeSectionKind::ConstantBlob as usize - 1;
+    let blob_start = section_offset(&bytes, blob_index);
+    let blob_length = section_length(&bytes, blob_index);
+    let mut blob = bytes[blob_start..blob_start + blob_length].to_vec();
+    blob.extend_from_slice(&2.0_f64.to_bits().to_le_bytes());
+    replace_section_contents(&mut bytes, blob_index, &blob, 0);
+
+    let table_index = BytecodeSectionKind::ConstantTable as usize - 1;
+    let constant_count = read_u32(&bytes, section_entry_offset(table_index) + 4);
+    let mut entry = Vec::new();
+    entry.extend_from_slice(&type_id_with_tag(&bytes, RuntimeTypeTag::F64).to_le_bytes());
+    entry.push(1);
+    entry.push(8);
+    entry.extend_from_slice(&0_u16.to_le_bytes());
+    entry.extend_from_slice(&(blob_length as u64).to_le_bytes());
+    entry.extend_from_slice(&8_u64.to_le_bytes());
+    append_section_item(&mut bytes, table_index, &entry, constant_count + 1);
+
+    let error = ParsedProgram::from_bytes(&bytes).unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeUnreferencedConstant");
+    assert_eq!(
+        error
+            .kind_as::<BytecodeUnreferencedConstant>()
+            .unwrap()
+            .constant,
+        1
+    );
+}
+
+#[test]
+fn rejects_crc_valid_unused_application_requirement_row() {
+    let mut input = program(vec![empty_constant()]);
+    input.requirements = vec![
+        ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
+            name: "host-a".into(),
+        }),
+        ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
+            name: "host-b".into(),
+        }),
+    ];
+    input.instructions.insert(
+        1,
+        BytecodeInstruction::HostCall {
+            requirement: 0,
+            dst: 0,
+            arguments: Vec::new(),
+        },
+    );
+    let bytes = write_bytecode_without_reader_validation(&input).unwrap();
+
+    let error = ParsedProgram::from_bytes(&bytes).unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeUnreferencedRequirement");
+    assert_eq!(
+        error
+            .kind_as::<BytecodeUnreferencedRequirement>()
+            .unwrap()
+            .requirement,
+        1
+    );
+}
+
+#[test]
+fn referenced_runtime_types_include_the_exact_nested_decode_closure() {
+    let matrix_type = RuntimeType::Matrix {
+        element: Box::new(RuntimeType::U8),
+        storage: MatrixStorage::Matrix2,
+        rows: 2,
+        cols: 2,
+    };
+    let tuple_type = RuntimeType::Tuple(vec![RuntimeType::F64, matrix_type.clone()]);
+    let runtime_type = RuntimeType::Map {
+        key: Box::new(RuntimeType::String),
+        value: Box::new(tuple_type.clone()),
+    };
+    let mut matrix = Vec::new();
+    matrix.extend_from_slice(&2_u32.to_le_bytes());
+    matrix.extend_from_slice(&2_u32.to_le_bytes());
+    matrix.extend_from_slice(&[1, 2, 3, 4]);
+    let mut tuple = 2_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut tuple, &1.0_f64.to_bits().to_le_bytes());
+    append_child_payload(&mut tuple, &matrix);
+    let mut payload = 1_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut payload, b"key");
+    append_child_payload(&mut payload, &tuple);
+    let bytes = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: runtime_type.clone(),
+        alignment: 4,
+        bytes: payload,
+    }]))
+    .unwrap();
+
+    let referenced = ParsedProgram::from_bytes(&bytes)
+        .unwrap()
+        .referenced_runtime_types()
+        .unwrap()
+        .into_iter()
+        .collect::<BTreeSet<_>>();
+
+    assert_eq!(
+        referenced,
+        BTreeSet::from([
+            RuntimeType::String,
+            RuntimeType::F64,
+            RuntimeType::U8,
+            matrix_type,
+            tuple_type,
+            runtime_type,
+        ])
+    );
 }
 
 #[test]
@@ -1225,6 +1453,14 @@ fn rejects_impossible_variable_lengths_before_reserving() {
     });
     let mut input = program(vec![empty_constant()]);
     input.requirements.push(requirement);
+    input.instructions.insert(
+        1,
+        BytecodeInstruction::HostCall {
+            requirement: 0,
+            dst: 0,
+            arguments: Vec::new(),
+        },
+    );
     let mut requirement = write_bytecode(&input).unwrap();
     let requirement_offset = section_offset(
         &requirement,
@@ -1296,7 +1532,7 @@ fn rejects_unknown_out_of_range_cyclic_and_invalid_matrix_types() {
     refresh_crc(&mut dimensions);
     assert_validation_reason(&dimensions, "matrix storage and dimensions disagree");
 
-    let mut unsupported_element = write_bytecode(&program(vec![
+    let mut unsupported_element = write_bytecode_without_reader_validation(&program(vec![
         matrix_constant(MatrixStorage::MatrixD, 2, 2),
         EncodedConstant {
             runtime_type: RuntimeType::Any,
@@ -1483,6 +1719,13 @@ fn rejects_unknown_requirement_fields_utf8_opcode_and_trailing_bytes() {
     });
     let mut input = program(vec![empty_constant()]);
     input.requirements.push(requirement);
+    input.instructions.insert(
+        1,
+        BytecodeInstruction::ResourceRead {
+            requirement: 0,
+            dst: 0,
+        },
+    );
     let requirement = write_bytecode(&input).unwrap();
     let requirement_offset = section_offset(
         &requirement,
@@ -1633,6 +1876,14 @@ fn every_read_limit_is_enforced_with_a_structured_validation_error() {
                 name: "host".into(),
             },
         ));
+    requirements.instructions.insert(
+        1,
+        BytecodeInstruction::HostCall {
+            requirement: 0,
+            dst: 0,
+            arguments: Vec::new(),
+        },
+    );
     let requirement_bytes = write_bytecode(&requirements).unwrap();
 
     let mut limits = BytecodeReadLimits::default();
@@ -1702,6 +1953,39 @@ fn requirements_use_the_explicit_canonical_order() {
     requirements.sort_by(compare_application_requirements);
     let mut input = program(vec![empty_constant()]);
     input.requirements = requirements.clone();
+    input.instructions = vec![BytecodeInstruction::ConstLoad {
+        dst: 0,
+        constant: 0,
+    }];
+    for (requirement, entry) in requirements.iter().enumerate() {
+        let requirement = requirement as u32;
+        input.instructions.push(match entry {
+            ApplicationRequirement::HostFunction(_) => BytecodeInstruction::HostCall {
+                requirement,
+                dst: 0,
+                arguments: Vec::new(),
+            },
+            ApplicationRequirement::Resource(request) => match request.intent {
+                ResourceIntent::Read => BytecodeInstruction::ResourceRead {
+                    requirement,
+                    dst: 0,
+                },
+                ResourceIntent::Assign => BytecodeInstruction::ResourceWrite {
+                    requirement,
+                    dst: 0,
+                    src: 0,
+                },
+                ResourceIntent::Send => BytecodeInstruction::ResourceSend {
+                    requirement,
+                    dst: 0,
+                    src: 0,
+                },
+            },
+        });
+    }
+    input
+        .instructions
+        .push(BytecodeInstruction::Return { src: 0 });
     let parsed = ParsedProgram::from_bytes(&write_bytecode(&input).unwrap()).unwrap();
     assert_eq!(parsed.requirements, requirements);
 }
@@ -1718,6 +2002,13 @@ fn resource_program(base_uri: &str, path: &str) -> BytecodeProgram {
             intent: ResourceIntent::Read,
             delivery: ResourceDelivery::Snapshot,
         }));
+    input.instructions.insert(
+        1,
+        BytecodeInstruction::ResourceRead {
+            requirement: 0,
+            dst: 0,
+        },
+    );
     input
 }
 
@@ -1833,7 +2124,8 @@ fn rejects_crc_valid_unused_named_runtime_types_with_mismatched_ids() {
     for (tag, name, category, named, replacement, replacement_tag) in cases {
         let expected = hash_str(name);
         let supplied = expected ^ 1;
-        let mut bytes = write_bytecode(&program(vec![named, replacement])).unwrap();
+        let mut bytes =
+            write_bytecode_without_reader_validation(&program(vec![named, replacement])).unwrap();
         let named_entry = type_entry_with_tag(&bytes, tag);
         write_u64(&mut bytes, named_entry + 8, supplied);
         let replacement_type = type_id_with_tag(&bytes, replacement_tag);
@@ -2467,6 +2759,315 @@ mod compiler_tests {
             3
         );
         assert_eq!(absent.bytes, [0]);
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "map",
+        feature = "matrix2",
+        feature = "matrixd",
+        feature = "record",
+        feature = "set",
+        feature = "string",
+        feature = "table",
+        feature = "vectord"
+    ))]
+    mod annotated_option_composites {
+        use std::collections::HashMap;
+
+        use indexmap::{IndexMap, IndexSet};
+        use nalgebra::{DMatrix, DVector, Matrix2};
+
+        use crate::matrix::Matrix;
+        use crate::{MechMap, MechRecord, MechSet, MechTable};
+
+        use super::*;
+
+        fn option(inner: ValueKind) -> ValueKind {
+            ValueKind::Option(Box::new(inner))
+        }
+
+        fn present(value: Value, declared_inner: ValueKind) -> Value {
+            Value::Typed(Box::new(value), option(declared_inner))
+        }
+
+        fn map(entries: Vec<(Value, Value)>, key_kind: ValueKind, value_kind: ValueKind) -> Value {
+            let map = entries.into_iter().collect::<IndexMap<_, _>>();
+            Value::Map(Ref::new(MechMap {
+                key_kind,
+                value_kind,
+                num_elements: map.len(),
+                map,
+            }))
+        }
+
+        fn set(elements: Vec<Value>, kind: ValueKind) -> Value {
+            let set = elements.into_iter().collect::<IndexSet<_>>();
+            Value::Set(Ref::new(MechSet {
+                kind,
+                max_elements: Some(set.len()),
+                num_elements: set.len(),
+                set,
+            }))
+        }
+
+        fn table(kind: ValueKind, cells: Vec<Value>) -> Value {
+            let name = "value";
+            let id = hash_str(name);
+            let rows = cells.len();
+            Value::Table(Ref::new(MechTable::new(
+                rows,
+                1,
+                IndexMap::from([(
+                    id,
+                    (kind, Matrix::DVector(Ref::new(DVector::from_vec(cells)))),
+                )]),
+                HashMap::from([(id, name.to_owned())]),
+            )))
+        }
+
+        fn matrix2() -> Value {
+            Value::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::from_row_slice(&[
+                1.0, 2.0, 3.0, 4.0,
+            ]))))
+        }
+
+        fn dynamic_matrix2() -> Value {
+            Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_row_slice(
+                2,
+                2,
+                &[1.0, 2.0, 3.0, 4.0],
+            ))))
+        }
+
+        fn declared_matrix() -> ValueKind {
+            ValueKind::Matrix(Box::new(ValueKind::F64), vec![2, 2])
+        }
+
+        fn option_inner(runtime_type: &RuntimeType) -> &RuntimeType {
+            let RuntimeType::Option(inner) = runtime_type else {
+                panic!("expected option runtime type, found {runtime_type:?}");
+            };
+            inner
+        }
+
+        #[test]
+        fn map_values_finalize_absent_and_present_options_independent_of_iteration_order() {
+            let entries = vec![
+                (Value::String(Ref::new("absent".into())), Value::Empty),
+                (
+                    Value::String(Ref::new("present".into())),
+                    present(Value::F64(Ref::new(1.0)), ValueKind::F64),
+                ),
+            ];
+            let forward = encode(&map(
+                entries.clone(),
+                ValueKind::String,
+                option(ValueKind::F64),
+            ));
+            let reverse = encode(&map(
+                entries.into_iter().rev().collect(),
+                ValueKind::String,
+                option(ValueKind::F64),
+            ));
+
+            assert_eq!(forward, reverse);
+            assert_eq!(
+                forward.runtime_type,
+                RuntimeType::Map {
+                    key: Box::new(RuntimeType::String),
+                    value: Box::new(RuntimeType::Option(Box::new(RuntimeType::F64))),
+                }
+            );
+            assert_eq!(encode(&decode_one(&forward)), forward);
+        }
+
+        #[test]
+        fn map_keys_finalize_absent_and_present_options() {
+            let encoded = encode(&map(
+                vec![
+                    (Value::Empty, Value::F64(Ref::new(1.0))),
+                    (
+                        present(Value::String(Ref::new("present".into())), ValueKind::String),
+                        Value::F64(Ref::new(2.0)),
+                    ),
+                ],
+                option(ValueKind::String),
+                ValueKind::F64,
+            ));
+
+            assert_eq!(
+                encoded.runtime_type,
+                RuntimeType::Map {
+                    key: Box::new(RuntimeType::Option(Box::new(RuntimeType::String))),
+                    value: Box::new(RuntimeType::F64),
+                }
+            );
+            assert_eq!(encode(&decode_one(&encoded)), encoded);
+        }
+
+        #[test]
+        fn set_scalar_options_round_trip_absent_and_present_values() {
+            let encoded = encode(&set(
+                vec![
+                    Value::Empty,
+                    present(Value::F64(Ref::new(1.0)), ValueKind::F64),
+                ],
+                option(ValueKind::F64),
+            ));
+
+            assert_eq!(
+                encoded.runtime_type,
+                RuntimeType::Set {
+                    element: Box::new(RuntimeType::Option(Box::new(RuntimeType::F64))),
+                    max_len: Some(2),
+                }
+            );
+            assert_eq!(encode(&decode_one(&encoded)), encoded);
+        }
+
+        #[test]
+        fn set_fixed_matrix_options_are_canonical_in_both_iteration_orders() {
+            let present = present(matrix2(), declared_matrix());
+            let forward = encode(&set(
+                vec![Value::Empty, present.clone()],
+                option(declared_matrix()),
+            ));
+            let reverse = encode(&set(vec![present, Value::Empty], option(declared_matrix())));
+
+            assert_eq!(forward, reverse);
+            let RuntimeType::Set { element, .. } = &forward.runtime_type else {
+                panic!("expected set runtime type");
+            };
+            assert!(matches!(
+                option_inner(element),
+                RuntimeType::Matrix {
+                    storage: MatrixStorage::Matrix2,
+                    ..
+                }
+            ));
+            assert_eq!(encode(&decode_one(&forward)), forward);
+        }
+
+        #[test]
+        fn all_absent_matrix_options_use_the_annotation_derived_dynamic_storage() {
+            let encoded = encode(&set(vec![Value::Empty], option(declared_matrix())));
+            let RuntimeType::Set { element, .. } = &encoded.runtime_type else {
+                panic!("expected set runtime type");
+            };
+            assert!(matches!(
+                option_inner(element),
+                RuntimeType::Matrix {
+                    storage: MatrixStorage::MatrixD,
+                    ..
+                }
+            ));
+        }
+
+        #[test]
+        fn heterogeneous_present_matrix_option_storage_is_rejected() {
+            let error = set(
+                vec![
+                    present(matrix2(), declared_matrix()),
+                    present(dynamic_matrix2(), declared_matrix()),
+                ],
+                option(declared_matrix()),
+            )
+            .compile_const(&mut ConstantContext::default())
+            .unwrap_err();
+
+            assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
+            assert!(
+                error
+                    .kind_as::<BytecodeConstantUnsupported>()
+                    .unwrap()
+                    .reason
+                    .contains("set element type")
+            );
+        }
+
+        #[test]
+        fn bare_empty_under_non_option_annotation_is_rejected() {
+            let error = set(vec![Value::Empty], ValueKind::F64)
+                .compile_const(&mut ConstantContext::default())
+                .unwrap_err();
+
+            assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
+        }
+
+        #[test]
+        fn explicit_absent_option_must_match_the_declared_child_type() {
+            let error = set(
+                vec![Value::EmptyKind(option(ValueKind::String))],
+                option(ValueKind::F64),
+            )
+            .compile_const(&mut ConstantContext::default())
+            .unwrap_err();
+
+            assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
+        }
+
+        #[test]
+        fn table_scalar_option_column_accepts_bare_empty_cells() {
+            let encoded = encode(&table(
+                option(ValueKind::F64),
+                vec![
+                    Value::Empty,
+                    present(Value::F64(Ref::new(1.0)), ValueKind::F64),
+                ],
+            ));
+            let RuntimeType::Table { columns, .. } = &encoded.runtime_type else {
+                panic!("expected table runtime type");
+            };
+            assert_eq!(
+                columns,
+                &[(
+                    "value".into(),
+                    RuntimeType::Option(Box::new(RuntimeType::F64))
+                )]
+            );
+            assert_eq!(encode(&decode_one(&encoded)), encoded);
+        }
+
+        #[test]
+        fn table_fixed_matrix_option_column_uses_the_present_storage() {
+            let encoded = encode(&table(
+                option(declared_matrix()),
+                vec![Value::Empty, present(matrix2(), declared_matrix())],
+            ));
+            let RuntimeType::Table { columns, .. } = &encoded.runtime_type else {
+                panic!("expected table runtime type");
+            };
+            assert!(matches!(
+                option_inner(&columns[0].1),
+                RuntimeType::Matrix {
+                    storage: MatrixStorage::Matrix2,
+                    ..
+                }
+            ));
+            assert_eq!(encode(&decode_one(&encoded)), encoded);
+        }
+
+        #[test]
+        fn record_option_field_accepts_a_bare_empty_value() {
+            let name = "optional";
+            let id = hash_str(name);
+            let encoded = encode(&Value::Record(Ref::new(MechRecord {
+                cols: 1,
+                kinds: vec![option(ValueKind::String)],
+                data: IndexMap::from([(id, Value::Empty)]),
+                field_names: HashMap::from([(id, name.into())]),
+            })));
+
+            assert_eq!(
+                encoded.runtime_type,
+                RuntimeType::Record(vec![(
+                    name.into(),
+                    RuntimeType::Option(Box::new(RuntimeType::String)),
+                )])
+            );
+            assert_eq!(encode(&decode_one(&encoded)), encoded);
+        }
     }
 
     #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
