@@ -457,7 +457,7 @@ mod checkpoint_tests {
         root.context_bindings.borrow_mut().insert(
             context_binding_id,
             RuntimeContextBinding {
-                name: "checkpoint-context".to_string(),
+                context_name: "checkpoint".to_string(),
                 base_uri: "test://checkpoint".to_string(),
             },
         );

@@ -42,6 +42,7 @@ fn cli_hosted_native_application_builds_and_emits_once() {
                         request,
                         owner,
                     } if request.base_uri == "cli://stdout"
+                        && request.context_name == "stdout"
                         && owner.host_instance == "cli"
                         && owner.canonical_base_uri == "cli://cli/stdout"
                 )

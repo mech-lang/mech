@@ -76,7 +76,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "b44070ea905e60811842eec33ad1785118cf69dd31357e27dcb2759a752b8203",
+      "native_plan_sha256": "ce7319331dc71683196c4264557261af413b1618930cf094584895c302bac447",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -435,7 +435,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "2f92ad4062014cb10f1409a9ff9ad8b489649d9fd0f5e209f84c5d576ff9d7db",
+      "native_plan_sha256": "b7c3cccb773ba2d67a4e64cc0b0300dd4af439e9d017fc4e1b48b3f2aa036f21",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -1182,7 +1182,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "251706ddc7742edeb79afd99f0cfcc848e1849014853eacfb0efb5fbfc565d63",
+      "native_plan_sha256": "a44cc42bf51dc3158a3a57a3913703b468718ae05ee57e2d67c110c6bee9186e",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -1483,7 +1483,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "445a8bc4d0235ff899e25246a822506d07081dbde8b33b7b885098e82cb7c8df",
+      "native_plan_sha256": "3742a4d3b8e3c6c3cc1a3cafcc5f50d487f40efca028a9c591a9579387f6717e",
       "origin": "source-compiler",
       "packages": [
         {
@@ -1635,7 +1635,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "64ab20011dba08f5ece50804c9f5dcf44e132016656a1a2ea2183ab1af3bff15",
+      "native_plan_sha256": "1c0fac0ec42cc3b43f9a3c409bf469c4ebba83c89915d3a93c037848de6e431e",
       "origin": "source-compiler",
       "packages": [
         {
@@ -1823,7 +1823,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "f72a81032b9eb0eae922707a221ed38b13ab7f4c21331a1134523c5bd1780689",
+      "native_plan_sha256": "f18ca30581263c1542829a32e1e893620538a6c34e36d0a08de766f41290a422",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2085,7 +2085,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "eee1fd9f852d1dc18795d1039397983d48e010bb02fe05101edec7166271ef6d",
+      "native_plan_sha256": "119fd23cacf33693513c22796ebd7332d4c28afe45e1b613c343ba573e7cde8a",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2318,7 +2318,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "cec43aafbbc5655a85fb40ec5e38b7cb3184cb6fb7679619cd4170bd4ba23509",
+      "native_plan_sha256": "1408c059184d5f05dc79dbdba07463c2fc6aad99fbf1858abc3079c6d3125881",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2495,7 +2495,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "c20d39ee46defe700d4b5d589250d18ed50f2769b1612049f082ff21f0d7e0d9",
+      "native_plan_sha256": "cef118b041657864b3a73c31203617baaf716404fc1d56fa5028e1943b57165d",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2653,7 +2653,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "5aeadf96cec73fb01b8a144e0f878d810cb07bf2af4861571ce224b0202d262f",
+      "native_plan_sha256": "fef48c4431f8707b6ddedcbc8c22f468334a9376e57a54e1101dad2024ee535b",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2837,7 +2837,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "a8ae878e4d8a0ce6158feb1be7bea81a2237947e035017719cd05ae5e6d5da52",
+      "native_plan_sha256": "0cbb3a7832243e2400155b4581fae16553c006b29df80a3c432bdec61d92bba5",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3070,7 +3070,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "9d341a281b4db29d9d0b15318387c0e6cae9cb9a906b5c600cf4c68c3933e617",
+      "native_plan_sha256": "37a36ecd09be9a4240d549f8647b01d1def9db9bacb7feb62acd981d38ed3435",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3295,7 +3295,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "188d0b9903c8bd6aabd325207a28e9b1e83a9612f8c14a6c60fea1ac087887aa",
+      "native_plan_sha256": "aab709e640cae327b94bb1790acccaed8aff032030f07995b7e5dc8bf42c4176",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3425,7 +3425,7 @@
       "application_requirements": [
         {
           "base_uri": "cli://cli/stdout",
-          "context_name": "out",
+          "context_name": "stdout",
           "delivery": "Snapshot",
           "delivery_id": 0,
           "intent": "Send",
@@ -3453,8 +3453,8 @@
       "expected_output": "done",
       "file": "cli-stdout.mecb",
       "header": {
-        "checksum_offset": 492,
-        "file_len": 496,
+        "checksum_offset": 495,
+        "file_len": 499,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -3482,7 +3482,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "3af4b40d543b3bdf3f4f61c784c1d4290485e9350b4a0eff21fc14c88c4e3881",
+      "native_plan_sha256": "e8e012237ec52b52e8ebd3bbe6fd272ad998f67bab1e39d6ca53082708e8211f",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3608,12 +3608,12 @@
           "id": 7,
           "item_count": 1,
           "kind": "ApplicationRequirements",
-          "length": 44,
+          "length": 47,
           "offset": 448,
           "reserved": 0
         }
       ],
-      "sha256": "295493d90b5b653bfee67763e57a5da60765edfdecd4926ec1227a5b6fc7ae57",
+      "sha256": "0e7b45ab3c74b20c7cb9d079d1eee1af26ef792fc3b1f19b4de425aa3792eccd",
       "source": "+> @out := cli/stdout\n\n@out/line <- \"phase1-hosted-ok\"\n\n\"done\"",
       "source_file": "cli-stdout.mec"
     },
@@ -3621,7 +3621,7 @@
       "application_requirements": [
         {
           "base_uri": "console://console/output",
-          "context_name": "out",
+          "context_name": "output",
           "delivery": "Snapshot",
           "delivery_id": 0,
           "intent": "Send",
@@ -3649,8 +3649,8 @@
       "expected_output": "console-done",
       "file": "console.mecb",
       "header": {
-        "checksum_offset": 508,
-        "file_len": 512,
+        "checksum_offset": 511,
+        "file_len": 515,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -3678,7 +3678,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "82cfef949a49983c2a1abc6b2b792589ce737fcb8405b2c414247cd941818290",
+      "native_plan_sha256": "7ea7a5400fdf8a0cc0b7e22a29d0be2593a2a91e375f2f0df6850682e14e5576",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3804,12 +3804,12 @@
           "id": 7,
           "item_count": 1,
           "kind": "ApplicationRequirements",
-          "length": 52,
+          "length": 55,
           "offset": 456,
           "reserved": 0
         }
       ],
-      "sha256": "9fe9eec36fc808891ff58720b388cdf51611f716a2e7f92e62384a46075cc07e",
+      "sha256": "9f504a06f716328d0b516a247ebe7560abf7fffc5bcceb34a08034e24d788015",
       "source": "@out := console://console/output{:write(line)}\n@out/line <- \"bytecode-v1-console\"\n\"console-done\"",
       "source_file": "console.mec"
     },
@@ -3882,7 +3882,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "c4db13fe4fcf0682edfa8128c1e8227f1f628484b9107c8f14f294265a0780aa",
+      "native_plan_sha256": "b3a0c5c4e3e169bea80d5570a681b5e3de119b991b4b054b2619158f29273cfe",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4041,7 +4041,7 @@
       "application_requirements": [
         {
           "base_uri": "timer://timer/tick",
-          "context_name": "timer",
+          "context_name": "tick",
           "delivery": "Live",
           "delivery_id": 1,
           "intent": "Read",
@@ -4077,8 +4077,8 @@
       "expected_output": "timer-done",
       "file": "timer.mecb",
       "header": {
-        "checksum_offset": 583,
-        "file_len": 587,
+        "checksum_offset": 582,
+        "file_len": 586,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 7,
@@ -4106,7 +4106,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "136270a902be7dc9e83b5ac7c1330804bd92ed54bf3e96a32360c1ddf112906e",
+      "native_plan_sha256": "092093bdf3f067b7f4151b6bcbebda18c36d412ddd4162968bd35a932b02925d",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4252,12 +4252,12 @@
           "id": 7,
           "item_count": 1,
           "kind": "ApplicationRequirements",
-          "length": 47,
+          "length": 46,
           "offset": 536,
           "reserved": 0
         }
       ],
-      "sha256": "608a2548ee229b03848a959e00ff4e8c314543d74fab8cdb2336fc4021c9fdb4",
+      "sha256": "5c0beb99d395e3903e76db7d3cac700e9a24ad2fc8ead2036c80238e871ced2f",
       "source": "@timer := timer://timer/tick{:read(tick)}\ntick := @timer/tick\n\"timer-done\"",
       "source_file": "timer.mec"
     },
@@ -4333,7 +4333,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "f114771305d8317b9e6d9cdecaf0f5db6d225bed25b5d1fae8e94e34ae412819",
+      "native_plan_sha256": "8bd14b62e245e43af89d2c014a52ede034dfc2dd9bf5a40544b1c03b6e8c8655",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4527,7 +4527,7 @@
       "application_requirements": [
         {
           "base_uri": "robot://arm/commands",
-          "context_name": "arm",
+          "context_name": "commands",
           "delivery": "Snapshot",
           "delivery_id": 0,
           "intent": "Send",
@@ -4558,8 +4558,8 @@
       "expected_output": "robot-done",
       "file": "robot-arm.mecb",
       "header": {
-        "checksum_offset": 495,
-        "file_len": 499,
+        "checksum_offset": 500,
+        "file_len": 504,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -4587,7 +4587,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "1d24f88d9b11ee95d51729651e3940f82f0e505ab8623234b2a019fdd70c75d4",
+      "native_plan_sha256": "5d8b028f327acf88e8774d401031222528d6222ffd532344af99722b525685d6",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4722,12 +4722,12 @@
           "id": 7,
           "item_count": 1,
           "kind": "ApplicationRequirements",
-          "length": 47,
+          "length": 52,
           "offset": 448,
           "reserved": 0
         }
       ],
-      "sha256": "a68838c61b23cfe9555ae31c0075015c555e846aaf701f31bf6f783a20098385",
+      "sha256": "eca24602a7ce456ec410f65bcbc50624188c890b105377cce3264d470984c941",
       "source": "@arm := robot://arm/commands{:move(move)}\n@arm/move <- true\n\"robot-done\"",
       "source_file": "robot-arm.mec"
     },
@@ -4791,7 +4791,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "7c08d0cc02af3784338e057d7b74bc3ef18d522920343fbdfd401b85ecbe3008",
+      "native_plan_sha256": "a6553fe3b238edfd56d44d52614ebf254dad15aeabaa7bd197f82b651b3f8126",
       "origin": "source-compiler",
       "packages": [
         {

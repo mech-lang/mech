@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
-EXPECTED_MANIFEST_SHA256 = "98782a6d649297e8428958c848b9364fbda479144c600467b3ecfe1b5d6a4a2b"
+EXPECTED_MANIFEST_SHA256 = "bb6fb7cd71c1aeee0c97f6608b6d06b0ca4d0503bc6dda67b5a75eefe90344f9"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "a437e67ca6120b90c928eb55ee0479c4a95afbb23a854c406c7fd531df2c85cc",
     "canonical-matrices.mecb": "1e0d08eabb54b9c4edc5caae095dbab607cd633867d1c0b642126f5451ecf55d",
@@ -29,12 +29,12 @@ EXPECTED_FIXTURE_SHA256 = {
     "ternary.mecb": "5362544462bdc214915c4ae41df632a4b03a189f79324f9e8af2fcdb14e6c575",
     "quaternary.mecb": "75a23eb4144efcbd6b28fae4ac534cff2dad581bf385cd2114f828f033422dca",
     "named-module-operation.mecb": "d155bc55b645b9ad23879a3a6233a0717f37f67570b5bf36e1e5a09c0b15833a",
-    "cli-stdout.mecb": "295493d90b5b653bfee67763e57a5da60765edfdecd4926ec1227a5b6fc7ae57",
-    "console.mecb": "9fe9eec36fc808891ff58720b388cdf51611f716a2e7f92e62384a46075cc07e",
+    "cli-stdout.mecb": "0e7b45ab3c74b20c7cb9d079d1eee1af26ef792fc3b1f19b4de425aa3792eccd",
+    "console.mecb": "9f504a06f716328d0b516a247ebe7560abf7fffc5bcceb34a08034e24d788015",
     "time.mecb": "e1fad86d1a908f13477a96e5317596842f74a3d70637f38d7bd0e4ff1396638f",
-    "timer.mecb": "608a2548ee229b03848a959e00ff4e8c314543d74fab8cdb2336fc4021c9fdb4",
+    "timer.mecb": "5c0beb99d395e3903e76db7d3cac700e9a24ad2fc8ead2036c80238e871ced2f",
     "scene.mecb": "3d014a27bf8a34a6af74c6a05b14be8656508c2bdbb540c708b1587ef653c30c",
-    "robot-arm.mecb": "a68838c61b23cfe9555ae31c0075015c555e846aaf701f31bf6f783a20098385",
+    "robot-arm.mecb": "eca24602a7ce456ec410f65bcbc50624188c890b105377cce3264d470984c941",
     "actor-host-function.mecb": "feaec635e1e33399fb4148ec7ec789373b065ca60161c995cbb61b71b2e7d917",
     "synthetic-live-read.mecb": "d4141713973607c9e02cbed6d67b5010022035a95bcd88a7218834606bd35609",
 }

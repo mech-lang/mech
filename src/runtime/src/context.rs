@@ -63,6 +63,7 @@ pub enum RuntimeContextBase {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeContextBinding {
     pub name: String,
+    pub resource_context_name: String,
     pub base: RuntimeContextBase,
     pub capabilities: Vec<RuntimeContextCapability>,
     pub scope: SourceScope,
@@ -148,7 +149,7 @@ impl RuntimeContextBinding {
             ));
         }
 
-        let base = match &declaration.base {
+        let (base, resource_context_name) = match &declaration.base {
             SourceContextBase::ResourceUri(uri) => {
                 if uri.is_empty() {
                     return Err(MechError::new(
@@ -159,7 +160,10 @@ impl RuntimeContextBinding {
                         None,
                     ));
                 }
-                RuntimeContextBase::ResourceUri(uri.clone())
+                (
+                    RuntimeContextBase::ResourceUri(uri.clone()),
+                    canonical_context_name_from_base_uri(uri),
+                )
             }
             SourceContextBase::Context(name) => {
                 let base_binding = registry.get(name).ok_or_else(|| {
@@ -174,7 +178,10 @@ impl RuntimeContextBinding {
                         None,
                     )
                 })?;
-                base_binding.base.clone()
+                (
+                    base_binding.base.clone(),
+                    base_binding.resource_context_name.clone(),
+                )
             }
         };
 
@@ -226,11 +233,21 @@ impl RuntimeContextBinding {
 
         Ok(Self {
             name: declaration.name.clone(),
+            resource_context_name,
             base,
             capabilities,
             scope,
         })
     }
+}
+
+fn canonical_context_name_from_base_uri(base_uri: &str) -> String {
+    base_uri
+        .trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .unwrap_or(base_uri)
+        .to_owned()
 }
 
 fn runtime_context_capability_from_source(
