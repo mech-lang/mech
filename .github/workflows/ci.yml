@@ -670,26 +670,11 @@ jobs:
       - name: Run complete core suite
         run: cargo test -p mech-core
 
-      - name: Run complete program library suite
-        run: |
-          # The library and test-harness units are both large under the full
-          # feature surface. Serialize both Cargo units and LLVM codegen, and
-          # give the ephemeral runner swap headroom for the remaining peak.
-          # This preserves the exact suite and its full feature coverage.
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          free -h
-          CARGO_BUILD_JOBS=1 \
-            CARGO_PROFILE_TEST_CODEGEN_UNITS=1 \
-            cargo test -p mech-engine --all-features &
-          engine_test_pid=$!
-          while kill -0 "$engine_test_pid" 2>/dev/null; do
-            sleep 30
-            echo "mech-engine all-features test is still running"
-          done
-          wait "$engine_test_pid"
+      - name: Run compiler-enabled program library suite
+        # Exhaustive native-link feature coverage is intentionally split across
+        # the native-linkage-surface jobs instead of linked into one enormous
+        # test harness on a memory-constrained hosted runner.
+        run: cargo test -p mech-engine --lib --tests --features compiler
 
       - name: Run non-UTF-8 source-root regressions
         run: |
