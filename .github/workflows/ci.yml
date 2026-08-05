@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   cargo-language:
-    name: Language, features, and safety
+    name: Language and safety
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -32,21 +32,6 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
-      - name: Check compiler and feature boundaries
-        run: |
-          bash scripts/check-bytecode-compiler-boundaries.sh
-          cargo check --no-default-features
-          cargo check --no-default-features --features build
-          cargo check --no-default-features --features test
-          cargo check -p mech-core --no-default-features --features mika
-          cargo check -p mech-core --no-default-features --features "mika serde"
-          cargo check -p mech-core --no-default-features --features no_std
-          cargo check -p mech-core --no-default-features --features baselib
-          cargo check -p mech-core --no-default-features --features "matrix,matrixd,f64"
-          cargo check -p mech-syntax --no-default-features --features mika
-          cargo check -p mech-engine --no-default-features --features program
-          cargo check -p mech-engine --no-default-features --features "compiler functions formulas string_concat"
-
       - name: Run language suites
         run: |
           cargo test --test interpreter --test bytecode
@@ -54,12 +39,6 @@ jobs:
           cargo test -p mech-bytecode
           cargo test -p mech-core
           cargo test -p mech-engine --lib --tests --features compiler
-
-      - name: Exercise the default and reduced CLIs
-        run: |
-          cargo build --bin mech
-          ./target/debug/mech test examples/working
-          cargo run --bin mech --no-default-features --features test -- test examples/working/fizzbuzz.mec
 
       - name: Run focused source and feature regressions
         run: |
@@ -90,8 +69,44 @@ jobs:
             whole_div_assignment_selects_div_operation_only \
             -- --exact --nocapture
 
+  cargo-features:
+    name: Feature and CLI boundaries
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Check compiler and feature boundaries
+        run: |
+          bash scripts/check-bytecode-compiler-boundaries.sh
+          cargo check --no-default-features
+          cargo check --no-default-features --features build
+          cargo check --no-default-features --features test
+          cargo check -p mech-core --no-default-features --features mika
+          cargo check -p mech-core --no-default-features --features "mika serde"
+          cargo check -p mech-core --no-default-features --features no_std
+          cargo check -p mech-core --no-default-features --features baselib
+          cargo check -p mech-core --no-default-features --features "matrix,matrixd,f64"
+          cargo check -p mech-syntax --no-default-features --features mika
+          cargo check -p mech-engine --no-default-features --features program
+          cargo check -p mech-engine --no-default-features --features "compiler functions formulas string_concat"
+
+      - name: Exercise the default and reduced CLIs
+        run: |
+          cargo build --bin mech
+          ./target/debug/mech test examples/working
+          cargo run --bin mech --no-default-features --features test -- test examples/working/fizzbuzz.mec
+
   cargo-runtime:
-    name: Runtime, hosts, and source examples
+    name: Runtime and host tests
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -134,9 +149,6 @@ jobs:
             --features "repl mika" \
             mika_farewell_remains_visible_after_drop
 
-      - name: Run all source-mode runtime examples with one shared target
-        run: bash scripts/run-runtime-source-targets.sh all
-
   function-system:
     name: Representative function-system contracts
     runs-on: ubuntu-latest
@@ -165,7 +177,7 @@ jobs:
           bash scripts/check-standard-machine-baseline.sh representative
 
   distribution:
-    name: Representative distributions and packages
+    name: Distributions, packages, and WASM
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -186,6 +198,16 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup target add wasm32-unknown-unknown --toolchain nightly-2026-03-03
 
+      - name: Install wasm-pack
+        env:
+          WASM_PACK_VERSION: v0.15.0
+        run: |
+          curl -fsSL \
+            "https://github.com/wasm-bindgen/wasm-pack/releases/download/$WASM_PACK_VERSION/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/wasm-pack.tar.gz
+          tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
+          sudo install "/tmp/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
+
       - name: Check representative distribution graphs
         run: |
           bash scripts/check-static-distribution-profiles.sh static
@@ -200,6 +222,17 @@ jobs:
 
       - name: Validate Cargo package archive contents
         run: python3 scripts/check-package-archives.py
+
+      - name: Execute official bytecode fixtures in Chrome
+        run: |
+          wasm-pack test \
+            --headless \
+            --chrome \
+            src/wasm \
+            --no-default-features \
+            --features "browser_project,set_union,set_element_of" \
+            -- \
+            --nocapture
 
       - name: Upload package archive manifests
         if: ${{ always() }}
@@ -227,8 +260,8 @@ jobs:
       - name: Compare two fresh compiler processes
         run: cargo +nightly-2026-03-03 run --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml -- --check
 
-  dynamic-modules:
-    name: Dynamic modules
+  runtime-source:
+    name: Runtime source examples and dynamic modules
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -236,9 +269,16 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - name: Install Rust nightly and stable
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup toolchain install stable --profile minimal
+      - name: Run all source-mode runtime examples with one shared target
+        run: bash scripts/run-runtime-source-targets.sh all
       - name: Run dynamic module smoke path
+        env:
+          RUSTUP_TOOLCHAIN: stable
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target/dynamic-modules
         run: bash scripts/test-dynamic-modules.sh
 
   native-linkage-owners:
@@ -468,35 +508,6 @@ jobs:
         if: ${{ always() }}
         run: rm -rf src/wasm/pkg
 
-  wasm:
-    name: WASM bytecode v1 in Chrome
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Install Rust and WASM
-        run: |
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2026-03-03
-      - name: Install wasm-pack
-        env:
-          WASM_PACK_VERSION: v0.15.0
-        run: |
-          curl -fsSL \
-            "https://github.com/wasm-bindgen/wasm-pack/releases/download/$WASM_PACK_VERSION/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl.tar.gz" \
-            -o /tmp/wasm-pack.tar.gz
-          tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
-          sudo install "/tmp/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
-      - name: Execute official bytecode fixtures
-        run: |
-          wasm-pack test \
-            --headless \
-            --chrome \
-            src/wasm \
-            --no-default-features \
-            --features "browser_project,set_union,set_element_of" \
-            -- \
-            --nocapture
-
   windows-build-path:
     name: Windows build and path contracts
     runs-on: windows-latest
@@ -516,8 +527,8 @@ jobs:
         run: cargo build --bin mech
       - name: Run runtime path contracts
         run: cargo test -p mech-runtime --lib --no-default-features --features "base,u64" windows_ -- --nocapture
-      - name: Run source-tooling path contracts
-        run: cargo test -p mech --no-default-features --features "run build test" --test windows_source_paths -- --nocapture
+      - name: Run Windows-sensitive root contract
+        run: cargo test -p mech --lib --no-default-features --features "run repl" repl::runtime_load_tests::runtime_repl_load_request_preserves_explicit_source_schemes -- --exact --nocapture
 
   windows-format-serve:
     name: Windows REPL, formatter, and serve contracts
@@ -538,7 +549,8 @@ jobs:
         run: |
           cargo check --bin mech --no-default-features --features repl
           cargo check --bin mech --no-default-features --features "repl mika"
-          cargo test -p mech --lib --no-default-features --features "run repl" repl::runtime_load_tests::runtime_repl_load_request_preserves_explicit_source_schemes -- --exact --nocapture
+      - name: Run source-tooling path contracts
+        run: cargo test -p mech --no-default-features --features "run build test" --test windows_source_paths -- --nocapture
       - name: Run Windows serve suite
         run: cargo test -p mech --no-default-features --features serve --test mech_serve -- --nocapture
       - name: Run Windows formatter and serve shim contracts
@@ -570,18 +582,18 @@ jobs:
     if: ${{ always() }}
     needs:
       - cargo-language
+      - cargo-features
       - cargo-runtime
+      - runtime-source
       - function-system
       - distribution
       - bytecode
-      - dynamic-modules
       - native-linkage-owners
       - native-linkage
       - native-linux
       - native-windows
       - native-macos
       - project-browser
-      - wasm
       - windows-build-path
       - windows-format-serve
     runs-on: ubuntu-latest
@@ -589,33 +601,33 @@ jobs:
       - name: Require every pull-request contract
         env:
           LANGUAGE_RESULT: ${{ needs.cargo-language.result }}
+          FEATURES_RESULT: ${{ needs.cargo-features.result }}
           RUNTIME_RESULT: ${{ needs.cargo-runtime.result }}
+          RUNTIME_SOURCE_RESULT: ${{ needs.runtime-source.result }}
           FUNCTION_RESULT: ${{ needs.function-system.result }}
           DISTRIBUTION_RESULT: ${{ needs.distribution.result }}
           BYTECODE_RESULT: ${{ needs.bytecode.result }}
-          DYNAMIC_RESULT: ${{ needs.dynamic-modules.result }}
           LINKAGE_OWNERS_RESULT: ${{ needs.native-linkage-owners.result }}
           LINKAGE_RESULT: ${{ needs.native-linkage.result }}
           NATIVE_LINUX_RESULT: ${{ needs.native-linux.result }}
           NATIVE_WINDOWS_RESULT: ${{ needs.native-windows.result }}
           NATIVE_MACOS_RESULT: ${{ needs.native-macos.result }}
           BROWSER_RESULT: ${{ needs.project-browser.result }}
-          WASM_RESULT: ${{ needs.wasm.result }}
           WINDOWS_BUILD_RESULT: ${{ needs.windows-build-path.result }}
           WINDOWS_FORMAT_RESULT: ${{ needs.windows-format-serve.result }}
         run: |
           test "$LANGUAGE_RESULT" = success
+          test "$FEATURES_RESULT" = success
           test "$RUNTIME_RESULT" = success
+          test "$RUNTIME_SOURCE_RESULT" = success
           test "$FUNCTION_RESULT" = success
           test "$DISTRIBUTION_RESULT" = success
           test "$BYTECODE_RESULT" = success
-          test "$DYNAMIC_RESULT" = success
           test "$LINKAGE_OWNERS_RESULT" = success
           test "$LINKAGE_RESULT" = success
           test "$NATIVE_LINUX_RESULT" = success
           test "$NATIVE_WINDOWS_RESULT" = success
           test "$NATIVE_MACOS_RESULT" = success
           test "$BROWSER_RESULT" = success
-          test "$WASM_RESULT" = success
           test "$WINDOWS_BUILD_RESULT" = success
           test "$WINDOWS_FORMAT_RESULT" = success
