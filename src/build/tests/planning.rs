@@ -26,7 +26,10 @@ use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, Runt
 mod isolated;
 use isolated::{OwnerProfile, RunnerAction, fixture_path, run_owner};
 #[cfg(not(feature = "standard-hosts"))]
-use mech_runtime::{HostContextManifest, HostManifestConfig};
+use mech_runtime::{
+    HostContextManifest, HostManifestConfig, RuntimeHostFactory, RuntimeHostInstallation,
+    RuntimeResourceProvider, RuntimeResourceReadRequest, materialize_host_manifest,
+};
 
 const LITERAL_F64: &[u8] =
     include_bytes!("../../../tests/architecture/bytecode-v1/literal-f64.mecb");
@@ -61,6 +64,73 @@ fn validate_cli_settings(_instance: &str, _settings: &ConfigValue) -> MResult<()
     Ok(())
 }
 
+#[cfg(not(feature = "standard-hosts"))]
+#[derive(Debug)]
+struct PlanningCliResourceProvider {
+    instance: String,
+}
+
+#[cfg(not(feature = "standard-hosts"))]
+impl RuntimeResourceProvider for PlanningCliResourceProvider {
+    fn scheme(&self) -> &str {
+        "cli"
+    }
+
+    fn base_uris(&self) -> Vec<String> {
+        ["env", "stdout", "stderr"]
+            .into_iter()
+            .map(|context| format!("cli://{}/{context}", self.instance))
+            .collect()
+    }
+
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        unreachable!("native planning does not execute resource access")
+    }
+}
+
+#[cfg(not(feature = "standard-hosts"))]
+#[derive(Debug)]
+struct PlanningCliHostFactory {
+    manifest: HostManifestConfig,
+}
+
+#[cfg(not(feature = "standard-hosts"))]
+impl RuntimeHostFactory for PlanningCliHostFactory {
+    fn provider_name(&self) -> &str {
+        "cli"
+    }
+
+    fn manifest(&self) -> &HostManifestConfig {
+        &self.manifest
+    }
+
+    fn validate_settings(&self, instance: &str, settings: &ConfigValue) -> MResult<()> {
+        validate_cli_settings(instance, settings)
+    }
+
+    fn instantiate(
+        &self,
+        instance: &str,
+        settings: &ConfigValue,
+    ) -> MResult<RuntimeHostInstallation> {
+        self.validate_settings(instance, settings)?;
+        Ok(RuntimeHostInstallation {
+            interface: materialize_host_manifest(instance, &self.manifest)?,
+            resource_providers: vec![Box::new(PlanningCliResourceProvider {
+                instance: instance.to_owned(),
+            })],
+            input_drivers: Vec::new(),
+        })
+    }
+}
+
+#[cfg(not(feature = "standard-hosts"))]
+fn cli_planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
+    Ok(Box::new(PlanningCliHostFactory {
+        manifest: cli_manifest()?,
+    }))
+}
+
 #[cfg(feature = "standard-hosts")]
 fn cli_host_catalog() -> Arc<NativeHostCatalog> {
     mech_build::standard_native_host_catalog().unwrap()
@@ -79,6 +149,7 @@ fn cli_host_catalog() -> Arc<NativeHostCatalog> {
             supported_targets: &[NativeTargetFamily::Unix, NativeTargetFamily::Windows],
             manifest: cli_manifest,
             validate_settings: validate_cli_settings,
+            planning_factory: cli_planning_factory,
         })
         .unwrap();
     Arc::new(catalog)

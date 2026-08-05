@@ -67,17 +67,12 @@ pub fn generated_cases() -> Vec<GeneratedCase> {
             "dynamic-matrix-add-f64.mecb",
             "[26 26 26 26 26; 26 26 26 26 26; 26 26 26 26 26; 26 26 26 26 26; 26 26 26 26 26]",
         ),
-        frozen(
-            "cli",
-            "generated_native_cli",
-            "cli-stdout.mecb",
-            "phase1-hosted-ok\n\"done\"",
-        ),
+        generated_cli_alias_case(),
         hosted(
             "console",
             "generated_native_console",
             "console",
-            "@out := console://console/output{:write(line)}\n@out/line <- \"generated-console-ok\"\n\"console-done\"",
+            "@out := console://output{:write(line)}\n@out/line <- \"generated-console-ok\"\n\"console-done\"",
             "generated-console-ok\n\"console-done\"",
         ),
         hosted(
@@ -114,6 +109,16 @@ pub fn generated_cases() -> Vec<GeneratedCase> {
         ),
         actor_case(),
     ]
+}
+
+pub fn generated_cli_alias_case() -> GeneratedCase {
+    hosted(
+        "cli",
+        "generated_native_cli",
+        "cli",
+        "@out := cli://stdout{:write(line)}\n@out/line <- \"phase1-hosted-ok\"\n\"done\"",
+        "phase1-hosted-ok\n\"done\"",
+    )
 }
 
 fn frozen(
@@ -228,6 +233,7 @@ fn host_configuration(
 ) {
     let empty = || ConfigValue::Map(BTreeMap::new());
     match provider {
+        "cli" => ("cli", "cli/stdout", vec!["write"], vec!["line"], empty()),
         "console" => (
             "console",
             "console/output",

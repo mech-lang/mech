@@ -373,6 +373,7 @@ jobs:
             --test planning \
             --test native_host_pruning \
             --test standard_host_source_planning
+          cargo +nightly-2026-03-03 test -p mech --features build --test mech_build
           python3 scripts/check-native-host-catalog.py
       - name: Build representative hosted and actor applications
         run: |
@@ -406,6 +407,8 @@ jobs:
       - name: Build scalar, hosted, and actor applications
         shell: pwsh
         run: |
+          cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --lib project::manifest::tests::windows_cargo_paths_require_the_same_volume -- --exact
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $env:MECH_NATIVE_GENERATED_CASE = "scalar,console,actor"
           cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_generated_end_to_end -- --nocapture
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

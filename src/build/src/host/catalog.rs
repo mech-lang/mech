@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use mech_core::{MResult, MechError, MechErrorKind};
-use mech_runtime::{ConfigValue, HostManifestConfig};
+use mech_runtime::{ConfigValue, HostManifestConfig, RuntimeHostFactory};
 
 /// Broad target families used by trusted native-host metadata.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -66,6 +66,7 @@ pub struct NativeHostLinkage {
     pub supported_targets: &'static [NativeTargetFamily],
     pub manifest: fn() -> MResult<HostManifestConfig>,
     pub validate_settings: fn(instance: &str, settings: &ConfigValue) -> MResult<()>,
+    pub planning_factory: fn() -> MResult<Box<dyn RuntimeHostFactory>>,
 }
 
 impl std::fmt::Debug for NativeHostLinkage {
@@ -179,6 +180,20 @@ fn validate_provider_linkage(linkage: &NativeHostLinkage) -> MResult<()> {
             linkage.provider, manifest.provider
         ));
     }
+    let planning_factory = (linkage.planning_factory)()?;
+    if planning_factory.provider_name() != linkage.provider {
+        return invalid(format!(
+            "native host provider `{}` does not match planning-factory provider `{}`",
+            linkage.provider,
+            planning_factory.provider_name()
+        ));
+    }
+    if planning_factory.manifest() != &manifest {
+        return invalid(format!(
+            "native host provider `{}` planning-factory manifest differs from its trusted linkage manifest",
+            linkage.provider
+        ));
+    }
     Ok(())
 }
 
@@ -281,6 +296,34 @@ impl MechErrorKind for NativeHostCatalogInvalid {
 mod tests {
     use super::*;
 
+    #[derive(Debug)]
+    struct TestFactory {
+        provider: &'static str,
+        manifest: HostManifestConfig,
+    }
+
+    impl RuntimeHostFactory for TestFactory {
+        fn provider_name(&self) -> &str {
+            self.provider
+        }
+
+        fn manifest(&self) -> &HostManifestConfig {
+            &self.manifest
+        }
+
+        fn validate_settings(&self, _instance: &str, _settings: &ConfigValue) -> MResult<()> {
+            Ok(())
+        }
+
+        fn instantiate(
+            &self,
+            _instance: &str,
+            _settings: &ConfigValue,
+        ) -> MResult<mech_runtime::RuntimeHostInstallation> {
+            unreachable!("catalog validation must not instantiate planning factories")
+        }
+    }
+
     fn test_manifest() -> MResult<HostManifestConfig> {
         Ok(HostManifestConfig {
             provider: "test".to_string(),
@@ -296,6 +339,23 @@ mod tests {
         Ok(())
     }
 
+    fn planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
+        Ok(Box::new(TestFactory {
+            provider: "test",
+            manifest: test_manifest()?,
+        }))
+    }
+
+    fn z_test_planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
+        Ok(Box::new(TestFactory {
+            provider: "z-test",
+            manifest: HostManifestConfig {
+                provider: "z-test".to_owned(),
+                ..test_manifest()?
+            },
+        }))
+    }
+
     fn linkage() -> NativeHostLinkage {
         NativeHostLinkage {
             provider: "test",
@@ -306,6 +366,7 @@ mod tests {
             supported_targets: &[NativeTargetFamily::Unix, NativeTargetFamily::Windows],
             manifest: test_manifest,
             validate_settings,
+            planning_factory,
         }
     }
 
@@ -319,6 +380,7 @@ mod tests {
                 ..test_manifest()?
             })
         };
+        second.planning_factory = z_test_planning_factory;
 
         let mut catalog = NativeHostCatalog::new();
         catalog.insert_provider(second).unwrap();
@@ -343,6 +405,38 @@ mod tests {
         invalid.provider = "other";
         invalid.cargo_features = &["z", "a"];
         assert!(catalog.insert_provider(invalid).is_err());
+    }
+
+    #[test]
+    fn planning_factory_identity_and_manifest_are_exact() {
+        let mut wrong_provider = linkage();
+        wrong_provider.planning_factory = z_test_planning_factory;
+        let error = NativeHostCatalog::new()
+            .insert_provider(wrong_provider)
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "NativeHostCatalogInvalid");
+        assert!(error.kind_message().contains("planning-factory provider"));
+
+        fn wrong_manifest_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
+            Ok(Box::new(TestFactory {
+                provider: "test",
+                manifest: HostManifestConfig {
+                    provider: "test".to_owned(),
+                    contexts: vec![mech_runtime::HostContextManifest {
+                        name: "other".to_owned(),
+                        base_uri_template: "test://{instance}/other".to_owned(),
+                        operations: vec!["read".to_owned()],
+                    }],
+                },
+            }))
+        }
+        let mut wrong_manifest = linkage();
+        wrong_manifest.planning_factory = wrong_manifest_factory;
+        let error = NativeHostCatalog::new()
+            .insert_provider(wrong_manifest)
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "NativeHostCatalogInvalid");
+        assert!(error.kind_message().contains("manifest differs"));
     }
 
     #[test]
