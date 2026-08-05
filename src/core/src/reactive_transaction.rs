@@ -334,7 +334,9 @@ mod tests {
     }
 
     impl MechFunctionImpl for JournalFunction {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
 
         fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
             self.events
@@ -444,7 +446,9 @@ mod tests {
     }
 
     impl MechFunctionImpl for JournalRegister {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
 
         fn out(&self) -> Value {
             Value::Index(self.sink.clone())

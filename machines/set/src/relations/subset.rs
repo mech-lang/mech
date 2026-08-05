@@ -38,7 +38,7 @@ impl MechFunctionFactory for SetSubsetFxn {
     }
 }
 impl MechFunctionImpl for SetSubsetFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             // Get mutable reference to the output set
             let mut out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
@@ -49,7 +49,8 @@ impl MechFunctionImpl for SetSubsetFxn {
 
             // Check if lhs is subset of rhs
             *out_ptr = lhs_ptr.set.is_subset(&(rhs_ptr.set));
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Bool(self.out.clone())

@@ -62,13 +62,14 @@ macro_rules! vertcat_two_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
                     let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -165,14 +166,15 @@ macro_rules! vertcat_three_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
                     let e2_ptr = (*(self.e2.as_ptr())).clone();
                     let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -273,7 +275,7 @@ macro_rules! vertcat_four_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -281,7 +283,8 @@ macro_rules! vertcat_four_args {
                     let e3_ptr = (*(self.e3.as_ptr())).clone();
                     let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -364,9 +367,10 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let offset = self.e0.copy_into_row_major(&self.out, 0);
         self.e1.copy_into_row_major(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -467,10 +471,11 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_row_major(&self.out, 0);
         offset += self.e1.copy_into_row_major(&self.out, offset);
         self.e2.copy_into_row_major(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -582,11 +587,12 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_row_major(&self.out, 0);
         offset += self.e1.copy_into_row_major(&self.out, offset);
         offset += self.e2.copy_into_row_major(&self.out, offset);
         self.e3.copy_into_row_major(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -686,11 +692,12 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = 0;
         for e in &self.e0 {
             offset += e.copy_into_row_major(&self.out, offset);
         }
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -824,7 +831,9 @@ macro_rules! vertical_concatenate {
         T: Debug + Clone + Sync + Send + PartialEq + 'static,
         Ref<[<$vec_size>]<T>>: ToValue
       {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
         fn out(&self) -> Value { self.out.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
 
@@ -902,9 +911,10 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DVector<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_v(&self.out, 0);
         self.e1.copy_into_v(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1003,10 +1013,11 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DVector<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_v(&self.out, 0);
         offset += self.e1.copy_into_v(&self.out, offset);
         self.e2.copy_into_v(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1115,11 +1126,12 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DVector<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_v(&self.out, 0);
         offset += self.e1.copy_into_v(&self.out, offset);
         offset += self.e2.copy_into_v(&self.out, offset);
         self.e3.copy_into_v(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1228,7 +1240,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DVector<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
             for (e, i) in &self.matrix {
@@ -1237,7 +1249,8 @@ where
             for (e, i) in &self.scalar {
                 out_ptr[*i] = e.borrow().clone();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1323,7 +1336,9 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<Matrix1<T>>: ToValue,
 {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.out.to_value()
     }
@@ -1461,7 +1476,9 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DVector<T>>: ToValue,
 {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.out.to_value()
     }
@@ -1741,7 +1758,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<Vector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -1752,7 +1769,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e3_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()

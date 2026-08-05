@@ -82,7 +82,7 @@ macro_rules! test_catalog_internal_operation {
                 .specializer
                 .specialize(&arguments)
                 .expect("internal operation must specialize for the test arguments");
-            function.solve();
+            function.solve_result().unwrap();
             assert_eq!(function.out(), $expected);
         }
     };
@@ -3825,7 +3825,7 @@ B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |"#,
         .specializer
         .specialize(&arguments)
         .expect("table join must specialize for table arguments");
-    function.solve();
+    function.solve_result().unwrap();
 
     let Value::Table(table) = function.out() else {
         panic!("table join must return a table")

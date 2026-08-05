@@ -20,13 +20,9 @@ struct RuntimeStepProbe {
 
 #[cfg(feature = "functions")]
 impl MechFunctionImpl for RuntimeStepProbe {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         self.calls.fetch_add(1, Ordering::SeqCst);
         *self.output.borrow_mut() += 1;
-    }
-
-    fn solve_result(&self) -> MResult<()> {
-        self.solve();
         Ok(())
     }
 

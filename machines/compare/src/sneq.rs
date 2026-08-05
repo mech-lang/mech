@@ -9,7 +9,7 @@ pub struct StrictNotEqValue {
 }
 
 impl MechFunctionImpl for StrictNotEqValue {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let lhs = match &self.lhs {
             Value::MutableReference(v) => v.borrow().clone(),
             v => v.clone(),
@@ -19,6 +19,7 @@ impl MechFunctionImpl for StrictNotEqValue {
             v => v.clone(),
         };
         *self.out.borrow_mut() = lhs != rhs;
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()

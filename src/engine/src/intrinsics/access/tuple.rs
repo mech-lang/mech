@@ -9,8 +9,9 @@ struct TupleAccessElement {
 }
 
 impl MechFunctionImpl for TupleAccessElement {
-    fn solve(&self) {
-        ()
+    fn solve_result(&self) -> MResult<()> {
+        ();
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.clone()

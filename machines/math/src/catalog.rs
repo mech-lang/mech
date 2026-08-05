@@ -1,5 +1,5 @@
 use mech_core::{
-    FunctionArgumentRole, FunctionArgs, FunctionCatalogBuilder, MResult, MechFunctionFactory,
+    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, MechFunctionFactory,
     RuntimeFunctionContract, RuntimeOutputAliasPolicy, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
@@ -45,7 +45,9 @@ fn validate_op_assign_slice(args: &FunctionArgs) -> MResult<()> {
     let output = args
         .output_value()
         .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| function_shape_contract_violation(contract, "output must be matrix-backed"))?;
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "output must be matrix-backed")
+        })?;
     for index in 0..args.input_count() {
         if let Some(input) = args
             .input_value(index)
@@ -470,25 +472,44 @@ macro_rules! install_math_float_unop {
 
 macro_rules! math_float_unop_families {
     ($callback:ident) => {
-        $callback!(MathJ0, "j0"); $callback!(MathJ1, "j1");
-        $callback!(MathY0, "y0"); $callback!(MathY1, "y1");
-        $callback!(MathLgamma, "lgamma"); $callback!(MathTgamma, "tgamma");
-        $callback!(MathLog, "log"); $callback!(MathLog10, "log10");
-        $callback!(MathLog1p, "log1p"); $callback!(MathLog2, "log2");
-        $callback!(MathCbrt, "cbrt"); $callback!(MathSqrt, "sqrt");
-        $callback!(MathCeil, "ceil"); $callback!(MathFloor, "floor");
-        $callback!(MathRint, "rint"); $callback!(MathRound, "round");
-        $callback!(MathRoundeven, "roundeven"); $callback!(MathTrunc, "trunc");
-        $callback!(MathErf, "erf"); $callback!(MathErfc, "erfc");
-        $callback!(MathAcos, "acos"); $callback!(MathAcosh, "acosh");
-        $callback!(MathAcot, "acot"); $callback!(MathAcsc, "acsc");
-        $callback!(MathAsec, "asec"); $callback!(MathAsin, "asin");
-        $callback!(MathAsinh, "asinh"); $callback!(MathAtan, "atan");
-        $callback!(MathAtanh, "atanh"); $callback!(MathCos, "cos");
-        $callback!(MathCosh, "cosh"); $callback!(MathCot, "cot");
-        $callback!(MathCsc, "csc"); $callback!(MathSec, "sec");
-        $callback!(MathSin, "sin"); $callback!(MathSinh, "sinh");
-        $callback!(MathTan, "tan"); $callback!(MathTanh, "tanh");
+        $callback!(MathJ0, "j0");
+        $callback!(MathJ1, "j1");
+        $callback!(MathY0, "y0");
+        $callback!(MathY1, "y1");
+        $callback!(MathLgamma, "lgamma");
+        $callback!(MathTgamma, "tgamma");
+        $callback!(MathLog, "log");
+        $callback!(MathLog10, "log10");
+        $callback!(MathLog1p, "log1p");
+        $callback!(MathLog2, "log2");
+        $callback!(MathCbrt, "cbrt");
+        $callback!(MathSqrt, "sqrt");
+        $callback!(MathCeil, "ceil");
+        $callback!(MathFloor, "floor");
+        $callback!(MathRint, "rint");
+        $callback!(MathRound, "round");
+        $callback!(MathRoundeven, "roundeven");
+        $callback!(MathTrunc, "trunc");
+        $callback!(MathErf, "erf");
+        $callback!(MathErfc, "erfc");
+        $callback!(MathAcos, "acos");
+        $callback!(MathAcosh, "acosh");
+        $callback!(MathAcot, "acot");
+        $callback!(MathAcsc, "acsc");
+        $callback!(MathAsec, "asec");
+        $callback!(MathAsin, "asin");
+        $callback!(MathAsinh, "asinh");
+        $callback!(MathAtan, "atan");
+        $callback!(MathAtanh, "atanh");
+        $callback!(MathCos, "cos");
+        $callback!(MathCosh, "cosh");
+        $callback!(MathCot, "cot");
+        $callback!(MathCsc, "csc");
+        $callback!(MathSec, "sec");
+        $callback!(MathSin, "sin");
+        $callback!(MathSinh, "sinh");
+        $callback!(MathTan, "tan");
+        $callback!(MathTanh, "tanh");
     };
 }
 
@@ -634,7 +655,9 @@ macro_rules! install_math_neg_for_scalar {
 }
 
 macro_rules! install_math_neg {
-    ($builder:ident) => { for_each_math_neg_scalar!(install_math_neg_for_scalar, $builder); };
+    ($builder:ident) => {
+        for_each_math_neg_scalar!(install_math_neg_for_scalar, $builder);
+    };
 }
 
 macro_rules! install_float_unop {
@@ -645,13 +668,10 @@ macro_rules! install_float_unop {
 
 macro_rules! install_exact_runtime {
     ($builder:expr, $factory:ident) => {
-        $builder
-            .insert_runtime_factory::<$factory>(
-                stringify!($factory),
-                RuntimeFunctionContract::same_shape(
-                    RuntimeOutputAliasPolicy::DisallowInputAlias,
-                ),
-            )?;
+        $builder.insert_runtime_factory::<$factory>(
+            stringify!($factory),
+            RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
+        )?;
     };
 }
 
@@ -1760,7 +1780,12 @@ for_each_atan2_factory!(declare_atan2_factory, ());
 
 #[cfg(feature = "atan2")]
 fn install_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    macro_rules! register_atan2_factory { (($builder:ident); $cfg:meta; $_scalar_feature:literal; $factory:ident; [$($_shape_feature:literal),*]) => { #[cfg(all(feature = "atan2", $cfg))] mech_core::paste::paste! { [<register_ $factory:snake>]($builder)?; } }; }
+    macro_rules! register_atan2_factory {
+        (($builder:ident); $cfg:meta; $_scalar_feature:literal; $factory:ident; [$($_shape_feature:literal),*]) => {
+            #[cfg(all(feature = "atan2", $cfg))]
+            mech_core::paste::paste! { [<register_ $factory:snake>]($builder)?; }
+        };
+    }
     for_each_atan2_factory!(register_atan2_factory, (builder));
     Ok(())
 }

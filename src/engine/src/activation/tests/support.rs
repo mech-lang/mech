@@ -51,9 +51,10 @@ pub(super) struct FailingPatternRegister {
     stage_calls: Arc<AtomicUsize>,
 }
 impl MechFunctionImpl for FailingPatternRegister {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         self.solve_calls.fetch_add(1, Ordering::SeqCst);
         *self.sink.borrow_mut() = -999.0;
+        Ok(())
     }
     fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
         self.stage_calls.fetch_add(1, Ordering::SeqCst);

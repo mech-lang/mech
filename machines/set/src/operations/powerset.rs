@@ -80,7 +80,7 @@ where
 }
 
 impl MechFunctionImpl for SetPowersetFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             // Get mutable reference to the output set
             let out_ptr: &mut MechSet = &mut *(self.out.as_mut_ptr());
@@ -102,7 +102,8 @@ impl MechFunctionImpl for SetPowersetFxn {
             // Update metadata
             out_ptr.sync_cardinality_from_contents();
             out_ptr.kind = ValueKind::Set(Box::new(input_ptr.kind.clone()), None);
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Set(self.out.clone())

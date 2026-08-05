@@ -8,8 +8,9 @@ pub struct RecordAccessField {
     pub source: Value,
 }
 impl MechFunctionImpl for RecordAccessField {
-    fn solve(&self) {
-        ()
+    fn solve_result(&self) -> MResult<()> {
+        ();
+        Ok(())
     }
     fn out(&self) -> Value {
         self.source.clone()
@@ -102,8 +103,9 @@ pub struct RecordAccessSwizzle {
 }
 
 impl MechFunctionImpl for RecordAccessSwizzle {
-    fn solve(&self) {
-        ()
+    fn solve_result(&self) -> MResult<()> {
+        ();
+        Ok(())
     }
     fn out(&self) -> Value {
         self.source.clone()

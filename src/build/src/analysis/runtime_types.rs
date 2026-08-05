@@ -24,6 +24,8 @@ pub(crate) fn analyze_runtime_types(types: &[RuntimeType]) -> MResult<RuntimeTyp
         .into_iter()
         .map(NativeValueFeature::cargo_feature)
         .map(str::to_owned)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
         .collect();
 
     Ok(RuntimeTypeAnalysis {

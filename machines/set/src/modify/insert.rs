@@ -51,7 +51,7 @@ fn match_types(type1: ValueKind, type2: ValueKind) -> (bool, bool) {
 }
 
 impl MechFunctionImpl for SetInsertFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             // Get mutable reference to the output set
             let mut out_ptr: &mut MechSet = &mut *(self.out.as_mut_ptr());
@@ -81,7 +81,8 @@ impl MechFunctionImpl for SetInsertFxn {
             if (types_match && sizes_match) {
                 out_ptr.kind = set_ptr.kind.clone();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Set(self.out.clone())

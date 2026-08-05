@@ -16,12 +16,13 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<T>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let source_ptr = self.source.as_ptr();
         let sink_ptr = self.sink.as_mut_ptr();
         unsafe {
             *sink_ptr = (*source_ptr).clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.sink.to_value()

@@ -15,7 +15,9 @@ use crate::{MResult, ReactiveCellId, Ref, ToValue, Value};
 struct RetainedZstFunction;
 
 impl MechFunctionImpl for RetainedZstFunction {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         Value::Empty
     }

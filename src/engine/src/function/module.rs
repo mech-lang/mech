@@ -954,12 +954,6 @@ fn solve_dynamic_binary_scalar(
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
-    fn solve(&self) {
-        if let Err(error) = self.solve_result() {
-            dynamic_trace(error.full_chain_message());
-        }
-    }
-
     fn solve_result(&self) -> MResult<()> {
         solve_dynamic_binary_scalar(&self.n, &self.k, &self.out, self.kernel, &self.name)
     }
@@ -1030,12 +1024,6 @@ fn solve_dynamic_binary_broadcast(
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
-    fn solve(&self) {
-        if let Err(error) = self.solve_result() {
-            dynamic_trace(error.full_chain_message());
-        }
-    }
-
     fn solve_result(&self) -> MResult<()> {
         solve_dynamic_binary_broadcast(&self.lhs, &self.rhs, &self.out, self.kernel, &self.name)
     }
@@ -1094,12 +1082,6 @@ fn solve_dynamic_unary_scalar(
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
-    fn solve(&self) {
-        if let Err(error) = self.solve_result() {
-            dynamic_trace(error.full_chain_message());
-        }
-    }
-
     fn solve_result(&self) -> MResult<()> {
         solve_dynamic_unary_scalar(&self.input, &self.out, self.kernel, &self.name)
     }
@@ -1187,12 +1169,6 @@ fn solve_dynamic_unary_view(
 
 #[cfg(feature = "dynamic-modules")]
 impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
-    fn solve(&self) {
-        if let Err(error) = self.solve_result() {
-            dynamic_trace(error.full_chain_message());
-        }
-    }
-
     fn solve_result(&self) -> MResult<()> {
         solve_dynamic_unary_view(&self.input, &self.out, self.kernel, &self.name)
     }

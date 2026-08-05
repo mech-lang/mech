@@ -107,9 +107,9 @@ pub use self::catalog::*;
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
+    pub use crate::catalog::__mech_native::*;
     #[cfg(feature = "add")]
     pub use crate::ops::add::__mech_native::*;
-    pub use crate::catalog::__mech_native::*;
 }
 
 // ----------------------------------------------------------------------------

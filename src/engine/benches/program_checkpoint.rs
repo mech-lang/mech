@@ -15,7 +15,9 @@ struct BenchNode {
 }
 
 impl MechFunctionImpl for BenchNode {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         Value::F64(self.out.clone())
     }

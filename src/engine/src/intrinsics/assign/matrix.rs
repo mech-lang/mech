@@ -115,13 +115,14 @@ macro_rules! impl_set_all_fxn_s {
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
                     let source_ptr = &*self.source.as_ptr();
                     let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
                     $op!(source_ptr, ix_ptr, sink_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -261,13 +262,14 @@ macro_rules! impl_assign_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let mut sink_ptr = &mut *self.sink.as_mut_ptr();
                     let ix_val = (*self.ixes.as_ptr()).clone();
                     let source_val = (*self.source.as_ptr()).clone();
                     $op!(source_val, ix_val, sink_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -615,7 +617,7 @@ where
     S: StorageMut<T, R, C> + Debug + IsContiguous,
     Ref<naMatrix<T, R, C, S>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let sink = &mut *self.sink.as_mut_ptr();
             let source_val = (*self.source.as_ptr()).clone();
@@ -623,7 +625,8 @@ where
             for elem in slice.iter_mut() {
                 *elem = source_val.clone();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.sink.to_value()
@@ -800,14 +803,15 @@ where
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let sink_ptr = &mut *self.sink.as_mut_ptr();
             let source_val = (*self.source.as_ptr()).clone();
             let r = (*self.ixes.0.as_ptr()).clone();
             let c = (*self.ixes.1.as_ptr()).clone();
             sink_ptr[(r - 1, c - 1)] = source_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.sink.to_value()
@@ -1067,13 +1071,14 @@ macro_rules! impl_assign_scalar_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
                     let source_ptr = &*self.source.as_ptr();
                     let ix_ptr = &(*self.ixes.as_ptr());
                     $op!(source_ptr, ix_ptr, sink_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -1416,14 +1421,15 @@ macro_rules! impl_assign_range_scalar_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink = &mut *self.sink.as_mut_ptr();
                     let source = &*self.source.as_ptr();
                     let ix1 = (*self.ixes.0.as_ptr()).as_ref();
                     let ix2 = (*self.ixes.1.as_ptr());
                     $op!(sink, ix1, ix2, source);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -1558,14 +1564,15 @@ macro_rules! impl_assign_range_scalar_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink = &mut *self.sink.as_mut_ptr();
                     let source = &*self.source.as_ptr();
                     let ix1 = (*self.ixes.0.as_ptr()).as_ref();
                     let ix2 = (*self.ixes.1.as_ptr());
                     $op!(sink, ix1, ix2, source);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -1904,14 +1911,15 @@ macro_rules! impl_assign_scalar_range_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink = &mut *self.sink.as_mut_ptr();
                     let source = &*self.source.as_ptr();
                     let ix1 = (*self.ixes.0.as_ptr());
                     let ix2 = (*self.ixes.1.as_ptr()).as_ref();
                     $op!(sink, ix1, ix2, source);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -2046,14 +2054,15 @@ macro_rules! impl_assign_scalar_range_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink = &mut *self.sink.as_mut_ptr();
                     let source = &*self.source.as_ptr();
                     let ix1 = (*self.ixes.0.as_ptr());
                     let ix2 = (*self.ixes.1.as_ptr()).as_ref();
                     $op!(sink, ix1, ix2, source);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -2474,14 +2483,15 @@ macro_rules! impl_assign_range_range_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink = &mut *self.sink.as_mut_ptr();
                     let source = &*self.source.as_ptr();
                     let ix1 = (*self.ixes.0.as_ptr()).as_ref();
                     let ix2 = (*self.ixes.1.as_ptr()).as_ref();
                     $op!(sink, ix1, ix2, source);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()

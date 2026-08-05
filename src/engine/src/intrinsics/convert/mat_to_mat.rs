@@ -12,7 +12,9 @@ pub struct ConvertMatPassthrough {
 }
 
 impl MechFunctionImpl for ConvertMatPassthrough {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.out.borrow().clone()
     }
@@ -65,7 +67,7 @@ where
     FromMat: Debug,
     ToMat: Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
@@ -74,7 +76,8 @@ where
             for (dst, src) in (&mut *out_ref).into_iter().zip((&*arg_ref).into_iter()) {
                 *dst = src.clone().lossless_into();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()

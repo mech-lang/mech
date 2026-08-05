@@ -158,7 +158,9 @@ mod tests {
     struct TestFunction(&'static str);
 
     impl MechFunctionImpl for TestFunction {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
 
         fn out(&self) -> Value {
             Value::Empty

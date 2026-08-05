@@ -44,7 +44,9 @@ impl ReentrantRuntimeServiceFunction {
 }
 
 impl MechFunctionImpl for ReentrantRuntimeServiceFunction {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
 
     fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
         self.execute(services)

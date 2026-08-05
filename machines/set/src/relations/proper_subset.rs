@@ -43,7 +43,7 @@ impl MechFunctionFactory for SetProperSubsetFxn {
 }
 
 impl MechFunctionImpl for SetProperSubsetFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
             let lhs_ptr: &MechSet = &*(self.lhs.as_ptr());
@@ -51,7 +51,8 @@ impl MechFunctionImpl for SetProperSubsetFxn {
             // Proper subset: lhs ⊂ rhs  <=>  lhs ⊆ rhs and |lhs| < |rhs|
             *out_ptr =
                 lhs_ptr.set.is_subset(&rhs_ptr.set) && (lhs_ptr.set.len() < rhs_ptr.set.len());
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Bool(self.out.clone())

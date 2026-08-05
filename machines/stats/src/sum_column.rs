@@ -114,12 +114,13 @@ where
         + PartialOrd,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let mut out_ptr = self.out.as_mut_ptr();
         unsafe {
             (&mut (*out_ptr))[(0, 0)] = (*arg_ptr).column_sum()[0];
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()

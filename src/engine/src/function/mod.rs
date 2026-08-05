@@ -1028,7 +1028,9 @@ mod source_only {
         }
 
         impl MechFunctionImpl for NativeDependencyTestFunction {
-            fn solve(&self) {}
+            fn solve_result(&self) -> MResult<()> {
+                Ok(())
+            }
 
             fn out(&self) -> Value {
                 self.output.clone()
@@ -1070,8 +1072,9 @@ mod source_only {
         }
 
         impl MechFunctionImpl for IndexedInitializedFunction {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 self.solve_calls.fetch_add(1, Ordering::SeqCst);
+                Ok(())
             }
 
             fn out(&self) -> Value {
@@ -1152,27 +1155,25 @@ mod source_only {
         }
 
         struct DeferredNativeSolveCompiler {
-            solve_calls: Arc<std::sync::atomic::AtomicUsize>,
+            solve_result_calls: Arc<std::sync::atomic::AtomicUsize>,
         }
         struct DeferredNativeSolveFunction {
             output: Value,
-            solve_calls: Arc<std::sync::atomic::AtomicUsize>,
+            solve_result_calls: Arc<std::sync::atomic::AtomicUsize>,
         }
 
         impl FunctionSpecializer for DeferredNativeSolveCompiler {
             fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
                 Ok(Box::new(DeferredNativeSolveFunction {
                     output: Value::F64(Ref::new(2.0)),
-                    solve_calls: self.solve_calls.clone(),
+                    solve_result_calls: self.solve_result_calls.clone(),
                 }))
             }
         }
         impl MechFunctionImpl for DeferredNativeSolveFunction {
-            fn solve(&self) {
-                self.solve_calls
-                    .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            }
             fn solve_result(&self) -> MResult<()> {
+                self.solve_result_calls
+                    .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 Err(MechError::new(DeferredNativeSolveError, None))
             }
             fn out(&self) -> Value {
@@ -1201,12 +1202,12 @@ mod source_only {
             let input = Ref::new(1.0);
             let input_cell = ReactiveCellId::new(input.id());
             let arguments = vec![Value::F64(input)];
-            let solve_calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+            let solve_result_calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
             let plan = interpreter.plan();
             plan.push_activation_registration_scope(vec![input_cell]);
             let result = execute_function_specializer(
                 Arc::new(DeferredNativeSolveCompiler {
-                    solve_calls: solve_calls.clone(),
+                    solve_result_calls: solve_result_calls.clone(),
                 }),
                 &arguments,
                 &execution,
@@ -1214,7 +1215,10 @@ mod source_only {
             plan.pop_activation_registration_scope();
 
             assert!(result.is_ok());
-            assert_eq!(solve_calls.load(std::sync::atomic::Ordering::SeqCst), 0);
+            assert_eq!(
+                solve_result_calls.load(std::sync::atomic::Ordering::SeqCst),
+                0
+            );
             let plan = plan.borrow();
             assert!(
                 plan.nodes
@@ -1233,6 +1237,10 @@ mod source_only {
                     .unwrap_err()
                     .kind_name()
                     .contains("DeferredNativeSolveError")
+            );
+            assert_eq!(
+                solve_result_calls.load(std::sync::atomic::Ordering::SeqCst),
+                1
             );
             assert_eq!(plan.len(), 1);
         }
@@ -1280,14 +1288,12 @@ mod source_only {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         struct FailingInitializationCompiler {
-            solve_calls: Arc<AtomicUsize>,
             solve_result_calls: Arc<AtomicUsize>,
             preserved_initialization_calls: Arc<AtomicUsize>,
             initial_solve_policy: InitialSolvePolicy,
         }
 
         struct FailingInitializationFunction {
-            solve_calls: Arc<AtomicUsize>,
             solve_result_calls: Arc<AtomicUsize>,
             preserved_initialization_calls: Arc<AtomicUsize>,
             output: Ref<f64>,
@@ -1297,7 +1303,6 @@ mod source_only {
         impl FunctionSpecializer for FailingInitializationCompiler {
             fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
                 Ok(Box::new(FailingInitializationFunction {
-                    solve_calls: self.solve_calls.clone(),
                     solve_result_calls: self.solve_result_calls.clone(),
                     preserved_initialization_calls: self.preserved_initialization_calls.clone(),
                     output: Ref::new(123.0),
@@ -1307,10 +1312,6 @@ mod source_only {
         }
 
         impl MechFunctionImpl for FailingInitializationFunction {
-            fn solve(&self) {
-                self.solve_calls.fetch_add(1, Ordering::SeqCst);
-            }
-
             fn solve_result(&self) -> MResult<()> {
                 self.solve_result_calls.fetch_add(1, Ordering::SeqCst);
                 Err(MechError::new(
@@ -1354,12 +1355,8 @@ mod source_only {
             }
         }
 
-        fn failing_compiler(
-            solve_calls: Arc<AtomicUsize>,
-            solve_result_calls: Arc<AtomicUsize>,
-        ) -> Arc<dyn FunctionSpecializer> {
+        fn failing_compiler(solve_result_calls: Arc<AtomicUsize>) -> Arc<dyn FunctionSpecializer> {
             Arc::new(FailingInitializationCompiler {
-                solve_calls,
                 solve_result_calls,
                 preserved_initialization_calls: Arc::new(AtomicUsize::new(0)),
                 initial_solve_policy: InitialSolvePolicy::Solve,
@@ -1372,12 +1369,11 @@ mod source_only {
             let mut services = NoMechExecutionServices;
             let execution = InterpreterExecution::new(&interpreter, &mut services);
             let arguments = vec![Value::F64(Ref::new(1.0))];
-            let solve_calls = Arc::new(AtomicUsize::new(0));
             let solve_result_calls = Arc::new(AtomicUsize::new(0));
             let plan_len = interpreter.plan().len();
 
             let error = execute_function_specializer(
-                failing_compiler(solve_calls.clone(), solve_result_calls.clone()),
+                failing_compiler(solve_result_calls.clone()),
                 &arguments,
                 &execution,
             )
@@ -1389,7 +1385,6 @@ mod source_only {
                     .contains("test native initialization failed")
             );
             assert_eq!(solve_result_calls.load(Ordering::SeqCst), 1);
-            assert_eq!(solve_calls.load(Ordering::SeqCst), 0);
             assert_eq!(interpreter.plan().len(), plan_len);
         }
 
@@ -1400,14 +1395,13 @@ mod source_only {
             let execution = InterpreterExecution::new(&interpreter, &mut services);
             let input = Ref::new(1.0);
             let arguments = vec![Value::F64(input.clone())];
-            let solve_calls = Arc::new(AtomicUsize::new(0));
             let solve_result_calls = Arc::new(AtomicUsize::new(0));
             let plan = interpreter.plan();
             let plan_len = plan.len();
 
             plan.push_activation_registration_scope(vec![ReactiveCellId::new(input.id())]);
             let result = execute_function_specializer(
-                failing_compiler(solve_calls.clone(), solve_result_calls.clone()),
+                failing_compiler(solve_result_calls.clone()),
                 &arguments,
                 &execution,
             );
@@ -1415,7 +1409,6 @@ mod source_only {
 
             assert!(result.is_ok());
             assert_eq!(solve_result_calls.load(Ordering::SeqCst), 0);
-            assert_eq!(solve_calls.load(Ordering::SeqCst), 0);
             assert_eq!(plan.len(), plan_len + 1);
         }
 
@@ -1425,7 +1418,6 @@ mod source_only {
             let mut services = NoMechExecutionServices;
             let execution = InterpreterExecution::new(&interpreter, &mut services);
             let arguments = vec![Value::F64(Ref::new(1.0))];
-            let solve_calls = Arc::new(AtomicUsize::new(0));
             let solve_result_calls = Arc::new(AtomicUsize::new(0));
             let preserved_initialization_calls = Arc::new(AtomicUsize::new(0));
             let plan = interpreter.plan();
@@ -1433,7 +1425,6 @@ mod source_only {
 
             let result = execute_function_specializer(
                 Arc::new(FailingInitializationCompiler {
-                    solve_calls: solve_calls.clone(),
                     solve_result_calls: solve_result_calls.clone(),
                     preserved_initialization_calls: preserved_initialization_calls.clone(),
                     initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
@@ -1445,7 +1436,6 @@ mod source_only {
 
             assert!(matches!(result, Value::F64(_)));
             assert_eq!(solve_result_calls.load(Ordering::SeqCst), 0);
-            assert_eq!(solve_calls.load(Ordering::SeqCst), 0);
             assert_eq!(preserved_initialization_calls.load(Ordering::SeqCst), 1);
             assert_eq!(plan.len(), plan_len + 1);
         }

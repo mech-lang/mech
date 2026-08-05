@@ -43,7 +43,7 @@ impl MechFunctionFactory for SetNotElementOfFxn {
 }
 
 impl MechFunctionImpl for SetNotElementOfFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
             let elem_ptr: &Value = &*(self.elem.as_ptr());
@@ -55,7 +55,8 @@ impl MechFunctionImpl for SetNotElementOfFxn {
             } else {
                 *out_ptr = true;
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Bool(self.out.clone())

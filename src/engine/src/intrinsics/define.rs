@@ -59,7 +59,9 @@ where
     T: Debug + Clone + Sync + Send + 'static + ConstElem + AsValueKind,
     MatA: Debug,
 {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.var.to_value()
     }
@@ -132,7 +134,9 @@ macro_rules! impl_variable_define_fxn {
         }
       }
       impl MechFunctionImpl for [<VariableDefine $kind:camel>] {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
         fn out(&self) -> Value { self.var.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
 
@@ -496,7 +500,9 @@ mech_core::declare_native_runtime_factory! {
     extra_cargo_features: ["variable_define"],
 }
 impl MechFunctionImpl for VariableDefineEmpty {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.var.borrow().clone()
     }

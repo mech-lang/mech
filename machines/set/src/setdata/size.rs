@@ -40,13 +40,14 @@ impl MechFunctionFactory for SetSizeFxn {
 }
 
 impl MechFunctionImpl for SetSizeFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let out_ptr: &mut u64 = &mut *(self.out.as_mut_ptr());
             let input_ptr: &MechSet = &*(self.input.as_ptr());
             // Uses the internal IndexSet length
             *out_ptr = input_ptr.set.len() as u64;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::U64(self.out.clone())

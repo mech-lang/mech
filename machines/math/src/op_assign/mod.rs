@@ -85,8 +85,10 @@ macro_rules! impl_op_assign_range_fxn_s {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
-                        let source: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ixes: Ref<IxVec> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let source: Ref<T> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ixes: Ref<IxVec> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
                         let sink: Ref<naMatrix<T, R1, C1, S1>> =
                             out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
@@ -134,13 +136,14 @@ macro_rules! impl_op_assign_range_fxn_s {
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
                     let source_ptr = &*self.source.as_ptr();
                     let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
                     $op!(source_ptr, ix_ptr, sink_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -251,7 +254,8 @@ macro_rules! impl_op_assign_range_fxn_v {
                     FunctionArgs::Binary(out, arg1, arg2) => {
                         let source: Ref<naMatrix<T, R2, C2, S2>> =
                             arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let ixes: Ref<IxVec> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let ixes: Ref<IxVec> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
                         let sink: Ref<naMatrix<T, R1, C1, S1>> =
                             out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
@@ -302,13 +306,14 @@ macro_rules! impl_op_assign_range_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
                     let source_ptr = &*self.source.as_ptr();
                     let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
                     $op!(source_ptr, ix_ptr, sink_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -448,12 +453,14 @@ macro_rules! impl_assign_scalar_scalar {
            PartialEq + PartialOrd,
         Ref<T>: ToValue
       {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
           let sink_ptr = self.sink.as_mut_ptr();
           let source_ptr = self.source.as_ptr();
           unsafe {
             *sink_ptr $op_fn (*source_ptr).clone();
           }
+        ;
+            Ok(())
         }
         fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
           let mut next = self.sink.borrow().clone();
@@ -538,7 +545,7 @@ macro_rules! impl_assign_vector_vector {
         MatA: Debug + Clone + 'static,
         MatB: Debug,
       {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
           unsafe {
             let sink_ptr = self.sink.as_mut_ptr();
             let source_ptr = self.source.as_ptr();
@@ -548,6 +555,8 @@ macro_rules! impl_assign_vector_vector {
               *dst $op_fn src.clone();
             }
           }
+        ;
+            Ok(())
         }
         fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
           let mut next = self.sink.borrow().clone();
@@ -637,7 +646,7 @@ macro_rules! impl_assign_vector_scalar {
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         MatA: Debug + Clone + 'static,
       {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
           unsafe {
             let sink_ptr = self.sink.as_mut_ptr();
             let source_ptr = self.source.as_ptr();
@@ -647,6 +656,8 @@ macro_rules! impl_assign_vector_scalar {
               *dst $op_fn source_ref.clone();
             }
           }
+        ;
+            Ok(())
         }
         fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
           let mut next = self.sink.borrow().clone();

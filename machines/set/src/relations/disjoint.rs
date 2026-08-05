@@ -38,7 +38,7 @@ impl MechFunctionFactory for SetDisjointFxn {
     }
 }
 impl MechFunctionImpl for SetDisjointFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             // Get mutable reference to the output set
             let mut out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
@@ -49,7 +49,8 @@ impl MechFunctionImpl for SetDisjointFxn {
 
             // Check if lhs is disjoint of rhs
             *out_ptr = lhs_ptr.set.is_disjoint(&(rhs_ptr.set));
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Bool(self.out.clone())

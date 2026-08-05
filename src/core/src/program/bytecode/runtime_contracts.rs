@@ -377,7 +377,9 @@ mod tests {
     }
 
     impl MechFunctionImpl for ExactF64Binary {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
 
         fn out(&self) -> Value {
             self.out.to_value()
@@ -847,7 +849,9 @@ mod tests {
             }
         }
         impl MechFunctionImpl for ExactMatrix2Binary {
-            fn solve(&self) {}
+            fn solve_result(&self) -> MResult<()> {
+                Ok(())
+            }
             fn out(&self) -> Value {
                 Value::MatrixF64(ValueMatrix::Matrix2(self.out.clone()))
             }

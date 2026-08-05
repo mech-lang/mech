@@ -12,7 +12,7 @@ macro_rules! impl_col_access_fxn {
       out: Ref<$vector_size<$out_type>>,
     }
     impl MechFunctionImpl for $fxn_name {
-      fn solve(&self) {
+      fn solve_result(&self) -> MResult<()> {
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
           for i in 1..=self.source.shape()[0] {
@@ -21,6 +21,8 @@ macro_rules! impl_col_access_fxn {
             }
           }
         }
+      ;
+          Ok(())
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
@@ -199,8 +201,9 @@ pub struct TableAccessSwizzle {
 }
 
 impl MechFunctionImpl for TableAccessSwizzle {
-    fn solve(&self) {
-        ()
+    fn solve_result(&self) -> MResult<()> {
+        ();
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.clone()
@@ -233,7 +236,7 @@ pub struct TableAccessScalarF {
 }
 
 impl MechFunctionImpl for TableAccessScalarF {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let table = self.source.borrow();
         let mut record = self.out.borrow_mut();
         let row_ix = *self.ix.borrow();
@@ -241,6 +244,7 @@ impl MechFunctionImpl for TableAccessScalarF {
             let value = matrix.index1d(row_ix);
             record.data.insert(*key, value.clone());
         }
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Record(self.out.clone())
@@ -367,7 +371,7 @@ pub struct TableAccessRangeIndex {
 }
 
 impl MechFunctionImpl for TableAccessRangeIndex {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let table = self.source.borrow();
         let mut out_table = self.out.borrow_mut();
         let ix_brrw = self.ix.borrow();
@@ -379,6 +383,7 @@ impl MechFunctionImpl for TableAccessRangeIndex {
                 out_matrix.set_index1d(out_i, value.clone());
             }
         }
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Table(self.out.clone())
@@ -419,7 +424,7 @@ pub struct TableAccessRangeBool {
 }
 
 impl MechFunctionImpl for TableAccessRangeBool {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let table = self.source.borrow();
         let ix_brrw = self.ix.borrow();
         let true_count = ix_brrw.iter().filter(|&&b| b).count();
@@ -443,6 +448,7 @@ impl MechFunctionImpl for TableAccessRangeBool {
             }
         }
         out_table.rows = true_count;
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Table(self.out.clone())

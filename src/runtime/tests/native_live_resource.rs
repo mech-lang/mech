@@ -58,13 +58,9 @@ struct ControlledAdd {
 }
 
 impl MechFunctionImpl for ControlledAdd {
-    fn solve(&self) {
-        *self.output.borrow_mut() = *self.lhs.borrow() + *self.rhs.borrow();
-    }
-
     fn solve_result(&self) -> MResult<()> {
         ADD_SOLVE_COUNT.fetch_add(1, Ordering::SeqCst);
-        self.solve();
+        *self.output.borrow_mut() = *self.lhs.borrow() + *self.rhs.borrow();
         if ADD_SHOULD_FAIL.load(Ordering::SeqCst) {
             ADD_FAILED_OUTPUT_BITS.store(self.output.borrow().to_bits(), Ordering::SeqCst);
             return Err(MechError::new(DeliberateAddFailure, None));

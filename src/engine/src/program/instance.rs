@@ -3247,8 +3247,6 @@ mod compact_program_reactive_turn_tests {
     }
 
     impl MechFunctionImpl for ProgramTestFunction {
-        fn solve(&self) {}
-
         fn solve_result(&self) -> MResult<()> {
             self.solve_reactive().map(|_| ())
         }
@@ -3522,7 +3520,9 @@ mod compact_program_reactive_turn_tests {
     }
 
     impl MechFunctionImpl for ProgramRegister {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
         fn out(&self) -> Value {
             Value::Index(self.sink.clone())
         }
@@ -4247,8 +4247,9 @@ mod retained_checkpoint_tests {
     }
 
     impl MechFunctionImpl for RestoreProbe {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             *self.solve_count.borrow_mut() += 1;
+            Ok(())
         }
         fn out(&self) -> Value {
             Value::F64(self.output.clone())
@@ -4275,7 +4276,9 @@ mod retained_checkpoint_tests {
     struct UnsupportedCheckpointFunction;
 
     impl MechFunctionImpl for UnsupportedCheckpointFunction {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
         fn out(&self) -> Value {
             Value::Empty
         }

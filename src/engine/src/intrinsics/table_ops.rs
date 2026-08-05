@@ -274,14 +274,15 @@ impl MechFunctionFactory for TableJoinFxn {
 }
 
 impl MechFunctionImpl for TableJoinFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let lhs = &*self.lhs.as_ptr();
             let rhs = &*self.rhs.as_ptr();
             if let Ok(joined) = Self::build_joined_table(lhs, rhs, self.mode) {
                 *self.out.as_mut_ptr() = joined;
             }
-        }
+        };
+        Ok(())
     }
 
     fn out(&self) -> Value {

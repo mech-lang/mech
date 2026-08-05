@@ -46,11 +46,13 @@ macro_rules! impl_two_arg_fxn {
       out: Ref<$out_kind>,
     }
     impl MechFunctionImpl for $struct_name {
-      fn solve(&self) {
+      fn solve_result(&self) -> MResult<()> {
         let arg1_ptr = self.arg1.as_ptr();
         let arg2_ptr = self.arg2.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         $op!(arg1_ptr,arg2_ptr,out_ptr);
+      ;
+          Ok(())
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }

@@ -613,7 +613,12 @@ mod tests {
         assert_catalog_name_and_id(&catalog, "AddM2M2<f64>", 0x00eb_049b_7b90_a0d9);
     }
 
-    #[cfg(all(feature = "f64", feature = "i8", feature = "matrix2", feature = "matrixd"))]
+    #[cfg(all(
+        feature = "f64",
+        feature = "i8",
+        feature = "matrix2",
+        feature = "matrixd"
+    ))]
     #[test]
     fn runtime_add_factories_reject_incompatible_exact_representations() {
         fn entry<'a>(catalog: &'a FunctionCatalog, name: &str) -> &'a RuntimeFunctionEntry {
@@ -659,7 +664,11 @@ mod tests {
             scalar.instantiate(FunctionArgs::Unary(output.to_value(), lhs.to_value())),
             "IncorrectNumberOfArguments",
         );
-        assert_eq!(*output.borrow(), 41.0, "construction must not mutate output");
+        assert_eq!(
+            *output.borrow(),
+            41.0,
+            "construction must not mutate output"
+        );
 
         let fixed = Value::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::identity())));
         let dynamic = Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
@@ -672,8 +681,11 @@ mod tests {
             "FunctionSignatureViolation",
         );
         assert_contract_error(
-            entry(&catalog, "AddMDMD<f64>")
-                .instantiate(FunctionArgs::Binary(dynamic, fixed.clone(), fixed)),
+            entry(&catalog, "AddMDMD<f64>").instantiate(FunctionArgs::Binary(
+                dynamic,
+                fixed.clone(),
+                fixed,
+            )),
             "FunctionSignatureViolation",
         );
     }
@@ -910,7 +922,7 @@ mod tests {
 
         assert_eq!(specializer.guard_safety(), GuardFunctionSafety::Unsupported);
         let fxn = specializer.specialize(&arguments).unwrap();
-        fxn.solve();
+        fxn.solve_result().unwrap();
         assert_eq!(fxn.out().as_f64().unwrap().borrow().clone(), 3.5);
     }
 
@@ -922,7 +934,7 @@ mod tests {
         let arguments = vec![left, right];
 
         let function = FunctionSpecializer::specialize(&MathAdd {}, &arguments).unwrap();
-        function.solve();
+        function.solve_result().unwrap();
         assert_eq!(function.out().as_f64().unwrap().borrow().clone(), 3.0);
     }
 }

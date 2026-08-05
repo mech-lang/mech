@@ -546,13 +546,15 @@ macro_rules! impl_access_all_fxn_v {
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
     {
-      fn solve(&self) {
+      fn solve_result(&self) -> MResult<()> {
         unsafe {
           let sink_ptr = &mut *self.sink.as_mut_ptr();
           let source_ptr = &*self.source.as_ptr();
           let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
           $op!(source_ptr,ix_ptr,sink_ptr);
         }
+      ;
+          Ok(())
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
@@ -631,11 +633,12 @@ macro_rules! impl_access_fxn {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out_type>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 let source_ptr = self.source.as_ptr();
                 let ixes_ptr = self.ixes.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(source_ptr, ixes_ptr, out_ptr);
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -722,12 +725,13 @@ macro_rules! impl_access_fxn2 {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out_type>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 let source_ptr = self.source.as_ptr();
                 let ix1_ptr = self.ix1.as_ptr();
                 let ix2_ptr = self.ix2.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(source_ptr, ix1_ptr, ix2_ptr, out_ptr);
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -1033,13 +1037,14 @@ struct MatrixAccessScalarValueF {
 }
 
 impl MechFunctionImpl for MatrixAccessScalarValueF {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let ix = *self.ix.borrow();
         let value = self.source.index1d(ix);
         *self.out.borrow_mut() = match &self.element_kind {
             ValueKind::Option(_) => Value::Typed(Box::new(value), self.element_kind.clone()),
             _ => value,
         };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.borrow().clone()
