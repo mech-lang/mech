@@ -4,7 +4,8 @@ use alloc::{format, string::String, vec, vec::Vec};
 use std::{format, string::String, vec, vec::Vec};
 
 use crate::{
-    ApplicationRequirement, FunctionArgs, FunctionCatalog, MResult, MechError, MechErrorKind,
+    ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest, FunctionArgs,
+    FunctionCatalog, FunctionValueRepresentation, MResult, MechError, MechErrorKind,
     ResourceIntent, RuntimeFunctionId, Value,
 };
 
@@ -69,10 +70,251 @@ fn violation_with_source(
     .with_source(source)
 }
 
+pub struct BytecodeHostCallContract<'a> {
+    pub instruction: u32,
+    pub request: &'a ExecutionHostFunctionRequest,
+    pub output_seed: &'a Value,
+    pub arguments: &'a [Value],
+}
+
+pub struct BytecodeResourceReadContract<'a> {
+    pub instruction: u32,
+    pub request: &'a ExecutionResourceRequest,
+    pub output_seed: &'a Value,
+}
+
+pub struct BytecodeResourceWriteContract<'a> {
+    pub instruction: u32,
+    pub request: &'a ExecutionResourceRequest,
+    pub output_seed: &'a Value,
+    pub source: &'a Value,
+}
+
+pub trait BytecodeExternalContractResolver {
+    fn validate_host_call(&mut self, contract: BytecodeHostCallContract<'_>) -> MResult<Value>;
+
+    fn validate_resource_read(
+        &mut self,
+        contract: BytecodeResourceReadContract<'_>,
+    ) -> MResult<Value>;
+
+    fn validate_resource_write(
+        &mut self,
+        contract: BytecodeResourceWriteContract<'_>,
+    ) -> MResult<()>;
+}
+
+pub struct StructuralExternalContractResolver;
+
+impl BytecodeExternalContractResolver for StructuralExternalContractResolver {
+    fn validate_host_call(&mut self, contract: BytecodeHostCallContract<'_>) -> MResult<Value> {
+        Ok(contract.output_seed.clone())
+    }
+
+    fn validate_resource_read(
+        &mut self,
+        contract: BytecodeResourceReadContract<'_>,
+    ) -> MResult<Value> {
+        Ok(contract.output_seed.clone())
+    }
+
+    fn validate_resource_write(
+        &mut self,
+        contract: BytecodeResourceWriteContract<'_>,
+    ) -> MResult<()> {
+        if contract.output_seed == &Value::Empty {
+            return Ok(());
+        }
+        Err(violation(
+            contract.instruction as usize,
+            None,
+            None,
+            format!(
+                "resource write/send destination must have an Empty seed, found {:?}",
+                contract.output_seed.kind(),
+            ),
+        ))
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StableValueUpdateContractViolation {
+    pub current: FunctionValueRepresentation,
+    pub incoming: FunctionValueRepresentation,
+    pub reason: String,
+}
+
+impl MechErrorKind for StableValueUpdateContractViolation {
+    fn name(&self) -> &str {
+        "StableValueUpdateContractViolation"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "stable value update from {:?} to {:?} violates its contract: {}",
+            self.current, self.incoming, self.reason,
+        )
+    }
+}
+
+fn stable_update_violation(
+    current: &Value,
+    incoming: &Value,
+    reason: impl Into<String>,
+) -> MechError {
+    MechError::new(
+        StableValueUpdateContractViolation {
+            current: FunctionValueRepresentation::from_value(current),
+            incoming: FunctionValueRepresentation::from_value(incoming),
+            reason: reason.into(),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+fn composite_schema_matches(current: &Value, incoming: &Value) -> bool {
+    match (current, incoming) {
+        #[cfg(feature = "record")]
+        (Value::Record(current), Value::Record(incoming)) => {
+            current.borrow().kind() == incoming.borrow().kind()
+        }
+        #[cfg(feature = "map")]
+        (Value::Map(current), Value::Map(incoming)) => {
+            let current = current.borrow();
+            let incoming = incoming.borrow();
+            current.key_kind == incoming.key_kind && current.value_kind == incoming.value_kind
+        }
+        #[cfg(feature = "set")]
+        (Value::Set(current), Value::Set(incoming)) => {
+            let current = current.borrow();
+            let incoming = incoming.borrow();
+            current.kind == incoming.kind && current.max_elements == incoming.max_elements
+        }
+        #[cfg(feature = "table")]
+        (Value::Table(current), Value::Table(incoming)) => {
+            let current = current.borrow();
+            let incoming = incoming.borrow();
+            current.cols == incoming.cols
+                && current.data.len() == incoming.data.len()
+                && current.data.iter().zip(incoming.data.iter()).all(
+                    |((current_id, (current_kind, _)), (incoming_id, (incoming_kind, _)))| {
+                        current_id == incoming_id
+                            && current_kind == incoming_kind
+                            && current.col_names.get(current_id)
+                                == incoming.col_names.get(incoming_id)
+                    },
+                )
+        }
+        #[cfg(feature = "tuple")]
+        (Value::Tuple(current), Value::Tuple(incoming)) => {
+            current.borrow().kind() == incoming.borrow().kind()
+        }
+        _ => false,
+    }
+}
+
+pub fn validate_stable_value_update(current: &Value, incoming: &Value) -> MResult<()> {
+    if let (
+        Value::Typed(current_inner, current_annotation),
+        Value::Typed(incoming_inner, incoming_annotation),
+    ) = (current, incoming)
+    {
+        if current_annotation != incoming_annotation {
+            return Err(stable_update_violation(
+                current,
+                incoming,
+                "typed annotations differ",
+            ));
+        }
+        return validate_stable_value_update(current_inner, incoming_inner);
+    }
+    if matches!(current, Value::Typed(_, _)) || matches!(incoming, Value::Typed(_, _)) {
+        return Err(stable_update_violation(
+            current,
+            incoming,
+            "typed values are not implicitly unwrapped",
+        ));
+    }
+    if matches!(current, Value::MutableReference(_))
+        || matches!(incoming, Value::MutableReference(_))
+    {
+        return Err(stable_update_violation(
+            current,
+            incoming,
+            "mutable references are not implicitly unwrapped",
+        ));
+    }
+    if matches!((current, incoming), (Value::Empty, Value::Empty)) {
+        return Ok(());
+    }
+    if matches!(current, Value::IndexAll) || matches!(incoming, Value::IndexAll) {
+        return Err(stable_update_violation(
+            current,
+            incoming,
+            "IndexAll is a selector and has no stable scalar backing",
+        ));
+    }
+
+    let current_representation = FunctionValueRepresentation::from_value(current);
+    let incoming_representation = FunctionValueRepresentation::from_value(incoming);
+    if current_representation != incoming_representation {
+        return Err(stable_update_violation(
+            current,
+            incoming,
+            "the exact value backing, matrix element type, or matrix storage differs",
+        ));
+    }
+
+    match current_representation {
+        FunctionValueRepresentation::Record
+        | FunctionValueRepresentation::Map
+        | FunctionValueRepresentation::Set
+        | FunctionValueRepresentation::Table
+        | FunctionValueRepresentation::Tuple => {
+            if !composite_schema_matches(current, incoming) {
+                return Err(stable_update_violation(
+                    current,
+                    incoming,
+                    "the composite semantic schema differs",
+                ));
+            }
+        }
+        FunctionValueRepresentation::Empty => {
+            return Err(stable_update_violation(
+                current,
+                incoming,
+                "only bare Empty values share the stable empty backing",
+            ));
+        }
+        FunctionValueRepresentation::AnyValue | FunctionValueRepresentation::MutableValueCell => {
+            return Err(stable_update_violation(
+                current,
+                incoming,
+                "the outer value representation is not stable-updateable",
+            ));
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 impl ParsedProgram {
     /// Validates catalog-aware bytecode contracts without mutating interpreter
     /// or runtime state.
     pub fn validate_runtime_contracts(&self, catalog: &FunctionCatalog) -> MResult<()> {
+        let mut resolver = StructuralExternalContractResolver;
+        self.validate_runtime_contracts_with(catalog, &mut resolver)
+    }
+
+    pub fn validate_runtime_contracts_with<R>(
+        &self,
+        catalog: &FunctionCatalog,
+        resolver: &mut R,
+    ) -> MResult<()>
+    where
+        R: BytecodeExternalContractResolver,
+    {
         let constants = self
             .decode_constants()
             .map_err(|error| violation_with_source(0, None, None, error))?;
@@ -211,59 +453,94 @@ impl ParsedProgram {
                     dst,
                     arguments,
                 } => {
-                    if !matches!(
-                        self.requirements.get(*requirement as usize),
-                        Some(ApplicationRequirement::HostFunction(_))
-                    ) {
-                        return Err(violation(
-                            instruction_index,
-                            None,
-                            None,
-                            format!("HostCall requirement {requirement} must be a HostFunction"),
-                        ));
-                    }
-                    register(*dst)?;
-                    for argument in arguments {
-                        register(*argument)?;
-                    }
+                    let request = match self.requirements.get(*requirement as usize) {
+                        Some(ApplicationRequirement::HostFunction(request)) => request,
+                        _ => {
+                            return Err(violation(
+                                instruction_index,
+                                None,
+                                None,
+                                format!(
+                                    "HostCall requirement {requirement} must be a HostFunction"
+                                ),
+                            ));
+                        }
+                    };
+                    let output_seed = register(*dst)?;
+                    let arguments = arguments
+                        .iter()
+                        .map(|argument| register(*argument))
+                        .collect::<MResult<Vec<_>>>()?;
+                    let planned = resolver.validate_host_call(BytecodeHostCallContract {
+                        instruction: u32::try_from(instruction_index).unwrap_or(u32::MAX),
+                        request,
+                        output_seed: &output_seed,
+                        arguments: &arguments,
+                    })?;
+                    validate_stable_value_update(&output_seed, &planned).map_err(|error| {
+                        violation_with_source(instruction_index, None, None, error)
+                    })?;
+                    registers[*dst as usize] = Some(planned);
                 }
                 BytecodeInstruction::ResourceRead { requirement, dst } => {
-                    self.validate_resource_requirement(
+                    let request = self.resource_requirement(
                         instruction_index,
                         *requirement,
                         ResourceIntent::Read,
                     )?;
-                    register(*dst)?;
+                    let output_seed = register(*dst)?;
+                    let planned =
+                        resolver.validate_resource_read(BytecodeResourceReadContract {
+                            instruction: u32::try_from(instruction_index).unwrap_or(u32::MAX),
+                            request,
+                            output_seed: &output_seed,
+                        })?;
+                    validate_stable_value_update(&output_seed, &planned).map_err(|error| {
+                        violation_with_source(instruction_index, None, None, error)
+                    })?;
+                    registers[*dst as usize] = Some(planned);
                 }
                 BytecodeInstruction::ResourceWrite {
                     requirement,
                     dst,
                     src,
                 } => {
-                    self.validate_resource_requirement(
+                    let request = self.resource_requirement(
                         instruction_index,
                         *requirement,
                         ResourceIntent::Assign,
                     )?;
-                    let output = register(*dst)?;
-                    register(*src)?;
-                    self.validate_resource_write_seed(instruction_index, *dst, output)?;
+                    let output_seed = register(*dst)?;
+                    let source = register(*src)?;
+                    resolver.validate_resource_write(BytecodeResourceWriteContract {
+                        instruction: u32::try_from(instruction_index).unwrap_or(u32::MAX),
+                        request,
+                        output_seed: &output_seed,
+                        source: &source,
+                    })?;
                 }
                 BytecodeInstruction::ResourceSend {
                     requirement,
                     dst,
                     src,
                 } => {
-                    self.validate_resource_requirement(
+                    let request = self.resource_requirement(
                         instruction_index,
                         *requirement,
                         ResourceIntent::Send,
                     )?;
-                    let output = register(*dst)?;
-                    register(*src)?;
-                    self.validate_resource_write_seed(instruction_index, *dst, output)?;
+                    let output_seed = register(*dst)?;
+                    let source = register(*src)?;
+                    resolver.validate_resource_write(BytecodeResourceWriteContract {
+                        instruction: u32::try_from(instruction_index).unwrap_or(u32::MAX),
+                        request,
+                        output_seed: &output_seed,
+                        source: &source,
+                    })?;
                 }
-                BytecodeInstruction::Return { .. } => {}
+                BytecodeInstruction::Return { src } => {
+                    register(*src)?;
+                }
             }
         }
         Ok(())
@@ -290,14 +567,16 @@ impl ParsedProgram {
         })
     }
 
-    fn validate_resource_requirement(
+    fn resource_requirement(
         &self,
         instruction: usize,
         requirement: u32,
         expected: ResourceIntent,
-    ) -> MResult<()> {
+    ) -> MResult<&ExecutionResourceRequest> {
         match self.requirements.get(requirement as usize) {
-            Some(ApplicationRequirement::Resource(request)) if request.intent == expected => Ok(()),
+            Some(ApplicationRequirement::Resource(request)) if request.intent == expected => {
+                Ok(request)
+            }
             actual => Err(violation(
                 instruction,
                 None,
@@ -307,26 +586,6 @@ impl ParsedProgram {
                 ),
             )),
         }
-    }
-
-    fn validate_resource_write_seed(
-        &self,
-        instruction: usize,
-        destination: u32,
-        output: Value,
-    ) -> MResult<()> {
-        if output == Value::Empty {
-            return Ok(());
-        }
-        Err(violation(
-            instruction,
-            None,
-            None,
-            format!(
-                "resource write/send destination register {destination} must have an Empty seed, found {:?}",
-                output.kind(),
-            ),
-        ))
     }
 }
 
@@ -815,6 +1074,113 @@ mod tests {
         .unwrap();
 
         assert_contract_violation(&program, "must have an Empty seed");
+    }
+
+    #[cfg(all(feature = "matrix2", feature = "matrixd"))]
+    #[test]
+    fn stable_updates_require_exact_matrix_storage() {
+        use crate::structures::matrix::Matrix as ValueMatrix;
+        use nalgebra::{DMatrix, Matrix2};
+
+        let fixed = Value::MatrixF64(ValueMatrix::Matrix2(Ref::new(Matrix2::identity())));
+        let dynamic = Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
+
+        let error = validate_stable_value_update(&fixed, &dynamic).unwrap_err();
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
+        assert!(error.kind_message().contains("matrix storage differs"));
+    }
+
+    #[cfg(feature = "matrixd")]
+    #[test]
+    fn stable_updates_allow_dynamic_matrix_dimension_changes() {
+        use crate::structures::matrix::Matrix as ValueMatrix;
+        use nalgebra::DMatrix;
+
+        let current = Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(2, 3))));
+        let incoming = Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(5, 7))));
+
+        validate_stable_value_update(&current, &incoming).unwrap();
+    }
+
+    #[test]
+    fn stable_updates_do_not_implicitly_unwrap_typed_values() {
+        let typed = Value::Typed(Box::new(Value::F64(Ref::new(1.0))), crate::ValueKind::F64);
+        let untyped = Value::F64(Ref::new(2.0));
+
+        let error = validate_stable_value_update(&typed, &untyped).unwrap_err();
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
+        assert!(error.kind_message().contains("not implicitly unwrapped"));
+    }
+
+    #[cfg(all(feature = "matrix2", feature = "matrixd"))]
+    #[test]
+    fn external_planning_rejects_fixed_seed_for_dynamic_matrix_output() {
+        use crate::structures::matrix::Matrix as ValueMatrix;
+        use nalgebra::DMatrix;
+
+        struct DynamicReadResolver;
+        impl BytecodeExternalContractResolver for DynamicReadResolver {
+            fn validate_host_call(
+                &mut self,
+                contract: BytecodeHostCallContract<'_>,
+            ) -> MResult<Value> {
+                Ok(contract.output_seed.clone())
+            }
+
+            fn validate_resource_read(
+                &mut self,
+                _contract: BytecodeResourceReadContract<'_>,
+            ) -> MResult<Value> {
+                Ok(Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(
+                    DMatrix::identity(2, 2),
+                ))))
+            }
+
+            fn validate_resource_write(
+                &mut self,
+                _contract: BytecodeResourceWriteContract<'_>,
+            ) -> MResult<()> {
+                Ok(())
+            }
+        }
+
+        let program = ParsedProgram::from_bytes(
+            &write_bytecode(&BytecodeProgram {
+                register_count: 1,
+                constants: vec![f64_matrix_constant(crate::MatrixStorage::Matrix2, 2, 2)],
+                symbols: BTreeMap::new(),
+                mutable_symbols: BTreeSet::new(),
+                instructions: vec![
+                    BytecodeInstruction::ConstLoad {
+                        dst: 0,
+                        constant: 0,
+                    },
+                    BytecodeInstruction::ResourceRead {
+                        requirement: 0,
+                        dst: 0,
+                    },
+                    BytecodeInstruction::Return { src: 0 },
+                ],
+                dictionary: BTreeMap::new(),
+                requirements: vec![ApplicationRequirement::Resource(ExecutionResourceRequest {
+                    base_uri: "test://provider/input".into(),
+                    path: "matrix".into(),
+                    context_name: "input".into(),
+                    operation: "read".into(),
+                    intent: ResourceIntent::Read,
+                    delivery: ResourceDelivery::Snapshot,
+                })],
+            })
+            .unwrap(),
+        )
+        .unwrap();
+        let mut resolver = DynamicReadResolver;
+        let error = program
+            .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut resolver)
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
+        assert!(error.kind_message().contains("matrix storage differs"));
     }
 
     #[cfg(all(feature = "matrix2", feature = "matrixd"))]

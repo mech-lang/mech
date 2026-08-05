@@ -285,7 +285,7 @@ fn live_host_output_kind_change_preserves_previous_output() {
         .unwrap_err();
     let rendered = format!("{error:?}");
     assert!(
-        rendered.contains("StableValueUpdateKindMismatch"),
+        rendered.contains("StableValueUpdateContractViolation"),
         "{rendered}"
     );
     assert!(calls.load(Ordering::SeqCst) >= 1);

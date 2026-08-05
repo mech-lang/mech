@@ -13,7 +13,8 @@ use mech_core::FunctionCatalog;
 use mech_core::{
     FunctionSpecializer, MResult, MechError, MechErrorKind, MechFunction, MechSourceCode,
     ParsedProgram, ReactiveCellId, ReactiveJournalParticipant, ReactiveTurnOutcome, ValRef, Value,
-    ValueKind, hash_str, val_ref_reactive_cell_ids, with_reactive_journal_participant,
+    ValueKind, hash_str, val_ref_reactive_cell_ids, validate_stable_value_update,
+    with_reactive_journal_participant,
 };
 
 #[cfg(feature = "compiler")]
@@ -26,175 +27,6 @@ use mech_syntax::parser;
 #[cfg(all(feature = "source", feature = "native"))]
 use crate::ClosureFunctionSpecializer;
 
-#[derive(Debug, Clone)]
-pub struct StableValueUpdateKindMismatch {
-    pub expected: ValueKind,
-    pub actual: ValueKind,
-}
-impl MechErrorKind for StableValueUpdateKindMismatch {
-    fn name(&self) -> &str {
-        "StableValueUpdateKindMismatch"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "stable value update requires the same value kind and shape; expected {:?}, found {:?}",
-            self.expected, self.actual,
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct StableValueUpdateUnsupported {
-    pub kind: ValueKind,
-}
-impl MechErrorKind for StableValueUpdateUnsupported {
-    fn name(&self) -> &str {
-        "StableValueUpdateUnsupported"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "stable value update does not support preserving values of kind {:?}",
-            self.kind,
-        )
-    }
-}
-
-fn stable_value_update_kind_mismatch(expected: ValueKind, actual: ValueKind) -> MechError {
-    MechError::new(StableValueUpdateKindMismatch { expected, actual }, None)
-}
-
-fn is_stable_value_update_supported_value(value: &Value) -> bool {
-    match value {
-        #[cfg(feature = "u8")]
-        Value::U8(_) => true,
-        #[cfg(feature = "u16")]
-        Value::U16(_) => true,
-        #[cfg(feature = "u32")]
-        Value::U32(_) => true,
-        #[cfg(feature = "u64")]
-        Value::U64(_) => true,
-        #[cfg(feature = "u128")]
-        Value::U128(_) => true,
-        #[cfg(feature = "i8")]
-        Value::I8(_) => true,
-        #[cfg(feature = "i16")]
-        Value::I16(_) => true,
-        #[cfg(feature = "i32")]
-        Value::I32(_) => true,
-        #[cfg(feature = "i64")]
-        Value::I64(_) => true,
-        #[cfg(feature = "i128")]
-        Value::I128(_) => true,
-        #[cfg(feature = "f32")]
-        Value::F32(_) => true,
-        #[cfg(feature = "f64")]
-        Value::F64(_) => true,
-        #[cfg(feature = "complex")]
-        Value::C64(_) => true,
-        #[cfg(feature = "rational")]
-        Value::R64(_) => true,
-        #[cfg(any(feature = "string", feature = "variable_define"))]
-        Value::String(_) => true,
-        #[cfg(any(feature = "bool", feature = "variable_define"))]
-        Value::Bool(_) => true,
-        Value::Index(_) => true,
-
-        #[cfg(feature = "matrix")]
-        Value::MatrixIndex(_) => false,
-        #[cfg(feature = "matrix")]
-        Value::MatrixValue(_) => false,
-        #[cfg(all(feature = "matrix", feature = "bool"))]
-        Value::MatrixBool(_) => true,
-        #[cfg(all(feature = "matrix", feature = "u8"))]
-        Value::MatrixU8(_) => true,
-        #[cfg(all(feature = "matrix", feature = "u16"))]
-        Value::MatrixU16(_) => true,
-        #[cfg(all(feature = "matrix", feature = "u32"))]
-        Value::MatrixU32(_) => true,
-        #[cfg(all(feature = "matrix", feature = "u64"))]
-        Value::MatrixU64(_) => true,
-        #[cfg(all(feature = "matrix", feature = "u128"))]
-        Value::MatrixU128(_) => true,
-        #[cfg(all(feature = "matrix", feature = "i8"))]
-        Value::MatrixI8(_) => true,
-        #[cfg(all(feature = "matrix", feature = "i16"))]
-        Value::MatrixI16(_) => true,
-        #[cfg(all(feature = "matrix", feature = "i32"))]
-        Value::MatrixI32(_) => true,
-        #[cfg(all(feature = "matrix", feature = "i64"))]
-        Value::MatrixI64(_) => true,
-        #[cfg(all(feature = "matrix", feature = "i128"))]
-        Value::MatrixI128(_) => true,
-        #[cfg(all(feature = "matrix", feature = "f32"))]
-        Value::MatrixF32(_) => true,
-        #[cfg(all(feature = "matrix", feature = "f64"))]
-        Value::MatrixF64(_) => true,
-        #[cfg(all(feature = "matrix", feature = "string"))]
-        Value::MatrixString(_) => true,
-        #[cfg(all(feature = "matrix", feature = "rational"))]
-        Value::MatrixR64(_) => true,
-        #[cfg(all(feature = "matrix", feature = "complex"))]
-        Value::MatrixC64(_) => true,
-
-        _ => false,
-    }
-}
-
-fn validate_stable_value_update(current: &Value, next: &Value) -> MResult<()> {
-    match (current, next) {
-        (
-            Value::Typed(current_inner, current_annotation),
-            Value::Typed(next_inner, next_annotation),
-        ) => {
-            if current_annotation != next_annotation {
-                return Err(stable_value_update_kind_mismatch(
-                    current_annotation.clone(),
-                    next_annotation.clone(),
-                ));
-            }
-            validate_stable_value_update(current_inner.as_ref(), next_inner.as_ref())
-        }
-        (Value::Typed(_, _), _) | (_, Value::Typed(_, _)) => Err(
-            stable_value_update_kind_mismatch(current.kind(), next.kind()),
-        ),
-        (Value::Empty, Value::Empty) => Ok(()),
-        #[cfg(feature = "matrix")]
-        (Value::MatrixValue(_), _) => Err(MechError::new(
-            StableValueUpdateUnsupported {
-                kind: current.kind(),
-            },
-            None,
-        )),
-        #[cfg(feature = "matrix")]
-        (_, Value::MatrixValue(_)) => Err(MechError::new(
-            StableValueUpdateUnsupported { kind: next.kind() },
-            None,
-        )),
-        _ => {
-            let expected = current.kind();
-            let actual = next.kind();
-            if expected != actual {
-                return Err(stable_value_update_kind_mismatch(expected, actual));
-            }
-            if !is_stable_value_update_supported_value(current) {
-                return Err(MechError::new(
-                    StableValueUpdateUnsupported { kind: expected },
-                    None,
-                ));
-            }
-            if !is_stable_value_update_supported_value(next) {
-                return Err(MechError::new(
-                    StableValueUpdateUnsupported { kind: actual },
-                    None,
-                ));
-            }
-            Ok(())
-        }
-    }
-}
-
 pub fn compile_stable_value_update(sink: ValRef, source: Value) -> MResult<Box<dyn MechFunction>> {
     {
         let current = sink.borrow();
@@ -205,7 +37,12 @@ pub fn compile_stable_value_update(sink: ValRef, source: Value) -> MResult<Box<d
 }
 
 pub fn apply_stable_value_update(sink: ValRef, source: Value) -> MResult<Value> {
-    let update = compile_stable_value_update(sink.clone(), source)?;
+    {
+        let current = sink.borrow();
+        validate_stable_value_update(&current, &source)?;
+    }
+    let update =
+        crate::AssignValue {}.specialize(&[Value::MutableReference(sink.clone()), source])?;
     update.solve_result()?;
     Ok(sink.borrow().clone())
 }
@@ -2274,7 +2111,9 @@ mod live_input_tests {
             sink.clone(),
             Value::Typed(Box::new(Value::F64(Ref::new(9.0))), ValueKind::String),
         );
-        assert!(format!("{:?}", result.unwrap_err()).contains("StableValueUpdateKindMismatch"));
+        assert!(
+            format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
+        );
 
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
@@ -2308,7 +2147,9 @@ mod live_input_tests {
         };
 
         let result = apply_stable_value_update(sink.clone(), Value::F64(Ref::new(9.0)));
-        assert!(format!("{:?}", result.unwrap_err()).contains("StableValueUpdateKindMismatch"));
+        assert!(
+            format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
+        );
 
         match &*sink.borrow() {
             Value::Typed(inner, annotation) => {
@@ -2351,16 +2192,18 @@ mod live_input_tests {
     fn stable_value_update_rejects_empty_to_value() {
         let sink = Ref::new(Value::Empty);
         let result = apply_stable_value_update(sink.clone(), Value::F64(Ref::new(1.0)));
-        assert!(format!("{:?}", result.unwrap_err()).contains("StableValueUpdateKindMismatch"));
+        assert!(
+            format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
+        );
         assert_eq!(&*sink.borrow(), &Value::Empty);
     }
 
     #[cfg(all(feature = "matrix", feature = "f64"))]
     #[test]
-    fn stable_value_update_rejects_dynamic_matrix_shape_change() {
+    fn stable_value_update_allows_dynamic_matrix_shape_change() {
         let sink_matrix = MechMatrix::from_vec((1..=25).map(|x| x as f64).collect(), 5, 5);
-        let original = sink_matrix.clone();
         let source_matrix = MechMatrix::from_vec((1..=36).map(|x| x as f64).collect(), 6, 6);
+        let expected = source_matrix.clone();
         let sink = Ref::new(Value::MatrixF64(sink_matrix));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
@@ -2368,40 +2211,46 @@ mod live_input_tests {
             other => panic!("expected f64 matrix, got {other:?}"),
         };
 
-        let result = apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix));
-        assert!(format!("{:?}", result.unwrap_err()).contains("StableValueUpdateKindMismatch"));
+        apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix)).unwrap();
 
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
             Value::MatrixF64(value) => {
                 assert_eq!(inner_pointer, value.addr());
-                assert_eq!(value.shape(), vec![5, 5]);
-                assert_eq!(value, &original);
+                assert_eq!(value.shape(), vec![6, 6]);
+                assert_eq!(value, &expected);
             }
             other => panic!("expected f64 matrix, got {other:?}"),
         }
     }
 
-    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[cfg(all(feature = "matrixd", feature = "f64"))]
     #[test]
-    fn stable_value_update_rejects_equal_length_different_shape() {
-        let sink_matrix = MechMatrix::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0], 2, 3);
-        let original = sink_matrix.clone();
-        let source_matrix = MechMatrix::from_vec(vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0], 3, 2);
+    fn stable_value_update_allows_equal_length_dynamic_shape_change() {
+        let sink_matrix = MechMatrix::DMatrix(Ref::new(crate::na::DMatrix::from_vec(
+            2,
+            3,
+            vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+        )));
+        let source_matrix = MechMatrix::DMatrix(Ref::new(crate::na::DMatrix::from_vec(
+            3,
+            2,
+            vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0],
+        )));
+        let expected = source_matrix.clone();
         let sink = Ref::new(Value::MatrixF64(sink_matrix));
         let inner_pointer = match &*sink.borrow() {
             Value::MatrixF64(value) => value.addr(),
             other => panic!("expected f64 matrix, got {other:?}"),
         };
 
-        let result = apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix));
-        assert!(format!("{:?}", result.unwrap_err()).contains("StableValueUpdateKindMismatch"));
+        apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix)).unwrap();
 
         match &*sink.borrow() {
             Value::MatrixF64(value) => {
                 assert_eq!(inner_pointer, value.addr());
-                assert_eq!(value.shape(), vec![2, 3]);
-                assert_eq!(value, &original);
+                assert_eq!(value.shape(), vec![3, 2]);
+                assert_eq!(value, &expected);
             }
             other => panic!("expected f64 matrix, got {other:?}"),
         }
@@ -2415,10 +2264,9 @@ mod live_input_tests {
         let result = apply_stable_value_update(sink.clone(), Value::F64(Ref::new(9.0)));
         let rendered = format!("{:?}", result.unwrap_err());
         assert!(
-            rendered.contains("StableValueUpdateUnsupported"),
+            rendered.contains("StableValueUpdateContractViolation"),
             "{rendered}"
         );
-        assert!(rendered.contains("Matrix(F64"), "{rendered}");
     }
 
     #[cfg(all(feature = "matrix", feature = "f64"))]
@@ -2429,10 +2277,9 @@ mod live_input_tests {
         let result = apply_stable_value_update(sink.clone(), Value::MatrixValue(matrix_value));
         let rendered = format!("{:?}", result.unwrap_err());
         assert!(
-            rendered.contains("StableValueUpdateUnsupported"),
+            rendered.contains("StableValueUpdateContractViolation"),
             "{rendered}"
         );
-        assert!(rendered.contains("Matrix(F64"), "{rendered}");
     }
 
     #[cfg(feature = "matrix")]
@@ -2452,7 +2299,7 @@ mod live_input_tests {
         );
         let rendered = format!("{:?}", result.unwrap_err());
         assert!(
-            rendered.contains("StableValueUpdateUnsupported"),
+            rendered.contains("UnhandledFunctionArgumentKind2"),
             "{rendered}"
         );
         assert_eq!(outer_pointer, sink.as_ptr());
@@ -3052,7 +2899,7 @@ mod program_reactive_turn_tests {
                 },
             ])
             .unwrap_err();
-        assert!(format!("{q:?}").contains("StableValueUpdateKindMismatch"));
+        assert!(format!("{q:?}").contains("StableValueUpdateContractViolation"));
         assert_eq!(
             (
                 value(&p, id, "a"),
