@@ -386,8 +386,9 @@ def report_summary(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def verify_owner_native_link_profiles() -> None:
-    for package, (manifest, _, profile) in OWNERS.items():
+def verify_owner_native_link_profiles(packages: list[str]) -> None:
+    for package in packages:
+        manifest, _, profile = OWNERS[package]
         run(
             [
                 "cargo", "+nightly-2026-03-03", "check",
@@ -417,20 +418,28 @@ def main() -> int:
         except (ContractError, OSError, TypeError, ValueError, KeyError) as error:
             print(f"native linkage coverage failed: {error}", file=sys.stderr)
             return 1
-    mode = sys.argv[1] if len(sys.argv) == 2 else "strict"
+    mode = sys.argv[1] if len(sys.argv) >= 2 else "strict"
     if mode not in {"coverage", "merge", "owners", "report", "strict"}:
         print(
             "usage: scripts/check-native-linkage-coverage.py "
-            "[coverage|merge|owners|report|strict|surface FEATURE]",
+            "[coverage|merge|owners [PACKAGE ...]|report|strict|surface FEATURE]",
             file=sys.stderr,
         )
         return 2
     try:
+        if mode != "owners" and len(sys.argv) > 2:
+            raise ContractError(f"{mode} does not accept owner package arguments")
+        requested_owners = sys.argv[2:] if mode == "owners" and len(sys.argv) > 2 else list(OWNERS)
+        unknown_owners = sorted(set(requested_owners).difference(OWNERS))
+        if unknown_owners:
+            raise ContractError(f"unknown native-link owners: {unknown_owners}")
+        if len(requested_owners) != len(set(requested_owners)):
+            raise ContractError("native-link owner arguments contain duplicates")
         if mode in {"owners", "strict"}:
             verify_owner_contracts()
-            verify_owner_native_link_profiles()
+            verify_owner_native_link_profiles(requested_owners)
         if mode == "owners":
-            print(f"validated {len(OWNERS)} isolated owner native-link profiles")
+            print(f"validated {len(requested_owners)} isolated owner native-link profiles")
             return 0
         report = build_report_from_ci_surfaces() if mode == "merge" else build_report()
         summary = report_summary(report)

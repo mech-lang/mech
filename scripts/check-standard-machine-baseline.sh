@@ -12,6 +12,15 @@ export CARGO_PROFILE_DEV_DEBUG=0
 export CARGO_PROFILE_TEST_DEBUG=0
 export CARGO_INCREMENTAL=0
 
+mode=${1:-full}
+case "$mode" in
+  full | representative) ;;
+  *)
+    echo "usage: $0 [full|representative]" >&2
+    exit 2
+    ;;
+esac
+
 for utility in cargo cat grep mktemp rm
 do
   command -v "$utility" >/dev/null 2>&1 || {
@@ -158,15 +167,26 @@ check_machine() {
 
 # These four profiles are also the reduced-closure contracts from PR3. They
 # deliberately omit transpose, baselib, matrixd, and formulas respectively.
-check_machine math "f64,add"
-check_machine compare "bool,f64,lt"
-check_machine logic "bool,and"
-check_machine range "f64,row_vectord,inclusive"
-check_machine matrix "f64,matrixd,vectord,solve"
-check_machine set "set,f64,union"
-check_machine string "string,concat"
-check_machine stats "f64,matrixd,vectord,sum"
-check_machine combinatorics "f64,n_choose_k"
+if test "$mode" = representative
+then
+  # Exercise every layer on one machine plus each reduced-closure edge from
+  # PR3. The scheduled exhaustive workflow retains the 9 x 7 profile matrix.
+  check_machine math "f64,add"
+  check_profile range runtime "f64,row_vectord,inclusive"
+  check_profile matrix runtime "f64,matrixd,vectord,solve"
+  check_profile set runtime "set,f64,union"
+  check_profile combinatorics runtime "f64,n_choose_k"
+else
+  check_machine math "f64,add"
+  check_machine compare "bool,f64,lt"
+  check_machine logic "bool,and"
+  check_machine range "f64,row_vectord,inclusive"
+  check_machine matrix "f64,matrixd,vectord,solve"
+  check_machine set "set,f64,union"
+  check_machine string "string,concat"
+  check_machine stats "f64,matrixd,vectord,sum"
+  check_machine combinatorics "f64,n_choose_k"
+fi
 
 # A downstream runtime-only crate can install the selected concrete factories
 # without enabling source specialization or compiler support.

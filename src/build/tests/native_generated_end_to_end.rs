@@ -9,10 +9,12 @@ fn every_generated_application_fixture_builds_and_executes() {
     let temporary = tempfile::tempdir().unwrap();
     let selected = std::env::var("MECH_NATIVE_GENERATED_CASE").ok();
     for generated in generated_cases() {
-        if selected
-            .as_deref()
-            .is_some_and(|selected| selected != generated.case)
-        {
+        if selected.as_deref().is_some_and(|selected| {
+            !selected
+                .split(',')
+                .map(str::trim)
+                .any(|selected| selected == generated.case)
+        }) {
             continue;
         }
         let fixture = temporary.path().join(format!("{}.mecb", generated.case));
