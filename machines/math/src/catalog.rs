@@ -412,11 +412,11 @@ macro_rules! declare_math_float_unop_factory {
                 registration: [<register_ $operation:snake _ $suffix:lower _ $scalar:lower>],
                 installer: [<install_ $operation:snake _ $suffix:lower _ $scalar:lower>],
                 name: stringify!([<$operation $scalar:camel $suffix>]),
-                factory: <[<$operation $scalar:camel $suffix>] as MechFunctionFactory>::new,
+                factory_type: [<$operation $scalar:camel $suffix>],
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _ $suffix:lower _ $scalar:lower>])),
-                cargo_features: [$operation_feature, $scalar_feature, "native-link", "runtime"],
+                extra_cargo_features: [$operation_feature],
             }
         }
     };
@@ -427,14 +427,14 @@ macro_rules! declare_math_float_unop_factory {
                 registration: [<register_ $operation:snake _ $suffix:lower _ $scalar:lower>],
                 installer: [<install_ $operation:snake _ $suffix:lower _ $scalar:lower>],
                 name: stringify!([<$operation $scalar:camel $suffix>]),
-                factory: <[<$operation $scalar:camel $suffix>] as MechFunctionFactory>::new,
+                factory_type: [<$operation $scalar:camel $suffix>],
                 contract: RuntimeFunctionContract::output_matches_input(
                     0,
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _ $suffix:lower _ $scalar:lower>])),
-                cargo_features: [$operation_feature, $scalar_feature, $shape_feature, "native-link", "runtime"],
+                extra_cargo_features: [$operation_feature],
             }
         }
     };
@@ -521,11 +521,11 @@ macro_rules! declare_math_abs_factory {
                 registration: [<register_math_abs_ $scalar_token _ $suffix:lower>],
                 installer: [<install_math_abs_ $scalar_token _ $suffix:lower>],
                 name: stringify!([<MathAbs $scalar_token:camel $suffix>]),
-                factory: <[<MathAbs $scalar_token:camel $suffix>] as MechFunctionFactory>::new,
+                factory_type: [<MathAbs $scalar_token:camel $suffix>],
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_math_abs_ $scalar_token _ $suffix:lower>])),
-                cargo_features: ["abs", $scalar_feature, "native-link", "runtime"],
+                extra_cargo_features: ["abs"],
             }
         }
     };
@@ -536,14 +536,14 @@ macro_rules! declare_math_abs_factory {
                 registration: [<register_math_abs_ $scalar_token _ $suffix:lower>],
                 installer: [<install_math_abs_ $scalar_token _ $suffix:lower>],
                 name: stringify!([<MathAbs $scalar_token:camel $suffix>]),
-                factory: <[<MathAbs $scalar_token:camel $suffix>] as MechFunctionFactory>::new,
+                factory_type: [<MathAbs $scalar_token:camel $suffix>],
                 contract: RuntimeFunctionContract::output_matches_input(
                     0,
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_math_abs_ $scalar_token _ $suffix:lower>])),
-                cargo_features: ["abs", $scalar_feature, $shape_feature, "native-link", "runtime"],
+                extra_cargo_features: ["abs"],
             }
         }
     };
@@ -604,11 +604,11 @@ macro_rules! declare_math_neg_factory {
                 registration: [<register_ $factory:snake _ $scalar_token>],
                 installer: [<install_ $factory:snake _ $scalar_token>],
                 name: concat!(stringify!($factory), "<", stringify!($scalar_token), ">"),
-                factory: <crate::ops::negate::$factory<$scalar> as MechFunctionFactory>::new,
+                factory_type: crate::ops::negate::$factory<$scalar>,
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token>])),
-                cargo_features: ["neg", $scalar_feature, "native-link", "runtime"],
+                extra_cargo_features: ["neg"],
             }
         }
     };
@@ -646,9 +646,8 @@ macro_rules! install_float_unop {
 macro_rules! install_exact_runtime {
     ($builder:expr, $factory:ident) => {
         $builder
-            .insert_runtime_factory(
+            .insert_runtime_factory::<$factory>(
                 stringify!($factory),
-                <$factory as MechFunctionFactory>::new,
                 RuntimeFunctionContract::same_shape(
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),
@@ -765,11 +764,11 @@ macro_rules! declare_op_assign_ss {
                 registration: [<register_ $operation:snake _assign_ss_ $scalar_token>],
                 installer: [<install_ $operation:snake _assign_ss_ $scalar_token>],
                 name: concat!(stringify!($operation), "AssignSS<", $scalar_name, ">"),
-                factory: <[<$operation AssignSS>]<$scalar> as MechFunctionFactory>::new,
+                factory_type: [<$operation AssignSS>]<$scalar>,
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ss_ $scalar_token>])),
-                cargo_features: [$operation_feature, $scalar_feature, "native-link", "runtime"],
+                extra_cargo_features: [$operation_feature],
             }
         }
     };
@@ -784,11 +783,11 @@ macro_rules! declare_op_assign_vv {
                 registration: [<register_ $operation:snake _assign_vv_ $shape:snake _ $scalar_token>],
                 installer: [<install_ $operation:snake _assign_vv_ $shape:snake _ $scalar_token>],
                 name: concat!(stringify!($operation), "AssignVV<[", $scalar_name, "]:", $shape_name, ">"),
-                factory: <[<$operation AssignVV>]<$scalar, $shape<$scalar>, $shape<$scalar>> as MechFunctionFactory>::new,
+                factory_type: [<$operation AssignVV>]<$scalar, $shape<$scalar>, $shape<$scalar>>,
                 contract: RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_vv_ $shape:snake _ $scalar_token>])),
-                cargo_features: [$operation_feature, $scalar_feature, $shape_feature, "native-link", "runtime"],
+                extra_cargo_features: [$operation_feature],
             }
         }
     };
@@ -803,7 +802,7 @@ macro_rules! declare_op_assign_range_s {
                 registration: [<register_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>],
                 installer: [<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>],
                 name: concat!(stringify!($operation), stringify!($family), "<", $scalar_name, stringify!($sink), stringify!($index), ">"),
-                factory: <[<$operation $family>]<$scalar, $sink<$scalar>, $index<usize>> as MechFunctionFactory>::new,
+                factory_type: [<$operation $family>]<$scalar, $sink<$scalar>, $index<usize>>,
                 contract: RuntimeFunctionContract::custom(
                     "op_assign_slice",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -811,7 +810,7 @@ macro_rules! declare_op_assign_range_s {
                 ),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $index:snake _ $scalar_token>])),
-                cargo_features: [$operation_feature, $scalar_feature, $sink_feature, $index_feature, "native-link", "runtime"],
+                extra_cargo_features: [$operation_feature],
             }
         }
     };
@@ -826,7 +825,7 @@ macro_rules! declare_op_assign_range_v {
                 registration: [<register_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>],
                 installer: [<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>],
                 name: concat!(stringify!($operation), stringify!($family), "<", $scalar_name, stringify!($sink), stringify!($source), stringify!($index), ">"),
-                factory: <[<$operation $family>]<$scalar, $sink<$scalar>, $source<$scalar>, $index<usize>> as MechFunctionFactory>::new,
+                factory_type: [<$operation $family>]<$scalar, $sink<$scalar>, $source<$scalar>, $index<usize>>,
                 contract: RuntimeFunctionContract::custom(
                     "op_assign_slice",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -834,7 +833,7 @@ macro_rules! declare_op_assign_range_v {
                 ),
                 package: "mech-math", crate_name: "mech_math",
                 installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $operation:snake _assign_ $family:snake _ $sink:snake _ $source:snake _ $index:snake _ $scalar_token>])),
-                cargo_features: [$operation_feature, $scalar_feature, $sink_feature, $source_feature, $index_feature, "native-link", "runtime"],
+                extra_cargo_features: [$operation_feature],
             }
         }
     };
@@ -1041,7 +1040,7 @@ macro_rules! export_native_op_assign_runtime_factories {
 #[cfg(feature = "op_assign")]
 macro_rules! install_op_assign_vv {
     ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $shape:ident, $shape_name:literal) => {
-        $builder.insert_runtime_factory(
+        $builder.insert_runtime_factory::<$factory<$scalar, $shape<$scalar>, $shape<$scalar>>>(
             concat!(
                 stringify!($factory),
                 "<[",
@@ -1050,7 +1049,6 @@ macro_rules! install_op_assign_vv {
                 $shape_name,
                 ">"
             ),
-            <$factory<$scalar, $shape<$scalar>, $shape<$scalar>> as MechFunctionFactory>::new,
             RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
         )?;
     };
@@ -1153,7 +1151,7 @@ macro_rules! install_op_assign_values {
 #[cfg(feature = "op_assign")]
 macro_rules! install_op_assign_range_s {
     ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $sink:ident, $index:ident) => {
-        $builder.insert_runtime_factory(
+        $builder.insert_runtime_factory::<$factory<$scalar, $sink<$scalar>, $index<usize>>>(
             concat!(
                 stringify!($factory),
                 "<",
@@ -1162,7 +1160,6 @@ macro_rules! install_op_assign_range_s {
                 stringify!($index),
                 ">"
             ),
-            <$factory<$scalar, $sink<$scalar>, $index<usize>> as MechFunctionFactory>::new,
             RuntimeFunctionContract::custom(
                 "op_assign_slice",
                 RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -1175,7 +1172,7 @@ macro_rules! install_op_assign_range_s {
 #[cfg(feature = "op_assign")]
 macro_rules! install_op_assign_range_v {
     ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $sink:ident, $source:ident, $index:ident) => {
-        $builder.insert_runtime_factory(
+        $builder.insert_runtime_factory::<$factory<$scalar, $sink<$scalar>, $source<$scalar>, $index<usize>>>(
             concat!(
                 stringify!($factory),
                 "<",
@@ -1185,7 +1182,6 @@ macro_rules! install_op_assign_range_v {
                 stringify!($index),
                 ">"
             ),
-            <$factory<$scalar, $sink<$scalar>, $source<$scalar>, $index<usize>> as MechFunctionFactory>::new,
             RuntimeFunctionContract::custom(
                 "op_assign_slice",
                 RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -1744,10 +1740,10 @@ macro_rules! declare_atan2_factory {
     ($_context:tt; $cfg:meta; $scalar_feature:literal; $factory:ident; [$($shape_feature:literal),* $(,)?]) => {
         mech_core::paste::paste! { mech_core::declare_native_runtime_factory! {
             cfg: all(feature = "atan2", $cfg), registration: [<register_ $factory:snake>], installer: [<install_ $factory:snake>],
-            name: stringify!($factory), factory: <crate::trig::atan2::$factory as MechFunctionFactory>::new,
+            name: stringify!($factory), factory_type: crate::trig::atan2::$factory,
             contract: atan2_runtime_contract!([$($shape_feature),*]),
             package: "mech-math", crate_name: "mech_math", installer_path: concat!("mech_math::__mech_native::", stringify!([<install_ $factory:snake>])),
-            cargo_features: ["atan2", $scalar_feature, $($shape_feature,)* "native-link", "runtime"],
+            extra_cargo_features: ["atan2"],
         }}
     };
 }
@@ -2146,6 +2142,35 @@ mod tests {
     use super::*;
     use mech_core::{FunctionCatalog, OperationId, RuntimeFunctionId};
     use std::collections::BTreeSet;
+
+    #[cfg(all(
+        feature = "native-plan",
+        feature = "abs",
+        feature = "complex",
+        feature = "rational"
+    ))]
+    #[test]
+    fn complex_and_rational_linkage_features_follow_factory_signatures() {
+        let mut builder = FunctionCatalogBuilder::new();
+        register_math_abs_c64_s(&mut builder).unwrap();
+        register_math_abs_r64_s(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+
+        for (name, feature) in [("MathAbsC64S", "c64"), ("MathAbsR64S", "r64")] {
+            let entry = catalog
+                .runtime_entry(RuntimeFunctionId::from_name(name))
+                .unwrap_or_else(|| panic!("missing runtime factory {name}"));
+            let linkage = entry
+                .native_linkage
+                .as_ref()
+                .unwrap_or_else(|| panic!("missing native linkage for {name}"));
+            assert!(
+                linkage.cargo_features.contains(&feature),
+                "{name} did not derive {feature}: {:?}",
+                linkage.cargo_features,
+            );
+        }
+    }
 
     #[cfg(all(feature = "source", feature = "math_default"))]
     const FROZEN_NAMES: [&str; 64] = [

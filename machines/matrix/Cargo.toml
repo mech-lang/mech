@@ -40,7 +40,7 @@ source_default = ["runtime_default", "source"]
 compiler_default = ["source_default", "compiler"]
 
 matrix_default = ["matmul", "transpose", "dot", "solve"]
-matmul = ["runtime", "dep:num-traits", "matrix"]
+matmul = ["runtime", "dep:num-traits", "matrix", "mech-core/matrix1"]
 transpose = ["runtime", "dep:num-traits", "matrix"]
 dot = ["runtime", "dep:num-traits", "matrix"]
 solve = ["runtime", "dep:num-traits", "matrix"]

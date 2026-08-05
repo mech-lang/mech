@@ -207,7 +207,14 @@ where
     #[cfg(feature = "compiler")]
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
+    T: FunctionRuntimeType,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        T::REPRESENTATION,
+        T::REPRESENTATION,
+        T::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
@@ -341,7 +348,16 @@ where
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
     Ref<DMatrix<T>>: ToValue,
+    T: FunctionRuntimeType,
+    Matrix<T>: FunctionRuntimeType,
+    DMatrix<T>: FunctionRuntimeType,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        T::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {

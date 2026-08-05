@@ -16,11 +16,17 @@ where
     T: CompileConst,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-    MatA: Debug + ConstElem + AsNaKind + 'static,
+    MatA: Debug + ConstElem + AsNaKind + FunctionRuntimeType + 'static,
     #[cfg(feature = "compiler")]
     MatA: CompileConst,
     Ref<MatA>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        MatA::REPRESENTATION,
+        FunctionValueRepresentation::String,
+        FunctionValueRepresentation::Bool,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(var, arg1, arg2) => {
@@ -102,6 +108,12 @@ macro_rules! impl_variable_define_fxn {
         var: Ref<$kind>,
       }
       impl MechFunctionFactory for [<VariableDefine $kind:camel>] {
+      const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+          <$kind as FunctionRuntimeType>::REPRESENTATION,
+          FunctionValueRepresentation::String,
+          FunctionValueRepresentation::Bool,
+        );
+
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
@@ -153,21 +165,14 @@ mech_core::declare_native_runtime_factory! {
     installer: install_variable_define_f64,
 
     name: "VariableDefineF64",
-    factory: <VariableDefineF64 as MechFunctionFactory>::new,
+    factory_type: VariableDefineF64,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
 
     package: "mech-engine",
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_variable_define_f64",
 
-    cargo_features: &[
-        "bool",
-        "f64",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define",
-    ],
+    extra_cargo_features: ["variable_define"],
 }
 
 #[cfg(feature = "f32")]
@@ -216,14 +221,14 @@ impl_variable_define_fxn!(MechAtom);
 impl_variable_define_fxn!(MechEnum);
 
 macro_rules! declare_variable_define_scalar_native {
-    ($feature:literal, $kind:ident, [$($cargo_feature:literal),+ $(,)?]) => {
+    ($feature:literal, $kind:ident) => {
         paste! {
             mech_core::declare_native_runtime_factory! {
                 cfg: all(feature = "variable_define", feature = $feature),
                 registration: [<register_variable_define_ $kind:lower>],
                 installer: [<install_variable_define_ $kind:lower>],
                 name: stringify!([<VariableDefine $kind:camel>]),
-                factory: <[<VariableDefine $kind:camel>] as MechFunctionFactory>::new,
+                factory_type: [<VariableDefine $kind:camel>],
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
                 package: "mech-engine",
                 crate_name: "mech_engine",
@@ -231,274 +236,34 @@ macro_rules! declare_variable_define_scalar_native {
                     "mech_engine::__mech_native::install_variable_define_",
                     stringify!([<$kind:lower>]),
                 ),
-                cargo_features: [$($cargo_feature),+],
+                extra_cargo_features: ["variable_define"],
             }
         }
     };
 }
 
-declare_variable_define_scalar_native!(
-    "f32",
-    f32,
-    [
-        "bool",
-        "f32",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "u8",
-    u8,
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "u8",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "u16",
-    u16,
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "u16",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "u32",
-    u32,
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "u32",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "u64",
-    u64,
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "u64",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "u128",
-    u128,
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "u128",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "i8",
-    i8,
-    [
-        "bool",
-        "i8",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "i16",
-    i16,
-    [
-        "bool",
-        "i16",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "i32",
-    i32,
-    [
-        "bool",
-        "i32",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "i64",
-    i64,
-    [
-        "bool",
-        "i64",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "i128",
-    i128,
-    [
-        "bool",
-        "i128",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "r64",
-    R64,
-    [
-        "bool",
-        "native-link",
-        "r64",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "c64",
-    C64,
-    [
-        "bool",
-        "c64",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "bool",
-    bool,
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "string",
-    String,
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "table",
-    MechTable,
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "table",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "set",
-    MechSet,
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "set",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "tuple",
-    MechTuple,
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "tuple",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "record",
-    MechRecord,
-    [
-        "bool",
-        "native-link",
-        "record",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "map",
-    MechMap,
-    [
-        "bool",
-        "map",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "atom",
-    MechAtom,
-    [
-        "atom",
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_scalar_native!(
-    "enum",
-    MechEnum,
-    [
-        "bool",
-        "enum",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
+declare_variable_define_scalar_native!("f32", f32);
+declare_variable_define_scalar_native!("u8", u8);
+declare_variable_define_scalar_native!("u16", u16);
+declare_variable_define_scalar_native!("u32", u32);
+declare_variable_define_scalar_native!("u64", u64);
+declare_variable_define_scalar_native!("u128", u128);
+declare_variable_define_scalar_native!("i8", i8);
+declare_variable_define_scalar_native!("i16", i16);
+declare_variable_define_scalar_native!("i32", i32);
+declare_variable_define_scalar_native!("i64", i64);
+declare_variable_define_scalar_native!("i128", i128);
+declare_variable_define_scalar_native!("r64", R64);
+declare_variable_define_scalar_native!("c64", C64);
+declare_variable_define_scalar_native!("bool", bool);
+declare_variable_define_scalar_native!("string", String);
+declare_variable_define_scalar_native!("table", MechTable);
+declare_variable_define_scalar_native!("set", MechSet);
+declare_variable_define_scalar_native!("tuple", MechTuple);
+declare_variable_define_scalar_native!("record", MechRecord);
+declare_variable_define_scalar_native!("map", MechMap);
+declare_variable_define_scalar_native!("atom", MechAtom);
+declare_variable_define_scalar_native!("enum", MechEnum);
 
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
@@ -573,7 +338,7 @@ macro_rules! for_each_variable_define_matrix_shape {
 
 macro_rules! declare_variable_define_matrix_native {
     (
-        ($value_feature:literal; $kind:ty; $kind_token:ident; $kind_name:literal; [$($cargo_feature:literal),+]),
+        ($value_feature:literal; $kind:ty; $kind_token:ident; $kind_name:literal),
         $shape:ident,
         $shape_feature:literal
     ) => {
@@ -587,7 +352,7 @@ macro_rules! declare_variable_define_matrix_native {
                 registration: [<register_variable_define_matrix_ $kind_token:lower _ $shape:lower>],
                 installer: [<install_variable_define_matrix_ $kind_token:lower _ $shape:lower>],
                 name: concat!("VariableDefineMatrix<", $kind_name, stringify!($shape), ">"),
-                factory: VariableDefineMatrix::<$kind, $shape<$kind>>::new,
+                factory_type: VariableDefineMatrix<$kind, $shape<$kind>>,
                 contract: RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
                 package: "mech-engine",
                 crate_name: "mech_engine",
@@ -595,243 +360,37 @@ macro_rules! declare_variable_define_matrix_native {
                     "mech_engine::__mech_native::install_variable_define_matrix_",
                     stringify!([<$kind_token:lower>]), "_", stringify!([<$shape:lower>]),
                 ),
-                cargo_features: [$($cargo_feature,)+ $shape_feature],
+                extra_cargo_features: ["variable_define"],
             }
         }
     };
 }
 
 macro_rules! declare_variable_define_matrix_for_type {
-    ($value_feature:literal, $kind:ty, $kind_token:ident, $kind_name:literal, [$($cargo_feature:literal),+ $(,)?]) => {
+    ($value_feature:literal, $kind:ty, $kind_token:ident, $kind_name:literal) => {
         for_each_variable_define_matrix_shape!(
             declare_variable_define_matrix_native,
-            ($value_feature; $kind; $kind_token; $kind_name; [$($cargo_feature),+])
+            ($value_feature; $kind; $kind_token; $kind_name)
         );
     };
 }
 
-declare_variable_define_matrix_for_type!(
-    "u8",
-    u8,
-    u8,
-    "u8",
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "u8",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "u16",
-    u16,
-    u16,
-    "u16",
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "u16",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "u32",
-    u32,
-    u32,
-    "u32",
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "u32",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "u64",
-    u64,
-    u64,
-    "u64",
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "u64",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "u128",
-    u128,
-    u128,
-    "u128",
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "u128",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "i8",
-    i8,
-    i8,
-    "i8",
-    [
-        "bool",
-        "i8",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "i16",
-    i16,
-    i16,
-    "i16",
-    [
-        "bool",
-        "i16",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "i32",
-    i32,
-    i32,
-    "i32",
-    [
-        "bool",
-        "i32",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "i64",
-    i64,
-    i64,
-    "i64",
-    [
-        "bool",
-        "i64",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "i128",
-    i128,
-    i128,
-    "i128",
-    [
-        "bool",
-        "i128",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "f32",
-    f32,
-    f32,
-    "f32",
-    [
-        "bool",
-        "f32",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "f64",
-    f64,
-    f64,
-    "f64",
-    [
-        "bool",
-        "f64",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "r64",
-    R64,
-    R64,
-    "rational",
-    [
-        "bool",
-        "native-link",
-        "r64",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "c64",
-    C64,
-    C64,
-    "complex",
-    [
-        "bool",
-        "c64",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "bool",
-    bool,
-    bool,
-    "bool",
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
-declare_variable_define_matrix_for_type!(
-    "string",
-    String,
-    String,
-    "string",
-    [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define"
-    ]
-);
+declare_variable_define_matrix_for_type!("u8", u8, u8, "u8");
+declare_variable_define_matrix_for_type!("u16", u16, u16, "u16");
+declare_variable_define_matrix_for_type!("u32", u32, u32, "u32");
+declare_variable_define_matrix_for_type!("u64", u64, u64, "u64");
+declare_variable_define_matrix_for_type!("u128", u128, u128, "u128");
+declare_variable_define_matrix_for_type!("i8", i8, i8, "i8");
+declare_variable_define_matrix_for_type!("i16", i16, i16, "i16");
+declare_variable_define_matrix_for_type!("i32", i32, i32, "i32");
+declare_variable_define_matrix_for_type!("i64", i64, i64, "i64");
+declare_variable_define_matrix_for_type!("i128", i128, i128, "i128");
+declare_variable_define_matrix_for_type!("f32", f32, f32, "f32");
+declare_variable_define_matrix_for_type!("f64", f64, f64, "f64");
+declare_variable_define_matrix_for_type!("r64", R64, R64, "rational");
+declare_variable_define_matrix_for_type!("c64", C64, C64, "complex");
+declare_variable_define_matrix_for_type!("bool", bool, bool, "bool");
+declare_variable_define_matrix_for_type!("string", String, String, "string");
 
 macro_rules! register_variable_define_matrix_native {
     (
@@ -891,28 +450,36 @@ pub struct VariableDefineEmpty {
     var: Ref<Value>,
 }
 
-fn variable_define_empty_factory(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    match args {
-        FunctionArgs::Binary(var, arg1, arg2) => {
-            let var: Ref<Value> = var.try_function_ref(FunctionArgumentRole::Output)?;
-            let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-            let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-            let id = hash_str(&name.borrow());
-            Ok(Box::new(VariableDefineEmpty {
-                id,
-                name,
-                mutable,
-                var,
-            }))
+impl MechFunctionFactory for VariableDefineEmpty {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::MutableValueCell,
+        FunctionValueRepresentation::String,
+        FunctionValueRepresentation::Bool,
+    );
+
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(var, arg1, arg2) => {
+                let var: Ref<Value> = var.try_function_ref(FunctionArgumentRole::Output)?;
+                let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let id = hash_str(&name.borrow());
+                Ok(Box::new(Self {
+                    id,
+                    name,
+                    mutable,
+                    var,
+                }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 3,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
         }
-        _ => Err(MechError::new(
-            IncorrectNumberOfArguments {
-                expected: 3,
-                found: args.len(),
-            },
-            None,
-        )
-        .with_compiler_loc()),
     }
 }
 
@@ -921,18 +488,12 @@ mech_core::declare_native_runtime_factory! {
     registration: register_variable_define_empty,
     installer: install_variable_define_empty,
     name: "VariableDefineEmpty",
-    factory: variable_define_empty_factory,
+    factory_type: VariableDefineEmpty,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
     package: "mech-engine",
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_variable_define_empty",
-    cargo_features: [
-        "bool",
-        "native-link",
-        "runtime",
-        "string",
-        "variable_define",
-    ],
+    extra_cargo_features: ["variable_define"],
 }
 impl MechFunctionImpl for VariableDefineEmpty {
     fn solve(&self) {}

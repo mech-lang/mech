@@ -114,6 +114,12 @@ pub struct AtomEq {
 }
 #[cfg(feature = "atom")]
 impl MechFunctionFactory for AtomEq {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Bool,
+        FunctionValueRepresentation::Atom,
+        FunctionValueRepresentation::Atom,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
@@ -172,6 +178,12 @@ pub struct TableEq {
 }
 #[cfg(feature = "table")]
 impl MechFunctionFactory for TableEq {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Bool,
+        FunctionValueRepresentation::Table,
+        FunctionValueRepresentation::Table,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {

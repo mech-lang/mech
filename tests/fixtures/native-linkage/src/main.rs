@@ -102,7 +102,7 @@ struct LinkageEntry<'a> {
     package: Option<&'static str>,
     crate_name: Option<&'static str>,
     installer_path: Option<&'static str>,
-    cargo_features: Option<&'static [&'static str]>,
+    cargo_features: Option<Vec<&'static str>>,
     contract_kind: &'static str,
     output_alias_policy: &'static str,
 }
@@ -134,7 +134,7 @@ fn emit(catalog: &FunctionCatalog) {
                 package: linkage.map(|value| value.package),
                 crate_name: linkage.map(|value| value.crate_name),
                 installer_path: linkage.map(|value| value.installer_path),
-                cargo_features: linkage.map(|value| value.cargo_features),
+                cargo_features: linkage.map(|value| value.cargo_features.clone()),
                 contract_kind: entry.contract_kind(),
                 output_alias_policy: match entry.output_alias_policy() {
                     mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias => {

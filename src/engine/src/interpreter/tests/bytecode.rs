@@ -8,9 +8,10 @@
 mod bytecode_dependency_tests {
     use super::super::super::{
         BytecodeInstruction, BytecodeProgram, EncodedConstant, FunctionArgs, FunctionArgumentRole,
-        FunctionCatalogBuilder, Interpreter, MResult, MatrixStorage, MechError, MechFunction,
-        MechFunctionFactory, MechFunctionImpl, NoMechExecutionServices, ProgramState,
-        ReactiveCellId, ReactiveDependencyKind, Ref, RuntimeFunctionContract, RuntimeFunctionId,
+        FunctionCatalogBuilder, FunctionRuntimeType, FunctionValueRepresentation, Interpreter,
+        MResult, MatrixStorage, MechError, MechFunction, MechFunctionFactory, MechFunctionImpl,
+        NoMechExecutionServices, ProgramState, ReactiveCellId, ReactiveDependencyKind, Ref,
+        RuntimeFunctionContract, RuntimeFunctionId, RuntimeFunctionSignature,
         RuntimeOutputAliasPolicy, RuntimeType, ToValue, Value, hash_str,
         register_bytecode_function, write_bytecode,
     };
@@ -46,6 +47,9 @@ mod bytecode_dependency_tests {
     }
 
     impl MechFunctionFactory for ExactF64Nullary {
+        const SIGNATURE: RuntimeFunctionSignature =
+            RuntimeFunctionSignature::nullary(<f64 as FunctionRuntimeType>::REPRESENTATION);
+
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
             match args {
                 FunctionArgs::Nullary(output) => Ok(Box::new(Self {
@@ -105,20 +109,108 @@ mod bytecode_dependency_tests {
         Ok(Box::new(BytecodeDependencyTestFunction { output }))
     }
 
+    macro_rules! dependency_factory {
+        ($name:ident, $signature:expr) => {
+            struct $name;
+
+            impl MechFunctionFactory for $name {
+                const SIGNATURE: RuntimeFunctionSignature = $signature;
+
+                fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                    bytecode_dependency_test_factory(args)
+                }
+            }
+        };
+    }
+
+    dependency_factory!(
+        DependencyNullary,
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::AnyValue)
+    );
+    dependency_factory!(
+        DependencyUnary,
+        RuntimeFunctionSignature::unary(
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+        )
+    );
+    dependency_factory!(
+        DependencyBinary,
+        RuntimeFunctionSignature::binary(
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+        )
+    );
+    dependency_factory!(
+        DependencyTernary,
+        RuntimeFunctionSignature::ternary(
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+        )
+    );
+    dependency_factory!(
+        DependencyQuaternary,
+        RuntimeFunctionSignature::quaternary(
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+        )
+    );
+    dependency_factory!(
+        DependencyVariadic,
+        RuntimeFunctionSignature::variadic(
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+        )
+    );
+
     fn register_dependency_test_function(
         state: &ProgramState,
         args: FunctionArgs,
     ) -> MResult<Value> {
-        const NAME: &str = "BytecodeDependencyTestFunction";
         let mut builder = FunctionCatalogBuilder::new();
-        builder.insert_runtime_factory(
-            NAME,
-            bytecode_dependency_test_factory,
-            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
-        )?;
+        let contract =
+            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias);
+        let name = match &args {
+            FunctionArgs::Nullary(_) => {
+                builder
+                    .insert_runtime_factory::<DependencyNullary>("DependencyNullary", contract)?;
+                "DependencyNullary"
+            }
+            FunctionArgs::Unary(_, _) => {
+                builder.insert_runtime_factory::<DependencyUnary>("DependencyUnary", contract)?;
+                "DependencyUnary"
+            }
+            FunctionArgs::Binary(_, _, _) => {
+                builder.insert_runtime_factory::<DependencyBinary>("DependencyBinary", contract)?;
+                "DependencyBinary"
+            }
+            FunctionArgs::Ternary(_, _, _, _) => {
+                builder
+                    .insert_runtime_factory::<DependencyTernary>("DependencyTernary", contract)?;
+                "DependencyTernary"
+            }
+            FunctionArgs::Quaternary(_, _, _, _, _) => {
+                builder.insert_runtime_factory::<DependencyQuaternary>(
+                    "DependencyQuaternary",
+                    contract,
+                )?;
+                "DependencyQuaternary"
+            }
+            FunctionArgs::Variadic(_, _) => {
+                builder
+                    .insert_runtime_factory::<DependencyVariadic>("DependencyVariadic", contract)?;
+                "DependencyVariadic"
+            }
+        };
         let catalog = builder.build()?;
         let entry = catalog
-            .runtime_entry(RuntimeFunctionId::from_name(NAME))
+            .runtime_entry(RuntimeFunctionId::from_name(name))
             .expect("test factory was just registered");
         register_bytecode_function(state, entry, args)
     }
@@ -245,8 +337,17 @@ mod bytecode_dependency_tests {
     #[test]
     fn runtime_contract_preflight_preserves_plan_symbols_dictionary_and_register_state() {
         const NAME: &str = "AddMDMD<f64>";
-        fn must_not_instantiate(_args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-            panic!("malformed matrix relations must fail before factory construction")
+        struct MustNotInstantiate;
+        impl MechFunctionFactory for MustNotInstantiate {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                FunctionValueRepresentation::AnyValue,
+                FunctionValueRepresentation::AnyValue,
+                FunctionValueRepresentation::AnyValue,
+            );
+
+            fn new(_args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                panic!("malformed matrix relations must fail before factory construction")
+            }
         }
         fn matrix(rows: u32, cols: u32) -> EncodedConstant {
             let mut bytes = Vec::new();
@@ -268,9 +369,8 @@ mod bytecode_dependency_tests {
         }
         let mut catalog = FunctionCatalogBuilder::new();
         catalog
-            .insert_runtime_factory(
+            .insert_runtime_factory::<MustNotInstantiate>(
                 NAME,
-                must_not_instantiate,
                 RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
             )
             .unwrap();

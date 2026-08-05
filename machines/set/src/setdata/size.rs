@@ -15,6 +15,11 @@ pub(crate) struct SetSizeFxn {
 }
 
 impl MechFunctionFactory for SetSizeFxn {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        FunctionValueRepresentation::U64,
+        FunctionValueRepresentation::Set,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg1) => {

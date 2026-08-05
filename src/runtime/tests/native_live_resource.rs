@@ -10,9 +10,9 @@ use std::{
 
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, FunctionArgs, FunctionCatalog,
-    FunctionCatalogBuilder, MResult, MechError, MechErrorKind, MechFunction, MechFunctionFactory,
-    MechFunctionImpl, ParsedProgram, Ref, ResourceDelivery, ResourceIntent,
-    RuntimeFunctionContract, RuntimeOutputAliasPolicy, Value, hash_str,
+    FunctionCatalogBuilder, FunctionRuntimeType, MResult, MechError, MechErrorKind, MechFunction,
+    MechFunctionFactory, MechFunctionImpl, ParsedProgram, Ref, ResourceDelivery, ResourceIntent,
+    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, Value, hash_str,
 };
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
@@ -92,20 +92,28 @@ impl MechFunctionCompiler for ControlledAdd {
     }
 }
 
-fn controlled_add_factory(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    let FunctionArgs::Binary(output, lhs, rhs) = arguments else {
-        return Err(MechError::new(ControlledAddInvalidArguments, None));
-    };
-    let (Value::F64(output), Value::F64(lhs), Value::F64(rhs)) = (output, lhs, rhs) else {
-        return Err(MechError::new(ControlledAddInvalidArguments, None));
-    };
-    ADD_OBSERVATION.with(|observation| {
-        *observation.borrow_mut() = Some(AddObservation {
-            input: lhs.clone(),
-            output: output.clone(),
+impl MechFunctionFactory for ControlledAdd {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        <f64 as FunctionRuntimeType>::REPRESENTATION,
+        <f64 as FunctionRuntimeType>::REPRESENTATION,
+        <f64 as FunctionRuntimeType>::REPRESENTATION,
+    );
+
+    fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        let FunctionArgs::Binary(output, lhs, rhs) = arguments else {
+            return Err(MechError::new(ControlledAddInvalidArguments, None));
+        };
+        let (Value::F64(output), Value::F64(lhs), Value::F64(rhs)) = (output, lhs, rhs) else {
+            return Err(MechError::new(ControlledAddInvalidArguments, None));
+        };
+        ADD_OBSERVATION.with(|observation| {
+            *observation.borrow_mut() = Some(AddObservation {
+                input: lhs.clone(),
+                output: output.clone(),
+            });
         });
-    });
-    Ok(Box::new(ControlledAdd { lhs, rhs, output }))
+        Ok(Box::new(ControlledAdd { lhs, rhs, output }))
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -137,16 +145,14 @@ impl MechErrorKind for ControlledAddInvalidArguments {
 fn function_catalog() -> Arc<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
     builder
-        .insert_runtime_factory(
+        .insert_runtime_factory::<ControlledAdd>(
             "AddSS<f64>",
-            controlled_add_factory,
             RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
         )
         .unwrap();
     builder
-        .insert_runtime_factory(
+        .insert_runtime_factory::<mech_engine::intrinsics::define::VariableDefineF64>(
             "VariableDefineF64",
-            <mech_engine::intrinsics::define::VariableDefineF64 as MechFunctionFactory>::new,
             RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
         )
         .unwrap();

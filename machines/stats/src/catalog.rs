@@ -47,9 +47,8 @@ macro_rules! install_numeric_runtime_factories {
 
 macro_rules! install_numeric_runtime_factory {
     ($builder:expr, $module:ident, $factory:ident, $scalar:ty, $name:literal) => {
-        $builder.insert_runtime_factory(
+        $builder.insert_runtime_factory::<crate::$module::$factory<$scalar>>(
             concat!(stringify!($factory), "<", $name, ">"),
-            <crate::$module::$factory<$scalar> as mech_core::MechFunctionFactory>::new,
             RuntimeFunctionContract::custom(
                 "statistical_reduction",
                 RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -277,7 +276,7 @@ macro_rules! declare_stats_runtime_factory {
                 registration: [<register_ $factory:snake _ $scalar_token>],
                 installer: [<install_ $factory:snake _ $scalar_token>],
                 name: concat!(stringify!($factory), "<", $scalar_name, ">"),
-                factory: <crate::$module::$factory<$scalar> as mech_core::MechFunctionFactory>::new,
+                factory_type: crate::$module::$factory<$scalar>,
                 contract: RuntimeFunctionContract::custom(
                     "statistical_reduction",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -285,7 +284,7 @@ macro_rules! declare_stats_runtime_factory {
                 ),
                 package: "mech-stats", crate_name: "mech_stats",
                 installer_path: concat!("mech_stats::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token>])),
-                cargo_features: ["sum", $scalar_name, $($shape_feature,)* "native-link", "runtime"],
+                extra_cargo_features: ["sum"],
             }
         }
     };

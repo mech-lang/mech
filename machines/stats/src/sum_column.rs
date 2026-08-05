@@ -71,7 +71,14 @@ where
     #[cfg(feature = "compiler")]
     T: CompileConst + ConstElem,
     Ref<DMatrix<T>>: ToValue,
+    RowDVector<T>: FunctionRuntimeType,
+    DMatrix<T>: FunctionRuntimeType,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <RowDVector<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg) => {

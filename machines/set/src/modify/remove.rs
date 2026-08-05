@@ -12,6 +12,12 @@ pub(crate) struct SetRemoveFxn {
     out: Ref<MechSet>,
 }
 impl MechFunctionFactory for SetRemoveFxn {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::MutableValueCell,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {

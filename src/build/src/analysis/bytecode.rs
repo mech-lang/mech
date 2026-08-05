@@ -131,7 +131,7 @@ fn validate_linkage(
     if linkage.cargo_features.is_empty() {
         return Err(invalid("Cargo features must not be empty".to_owned()));
     }
-    for feature in linkage.cargo_features {
+    for feature in &linkage.cargo_features {
         if !is_cargo_feature_name(feature) {
             return Err(invalid(format!(
                 "Cargo feature {feature:?} must match [A-Za-z_][A-Za-z0-9_-]*"
@@ -185,42 +185,48 @@ fn is_cargo_feature_name(name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use mech_core::{
-        FunctionArgs, FunctionCatalogBuilder, MechFunction, NativeFunctionLinkage,
-        RuntimeFunctionContract, RuntimeOutputAliasPolicy,
+        FunctionArgs, FunctionCatalogBuilder, FunctionValueRepresentation, MechFunction,
+        MechFunctionFactory, NativeFunctionLinkage, RuntimeFunctionContract,
+        RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
     };
 
     use super::*;
 
-    fn unused_factory(_arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        panic!("factory must not run during native planning")
+    struct UnusedFactory;
+
+    impl MechFunctionFactory for UnusedFactory {
+        const SIGNATURE: RuntimeFunctionSignature =
+            RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Empty);
+
+        fn new(_arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            panic!("factory must not run during native planning")
+        }
     }
 
     #[test]
     fn runtime_ids_are_sorted_and_deduplicated() {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_runtime_factory_with_linkage(
+            .insert_runtime_factory_with_linkage::<UnusedFactory>(
                 "B",
-                unused_factory,
                 RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
                 NativeFunctionLinkage {
                     package: "mech-b",
                     crate_name: "mech_b",
                     installer_path: "mech_b::__mech_native::install_b",
-                    cargo_features: &["native-link", "runtime"],
+                    cargo_features: vec!["native-link", "runtime"],
                 },
             )
             .unwrap();
         builder
-            .insert_runtime_factory_with_linkage(
+            .insert_runtime_factory_with_linkage::<UnusedFactory>(
                 "A",
-                unused_factory,
                 RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
                 NativeFunctionLinkage {
                     package: "mech-a",
                     crate_name: "mech_a",
                     installer_path: "mech_a::__mech_native::install_a",
-                    cargo_features: &["native-link", "runtime"],
+                    cargo_features: vec!["native-link", "runtime"],
                 },
             )
             .unwrap();
@@ -247,9 +253,8 @@ mod tests {
     fn known_runtime_function_without_linkage_is_rejected() {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_runtime_factory(
+            .insert_runtime_factory::<UnusedFactory>(
                 "KnownButUnlinked",
-                unused_factory,
                 RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
             )
             .unwrap();

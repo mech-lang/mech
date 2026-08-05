@@ -162,11 +162,11 @@ mech_core::declare_native_runtime_factory! {
     registration: register_set_define,
     installer: install_set_define,
     name: "set/define",
-    factory: <ValueSet as MechFunctionFactory>::new,
+    factory_type: ValueSet,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_set_define",
-    cargo_features: ["native-link", "runtime", "set"],
+    extra_cargo_features: [],
 }
 
 mech_core::declare_native_runtime_factory! {
@@ -174,11 +174,11 @@ mech_core::declare_native_runtime_factory! {
     registration: register_set_comprehension,
     installer: install_set_comprehension,
     name: "set/comprehension",
-    factory: <ValueSetComprehension as MechFunctionFactory>::new,
+    factory_type: ValueSetComprehension,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_set_comprehension",
-    cargo_features: ["native-link", "runtime", "set_comprehensions"],
+    extra_cargo_features: ["set_comprehensions"],
 }
 
 mech_core::declare_native_runtime_factory! {
@@ -186,7 +186,7 @@ mech_core::declare_native_runtime_factory! {
     registration: register_matrix_comprehension,
     installer: install_matrix_comprehension,
     name: "matrix/comprehension",
-    factory: <ValueMatrixComprehension as MechFunctionFactory>::new,
+    factory_type: ValueMatrixComprehension,
     contract: RuntimeFunctionContract::custom(
         "matrix_comprehension",
         RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -194,7 +194,7 @@ mech_core::declare_native_runtime_factory! {
     ),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_matrix_comprehension",
-    cargo_features: ["matrix_comprehensions", "native-link", "runtime"],
+    extra_cargo_features: ["matrix_comprehensions"],
 }
 
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {

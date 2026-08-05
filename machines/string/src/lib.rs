@@ -91,7 +91,16 @@ macro_rules! impl_string_binop {
             #[cfg(feature = "compiler")]
             T: ConstElem + CompileConst,
             Ref<$out_type>: ToValue,
+            $arg1_type: FunctionRuntimeType,
+            $arg2_type: FunctionRuntimeType,
+            $out_type: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {

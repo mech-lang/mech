@@ -169,12 +169,12 @@ mech_core::declare_native_runtime_factory! {
     registration: register_atom_eq,
     installer: install_atom_eq,
     name: "AtomEq",
-    factory: <AtomEq as MechFunctionFactory>::new,
+    factory_type: AtomEq,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_atom_eq",
-    cargo_features: ["atom", "bool", "eq", "native-link", "runtime"],
+    extra_cargo_features: ["eq"],
 }
 
 mech_core::declare_native_runtime_factory! {
@@ -182,12 +182,12 @@ mech_core::declare_native_runtime_factory! {
     registration: register_table_eq,
     installer: install_table_eq,
     name: "TableEq",
-    factory: <TableEq as MechFunctionFactory>::new,
+    factory_type: TableEq,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_table_eq",
-    cargo_features: ["bool", "eq", "native-link", "runtime", "table"],
+    extra_cargo_features: ["eq"],
 }
 
 mech_core::declare_native_runtime_factory! {
@@ -195,12 +195,12 @@ mech_core::declare_native_runtime_factory! {
     registration: register_atom_neq,
     installer: install_atom_neq,
     name: "AtomNeq",
-    factory: <AtomNeq as MechFunctionFactory>::new,
+    factory_type: AtomNeq,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_atom_neq",
-    cargo_features: ["atom", "bool", "native-link", "neq", "runtime"],
+    extra_cargo_features: ["neq"],
 }
 
 mech_core::declare_native_runtime_factory! {
@@ -208,12 +208,12 @@ mech_core::declare_native_runtime_factory! {
     registration: register_table_neq,
     installer: install_table_neq,
     name: "TableNeq",
-    factory: <TableNeq as MechFunctionFactory>::new,
+    factory_type: TableNeq,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_table_neq",
-    cargo_features: ["bool", "native-link", "neq", "runtime", "table"],
+    extra_cargo_features: ["neq"],
 }
 
 #[doc(hidden)]

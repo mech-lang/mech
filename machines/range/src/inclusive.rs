@@ -34,12 +34,20 @@ where
     T: CompileConst + ConstElem,
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
     naMatrix<T, R1, C1, S1>: AsNaKind,
+    naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
+    T: FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     R1: Dim + 'static,
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug + 'static,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        <naMatrix<T, R1, C1, S1> as FunctionRuntimeType>::REPRESENTATION,
+        T::REPRESENTATION,
+        T::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, from, to) => {

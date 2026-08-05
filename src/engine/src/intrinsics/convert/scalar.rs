@@ -10,6 +10,9 @@ struct ConvertSEnum {
 }
 #[cfg(feature = "enum")]
 impl MechFunctionFactory for ConvertSEnum {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Enum);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
@@ -53,20 +56,25 @@ struct ConvertSEmpty {
     out: Ref<Value>,
 }
 
-fn convert_empty_factory(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    match args {
-        FunctionArgs::Nullary(out) => {
-            let out: Ref<Value> = out.try_function_ref(FunctionArgumentRole::Output)?;
-            Ok(Box::new(ConvertSEmpty { out }))
+impl MechFunctionFactory for ConvertSEmpty {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::MutableValueCell);
+
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Nullary(out) => {
+                let out: Ref<Value> = out.try_function_ref(FunctionArgumentRole::Output)?;
+                Ok(Box::new(Self { out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 0,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
         }
-        _ => Err(MechError::new(
-            IncorrectNumberOfArguments {
-                expected: 0,
-                found: args.len(),
-            },
-            None,
-        )
-        .with_compiler_loc()),
     }
 }
 
@@ -75,11 +83,11 @@ mech_core::declare_native_runtime_factory! {
     registration: register_convert_empty,
     installer: install_convert_empty,
     name: "ConvertSEmpty<empty>",
-    factory: convert_empty_factory,
+    factory_type: ConvertSEmpty,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_convert_empty",
-    cargo_features: ["convert", "native-link", "runtime"],
+    extra_cargo_features: ["convert"],
 }
 
 mech_core::declare_native_runtime_factory! {
@@ -87,11 +95,11 @@ mech_core::declare_native_runtime_factory! {
     registration: register_convert_enum,
     installer: install_convert_enum,
     name: "ConvertSEnum<enum>",
-    factory: ConvertSEnum::new,
+    factory_type: ConvertSEnum,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_convert_enum",
-    cargo_features: ["convert", "enum", "native-link", "runtime"],
+    extra_cargo_features: ["convert"],
 }
 
 impl MechFunctionImpl for ConvertSEmpty {

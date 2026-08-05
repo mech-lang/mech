@@ -34,14 +34,14 @@ macro_rules! declare_n_choose_k_scalar {
                 registration: [<register_n_choose_k_ $scalar_token>],
                 installer: [<install_n_choose_k_ $scalar_token>],
                 name: concat!("NChooseK<", $scalar_name, ">"),
-                factory: <crate::n_choose_k::NChooseK<$scalar> as mech_core::MechFunctionFactory>::new,
+                factory_type: crate::n_choose_k::NChooseK<$scalar>,
                 contract: mech_core::RuntimeFunctionContract::no_matrix(
                     mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),
                 package: "mech-combinatorics",
                 crate_name: "mech_combinatorics",
                 installer_path: concat!("mech_combinatorics::__mech_native::", stringify!([<install_n_choose_k_ $scalar_token>])),
-                cargo_features: ["n_choose_k", $scalar_name, "native-link", "runtime"],
+                extra_cargo_features: ["n_choose_k"],
             }
         }
     };
@@ -55,7 +55,7 @@ macro_rules! declare_n_choose_k_matrix {
                 registration: [<register_n_choose_k_matrix_ $scalar_token>],
                 installer: [<install_n_choose_k_matrix_ $scalar_token>],
                 name: concat!("NChooseKMatrix<", $scalar_name, ">"),
-                factory: <crate::n_choose_k::NChooseKMatrix<$scalar> as mech_core::MechFunctionFactory>::new,
+                factory_type: crate::n_choose_k::NChooseKMatrix<$scalar>,
                 contract: mech_core::RuntimeFunctionContract::custom(
                     "n_choose_k_matrix",
                     mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -64,7 +64,7 @@ macro_rules! declare_n_choose_k_matrix {
                 package: "mech-combinatorics",
                 crate_name: "mech_combinatorics",
                 installer_path: concat!("mech_combinatorics::__mech_native::", stringify!([<install_n_choose_k_matrix_ $scalar_token>])),
-                cargo_features: ["matrix", "matrixd", "n_choose_k", $scalar_name, "native-link", "runtime"],
+                extra_cargo_features: ["n_choose_k"],
             }
         }
     };

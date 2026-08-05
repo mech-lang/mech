@@ -44,6 +44,9 @@ impl MechFunctionImpl for ValueSet {
 
 #[cfg(all(feature = "set", feature = "functions"))]
 impl MechFunctionFactory for ValueSet {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Set);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
@@ -125,6 +128,9 @@ impl MechFunctionImpl for ValueSetComprehension {
 
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueSetComprehension {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Set);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(Value::Set(out)) => Ok(Box::new(ValueSetComprehension {
@@ -199,6 +205,9 @@ impl MechFunctionImpl for ValueMatrixComprehension {
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueMatrixComprehension {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::AnyValue);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => Ok(Box::new(ValueMatrixComprehension {

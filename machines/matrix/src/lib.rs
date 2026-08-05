@@ -22,7 +22,7 @@ use paste::paste;
 use nalgebra::DMatrix;
 #[cfg(feature = "vectord")]
 use nalgebra::DVector;
-#[cfg(feature = "matrix1")]
+#[cfg(any(feature = "matrix1", feature = "matmul"))]
 use nalgebra::Matrix1;
 #[cfg(feature = "matrix2")]
 use nalgebra::Matrix2;

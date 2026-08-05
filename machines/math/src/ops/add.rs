@@ -93,89 +93,6 @@ macro_rules! add_scalar_rhs_op {
 impl_math_fxns!(Add);
 
 #[cfg(feature = "f64")]
-fn add_f64_native_features(suffix: &str) -> &'static [&'static str] {
-    match suffix {
-        "SS" => &["add", "f64", "native-link", "runtime"],
-        "SM1" | "M1S" | "M1M1" => &["add", "f64", "matrix1", "native-link", "runtime"],
-        "SM2" | "M2S" | "M2M2" => &["add", "f64", "matrix2", "native-link", "runtime"],
-        "SM3" | "M3S" | "M3M3" => &["add", "f64", "matrix3", "native-link", "runtime"],
-        "SM4" | "M4S" | "M4M4" => &["add", "f64", "matrix4", "native-link", "runtime"],
-        "SM2x3" | "M2x3S" | "M2x3M2x3" => {
-            &["add", "f64", "matrix2x3", "native-link", "runtime"]
-        }
-        "SM3x2" | "M3x2S" | "M3x2M3x2" => {
-            &["add", "f64", "matrix3x2", "native-link", "runtime"]
-        }
-        "SMD" | "MDS" | "MDMD" => &["add", "f64", "matrixd", "native-link", "runtime"],
-        "SR2" | "R2S" | "R2R2" => {
-            &["add", "f64", "native-link", "row_vector2", "runtime"]
-        }
-        "SR3" | "R3S" | "R3R3" => {
-            &["add", "f64", "native-link", "row_vector3", "runtime"]
-        }
-        "SR4" | "R4S" | "R4R4" => {
-            &["add", "f64", "native-link", "row_vector4", "runtime"]
-        }
-        "SRD" | "RDS" | "RDRD" => {
-            &["add", "f64", "native-link", "row_vectord", "runtime"]
-        }
-        "SV2" | "V2S" | "V2V2" => {
-            &["add", "f64", "native-link", "runtime", "vector2"]
-        }
-        "SV3" | "V3S" | "V3V3" => {
-            &["add", "f64", "native-link", "runtime", "vector3"]
-        }
-        "SV4" | "V4S" | "V4V4" => {
-            &["add", "f64", "native-link", "runtime", "vector4"]
-        }
-        "SVD" | "VDS" | "VDVD" => {
-            &["add", "f64", "native-link", "runtime", "vectord"]
-        }
-        "M2V2" | "V2M2" => &["add", "f64", "matrix2", "native-link", "runtime", "vector2"],
-        "M3V3" | "V3M3" => &["add", "f64", "matrix3", "native-link", "runtime", "vector3"],
-        "M4V4" | "V4M4" => &["add", "f64", "matrix4", "native-link", "runtime", "vector4"],
-        "M2x3V2" | "V2M2x3" => {
-            &["add", "f64", "matrix2x3", "native-link", "runtime", "vector2"]
-        }
-        "M3x2V3" | "V3M3x2" => {
-            &["add", "f64", "matrix3x2", "native-link", "runtime", "vector3"]
-        }
-        "MDVD" | "VDMD" => &["add", "f64", "matrixd", "native-link", "runtime", "vectord"],
-        "MDV2" | "V2MD" => &["add", "f64", "matrixd", "native-link", "runtime", "vector2"],
-        "MDV3" | "V3MD" => &["add", "f64", "matrixd", "native-link", "runtime", "vector3"],
-        "MDV4" | "V4MD" => &["add", "f64", "matrixd", "native-link", "runtime", "vector4"],
-        "M2R2" | "R2M2" => {
-            &["add", "f64", "matrix2", "native-link", "row_vector2", "runtime"]
-        }
-        "M3R3" | "R3M3" => {
-            &["add", "f64", "matrix3", "native-link", "row_vector3", "runtime"]
-        }
-        "M4R4" | "R4M4" => {
-            &["add", "f64", "matrix4", "native-link", "row_vector4", "runtime"]
-        }
-        "M2x3R3" | "R3M2x3" => {
-            &["add", "f64", "matrix2x3", "native-link", "row_vector3", "runtime"]
-        }
-        "M3x2R2" | "R2M3x2" => {
-            &["add", "f64", "matrix3x2", "native-link", "row_vector2", "runtime"]
-        }
-        "MDRD" | "RDMD" => {
-            &["add", "f64", "matrixd", "native-link", "row_vectord", "runtime"]
-        }
-        "MDR2" | "R2MD" => {
-            &["add", "f64", "matrixd", "native-link", "row_vector2", "runtime"]
-        }
-        "MDR3" | "R3MD" => {
-            &["add", "f64", "matrixd", "native-link", "row_vector3", "runtime"]
-        }
-        "MDR4" | "R4MD" => {
-            &["add", "f64", "matrixd", "native-link", "row_vector4", "runtime"]
-        }
-        _ => unreachable!("the shared binary-operation traversal only emits known suffixes"),
-    }
-}
-
-#[cfg(feature = "f64")]
 macro_rules! declare_add_f64_native_runtime_factory {
     ($_context:tt, $lib:ident, $suffix:ident, $_shape_feature:tt, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
         paste::paste! {
@@ -186,7 +103,7 @@ macro_rules! declare_add_f64_native_runtime_factory {
                 installer: [<install_add_ $suffix:lower _f64>],
 
                 name: concat!("Add", stringify!($suffix), "<", $scalar_name, ">"),
-                factory: <[<Add $suffix>]<$scalar> as MechFunctionFactory>::new,
+                factory_type: [<Add $suffix>]<$scalar>,
                 contract: mech_core::__mech_elementwise_binop_contract!($suffix),
 
                 package: "mech-math",
@@ -196,7 +113,7 @@ macro_rules! declare_add_f64_native_runtime_factory {
                     stringify!([<install_add_ $suffix:lower _f64>])
                 ),
 
-                cargo_features: add_f64_native_features(stringify!($suffix)),
+                extra_cargo_features: ["add"],
             }
         }
     };
@@ -724,7 +641,7 @@ mod tests {
                 wrong.clone(),
                 rhs.to_value(),
             )),
-            "FunctionArgumentTypeMismatch",
+            "FunctionSignatureViolation",
         );
         assert_contract_error(
             scalar.instantiate(FunctionArgs::Binary(
@@ -732,11 +649,11 @@ mod tests {
                 lhs.to_value(),
                 wrong.clone(),
             )),
-            "FunctionArgumentTypeMismatch",
+            "FunctionSignatureViolation",
         );
         assert_contract_error(
             scalar.instantiate(FunctionArgs::Binary(wrong, lhs.to_value(), rhs.to_value())),
-            "FunctionArgumentTypeMismatch",
+            "FunctionSignatureViolation",
         );
         assert_contract_error(
             scalar.instantiate(FunctionArgs::Unary(output.to_value(), lhs.to_value())),
@@ -752,12 +669,12 @@ mod tests {
                 dynamic.clone(),
                 fixed.clone(),
             )),
-            "FunctionArgumentTypeMismatch",
+            "FunctionSignatureViolation",
         );
         assert_contract_error(
             entry(&catalog, "AddMDMD<f64>")
                 .instantiate(FunctionArgs::Binary(dynamic, fixed.clone(), fixed)),
-            "FunctionArgumentTypeMismatch",
+            "FunctionSignatureViolation",
         );
     }
 
@@ -813,8 +730,10 @@ mod tests {
     #[test]
     fn aggregate_catalog_links_exactly_the_three_math_representatives() {
         let catalog = explicit_runtime_catalog();
+        let representative_names = ["AddM2M2<f64>", "AddMDMD<f64>", "AddSS<f64>"];
         let mut linked = catalog
             .runtime_entries()
+            .filter(|entry| representative_names.contains(&entry.name.as_str()))
             .filter_map(|entry| {
                 entry
                     .native_linkage

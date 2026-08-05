@@ -114,6 +114,12 @@ pub struct AtomNeq {
 }
 #[cfg(feature = "atom")]
 impl MechFunctionFactory for AtomNeq {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Bool,
+        FunctionValueRepresentation::Atom,
+        FunctionValueRepresentation::Atom,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
@@ -172,6 +178,12 @@ pub struct TableNeq {
 }
 #[cfg(feature = "table")]
 impl MechFunctionFactory for TableNeq {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Bool,
+        FunctionValueRepresentation::Table,
+        FunctionValueRepresentation::Table,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {

@@ -209,6 +209,8 @@ where
         Matrix::DVector(value) => matrix!(value, DVector),
         #[cfg(feature = "matrixd")]
         Matrix::DMatrix(value) => matrix!(value, DMatrix),
+        #[allow(unreachable_patterns)]
+        _ => unreachable!("matrix storage is not enabled in this runtime profile"),
     }
 }
 

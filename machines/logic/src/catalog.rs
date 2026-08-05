@@ -43,9 +43,8 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 macro_rules! install_logic_factory {
     ($builder:expr, $module:ident, $operation:ident, $suffix:ident) => {
         paste! {
-            $builder.insert_runtime_factory(
+            $builder.insert_runtime_factory::<crate::$module::[<$operation $suffix>]>(
                 concat!(stringify!($operation), stringify!($suffix), "<bool>"),
-                <crate::$module::[<$operation $suffix>] as MechFunctionFactory>::new,
                 mech_core::__mech_elementwise_binop_contract!($suffix),
             )?;
         }
@@ -147,7 +146,7 @@ macro_rules! declare_logic_native_factory {
                 registration: [<register_logic_ $operation:lower _ $suffix:lower>],
                 installer: [<install_logic_ $operation:lower _ $suffix:lower>],
                 name: concat!(stringify!($operation), stringify!($suffix), "<bool>"),
-                factory: <crate::$module::[<$operation $suffix>] as MechFunctionFactory>::new,
+                factory_type: crate::$module::[<$operation $suffix>],
                 contract: mech_core::__mech_elementwise_binop_contract!($suffix),
                 package: "mech-logic",
                 crate_name: "mech_logic",
@@ -155,7 +154,7 @@ macro_rules! declare_logic_native_factory {
                     "mech_logic::__mech_native::install_logic_",
                     stringify!([<$operation:lower>]), "_", stringify!([<$suffix:lower>]),
                 ),
-                cargo_features: ["bool", $operation_feature, "native-link", "runtime"],
+                extra_cargo_features: [$operation_feature],
             }
         }
     };
@@ -170,7 +169,7 @@ macro_rules! declare_logic_native_factory {
                 registration: [<register_logic_ $operation:lower _ $suffix:lower>],
                 installer: [<install_logic_ $operation:lower _ $suffix:lower>],
                 name: concat!(stringify!($operation), stringify!($suffix), "<bool>"),
-                factory: <crate::$module::[<$operation $suffix>] as MechFunctionFactory>::new,
+                factory_type: crate::$module::[<$operation $suffix>],
                 contract: mech_core::__mech_elementwise_binop_contract!($suffix),
                 package: "mech-logic",
                 crate_name: "mech_logic",
@@ -178,7 +177,7 @@ macro_rules! declare_logic_native_factory {
                     "mech_logic::__mech_native::install_logic_",
                     stringify!([<$operation:lower>]), "_", stringify!([<$suffix:lower>]),
                 ),
-                cargo_features: ["bool", $operation_feature, $shape_feature, "native-link", "runtime"],
+                extra_cargo_features: [$operation_feature],
             }
         }
     };
@@ -227,12 +226,12 @@ mech_core::declare_native_runtime_factory! {
     registration: register_logic_not_s,
     installer: install_logic_not_s,
     name: "NotS<bool>",
-    factory: <crate::not::NotS<bool> as MechFunctionFactory>::new,
+    factory_type: crate::not::NotS<bool>,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-logic",
     crate_name: "mech_logic",
     installer_path: "mech_logic::__mech_native::install_logic_not_s",
-    cargo_features: ["bool", "native-link", "not", "runtime"],
+    extra_cargo_features: ["not"],
 }
 
 macro_rules! install_native_logic_binop_runtime {
