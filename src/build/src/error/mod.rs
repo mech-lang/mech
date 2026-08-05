@@ -111,6 +111,11 @@ pub enum NativeBuildErrorKind {
         target: String,
         operation: String,
     },
+    NativeResourceContextInvalid {
+        target: String,
+        expected: String,
+        actual: String,
+    },
     NativeResourcePathInvalid {
         target: String,
         path: String,
@@ -196,6 +201,7 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeTargetUnsupported { .. } => "NativeTargetUnsupported",
             Self::NativeHostSettingsInvalid { .. } => "NativeHostSettingsInvalid",
             Self::NativeContextOperationInvalid { .. } => "NativeContextOperationInvalid",
+            Self::NativeResourceContextInvalid { .. } => "NativeResourceContextInvalid",
             Self::NativeResourcePathInvalid { .. } => "NativeResourcePathInvalid",
             Self::NativeRunGrantMissing { .. } => "NativeRunGrantMissing",
             Self::NativeIdentifierInvalid { .. } => "NativeIdentifierInvalid",
@@ -280,6 +286,13 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeContextOperationInvalid { target, operation } => {
                 format!("resource target `{target}` does not support operation `{operation}`")
             }
+            Self::NativeResourceContextInvalid {
+                target,
+                expected,
+                actual,
+            } => format!(
+                "resource target `{target}` requires context name `{expected}`, found `{actual}`"
+            ),
             Self::NativeResourcePathInvalid { target, path } => {
                 format!("resource path `{path}` is invalid for target `{target}`")
             }

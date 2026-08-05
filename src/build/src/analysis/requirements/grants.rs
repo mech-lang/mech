@@ -83,6 +83,17 @@ pub(crate) fn validate_resource_authorization(
     let planned_grant = execution_resource_grant(request, owner);
     let runtime_target = runtime_resource_grant_target(&planned_grant);
 
+    if request.context_name != context.name {
+        return Err(native_build_error(
+            NativeBuildErrorKind::NativeResourceContextInvalid {
+                target: runtime_target,
+                expected: context.name.clone(),
+                actual: request.context_name.clone(),
+            },
+            None,
+        ));
+    }
+
     if !context
         .operations
         .iter()

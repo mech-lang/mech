@@ -230,6 +230,9 @@ fn collect_inline_runtime_types(
                     return invalid("enum variants are duplicate or not sorted by ID");
                 }
                 let variant_name = reader.read_string("enum variant name")?;
+                if variant_name.is_empty() {
+                    return invalid("enum variant name must not be empty");
+                }
                 if crate::hash_str(&variant_name) != variant_id {
                     return invalid("enum variant name does not match its stable ID");
                 }
@@ -808,6 +811,9 @@ fn decode_enum_constant(
             return invalid("enum variants are duplicate or not sorted by ID");
         }
         let variant_name = reader.read_string("enum variant name")?;
+        if variant_name.is_empty() {
+            return invalid("enum variant name must not be empty");
+        }
         if crate::hash_str(&variant_name) != variant_id {
             return invalid("enum variant name does not match its stable ID");
         }
