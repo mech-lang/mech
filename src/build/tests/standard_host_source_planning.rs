@@ -170,6 +170,8 @@ fn every_standard_provider_plans_source_to_bytecode() {
                     ApplicationRequirement::Resource(request)
                         if request.base_uri == case.base_uri
                             && request.path == case.path
+                            && request.context_name
+                                == case.target.rsplit('/').next().unwrap()
                             && request.intent == case.intent
                 )
             }),

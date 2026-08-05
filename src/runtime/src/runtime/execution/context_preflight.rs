@@ -190,7 +190,7 @@ impl MechRuntime {
         let request = ExecutionResourceRequest {
             base_uri: resolved.provider_base_uri,
             path: resolved.provider_path,
-            context_name: binding.name.clone(),
+            context_name: binding.resource_context_name.clone(),
             operation: RuntimeCapabilityOperation::Read.name().to_string(),
             intent: ResourceIntent::Read,
             delivery: if driven {
@@ -272,7 +272,7 @@ impl MechRuntime {
         let request = ExecutionResourceRequest {
             base_uri: resolved.provider_base_uri,
             path: resolved.provider_path,
-            context_name: binding.name.clone(),
+            context_name: binding.resource_context_name.clone(),
             operation: operation.name().to_string(),
             intent: match intent {
                 RuntimeResourceWriteIntent::Assign => ResourceIntent::Assign,
@@ -2796,7 +2796,7 @@ impl MechRuntime {
                 .preflight_write(RuntimeResourceWritePreflightRequest {
                     base_uri: resolved.provider_base_uri,
                     path: resolved.provider_path,
-                    context_name: binding.name.clone(),
+                    context_name: binding.resource_context_name.clone(),
                     operation: operation.clone(),
                     intent,
                 })?;

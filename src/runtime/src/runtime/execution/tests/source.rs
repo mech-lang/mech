@@ -143,7 +143,7 @@ impl RuntimeResourceProvider for PlanningWriteProvider {
         request: RuntimeResourceWritePreflightRequest,
     ) -> mech_core::MResult<()> {
         assert_eq!(request.base_uri, PLANNING_WRITE_BASE_URI);
-        assert_eq!(request.context_name, "out");
+        assert_eq!(request.context_name, "sink");
         match request.intent {
             RuntimeResourceWriteIntent::Assign => {
                 assert_eq!(request.path, "assigned");

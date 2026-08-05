@@ -23,11 +23,20 @@ use bytecode::{BytecodeRegisterFile, BytecodeRegisterFileCheckpoint};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeContextBinding {
-    pub name: String,
+    pub context_name: String,
     pub base_uri: String,
 }
 
 pub type InterpreterRef = Ref<Box<Interpreter>>;
+
+fn canonical_context_name_from_base_uri(base_uri: &str) -> String {
+    base_uri
+        .trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .unwrap_or(base_uri)
+        .to_owned()
+}
 
 pub struct Interpreter {
     pub id: u64,
@@ -1475,10 +1484,21 @@ impl Interpreter {
     }
 
     pub fn bind_context(&self, name: &Identifier, base_uri: impl Into<String>) {
+        let base_uri = base_uri.into();
+        let context_name = canonical_context_name_from_base_uri(&base_uri);
+        self.bind_context_with_name(name, context_name, base_uri);
+    }
+
+    pub(crate) fn bind_context_with_name(
+        &self,
+        alias: &Identifier,
+        context_name: impl Into<String>,
+        base_uri: impl Into<String>,
+    ) {
         self.context_bindings.borrow_mut().insert(
-            name.hash(),
+            alias.hash(),
             RuntimeContextBinding {
-                name: name.to_string(),
+                context_name: context_name.into(),
                 base_uri: base_uri.into(),
             },
         );
@@ -1489,11 +1509,12 @@ impl Interpreter {
     }
 
     pub fn bind_context_export(&self, alias: &Identifier, module: &str, item: &str) -> MResult<()> {
-        let base_uri = {
+        let (context_name, base_uri) = {
             let manifests = self.module_manifests.borrow();
-            manifests.context_export(module, item)?.base_uri.clone()
+            let export = manifests.context_export(module, item)?;
+            (export.name.clone(), export.base_uri.clone())
         };
-        self.bind_context(alias, base_uri);
+        self.bind_context_with_name(alias, context_name, base_uri);
         Ok(())
     }
 

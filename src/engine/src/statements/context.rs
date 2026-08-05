@@ -18,7 +18,7 @@ pub fn context_declaration(
         }
         ContextBase::Context(base) => match p.context_binding(base) {
             Some(binding) => {
-                p.bind_context(&ctx.name, binding.base_uri);
+                p.bind_context_with_name(&ctx.name, binding.context_name, binding.base_uri);
                 Ok(Value::Empty)
             }
             None => Err(MechError::new(
@@ -66,7 +66,7 @@ pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult
         request: ExecutionResourceRequest {
             base_uri: binding.base_uri,
             path: send.target.name.to_string(),
-            context_name: context.to_string(),
+            context_name: binding.context_name,
             operation: "write".to_string(),
             intent: ResourceIntent::Send,
             delivery: ResourceDelivery::Snapshot,
