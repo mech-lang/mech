@@ -1,11 +1,6 @@
 use mech_core::{ExecutionResourceRequest, MResult};
 use mech_runtime::{RunResourceGrantConfig, RuntimeCapabilityOperation, RuntimeResourceKey};
 
-#[cfg(test)]
-use mech_runtime::{
-    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
-};
-
 use crate::{
     error::{NativeBuildErrorKind, native_build_error},
     plan::{PlannedResourceGrantKey, PlannedResourceOwner, PlannedResourceRequest},
@@ -151,55 +146,6 @@ pub(crate) fn validate_resource_authorization(
         ));
     }
     Ok(planned_grant)
-}
-
-#[cfg(test)]
-pub(crate) fn validate_resource_requirement(
-    request: &ExecutionResourceRequest,
-    owner: &ResolvedResourceOwner<'_, '_>,
-    run_grants: &[RunResourceGrantConfig],
-) -> MResult<PlannedResourceGrantKey> {
-    let grant = validate_resource_authorization(request, owner, run_grants)?;
-    let key = RuntimeResourceKey::new(&request.base_uri, &request.path)
-        .expect("resource authorization validated the canonical resource key");
-
-    let provider_result = match request.intent {
-        mech_core::ResourceIntent::Read => owner
-            .provider
-            .plan_read(RuntimeResourceReadRequest {
-                base_uri: key.base_uri.clone(),
-                path: key.path.clone(),
-                context_name: request.context_name.clone(),
-            })
-            .map(|_| ()),
-        mech_core::ResourceIntent::Assign | mech_core::ResourceIntent::Send => {
-            let intent = match request.intent {
-                mech_core::ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
-                mech_core::ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
-                mech_core::ResourceIntent::Read => unreachable!(),
-            };
-            owner
-                .provider
-                .preflight_write(RuntimeResourceWritePreflightRequest {
-                    base_uri: key.base_uri.clone(),
-                    path: key.path.clone(),
-                    context_name: request.context_name.clone(),
-                    operation: RuntimeCapabilityOperation::from_name(request.operation.clone())
-                        .expect("resource authorization validated the capability operation"),
-                    intent,
-                })
-        }
-    };
-    provider_result.map_err(|_| {
-        native_build_error(
-            NativeBuildErrorKind::NativeResourcePathInvalid {
-                target: runtime_resource_grant_target(&grant),
-                path: request.path.clone(),
-            },
-            None,
-        )
-    })?;
-    Ok(grant)
 }
 
 fn resource_path_scope_matches(scope: &str, path: &str) -> bool {

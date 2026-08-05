@@ -112,7 +112,9 @@ rejected because this one-turn entrypoint has no live actor scheduling model.
 
 Analysis normalizes an optional `NativeRuntimeConfig`, validates requirements
 against the trusted catalogs and target, and emits schema
-`mech.native-build-plan.v1`. A plan freezes:
+`mech.native-build-plan.v1`. Grant paths use the runtime capability
+normalizer before matching or hashing, and host settings reject non-finite
+floats recursively so JSON plan identity remains lossless. A plan freezes:
 
 - bytecode and bytecode version, application kind, target, profile, binary
   name, component version, normalized runtime configuration, and optional
@@ -120,7 +122,8 @@ against the trusted catalogs and target, and emits schema
 - exact runtime types and functions, application requirements, host
   instances, grants, packages, features, installers, and factories;
 - registry or workspace dependency source, optional workspace fingerprint,
-  live status, bytecode SHA-256, and plan SHA-256.
+  the frozen dependency-resolution SHA-256, live status, bytecode SHA-256,
+  and plan SHA-256.
 
 Resource requirements retain two structured identities. The request records
 the originally requested base URI, path, context name, operation, intent, and
@@ -152,6 +155,16 @@ target/mech-native/projects/<plan-digest>/
 
 Cargo artifacts share `target/mech-native/cargo-target/`. Cargo JSON messages,
 not guessed paths, identify the target executable.
+
+Workspace generation seeds `Cargo.lock` from the trusted workspace lock;
+registry generation uses the packaged native-resolution seed. The seed digest
+is part of plan identity. Cargo may prune that universe for the exact generated
+manifest, but every selected registry package must match a seeded
+name/version/source/checksum tuple, and the seed cannot contain two
+semver-interchangeable versions. A newly published or cache-only version is
+therefore rejected instead of silently changing the binary for an existing
+plan. The resolved lock remains in the generated project and all builds use
+`--locked`.
 
 `catalog.rs` contains only the sorted exact runtime-factory installer calls
 selected by the bytecode. `runtime.rs` contains direct Rust construction of

@@ -89,8 +89,9 @@ the table is topological, so every child precedes its parent.
 | 32 | `Kind` | Canonical recursive semantic-kind encoding |
 
 Named type and schema names are nonempty and must match their stable hashes.
-Record fields and table columns are ordered and unique. A nonempty table's
-primary-key index must be in range. Runtime-type recursion is limited to 256.
+Record fields and table columns are ordered and unique. Table primary-key
+metadata must be zero because the frozen runtime value cannot preserve a
+different key yet. Runtime-type recursion is limited to 256.
 Every type-table row must be reachable from a constant's root type through
 raw child type IDs. An otherwise valid but unused type row is noncanonical.
 
@@ -177,7 +178,9 @@ payload.
   rejected.
 - A table is row count `u32`, column count `u32`, then length-prefixed cells
   in row-major order using the declared column schema. Decoding constructs
-  dynamic-vector columns.
+  dynamic-vector columns. Rows and total cells are each limited to 1,000,000,
+  and the declared cell count must fit the remaining four-byte child frames
+  before any allocation or row iteration begins.
 - A reference is one child. It decodes to a new mutable reference containing
   a deep snapshot. Separate occurrences do not preserve aliases; cyclic
   graphs are rejected, while shared acyclic references may be repeated.
@@ -222,8 +225,8 @@ A symbol entry is ID `u64`, register `u32`, flags `u32`. Entries are sorted by
 unique ID, the register is in range, and the only flag bit is bit 0 for a
 mutable symbol. A dictionary entry is ID `u64`, name length `u32`, and UTF-8
 name. Dictionary entries are sorted by unique ID; names are nonempty and hash
-to their IDs. Every symbol and every named runtime value must agree with the
-dictionary.
+to their IDs. Symbols and dictionary entries form an exact bijection: every
+symbol has its dictionary name and every dictionary row names a symbol.
 
 ## Instructions
 
@@ -316,6 +319,8 @@ Default read limits are:
 | Variadic or host-call arguments | 65,536 |
 | Type recursion | 256 |
 | Constant recursion | 256 |
+| Table rows | 1,000,000 |
+| Table cells | 1,000,000 |
 
 ## Determinism
 

@@ -123,6 +123,16 @@ pub fn validate_generation_identity(
     if compute_plan_sha256(plan)? != plan.plan_sha256 {
         return project_invalid("native build plan digest does not match its contents");
     }
+    if plan.dependency_resolution_seed_sha256.len() != 64
+        || !plan
+            .dependency_resolution_seed_sha256
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    {
+        return project_invalid(
+            "native dependency resolution seed digest is not lowercase SHA-256",
+        );
+    }
 
     let inferred_kind =
         if !plan.application_requirements.is_empty() || request.runtime_config.is_some() {
@@ -1109,6 +1119,7 @@ mod tests {
             dependency_source: PlannedDependencySource::Registry {
                 version: "0.3.5".into(),
             },
+            dependency_resolution_seed_sha256: sha256_hex(b"registry lock seed"),
             workspace_fingerprint: None,
         }
     }

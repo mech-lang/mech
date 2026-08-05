@@ -993,6 +993,23 @@ fn encode_table_constant(
     value: &MechTable,
     context: &mut ConstantCodecContext,
 ) -> MResult<EncodedConstant> {
+    if value.rows > crate::program::bytecode::constants::MAX_TABLE_CONSTANT_ROWS {
+        return Err(unsupported_constant(
+            RuntimeType::Any,
+            value.kind(),
+            "table row count exceeds bytecode v1 limit",
+        ));
+    }
+    let cells = value.rows.checked_mul(value.cols).ok_or_else(|| {
+        unsupported_constant(RuntimeType::Any, value.kind(), "table cell count overflow")
+    })?;
+    if cells > crate::program::bytecode::constants::MAX_TABLE_CONSTANT_CELLS {
+        return Err(unsupported_constant(
+            RuntimeType::Any,
+            value.kind(),
+            "table cell count exceeds bytecode v1 limit",
+        ));
+    }
     let mut columns = Vec::new();
     let mut column_values = Vec::new();
     for (id, (kind, column)) in &value.data {

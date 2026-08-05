@@ -1501,6 +1501,31 @@ fn rejects_invalid_utf8_and_dictionary_hashes() {
 }
 
 #[test]
+fn rejects_unreferenced_dictionary_entries_in_writer_and_reader() {
+    let name = "unused-name";
+    let id = hash_str(name);
+    let mut unused = program(vec![empty_constant()]);
+    unused.dictionary.insert(id, name.to_owned());
+    let error = write_bytecode(&unused).unwrap_err();
+    assert!(error.kind_message().contains("not referenced by a symbol"));
+
+    let mut canonical = program(vec![empty_constant()]);
+    canonical.symbols.insert(id, 0);
+    canonical.dictionary.insert(id, name.to_owned());
+    let mut bytes = write_bytecode(&canonical).unwrap();
+    let symbols = BytecodeSectionKind::Symbols as usize - 1;
+    let symbols_offset = section_offset(&bytes, symbols);
+    let symbols_length = section_length(&bytes, symbols);
+    assert_eq!(symbols_length, 16);
+    bytes[symbols_offset..symbols_offset + symbols_length].fill(0);
+    write_u32(&mut bytes, section_entry_offset(symbols) + 4, 0);
+    write_u64(&mut bytes, section_entry_offset(symbols) + 16, 0);
+    refresh_crc(&mut bytes);
+
+    assert_validation_reason(&bytes, "not referenced by a symbol");
+}
+
+#[test]
 fn rejects_unknown_out_of_range_cyclic_and_invalid_matrix_types() {
     let mut unknown = write_bytecode(&program(vec![empty_constant()])).unwrap();
     let entry = type_entry_offset(&unknown, 0);
@@ -2193,7 +2218,7 @@ fn rejects_crc_valid_named_ids_nested_in_semantic_kinds() {
 }
 
 #[test]
-fn rejects_noncanonical_primary_keys_for_empty_table_schemas() {
+fn rejects_table_primary_keys_that_the_runtime_cannot_represent() {
     let empty_table = EncodedConstant {
         runtime_type: RuntimeType::Table {
             columns: Vec::new(),
@@ -2206,7 +2231,10 @@ fn rejects_noncanonical_primary_keys_for_empty_table_schemas() {
     let table_entry = type_entry_with_tag(&runtime_table, RuntimeTypeTag::Table);
     write_u32(&mut runtime_table, table_entry + 12, 1);
     refresh_crc(&mut runtime_table);
-    assert_validation_reason(&runtime_table, "table primary key is out of range");
+    assert_validation_reason(
+        &runtime_table,
+        "primary keys other than zero are unsupported",
+    );
 
     let empty_kind_table = EncodedConstant {
         runtime_type: RuntimeType::Kind(crate::kind::Kind::Table(Vec::new(), 0)),
@@ -2218,7 +2246,7 @@ fn rejects_noncanonical_primary_keys_for_empty_table_schemas() {
     // RuntimeType::Kind payload: table tag, zero column count, primary key.
     write_u32(&mut kind_table, kind_entry + 13, 1);
     refresh_crc(&mut kind_table);
-    assert_validation_reason(&kind_table, "kind table primary key is out of range");
+    assert_validation_reason(&kind_table, "primary keys other than zero are unsupported");
 
     let mut canonical = types::canonical_runtime_type_key(&RuntimeType::Table {
         columns: Vec::new(),
@@ -2231,8 +2259,63 @@ fn rejects_noncanonical_primary_keys_for_empty_table_schemas() {
     assert!(
         error
             .kind_message()
-            .contains("canonical table primary key is out of range")
+            .contains("canonical table primary keys other than zero are unsupported")
     );
+
+    let two_columns = EncodedConstant {
+        runtime_type: RuntimeType::Table {
+            columns: vec![
+                ("first".to_owned(), RuntimeType::U8),
+                ("second".to_owned(), RuntimeType::U8),
+            ],
+            primary_key: 0,
+        },
+        alignment: 4,
+        bytes: [0_u32.to_le_bytes(), 2_u32.to_le_bytes()].concat(),
+    };
+    let mut multi_column = write_bytecode(&program(vec![two_columns])).unwrap();
+    let table_entry = type_entry_with_tag(&multi_column, RuntimeTypeTag::Table);
+    let payload_len = read_u32(&multi_column, table_entry + 4) as usize;
+    write_u32(&mut multi_column, table_entry + 8 + payload_len - 4, 1);
+    refresh_crc(&mut multi_column);
+    assert_validation_reason(
+        &multi_column,
+        "table primary keys other than zero are unsupported",
+    );
+}
+
+#[test]
+fn rejects_table_row_counts_before_allocation_or_unbounded_iteration() {
+    for columns in [Vec::new(), vec![("value".to_owned(), RuntimeType::U8)]] {
+        let column_count = columns.len() as u32;
+        let constant = EncodedConstant {
+            runtime_type: RuntimeType::Table {
+                columns,
+                primary_key: 0,
+            },
+            alignment: 4,
+            bytes: [0_u32.to_le_bytes(), column_count.to_le_bytes()].concat(),
+        };
+        let mut bytes = write_bytecode(&program(vec![constant])).unwrap();
+        let payload = constant_payload_offset(&bytes, 0);
+        write_u32(&mut bytes, payload, u32::MAX);
+        refresh_crc(&mut bytes);
+        assert_validation_reason(&bytes, "table row count exceeds bytecode v1 limit");
+    }
+
+    let constant = EncodedConstant {
+        runtime_type: RuntimeType::Table {
+            columns: vec![("value".to_owned(), RuntimeType::U8)],
+            primary_key: 0,
+        },
+        alignment: 4,
+        bytes: [0_u32.to_le_bytes(), 1_u32.to_le_bytes()].concat(),
+    };
+    let mut bytes = write_bytecode(&program(vec![constant])).unwrap();
+    let payload = constant_payload_offset(&bytes, 0);
+    write_u32(&mut bytes, payload, 1);
+    refresh_crc(&mut bytes);
+    assert_validation_reason(&bytes, "feasible framed cell payload");
 }
 
 #[test]

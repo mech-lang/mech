@@ -164,6 +164,11 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
             return invalid("symbol dictionary hash mismatch");
         }
     }
+    if let Some(id) = dictionary.keys().find(|id| !symbols.contains_key(id)) {
+        return invalid(format!(
+            "dictionary entry {id} is not referenced by a symbol"
+        ));
+    }
     let initialized =
         validate_instructions(&instructions, &header, constants.len(), requirements.len())?;
     validate_constant_and_requirement_reachability(

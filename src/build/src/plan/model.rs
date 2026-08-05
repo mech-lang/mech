@@ -168,5 +168,6 @@ pub struct NativeBuildPlan {
     pub run_grants: Vec<PlannedResourceGrantKey>,
     pub live: bool,
     pub dependency_source: PlannedDependencySource,
+    pub dependency_resolution_seed_sha256: String,
     pub workspace_fingerprint: Option<String>,
 }

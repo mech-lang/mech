@@ -170,6 +170,11 @@ fn validate_writer_program(program: &BytecodeProgram) -> MResult<()> {
         if name.is_empty() || hash_str(name) != *id {
             return invalid("dictionary hash mismatch");
         }
+        if !program.symbols.contains_key(id) {
+            return invalid(format!(
+                "dictionary entry {id} is not referenced by a symbol"
+            ));
+        }
     }
     if program
         .mutable_symbols
