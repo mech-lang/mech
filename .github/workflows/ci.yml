@@ -35,6 +35,7 @@ jobs:
       - name: Run language suites
         run: |
           cargo test --test interpreter --test bytecode
+          cargo test --test reactive_combinatorics
           cargo test --lib
           cargo test -p mech-bytecode
           cargo test -p mech-core
@@ -378,7 +379,7 @@ jobs:
       - name: Build representative hosted and actor applications
         run: |
           cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_cli_hosted
-          MECH_NATIVE_GENERATED_CASE=scalar,actor \
+          MECH_NATIVE_GENERATED_CASE=scalar,actor-alpha,actor-beta \
             cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_generated_end_to_end -- --nocapture
       - name: Exercise generated live-process cleanup
         run: |
@@ -409,7 +410,7 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --lib project::manifest::tests::windows_cargo_paths_require_the_same_volume -- --exact
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $env:MECH_NATIVE_GENERATED_CASE = "scalar,console,actor"
+          $env:MECH_NATIVE_GENERATED_CASE = "scalar,console,actor-alpha"
           cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_generated_end_to_end -- --nocapture
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Exercise Windows console-control cleanup

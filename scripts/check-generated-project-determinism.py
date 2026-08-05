@@ -20,7 +20,7 @@ FILES = [
 ]
 EXPECTED_LAYOUT = set(FILES + ["Cargo.lock"])
 EXPECTED_ENTRIES = EXPECTED_LAYOUT | {"src"}
-EXPECTED_PROJECT_COUNT = 15
+EXPECTED_PROJECT_COUNT = 16
 
 
 def generate() -> dict[str, Path]:

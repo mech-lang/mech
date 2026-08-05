@@ -83,6 +83,7 @@ pub enum PlannedApplicationRequirement {
         base_uri: String,
         path: String,
         context_name: String,
+        host_context: String,
         operation: String,
         intent: ResourceIntent,
         delivery: ResourceDelivery,

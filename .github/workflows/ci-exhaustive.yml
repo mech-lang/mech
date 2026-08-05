@@ -491,7 +491,7 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --lib project::manifest::tests::windows_cargo_paths_require_the_same_volume -- --exact
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $cases = @("scalar", "fixed-matrix", "dynamic-matrix", "cli", "console", "time-once", "actor")
+          $cases = @("scalar", "fixed-matrix", "dynamic-matrix", "cli", "console", "time-once", "actor-alpha", "actor-beta")
           foreach ($case in $cases) {
             $env:MECH_NATIVE_GENERATED_CASE = $case
             cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_generated_end_to_end -- --nocapture
@@ -667,6 +667,7 @@ jobs:
       - name: Run root interpreter and bytecode tests
         run: |
           cargo test --test interpreter --test bytecode
+          cargo test --test reactive_combinatorics
           # Generic root-library coverage runs once on Ubuntu. Platform jobs
           # below retain only behavior that is actually platform-sensitive.
           cargo test --lib

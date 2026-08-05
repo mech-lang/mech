@@ -56,7 +56,41 @@ Trusted actor calls are also exact: `actor/message/kind`,
 `actor/state/put`. Each selects only its corresponding
 `mech_runtime::__mech_native::install_*` function in generated `runtime.rs`.
 Host-function installers configure `RuntimeBuilder`; they are not function
-catalog installers.
+catalog installers. Linkage metadata marks these functions as requiring an
+actor turn; native analysis never infers that context from a function-name
+prefix.
+
+## Actor entrypoints
+
+`build.actor` is required whenever bytecode uses an actor-context host
+function. Actor values are never fabricated by the build tool or generated
+application. Configure the one explicit actor turn in `.mcfg`:
+
+```mech
+config := {
+  build: {
+    actor: {
+      subject: "actor:main",
+      message-kind: "startup",
+      message-payload: "hello",
+      initial-state: "initial",
+    },
+  },
+}
+```
+
+`subject`, `message-kind`, and `message-payload` are required.
+`initial-state` is optional; `initial-state: null` means the actor starts
+without state. Subjects and message kinds must be nonempty after trimming,
+while payload and present state strings may be empty. Unknown fields and
+wrong value types are rejected, and there are no hidden actor defaults.
+
+A generated actor executable creates the configured actor and message,
+installs only the exact capabilities needed by its five actor functions, and
+executes the bytecode in one transaction-backed actor turn. Success commits
+state and acknowledges the message; failure aborts staged state and leaves the
+message pending. Actor applications with live resource drivers are currently
+rejected because this one-turn entrypoint has no live actor scheduling model.
 
 ## NativeBuildPlan
 
@@ -65,7 +99,8 @@ against the trusted catalogs and target, and emits schema
 `mech.native-build-plan.v1`. A plan freezes:
 
 - bytecode and bytecode version, application kind, target, profile, binary
-  name, component version, and normalized runtime configuration;
+  name, component version, normalized runtime configuration, and optional
+  normalized actor bootstrap;
 - exact runtime types and functions, application requirements, host
   instances, grants, packages, features, installers, and factories;
 - registry or workspace dependency source, optional workspace fingerprint,

@@ -203,11 +203,13 @@ impl BuildOptions {
         if options.emit == BuildEmit::CargoProject && options.keep_project {
             return build_error("`--emit cargo-project` cannot be combined with `--keep-project`");
         }
-        if let Some(name) = options.name.as_deref() {
-            mech_build::validate_project_binary_name(name)?;
-        }
-        if let Some(target) = options.target.as_deref() {
-            mech_build::validate_project_target_triple(target)?;
+        if options.emit != BuildEmit::Bytecode || options.keep_project {
+            if let Some(name) = options.name.as_deref() {
+                mech_build::validate_project_binary_name(name)?;
+            }
+            if let Some(target) = options.target.as_deref() {
+                mech_build::validate_project_target_triple(target)?;
+            }
         }
         Ok(options)
     }
@@ -219,7 +221,9 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         .name
         .clone()
         .unwrap_or_else(|| inferred_binary_name(&options.paths[0]));
-    mech_build::validate_project_binary_name(&binary_name)?;
+    if options.emit != BuildEmit::Bytecode || options.keep_project {
+        mech_build::validate_project_binary_name(&binary_name)?;
+    }
 
     let (bytecode, loaded_config) = if bytecode_count == 1 {
         let path = PathBuf::from(&options.paths[0]);
