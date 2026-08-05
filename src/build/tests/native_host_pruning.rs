@@ -5,8 +5,8 @@ use std::path::{Path, PathBuf};
 
 use mech_build::{
     NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest,
-    NativeDependencySource, NativeEmit, NativeRuntimeConfig, render_generated_native_project,
-    standard_native_host_catalog,
+    NativeDependencySource, NativeEmit, NativeRuntimeConfig, PlannedResourceGrantKey,
+    render_generated_native_project, standard_native_host_catalog,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 
@@ -102,7 +102,12 @@ fn configured_standard_hosts_are_pruned_to_exact_bytecode_owners() {
     );
     assert_eq!(
         plan.run_grants,
-        [grant("console/output", &["write"], &["line"])]
+        [PlannedResourceGrantKey {
+            host_instance: "console".to_owned(),
+            host_context: "output".to_owned(),
+            operation: "write".to_owned(),
+            path: "line".to_owned(),
+        }]
     );
     assert_eq!(
         plan.packages

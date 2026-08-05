@@ -39,15 +39,17 @@ fn cli_hosted_native_application_builds_and_emits_once() {
                 matches!(
                     requirement,
                     PlannedApplicationRequirement::Resource {
-                        base_uri,
-                        host_instance,
-                        ..
-                    } if base_uri == "cli://stdout" && host_instance == "cli"
+                        request,
+                        owner,
+                    } if request.base_uri == "cli://stdout"
+                        && owner.host_instance == "cli"
+                        && owner.canonical_base_uri == "cli://cli/stdout"
                 )
             })
     );
     assert_eq!(result.plan.run_grants.len(), 1);
-    assert_eq!(result.plan.run_grants[0].target, "cli/stdout");
+    assert_eq!(result.plan.run_grants[0].host_instance, "cli");
+    assert_eq!(result.plan.run_grants[0].host_context, "stdout");
     let runtime = result.runtime_source.unwrap();
     assert!(runtime.contains("mech_host_cli::CliHostFactory::new"));
     assert_eq!(runtime.matches("CliHostFactory::new").count(), 1);

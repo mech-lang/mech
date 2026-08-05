@@ -6,7 +6,7 @@ use mech_core::{
     ResourceIntent, Value, validate_stable_value_update,
 };
 use mech_runtime::{
-    ActorHostPlanningState, RuntimeCapabilityOperation, RuntimeConfig, RuntimeResourceWriteIntent,
+    RuntimeCapabilityOperation, RuntimeConfig, RuntimeResourceWriteIntent,
     RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
 };
 
@@ -16,22 +16,22 @@ use crate::{
     host::NativeHostCatalog,
 };
 
+use super::actor::NativeActorPlanning;
 use super::{
-    ApplicationRequirementAnalysis, MaterializedConfiguredHost, exact_resource_grant,
-    materialize_configured_hosts, normalize_native_runtime_config, resolve_resource_owner,
-    validate_resource_authorization,
+    ApplicationRequirementAnalysis, MaterializedConfiguredHost, materialize_configured_hosts,
+    normalize_native_runtime_config, planned_resource_request, resolve_resource_owner,
+    runtime_resource_grant_target, validate_resource_authorization,
 };
-use crate::plan::PlannedApplicationRequirement;
+use crate::plan::{PlannedApplicationRequirement, PlannedResourceGrantKey, PlannedResourceOwner};
 
 pub(crate) struct NativeBytecodeContractResolver<'catalog> {
     host_catalog: &'catalog NativeHostCatalog,
     materialized: Vec<MaterializedConfiguredHost<'catalog>>,
     normalized_config: Option<NativeRuntimeConfig>,
-    actor_state: Option<ActorHostPlanningState>,
-    actor_required: bool,
+    actor: NativeActorPlanning,
     selected_host_instances: BTreeSet<String>,
     planned: Vec<PlannedApplicationRequirement>,
-    run_grants: Vec<mech_runtime::RunResourceGrantConfig>,
+    run_grants: Vec<PlannedResourceGrantKey>,
     live: bool,
 }
 
@@ -48,6 +48,19 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
         let needs_resources = requirements
             .iter()
             .any(|requirement| matches!(requirement, ApplicationRequirement::Resource(_)));
+        if !needs_resources
+            && normalized_config
+                .as_ref()
+                .is_some_and(|config| !config.hosts.is_empty() || !config.run_grants.is_empty())
+        {
+            return Err(native_build_error(
+                NativeBuildErrorKind::NativeRuntimeConfigUnsupported {
+                    reason: "host instances and run grants cannot be addressed by a build plan without resource requirements"
+                        .to_owned(),
+                },
+                None,
+            ));
+        }
         let materialized = if needs_resources {
             materialize_configured_hosts(
                 normalized_config.as_ref().ok_or_else(|| {
@@ -64,24 +77,13 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
         } else {
             Vec::new()
         };
-        let actor_state = normalized_config
-            .as_ref()
-            .and_then(|config| config.actor_bootstrap.as_ref())
-            .map(|bootstrap| {
-                ActorHostPlanningState::new(
-                    &bootstrap.subject,
-                    bootstrap.message_kind.clone(),
-                    bootstrap.message_payload.clone(),
-                    bootstrap.initial_state.clone(),
-                )
-            });
+        let actor = NativeActorPlanning::new(normalized_config.as_ref());
 
         Ok(Self {
             host_catalog,
             materialized,
             normalized_config,
-            actor_state,
-            actor_required: false,
+            actor,
             selected_host_instances: BTreeSet::new(),
             planned: Vec::new(),
             run_grants: Vec::new(),
@@ -90,31 +92,7 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
     }
 
     pub(crate) fn finish(mut self) -> MResult<ApplicationRequirementAnalysis> {
-        let actor_bootstrap = self
-            .normalized_config
-            .as_ref()
-            .and_then(|config| config.actor_bootstrap.clone());
-        match (self.actor_required, actor_bootstrap.is_some()) {
-            (true, false) => {
-                return Err(native_build_error(
-                    NativeBuildErrorKind::NativeActorBootstrapMissing,
-                    None,
-                ));
-            }
-            (false, true) => {
-                return Err(native_build_error(
-                    NativeBuildErrorKind::NativeActorBootstrapUnused,
-                    None,
-                ));
-            }
-            _ => {}
-        }
-        if self.actor_required && self.live {
-            return Err(native_build_error(
-                NativeBuildErrorKind::NativeActorLiveApplicationUnsupported,
-                None,
-            ));
-        }
+        let actor_bootstrap = self.actor.finish(self.live)?;
         if self.selected_host_instances.is_empty()
             && self
                 .normalized_config
@@ -132,13 +110,7 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
 
         self.planned.sort();
         self.planned.dedup();
-        self.run_grants.sort_by(|lhs, rhs| {
-            (&lhs.target, &lhs.operations, &lhs.paths).cmp(&(
-                &rhs.target,
-                &rhs.operations,
-                &rhs.paths,
-            ))
-        });
+        self.run_grants.sort();
         self.run_grants.dedup();
         let mut hosts = self
             .materialized
@@ -165,25 +137,16 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
     fn record_resource_requirement(
         &mut self,
         request: &mech_core::ExecutionResourceRequest,
-        host_instance: String,
-        provider: String,
-        host_context: String,
-        grant_target: String,
+        owner: PlannedResourceOwner,
+        grant: PlannedResourceGrantKey,
     ) {
-        self.selected_host_instances.insert(host_instance.clone());
-        self.run_grants
-            .push(exact_resource_grant(request, grant_target));
+        self.selected_host_instances
+            .insert(owner.host_instance.clone());
+        self.run_grants.push(grant);
         self.live |= request.delivery == mech_core::ResourceDelivery::Live;
         self.planned.push(PlannedApplicationRequirement::Resource {
-            base_uri: request.base_uri.clone(),
-            path: request.path.clone(),
-            context_name: request.context_name.clone(),
-            host_context,
-            operation: request.operation.clone(),
-            intent: request.intent,
-            delivery: request.delivery,
-            host_instance,
-            provider,
+            request: planned_resource_request(request),
+            owner,
         });
     }
 }
@@ -201,26 +164,12 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                     None,
                 )
             })?;
-        self.actor_required |= linkage.context == NativeHostFunctionContext::ActorTurn;
         let planned = match linkage.context {
-            NativeHostFunctionContext::ActorTurn => self
-                .actor_state
-                .as_mut()
-                .ok_or_else(|| {
-                    native_build_error(NativeBuildErrorKind::NativeActorBootstrapMissing, None)
-                })?
-                .plan(&contract.request.name, contract.arguments)
-                .map_err(|error| {
-                    application_instruction_error(
-                        contract.instruction,
-                        format!(
-                            "host function `{}` rejected its arguments: {}",
-                            contract.request.name,
-                            error.display_message(),
-                        ),
-                    )
-                    .with_source(error)
-                })?,
+            NativeHostFunctionContext::ActorTurn => self.actor.plan(
+                contract.instruction,
+                &contract.request.name,
+                contract.arguments,
+            )?,
             NativeHostFunctionContext::Standalone => {
                 return Err(application_instruction_error(
                     contract.instruction,
@@ -264,14 +213,14 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
         &mut self,
         contract: BytecodeResourceReadContract<'_>,
     ) -> MResult<Value> {
-        let (planned, host_instance, provider, host_context, grant_target) = {
+        let (planned, owner, grant) = {
             let owner = resolve_resource_owner(contract.request, &self.materialized)?;
             let configured_grants = self
                 .normalized_config
                 .as_ref()
                 .map(|config| config.run_grants.as_slice())
                 .unwrap_or_default();
-            let grant_target =
+            let grant =
                 validate_resource_authorization(contract.request, &owner, configured_grants)?;
             let planned = owner
                 .provider
@@ -283,20 +232,14 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                 .map_err(|error| {
                     native_build_error(
                         NativeBuildErrorKind::NativeResourcePathInvalid {
-                            target: grant_target.clone(),
+                            target: runtime_resource_grant_target(&grant),
                             path: contract.request.path.clone(),
                         },
                         None,
                     )
                     .with_source(error)
                 })?;
-            (
-                planned,
-                owner.host.config.name.clone(),
-                owner.host.config.provider.clone(),
-                owner.context.name.clone(),
-                grant_target,
-            )
+            (planned, owner.planned_owner(), grant)
         };
         validate_stable_value_update(contract.output_seed, &planned).map_err(|error| {
             application_instruction_error(
@@ -310,13 +253,7 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
             )
             .with_source(error)
         })?;
-        self.record_resource_requirement(
-            contract.request,
-            host_instance,
-            provider,
-            host_context,
-            grant_target,
-        );
+        self.record_resource_requirement(contract.request, owner, grant);
         Ok(planned)
     }
 
@@ -349,14 +286,14 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
             )
             .with_source(error)
         })?;
-        let (host_instance, provider, host_context, grant_target) = {
+        let (owner, grant) = {
             let owner = resolve_resource_owner(contract.request, &self.materialized)?;
             let configured_grants = self
                 .normalized_config
                 .as_ref()
                 .map(|config| config.run_grants.as_slice())
                 .unwrap_or_default();
-            let grant_target =
+            let grant =
                 validate_resource_authorization(contract.request, &owner, configured_grants)?;
             owner
                 .provider
@@ -370,7 +307,7 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                 .map_err(|error| {
                     native_build_error(
                         NativeBuildErrorKind::NativeResourcePathInvalid {
-                            target: grant_target.clone(),
+                            target: runtime_resource_grant_target(&grant),
                             path: contract.request.path.clone(),
                         },
                         None,
@@ -399,25 +336,17 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                     )
                     .with_source(error)
                 })?;
-            (
-                owner.host.config.name.clone(),
-                owner.host.config.provider.clone(),
-                owner.context.name.clone(),
-                grant_target,
-            )
+            (owner.planned_owner(), grant)
         };
-        self.record_resource_requirement(
-            contract.request,
-            host_instance,
-            provider,
-            host_context,
-            grant_target,
-        );
+        self.record_resource_requirement(contract.request, owner, grant);
         Ok(())
     }
 }
 
-fn application_instruction_error(instruction: u32, reason: impl Into<String>) -> MechError {
+pub(super) fn application_instruction_error(
+    instruction: u32,
+    reason: impl Into<String>,
+) -> MechError {
     native_build_error(
         NativeBuildErrorKind::NativeApplicationInstructionInvalid {
             instruction,

@@ -1,5 +1,5 @@
 use mech_core::{MResult, RuntimeType};
-use mech_runtime::{RunResourceGrantConfig, RuntimeConfig};
+use mech_runtime::RuntimeConfig;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
@@ -8,7 +8,7 @@ use crate::error::{NativeBuildErrorKind, native_build_error};
 use super::{
     NativeActorBootstrap, NativeApplicationKind, NativeBuildPlan, NativeBuildProfile,
     PlannedApplicationRequirement, PlannedDependencySource, PlannedHostInstance, PlannedPackage,
-    PlannedRuntimeFunction,
+    PlannedResourceGrantKey, PlannedRuntimeFunction,
 };
 
 /// The complete, stable input to the v1 native-build plan digest.
@@ -36,7 +36,7 @@ pub struct NativeBuildPlanDigestInput {
     pub engine_features: Vec<String>,
     pub runtime_features: Vec<String>,
     pub hosts: Vec<PlannedHostInstance>,
-    pub run_grants: Vec<RunResourceGrantConfig>,
+    pub run_grants: Vec<PlannedResourceGrantKey>,
     pub live: bool,
     pub dependency_source: PlannedDependencySource,
     pub workspace_fingerprint: Option<String>,
@@ -100,8 +100,10 @@ pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use mech_core::BYTECODE_VERSION;
+    use mech_core::{BYTECODE_VERSION, ResourceDelivery, ResourceIntent};
     use mech_runtime::ConfigValue;
+
+    use crate::plan::{PlannedResourceOwner, PlannedResourceRequest};
 
     use super::*;
 
@@ -222,13 +224,50 @@ mod tests {
         });
 
         let mut with_grant = plan.clone();
-        with_grant.run_grants.push(RunResourceGrantConfig {
-            target: "cli/stdout".to_owned(),
-            operations: vec!["write".to_owned()],
-            paths: vec!["line".to_owned()],
+        with_grant.run_grants.push(PlannedResourceGrantKey {
+            host_instance: "cli".to_owned(),
+            host_context: "stdout".to_owned(),
+            operation: "write".to_owned(),
+            path: "line".to_owned(),
         });
         assert_digest_changes(&with_grant, |changed| {
-            changed.run_grants[0].paths[0] = "text".to_owned()
+            changed.run_grants[0].path = "text".to_owned()
+        });
+
+        let mut with_resource = plan.clone();
+        with_resource
+            .application_requirements
+            .push(PlannedApplicationRequirement::Resource {
+                request: PlannedResourceRequest {
+                    base_uri: "cli://stdout".to_owned(),
+                    path: "line".to_owned(),
+                    context_name: "stdout".to_owned(),
+                    operation: "write".to_owned(),
+                    intent: ResourceIntent::Send,
+                    delivery: ResourceDelivery::Snapshot,
+                },
+                owner: PlannedResourceOwner {
+                    host_instance: "cli".to_owned(),
+                    provider: "cli".to_owned(),
+                    host_context: "stdout".to_owned(),
+                    canonical_base_uri: "cli://cli/stdout".to_owned(),
+                },
+            });
+        assert_digest_changes(&with_resource, |changed| {
+            let PlannedApplicationRequirement::Resource { owner, .. } =
+                &mut changed.application_requirements[0]
+            else {
+                unreachable!()
+            };
+            owner.host_context = "stderr".to_owned();
+        });
+        assert_digest_changes(&with_resource, |changed| {
+            let PlannedApplicationRequirement::Resource { owner, .. } =
+                &mut changed.application_requirements[0]
+            else {
+                unreachable!()
+            };
+            owner.canonical_base_uri = "cli://cli/stderr".to_owned();
         });
 
         let mut workspace = plan;
@@ -237,6 +276,46 @@ mod tests {
         assert_digest_changes(&workspace, |changed| {
             changed.workspace_fingerprint = Some("b".repeat(64))
         });
+    }
+
+    #[test]
+    fn structured_resource_plan_serialization_is_deterministic() {
+        let mut plan = empty_plan();
+        plan.application_requirements = vec![PlannedApplicationRequirement::Resource {
+            request: PlannedResourceRequest {
+                base_uri: "cli://stdout".to_owned(),
+                path: "line".to_owned(),
+                context_name: "stdout".to_owned(),
+                operation: "write".to_owned(),
+                intent: ResourceIntent::Send,
+                delivery: ResourceDelivery::Snapshot,
+            },
+            owner: PlannedResourceOwner {
+                host_instance: "cli".to_owned(),
+                provider: "cli".to_owned(),
+                host_context: "stdout".to_owned(),
+                canonical_base_uri: "cli://cli/stdout".to_owned(),
+            },
+        }];
+        plan.run_grants = vec![PlannedResourceGrantKey {
+            host_instance: "cli".to_owned(),
+            host_context: "stdout".to_owned(),
+            operation: "write".to_owned(),
+            path: "line".to_owned(),
+        }];
+
+        let first = serde_json::to_vec(&plan).unwrap();
+        let second = serde_json::to_vec(&plan).unwrap();
+        assert_eq!(first, second);
+        let json: serde_json::Value = serde_json::from_slice(&first).unwrap();
+        assert_eq!(
+            json["application_requirements"][0]["request"]["base_uri"],
+            "cli://stdout"
+        );
+        assert_eq!(
+            json["application_requirements"][0]["owner"]["canonical_base_uri"],
+            "cli://cli/stdout"
+        );
     }
 
     fn assert_digest_changes(plan: &NativeBuildPlan, mutate: impl FnOnce(&mut NativeBuildPlan)) {

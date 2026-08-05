@@ -47,16 +47,16 @@
       "expected_output": "bytecode-v1 🦀",
       "file": "canonical-scalars.mecb",
       "header": {
-        "checksum_offset": 1064,
-        "file_len": 1068,
+        "checksum_offset": 1224,
+        "file_len": 1228,
         "flags": 0,
         "header_size": 64,
-        "instruction_count": 2,
+        "instruction_count": 20,
         "magic": "MECH",
         "mech_major": 0,
         "mech_minor": 3,
         "mech_patch": 5,
-        "register_count": 1,
+        "register_count": 19,
         "reserved": [
           0,
           0,
@@ -76,7 +76,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "d7e487646bf4c3dc6772a02ae55ef9eac917f1efff8ac9c8211d1d816632b2b8",
+      "native_plan_sha256": "68b731cb28a2bee0b9c7b673e9a747d9a8b869d9b7908c7f2f1357094f4d134b",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -291,9 +291,9 @@
         {
           "flags": 0,
           "id": 5,
-          "item_count": 2,
+          "item_count": 20,
           "kind": "Instructions",
-          "length": 14,
+          "length": 176,
           "offset": 1048,
           "reserved": 0
         },
@@ -303,7 +303,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 1064,
+          "offset": 1224,
           "reserved": 0
         },
         {
@@ -312,11 +312,11 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 1064,
+          "offset": 1224,
           "reserved": 0
         }
       ],
-      "sha256": "f470d9afe5397a93dc7f52c88a81d9e72810d6789fbdb1588ec8494277effc88",
+      "sha256": "a437e67ca6120b90c928eb55ee0479c4a95afbb23a854c406c7fd531df2c85cc",
       "source": null,
       "source_file": null
     },
@@ -406,16 +406,16 @@
       ],
       "file": "canonical-matrices.mecb",
       "header": {
-        "checksum_offset": 2944,
-        "file_len": 2948,
+        "checksum_offset": 3224,
+        "file_len": 3228,
         "flags": 0,
         "header_size": 64,
-        "instruction_count": 2,
+        "instruction_count": 33,
         "magic": "MECH",
         "mech_major": 0,
         "mech_minor": 3,
         "mech_patch": 5,
-        "register_count": 1,
+        "register_count": 32,
         "reserved": [
           0,
           0,
@@ -435,7 +435,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "369b60a2ddeb392cd5156978c91b446d505e2b42e915bf6567b8e65149388a03",
+      "native_plan_sha256": "21a9c05e44fc16fc09295c4354ce3cb9ca75ed50aefd7144f88628fc5ecd16c9",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -1084,9 +1084,9 @@
         {
           "flags": 0,
           "id": 5,
-          "item_count": 2,
+          "item_count": 33,
           "kind": "Instructions",
-          "length": 14,
+          "length": 293,
           "offset": 2928,
           "reserved": 0
         },
@@ -1096,7 +1096,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 2944,
+          "offset": 3224,
           "reserved": 0
         },
         {
@@ -1105,11 +1105,11 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 2944,
+          "offset": 3224,
           "reserved": 0
         }
       ],
-      "sha256": "753c19e2b41ad2b7984bb8adc40dd5c3623c2d12aa238cf954a51ad7e723b193",
+      "sha256": "1e0d08eabb54b9c4edc5caae095dbab607cd633867d1c0b642126f5451ecf55d",
       "source": null,
       "source_file": null
     },
@@ -1153,16 +1153,16 @@
       ],
       "file": "canonical-composites.mecb",
       "header": {
-        "checksum_offset": 960,
-        "file_len": 964,
+        "checksum_offset": 1048,
+        "file_len": 1052,
         "flags": 0,
         "header_size": 64,
-        "instruction_count": 2,
+        "instruction_count": 12,
         "magic": "MECH",
         "mech_major": 0,
         "mech_minor": 3,
         "mech_patch": 5,
-        "register_count": 1,
+        "register_count": 11,
         "reserved": [
           0,
           0,
@@ -1182,7 +1182,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "2f2df97e53aa0a26e804988891df85f5b9bd693d5df7283e84070cd779ee997c",
+      "native_plan_sha256": "aababacd677ca14df8e23781179385f74c556bdbe43171adc71e353d50e7f0fe",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -1408,9 +1408,9 @@
         {
           "flags": 0,
           "id": 5,
-          "item_count": 2,
+          "item_count": 12,
           "kind": "Instructions",
-          "length": 14,
+          "length": 104,
           "offset": 944,
           "reserved": 0
         },
@@ -1420,7 +1420,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 960,
+          "offset": 1048,
           "reserved": 0
         },
         {
@@ -1429,11 +1429,11 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 960,
+          "offset": 1048,
           "reserved": 0
         }
       ],
-      "sha256": "21b2c1247be183d5b13c5f5c9ed7964a9c7f848cd173824af7185e2240652c02",
+      "sha256": "b825bdb8a73062a8463a55aab2e2bffc9c6c20e6183f3f04a183d03d4dec6eb0",
       "source": null,
       "source_file": null
     },
@@ -1483,7 +1483,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "dd65807f090ca4631a119c219ea97e2aeb2cc9e629165251d4cde9a72d34f7d4",
+      "native_plan_sha256": "c484f4c4dae306d051f83e0f848b406005bca8719b0b49397eda4fff29a32976",
       "origin": "source-compiler",
       "packages": [
         {
@@ -1635,7 +1635,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "14b484154e765919e699bea498e6eb18e96146390b34d63b34974faf012967e5",
+      "native_plan_sha256": "293dd170e3575871c1dd92d0eb8e2d685c9d7e97a4b8596a7f172b1481557ebd",
       "origin": "source-compiler",
       "packages": [
         {
@@ -1771,15 +1771,13 @@
           "row_vector2"
         ],
         "mech-engine": [
-          "bool",
           "f64",
           "matrix2",
           "matrix_horzcat",
           "matrix_vertcat",
           "native-link",
           "row_vector2",
-          "runtime",
-          "vector2"
+          "runtime"
         ],
         "mech-runtime": []
       },
@@ -1825,7 +1823,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "7235095d91914ed7aab120ebb048708b2a4cb3eb8232d7cb103dff2907353c6a",
+      "native_plan_sha256": "13cc5b8b3195cbaa3d1d84c9729cac23cac363da3d5c2d339b265d7da355e336",
       "origin": "source-compiler",
       "packages": [
         {
@@ -1844,15 +1842,13 @@
         },
         {
           "cargo_features": [
-            "bool",
             "f64",
             "matrix2",
             "matrix_horzcat",
             "matrix_vertcat",
             "native-link",
             "row_vector2",
-            "runtime",
-            "vector2"
+            "runtime"
           ],
           "crate_name": "mech_engine",
           "package": "mech-engine",
@@ -2009,6 +2005,7 @@
         "mech-engine": [
           "bool",
           "f64",
+          "matrix",
           "matrix_horzcat",
           "matrix_vertcat",
           "matrixd",
@@ -2088,7 +2085,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "d04b079c03223e85e55380729118123f03a7cad3f019405d1ea13d89272a5d00",
+      "native_plan_sha256": "6816d40362a148352e280129d245ab8dc4c06327494ca531c2a538b66a96b95c",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2109,6 +2106,7 @@
           "cargo_features": [
             "bool",
             "f64",
+            "matrix",
             "matrix_horzcat",
             "matrix_vertcat",
             "matrixd",
@@ -2272,7 +2270,6 @@
           "bool",
           "f64",
           "matrix_horzcat",
-          "matrixd",
           "native-link",
           "row_vectord",
           "runtime",
@@ -2321,7 +2318,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "137d4b5daaa0de7d3a73e2a3642486373c740429cabaade62fec4fd6262004d0",
+      "native_plan_sha256": "e8e7ccfdfd433397deaedd8056b83eb7df754f5bb104c2c9be0594062d60f501",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2342,7 +2339,6 @@
             "bool",
             "f64",
             "matrix_horzcat",
-            "matrixd",
             "native-link",
             "row_vectord",
             "runtime",
@@ -2499,7 +2495,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "c87e36b192b0ad7bf6fefdcbea46e240dbf30aeb8cc3ce0e9eb3612878446051",
+      "native_plan_sha256": "8631ef5c887920733e40e49020ebb8c1c4a252e12abfb1437e94f1c092b0d6df",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2657,7 +2653,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "e85a8fd8d680039a8342e744986b791c992d00e4f62c2065cfd3007a08c5d142",
+      "native_plan_sha256": "19cc54e95728d10211ac463a009621ff8bb8a8b14da9e38ad8ffd6a81211e4e5",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2841,7 +2837,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "ea3da1a510067cc93d8fe0804dfd3f6cb2e81533dd785b6aef3603a1134b4016",
+      "native_plan_sha256": "0be7e9f94f8836b83a5d35ed5bf7723dbd2c1da2ec7c6eb95c47ca81f181e179",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2999,6 +2995,7 @@
         "mech-engine": [
           "bool",
           "f64",
+          "matrix",
           "matrix_horzcat",
           "matrix_vertcat",
           "matrixd",
@@ -3073,7 +3070,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "a44d7ce45deff87a0fe22cd0ef2bd4a4f970a740db1ea9771e8172c544a05a2f",
+      "native_plan_sha256": "4cb49461ca26ba71dfaa74a54232d5b7f91b5237b8e9677d0499e5a8e7d675d4",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3096,6 +3093,7 @@
           "cargo_features": [
             "bool",
             "f64",
+            "matrix",
             "matrix_horzcat",
             "matrix_vertcat",
             "matrixd",
@@ -3297,7 +3295,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "b3ca185cdde7631473def58646d8bbc2a108cca74db21373f5241b9b7a0e0248",
+      "native_plan_sha256": "3c9103a540c1b9c88c1aa0bc874c0cf49fa230f9d591cd72baad77045a8a8921",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3484,7 +3482,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "7358546f7935369dad9cd0fe1bdbf404ab9a0ccc070bfc1390e24c39e5da65ed",
+      "native_plan_sha256": "be12e54e7fccee176f80b8fc68b3208a44a694adb2794d2240662874ac237deb",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3680,7 +3678,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "160a716446a76abc5adc4e7521c60df389458f472a397ff165c38f10f1410cfe",
+      "native_plan_sha256": "6e657113e1ec753a839ca5db78be117a387fb99382a862896e33857ab8d24662",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3884,7 +3882,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "438b5eded58c3a9756a77d379cfbf80f954e975d3cb3f44e59fb6e77bfb53cec",
+      "native_plan_sha256": "2e29a67013970b1149e7013394c72896f425496ba2b4b38876e425a68b23b315",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4108,7 +4106,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "c7a80fe06f60ec911ce404eddbe3621286ac42fb6cda1a343a35269dc976e172",
+      "native_plan_sha256": "d765508037df2a272c2e39d4bf1a1faa2039fdfb81b964ec9a27b8fa703004f8",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4335,7 +4333,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "7678f75fe7d850af16765670d9225f8a6427f94a3906f71d97e0100ec2e1d463",
+      "native_plan_sha256": "9e780e2f1144c62d5c3de0fc2058f7c2e368db6f285fcb635c42f0641e2a9b64",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4589,7 +4587,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "f1b57886018b930a1a4989848bfe3e5e7c3b3d8e65e7bc3db674e82b0e768bdd",
+      "native_plan_sha256": "6d9dac1feaeb7a6df6af698031506bafab0fa02362afec923384d110d8046ba2",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4793,7 +4791,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "dac292dc380913c6b316c00ec37b69711ac3b4ac44b6b10a96143e41f9635a62",
+      "native_plan_sha256": "9345e618dc483188d3193591d7e953b12929ac58240d6692b8d2ce4c6a37a92d",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4998,7 +4996,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "e3505c20fb7cef4794d8b468c048fb8dd04ca324b460882f65313db2851e043f",
+      "native_plan_sha256": "0544d4b3afafda8bf9269116985e87c355f981f94ede6f015be75354d27ca031",
       "origin": "source-compiler",
       "packages": [
         {

@@ -27,6 +27,7 @@ jobs:
           scripts/test-unsafe-boundaries.sh
           scripts/check-runtime-factory-safety.py
           scripts/check-fallible-solve-boundary.py
+          scripts/check-native-build-analysis-layout.py
 
       - name: Install Rust nightly-2026-03-03
         run: |

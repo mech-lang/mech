@@ -34,9 +34,9 @@ fn every_generated_application_fixture_builds_and_executes() {
             "{}",
             generated.case,
         );
-        if let Some((requested, target)) = match generated.case {
-            "cli" => Some(("cli://stdout", "cli/stdout")),
-            "console" => Some(("console://output", "console/output")),
+        if let Some((requested, host_instance, host_context)) = match generated.case {
+            "cli" => Some(("cli://stdout", "cli", "stdout")),
+            "console" => Some(("console://output", "console", "output")),
             _ => None,
         } {
             assert!(
@@ -47,18 +47,16 @@ fn every_generated_application_fixture_builds_and_executes() {
                     .any(|requirement| {
                         matches!(
                             requirement,
-                            PlannedApplicationRequirement::Resource { base_uri, .. }
-                                if base_uri == requested
+                            PlannedApplicationRequirement::Resource { request, owner }
+                                if request.base_uri == requested
+                                    && owner.host_instance == host_instance
+                                    && owner.host_context == host_context
                         )
                     })
             );
-            assert!(
-                result
-                    .plan
-                    .run_grants
-                    .iter()
-                    .any(|grant| grant.target == target)
-            );
+            assert!(result.plan.run_grants.iter().any(|grant| {
+                grant.host_instance == host_instance && grant.host_context == host_context
+            }));
         }
         if generated.case.starts_with("actor-") {
             let runtime = result.runtime_source.unwrap();

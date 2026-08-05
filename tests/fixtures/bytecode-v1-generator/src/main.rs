@@ -467,18 +467,29 @@ fn constructed_program(
     constants: Vec<EncodedConstant>,
     returned_constant: u32,
 ) -> AppResult<Vec<u8>> {
+    let register_count = u32::try_from(constants.len())
+        .map_err(|_| io::Error::other("constructed bytecode has too many constants"))?;
+    if returned_constant >= register_count {
+        return Err(io::Error::other(format!(
+            "constructed bytecode return constant {returned_constant} exceeds constant count {register_count}",
+        ))
+        .into());
+    }
+    let mut instructions = (0..register_count)
+        .map(|constant| BytecodeInstruction::ConstLoad {
+            dst: constant,
+            constant,
+        })
+        .collect::<Vec<_>>();
+    instructions.push(BytecodeInstruction::Return {
+        src: returned_constant,
+    });
     let program = BytecodeProgram {
-        register_count: 1,
+        register_count,
         constants,
         symbols: BTreeMap::new(),
         mutable_symbols: BTreeSet::new(),
-        instructions: vec![
-            BytecodeInstruction::ConstLoad {
-                dst: 0,
-                constant: returned_constant,
-            },
-            BytecodeInstruction::Return { src: 0 },
-        ],
+        instructions,
         dictionary: BTreeMap::new(),
         requirements: Vec::new(),
     };

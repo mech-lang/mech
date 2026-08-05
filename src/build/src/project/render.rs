@@ -2,11 +2,14 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use mech_core::{ExecutionResourceRequest, MResult, ResourceDelivery};
+use mech_core::{MResult, ResourceDelivery};
 use mech_runtime::{ConfigValue, LogLevel, RuntimeConfig};
 
 use crate::NativeHostFunctionContext;
-use crate::analysis::requirements::{grant_covers_resource, normalize_native_runtime_config};
+use crate::analysis::requirements::{
+    grant_covers_resource, normalize_native_runtime_config, planned_resource_grant,
+    runtime_resource_grant,
+};
 use crate::error::{NativeBuildErrorKind, native_build_error};
 use crate::plan::{
     NATIVE_BUILD_PLAN_SCHEMA, NativeApplicationKind, NativeBuildPlan, NativeBuildRequest,
@@ -201,26 +204,7 @@ fn validate_runtime_config_implications(
         .application_requirements
         .iter()
         .filter_map(|requirement| match requirement {
-            PlannedApplicationRequirement::Resource {
-                base_uri,
-                path,
-                context_name,
-                host_context,
-                operation,
-                intent,
-                delivery,
-                host_instance,
-                ..
-            } => Some((
-                base_uri,
-                path,
-                context_name,
-                host_context,
-                operation,
-                *intent,
-                *delivery,
-                host_instance,
-            )),
+            PlannedApplicationRequirement::Resource { request, owner } => Some((request, owner)),
             PlannedApplicationRequirement::HostFunction { .. } => None,
         })
         .collect::<Vec<_>>();
@@ -241,7 +225,7 @@ fn validate_runtime_config_implications(
     if plan.live
         != resource_requirements
             .iter()
-            .any(|(_, _, _, _, _, _, delivery, _)| *delivery == ResourceDelivery::Live)
+            .any(|(request, _)| request.delivery == ResourceDelivery::Live)
     {
         return project_invalid(
             "native build plan live mode contradicts its resource requirements",
@@ -272,7 +256,7 @@ fn validate_runtime_config_implications(
     }
     let required_host_names = resource_requirements
         .iter()
-        .map(|(_, _, _, _, _, _, _, host_instance)| (*host_instance).clone())
+        .map(|(_, owner)| owner.host_instance.clone())
         .collect::<BTreeSet<_>>();
     let planned_host_names = plan
         .hosts
@@ -293,68 +277,32 @@ fn validate_runtime_config_implications(
         if configured.provider != planned.provider || configured.settings != planned.settings {
             return project_invalid("planned host metadata does not match runtime configuration");
         }
+        if resource_requirements.iter().any(|(_, owner)| {
+            owner.host_instance == planned.name && owner.provider != planned.provider
+        }) {
+            return project_invalid("planned resource owner provider does not match its host");
+        }
     }
 
-    let mut expected_grant_keys = BTreeMap::new();
-    for (base_uri, path, _, host_context, operation, _, _, host_instance) in &resource_requirements
-    {
-        *expected_grant_keys
-            .entry((
-                (*base_uri).clone(),
-                (*host_instance).clone(),
-                (*host_context).clone(),
-                (*operation).clone(),
-                (*path).clone(),
-            ))
-            .or_insert(0usize) += 1;
-    }
-    let mut actual_grant_keys = BTreeMap::new();
-    for grant in &plan.run_grants {
-        let Some((host_instance, host_context)) = grant.target.split_once('/') else {
-            return project_invalid("planned run grant target is not a host/context pair");
-        };
-        if host_context.is_empty() || grant.operations.len() != 1 || grant.paths.len() != 1 {
-            return project_invalid("planned run grants must contain one exact operation and path");
-        }
-        let Some((base_uri, path, requirement_context, _, operation, intent, delivery, _)) =
-            resource_requirements.iter().find(
-                |(_, path, _, requirement_host_context, operation, _, _, owner)| {
-                    owner.as_str() == host_instance
-                        && requirement_host_context.as_str() == host_context
-                        && **operation == grant.operations[0]
-                        && **path == grant.paths[0]
-                },
-            )
-        else {
-            return project_invalid("planned run grant does not match its resource owner context");
-        };
-        let request = ExecutionResourceRequest {
-            base_uri: (*base_uri).clone(),
-            path: (*path).clone(),
-            context_name: (*requirement_context).clone(),
-            operation: (*operation).clone(),
-            intent: *intent,
-            delivery: *delivery,
-        };
-        if !normalized_config
-            .run_grants
-            .iter()
-            .any(|configured| grant_covers_resource(configured, &grant.target, &request))
-        {
-            return project_invalid("planned resource is not covered by configured run grants");
-        }
-        *actual_grant_keys
-            .entry((
-                (*base_uri).clone(),
-                host_instance.to_owned(),
-                host_context.to_owned(),
-                grant.operations[0].clone(),
-                grant.paths[0].clone(),
-            ))
-            .or_insert(0usize) += 1;
+    let expected_grant_keys = resource_requirements
+        .iter()
+        .map(|(request, owner)| planned_resource_grant(request, owner))
+        .collect::<BTreeSet<_>>();
+    let actual_grant_keys = plan.run_grants.iter().cloned().collect::<BTreeSet<_>>();
+    if actual_grant_keys.len() != plan.run_grants.len() {
+        return project_invalid("native build plan contains duplicate structured run grants");
     }
     if actual_grant_keys != expected_grant_keys {
         return project_invalid("native build plan run grants are not exact resource operations");
+    }
+    for grant in &plan.run_grants {
+        if !normalized_config
+            .run_grants
+            .iter()
+            .any(|configured| grant_covers_resource(configured, grant))
+        {
+            return project_invalid("planned resource is not covered by configured run grants");
+        }
     }
     Ok(())
 }
@@ -923,6 +871,7 @@ pub fn render_runtime_source(
         .expect("writing to String cannot fail");
     }
     for grant in &plan.run_grants {
+        let grant = runtime_resource_grant(grant);
         write!(
             &mut source,
             "\n    builder = builder.run_resource_grant(RunResourceGrantConfig {{\n        target: {}.to_string(),\n        operations: {},\n        paths: {},\n    }});\n",
@@ -1095,6 +1044,7 @@ mod tests {
 
     use crate::plan::{
         NativeActorBootstrap, NativeBuildProfile, NativeEmit, PlannedHostInstance, PlannedPackage,
+        PlannedResourceGrantKey, PlannedResourceOwner, PlannedResourceRequest,
         PlannedRuntimeFunction, refresh_plan_sha256,
     };
     use crate::project::GeneratedDependencySource;
@@ -1174,6 +1124,39 @@ mod tests {
             emit: NativeEmit::CargoProject,
             keep_project: true,
             offline: true,
+        }
+    }
+
+    fn resource_requirement(
+        base_uri: &str,
+        host_instance: &str,
+        provider: &str,
+        host_context: &str,
+    ) -> PlannedApplicationRequirement {
+        PlannedApplicationRequirement::Resource {
+            request: PlannedResourceRequest {
+                base_uri: base_uri.into(),
+                path: "line".into(),
+                context_name: "out".into(),
+                operation: "write".into(),
+                intent: ResourceIntent::Send,
+                delivery: ResourceDelivery::Snapshot,
+            },
+            owner: PlannedResourceOwner {
+                host_instance: host_instance.into(),
+                provider: provider.into(),
+                host_context: host_context.into(),
+                canonical_base_uri: base_uri.into(),
+            },
+        }
+    }
+
+    fn planned_grant(host_instance: &str, host_context: &str) -> PlannedResourceGrantKey {
+        PlannedResourceGrantKey {
+            host_instance: host_instance.into(),
+            host_context: host_context.into(),
+            operation: "write".into(),
+            path: "line".into(),
         }
     }
 
@@ -1409,17 +1392,12 @@ mod tests {
                 ConfigValue::String("value\\x".into()),
             ),
         ]));
-        plan.application_requirements = vec![PlannedApplicationRequirement::Resource {
-            base_uri: "cli://cli/stdout".into(),
-            path: "line".into(),
-            context_name: "out".into(),
-            host_context: "stdout".into(),
-            operation: "write".into(),
-            intent: ResourceIntent::Send,
-            delivery: ResourceDelivery::Snapshot,
-            host_instance: "cli".into(),
-            provider: "cli".into(),
-        }];
+        plan.application_requirements = vec![resource_requirement(
+            "cli://cli/stdout",
+            "cli",
+            "cli",
+            "stdout",
+        )];
         plan.hosts = vec![PlannedHostInstance {
             name: "cli".into(),
             provider: "cli".into(),
@@ -1429,11 +1407,7 @@ mod tests {
             factory_path: "mech_host_cli::CliHostFactory::new".into(),
             settings: settings.clone(),
         }];
-        plan.run_grants = vec![RunResourceGrantConfig {
-            target: "cli/stdout".into(),
-            operations: vec!["write".into()],
-            paths: vec!["line".into()],
-        }];
+        plan.run_grants = vec![planned_grant("cli", "stdout")];
         let config = NativeRuntimeConfig {
             runtime: plan.runtime_config.clone(),
             actor_bootstrap: None,
@@ -1442,7 +1416,7 @@ mod tests {
                 provider: "cli".into(),
                 settings,
             }],
-            run_grants: plan.run_grants.clone(),
+            run_grants: plan.run_grants.iter().map(runtime_resource_grant).collect(),
         };
 
         let source = render_runtime_source(&plan, Some(&config)).unwrap();
@@ -1463,17 +1437,12 @@ mod tests {
     #[test]
     fn runtime_render_rejects_a_grant_for_a_peer_resource_context() {
         let mut plan = base_plan(NativeApplicationKind::Hosted);
-        plan.application_requirements = vec![PlannedApplicationRequirement::Resource {
-            base_uri: "cli://cli/stdout".into(),
-            path: "line".into(),
-            context_name: "out".into(),
-            host_context: "stdout".into(),
-            operation: "write".into(),
-            intent: ResourceIntent::Send,
-            delivery: ResourceDelivery::Snapshot,
-            host_instance: "cli".into(),
-            provider: "cli".into(),
-        }];
+        plan.application_requirements = vec![resource_requirement(
+            "cli://cli/stdout",
+            "cli",
+            "cli",
+            "stdout",
+        )];
         plan.hosts = vec![PlannedHostInstance {
             name: "cli".into(),
             provider: "cli".into(),
@@ -1483,11 +1452,7 @@ mod tests {
             factory_path: "mech_host_cli::CliHostFactory::new".into(),
             settings: ConfigValue::Map(BTreeMap::new()),
         }];
-        plan.run_grants = vec![RunResourceGrantConfig {
-            target: "cli/stderr".into(),
-            operations: vec!["write".into()],
-            paths: vec!["line".into()],
-        }];
+        plan.run_grants = vec![planned_grant("cli", "stderr")];
         let config = NativeRuntimeConfig {
             runtime: plan.runtime_config.clone(),
             actor_bootstrap: None,
@@ -1502,7 +1467,7 @@ mod tests {
                     operations: vec!["write".into()],
                     paths: vec!["line".into()],
                 },
-                plan.run_grants[0].clone(),
+                runtime_resource_grant(&plan.run_grants[0]),
             ],
         };
 
@@ -1510,7 +1475,7 @@ mod tests {
         assert!(
             error
                 .full_chain_message()
-                .contains("does not match its resource owner context")
+                .contains("run grants are not exact resource operations")
         );
     }
 
