@@ -178,7 +178,10 @@ payload.
   a deep snapshot. Separate occurrences do not preserve aliases; cyclic
   graphs are rejected, while shared acyclic references may be repeated.
 - An option is `00` for absent or `01` followed by one framed child for
-  present. Only canonical typed option wrappers are accepted.
+  present. Only canonical typed option wrappers are accepted. A present option
+  retains the concrete runtime representation of its child. An absent option
+  uses its declared semantic kind because there is no child representation to
+  preserve.
 - A kind has no constant bytes; its complete semantic kind is carried by the
   `RuntimeType::Kind` payload.
 

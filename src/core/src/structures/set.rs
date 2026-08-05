@@ -6,6 +6,13 @@ use indexmap::set::{IndexSet, Iter};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechSet {
     pub kind: ValueKind,
+    /// The exact optional cardinality limit carried by the set's schema.
+    ///
+    /// `num_elements` predates optional set limits and uses zero as the
+    /// unbounded sentinel. Keep it for compatibility, but do not use it when
+    /// exact schema identity matters because it cannot distinguish `None`
+    /// from `Some(0)`.
+    pub max_elements: Option<usize>,
     pub num_elements: usize,
     pub set: IndexSet<Value>,
 }
@@ -14,6 +21,7 @@ impl MechSet {
     pub fn new(kind: ValueKind, size: usize) -> MechSet {
         MechSet {
             kind,
+            max_elements: (size > 0).then_some(size),
             num_elements: size,
             set: IndexSet::with_capacity(size),
         }
@@ -37,12 +45,14 @@ impl MechSet {
     }
 
     pub fn kind(&self) -> ValueKind {
-        let size = if self.num_elements > 0 {
-            Some(self.num_elements)
-        } else {
-            None
-        };
-        ValueKind::Set(Box::new(self.kind.clone()), size)
+        ValueKind::Set(Box::new(self.kind.clone()), self.max_elements)
+    }
+
+    /// Refreshes the legacy count and exact inferred bound after a set
+    /// operation replaces or mutates the contents.
+    pub fn sync_cardinality_from_contents(&mut self) {
+        self.num_elements = self.set.len();
+        self.max_elements = (!self.set.is_empty()).then_some(self.set.len());
     }
 
     pub fn size_of(&self) -> usize {
@@ -61,6 +71,7 @@ impl MechSet {
         };
         MechSet {
             kind,
+            max_elements: (!set.is_empty()).then_some(set.len()),
             num_elements: set.len(),
             set,
         }
@@ -74,6 +85,7 @@ impl MechSet {
         };
         MechSet {
             kind,
+            max_elements: (!set.is_empty()).then_some(set.len()),
             num_elements: set.len(),
             set,
         }

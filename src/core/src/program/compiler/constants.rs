@@ -153,6 +153,96 @@ fn runtime_type_from_value_kind(kind: &ValueKind) -> MResult<RuntimeType> {
 }
 
 #[cfg(feature = "compiler")]
+fn runtime_type_matches_annotation(actual: &RuntimeType, declared: &RuntimeType) -> bool {
+    match (actual, declared) {
+        (
+            RuntimeType::Matrix {
+                element: actual_element,
+                rows: actual_rows,
+                cols: actual_cols,
+                ..
+            },
+            RuntimeType::Matrix {
+                element: declared_element,
+                rows: declared_rows,
+                cols: declared_cols,
+                ..
+            },
+        ) => {
+            actual_rows == declared_rows
+                && actual_cols == declared_cols
+                && runtime_type_matches_annotation(actual_element, declared_element)
+        }
+        (RuntimeType::Record(actual), RuntimeType::Record(declared)) => {
+            actual.len() == declared.len()
+                && actual.iter().zip(declared).all(
+                    |((actual_name, actual_type), (declared_name, declared_type))| {
+                        actual_name == declared_name
+                            && runtime_type_matches_annotation(actual_type, declared_type)
+                    },
+                )
+        }
+        (
+            RuntimeType::Map {
+                key: actual_key,
+                value: actual_value,
+            },
+            RuntimeType::Map {
+                key: declared_key,
+                value: declared_value,
+            },
+        ) => {
+            runtime_type_matches_annotation(actual_key, declared_key)
+                && runtime_type_matches_annotation(actual_value, declared_value)
+        }
+        (
+            RuntimeType::Table {
+                columns: actual_columns,
+                primary_key: actual_primary_key,
+            },
+            RuntimeType::Table {
+                columns: declared_columns,
+                primary_key: declared_primary_key,
+            },
+        ) => {
+            actual_primary_key == declared_primary_key
+                && actual_columns.len() == declared_columns.len()
+                && actual_columns.iter().zip(declared_columns).all(
+                    |((actual_name, actual_type), (declared_name, declared_type))| {
+                        actual_name == declared_name
+                            && runtime_type_matches_annotation(actual_type, declared_type)
+                    },
+                )
+        }
+        (RuntimeType::Tuple(actual), RuntimeType::Tuple(declared)) => {
+            actual.len() == declared.len()
+                && actual
+                    .iter()
+                    .zip(declared)
+                    .all(|(actual, declared)| runtime_type_matches_annotation(actual, declared))
+        }
+        (RuntimeType::Reference(actual), RuntimeType::Reference(declared))
+        | (RuntimeType::Option(actual), RuntimeType::Option(declared)) => {
+            runtime_type_matches_annotation(actual, declared)
+        }
+        (
+            RuntimeType::Set {
+                element: actual_element,
+                max_len: actual_max_len,
+            },
+            RuntimeType::Set {
+                element: declared_element,
+                max_len: declared_max_len,
+            },
+        ) => {
+            actual_max_len == declared_max_len
+                && runtime_type_matches_annotation(actual_element, declared_element)
+        }
+        _ => actual == declared,
+    }
+}
+
+#[cfg(feature = "compiler")]
 fn unsupported_value_kind(kind: ValueKind, reason: &'static str) -> MResult<u32> {
     Err(unsupported_constant(
         runtime_type_from_value_kind(&kind)?,
@@ -635,28 +725,55 @@ fn encode_map_constant(
     value: &MechMap,
     context: &mut ConstantCodecContext,
 ) -> MResult<EncodedConstant> {
-    let key_type = runtime_type_from_value_kind(&value.key_kind)?;
-    let value_type = runtime_type_from_value_kind(&value.value_kind)?;
-    let runtime_type = RuntimeType::Map {
-        key: Box::new(key_type.clone()),
-        value: Box::new(value_type.clone()),
+    let declared_key_type = runtime_type_from_value_kind(&value.key_kind)?;
+    let declared_value_type = runtime_type_from_value_kind(&value.value_kind)?;
+    let declared_runtime_type = RuntimeType::Map {
+        key: Box::new(declared_key_type.clone()),
+        value: Box::new(declared_value_type.clone()),
     };
     let source_kind = value.kind();
     let mut entries = Vec::new();
     for (key, entry_value) in &value.map {
         let encoded_key = context.encode_child(key)?;
         let encoded_value = context.encode_child(entry_value)?;
-        if encoded_key.runtime_type != key_type || encoded_value.runtime_type != value_type {
+        if !runtime_type_matches_annotation(&encoded_key.runtime_type, &declared_key_type)
+            || !runtime_type_matches_annotation(&encoded_value.runtime_type, &declared_value_type)
+        {
             return Err(unsupported_constant(
-                runtime_type,
+                declared_runtime_type,
                 source_kind,
                 "map entry type does not match the declared map schema",
             ));
         }
-        entries.push((encoded_key.bytes, encoded_value.bytes));
+        entries.push((encoded_key, encoded_value));
     }
-    entries.sort();
-    if entries.windows(2).any(|pair| pair[0].0 == pair[1].0) {
+    let key_type = entries
+        .first()
+        .map(|(key, _)| key.runtime_type.clone())
+        .unwrap_or(declared_key_type);
+    let value_type = entries
+        .first()
+        .map(|(_, value)| value.runtime_type.clone())
+        .unwrap_or(declared_value_type);
+    let runtime_type = RuntimeType::Map {
+        key: Box::new(key_type.clone()),
+        value: Box::new(value_type.clone()),
+    };
+    if entries
+        .iter()
+        .any(|(key, value)| key.runtime_type != key_type || value.runtime_type != value_type)
+    {
+        return Err(unsupported_constant(
+            runtime_type,
+            source_kind,
+            "map entries do not share one exact runtime schema",
+        ));
+    }
+    entries.sort_by(|lhs, rhs| (&lhs.0.bytes, &lhs.1.bytes).cmp(&(&rhs.0.bytes, &rhs.1.bytes)));
+    if entries
+        .windows(2)
+        .any(|pair| pair[0].0.bytes == pair[1].0.bytes)
+    {
         return Err(unsupported_constant(
             runtime_type,
             source_kind,
@@ -674,11 +791,8 @@ fn encode_map_constant(
         .to_le_bytes(),
     );
     for (key, entry_value) in entries {
-        append_child_payload(&mut bytes, &encoded_constant(key_type.clone(), 1, key))?;
-        append_child_payload(
-            &mut bytes,
-            &encoded_constant(value_type.clone(), 1, entry_value),
-        )?;
+        append_child_payload(&mut bytes, &key)?;
+        append_child_payload(&mut bytes, &entry_value)?;
     }
     Ok(encoded_constant(runtime_type, 4, bytes))
 }
@@ -688,32 +802,58 @@ fn encode_set_constant(
     value: &MechSet,
     context: &mut ConstantCodecContext,
 ) -> MResult<EncodedConstant> {
-    let element_type = runtime_type_from_value_kind(&value.kind)?;
-    let max_len = Some(checked_count(
-        value.num_elements,
-        RuntimeType::Any,
-        value.kind(),
-        "set maximum length exceeds u32",
-    )?);
-    let runtime_type = RuntimeType::Set {
-        element: Box::new(element_type.clone()),
+    let declared_element_type = runtime_type_from_value_kind(&value.kind)?;
+    let max_len = value
+        .max_elements
+        .map(|limit| {
+            checked_count(
+                limit,
+                RuntimeType::Any,
+                value.kind(),
+                "set maximum length exceeds u32",
+            )
+        })
+        .transpose()?;
+    let declared_runtime_type = RuntimeType::Set {
+        element: Box::new(declared_element_type.clone()),
         max_len,
     };
     let source_kind = value.kind();
     let mut elements = Vec::new();
     for element in &value.set {
         let child = context.encode_child(element)?;
-        if child.runtime_type != element_type {
+        if !runtime_type_matches_annotation(&child.runtime_type, &declared_element_type) {
             return Err(unsupported_constant(
-                runtime_type,
+                declared_runtime_type,
                 source_kind,
                 "set element type does not match the declared set schema",
             ));
         }
-        elements.push(child.bytes);
+        elements.push(child);
     }
-    elements.sort();
-    if elements.windows(2).any(|pair| pair[0] == pair[1]) {
+    let element_type = elements
+        .first()
+        .map(|element| element.runtime_type.clone())
+        .unwrap_or(declared_element_type);
+    let runtime_type = RuntimeType::Set {
+        element: Box::new(element_type.clone()),
+        max_len,
+    };
+    if elements
+        .iter()
+        .any(|element| element.runtime_type != element_type)
+    {
+        return Err(unsupported_constant(
+            runtime_type,
+            source_kind,
+            "set elements do not share one exact runtime schema",
+        ));
+    }
+    elements.sort_by(|lhs, rhs| lhs.bytes.cmp(&rhs.bytes));
+    if elements
+        .windows(2)
+        .any(|pair| pair[0].bytes == pair[1].bytes)
+    {
         return Err(unsupported_constant(
             runtime_type,
             source_kind,
@@ -731,10 +871,7 @@ fn encode_set_constant(
         .to_le_bytes(),
     );
     for element in elements {
-        append_child_payload(
-            &mut bytes,
-            &encoded_constant(element_type.clone(), 1, element),
-        )?;
+        append_child_payload(&mut bytes, &element)?;
     }
     Ok(encoded_constant(runtime_type, 4, bytes))
 }
@@ -775,8 +912,44 @@ fn encode_table_constant(
                 "table column length does not match row count",
             ));
         }
-        columns.push((name.clone(), runtime_type_from_value_kind(kind)?));
-        column_values.push((kind.clone(), values.clone()));
+        let declared_type = runtime_type_from_value_kind(kind)?;
+        let mut encoded_cells = Vec::new();
+        encoded_cells
+            .try_reserve_exact(value.rows)
+            .map_err(|_| invalid::<()>("unable to allocate table constant cells").unwrap_err())?;
+        for cell in values.borrow().iter() {
+            let encoded = context.encode_child(cell)?;
+            if !runtime_type_matches_annotation(&encoded.runtime_type, &declared_type) {
+                return Err(unsupported_constant(
+                    RuntimeType::Table {
+                        columns: vec![(name.clone(), declared_type)],
+                        primary_key: 0,
+                    },
+                    ValueKind::Table(vec![(name.clone(), kind.clone())], value.rows),
+                    "table cell type does not match its declared column type",
+                ));
+            }
+            encoded_cells.push(encoded);
+        }
+        let column_type = encoded_cells
+            .first()
+            .map(|cell| cell.runtime_type.clone())
+            .unwrap_or(declared_type);
+        if encoded_cells
+            .iter()
+            .any(|cell| cell.runtime_type != column_type)
+        {
+            return Err(unsupported_constant(
+                RuntimeType::Table {
+                    columns: vec![(name.clone(), column_type)],
+                    primary_key: 0,
+                },
+                ValueKind::Table(vec![(name.clone(), kind.clone())], value.rows),
+                "table cells do not share one exact runtime schema",
+            ));
+        }
+        columns.push((name.clone(), column_type));
+        column_values.push(encoded_cells);
     }
     let primary_key = 0;
     let runtime_type = RuntimeType::Table {
@@ -804,16 +977,8 @@ fn encode_table_constant(
         .to_le_bytes(),
     );
     for row in 0..value.rows {
-        for ((kind, cells), (_, expected_type)) in column_values.iter().zip(&columns) {
-            let child = context.encode_child(&cells.borrow()[row])?;
-            if child.runtime_type != *expected_type {
-                return Err(unsupported_constant(
-                    runtime_type,
-                    ValueKind::Table(vec![(String::new(), kind.clone())], 0),
-                    "table cell type does not match its declared column type",
-                ));
-            }
-            append_child_payload(&mut bytes, &child)?;
+        for cells in &column_values {
+            append_child_payload(&mut bytes, &cells[row])?;
         }
     }
     Ok(encoded_constant(runtime_type, 4, bytes))
@@ -1000,19 +1165,20 @@ fn encode_typed_constant(
             "typed constant annotation does not match its source value kind; only Option wrappers are canonical",
         ));
     };
-    let inner_type = runtime_type_from_value_kind(inner)?;
-    let runtime_type = RuntimeType::Option(Box::new(inner_type.clone()));
+    let declared_inner_type = runtime_type_from_value_kind(inner)?;
+    let declared_runtime_type = RuntimeType::Option(Box::new(declared_inner_type.clone()));
     if matches!(value, Value::Empty) {
-        return Ok(encoded_constant(runtime_type, 1, vec![0]));
+        return Ok(encoded_constant(declared_runtime_type, 1, vec![0]));
     }
     let child = context.encode_child(value)?;
-    if child.runtime_type != inner_type {
+    if !runtime_type_matches_annotation(&child.runtime_type, &declared_inner_type) {
         return Err(unsupported_constant(
-            runtime_type,
+            declared_runtime_type,
             value.kind(),
             "typed option child does not match its declared inner type",
         ));
     }
+    let runtime_type = RuntimeType::Option(Box::new(child.runtime_type.clone()));
     let mut bytes = vec![1];
     append_child_payload(&mut bytes, &child)?;
     Ok(encoded_constant(runtime_type, 4, bytes))

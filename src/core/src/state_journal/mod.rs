@@ -377,6 +377,7 @@ fn canonical_set_snapshot(set: &MechSet, phase: &'static str) -> MResult<MechSet
     }
     Ok(MechSet {
         kind: set.kind.clone(),
+        max_elements: set.max_elements,
         num_elements: set.num_elements,
         set: elements,
     })

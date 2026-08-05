@@ -36,6 +36,9 @@ fn validate_canonical_resource_base_uri(base_uri: &str) -> MResult<()> {
     // `canonicalize_resource_base_uri` removes every trailing slash, requires
     // a scheme, and requires a non-empty authority. Bytecode stores only that
     // canonical result, never an equivalent pre-normalized spelling.
+    if base_uri != base_uri.trim() {
+        return invalid("resource requirement base URI must not have surrounding whitespace");
+    }
     if base_uri.ends_with('/') {
         return invalid("resource requirement base URI must be canonical (no trailing slash)");
     }

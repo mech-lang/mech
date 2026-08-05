@@ -48,7 +48,7 @@ impl MechFunctionImpl for SetUnionFxn {
             out_ptr.set = lhs_ptr.set.union(&(rhs_ptr.set)).cloned().collect();
 
             // Update metadata
-            out_ptr.num_elements = out_ptr.set.len();
+            out_ptr.sync_cardinality_from_contents();
             out_ptr.kind = if out_ptr.set.len() > 0 {
                 out_ptr.set.iter().next().unwrap().kind()
             } else {

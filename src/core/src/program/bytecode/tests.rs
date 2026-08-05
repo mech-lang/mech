@@ -131,6 +131,17 @@ fn type_entry_with_tag(bytes: &[u8], tag: RuntimeTypeTag) -> usize {
         .expect("requested runtime type tag must be present")
 }
 
+fn type_id_with_tag(bytes: &[u8], tag: RuntimeTypeTag) -> u32 {
+    let count = read_u32(
+        bytes,
+        section_entry_offset(BytecodeSectionKind::Types as usize - 1) + 4,
+    ) as usize;
+    (0..count)
+        .find(|index| read_u16(bytes, type_entry_offset(bytes, *index)) == tag as u16)
+        .map(|index| index as u32)
+        .expect("requested runtime type tag must be present")
+}
+
 fn constant_entry_offset(bytes: &[u8], index: usize) -> usize {
     section_offset(bytes, BytecodeSectionKind::ConstantTable as usize - 1) + index * 24
 }
@@ -155,6 +166,29 @@ fn assert_validation_reason(bytes: &[u8], expected: &str) {
         "expected `{expected}` in `{}`",
         error.kind_message(),
     );
+}
+
+fn assert_named_id_validation(
+    bytes: &[u8],
+    category: &str,
+    supplied: u64,
+    expected: u64,
+    name: &str,
+) {
+    let error = ParsedProgram::from_bytes(bytes).unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeValidation");
+    let message = error.kind_message();
+    for expected_fragment in [
+        category.to_owned(),
+        format!("0x{supplied:016x}"),
+        format!("0x{expected:016x}"),
+        name.to_owned(),
+    ] {
+        assert!(
+            message.contains(&expected_fragment),
+            "expected `{expected_fragment}` in `{message}`"
+        );
+    }
 }
 
 fn assert_validation_with_limits(bytes: &[u8], limits: BytecodeReadLimits) {
@@ -1262,6 +1296,24 @@ fn rejects_unknown_out_of_range_cyclic_and_invalid_matrix_types() {
     refresh_crc(&mut dimensions);
     assert_validation_reason(&dimensions, "matrix storage and dimensions disagree");
 
+    let mut unsupported_element = write_bytecode(&program(vec![
+        matrix_constant(MatrixStorage::MatrixD, 2, 2),
+        EncodedConstant {
+            runtime_type: RuntimeType::Any,
+            alignment: 1,
+            bytes: Vec::new(),
+        },
+    ]))
+    .unwrap();
+    let matrix_entry = type_entry_with_tag(&unsupported_element, RuntimeTypeTag::Matrix);
+    let any_type = type_id_with_tag(&unsupported_element, RuntimeTypeTag::Any);
+    write_u32(&mut unsupported_element, matrix_entry + 8, any_type);
+    refresh_crc(&mut unsupported_element);
+    assert_validation_reason(
+        &unsupported_element,
+        "matrix element type is not supported by bytecode v1",
+    );
+
     let mut deeply_nested = RuntimeType::U8;
     for _ in 0..300 {
         deeply_nested = RuntimeType::Reference(Box::new(deeply_nested));
@@ -1688,6 +1740,15 @@ fn writer_rejects_noncanonical_resource_identities() {
         assert!(error.kind_message().contains("base URI must be canonical"));
     }
 
+    for base_uri in [" docs://manual", "docs://manual "] {
+        let error = write_bytecode(&resource_program(base_uri, "chapter/one")).unwrap_err();
+        assert!(
+            error
+                .kind_message()
+                .contains("base URI must not have surrounding whitespace")
+        );
+    }
+
     for path in [
         "./chapter",
         "chapter/./one",
@@ -1710,6 +1771,17 @@ fn reader_rejects_noncanonical_resource_identities() {
     refresh_crc(&mut trailing_uri);
     assert_validation_reason(&trailing_uri, "base URI must be canonical");
 
+    for (canonical, noncanonical) in [
+        ("xdocs://manual", " docs://manual"),
+        ("docs://manualx", "docs://manual "),
+    ] {
+        let mut bytes = write_bytecode(&resource_program(canonical, "chapter/one")).unwrap();
+        let (base_uri, _) = resource_requirement_field_offsets(&bytes);
+        bytes[base_uri..base_uri + noncanonical.len()].copy_from_slice(noncanonical.as_bytes());
+        refresh_crc(&mut bytes);
+        assert_validation_reason(&bytes, "base URI must not have surrounding whitespace");
+    }
+
     for (canonical, noncanonical) in [("a/x", "a/."), ("a/xx", "a/.."), ("a/xb", "a//b")] {
         let mut bytes = write_bytecode(&resource_program("docs://manual", canonical)).unwrap();
         let (_, path) = resource_requirement_field_offsets(&bytes);
@@ -1719,6 +1791,159 @@ fn reader_rejects_noncanonical_resource_identities() {
     }
 }
 
+#[test]
+fn rejects_crc_valid_unused_named_runtime_types_with_mismatched_ids() {
+    let cases = [
+        (
+            RuntimeTypeTag::Atom,
+            "unused-atom",
+            "runtime atom",
+            EncodedConstant {
+                runtime_type: RuntimeType::Atom {
+                    id: hash_str("unused-atom"),
+                    name: "unused-atom".to_owned(),
+                },
+                alignment: 1,
+                bytes: Vec::new(),
+            },
+            empty_constant(),
+            RuntimeTypeTag::Empty,
+        ),
+        (
+            RuntimeTypeTag::Enum,
+            "unused-enum",
+            "runtime enum",
+            EncodedConstant {
+                runtime_type: RuntimeType::Enum {
+                    id: hash_str("unused-enum"),
+                    name: "unused-enum".to_owned(),
+                },
+                alignment: 4,
+                bytes: 0_u32.to_le_bytes().to_vec(),
+            },
+            EncodedConstant {
+                runtime_type: RuntimeType::U32,
+                alignment: 4,
+                bytes: 0_u32.to_le_bytes().to_vec(),
+            },
+            RuntimeTypeTag::U32,
+        ),
+    ];
+
+    for (tag, name, category, named, replacement, replacement_tag) in cases {
+        let expected = hash_str(name);
+        let supplied = expected ^ 1;
+        let mut bytes = write_bytecode(&program(vec![named, replacement])).unwrap();
+        let named_entry = type_entry_with_tag(&bytes, tag);
+        write_u64(&mut bytes, named_entry + 8, supplied);
+        let replacement_type = type_id_with_tag(&bytes, replacement_tag);
+        let constant_entry = constant_entry_offset(&bytes, 0);
+        write_u32(&mut bytes, constant_entry, replacement_type);
+        refresh_crc(&mut bytes);
+
+        assert_named_id_validation(&bytes, category, supplied, expected, name);
+    }
+}
+
+#[test]
+fn rejects_crc_valid_named_ids_nested_in_semantic_kinds() {
+    for (name, category, nested) in [
+        (
+            "nested-atom",
+            "kind atom",
+            crate::kind::Kind::Option(Box::new(crate::kind::Kind::Atom(
+                hash_str("nested-atom"),
+                "nested-atom".to_owned(),
+            ))),
+        ),
+        (
+            "nested-enum",
+            "kind enum",
+            crate::kind::Kind::Option(Box::new(crate::kind::Kind::Enum(
+                hash_str("nested-enum"),
+                "nested-enum".to_owned(),
+            ))),
+        ),
+    ] {
+        let expected = hash_str(name);
+        let supplied = expected ^ 1;
+        let mut bytes = write_bytecode(&program(vec![EncodedConstant {
+            runtime_type: RuntimeType::Kind(nested),
+            alignment: 1,
+            bytes: Vec::new(),
+        }]))
+        .unwrap();
+        let kind_entry = type_entry_with_tag(&bytes, RuntimeTypeTag::Kind);
+        // RuntimeType::Kind payload: Option tag, Atom/Enum tag, then the named ID.
+        write_u64(&mut bytes, kind_entry + 10, supplied);
+        refresh_crc(&mut bytes);
+
+        assert_named_id_validation(&bytes, category, supplied, expected, name);
+    }
+}
+
+#[test]
+fn rejects_noncanonical_primary_keys_for_empty_table_schemas() {
+    let empty_table = EncodedConstant {
+        runtime_type: RuntimeType::Table {
+            columns: Vec::new(),
+            primary_key: 0,
+        },
+        alignment: 4,
+        bytes: [0_u32.to_le_bytes(), 0_u32.to_le_bytes()].concat(),
+    };
+    let mut runtime_table = write_bytecode(&program(vec![empty_table])).unwrap();
+    let table_entry = type_entry_with_tag(&runtime_table, RuntimeTypeTag::Table);
+    write_u32(&mut runtime_table, table_entry + 12, 1);
+    refresh_crc(&mut runtime_table);
+    assert_validation_reason(&runtime_table, "table primary key is out of range");
+
+    let empty_kind_table = EncodedConstant {
+        runtime_type: RuntimeType::Kind(crate::kind::Kind::Table(Vec::new(), 0)),
+        alignment: 1,
+        bytes: Vec::new(),
+    };
+    let mut kind_table = write_bytecode(&program(vec![empty_kind_table])).unwrap();
+    let kind_entry = type_entry_with_tag(&kind_table, RuntimeTypeTag::Kind);
+    // RuntimeType::Kind payload: table tag, zero column count, primary key.
+    write_u32(&mut kind_table, kind_entry + 13, 1);
+    refresh_crc(&mut kind_table);
+    assert_validation_reason(&kind_table, "kind table primary key is out of range");
+
+    let mut canonical = types::canonical_runtime_type_key(&RuntimeType::Table {
+        columns: Vec::new(),
+        primary_key: 0,
+    })
+    .unwrap();
+    let primary_key = canonical.len() - 4;
+    write_u32(&mut canonical, primary_key, 1);
+    let error = types::decode_canonical_runtime_type_key(&canonical).unwrap_err();
+    assert!(
+        error
+            .kind_message()
+            .contains("canonical table primary key is out of range")
+    );
+}
+
+#[test]
+fn rejects_noncanonical_scalar_ids_nested_in_semantic_kinds() {
+    let mut bytes = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::Kind(crate::kind::Kind::Scalar(hash_str("u8"))),
+        alignment: 1,
+        bytes: Vec::new(),
+    }]))
+    .unwrap();
+    let kind_entry = type_entry_with_tag(&bytes, RuntimeTypeTag::Kind);
+    // RuntimeType::Kind payload: scalar tag followed by the scalar ID.
+    write_u64(&mut bytes, kind_entry + 9, hash_str("not-a-runtime-scalar"));
+    refresh_crc(&mut bytes);
+
+    assert_validation_reason(
+        &bytes,
+        "Kind scalar ID does not identify a canonical runtime scalar",
+    );
+}
+
 #[cfg(feature = "compiler")]
 mod compiler_tests {
     #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
@@ -1726,13 +1951,28 @@ mod compiler_tests {
 
     #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
     use indexmap::IndexMap;
+    #[cfg(all(
+        feature = "f64",
+        feature = "i64",
+        feature = "matrix2",
+        feature = "matrix3"
+    ))]
+    use nalgebra as na;
     #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
     use nalgebra::DVector;
 
     use crate::program::compiler::{BytecodeCompilerContext, CompileConst, Register};
     use crate::{MResult, Ref, Value, ValueKind};
 
-    #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
+    #[cfg(any(
+        all(feature = "table", feature = "vectord", feature = "u8"),
+        all(
+            feature = "f64",
+            feature = "i64",
+            feature = "matrix2",
+            feature = "matrix3"
+        )
+    ))]
     use crate::matrix::Matrix;
 
     use super::*;
@@ -1860,6 +2100,293 @@ mod compiler_tests {
         assert!(detail.reason.contains("does not match"));
     }
 
+    #[cfg(all(
+        feature = "f64",
+        feature = "i64",
+        feature = "matrix2",
+        feature = "matrix2x3",
+        feature = "matrix3",
+        feature = "row_vector2",
+        feature = "vector2",
+        feature = "matrixd"
+    ))]
+    fn f64_matrix_storage(value: &Value) -> MatrixStorage {
+        let Value::MatrixF64(matrix) = value else {
+            panic!("expected an f64 matrix, found {value:?}");
+        };
+        match matrix {
+            Matrix::Matrix2(_) => MatrixStorage::Matrix2,
+            Matrix::Matrix2x3(_) => MatrixStorage::Matrix2x3,
+            Matrix::RowVector2(_) => MatrixStorage::RowVector2,
+            Matrix::Vector2(_) => MatrixStorage::Vector2,
+            Matrix::DMatrix(_) => MatrixStorage::MatrixD,
+            other => panic!("unexpected matrix storage {other:?}"),
+        }
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "i64",
+        feature = "matrix2",
+        feature = "matrix2x3",
+        feature = "matrix3",
+        feature = "row_vector2",
+        feature = "vector2",
+        feature = "matrixd"
+    ))]
+    #[test]
+    fn present_matrix_options_preserve_concrete_storage() {
+        let cases = vec![
+            (
+                Value::MatrixF64(Matrix::Matrix2(Ref::new(na::Matrix2::from_row_slice(&[
+                    1.0, 2.0, 3.0, 4.0,
+                ])))),
+                MatrixStorage::Matrix2,
+                2,
+                2,
+            ),
+            (
+                Value::MatrixF64(Matrix::Matrix2x3(Ref::new(na::Matrix2x3::from_row_slice(
+                    &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                )))),
+                MatrixStorage::Matrix2x3,
+                2,
+                3,
+            ),
+            (
+                Value::MatrixF64(Matrix::RowVector2(Ref::new(
+                    na::RowVector2::from_row_slice(&[1.0, 2.0]),
+                ))),
+                MatrixStorage::RowVector2,
+                1,
+                2,
+            ),
+            (
+                Value::MatrixF64(Matrix::Vector2(Ref::new(na::Vector2::from_column_slice(
+                    &[1.0, 2.0],
+                )))),
+                MatrixStorage::Vector2,
+                2,
+                1,
+            ),
+            (
+                Value::MatrixF64(Matrix::DMatrix(Ref::new(na::DMatrix::from_row_slice(
+                    2,
+                    2,
+                    &[1.0, 2.0, 3.0, 4.0],
+                )))),
+                MatrixStorage::MatrixD,
+                2,
+                2,
+            ),
+        ];
+
+        for (value, expected_storage, expected_rows, expected_cols) in cases {
+            let declared_kind = value.kind();
+            let constant = encode(&Value::Typed(
+                Box::new(value.clone()),
+                ValueKind::Option(Box::new(declared_kind)),
+            ));
+            let RuntimeType::Option(inner) = &constant.runtime_type else {
+                panic!("expected an option runtime type");
+            };
+            let RuntimeType::Matrix {
+                element,
+                storage,
+                rows,
+                cols,
+            } = inner.as_ref()
+            else {
+                panic!("expected an option matrix child");
+            };
+            assert_eq!(*element.as_ref(), RuntimeType::F64);
+            assert_eq!(*storage, expected_storage);
+            assert_eq!((*rows, *cols), (expected_rows, expected_cols));
+
+            let Value::Typed(decoded, ValueKind::Option(_)) = decode_one(&constant) else {
+                panic!("present matrix option did not decode as a typed option");
+            };
+            assert_eq!(decoded.as_ref(), &value);
+            assert_eq!(f64_matrix_storage(&decoded), expected_storage);
+        }
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrixd"))]
+    #[test]
+    fn absent_matrix_option_uses_annotation_derived_dynamic_storage() {
+        let constant = encode(&Value::EmptyKind(ValueKind::Option(Box::new(
+            ValueKind::Matrix(Box::new(ValueKind::F64), vec![2, 2]),
+        ))));
+        assert_eq!(
+            constant.runtime_type,
+            RuntimeType::Option(Box::new(RuntimeType::Matrix {
+                element: Box::new(RuntimeType::F64),
+                storage: MatrixStorage::MatrixD,
+                rows: 2,
+                cols: 2,
+            }))
+        );
+        assert_eq!(constant.bytes, [0]);
+        assert!(matches!(
+            decode_one(&constant),
+            Value::EmptyKind(ValueKind::Option(_))
+        ));
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "i64",
+        feature = "matrix2",
+        feature = "matrix3"
+    ))]
+    #[test]
+    fn present_matrix_options_reject_semantic_mismatches() {
+        let declared = ValueKind::Matrix(Box::new(ValueKind::F64), vec![2, 2]);
+        let mismatches = vec![
+            Value::MatrixI64(Matrix::Matrix2(Ref::new(na::Matrix2::from_row_slice(&[
+                1, 2, 3, 4,
+            ])))),
+            Value::MatrixF64(Matrix::Matrix3(Ref::new(na::Matrix3::from_row_slice(&[
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0,
+            ])))),
+            Value::F64(Ref::new(1.0)),
+        ];
+
+        for actual in mismatches {
+            let error = Value::Typed(
+                Box::new(actual),
+                ValueKind::Option(Box::new(declared.clone())),
+            )
+            .compile_const(&mut ConstantContext::default())
+            .unwrap_err();
+            assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
+            let detail = error.kind_as::<BytecodeConstantUnsupported>().unwrap();
+            assert!(detail.reason.contains("does not match"));
+        }
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "i64",
+        feature = "map",
+        feature = "matrix2",
+        feature = "matrix3",
+        feature = "set",
+        feature = "table",
+        feature = "u8",
+        feature = "vectord"
+    ))]
+    #[test]
+    fn fixed_matrix_composite_entries_preserve_concrete_storage() {
+        let fixed = Value::MatrixI64(Matrix::Matrix2(Ref::new(na::Matrix2::from_row_slice(&[
+            1, 2, 3, 4,
+        ]))));
+        let matrix_type = RuntimeType::Matrix {
+            element: Box::new(RuntimeType::I64),
+            storage: MatrixStorage::Matrix2,
+            rows: 2,
+            cols: 2,
+        };
+        let assert_fixed = |value: &Value| {
+            assert!(matches!(value, Value::MatrixI64(Matrix::Matrix2(_))));
+        };
+
+        let map = crate::MechMap::from_vec(vec![(Value::U8(Ref::new(1)), fixed.clone())]);
+        let map_constant = encode(&Value::Map(Ref::new(map)));
+        assert_eq!(
+            map_constant.runtime_type,
+            RuntimeType::Map {
+                key: Box::new(RuntimeType::U8),
+                value: Box::new(matrix_type.clone()),
+            }
+        );
+        let Value::Map(decoded_map) = decode_one(&map_constant) else {
+            panic!("matrix-valued map did not decode as a map");
+        };
+        assert_fixed(decoded_map.borrow().map.values().next().unwrap());
+
+        let set = crate::MechSet::from_vec(vec![fixed.clone()]);
+        let set_constant = encode(&Value::Set(Ref::new(set)));
+        assert_eq!(
+            set_constant.runtime_type,
+            RuntimeType::Set {
+                element: Box::new(matrix_type.clone()),
+                max_len: Some(1),
+            }
+        );
+        let Value::Set(decoded_set) = decode_one(&set_constant) else {
+            panic!("matrix-valued set did not decode as a set");
+        };
+        assert_fixed(decoded_set.borrow().set.iter().next().unwrap());
+
+        let name = "matrix";
+        let id = hash_str(name);
+        let mut data = IndexMap::new();
+        data.insert(
+            id,
+            (
+                fixed.kind(),
+                Matrix::DVector(Ref::new(DVector::from_vec(vec![fixed.clone()]))),
+            ),
+        );
+        let table = crate::MechTable::new(1, 1, data, HashMap::from([(id, name.to_owned())]));
+        let table_constant = encode(&Value::Table(Ref::new(table)));
+        assert_eq!(
+            table_constant.runtime_type,
+            RuntimeType::Table {
+                columns: vec![(name.to_owned(), matrix_type)],
+                primary_key: 0,
+            }
+        );
+        let Value::Table(decoded_table) = decode_one(&table_constant) else {
+            panic!("matrix-valued table did not decode as a table");
+        };
+        let table = decoded_table.borrow();
+        let (_, Matrix::DVector(cells)) = table.data.values().next().unwrap() else {
+            panic!("decoded table column did not preserve dynamic cell storage");
+        };
+        assert_fixed(&cells.borrow()[0]);
+    }
+
+    #[cfg(all(feature = "f64", feature = "set"))]
+    #[test]
+    fn set_constants_preserve_exact_optional_limits() {
+        let cases = [
+            (Vec::new(), Some(0)),
+            (Vec::new(), Some(10)),
+            (
+                vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0))],
+                Some(10),
+            ),
+            (
+                vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0))],
+                None,
+            ),
+        ];
+
+        for (values, max_elements) in cases {
+            let mut set = crate::MechSet::from_vec(values);
+            set.kind = ValueKind::F64;
+            set.max_elements = max_elements;
+            set.num_elements = max_elements.unwrap_or(0);
+            let encoded = encode(&Value::Set(Ref::new(set)));
+            assert_eq!(
+                encoded.runtime_type,
+                RuntimeType::Set {
+                    element: Box::new(RuntimeType::F64),
+                    max_len: max_elements.map(|limit| limit as u32),
+                }
+            );
+
+            let decoded = decode_one(&encoded);
+            assert_eq!(
+                decoded.kind(),
+                ValueKind::Set(Box::new(ValueKind::F64), max_elements)
+            );
+            assert_eq!(encode(&decoded), encoded);
+        }
+    }
+
     #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
     fn table(rows: usize, columns: &[&str]) -> crate::MechTable {
         let mut data = IndexMap::new();
@@ -1881,7 +2408,6 @@ mod compiler_tests {
         crate::MechTable::new(rows, columns.len(), data, col_names)
     }
 
-    #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
     fn decode_one(constant: &EncodedConstant) -> Value {
         let parsed =
             ParsedProgram::from_bytes(&write_bytecode(&program(vec![constant.clone()])).unwrap())

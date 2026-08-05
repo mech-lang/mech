@@ -3899,6 +3899,7 @@ mod reactive_cell_tests {
         members.insert(Value::F64(second.clone()));
         let set = Ref::new(MechSet {
             kind: ValueKind::F64,
+            max_elements: Some(2),
             num_elements: 2,
             set: members,
         });
@@ -4049,6 +4050,7 @@ mod reactive_cell_tests {
         set_data.insert(Value::F64(set2.clone()));
         let set = Ref::new(MechSet {
             kind: ValueKind::F64,
+            max_elements: Some(2),
             num_elements: 2,
             set: set_data,
         });

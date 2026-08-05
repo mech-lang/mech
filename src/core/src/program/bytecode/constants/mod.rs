@@ -74,6 +74,220 @@ pub fn decode_constants(
     Ok(values)
 }
 
+pub(crate) fn referenced_runtime_types(
+    types: &[RuntimeType],
+    entries: &[ConstantEntry],
+    blob: &[u8],
+) -> MResult<Vec<RuntimeType>> {
+    let mut referenced = types.iter().cloned().collect::<BTreeSet<_>>();
+    for entry in entries {
+        let type_id = checked_usize(u64::from(entry.type_id), "constant type ID")?;
+        let ty = types
+            .get(type_id)
+            .ok_or_else(|| invalid::<()>("constant type ID is out of range").unwrap_err())?;
+        let start = checked_usize(entry.offset, "constant offset")?;
+        let length = checked_usize(entry.length, "constant length")?;
+        let end = start
+            .checked_add(length)
+            .ok_or_else(|| invalid::<()>("constant range overflow").unwrap_err())?;
+        let payload = blob
+            .get(start..end)
+            .ok_or_else(|| invalid::<()>("constant exceeds ConstantBlob").unwrap_err())?;
+        collect_inline_runtime_types(ty, payload, 0, &mut referenced)?;
+    }
+    Ok(referenced.into_iter().collect())
+}
+
+fn collect_inline_runtime_types(
+    ty: &RuntimeType,
+    bytes: &[u8],
+    depth: usize,
+    referenced: &mut BTreeSet<RuntimeType>,
+) -> MResult<()> {
+    if depth > MAX_CONSTANT_NESTING {
+        return Err(super::depth_exceeded(MAX_CONSTANT_NESTING));
+    }
+
+    let mut reader = ByteReader::new(bytes);
+    match ty {
+        RuntimeType::Tuple(types) => {
+            let count = checked_usize(
+                u64::from(reader.read_u32("tuple element count")?),
+                "tuple element count",
+            )?;
+            if count != types.len() {
+                return invalid("tuple element count does not match RuntimeType");
+            }
+            for child in types {
+                collect_inline_runtime_types(
+                    child,
+                    read_child_payload(&mut reader, "tuple element")?,
+                    depth + 1,
+                    referenced,
+                )?;
+            }
+        }
+        RuntimeType::Record(fields) => {
+            let count = checked_usize(
+                u64::from(reader.read_u32("record field count")?),
+                "record field count",
+            )?;
+            if count != fields.len() {
+                return invalid("record field count does not match RuntimeType");
+            }
+            for (_, child) in fields {
+                collect_inline_runtime_types(
+                    child,
+                    read_child_payload(&mut reader, "record field")?,
+                    depth + 1,
+                    referenced,
+                )?;
+            }
+        }
+        RuntimeType::Map { key, value } => {
+            let count = checked_usize(
+                u64::from(reader.read_u32("map entry count")?),
+                "map entry count",
+            )?;
+            for _ in 0..count {
+                collect_inline_runtime_types(
+                    key,
+                    read_child_payload(&mut reader, "map key")?,
+                    depth + 1,
+                    referenced,
+                )?;
+                collect_inline_runtime_types(
+                    value,
+                    read_child_payload(&mut reader, "map value")?,
+                    depth + 1,
+                    referenced,
+                )?;
+            }
+        }
+        RuntimeType::Set { element, .. } => {
+            let count = checked_usize(
+                u64::from(reader.read_u32("set element count")?),
+                "set element count",
+            )?;
+            for _ in 0..count {
+                collect_inline_runtime_types(
+                    element,
+                    read_child_payload(&mut reader, "set element")?,
+                    depth + 1,
+                    referenced,
+                )?;
+            }
+        }
+        RuntimeType::Table { columns, .. } => {
+            let rows = checked_usize(
+                u64::from(reader.read_u32("table row count")?),
+                "table row count",
+            )?;
+            let count = checked_usize(
+                u64::from(reader.read_u32("table column count")?),
+                "table column count",
+            )?;
+            if count != columns.len() {
+                return invalid("table column count does not match RuntimeType");
+            }
+            for _ in 0..rows {
+                for (_, child) in columns {
+                    collect_inline_runtime_types(
+                        child,
+                        read_child_payload(&mut reader, "table cell")?,
+                        depth + 1,
+                        referenced,
+                    )?;
+                }
+            }
+        }
+        RuntimeType::Reference(child) => collect_inline_runtime_types(
+            child,
+            read_child_payload(&mut reader, "reference child")?,
+            depth + 1,
+            referenced,
+        )?,
+        RuntimeType::Option(child) => match reader.read_u8("option presence")? {
+            0 => {}
+            1 => collect_inline_runtime_types(
+                child,
+                read_child_payload(&mut reader, "option child")?,
+                depth + 1,
+                referenced,
+            )?,
+            _ => return invalid("option presence must be exactly 0x00 or 0x01"),
+        },
+        RuntimeType::Enum { .. } => {
+            let count = checked_usize(
+                u64::from(reader.read_u32("enum variant count")?),
+                "enum variant count",
+            )?;
+            let mut previous = None;
+            for _ in 0..count {
+                let variant_id = reader.read_u64("enum variant ID")?;
+                if previous >= Some(variant_id) {
+                    return invalid("enum variants are duplicate or not sorted by ID");
+                }
+                let variant_name = reader.read_string("enum variant name")?;
+                if crate::hash_str(&variant_name) != variant_id {
+                    return invalid("enum variant name does not match its stable ID");
+                }
+                match reader.read_u8("enum variant payload presence")? {
+                    0 => {}
+                    1 => {
+                        let payload_type = inline_type::decode(read_child_payload(
+                            &mut reader,
+                            "enum variant inline type",
+                        )?)?;
+                        let payload = read_child_payload(&mut reader, "enum variant payload")?;
+                        referenced.insert(payload_type.clone());
+                        collect_inline_runtime_types(
+                            &payload_type,
+                            payload,
+                            depth + 1,
+                            referenced,
+                        )?;
+                    }
+                    _ => {
+                        return invalid(
+                            "enum variant payload presence must be exactly 0x00 or 0x01",
+                        );
+                    }
+                }
+                previous = Some(variant_id);
+            }
+        }
+        RuntimeType::Empty
+        | RuntimeType::Bool
+        | RuntimeType::String
+        | RuntimeType::U8
+        | RuntimeType::U16
+        | RuntimeType::U32
+        | RuntimeType::U64
+        | RuntimeType::U128
+        | RuntimeType::I8
+        | RuntimeType::I16
+        | RuntimeType::I32
+        | RuntimeType::I64
+        | RuntimeType::I128
+        | RuntimeType::F32
+        | RuntimeType::F64
+        | RuntimeType::C64
+        | RuntimeType::R64
+        | RuntimeType::Id
+        | RuntimeType::Index
+        | RuntimeType::Matrix { .. }
+        | RuntimeType::Atom { .. }
+        | RuntimeType::Kind(_)
+        | RuntimeType::Any
+        | RuntimeType::None => return Ok(()),
+    }
+    if !reader.is_empty() {
+        return invalid("constant has trailing bytes while collecting inline runtime types");
+    }
+    Ok(())
+}
+
 fn decode_value_payload(
     ty: &RuntimeType,
     bytes: &[u8],
@@ -376,9 +590,13 @@ fn decode_set_constant(
     if !reader.is_empty() {
         return invalid("set constant has trailing bytes");
     }
+    let max_elements = max_len
+        .map(|limit| checked_usize(u64::from(limit), "set maximum length"))
+        .transpose()?;
     Ok(Value::Set(Ref::new(crate::MechSet {
         kind: runtime_type_to_value_kind(element_type)?,
-        num_elements: count,
+        max_elements,
+        num_elements: max_elements.unwrap_or(0),
         set,
     })))
 }
@@ -409,7 +627,10 @@ fn decode_table_constant(
         u64::from(reader.read_u32("table column count")?),
         "table column count",
     )?;
-    if count != columns.len() || (count > 0 && primary_key as usize >= count) {
+    if count != columns.len()
+        || (count == 0 && primary_key != 0)
+        || (count > 0 && primary_key as usize >= count)
+    {
         return invalid("table schema does not match RuntimeType");
     }
     let mut cell_columns = (0..count)

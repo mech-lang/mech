@@ -71,7 +71,7 @@ impl MechFunctionImpl for SetInsertFxn {
                 }
             }
             // Update metadata
-            out_ptr.num_elements = out_ptr.set.len();
+            out_ptr.sync_cardinality_from_contents();
             if (types_match && sizes_match) {
                 out_ptr.kind = set_ptr.kind.clone();
             }

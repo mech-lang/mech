@@ -41,6 +41,12 @@ impl ParsedProgram {
     pub fn decode_constants(&self) -> MResult<Vec<Value>> {
         decode_constants(&self.types, &self.constants, &self.constant_blob)
     }
+
+    /// Returns every runtime type required to decode this program, including
+    /// types stored inline by enum payloads rather than in the type table.
+    pub fn referenced_runtime_types(&self) -> MResult<Vec<RuntimeType>> {
+        constants::referenced_runtime_types(&self.types, &self.constants, &self.constant_blob)
+    }
 }
 
 #[cfg(not(feature = "no_std"))]
