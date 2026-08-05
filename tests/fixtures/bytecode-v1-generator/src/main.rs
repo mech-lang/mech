@@ -70,7 +70,7 @@ const SOURCE_FILES: [&str; 18] = [
     "actor-host-function.mec",
     "synthetic-live-read.mec",
 ];
-const DETERMINISM_RUNS: usize = 5;
+const DEFAULT_DETERMINISM_RUNS: usize = 5;
 const LITERAL_SOURCE: &str = "42.0";
 const SCALAR_SOURCE: &str = "1.0 + 2.0";
 const FIXED_MATRIX_SOURCE: &str = "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]";
@@ -1342,6 +1342,24 @@ fn sha256(bytes: &[u8]) -> String {
 }
 
 fn check_corpus() -> AppResult<()> {
+    let determinism_runs = match env::var("MECH_BYTECODE_DETERMINISM_RUNS") {
+        Ok(value) => {
+            let runs = value.parse::<usize>().map_err(|error| {
+                io::Error::other(format!(
+                    "invalid MECH_BYTECODE_DETERMINISM_RUNS {value:?}: {error}",
+                ))
+            })?;
+            if runs < 2 {
+                return Err(io::Error::other(
+                    "MECH_BYTECODE_DETERMINISM_RUNS must be at least 2",
+                )
+                .into());
+            }
+            runs
+        }
+        Err(env::VarError::NotPresent) => DEFAULT_DETERMINISM_RUNS,
+        Err(error) => return Err(error.into()),
+    };
     let committed = corpus_directory();
     ensure_exact_file_set(&committed)?;
     let executable = env::current_exe()?;
@@ -1354,7 +1372,7 @@ fn check_corpus() -> AppResult<()> {
 
     let result: AppResult<()> = (|| -> AppResult<()> {
         let mut first_run: Option<PathBuf> = None;
-        for run in 0..DETERMINISM_RUNS {
+        for run in 0..determinism_runs {
             let output = temporary.join(format!("run-{run}"));
             let status = Command::new(&executable)
                 .arg("--emit")
@@ -1380,7 +1398,7 @@ fn check_corpus() -> AppResult<()> {
     result?;
     cleanup?;
     println!(
-        "checked {} bytecode v1 fixtures across {DETERMINISM_RUNS} fresh child processes",
+        "checked {} bytecode v1 fixtures across {determinism_runs} fresh child processes",
         FIXTURE_FILES.len(),
     );
     Ok(())

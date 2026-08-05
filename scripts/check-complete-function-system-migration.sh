@@ -4,6 +4,15 @@ set -eu
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$repository_root"
 
+mode=${1:-all}
+case "$mode" in
+  all | boundaries) ;;
+  *)
+    echo "usage: $0 [all|boundaries]" >&2
+    exit 2
+    ;;
+esac
+
 fail() {
   echo "complete function-system migration boundary failed: $*" >&2
   exit 1
@@ -143,8 +152,11 @@ fi
 # source contracts and the full runtime-factory contract. Other CI jobs own
 # machine-profile, bytecode-consumer, native, WASM, and full package suites, so
 # this boundary does not replay them.
-bash "$repository_root/scripts/check-static-distribution-profiles.sh" static
-bash "$repository_root/scripts/check-static-distribution-profiles.sh" engine
-bash "$repository_root/scripts/check-function-system-contracts.sh" surface
+if test "$mode" = all
+then
+  bash "$repository_root/scripts/check-static-distribution-profiles.sh" static
+  bash "$repository_root/scripts/check-static-distribution-profiles.sh" engine
+  bash "$repository_root/scripts/check-function-system-contracts.sh" surface
+fi
 
-echo "complete function-system migration boundary passed"
+echo "complete function-system migration boundary passed ($mode)"
