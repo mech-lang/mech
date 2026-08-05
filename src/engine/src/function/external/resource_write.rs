@@ -41,7 +41,12 @@ impl ExternalResourceWriteFunction {
 
     fn solve_with_services(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
         self.validate()?;
-        services.write_resource(&self.request, &self.input)
+        // Reactive bytecode inputs retain their stable outer register cell, but
+        // execution services receive the logical value at the time of the
+        // effect. This also keeps source and reconstructed bytecode calls
+        // observably equivalent for non-reactive service implementations.
+        let input = self.input.try_deep_snapshot()?;
+        services.write_resource(&self.request, &input)
     }
 }
 

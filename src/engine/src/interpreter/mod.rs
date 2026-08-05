@@ -1938,6 +1938,7 @@ impl Interpreter {
         }
     }
 
+    #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
     fn run_validated_program_with_services(
         &mut self,
         program: &ParsedProgram,

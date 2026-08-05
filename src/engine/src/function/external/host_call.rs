@@ -17,7 +17,14 @@ pub struct ExternalHostCallFunction {
 
 impl ExternalHostCallFunction {
     fn solve_with_services(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
-        let result = services.invoke_host_function(&self.request, &self.arguments)?;
+        // Keep stable reactive inputs inside the plan, while exposing their
+        // current logical values across the execution-service boundary.
+        let arguments = self
+            .arguments
+            .iter()
+            .map(Value::try_deep_snapshot)
+            .collect::<MResult<Vec<_>>>()?;
+        let result = services.invoke_host_function(&self.request, &arguments)?;
         apply_stable_value_update(self.output.clone(), result)?;
         Ok(())
     }
