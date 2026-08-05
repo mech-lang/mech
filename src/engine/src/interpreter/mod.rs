@@ -15,6 +15,9 @@ use web_time::Instant;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown",)))]
 use std::time::Instant;
 
+mod bytecode;
+use bytecode::{BytecodeRegisterFile, BytecodeRegisterFileCheckpoint};
+
 // Interpreter
 // ----------------------------------------------------------------------------
 
@@ -48,7 +51,7 @@ pub struct Interpreter {
     pub(crate) deferred_expression_solve_depth: Ref<usize>,
     #[cfg(feature = "functions")]
     pub stack: Vec<Frame>,
-    registers: Vec<Value>,
+    bytecode_registers: BytecodeRegisterFile,
     constants: Vec<Value>,
     pub code: Vec<MechSourceCode>,
     pub out: Value,
@@ -65,6 +68,26 @@ pub struct Interpreter {
     #[cfg(feature = "state_machines")]
     pub user_state_machine_specs: Ref<HashMap<u64, FsmSpecification>>,
     pub sub_interpreters: Ref<HashMap<u64, InterpreterRef>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InterpreterBytecodeInstallRollbackFailed {
+    pub interpreter_id: u64,
+    pub original_error: String,
+    pub rollback_error: String,
+}
+
+impl MechErrorKind for InterpreterBytecodeInstallRollbackFailed {
+    fn name(&self) -> &str {
+        "InterpreterBytecodeInstallRollbackFailed"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "interpreter {} could not roll back a failed bytecode installation after {}: {}",
+            self.interpreter_id, self.original_error, self.rollback_error,
+        )
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -697,7 +720,7 @@ struct InterpreterStructureCheckpoint {
     stack: Vec<Frame>,
     #[cfg(feature = "functions")]
     frame_checkpoints: Vec<FrameCellCheckpoint>,
-    registers: Vec<Value>,
+    bytecode_registers: BytecodeRegisterFileCheckpoint,
     constants: Vec<Value>,
     code: Vec<MechSourceCode>,
     out: Value,
@@ -730,9 +753,8 @@ impl InterpreterStructureCheckpoint {
             .plan
             .validate_checkpoint_turn_state(&interpreter.reactive_turn_state)?;
 
-        for value in &interpreter.registers {
-            journal.capture_value(value)?;
-        }
+        let bytecode_registers =
+            BytecodeRegisterFileCheckpoint::capture(&interpreter.bytecode_registers, journal)?;
         for value in &interpreter.constants {
             journal.capture_value(value)?;
         }
@@ -818,7 +840,7 @@ impl InterpreterStructureCheckpoint {
             stack: interpreter.stack.clone(),
             #[cfg(feature = "functions")]
             frame_checkpoints,
-            registers: interpreter.registers.clone(),
+            bytecode_registers,
             constants: interpreter.constants.clone(),
             code: interpreter.code.clone(),
             out: interpreter.out.clone(),
@@ -933,7 +955,7 @@ impl InterpreterStructureCheckpoint {
         }
         interpreter.deferred_expression_solve_depth =
             self.deferred_expression_solve_depth.target.clone();
-        interpreter.registers = self.registers.clone();
+        interpreter.bytecode_registers = self.bytecode_registers.restore();
         interpreter.constants = self.constants.clone();
         interpreter.code = self.code.clone();
         interpreter.out = self.out.clone();
@@ -1140,7 +1162,7 @@ impl Clone for Interpreter {
             deferred_expression_solve_depth: self.deferred_expression_solve_depth.clone(),
             #[cfg(feature = "functions")]
             stack: self.stack.clone(),
-            registers: self.registers.clone(),
+            bytecode_registers: self.bytecode_registers.clone(),
             constants: self.constants.clone(),
             code: self.code.clone(),
             out: self.out.clone(),
@@ -1410,7 +1432,7 @@ impl Interpreter {
             deferred_expression_solve_depth: Ref::new(0),
             #[cfg(feature = "functions")]
             stack: Vec::new(),
-            registers: Vec::new(),
+            bytecode_registers: BytecodeRegisterFile::new(0),
             constants: Vec::new(),
             out: Value::Empty,
             sub_interpreters: Ref::new(HashMap::new()),
@@ -1494,8 +1516,12 @@ impl Interpreter {
         output.push_str(&self.state.borrow().pretty_print());
 
         output.push_str("Registers:\n");
-        for (i, reg) in self.registers.iter().enumerate() {
-            output.push_str(&format!("  R{}: {}\n", i, reg));
+        for register in 0..self.bytecode_registers.len() {
+            let value = self
+                .bytecode_registers
+                .value(register as u32)
+                .expect("pretty-print register index is in range");
+            output.push_str(&format!("  R{}: {}\n", register, value));
         }
         output.push_str("Constants:\n");
         for (i, constant) in self.constants.iter().enumerate() {
@@ -1894,24 +1920,36 @@ impl Interpreter {
         services: &mut dyn MechExecutionServices,
     ) -> MResult<Value> {
         program.validate_runtime_contracts(&self.function_catalog)?;
+        let checkpoint = self.checkpoint()?;
+        match self.run_validated_program_with_services(program, services) {
+            Ok(value) => Ok(value),
+            Err(original_error) => match self.restore(checkpoint) {
+                Ok(()) => Err(original_error),
+                Err(rollback_error) => Err(MechError::new(
+                    InterpreterBytecodeInstallRollbackFailed {
+                        interpreter_id: self.id,
+                        original_error: original_error.display_message(),
+                        rollback_error: rollback_error.display_message(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
+    }
 
+    fn run_validated_program_with_services(
+        &mut self,
+        program: &ParsedProgram,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<Value> {
         // Reset the instruction pointer
         self.ip = 0;
         self.clear_plan();
-        // Resize the registers and constant table
-        self.registers = vec![Value::Empty; program.header.register_count as usize];
+        // Rebuild the register file with one stable outer cell per register.
+        self.bytecode_registers = BytecodeRegisterFile::new(program.header.register_count as usize);
         // Load the constants
         self.constants = program.decode_constants()?;
-        // A source symbol is a stable outer Value cell around its register
-        // value. Allocate those cells before rebuilding nodes so external
-        // consumers can retain the same recursive dependency shape as source
-        // execution: symbol wrapper followed by the producing register cell.
-        // Symbols that intentionally share a register share one outer cell.
-        let mut register_symbol_cells =
-            vec![None::<ValRef>; program.header.register_count as usize];
-        for register in program.symbols.values() {
-            register_symbol_cells[*register as usize].get_or_insert_with(|| Ref::new(Value::Empty));
-        }
         // Load the instructions
         {
             let function_catalog = Arc::clone(&self.function_catalog);
@@ -1925,16 +1963,13 @@ impl Interpreter {
                         // runtime cells. Detach each load so equal initial values do
                         // not accidentally alias after reconstruction.
                         let value = self.constants[*constant as usize].try_deep_snapshot()?;
-                        self.registers[*dst as usize] = value.clone();
-                        if let Some(symbol_cell) = &register_symbol_cells[*dst as usize] {
-                            *symbol_cell.borrow_mut() = value;
-                        }
+                        self.bytecode_registers.load(*dst, value)?;
                     }
                     BytecodeInstruction::RuntimeNullary { function, dst } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_entry(runtime_id) {
                             Some(entry) => {
-                                let out = self.registers[*dst as usize].clone();
+                                let out = self.bytecode_registers.function_argument(*dst)?;
                                 let function_args = FunctionArgs::Nullary(out);
                                 self.out =
                                     register_bytecode_function(&state_brrw, entry, function_args)?;
@@ -1952,8 +1987,8 @@ impl Interpreter {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_entry(runtime_id) {
                             Some(entry) => {
-                                let out = self.registers[*dst as usize].clone();
-                                let input = self.registers[*src as usize].clone();
+                                let out = self.bytecode_registers.function_argument(*dst)?;
+                                let input = self.bytecode_registers.function_argument(*src)?;
                                 let function_args = FunctionArgs::Unary(out, input);
                                 self.out =
                                     register_bytecode_function(&state_brrw, entry, function_args)?;
@@ -1976,9 +2011,9 @@ impl Interpreter {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_entry(runtime_id) {
                             Some(entry) => {
-                                let out = self.registers[*dst as usize].clone();
-                                let lhs = self.registers[*lhs as usize].clone();
-                                let rhs = self.registers[*rhs as usize].clone();
+                                let out = self.bytecode_registers.function_argument(*dst)?;
+                                let lhs = self.bytecode_registers.function_argument(*lhs)?;
+                                let rhs = self.bytecode_registers.function_argument(*rhs)?;
                                 let function_args = FunctionArgs::Binary(out, lhs, rhs);
                                 self.out =
                                     register_bytecode_function(&state_brrw, entry, function_args)?;
@@ -2002,10 +2037,10 @@ impl Interpreter {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_entry(runtime_id) {
                             Some(entry) => {
-                                let out = self.registers[*dst as usize].clone();
-                                let arg_a = self.registers[*a as usize].clone();
-                                let arg_b = self.registers[*b as usize].clone();
-                                let arg_c = self.registers[*c as usize].clone();
+                                let out = self.bytecode_registers.function_argument(*dst)?;
+                                let arg_a = self.bytecode_registers.function_argument(*a)?;
+                                let arg_b = self.bytecode_registers.function_argument(*b)?;
+                                let arg_c = self.bytecode_registers.function_argument(*c)?;
                                 let function_args = FunctionArgs::Ternary(out, arg_a, arg_b, arg_c);
                                 self.out =
                                     register_bytecode_function(&state_brrw, entry, function_args)?;
@@ -2030,11 +2065,11 @@ impl Interpreter {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_entry(runtime_id) {
                             Some(entry) => {
-                                let out = self.registers[*dst as usize].clone();
-                                let arg_a = self.registers[*a as usize].clone();
-                                let arg_b = self.registers[*b as usize].clone();
-                                let arg_c = self.registers[*c as usize].clone();
-                                let arg_d = self.registers[*d as usize].clone();
+                                let out = self.bytecode_registers.function_argument(*dst)?;
+                                let arg_a = self.bytecode_registers.function_argument(*a)?;
+                                let arg_b = self.bytecode_registers.function_argument(*b)?;
+                                let arg_c = self.bytecode_registers.function_argument(*c)?;
+                                let arg_d = self.bytecode_registers.function_argument(*d)?;
                                 let function_args =
                                     FunctionArgs::Quaternary(out, arg_a, arg_b, arg_c, arg_d);
                                 self.out =
@@ -2057,11 +2092,13 @@ impl Interpreter {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_entry(runtime_id) {
                             Some(entry) => {
-                                let out = self.registers[*dst as usize].clone();
+                                let out = self.bytecode_registers.function_argument(*dst)?;
                                 let argument_values = arguments
                                     .iter()
-                                    .map(|register| self.registers[*register as usize].clone())
-                                    .collect::<Vec<Value>>();
+                                    .map(|register| {
+                                        self.bytecode_registers.function_argument(*register)
+                                    })
+                                    .collect::<MResult<Vec<Value>>>()?;
                                 let function_args = FunctionArgs::Variadic(out, argument_values);
                                 self.out =
                                     register_bytecode_function(&state_brrw, entry, function_args)?;
@@ -2084,15 +2121,9 @@ impl Interpreter {
                             bytecode_host_function_request(program, *requirement, "HostCall")?;
                         let argument_values = arguments
                             .iter()
-                            .map(|register| {
-                                bytecode_external_input(
-                                    &self.registers,
-                                    &register_symbol_cells,
-                                    *register,
-                                )
-                            })
-                            .collect::<Vec<Value>>();
-                        let output = Ref::new(self.registers[*dst as usize].clone());
+                            .map(|register| self.bytecode_registers.external_input(*register))
+                            .collect::<MResult<Vec<Value>>>()?;
+                        let output = self.bytecode_registers.cell(*dst)?;
                         self.out = register_bytecode_node(
                             &state_brrw,
                             Box::new(ExternalHostCallFunction {
@@ -2111,7 +2142,7 @@ impl Interpreter {
                             "ResourceRead",
                             ResourceIntent::Read,
                         )?;
-                        let output = Ref::new(self.registers[*dst as usize].clone());
+                        let output = self.bytecode_registers.cell(*dst)?;
                         self.out = register_bytecode_node(
                             &state_brrw,
                             Box::new(ExternalResourceReadFunction {
@@ -2134,9 +2165,8 @@ impl Interpreter {
                             "ResourceWrite",
                             ResourceIntent::Assign,
                         )?;
-                        let input =
-                            bytecode_external_input(&self.registers, &register_symbol_cells, *src);
-                        let output = Ref::new(self.registers[*dst as usize].clone());
+                        let input = self.bytecode_registers.external_input(*src)?;
+                        let output = self.bytecode_registers.cell(*dst)?;
                         self.out = register_bytecode_node(
                             &state_brrw,
                             Box::new(ExternalResourceWriteFunction {
@@ -2159,9 +2189,8 @@ impl Interpreter {
                             "ResourceSend",
                             ResourceIntent::Send,
                         )?;
-                        let input =
-                            bytecode_external_input(&self.registers, &register_symbol_cells, *src);
-                        let output = Ref::new(self.registers[*dst as usize].clone());
+                        let input = self.bytecode_registers.external_input(*src)?;
+                        let output = self.bytecode_registers.cell(*dst)?;
                         self.out = register_bytecode_node(
                             &state_brrw,
                             Box::new(ExternalResourceWriteFunction {
@@ -2174,7 +2203,7 @@ impl Interpreter {
                         )?;
                     }
                     BytecodeInstruction::Return { src } => {
-                        self.out = self.registers[*src as usize].clone();
+                        self.out = self.bytecode_registers.value(*src)?;
                     }
                 }
                 self.ip += 1;
@@ -2188,9 +2217,7 @@ impl Interpreter {
             *symbol_table = SymbolTable::new();
             state_brrw.dictionary.borrow_mut().clear();
             for (id, register) in &program.symbols {
-                let cell = register_symbol_cells[*register as usize]
-                    .clone()
-                    .expect("symbol registers receive a stable cell before reconstruction");
+                let cell = self.bytecode_registers.cell(*register)?;
                 symbol_table.insert_cell(*id, cell, program.mutable_symbols.contains(id));
             }
             for (id, name) in &program.dictionary {
@@ -2215,7 +2242,7 @@ impl Interpreter {
             )
             .with_compiler_loc());
         };
-        self.out = self.registers[*src as usize].clone();
+        self.out = self.bytecode_registers.value(*src)?;
         Ok(self.out.clone())
     }
 }
@@ -2240,18 +2267,6 @@ fn register_bytecode_node(
     let output = function.out();
     state.plan.register_function(function, input_values)?;
     Ok(output)
-}
-
-#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
-fn bytecode_external_input(
-    registers: &[Value],
-    register_symbol_cells: &[Option<ValRef>],
-    register: u32,
-) -> Value {
-    match &register_symbol_cells[register as usize] {
-        Some(symbol_cell) => Value::MutableReference(symbol_cell.clone()),
-        None => registers[register as usize].clone(),
-    }
 }
 
 #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]

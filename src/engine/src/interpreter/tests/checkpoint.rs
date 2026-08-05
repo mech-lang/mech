@@ -1,12 +1,12 @@
 #[cfg(all(test, feature = "functions", feature = "symbol_table", feature = "f64"))]
 mod checkpoint_tests {
     use super::super::super::{
-        Dictionary, ExtensionFunctionId, FunctionBinding, FunctionCatalogBuilder, FunctionDefine,
-        FunctionDefinition, FunctionExport, FunctionExposure, FunctionExtensionEntry,
-        FunctionSpecializer, Interpreter, MResult, MechFunction, MechSourceCode,
-        ModuleManifestCatalog, OperationId, ProgramState, ReactiveCellId, Ref,
-        RuntimeContextBinding, ValRef, Value, ValueStateBorrowConflict, hash_str,
-        internal_pattern_value_identifier,
+        BytecodeRegisterFile, Dictionary, ExtensionFunctionId, FunctionBinding,
+        FunctionCatalogBuilder, FunctionDefine, FunctionDefinition, FunctionExport,
+        FunctionExposure, FunctionExtensionEntry, FunctionSpecializer, Interpreter, MResult,
+        MechFunction, MechSourceCode, ModuleManifestCatalog, OperationId, ProgramState,
+        ReactiveCellId, Ref, RuntimeContextBinding, ValRef, Value, ValueStateBorrowConflict,
+        hash_str, internal_pattern_value_identifier,
     };
     use std::collections::HashMap;
     use std::sync::Arc;
@@ -440,7 +440,10 @@ mod checkpoint_tests {
         let symbol_cell_address = symbol_cell.addr();
         let symbol_backing_address = symbol_backing.addr();
         let symbol_backing_identity = ReactiveCellId::new(symbol_backing.id());
-        root.registers = vec![f64_value(&symbol_backing)];
+        root.bytecode_registers = BytecodeRegisterFile::new(1);
+        root.bytecode_registers
+            .load(0, f64_value(&symbol_backing))
+            .unwrap();
         root.constants = vec![f64_value(&Ref::new(2.0))];
         root.out = f64_value(&symbol_backing);
         root.code.push(MechSourceCode::String("before".to_string()));
@@ -551,7 +554,7 @@ mod checkpoint_tests {
         root.ip = 99;
         root.profile = false;
         root.max_steps = 999;
-        root.registers.clear();
+        root.bytecode_registers = BytecodeRegisterFile::new(0);
         root.constants.clear();
         root.code.push(MechSourceCode::String("after".to_string()));
         root.out = Value::Empty;
@@ -699,7 +702,7 @@ mod checkpoint_tests {
             }
         }
         assert_eq!(root.sub_interpreters.addr(), sub_interpreters_address);
-        assert_eq!(root.registers.len(), 1);
+        assert_eq!(root.bytecode_registers.len(), 1);
         assert_eq!(root.constants.len(), 1);
         assert_eq!(
             root.code,
