@@ -6,7 +6,7 @@ use std::path::{Component, Path, PathBuf};
 use mech_core::MResult;
 use sha2::{Digest, Sha256};
 
-use super::{WorkspacePackage, workspace_path_string};
+use super::{WORKSPACE_RESOLUTION_PATCHES, WorkspacePackage, workspace_path_string};
 use crate::error::{NativeBuildErrorKind, native_build_error};
 
 const WORKSPACE_FINGERPRINT_DOMAIN: &[u8] = b"mech.workspace-fingerprint.v2";
@@ -45,6 +45,7 @@ pub fn fingerprint_workspace(
 
     let mut inputs = BTreeSet::new();
     inputs.insert(PathBuf::from("Cargo.lock"));
+    inputs.extend(resolution_fingerprint_inputs().map(|(_, path)| PathBuf::from(path)));
 
     let mut packages = selected_packages.to_vec();
     packages.sort_by(|left, right| {
@@ -83,6 +84,12 @@ pub fn fingerprint_workspace(
     Ok(fingerprint_entries(entries.iter().map(
         |(path, content)| (path.as_str(), content.as_slice()),
     )))
+}
+
+fn resolution_fingerprint_inputs() -> impl Iterator<Item = (&'static str, &'static str)> {
+    WORKSPACE_RESOLUTION_PATCHES
+        .iter()
+        .map(|patch| (patch.package, patch.manifest_relative_path))
 }
 
 fn fingerprint_entries<'a>(
@@ -454,6 +461,17 @@ mod tests {
             ));
             fs::create_dir_all(root.join("machines/math/src")).unwrap();
             fs::write(root.join("Cargo.lock"), "lock-v1\n").unwrap();
+            fs::create_dir_all(root.join("src/syntax/src")).unwrap();
+            fs::write(
+                root.join("src/syntax/Cargo.toml"),
+                "[package]\nname = \"mech-syntax\"\n",
+            )
+            .unwrap();
+            fs::write(
+                root.join("src/syntax/src/lib.rs"),
+                "pub const SYNTAX: u8 = 1;\n",
+            )
+            .unwrap();
             fs::write(
                 root.join("machines/math/Cargo.toml"),
                 "[package]\nname = \"mech-math\"\n",
@@ -496,7 +514,7 @@ mod tests {
         assert_eq!(left_digest, right_digest);
         assert_eq!(
             left_digest.as_str(),
-            "97409e5787610f2f7b28345fcee424f103a827da774de7a4156dc2aaf9fd49d0"
+            "0f1ec3e5750c3e55613134a92c3686032a3d7cbcb51658de16f617ebbec0368b"
         );
         assert_eq!(left_digest.as_str().len(), 64);
         assert!(
@@ -505,6 +523,55 @@ mod tests {
                 .chars()
                 .all(|character| character.is_ascii_hexdigit() && !character.is_ascii_uppercase())
         );
+    }
+
+    #[test]
+    fn resolution_patch_manifest_but_not_source_changes_the_fingerprint() {
+        let workspace = TestWorkspace::new("resolution-patch");
+        let initial = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+
+        fs::write(
+            workspace.0.join("src/syntax/src/lib.rs"),
+            "pub const SYNTAX: u8 = 2;\n",
+        )
+        .unwrap();
+        let source_changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+        assert_eq!(initial, source_changed);
+
+        fs::write(
+            workspace.0.join("src/syntax/Cargo.toml"),
+            "[package]\nname = \"mech-syntax\"\nversion = \"0.3.5\"\n",
+        )
+        .unwrap();
+        let manifest_changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+        assert_ne!(initial, manifest_changed);
+    }
+
+    #[test]
+    fn missing_resolution_patch_manifest_is_invalid() {
+        let workspace = TestWorkspace::new("missing-resolution-patch");
+        fs::remove_file(workspace.0.join("src/syntax/Cargo.toml")).unwrap();
+        let error = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeWorkspaceInputInvalid");
+        assert!(error.kind_message().contains("src/syntax/Cargo.toml"));
+
+        fs::create_dir(workspace.0.join("src/syntax/Cargo.toml")).unwrap();
+        let error = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeWorkspaceInputInvalid");
+        assert!(error.kind_message().contains("not a file"));
+    }
+
+    #[test]
+    fn resolution_patch_packages_exactly_match_resolution_fingerprint_packages() {
+        let declared = WORKSPACE_RESOLUTION_PATCHES
+            .iter()
+            .map(|patch| patch.package)
+            .collect::<BTreeSet<_>>();
+        let fingerprinted = resolution_fingerprint_inputs()
+            .map(|(package, _)| package)
+            .collect::<BTreeSet<_>>();
+        assert_eq!(declared, fingerprinted);
+        assert_eq!(declared, BTreeSet::from(["mech-syntax"]));
     }
 
     #[test]

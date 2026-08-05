@@ -74,9 +74,65 @@ fn plan_digest(path: &Path) -> String {
         .to_owned()
 }
 
+fn assert_workspace_project(project: &Path, cargo_target: &Path) {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let manifest = std::fs::read_to_string(project.join("Cargo.toml")).unwrap();
+
+    let mut resolved = Vec::new();
+    for suffix in manifest.split("path = \"").skip(1) {
+        let path = suffix.split('"').next().unwrap();
+        assert!(
+            !Path::new(path).is_absolute(),
+            "{} contains absolute Cargo path {path}",
+            project.display()
+        );
+        if !path.starts_with("..") {
+            continue;
+        }
+        let candidate = project.join(path);
+        let resolved_path = candidate.canonicalize().unwrap_or_else(|error| {
+            panic!(
+                "failed to resolve Cargo path {} from {}: {error}",
+                candidate.display(),
+                project.display()
+            )
+        });
+        assert!(resolved_path.starts_with(workspace));
+        resolved.push(resolved_path);
+    }
+    resolved.sort();
+    resolved.dedup();
+    assert_eq!(
+        resolved,
+        [
+            workspace.join("src/core").canonicalize().unwrap(),
+            workspace.join("src/engine").canonicalize().unwrap(),
+            workspace.join("src/syntax").canonicalize().unwrap(),
+        ]
+    );
+
+    let output = Command::new(env!("CARGO"))
+        .arg("build")
+        .arg("--manifest-path")
+        .arg(project.join("Cargo.toml"))
+        .arg("--locked")
+        .arg("--offline")
+        .env("CARGO_TARGET_DIR", cargo_target)
+        .output()
+        .unwrap();
+    assert_success(
+        output,
+        &format!("building exported project {}", project.display()),
+    );
+}
+
 #[test]
 fn source_and_bytecode_cover_every_authoritative_build_emit() {
     let root = temp_root("all-emits");
+    let workspace_export_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("target/mech/relocation-tests")
+        .join(root.file_name().unwrap());
+    let cargo_target = root.join("exported-cargo-target");
     let source = root.join("demo.mec");
     std::fs::write(&source, "answer := 42\nanswer\n").unwrap();
 
@@ -98,13 +154,20 @@ fn source_and_bytecode_cover_every_authoritative_build_emit() {
             .is_file()
     );
 
-    let source_project = root.join("source.cargo");
+    let source_project = workspace_export_root.join("source.cargo");
     assert_success(
         run_build(&root, &source, "cargo-project", &source_project, false),
         "source to Cargo project",
     );
     assert!(source_project.join("Cargo.toml").is_file());
     assert!(source_project.join("Cargo.lock").is_file());
+
+    let external_project = root.join("external.cargo");
+    assert_success(
+        run_build(&root, &source, "cargo-project", &external_project, false),
+        "source to external Cargo project",
+    );
+    assert!(external_project.join("Cargo.lock").is_file());
 
     let source_native = root.join("source-native-exact");
     assert_success(
@@ -116,6 +179,11 @@ fn source_and_bytecode_cover_every_authoritative_build_emit() {
         root.join("source-native-exact.project/Cargo.lock")
             .is_file()
     );
+    let cached_manifest = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("target/mech-native/projects")
+        .join(plan_digest(&source_plan))
+        .join("Cargo.toml");
+    let cached_manifest_before_exports = std::fs::read(&cached_manifest).unwrap();
 
     let copied_bytecode = root.join("copied-exact.mecb");
     assert_success(
@@ -135,7 +203,7 @@ fn source_and_bytecode_cover_every_authoritative_build_emit() {
     );
     assert_eq!(plan_digest(&source_plan), plan_digest(&bytecode_plan));
 
-    let bytecode_project = root.join("bytecode.cargo");
+    let bytecode_project = workspace_export_root.join("deeply/nested/bytecode.cargo");
     assert_success(
         run_build(&root, &bytecode, "cargo-project", &bytecode_project, false),
         "bytecode to Cargo project",
@@ -149,6 +217,22 @@ fn source_and_bytecode_cover_every_authoritative_build_emit() {
     );
     assert!(bytecode_native.is_file());
 
+    for project in [
+        &source_project,
+        &external_project,
+        &bytecode_project,
+        &root.join("source.build-plan.json.project"),
+        &root.join("source-native-exact.project"),
+        &root.join("copied-exact.mecb.project"),
+    ] {
+        assert_workspace_project(project, &cargo_target);
+    }
+    assert_eq!(
+        std::fs::read(&cached_manifest).unwrap(),
+        cached_manifest_before_exports
+    );
+
+    std::fs::remove_dir_all(workspace_export_root).unwrap();
     std::fs::remove_dir_all(root).unwrap();
 }
 

@@ -165,9 +165,25 @@ fn materialization_boundary(root: &Path) -> MResult<PathBuf> {
             .ok_or_else(|| project_error("generated project root has no workspace boundary"));
     }
 
-    root.parent()
-        .map(Path::to_path_buf)
-        .ok_or_else(|| project_error("generated project root has no parent boundary"))
+    let mut candidate = root
+        .parent()
+        .ok_or_else(|| project_error("generated project root has no parent boundary"))?;
+    loop {
+        match fs::symlink_metadata(candidate) {
+            Ok(_) => return Ok(candidate.to_path_buf()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                candidate = candidate.parent().ok_or_else(|| {
+                    project_error("generated project root has no existing ancestor boundary")
+                })?;
+            }
+            Err(error) => {
+                return project_invalid(format!(
+                    "failed to inspect generated project ancestor `{}`: {error}",
+                    candidate.display()
+                ));
+            }
+        }
+    }
 }
 
 fn ensure_directory_beneath(boundary: &Path, path: &Path, label: &str) -> MResult<()> {

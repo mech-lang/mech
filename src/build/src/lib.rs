@@ -56,7 +56,8 @@ impl NativeApplicationBuilder {
         for function in &runtime_functions {
             plan::validate_installer_path(&function.installer_path)?;
         }
-        let runtime_types = analysis::analyze_runtime_types(&program.types)?;
+        let referenced_runtime_types = program.referenced_runtime_types()?;
+        let runtime_types = analysis::analyze_runtime_types(&referenced_runtime_types)?;
         let requirements = analysis::analyze_application_requirements(
             &program.requirements,
             request.runtime_config.as_ref(),
@@ -210,6 +211,42 @@ impl NativeApplicationBuilder {
         request: &NativeBuildRequest,
         plan: &NativeBuildPlan,
     ) -> MResult<GeneratedNativeProject> {
+        let workspace_root = self.trusted_workspace_root()?;
+        let cache_root = match workspace_root.as_ref() {
+            Some(root) => root.clone(),
+            None => project::normalized_absolute_project_root(&std::env::current_dir().map_err(
+                |error| {
+                    error::native_build_error(
+                        error::NativeBuildErrorKind::NativeProjectInvalid {
+                            reason: format!("failed to resolve the native project root: {error}"),
+                        },
+                        None,
+                    )
+                },
+            )?)?,
+        };
+        let root = project::generated_project_root(&cache_root, &plan.plan_sha256)?;
+        self.generate_internal(request, plan, root, workspace_root.as_deref())
+    }
+
+    pub fn generate_at(
+        &self,
+        request: &NativeBuildRequest,
+        plan: &NativeBuildPlan,
+        project_root: impl AsRef<Path>,
+    ) -> MResult<GeneratedNativeProject> {
+        let project_root = project::normalized_absolute_project_root(project_root.as_ref())?;
+        let workspace_root = self.trusted_workspace_root()?;
+        self.generate_internal(request, plan, project_root, workspace_root.as_deref())
+    }
+
+    fn generate_internal(
+        &self,
+        request: &NativeBuildRequest,
+        plan: &NativeBuildPlan,
+        root: impl Into<std::path::PathBuf>,
+        workspace_root: Option<&Path>,
+    ) -> MResult<GeneratedNativeProject> {
         let expected = self.plan(request)?;
         if &expected != plan {
             return Err(error::native_build_error(
@@ -221,24 +258,20 @@ impl NativeApplicationBuilder {
             ));
         }
 
-        let workspace_root = match &self.environment.dependency_source {
-            NativeDependencySource::Workspace { root } => root.clone(),
-            NativeDependencySource::Registry { .. } => {
-                std::env::current_dir().map_err(|error| {
-                    error::native_build_error(
-                        error::NativeBuildErrorKind::NativeProjectInvalid {
-                            reason: format!("failed to resolve the native project root: {error}"),
-                        },
-                        None,
-                    )
-                })?
-            }
-        };
-        let root = project::generated_project_root(&workspace_root, &plan.plan_sha256)?;
-        let project = project::render_generated_native_project(root, request, plan)?;
+        let project =
+            project::render_generated_native_project(root, request, plan, workspace_root)?;
         project.materialize()?;
         cargo::generate_project_lockfile(&project, request.offline)?;
         Ok(project)
+    }
+
+    fn trusted_workspace_root(&self) -> MResult<Option<std::path::PathBuf>> {
+        match &self.environment.dependency_source {
+            NativeDependencySource::Workspace { root } => {
+                project::normalized_absolute_project_root(root).map(Some)
+            }
+            NativeDependencySource::Registry { .. } => Ok(None),
+        }
     }
 
     pub fn build(

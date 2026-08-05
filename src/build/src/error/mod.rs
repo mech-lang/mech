@@ -2,6 +2,28 @@ use std::path::PathBuf;
 
 use mech_core::{MechError, MechErrorKind};
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NativeProjectRelocationUnsupported {
+    pub project_root: PathBuf,
+    pub dependency: PathBuf,
+    pub reason: String,
+}
+
+impl MechErrorKind for NativeProjectRelocationUnsupported {
+    fn name(&self) -> &str {
+        "NativeProjectRelocationUnsupported"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "generated project `{}` cannot address dependency `{}`: {}",
+            self.project_root.display(),
+            self.dependency.display(),
+            self.reason
+        )
+    }
+}
+
 /// Structured failures raised while planning or constructing a native Mech
 /// application.
 ///

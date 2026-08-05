@@ -17,8 +17,8 @@ use mech_core::{
     EncodedConstant, ExecutionHostFunctionRequest, FunctionArgs, FunctionArgumentRole,
     FunctionCatalog, FunctionCatalogBuilder, MResult, MatrixStorage, MechFunction,
     MechFunctionCompiler, MechFunctionImpl, NativeFunctionLinkage, Ref, Register,
-    RuntimeFunctionContract, RuntimeOutputAliasPolicy, RuntimeType, ToValue, Value, hash_str,
-    write_bytecode,
+    RuntimeFunctionContract, RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, ToValue, Value,
+    hash_str, write_bytecode,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 
@@ -720,6 +720,23 @@ fn unrelated_program_types_do_not_become_machine_features() {
 }
 
 #[test]
+fn enum_inline_payload_types_select_native_decode_features() {
+    let plan = plan(&enum_with_f64_payload_bytecode());
+
+    for features in [&plan.core_features, &plan.engine_features] {
+        assert!(features.iter().any(|feature| feature == "enum"));
+        assert!(features.iter().any(|feature| feature == "f64"));
+    }
+    let core = plan
+        .packages
+        .iter()
+        .find(|package| package.package == "mech-core")
+        .unwrap();
+    assert!(core.cargo_features.iter().any(|feature| feature == "enum"));
+    assert!(core.cargo_features.iter().any(|feature| feature == "f64"));
+}
+
+#[test]
 fn equivalent_normalized_runtime_configs_produce_identical_plans() {
     let mut first = request(CLI_STDOUT);
     first.output = PathBuf::from("first-output");
@@ -845,6 +862,46 @@ fn runtime_nullary_bytecode_with_constant(function: u64, output: EncodedConstant
     .unwrap()
 }
 
+fn enum_with_f64_payload_bytecode() -> Vec<u8> {
+    let enum_name = "measurement";
+    let variant_name = "reading";
+    let mut bytes = 1_u32.to_le_bytes().to_vec();
+    bytes.extend_from_slice(&hash_str(variant_name).to_le_bytes());
+    bytes.extend_from_slice(&(variant_name.len() as u32).to_le_bytes());
+    bytes.extend_from_slice(variant_name.as_bytes());
+    bytes.push(1);
+    let inline_f64 = (RuntimeTypeTag::F64 as u16).to_le_bytes();
+    bytes.extend_from_slice(&(inline_f64.len() as u32).to_le_bytes());
+    bytes.extend_from_slice(&inline_f64);
+    let payload = 42.5_f64.to_bits().to_le_bytes();
+    bytes.extend_from_slice(&(payload.len() as u32).to_le_bytes());
+    bytes.extend_from_slice(&payload);
+
+    write_bytecode(&BytecodeProgram {
+        register_count: 1,
+        constants: vec![EncodedConstant {
+            runtime_type: RuntimeType::Enum {
+                id: hash_str(enum_name),
+                name: enum_name.to_owned(),
+            },
+            alignment: 4,
+            bytes,
+        }],
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions: vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+        dictionary: BTreeMap::new(),
+        requirements: Vec::new(),
+    })
+    .unwrap()
+}
+
 fn host_function_only_bytecode(name: &str) -> Vec<u8> {
     write_bytecode(&BytecodeProgram {
         register_count: 1,
@@ -962,6 +1019,7 @@ fn string_and_scalar_add_bytecode() -> Vec<u8> {
 fn write_fingerprint_fixture(root: &std::path::Path) {
     let package = root.join("packages/example");
     fs::create_dir_all(package.join("src/nested")).unwrap();
+    fs::create_dir_all(root.join("src/syntax")).unwrap();
     fs::write(
         root.join("Cargo.lock"),
         "# deterministic fixture lockfile\nversion = 4\n",
@@ -970,6 +1028,11 @@ fn write_fingerprint_fixture(root: &std::path::Path) {
     fs::write(
         package.join("Cargo.toml"),
         "[package]\nname = \"mech-example\"\nversion = \"0.3.5\"\nedition = \"2024\"\n",
+    )
+    .unwrap();
+    fs::write(
+        root.join("src/syntax/Cargo.toml"),
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.3.5\"\nedition = \"2024\"\n",
     )
     .unwrap();
     fs::write(package.join("src/lib.rs"), "mod nested;\n").unwrap();

@@ -116,7 +116,8 @@ fn configured_standard_hosts_are_pruned_to_exact_bytecode_owners() {
         ]
     );
 
-    let project = render_generated_native_project("ignored-project", &request, &plan).unwrap();
+    let project =
+        render_generated_native_project("ignored-project", &request, &plan, None).unwrap();
     assert!(project.cargo_manifest.contains("mech-host-console"));
     for unused in [
         "mech-host-cli",
