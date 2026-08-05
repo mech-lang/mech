@@ -1,4 +1,7 @@
-use mech_core::{FunctionCatalogBuilder, MResult, MechFunctionFactory};
+use mech_core::{
+    FunctionCatalogBuilder, MResult, MechFunctionFactory, RuntimeFunctionContract,
+    RuntimeOutputAliasPolicy,
+};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
 #[cfg(feature = "source")]
@@ -218,6 +221,7 @@ macro_rules! declare_set_runtime_factory {
             installer: $installer,
             name: $name,
             factory: <$factory as MechFunctionFactory>::new,
+            contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
             package: "mech-set",
             crate_name: "mech_set",
             installer_path: concat!("mech_set::__mech_native::", stringify!($installer)),

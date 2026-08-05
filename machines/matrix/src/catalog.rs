@@ -2,7 +2,10 @@
 use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
-use mech_core::{FunctionCatalogBuilder, MResult, MechFunctionFactory};
+use mech_core::{
+    FunctionArgumentRole, FunctionArgs, FunctionCatalogBuilder, MResult, MechFunctionFactory,
+    RuntimeFunctionContract, RuntimeOutputAliasPolicy, function_shape_contract_violation,
+};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
 #[cfg(feature = "source")]
@@ -57,6 +60,59 @@ macro_rules! for_each_matrix_numeric_scalar {
     };
 }
 
+macro_rules! matrix_numeric_runtime_contract {
+    (dot, DotScalar) => {
+        RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias)
+    };
+    (dot, $factory:ident) => {
+        RuntimeFunctionContract::custom(
+            "dot_reduction",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_dot_reduction,
+        )
+    };
+    (matmul, MatMulScalar) => {
+        RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias)
+    };
+    (matmul, $factory:ident) => {
+        RuntimeFunctionContract::matrix_product(RuntimeOutputAliasPolicy::DisallowInputAlias)
+    };
+}
+
+fn validate_dot_reduction(args: &FunctionArgs) -> MResult<()> {
+    let contract = "dot_reduction";
+    if args
+        .output_value()
+        .function_matrix_descriptor(FunctionArgumentRole::Output)?
+        .is_some()
+    {
+        return Err(function_shape_contract_violation(
+            contract,
+            "dot output must be scalar",
+        ));
+    }
+    let lhs = args
+        .input_value(0)
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing lhs"))?
+        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
+        .ok_or_else(|| function_shape_contract_violation(contract, "lhs must be matrix-backed"))?;
+    let rhs = args
+        .input_value(1)
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing rhs"))?
+        .function_matrix_descriptor(FunctionArgumentRole::Input(1))?
+        .ok_or_else(|| function_shape_contract_violation(contract, "rhs must be matrix-backed"))?;
+    if lhs.rows != rhs.rows || lhs.cols != rhs.cols {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "lhs is {}x{}, rhs is {}x{}",
+                lhs.rows, lhs.cols, rhs.rows, rhs.cols,
+            ),
+        ));
+    }
+    Ok(())
+}
+
 macro_rules! declare_matrix_numeric_factory {
     (($cfg:meta; $operation:literal; $module:ident; $factory:ident; [$($feature:literal),*]); $token:ident; $scalar:ty; $scalar_feature:literal) => {
         mech_core::paste::paste! {
@@ -66,6 +122,7 @@ macro_rules! declare_matrix_numeric_factory {
                 installer: [<install_ $module:snake _ $factory:snake _ $token>],
                 name: concat!(stringify!($factory), "<", $scalar_feature, ">"),
                 factory: <crate::$module::$factory<$scalar> as MechFunctionFactory>::new,
+                contract: matrix_numeric_runtime_contract!($module, $factory),
                 package: "mech-matrix", crate_name: "mech_matrix",
                 installer_path: concat!("mech_matrix::__mech_native::", stringify!([<install_ $module:snake _ $factory:snake _ $token>])),
                 cargo_features: [$operation, $scalar_feature, $($feature,)* "native-link", "runtime"],
@@ -149,7 +206,7 @@ macro_rules! for_each_matrix_matmul_fixed_family {
         #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "row_vectord"))] $callback!($($context)*; MatMulR4MD; ["row_vector4", "matrixd", "row_vectord"]);
         #[cfg(all(feature = "row_vector3", feature = "vector3", feature = "matrix1"))] $callback!($($context)*; MatMulR3V3; ["row_vector3", "vector3", "matrix1"]);
         #[cfg(all(feature = "row_vector3", feature = "matrix3"))] $callback!($($context)*; MatMulR3M3; ["row_vector3", "matrix3"]);
-        #[cfg(all(feature = "row_vector3", feature = "matrix3x2"))] $callback!($($context)*; MatMulR3M3x2; ["row_vector3", "matrix3x2"]);
+        #[cfg(all(feature = "row_vector3", feature = "matrix3x2", feature = "row_vector2"))] $callback!($($context)*; MatMulR3M3x2; ["row_vector3", "matrix3x2", "row_vector2"]);
         #[cfg(all(feature = "row_vector3", feature = "matrixd", feature = "row_vectord"))] $callback!($($context)*; MatMulR3MD; ["row_vector3", "matrixd", "row_vectord"]);
         #[cfg(all(feature = "row_vector2", feature = "vector2", feature = "matrix1"))] $callback!($($context)*; MatMulR2V2; ["row_vector2", "vector2", "matrix1"]);
         #[cfg(all(feature = "row_vector2", feature = "matrix2"))] $callback!($($context)*; MatMulR2M2; ["row_vector2", "matrix2"]);
@@ -245,6 +302,7 @@ macro_rules! declare_matrix_transpose_factory {
             installer: [<install_transpose_ $factory:snake _ $token>],
             name: concat!(stringify!($factory), "<", $name, ">"),
             factory: <crate::transpose::$factory<$scalar> as MechFunctionFactory>::new,
+            contract: RuntimeFunctionContract::transpose(RuntimeOutputAliasPolicy::DisallowInputAlias),
             package: "mech-matrix", crate_name: "mech_matrix",
             installer_path: concat!("mech_matrix::__mech_native::", stringify!([<install_transpose_ $factory:snake _ $token>])),
             cargo_features: ["transpose", $scalar_feature, $($shape_feature,)+ "native-link", "runtime"],
@@ -320,6 +378,7 @@ mech_core::declare_native_runtime_factory! {
     installer: install_matrix_solve_mdvd_f64,
     name: "MatrixSolveMDVD<f64>",
     factory: <crate::solve::MatrixSolveMDVD<f64> as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-matrix", crate_name: "mech_matrix",
     installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdvd_f64",
     cargo_features: ["f64", "matrixd", "native-link", "runtime", "solve", "vectord"],
@@ -372,7 +431,11 @@ fn install_matmul_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_declared_matrix_numeric_family!(builder, matmul, MatMulR3V3);
     #[cfg(all(feature = "row_vector3", feature = "matrix3"))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulR3M3);
-    #[cfg(all(feature = "row_vector3", feature = "matrix3x2"))]
+    #[cfg(all(
+        feature = "row_vector3",
+        feature = "matrix3x2",
+        feature = "row_vector2"
+    ))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulR3M3x2);
     #[cfg(all(feature = "row_vector3", feature = "matrixd", feature = "row_vectord"))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulR3MD);

@@ -1,7 +1,9 @@
 pub mod argument;
 pub mod catalog;
+pub mod contract;
 pub use argument::*;
 pub use catalog::*;
+pub use contract::*;
 
 use crate::nodes::*;
 use crate::types::*;
@@ -170,6 +172,59 @@ pub enum FunctionArgs {
 }
 
 impl FunctionArgs {
+    pub fn output_value(&self) -> &Value {
+        match self {
+            FunctionArgs::Nullary(output)
+            | FunctionArgs::Unary(output, _)
+            | FunctionArgs::Binary(output, _, _)
+            | FunctionArgs::Ternary(output, _, _, _)
+            | FunctionArgs::Quaternary(output, _, _, _, _)
+            | FunctionArgs::Variadic(output, _) => output,
+        }
+    }
+
+    pub fn input_value(&self, index: usize) -> Option<&Value> {
+        match (self, index) {
+            (FunctionArgs::Unary(_, a), 0) => Some(a),
+            (FunctionArgs::Binary(_, a, _), 0) => Some(a),
+            (FunctionArgs::Binary(_, _, b), 1) => Some(b),
+            (FunctionArgs::Ternary(_, a, _, _), 0) => Some(a),
+            (FunctionArgs::Ternary(_, _, b, _), 1) => Some(b),
+            (FunctionArgs::Ternary(_, _, _, c), 2) => Some(c),
+            (FunctionArgs::Quaternary(_, a, _, _, _), 0) => Some(a),
+            (FunctionArgs::Quaternary(_, _, b, _, _), 1) => Some(b),
+            (FunctionArgs::Quaternary(_, _, _, c, _), 2) => Some(c),
+            (FunctionArgs::Quaternary(_, _, _, _, d), 3) => Some(d),
+            (FunctionArgs::Variadic(_, arguments), index) => arguments.get(index),
+            _ => None,
+        }
+    }
+
+    pub fn input_count(&self) -> usize {
+        self.len()
+    }
+
+    pub fn validate_contract(&self, contract: RuntimeFunctionContract) -> MResult<()> {
+        if contract.output_alias == RuntimeOutputAliasPolicy::DisallowInputAlias {
+            let output_roots = self.output_value().reactive_root_cell_ids();
+            for index in 0..self.input_count() {
+                let Some(input) = self.input_value(index) else {
+                    continue;
+                };
+                for cell in input.reactive_root_cell_ids() {
+                    if output_roots.contains(&cell) {
+                        return Err(MechError::new(
+                            FunctionArgumentAliasViolation { input: index, cell },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                }
+            }
+        }
+        (contract.validate_shapes)(self)
+    }
+
     pub fn len(&self) -> usize {
         match self {
             FunctionArgs::Nullary(_) => 0,

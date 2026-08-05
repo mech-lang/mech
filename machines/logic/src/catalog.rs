@@ -1,4 +1,7 @@
-use mech_core::{FunctionCatalogBuilder, MResult, MechFunctionFactory};
+use mech_core::{
+    FunctionCatalogBuilder, MResult, MechFunctionFactory, RuntimeFunctionContract,
+    RuntimeOutputAliasPolicy,
+};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
 use paste::paste;
@@ -43,6 +46,7 @@ macro_rules! install_logic_factory {
             $builder.insert_runtime_factory(
                 concat!(stringify!($operation), stringify!($suffix), "<bool>"),
                 <crate::$module::[<$operation $suffix>] as MechFunctionFactory>::new,
+                mech_core::__mech_elementwise_binop_contract!($suffix),
             )?;
         }
     };
@@ -144,6 +148,7 @@ macro_rules! declare_logic_native_factory {
                 installer: [<install_logic_ $operation:lower _ $suffix:lower>],
                 name: concat!(stringify!($operation), stringify!($suffix), "<bool>"),
                 factory: <crate::$module::[<$operation $suffix>] as MechFunctionFactory>::new,
+                contract: mech_core::__mech_elementwise_binop_contract!($suffix),
                 package: "mech-logic",
                 crate_name: "mech_logic",
                 installer_path: concat!(
@@ -166,6 +171,7 @@ macro_rules! declare_logic_native_factory {
                 installer: [<install_logic_ $operation:lower _ $suffix:lower>],
                 name: concat!(stringify!($operation), stringify!($suffix), "<bool>"),
                 factory: <crate::$module::[<$operation $suffix>] as MechFunctionFactory>::new,
+                contract: mech_core::__mech_elementwise_binop_contract!($suffix),
                 package: "mech-logic",
                 crate_name: "mech_logic",
                 installer_path: concat!(
@@ -222,6 +228,7 @@ mech_core::declare_native_runtime_factory! {
     installer: install_logic_not_s,
     name: "NotS<bool>",
     factory: <crate::not::NotS<bool> as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-logic",
     crate_name: "mech_logic",
     installer_path: "mech_logic::__mech_native::install_logic_not_s",

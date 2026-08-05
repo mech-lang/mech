@@ -52,6 +52,16 @@ CI_SURFACES = ("standard",) + CI_EXTENDED_SURFACES
 SURFACE_DIRECTORY = ROOT / "target/native-linkage/surfaces"
 FEATURE_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 RUST_PATH = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)+$")
+CONTRACT_KIND = re.compile(r"^[a-z][a-z0-9_]*$")
+MATRIX_FEATURES = {
+    "matrix", "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+    "matrixd", "row_vector2", "row_vector3", "row_vector4", "row_vectord",
+    "vector2", "vector3", "vector4", "vectord",
+}
+MATRIX_MINIMAL_NATIVE_LINK_PROFILES = (
+    "dot f64 matrix1 native-link runtime source",
+    "matmul f64 matrix3x2 native-link row_vector2 row_vector3 runtime",
+)
 
 
 class ContractError(RuntimeError):
@@ -152,6 +162,8 @@ def validate_catalog(
         crate_name = value.get("crate_name")
         installer = value.get("installer_path")
         features = value.get("cargo_features")
+        contract_kind = value.get("contract_kind")
+        output_alias_policy = value.get("output_alias_policy")
         if not isinstance(name, str) or not isinstance(runtime_id, str):
             raise ContractError(f"{label} contains a malformed runtime factory")
         if runtime_id in by_id and by_id[runtime_id] != name:
@@ -166,6 +178,12 @@ def validate_catalog(
             raise ContractError(f"{label} factory {name!r} has invalid linkage metadata")
         if not isinstance(features, list) or not all(isinstance(item, str) for item in features):
             raise ContractError(f"{label} factory {name!r} has invalid Cargo features")
+        if not isinstance(contract_kind, str) or not CONTRACT_KIND.fullmatch(contract_kind):
+            raise ContractError(f"{label} factory {name!r} has an unknown contract kind")
+        if contract_kind in {"unknown", "unchecked", "infer_from_name", "best_effort"}:
+            raise ContractError(f"{label} factory {name!r} has forbidden contract kind {contract_kind!r}")
+        if output_alias_policy not in {"disallow_input_alias", "allow_input_alias"}:
+            raise ContractError(f"{label} factory {name!r} has an unknown output alias policy")
         if features != sorted(set(features)):
             raise ContractError(f"{label} factory {name!r} has unsorted or duplicate features")
         invalid = [item for item in features if not FEATURE_NAME.fullmatch(item)]
@@ -184,6 +202,14 @@ def validate_catalog(
             raise ContractError(f"{label} factory {name!r} omits required native features")
         if set(features).intersection(forbidden):
             raise ContractError(f"{label} factory {name!r} contains a forbidden aggregate feature")
+        if contract_kind == "no_matrix" and set(features).intersection(MATRIX_FEATURES):
+            raise ContractError(f"{label} matrix factory {name!r} uses no_matrix")
+        if output_alias_policy == "allow_input_alias" and not (
+            name.startswith("Assign") or name.startswith("VariableDefine")
+        ):
+            raise ContractError(
+                f"{label} factory {name!r} allows output aliasing outside register families"
+            )
         if installer in paths and paths[installer] != name:
             raise ContractError(f"{label} duplicates installer path {installer!r}")
         paths[installer] = name
@@ -195,6 +221,8 @@ def validate_catalog(
                 "crate_name": crate_name,
                 "installer_path": installer,
                 "cargo_features": features,
+                "contract_kind": contract_kind,
+                "output_alias_policy": output_alias_policy,
             }
         )
     return sorted(clean, key=lambda item: (item["runtime_factory_id"], item["runtime_factory_name"]))
@@ -258,6 +286,14 @@ def surface_summary(entries: list[dict[str, Any]]) -> dict[str, Any]:
         {"runtime_factory_id": item["runtime_factory_id"], "cargo_features": item["cargo_features"]}
         for item in entries
     ]
+    contracts = [
+        {
+            "runtime_factory_id": item["runtime_factory_id"],
+            "contract_kind": item["contract_kind"],
+            "output_alias_policy": item["output_alias_policy"],
+        }
+        for item in entries
+    ]
     return {
         "entry_count": len(entries),
         "linked_entry_count": len(entries),
@@ -265,6 +301,9 @@ def surface_summary(entries: list[dict[str, Any]]) -> dict[str, Any]:
         "runtime_surface_digest": digest(runtime),
         "installer_surface_digest": digest(installers),
         "feature_surface_digest": digest(feature_sets),
+        "runtime_contract_count": len(contracts),
+        "missing_contract_count": 0,
+        "runtime_contract_surface_digest": digest(contracts),
     }
 
 
@@ -347,6 +386,8 @@ def read_ci_surface(path: Path, feature: str, known: dict[str, set[str]]) -> lis
             "crate_name": entry.get("crate_name"),
             "installer_path": entry.get("installer_path"),
             "cargo_features": entry.get("cargo_features"),
+            "contract_kind": entry.get("contract_kind"),
+            "output_alias_policy": entry.get("output_alias_policy"),
         }
         for entry in entries
     ]
@@ -396,6 +437,15 @@ def verify_owner_native_link_profiles(packages: list[str]) -> None:
                 "--features", f"{profile} native-link",
             ]
         )
+        if package == "mech-matrix":
+            for minimal_profile in MATRIX_MINIMAL_NATIVE_LINK_PROFILES:
+                run(
+                    [
+                        "cargo", "+nightly-2026-03-03", "check",
+                        "--manifest-path", str(manifest), "--no-default-features",
+                        "--features", minimal_profile,
+                    ]
+                )
 
 
 def verify_owner_contracts() -> None:

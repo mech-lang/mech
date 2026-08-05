@@ -1,7 +1,39 @@
 #[cfg(feature = "matrix")]
 use super::matrix::*;
 use super::*;
-use mech_core::{FunctionCatalogBuilder, MResult, MechFunctionFactory};
+use mech_core::{
+    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, MechFunctionFactory,
+    function_shape_contract_violation,
+};
+
+#[cfg(feature = "matrix")]
+fn validate_assign_slice_contract(args: &FunctionArgs) -> MResult<()> {
+    let contract = "assign_slice";
+    let output = args
+        .output_value()
+        .function_matrix_descriptor(FunctionArgumentRole::Output)?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "output must be matrix-backed")
+        })?;
+    for index in 0..args.input_count() {
+        if let Some(input) = args
+            .input_value(index)
+            .expect("input index is bounded")
+            .function_matrix_descriptor(FunctionArgumentRole::Input(index))?
+            && input.rows.saturating_mul(input.cols) > output.rows.saturating_mul(output.cols)
+        {
+            return Err(function_shape_contract_violation(
+                contract,
+                format!(
+                    "matrix input {index} has {} elements, output has {}",
+                    input.rows.saturating_mul(input.cols),
+                    output.rows.saturating_mul(output.cols),
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
 
 // Assignment's scalar factories deliberately keep the Rust type, emitted
 // runtime spelling, Cargo value feature, and installer token independent.
@@ -36,6 +68,7 @@ macro_rules! declare_assign_scalar_factory {
                 installer: [<install_assign_ $installer_token>],
                 name: concat!("Assign<", $runtime_name, ">"),
                 factory: <Assign<$scalar> as MechFunctionFactory>::new,
+                contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!("mech_engine::__mech_native::", stringify!([<install_assign_ $installer_token>])),
                 cargo_features: ["assign", $cargo_feature, "native-link", "runtime"],
@@ -52,6 +85,7 @@ mech_core::declare_native_runtime_factory! {
     installer: install_assign_index,
     name: "Assign<index>",
     factory: <Assign<usize> as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_assign_index",
     cargo_features: ["assign", "native-link", "runtime"],
@@ -140,6 +174,11 @@ macro_rules! declare_matrix_assign_factory {
                 installer: [<install_assign_ $fxn_name:lower _ $scalar:lower $( _ $shape:lower )*>],
                 name: concat!(stringify!($fxn_name), "<", $scalar_name, $(stringify!($shape)),*, ">"),
                 factory: $factory,
+                contract: RuntimeFunctionContract::custom(
+                    "assign_slice",
+                    RuntimeOutputAliasPolicy::AllowInputAlias,
+                    validate_assign_slice_contract,
+                ),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!(
                     "mech_engine::__mech_native::",

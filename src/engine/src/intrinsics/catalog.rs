@@ -8,7 +8,8 @@ use crate::intrinsics::constructors::ValueSetComprehension;
 use crate::intrinsics::define::VarDefine;
 use crate::*;
 use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
+    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, FunctionExport, FunctionExposure,
+    FunctionSpecializer, MResult, function_shape_contract_violation,
 };
 use std::sync::Arc;
 
@@ -44,6 +45,23 @@ where
     builder
         .insert_intrinsic_specializer(canonical_name, Arc::new(compiler))
         .map(|_| ())
+}
+
+#[cfg(feature = "matrix_comprehensions")]
+fn validate_matrix_comprehension(args: &FunctionArgs) -> MResult<()> {
+    let contract = "matrix_comprehension";
+    if args.input_count() != 0 {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("expected no inputs, found {}", args.input_count()),
+        ));
+    }
+    args.output_value()
+        .function_matrix_descriptor(FunctionArgumentRole::Output)?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "output must be matrix-backed")
+        })?;
+    Ok(())
 }
 
 #[cfg(feature = "source")]
@@ -145,6 +163,7 @@ mech_core::declare_native_runtime_factory! {
     installer: install_set_define,
     name: "set/define",
     factory: <ValueSet as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_set_define",
     cargo_features: ["native-link", "runtime", "set"],
@@ -156,6 +175,7 @@ mech_core::declare_native_runtime_factory! {
     installer: install_set_comprehension,
     name: "set/comprehension",
     factory: <ValueSetComprehension as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_set_comprehension",
     cargo_features: ["native-link", "runtime", "set_comprehensions"],
@@ -167,6 +187,11 @@ mech_core::declare_native_runtime_factory! {
     installer: install_matrix_comprehension,
     name: "matrix/comprehension",
     factory: <ValueMatrixComprehension as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::custom(
+        "matrix_comprehension",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_matrix_comprehension,
+    ),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_matrix_comprehension",
     cargo_features: ["matrix_comprehensions", "native-link", "runtime"],

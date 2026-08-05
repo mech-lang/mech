@@ -187,6 +187,7 @@ macro_rules! declare_add_f64_native_runtime_factory {
 
                 name: concat!("Add", stringify!($suffix), "<", $scalar_name, ">"),
                 factory: <[<Add $suffix>]<$scalar> as MechFunctionFactory>::new,
+                contract: mech_core::__mech_elementwise_binop_contract!($suffix),
 
                 package: "mech-math",
                 crate_name: "mech_math",

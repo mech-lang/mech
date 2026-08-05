@@ -8,10 +8,11 @@
 mod bytecode_dependency_tests {
     use super::super::super::{
         BytecodeInstruction, BytecodeProgram, EncodedConstant, FunctionArgs, FunctionArgumentRole,
-        FunctionCatalogBuilder, Interpreter, MResult, MechError, MechFunction, MechFunctionFactory,
-        MechFunctionImpl, ProgramState, ReactiveCellId, ReactiveDependencyKind, Ref,
-        RuntimeFunctionId, RuntimeType, ToValue, Value, hash_str, register_bytecode_function,
-        write_bytecode,
+        FunctionCatalogBuilder, Interpreter, MResult, MatrixStorage, MechError, MechFunction,
+        MechFunctionFactory, MechFunctionImpl, NoMechExecutionServices, ProgramState,
+        ReactiveCellId, ReactiveDependencyKind, Ref, RuntimeFunctionContract, RuntimeFunctionId,
+        RuntimeOutputAliasPolicy, RuntimeType, ToValue, Value, hash_str,
+        register_bytecode_function, write_bytecode,
     };
     use std::collections::{BTreeMap, BTreeSet};
     use std::sync::Arc;
@@ -110,7 +111,11 @@ mod bytecode_dependency_tests {
     ) -> MResult<Value> {
         const NAME: &str = "BytecodeDependencyTestFunction";
         let mut builder = FunctionCatalogBuilder::new();
-        builder.insert_runtime_factory(NAME, bytecode_dependency_test_factory)?;
+        builder.insert_runtime_factory(
+            NAME,
+            bytecode_dependency_test_factory,
+            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+        )?;
         let catalog = builder.build()?;
         let entry = catalog
             .runtime_entry(RuntimeFunctionId::from_name(NAME))
@@ -239,10 +244,35 @@ mod bytecode_dependency_tests {
 
     #[test]
     fn runtime_contract_preflight_preserves_plan_symbols_dictionary_and_register_state() {
-        const NAME: &str = "ExactF64Nullary";
+        const NAME: &str = "AddMDMD<f64>";
+        fn must_not_instantiate(_args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            panic!("malformed matrix relations must fail before factory construction")
+        }
+        fn matrix(rows: u32, cols: u32) -> EncodedConstant {
+            let mut bytes = Vec::new();
+            bytes.extend_from_slice(&rows.to_le_bytes());
+            bytes.extend_from_slice(&cols.to_le_bytes());
+            for index in 0..rows.saturating_mul(cols) {
+                bytes.extend_from_slice(&f64::from(index + 1).to_bits().to_le_bytes());
+            }
+            EncodedConstant {
+                runtime_type: RuntimeType::Matrix {
+                    element: Box::new(RuntimeType::F64),
+                    storage: MatrixStorage::MatrixD,
+                    rows,
+                    cols,
+                },
+                alignment: 8,
+                bytes,
+            }
+        }
         let mut catalog = FunctionCatalogBuilder::new();
         catalog
-            .insert_runtime_factory(NAME, ExactF64Nullary::new)
+            .insert_runtime_factory(
+                NAME,
+                must_not_instantiate,
+                RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            )
             .unwrap();
         let mut interpreter =
             Interpreter::with_function_catalog(7, 100, Arc::new(catalog.build().unwrap()));
@@ -274,12 +304,8 @@ mod bytecode_dependency_tests {
         let prior_dictionary = interpreter.dictionary().borrow().clone();
         let program = super::super::super::ParsedProgram::from_bytes(
             &write_bytecode(&BytecodeProgram {
-                register_count: 1,
-                constants: vec![EncodedConstant {
-                    runtime_type: RuntimeType::I8,
-                    alignment: 1,
-                    bytes: vec![1],
-                }],
+                register_count: 3,
+                constants: vec![matrix(2, 2), matrix(2, 2), matrix(3, 3)],
                 symbols: BTreeMap::new(),
                 mutable_symbols: BTreeSet::new(),
                 instructions: vec![
@@ -287,9 +313,19 @@ mod bytecode_dependency_tests {
                         dst: 0,
                         constant: 0,
                     },
-                    BytecodeInstruction::RuntimeNullary {
+                    BytecodeInstruction::ConstLoad {
+                        dst: 1,
+                        constant: 1,
+                    },
+                    BytecodeInstruction::ConstLoad {
+                        dst: 2,
+                        constant: 2,
+                    },
+                    BytecodeInstruction::RuntimeBinary {
                         function: RuntimeFunctionId::from_name(NAME).raw(),
                         dst: 0,
+                        lhs: 1,
+                        rhs: 2,
                     },
                     BytecodeInstruction::Return { src: 0 },
                 ],
@@ -300,7 +336,10 @@ mod bytecode_dependency_tests {
         )
         .unwrap();
 
-        let error = interpreter.run_program(&program).unwrap_err();
+        let mut services = NoMechExecutionServices;
+        let error = interpreter
+            .run_program_with_services(&program, &mut services)
+            .unwrap_err();
         assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
         assert_eq!(interpreter.ip, 9);
         assert_eq!(interpreter.registers, vec![prior_register]);

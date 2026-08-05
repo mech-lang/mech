@@ -1275,6 +1275,492 @@ macro_rules! __mech_for_each_binop_runtime_factory_for_type {
 
 #[doc(hidden)]
 #[macro_export]
+macro_rules! __mech_elementwise_binop_contract {
+    (SS) => {
+        $crate::RuntimeFunctionContract::no_matrix(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+
+    (SM1) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SM2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SM3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SM4) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SM2x3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SM3x2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SMD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SR2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SR3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SR4) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SRD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SV2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SV3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SV4) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (SVD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+
+    (M1S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M2S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M3S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M4S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M2x3S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M3x2S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (MDS) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R2S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R3S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R4S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (RDS) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V2S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V3S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V4S) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (VDS) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+
+    (M1M1) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M2M2) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M3M3) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M4M4) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M2x3M2x3) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M3x2M3x2) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (MDMD) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R2R2) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R3R3) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R4R4) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (RDRD) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V2V2) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V3V3) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V4V4) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (VDVD) => {
+        $crate::RuntimeFunctionContract::same_shape(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+
+    (M2V2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M3V3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M4V4) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M2x3V2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M3x2V3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (MDVD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (MDV2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (MDV3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (MDV4) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M2R2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M3R3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M4R4) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M2x3R3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (M3x2R2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (MDRD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (MDR2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (MDR3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (MDR4) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+
+    (V2M2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V3M3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V4M4) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V2M2x3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V3M3x2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (VDMD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V2MD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V3MD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (V4MD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R2M2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R3M3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R4M4) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R3M2x3) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R2M3x2) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (RDMD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R2MD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R3MD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    (R4MD) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            1,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! __mech_declare_native_binop_runtime_factory {
     (
         ($cfg:meta; $package:literal; $crate_name:literal; [$($base_feature:literal),* $(,)?]),
@@ -1292,6 +1778,7 @@ macro_rules! __mech_declare_native_binop_runtime_factory {
                 installer: [<install_ $lib:snake _ $suffix:lower _ $scalar_token>],
                 name: concat!(stringify!($lib), stringify!($suffix), "<", $scalar_name, ">"),
                 factory: <[<$lib $suffix>]<$scalar> as $crate::MechFunctionFactory>::new,
+                contract: $crate::__mech_elementwise_binop_contract!($suffix),
                 package: $package,
                 crate_name: $crate_name,
                 installer_path: concat!(
@@ -1510,6 +1997,7 @@ macro_rules! __mech_install_binop_runtime_factory {
                     ">"
                 ),
                 <[<$lib $suffix>]<$scalar> as $crate::MechFunctionFactory>::new,
+                $crate::__mech_elementwise_binop_contract!($suffix),
             )?;
         }
     };
@@ -1710,12 +2198,29 @@ macro_rules! install_binop_runtime_factories {
 
 #[doc(hidden)]
 #[macro_export]
+macro_rules! __mech_elementwise_unop_contract {
+    (S) => {
+        $crate::RuntimeFunctionContract::no_matrix(
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+    ($suffix:ident) => {
+        $crate::RuntimeFunctionContract::output_matches_input(
+            0,
+            $crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        )
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! __mech_install_unop_runtime_factory {
     ($builder:expr, $lib:ident, $scalar:ident, $suffix:ident) => {
         paste! {
             $builder.insert_runtime_factory(
                 stringify!([<$lib $scalar:camel $suffix>]),
                 <[<$lib $scalar:camel $suffix>] as $crate::MechFunctionFactory>::new,
+                $crate::__mech_elementwise_unop_contract!($suffix),
             )?;
         }
     };
@@ -1794,10 +2299,11 @@ macro_rules! install_unop_runtime_factories {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __mech_install_typed_runtime_factory {
-    ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal) => {
+    ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $contract:expr) => {
         $builder.insert_runtime_factory(
             concat!(stringify!($factory), "<", $scalar_name, ">"),
             <$factory<$scalar> as $crate::MechFunctionFactory>::new,
+            $contract,
         )?;
     };
 }
@@ -1806,14 +2312,15 @@ macro_rules! __mech_install_typed_runtime_factory {
 /// form `Factory<scalar>`.
 #[macro_export]
 macro_rules! install_typed_runtime_factories {
-    ($builder:expr, $factory:ident; $(($feature:literal, $scalar:ty, $scalar_name:literal)),+ $(,)?) => {{
+    ($builder:expr, $factory:ident, contract: $contract:expr; $(($feature:literal, $scalar:ty, $scalar_name:literal)),+ $(,)?) => {{
         $(
             #[cfg(feature = $feature)]
             $crate::__mech_install_typed_runtime_factory!(
                 $builder,
                 $factory,
                 $scalar,
-                $scalar_name
+                $scalar_name,
+                $contract
             );
         )+
 

@@ -1,4 +1,8 @@
-use mech_core::{FunctionCatalogBuilder, MResult, MechFunctionFactory};
+use mech_core::{
+    FunctionArgumentRole, FunctionArgs, FunctionCatalogBuilder, MResult, MechFunctionFactory,
+    RuntimeFunctionContract, RuntimeOutputAliasPolicy, Value,
+    function_shape_contract_violation,
+};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
 #[cfg(feature = "source")]
@@ -81,8 +85,145 @@ macro_rules! install_range_factory {
                 ">"
             ),
             <crate::$module::$factory<$scalar, $shape<$scalar>> as MechFunctionFactory>::new,
+            RuntimeFunctionContract::custom(
+                "range_construction",
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                range_contract_validator!($module),
+            ),
         )?;
     };
+}
+
+fn range_numeric_value(value: &Value) -> Option<f64> {
+    match value {
+        #[cfg(feature = "u8")]
+        Value::U8(value) => Some(*value.borrow() as f64),
+        #[cfg(feature = "u16")]
+        Value::U16(value) => Some(*value.borrow() as f64),
+        #[cfg(feature = "u32")]
+        Value::U32(value) => Some(*value.borrow() as f64),
+        #[cfg(feature = "u64")]
+        Value::U64(value) => Some(*value.borrow() as f64),
+        #[cfg(feature = "u128")]
+        Value::U128(value) => Some(*value.borrow() as f64),
+        #[cfg(feature = "i8")]
+        Value::I8(value) => Some(*value.borrow() as f64),
+        #[cfg(feature = "i16")]
+        Value::I16(value) => Some(*value.borrow() as f64),
+        #[cfg(feature = "i32")]
+        Value::I32(value) => Some(*value.borrow() as f64),
+        #[cfg(feature = "i64")]
+        Value::I64(value) => Some(*value.borrow() as f64),
+        #[cfg(feature = "i128")]
+        Value::I128(value) => Some(*value.borrow() as f64),
+        #[cfg(feature = "f32")]
+        Value::F32(value) => Some(*value.borrow() as f64),
+        #[cfg(feature = "f64")]
+        Value::F64(value) => Some(*value.borrow()),
+        _ => None,
+    }
+}
+
+fn validate_range_contract(
+    args: &FunctionArgs,
+    inclusive: bool,
+    incremented: bool,
+) -> MResult<()> {
+    let contract = "range_construction";
+    let output = args
+        .output_value()
+        .function_matrix_descriptor(FunctionArgumentRole::Output)?
+        .ok_or_else(|| function_shape_contract_violation(contract, "output must be matrix-backed"))?;
+    if output.rows != 1 {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("output must be a row, found {}x{}", output.rows, output.cols),
+        ));
+    }
+    let expected_inputs = if incremented { 3 } else { 2 };
+    if args.input_count() != expected_inputs {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("expected {expected_inputs} inputs, found {}", args.input_count()),
+        ));
+    }
+    let mut values = Vec::with_capacity(expected_inputs);
+    for index in 0..expected_inputs {
+        let input = args
+            .input_value(index)
+            .and_then(range_numeric_value)
+            .ok_or_else(|| {
+                function_shape_contract_violation(
+                    contract,
+                    format!("input {index} must be a numeric scalar"),
+                )
+            })?;
+        values.push(input);
+    }
+    let from = values[0];
+    let (step, to) = if incremented {
+        (values[1], values[2])
+    } else {
+        (1.0, values[1])
+    };
+    if !from.is_finite() || !step.is_finite() || !to.is_finite() || step == 0.0 {
+        return Err(function_shape_contract_violation(
+            contract,
+            "range endpoints and step must be finite and the step nonzero",
+        ));
+    }
+    let diff = to - from;
+    let size = if incremented {
+        if diff == 0.0 && inclusive {
+            1
+        } else if (diff > 0.0 && step > 0.0) || (diff < 0.0 && step < 0.0) {
+            let quotient = diff / step;
+            if inclusive {
+                quotient.floor() as usize + 1
+            } else {
+                quotient.ceil() as usize
+            }
+        } else {
+            0
+        }
+    } else if diff >= 0.0 {
+        (diff as usize).saturating_add(usize::from(inclusive))
+    } else {
+        0
+    };
+    if size == 0 || output.cols != size {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "output has {} elements, range requires {size}",
+                output.rows.saturating_mul(output.cols),
+            ),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_range_exclusive(args: &FunctionArgs) -> MResult<()> {
+    validate_range_contract(args, false, false)
+}
+
+fn validate_range_inclusive(args: &FunctionArgs) -> MResult<()> {
+    validate_range_contract(args, true, false)
+}
+
+fn validate_range_increment_exclusive(args: &FunctionArgs) -> MResult<()> {
+    validate_range_contract(args, false, true)
+}
+
+fn validate_range_increment_inclusive(args: &FunctionArgs) -> MResult<()> {
+    validate_range_contract(args, true, true)
+}
+
+macro_rules! range_contract_validator {
+    (exclusive) => { validate_range_exclusive };
+    (inclusive) => { validate_range_inclusive };
+    (exclusive_increment) => { validate_range_increment_exclusive };
+    (inclusive_increment) => { validate_range_increment_inclusive };
 }
 
 macro_rules! install_range_factories_for_type {
@@ -237,6 +378,11 @@ macro_rules! declare_range_runtime_factory {
                 installer: [<install_ $factory:snake _ $scalar_token _ $shape:snake>],
                 name: concat!(stringify!($factory), "<", $scalar_feature, stringify!($shape), ">"),
                 factory: <crate::$module::$factory<$scalar, $shape<$scalar>> as MechFunctionFactory>::new,
+                contract: RuntimeFunctionContract::custom(
+                    "range_construction",
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                    range_contract_validator!($module),
+                ),
                 package: "mech-range", crate_name: "mech_range",
                 installer_path: concat!("mech_range::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token _ $shape:snake>])),
                 cargo_features: [$operation_feature, $scalar_feature, $($shape_feature,)* "native-link", "runtime"],

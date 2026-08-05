@@ -9,6 +9,98 @@ use paste::paste;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
 
+#[cfg(feature = "matrix")]
+fn checked_combination_count(n: usize, k: usize) -> Option<usize> {
+    let k = k.min(n.saturating_sub(k));
+    let mut result = 1usize;
+    for divisor in 1..=k {
+        result = result.checked_mul(n - k + divisor)? / divisor;
+    }
+    Some(result)
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_selection_size(value: &Value) -> Option<usize> {
+    match value {
+        Value::Index(value) => Some(*value.borrow()),
+        #[cfg(feature = "u8")]
+        Value::U8(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "u16")]
+        Value::U16(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "u32")]
+        Value::U32(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "u64")]
+        Value::U64(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "u128")]
+        Value::U128(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "i8")]
+        Value::I8(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "i16")]
+        Value::I16(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "i32")]
+        Value::I32(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "i64")]
+        Value::I64(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "i128")]
+        Value::I128(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "f32")]
+        Value::F32(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "f64")]
+        Value::F64(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "rational")]
+        Value::R64(value) => Some(value.borrow().to_usize()),
+        #[cfg(feature = "complex")]
+        Value::C64(value) => Some(value.borrow().to_usize()),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "matrix")]
+pub(crate) fn validate_n_choose_k_matrix_contract(args: &FunctionArgs) -> MResult<()> {
+    let contract = "n_choose_k_matrix";
+    let input = args
+        .input_value(0)
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing matrix input"))?
+        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "input 0 must be matrix-backed")
+        })?;
+    let output = args
+        .output_value()
+        .function_matrix_descriptor(FunctionArgumentRole::Output)?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "output must be matrix-backed")
+        })?;
+    let k = args
+        .input_value(1)
+        .and_then(matrix_selection_size)
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "input 1 must be a selection scalar")
+        })?;
+    let n = input.rows.checked_mul(input.cols).ok_or_else(|| {
+        function_shape_contract_violation(contract, "input element count overflowed usize")
+    })?;
+    if k == 0 || k > n {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("selection size {k} is outside 1..={n}"),
+        ));
+    }
+    let combinations = checked_combination_count(n, k).ok_or_else(|| {
+        function_shape_contract_violation(contract, "combination count overflowed usize")
+    })?;
+    if output.rows != k || output.cols != combinations {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "output is {}x{}, expected {k}x{combinations}",
+                output.rows, output.cols,
+            ),
+        ));
+    }
+    Ok(())
+}
+
 // Combinatorics N Choose K----------------------------------------------------
 
 #[derive(Debug)]

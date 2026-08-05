@@ -184,7 +184,10 @@ fn is_cargo_feature_name(name: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use mech_core::{FunctionArgs, FunctionCatalogBuilder, MechFunction, NativeFunctionLinkage};
+    use mech_core::{
+        FunctionArgs, FunctionCatalogBuilder, MechFunction, NativeFunctionLinkage,
+        RuntimeFunctionContract, RuntimeOutputAliasPolicy,
+    };
 
     use super::*;
 
@@ -199,6 +202,7 @@ mod tests {
             .insert_runtime_factory_with_linkage(
                 "B",
                 unused_factory,
+                RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
                 NativeFunctionLinkage {
                     package: "mech-b",
                     crate_name: "mech_b",
@@ -211,6 +215,7 @@ mod tests {
             .insert_runtime_factory_with_linkage(
                 "A",
                 unused_factory,
+                RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
                 NativeFunctionLinkage {
                     package: "mech-a",
                     crate_name: "mech_a",
@@ -242,7 +247,11 @@ mod tests {
     fn known_runtime_function_without_linkage_is_rejected() {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_runtime_factory("KnownButUnlinked", unused_factory)
+            .insert_runtime_factory(
+                "KnownButUnlinked",
+                unused_factory,
+                RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            )
             .unwrap();
         let catalog = builder.build().unwrap();
 

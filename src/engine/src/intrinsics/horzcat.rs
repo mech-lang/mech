@@ -898,6 +898,7 @@ mech_core::declare_native_runtime_factory! {
 
     name: "HorizontalConcatenateRDN<f64>",
     factory: <HorizontalConcatenateRDN<f64> as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::horizontal_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -1359,6 +1360,7 @@ mech_core::declare_native_runtime_factory! {
 
     name: "HorizontalConcatenateS2<f64>",
     factory: <HorizontalConcatenateS2<f64> as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::horizontal_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -5973,6 +5975,7 @@ macro_rules! declare_horzcat_scalar {
                 installer: [<install_ $factory:snake _ $token>],
                 name: concat!(stringify!($factory), "<", $name, ">"),
                 factory: <$factory<$scalar> as MechFunctionFactory>::new,
+                contract: RuntimeFunctionContract::horizontal_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token>])),
                 cargo_features: ["matrix_horzcat", "native-link", "runtime", $cargo, $($feature),+],

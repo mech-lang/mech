@@ -15,8 +15,9 @@ use mech_build::{NativeHostLinkage, NativeTargetFamily};
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
     EncodedConstant, ExecutionHostFunctionRequest, FunctionArgs, FunctionArgumentRole,
-    FunctionCatalog, FunctionCatalogBuilder, MResult, MechFunction, MechFunctionCompiler,
-    MechFunctionImpl, NativeFunctionLinkage, Ref, Register, RuntimeType, ToValue, Value, hash_str,
+    FunctionCatalog, FunctionCatalogBuilder, MResult, MatrixStorage, MechFunction,
+    MechFunctionCompiler, MechFunctionImpl, NativeFunctionLinkage, Ref, Register,
+    RuntimeFunctionContract, RuntimeOutputAliasPolicy, RuntimeType, ToValue, Value, hash_str,
     write_bytecode,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
@@ -412,7 +413,11 @@ fn known_runtime_ids_without_native_metadata_fail_before_generation() {
     const NAME: &str = "KnownButUnlinked";
     let mut catalog = FunctionCatalogBuilder::new();
     catalog
-        .insert_runtime_factory(NAME, unused_factory)
+        .insert_runtime_factory(
+            NAME,
+            unused_factory,
+            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+        )
         .unwrap();
     let bytecode = runtime_nullary_bytecode(hash_str(NAME));
 
@@ -430,6 +435,7 @@ fn malicious_runtime_type_mismatch_fails_before_native_analysis() {
         .insert_runtime_factory_with_linkage(
             NAME,
             unused_factory,
+            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
             NativeFunctionLinkage {
                 package: "mech-test",
                 crate_name: "mech_test",
@@ -452,6 +458,125 @@ fn malicious_runtime_type_mismatch_fails_before_native_analysis() {
         .unwrap_err();
     assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
     assert!(error.kind_message().contains(NAME));
+}
+
+#[test]
+fn malicious_matrix_relations_and_aliases_fail_without_materializing_a_project() {
+    fn must_not_instantiate(_args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        panic!("malformed matrix relations must fail before factory construction")
+    }
+    let mut catalog = FunctionCatalogBuilder::new();
+    for (name, installer_path, contract) in [
+        (
+            "AddMDMD<f64>",
+            "mech_test::__mech_native::install_add_mdmd",
+            RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
+        ),
+        (
+            "AddM2M2<f64>",
+            "mech_test::__mech_native::install_add_m2m2",
+            RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
+        ),
+        (
+            "MatMulMDMD<f64>",
+            "mech_test::__mech_native::install_matmul_mdmd",
+            RuntimeFunctionContract::matrix_product(RuntimeOutputAliasPolicy::DisallowInputAlias),
+        ),
+        (
+            "MatrixSolveMDVD<f64>",
+            "mech_test::__mech_native::install_solve_mdvd",
+            RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+        ),
+    ] {
+        catalog
+            .insert_runtime_factory_with_linkage(
+                name,
+                must_not_instantiate,
+                contract,
+                NativeFunctionLinkage {
+                    package: "mech-test",
+                    crate_name: "mech_test",
+                    installer_path,
+                    cargo_features: &["native-link", "runtime"],
+                },
+            )
+            .unwrap();
+    }
+    let temporary = tempfile::tempdir().unwrap();
+    let output = temporary.path().join("must-not-exist");
+    let builder = NativeApplicationBuilder::new(environment(Arc::new(catalog.build().unwrap())));
+    let prior_plan = builder.plan(&request(LITERAL_F64)).unwrap();
+    let prior_plan_snapshot = prior_plan.clone();
+
+    let dynamic = |rows, cols| f64_matrix_constant(MatrixStorage::MatrixD, rows, cols);
+    let vector = |rows| f64_matrix_constant(MatrixStorage::VectorD, rows, 1);
+    let cases = [
+        (
+            "AddMDMD<f64>",
+            vec![dynamic(2, 2), dynamic(2, 2), dynamic(3, 3)],
+            (0, 1, 2),
+        ),
+        (
+            "AddMDMD<f64>",
+            vec![dynamic(3, 3), dynamic(2, 2), dynamic(2, 2)],
+            (0, 1, 2),
+        ),
+        (
+            "AddMDMD<f64>",
+            vec![dynamic(2, 2), dynamic(2, 2)],
+            (0, 0, 1),
+        ),
+        (
+            "AddMDMD<f64>",
+            vec![dynamic(2, 2), dynamic(2, 2)],
+            (1, 0, 1),
+        ),
+        (
+            "AddM2M2<f64>",
+            vec![dynamic(2, 2), dynamic(2, 2)],
+            (0, 0, 1),
+        ),
+        (
+            "MatMulMDMD<f64>",
+            vec![dynamic(2, 4), dynamic(2, 3), dynamic(2, 4)],
+            (0, 1, 2),
+        ),
+        (
+            "MatMulMDMD<f64>",
+            vec![dynamic(3, 4), dynamic(2, 3), dynamic(3, 4)],
+            (0, 1, 2),
+        ),
+        (
+            "MatrixSolveMDVD<f64>",
+            vec![vector(3), dynamic(2, 3), vector(3)],
+            (0, 1, 2),
+        ),
+        (
+            "MatrixSolveMDVD<f64>",
+            vec![vector(2), dynamic(2, 2), vector(3)],
+            (0, 1, 2),
+        ),
+    ];
+
+    for (name, constants, (dst, lhs, rhs)) in cases {
+        let mut malformed = request(&runtime_binary_bytecode(
+            hash_str(name),
+            constants,
+            dst,
+            lhs,
+            rhs,
+        ));
+        malformed.output = output.clone();
+        let error = builder.plan(&malformed).unwrap_err();
+        assert_eq!(
+            error.kind_name(),
+            "BytecodeRuntimeContractViolation",
+            "{name}"
+        );
+        assert!(error.kind_message().contains(name));
+        assert!(!output.exists());
+        assert_eq!(prior_plan, prior_plan_snapshot);
+    }
 }
 
 #[test]
@@ -645,6 +770,59 @@ fn runtime_nullary_bytecode(function: u64) -> Vec<u8> {
             bytes: 0.0_f64.to_bits().to_le_bytes().to_vec(),
         },
     )
+}
+
+fn f64_matrix_constant(storage: MatrixStorage, rows: u32, cols: u32) -> EncodedConstant {
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(&rows.to_le_bytes());
+    bytes.extend_from_slice(&cols.to_le_bytes());
+    for index in 0..rows.saturating_mul(cols) {
+        bytes.extend_from_slice(&f64::from(index + 1).to_bits().to_le_bytes());
+    }
+    EncodedConstant {
+        runtime_type: RuntimeType::Matrix {
+            element: Box::new(RuntimeType::F64),
+            storage,
+            rows,
+            cols,
+        },
+        alignment: 8,
+        bytes,
+    }
+}
+
+fn runtime_binary_bytecode(
+    function: u64,
+    constants: Vec<EncodedConstant>,
+    dst: u32,
+    lhs: u32,
+    rhs: u32,
+) -> Vec<u8> {
+    let mut instructions = constants
+        .iter()
+        .enumerate()
+        .map(|(register, _)| BytecodeInstruction::ConstLoad {
+            dst: register as u32,
+            constant: register as u32,
+        })
+        .collect::<Vec<_>>();
+    instructions.push(BytecodeInstruction::RuntimeBinary {
+        function,
+        dst,
+        lhs,
+        rhs,
+    });
+    instructions.push(BytecodeInstruction::Return { src: dst });
+    write_bytecode(&BytecodeProgram {
+        register_count: constants.len() as u32,
+        constants,
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions,
+        dictionary: BTreeMap::new(),
+        requirements: Vec::new(),
+    })
+    .unwrap()
 }
 
 fn runtime_nullary_bytecode_with_constant(function: u64, output: EncodedConstant) -> Vec<u8> {

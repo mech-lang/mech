@@ -7,6 +7,59 @@ use nalgebra::{
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
+fn matrix_access_indices(value: &Value) -> Option<Vec<usize>> {
+    match value {
+        Value::Index(value) => Some(vec![*value.borrow()]),
+        Value::MatrixIndex(value) => Some(value.as_vec()),
+        _ => None,
+    }
+}
+
+fn validate_matrix_access_contract(args: &FunctionArgs) -> MResult<()> {
+    let contract = "matrix_access";
+    let source_value = args
+        .input_value(0)
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing matrix input"))?;
+    let source = source_value
+        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "input 0 must be matrix-backed")
+        })?;
+    if let Some(output) = args
+        .output_value()
+        .function_matrix_descriptor(FunctionArgumentRole::Output)?
+        && output.rows.saturating_mul(output.cols) > source.rows.saturating_mul(source.cols)
+    {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "output {}x{} exceeds source {}x{}",
+                output.rows, output.cols, source.rows, source.cols,
+            ),
+        ));
+    }
+    for index in 1..args.input_count() {
+        let Some(indices) = args.input_value(index).and_then(matrix_access_indices) else {
+            continue;
+        };
+        let upper = if args.input_count() >= 3 {
+            if index == 1 { source.rows } else { source.cols }
+        } else {
+            source.rows.saturating_mul(source.cols)
+        };
+        if let Some(found) = indices
+            .into_iter()
+            .find(|value| *value == 0 || *value > upper)
+        {
+            return Err(function_shape_contract_violation(
+                contract,
+                format!("input {index} index {found} is outside 1..={upper}"),
+            ));
+        }
+    }
+    Ok(())
+}
+
 // Access ---------------------------------------------------------------------
 
 #[macro_export]
@@ -2482,6 +2535,11 @@ macro_rules! declare_access_typed_scalar {
                 installer: [<install_ $factory:snake _ $scalar:lower>],
                 name: concat!(stringify!($factory), "<", $runtime_name, ">"),
                 factory: <$factory<$scalar> as MechFunctionFactory>::new,
+                contract: RuntimeFunctionContract::custom(
+                    "matrix_access",
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                    validate_matrix_access_contract,
+                ),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -2693,6 +2751,11 @@ macro_rules! declare_access_range_range_scalar {
                     $ix1<$ix1_scalar>,
                     $ix2<$ix2_scalar>,
                 > as MechFunctionFactory>::new,
+                contract: RuntimeFunctionContract::custom(
+                    "matrix_access",
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                    validate_matrix_access_contract,
+                ),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -2774,6 +2837,11 @@ macro_rules! declare_access_all_range_scalar {
                     $input<$scalar>,
                     $ix<$ix_scalar>,
                 > as MechFunctionFactory>::new,
+                contract: RuntimeFunctionContract::custom(
+                    "matrix_access",
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                    validate_matrix_access_contract,
+                ),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(

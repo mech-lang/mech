@@ -24,6 +24,19 @@ FORBIDDEN = (
         "public raw runtime factory lookup",
         re.compile(r"pub\s+fn\s+runtime_factory\s*\("),
     ),
+    (
+        "forbidden runtime contract escape hatch",
+        re.compile(r"RuntimeFunctionContract::(?:unchecked|unknown|infer_from_name|best_effort)\b", re.IGNORECASE),
+    ),
+)
+WHOLE_FILE_FORBIDDEN = (
+    (
+        "placeholder runtime shape validator",
+        re.compile(
+            r"RuntimeFunctionContract::custom\s*\(.{0,512}?\|\s*_\s*\|\s*Ok\s*\(\s*\(\s*\)\s*\)",
+            re.DOTALL,
+        ),
+    ),
 )
 
 
@@ -42,6 +55,12 @@ def main() -> int:
                             violations.append(
                                 (path.relative_to(ROOT), line_number, description)
                             )
+                for description, pattern in WHOLE_FILE_FORBIDDEN:
+                    for match in pattern.finditer(text):
+                        line_number = text.count("\n", 0, match.start()) + 1
+                        violations.append(
+                            (path.relative_to(ROOT), line_number, description)
+                        )
     except Exception as error:
         print(f"runtime factory safety audit failed internally: {error}", file=sys.stderr)
         return 2
