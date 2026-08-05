@@ -319,10 +319,7 @@ fn runtime_repl_drain_failure_still_stops_driver() {
         Err(error) => error,
     };
 
-    assert!(
-        error.kind_name().contains("KindMismatch"),
-        "unexpected drain error: {error:?}",
-    );
+    assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
     let state = state.lock().unwrap();
     assert_eq!(state.start_count, 1);
     assert_eq!(state.stop_count, 1);
