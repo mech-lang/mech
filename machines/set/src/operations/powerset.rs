@@ -95,7 +95,7 @@ impl MechFunctionImpl for SetPowersetFxn {
             }
 
             // Update metadata
-            out_ptr.num_elements = out_ptr.set.len();
+            out_ptr.sync_cardinality_from_contents();
             out_ptr.kind = ValueKind::Set(Box::new(input_ptr.kind.clone()), None);
         }
     }

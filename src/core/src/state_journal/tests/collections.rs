@@ -141,6 +141,7 @@ fn state_journal_set_restores_metadata_order_and_retained_cell() {
     members.insert(scalar_value(&retained));
     let set = Ref::new(MechSet {
         kind: ValueKind::F64,
+        max_elements: Some(2),
         num_elements: 2,
         set: members,
     });
@@ -153,6 +154,7 @@ fn state_journal_set_restores_metadata_order_and_retained_cell() {
         set.set.shift_remove(&scalar_value(&removed));
         set.set.insert(scalar_value(&added));
         set.kind = ValueKind::Any;
+        set.max_elements = Some(9);
         set.num_elements = 9;
     }
     // Perform this after structural edits so the temporarily stale hash does
@@ -162,6 +164,7 @@ fn state_journal_set_restores_metadata_order_and_retained_cell() {
 
     let set = set.borrow();
     assert_eq!(set.kind, ValueKind::F64);
+    assert_eq!(set.max_elements, Some(2));
     assert_eq!(set.num_elements, 2);
     let members = set.set.iter().map(as_scalar).collect::<Vec<_>>();
     assert_eq!(

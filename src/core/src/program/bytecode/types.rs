@@ -425,6 +425,7 @@ fn canonical_key(ty: &RuntimeType, depth: usize) -> MResult<Vec<u8>> {
 }
 
 pub(crate) fn canonical_runtime_type_key(ty: &RuntimeType) -> MResult<Vec<u8>> {
+    validate_runtime_type(ty, 0)?;
     canonical_key(ty, 0)
 }
 
@@ -488,14 +489,18 @@ pub(crate) fn decode_canonical_runtime_type_key(bytes: &[u8]) -> MResult<Runtime
                     element: Box::new(child(reader, depth, "canonical matrix element type")?),
                 }
             }
-            RuntimeTypeTag::Enum => RuntimeType::Enum {
-                id: reader.read_u64("canonical enum ID")?,
-                name: reader.read_string("canonical enum name")?,
-            },
-            RuntimeTypeTag::Atom => RuntimeType::Atom {
-                id: reader.read_u64("canonical atom ID")?,
-                name: reader.read_string("canonical atom name")?,
-            },
+            RuntimeTypeTag::Enum => {
+                let id = reader.read_u64("canonical enum ID")?;
+                let name = reader.read_string("canonical enum name")?;
+                validate_named_id("runtime enum", id, &name)?;
+                RuntimeType::Enum { id, name }
+            }
+            RuntimeTypeTag::Atom => {
+                let id = reader.read_u64("canonical atom ID")?;
+                let name = reader.read_string("canonical atom name")?;
+                validate_named_id("runtime atom", id, &name)?;
+                RuntimeType::Atom { id, name }
+            }
             RuntimeTypeTag::Record => {
                 let count = checked_usize(
                     u64::from(reader.read_u32("canonical record field count")?),
@@ -527,7 +532,8 @@ pub(crate) fn decode_canonical_runtime_type_key(bytes: &[u8]) -> MResult<Runtime
                     ));
                 }
                 let primary_key = reader.read_u32("canonical table primary key")?;
-                if count > 0 && primary_key as usize >= count {
+                if (count == 0 && primary_key != 0) || (count > 0 && primary_key as usize >= count)
+                {
                     return invalid("canonical table primary key is out of range");
                 }
                 RuntimeType::Table {
@@ -666,22 +672,157 @@ fn validate_named_schema_with_hash<'a>(
     Ok(())
 }
 
+fn validate_named_id(category: &'static str, id: u64, name: &str) -> MResult<()> {
+    if name.is_empty() {
+        return invalid(format!("{category} name must not be empty"));
+    }
+
+    let expected = hash_str(name);
+    if id != expected {
+        return invalid(format!(
+            "{category} ID 0x{id:016x} does not match the stable hash of name {name:?}; expected 0x{expected:016x}"
+        ));
+    }
+
+    Ok(())
+}
+
+fn validate_scalar_kind_id(id: u64) -> MResult<()> {
+    if [
+        "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32", "f64", "c64",
+        "r64", "string", "bool",
+    ]
+    .into_iter()
+    .any(|name| hash_str(name) == id)
+    {
+        Ok(())
+    } else {
+        invalid("Kind scalar ID does not identify a canonical runtime scalar")
+    }
+}
+
+fn validate_matrix_element_type(element: &RuntimeType) -> MResult<()> {
+    match element {
+        RuntimeType::Bool
+        | RuntimeType::String
+        | RuntimeType::U8
+        | RuntimeType::U16
+        | RuntimeType::U32
+        | RuntimeType::U64
+        | RuntimeType::U128
+        | RuntimeType::I8
+        | RuntimeType::I16
+        | RuntimeType::I32
+        | RuntimeType::I64
+        | RuntimeType::I128
+        | RuntimeType::F32
+        | RuntimeType::F64
+        | RuntimeType::C64
+        | RuntimeType::R64
+        | RuntimeType::Index => Ok(()),
+        _ => invalid("matrix element type is not supported by bytecode v1"),
+    }
+}
+
+fn validate_kind(kind: &Kind, depth: usize) -> MResult<()> {
+    if depth > MAX_TYPE_RECURSION {
+        return invalid("semantic kind recursion exceeds bytecode v1 limit");
+    }
+    match kind {
+        Kind::Atom(id, name) => validate_named_id("kind atom", *id, name)?,
+        Kind::Enum(id, name) => validate_named_id("kind enum", *id, name)?,
+        Kind::Map(key, value) => {
+            validate_kind(key, depth + 1)?;
+            validate_kind(value, depth + 1)?;
+        }
+        Kind::Matrix(element, dimensions) => {
+            let _: u32 = dimensions
+                .len()
+                .try_into()
+                .map_err(|_| invalid::<()>("too many kind dimensions").unwrap_err())?;
+            for dimension in dimensions {
+                let _: u32 = (*dimension)
+                    .try_into()
+                    .map_err(|_| invalid::<()>("kind dimension exceeds u32").unwrap_err())?;
+            }
+            validate_kind(element, depth + 1)?;
+        }
+        Kind::Option(inner) | Kind::Reference(inner) | Kind::Kind(inner) => {
+            validate_kind(inner, depth + 1)?;
+        }
+        Kind::Record(fields) => {
+            let _: u32 = fields
+                .len()
+                .try_into()
+                .map_err(|_| invalid::<()>("too many kind fields").unwrap_err())?;
+            validate_named_schema(
+                "kind record field",
+                fields.iter().map(|(name, _)| name.as_str()),
+            )?;
+            for (_, field) in fields {
+                validate_kind(field, depth + 1)?;
+            }
+        }
+        Kind::Set(element, max_len) => {
+            if let Some(max_len) = max_len {
+                let _: u32 = (*max_len)
+                    .try_into()
+                    .map_err(|_| invalid::<()>("kind set limit exceeds u32").unwrap_err())?;
+            }
+            validate_kind(element, depth + 1)?;
+        }
+        Kind::Table(columns, primary_key) => {
+            let count: u32 = columns
+                .len()
+                .try_into()
+                .map_err(|_| invalid::<()>("too many kind columns").unwrap_err())?;
+            let primary_key: u32 = (*primary_key)
+                .try_into()
+                .map_err(|_| invalid::<()>("kind primary key exceeds u32").unwrap_err())?;
+            if (count == 0 && primary_key != 0) || (count > 0 && primary_key >= count) {
+                return invalid("kind table primary key is out of range");
+            }
+            validate_named_schema(
+                "kind table column",
+                columns.iter().map(|(name, _)| name.as_str()),
+            )?;
+            for (_, column) in columns {
+                validate_kind(column, depth + 1)?;
+            }
+        }
+        Kind::Tuple(types) => {
+            let _: u32 = types
+                .len()
+                .try_into()
+                .map_err(|_| invalid::<()>("too many kind tuple entries").unwrap_err())?;
+            for ty in types {
+                validate_kind(ty, depth + 1)?;
+            }
+        }
+        Kind::Scalar(id) => validate_scalar_kind_id(*id)?,
+        Kind::Any | Kind::None | Kind::Empty | Kind::Id | Kind::Index => {}
+    }
+    Ok(())
+}
+
 fn validate_runtime_type(ty: &RuntimeType, depth: usize) -> MResult<()> {
     if depth > MAX_TYPE_RECURSION {
         return invalid("runtime type recursion exceeds bytecode v1 limit");
     }
     match ty {
         RuntimeType::Matrix {
+            element,
             storage,
             rows,
             cols,
-            ..
-        } if !storage.validate_dimensions(*rows, *cols) => {
-            return invalid("matrix storage and dimensions disagree");
+        } => {
+            if !storage.validate_dimensions(*rows, *cols) {
+                return invalid("matrix storage and dimensions disagree");
+            }
+            validate_matrix_element_type(element)?;
         }
-        RuntimeType::Enum { name, .. } | RuntimeType::Atom { name, .. } if name.is_empty() => {
-            return invalid("named runtime type has an empty name");
-        }
+        RuntimeType::Enum { id, name } => validate_named_id("runtime enum", *id, name)?,
+        RuntimeType::Atom { id, name } => validate_named_id("runtime atom", *id, name)?,
         RuntimeType::Record(fields) => {
             let _: u32 = fields
                 .len()
@@ -697,7 +838,7 @@ fn validate_runtime_type(ty: &RuntimeType, depth: usize) -> MResult<()> {
                 .len()
                 .try_into()
                 .map_err(|_| invalid::<()>("table column count exceeds u32").unwrap_err())?;
-            if count > 0 && *primary_key >= count {
+            if (count == 0 && *primary_key != 0) || (count > 0 && *primary_key >= count) {
                 return invalid("table primary key is out of range");
             }
             validate_named_schema(
@@ -711,6 +852,7 @@ fn validate_runtime_type(ty: &RuntimeType, depth: usize) -> MResult<()> {
                 .try_into()
                 .map_err(|_| invalid::<()>("tuple type count exceeds u32").unwrap_err())?;
         }
+        RuntimeType::Kind(kind) => validate_kind(kind, depth + 1)?,
         _ => {}
     }
     for child in ty.children() {
@@ -811,9 +953,7 @@ pub(crate) fn encode_type_payload(
 }
 
 fn encode_kind(kind: &Kind, out: &mut Vec<u8>, depth: usize) -> MResult<()> {
-    if depth > MAX_TYPE_RECURSION {
-        return invalid("semantic kind recursion exceeds bytecode v1 limit");
-    }
+    validate_kind(kind, depth)?;
     let tag = match kind {
         Kind::Any => EncodedKindTag::Any,
         Kind::None => EncodedKindTag::None,
@@ -1027,9 +1167,12 @@ pub(crate) fn decode_raw_type(tag: RuntimeTypeTag, payload: &[u8]) -> MResult<Ra
         RuntimeTypeTag::Enum | RuntimeTypeTag::Atom => {
             let id = r.read_u64("named type ID")?;
             let name = r.read_string("named type name")?;
-            if name.is_empty() {
-                return invalid("named runtime type has an empty name");
-            }
+            let category = if tag == RuntimeTypeTag::Enum {
+                "runtime enum"
+            } else {
+                "runtime atom"
+            };
+            validate_named_id(category, id, &name)?;
             complete(if tag == RuntimeTypeTag::Enum {
                 RuntimeType::Enum { id, name }
             } else {
@@ -1063,7 +1206,9 @@ pub(crate) fn decode_raw_type(tag: RuntimeTypeTag, payload: &[u8]) -> MResult<Ra
                 ));
             }
             let primary_key = r.read_u32("table primary key")?;
-            if encoded_count > 0 && primary_key >= encoded_count {
+            if (encoded_count == 0 && primary_key != 0)
+                || (encoded_count > 0 && primary_key >= encoded_count)
+            {
                 return invalid("table primary key is out of range");
             }
             RawRuntimeType::Table {
@@ -1186,7 +1331,11 @@ pub(crate) fn resolve_raw_types(raw: &[RawRuntimeType]) -> MResult<Vec<RuntimeTy
     for index in 0..raw.len() {
         resolve(index, raw, &mut states, &mut out, 0)?;
     }
-    Ok(out.into_iter().map(Option::unwrap).collect())
+    let types = out.into_iter().map(Option::unwrap).collect::<Vec<_>>();
+    for ty in &types {
+        validate_runtime_type(ty, 0)?;
+    }
+    Ok(types)
 }
 
 fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
@@ -1194,7 +1343,7 @@ fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
         return invalid("semantic kind recursion exceeds bytecode v1 limit");
     }
     let tag = r.read_u8("kind tag")?;
-    Ok(match tag {
+    let kind = match tag {
         1 => Kind::Any,
         2 => Kind::None,
         3 => Kind::Atom(
@@ -1264,7 +1413,9 @@ fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
                 ));
             }
             let primary_key = r.read_u32("kind table primary key")?;
-            if encoded_count > 0 && primary_key >= encoded_count {
+            if (encoded_count == 0 && primary_key != 0)
+                || (encoded_count > 0 && primary_key >= encoded_count)
+            {
                 return invalid("kind table primary key is out of range");
             }
             Kind::Table(
@@ -1285,7 +1436,9 @@ fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
         }
         17 => Kind::Kind(Box::new(decode_kind(r, depth + 1)?)),
         _ => return invalid("unknown semantic kind tag"),
-    })
+    };
+    validate_kind(&kind, depth)?;
+    Ok(kind)
 }
 
 #[cfg(test)]

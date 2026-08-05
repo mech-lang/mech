@@ -113,6 +113,7 @@ pub(super) fn set_output() -> (Value, ReactiveCellId, ReactiveCellId, ReactiveCe
     members.insert(Value::F64(second.clone()));
     let set = Ref::new(MechSet {
         kind: ValueKind::F64,
+        max_elements: Some(2),
         num_elements: 2,
         set: members,
     });
