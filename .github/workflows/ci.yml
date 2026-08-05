@@ -509,7 +509,7 @@ jobs:
         run: rm -rf src/wasm/pkg
 
   windows-build-path:
-    name: Windows build and path contracts
+    name: Windows build and root contract
     runs-on: windows-latest
     env:
       CARGO_TERM_COLOR: always
@@ -525,10 +525,28 @@ jobs:
           rustup default nightly-2026-03-03
       - name: Build default Windows CLI
         run: cargo build --bin mech
-      - name: Run runtime path contracts
-        run: cargo test -p mech-runtime --lib --no-default-features --features "base,u64" windows_ -- --nocapture
       - name: Run Windows-sensitive root contract
         run: cargo test -p mech --lib --no-default-features --features "run repl" repl::runtime_load_tests::runtime_repl_load_request_preserves_explicit_source_schemes -- --exact --nocapture
+
+  windows-paths:
+    name: Windows runtime and source paths
+    runs-on: windows-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+      - name: Run runtime path contracts
+        run: cargo test -p mech-runtime --lib --no-default-features --features "base,u64" windows_ -- --nocapture
+      - name: Run source-tooling path contracts
+        run: cargo test -p mech --no-default-features --features "run build test" --test windows_source_paths -- --nocapture
 
   windows-format-serve:
     name: Windows REPL, formatter, and serve contracts
@@ -549,8 +567,6 @@ jobs:
         run: |
           cargo check --bin mech --no-default-features --features repl
           cargo check --bin mech --no-default-features --features "repl mika"
-      - name: Run source-tooling path contracts
-        run: cargo test -p mech --no-default-features --features "run build test" --test windows_source_paths -- --nocapture
       - name: Run Windows serve suite
         run: cargo test -p mech --no-default-features --features serve --test mech_serve -- --nocapture
       - name: Run Windows formatter and serve shim contracts
@@ -595,6 +611,7 @@ jobs:
       - native-macos
       - project-browser
       - windows-build-path
+      - windows-paths
       - windows-format-serve
     runs-on: ubuntu-latest
     steps:
@@ -614,6 +631,7 @@ jobs:
           NATIVE_MACOS_RESULT: ${{ needs.native-macos.result }}
           BROWSER_RESULT: ${{ needs.project-browser.result }}
           WINDOWS_BUILD_RESULT: ${{ needs.windows-build-path.result }}
+          WINDOWS_PATHS_RESULT: ${{ needs.windows-paths.result }}
           WINDOWS_FORMAT_RESULT: ${{ needs.windows-format-serve.result }}
         run: |
           test "$LANGUAGE_RESULT" = success
@@ -630,4 +648,5 @@ jobs:
           test "$NATIVE_MACOS_RESULT" = success
           test "$BROWSER_RESULT" = success
           test "$WINDOWS_BUILD_RESULT" = success
+          test "$WINDOWS_PATHS_RESULT" = success
           test "$WINDOWS_FORMAT_RESULT" = success
