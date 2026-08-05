@@ -10,7 +10,10 @@
     "feature_surface_digest": "cabf3cb5f8ef1979b70f4e128c48590d6e2371dd722c5b724ed209f3e3536d6b",
     "runtime_contract_count": 9019,
     "missing_contract_count": 0,
-    "runtime_contract_surface_digest": "3aea5b93c2758b36b90f71a5c9329fff1a9c1b0222c9f848e5c0a0f4ddb6344c"
+    "runtime_contract_surface_digest": "3aea5b93c2758b36b90f71a5c9329fff1a9c1b0222c9f848e5c0a0f4ddb6344c",
+    "runtime_signature_count": 9019,
+    "missing_signature_count": 0,
+    "runtime_signature_surface_digest": "f6b5460b73f1ddfd1236935f2b16fadd496be999bf7cacff12daf48e9146b8a6"
   },
   "extended": {
     "entry_count": 119771,
@@ -21,11 +24,31 @@
     "feature_surface_digest": "66be136d5f995704eb7481a47177ee61e1e6b905e2fbe97087c8ddd323410727",
     "runtime_contract_count": 119771,
     "missing_contract_count": 0,
-    "runtime_contract_surface_digest": "923839db4a2badcc613e6f799e43f3efebb07bd471004c59e51fe52aba195db0"
+    "runtime_contract_surface_digest": "923839db4a2badcc613e6f799e43f3efebb07bd471004c59e51fe52aba195db0",
+    "runtime_signature_count": 119771,
+    "missing_signature_count": 0,
+    "runtime_signature_surface_digest": "042281abf59ecfa33bf57dfd79c55bf40b06cff8c910d8de514ac85863644442"
+  },
+  "signature_invariants": {
+    "same_runtime_id_different_signature_count": 0,
+    "representation_feature_missing_count": 0,
+    "representation_feature_manually_listed_extra_count": 0,
+    "feature_dependent_output_representation_count": 0,
+    "exact_closure_count": 34018,
+    "exact_closure_shard_counts": [
+      4319,
+      4214,
+      4253,
+      4121,
+      4235,
+      4257,
+      4241,
+      4378
+    ]
   },
   "coverage_digest": {
     "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
-    "sha256": "68aa7dafd6104c7f15b12a964a7a4f9099b8035141c17ff1cca7e088a7fd2a93"
+    "sha256": "cfe8ce7cdcb4d21b84f86f0fb9ef4dc39ec4db77f526055416e93a4d36156689"
   },
   "detail_artifact": {
     "path": "target/native-linkage/coverage-full.json",
