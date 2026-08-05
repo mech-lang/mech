@@ -226,6 +226,15 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 /// native application plans.
 #[cfg(feature = "native-plan")]
 pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "access")]
+    crate::intrinsics::access::install_native_plan(builder)?;
+
+    #[cfg(feature = "assign")]
+    crate::intrinsics::assign::catalog::install_native_plan(builder)?;
+
+    #[cfg(feature = "variable_define_matrix1")]
+    crate::intrinsics::define::install_native_plan_runtime(builder)?;
+
     #[cfg(feature = "matrix_horzcat")]
     crate::intrinsics::horzcat::install_native_plan_runtime(builder)?;
 

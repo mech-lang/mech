@@ -15,7 +15,7 @@ use paste::paste;
 use na::DMatrix;
 #[cfg(feature = "vectord")]
 use na::DVector;
-#[cfg(feature = "matrix1")]
+#[cfg(any(feature = "matrix1", feature = "matrix1_interop"))]
 use na::Matrix1;
 #[cfg(feature = "matrix2")]
 use na::Matrix2;

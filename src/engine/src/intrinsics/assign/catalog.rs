@@ -91,6 +91,131 @@ mech_core::declare_native_runtime_factory! {
     extra_cargo_features: ["assign"],
 }
 
+macro_rules! for_each_assign_value_matrix_shape {
+    ($callback:ident, $context:tt) => {
+        #[cfg(feature = "matrix1")]
+        $callback!($context, Matrix1, "matrix1");
+        #[cfg(feature = "matrix2")]
+        $callback!($context, Matrix2, "matrix2");
+        #[cfg(feature = "matrix2x3")]
+        $callback!($context, Matrix2x3, "matrix2x3");
+        #[cfg(feature = "matrix3x2")]
+        $callback!($context, Matrix3x2, "matrix3x2");
+        #[cfg(feature = "matrix3")]
+        $callback!($context, Matrix3, "matrix3");
+        #[cfg(feature = "matrix4")]
+        $callback!($context, Matrix4, "matrix4");
+        #[cfg(feature = "matrixd")]
+        $callback!($context, DMatrix, "matrixd");
+        #[cfg(feature = "vector2")]
+        $callback!($context, Vector2, "vector2");
+        #[cfg(feature = "vector3")]
+        $callback!($context, Vector3, "vector3");
+        #[cfg(feature = "vector4")]
+        $callback!($context, Vector4, "vector4");
+        #[cfg(feature = "vectord")]
+        $callback!($context, DVector, "vectord");
+        #[cfg(feature = "row_vector2")]
+        $callback!($context, RowVector2, "row_vector2");
+        #[cfg(feature = "row_vector3")]
+        $callback!($context, RowVector3, "row_vector3");
+        #[cfg(feature = "row_vector4")]
+        $callback!($context, RowVector4, "row_vector4");
+        #[cfg(feature = "row_vectord")]
+        $callback!($context, RowDVector, "row_vectord");
+    };
+}
+
+macro_rules! declare_assign_value_matrix_shape {
+    (
+        ($scalar:ty; $scalar_token:ident; $runtime_name:literal; $scalar_feature:literal),
+        $shape:ident,
+        $shape_feature:literal
+    ) => {
+        mech_core::paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(
+                    feature = "assign",
+                    feature = $scalar_feature,
+                    feature = $shape_feature
+                ),
+                registration: [<register_assign_value_ $scalar_token:lower _ $shape:lower>],
+                installer: [<install_assign_value_ $scalar_token:lower _ $shape:lower>],
+                name: concat!("Assign<", $runtime_name, stringify!($shape), ">"),
+                factory_type: Assign<$shape<$scalar>>,
+                contract: RuntimeFunctionContract::same_shape(
+                    RuntimeOutputAliasPolicy::AllowInputAlias,
+                ),
+                package: "mech-engine", crate_name: "mech_engine",
+                installer_path: concat!(
+                    "mech_engine::__mech_native::",
+                    stringify!([<install_assign_value_ $scalar_token:lower _ $shape:lower>]),
+                ),
+                extra_cargo_features: ["assign"],
+            }
+        }
+    };
+}
+
+macro_rules! declare_assign_value_matrix_for_scalar {
+    ($scalar:ty, $scalar_token:ident, $runtime_name:literal, $scalar_feature:literal) => {
+        for_each_assign_value_matrix_shape!(
+            declare_assign_value_matrix_shape,
+            ($scalar; $scalar_token; $runtime_name; $scalar_feature)
+        );
+    };
+}
+
+declare_assign_value_matrix_for_scalar!(u8, u8, "u8", "u8");
+declare_assign_value_matrix_for_scalar!(u16, u16, "u16", "u16");
+declare_assign_value_matrix_for_scalar!(u32, u32, "u32", "u32");
+declare_assign_value_matrix_for_scalar!(u64, u64, "u64", "u64");
+declare_assign_value_matrix_for_scalar!(u128, u128, "u128", "u128");
+declare_assign_value_matrix_for_scalar!(i8, i8, "i8", "i8");
+declare_assign_value_matrix_for_scalar!(i16, i16, "i16", "i16");
+declare_assign_value_matrix_for_scalar!(i32, i32, "i32", "i32");
+declare_assign_value_matrix_for_scalar!(i64, i64, "i64", "i64");
+declare_assign_value_matrix_for_scalar!(i128, i128, "i128", "i128");
+declare_assign_value_matrix_for_scalar!(f32, f32, "f32", "f32");
+declare_assign_value_matrix_for_scalar!(f64, f64, "f64", "f64");
+declare_assign_value_matrix_for_scalar!(bool, bool, "bool", "bool");
+declare_assign_value_matrix_for_scalar!(String, string, "string", "string");
+declare_assign_value_matrix_for_scalar!(R64, r64, "rational", "r64");
+declare_assign_value_matrix_for_scalar!(C64, c64, "complex", "c64");
+
+macro_rules! register_assign_value_matrix_shape {
+    (($builder:ident; $scalar_token:ident), $shape:ident, $_shape_feature:literal) => {
+        mech_core::paste::paste! {
+            [<register_assign_value_ $scalar_token:lower _ $shape:lower>]($builder)?;
+        }
+    };
+}
+
+macro_rules! register_assign_value_matrix_for_scalar {
+    ($builder:ident, $scalar_token:ident, $scalar_feature:literal) => {
+        #[cfg(feature = $scalar_feature)]
+        for_each_assign_value_matrix_shape!(
+            register_assign_value_matrix_shape,
+            ($builder; $scalar_token)
+        );
+    };
+}
+
+macro_rules! export_assign_value_matrix_shape {
+    (($scalar_token:ident), $shape:ident, $_shape_feature:literal) => {
+        mech_core::paste::paste! {
+            pub use super::[<install_assign_value_ $scalar_token:lower _ $shape:lower>];
+        }
+    };
+}
+
+macro_rules! export_assign_value_matrix_for_scalar {
+    ($scalar_token:ident, $scalar_feature:literal) => {
+        #[cfg(feature = $scalar_feature)]
+        for_each_assign_value_matrix_shape!(export_assign_value_matrix_shape, ($scalar_token));
+    };
+}
+
 macro_rules! register_assign_scalar_factory {
     (($builder:ident); $installer_token:ident; $_scalar:ty; $_runtime_name:literal; $cargo_feature:literal) => {
         #[cfg(all(feature = "assign", feature = $cargo_feature))]
@@ -1907,10 +2032,51 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+/// Installs whole-register matrix assignment factories used by compiled
+/// source programs. The frozen interpreter catalog continues to use the
+/// legacy slice-assignment surface; these exact storage-shaped entries exist
+/// only so native planning can link compiler-emitted stable assignments.
+#[cfg(feature = "native-plan")]
+pub(crate) fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register_assign_value_matrix_for_scalar!(builder, u8, "u8");
+    register_assign_value_matrix_for_scalar!(builder, u16, "u16");
+    register_assign_value_matrix_for_scalar!(builder, u32, "u32");
+    register_assign_value_matrix_for_scalar!(builder, u64, "u64");
+    register_assign_value_matrix_for_scalar!(builder, u128, "u128");
+    register_assign_value_matrix_for_scalar!(builder, i8, "i8");
+    register_assign_value_matrix_for_scalar!(builder, i16, "i16");
+    register_assign_value_matrix_for_scalar!(builder, i32, "i32");
+    register_assign_value_matrix_for_scalar!(builder, i64, "i64");
+    register_assign_value_matrix_for_scalar!(builder, i128, "i128");
+    register_assign_value_matrix_for_scalar!(builder, f32, "f32");
+    register_assign_value_matrix_for_scalar!(builder, f64, "f64");
+    register_assign_value_matrix_for_scalar!(builder, bool, "bool");
+    register_assign_value_matrix_for_scalar!(builder, string, "string");
+    register_assign_value_matrix_for_scalar!(builder, r64, "r64");
+    register_assign_value_matrix_for_scalar!(builder, c64, "c64");
+    Ok(())
+}
+
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
     for_each_assign_scalar_factory!(export_assign_scalar_factory, ());
+    export_assign_value_matrix_for_scalar!(u8, "u8");
+    export_assign_value_matrix_for_scalar!(u16, "u16");
+    export_assign_value_matrix_for_scalar!(u32, "u32");
+    export_assign_value_matrix_for_scalar!(u64, "u64");
+    export_assign_value_matrix_for_scalar!(u128, "u128");
+    export_assign_value_matrix_for_scalar!(i8, "i8");
+    export_assign_value_matrix_for_scalar!(i16, "i16");
+    export_assign_value_matrix_for_scalar!(i32, "i32");
+    export_assign_value_matrix_for_scalar!(i64, "i64");
+    export_assign_value_matrix_for_scalar!(i128, "i128");
+    export_assign_value_matrix_for_scalar!(f32, "f32");
+    export_assign_value_matrix_for_scalar!(f64, "f64");
+    export_assign_value_matrix_for_scalar!(bool, "bool");
+    export_assign_value_matrix_for_scalar!(string, "string");
+    export_assign_value_matrix_for_scalar!(r64, "r64");
+    export_assign_value_matrix_for_scalar!(c64, "c64");
 
     #[cfg(feature = "assign")]
     pub use super::install_assign_index;

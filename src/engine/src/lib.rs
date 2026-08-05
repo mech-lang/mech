@@ -108,6 +108,10 @@ pub mod __mech_native {
     pub use crate::intrinsics::access::matrix::__mech_native::*;
     #[cfg(all(feature = "access", feature = "tuple"))]
     pub use crate::intrinsics::access::tuple::install_tuple_access_element;
+    #[cfg(feature = "access")]
+    pub use crate::intrinsics::access::{
+        install_record_access_field, install_record_access_swizzle, install_table_access_swizzle,
+    };
     #[cfg(feature = "assign")]
     pub use crate::intrinsics::assign::catalog::__mech_native::*;
     #[cfg(feature = "matrix_comprehensions")]

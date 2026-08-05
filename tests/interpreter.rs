@@ -42,6 +42,18 @@ fn standard_matrix<T: na::Scalar>(values: Vec<T>, rows: usize, cols: usize) -> M
     }
 }
 
+/// Constructs the feature-invariant 1x1 result used by operations such as
+/// dynamic row-vector × dynamic vector multiplication.
+#[cfg(feature = "standard_source")]
+fn standard_matrix1<T: na::Scalar>(value: T) -> Matrix<T> {
+    Matrix::Matrix1(Ref::new(na::Matrix1::from_element(value)))
+}
+
+#[cfg(not(feature = "standard_source"))]
+fn standard_matrix1<T: na::Scalar>(value: T) -> Matrix<T> {
+    Matrix::DMatrix(Ref::new(na::DMatrix::from_element(1, 1, value)))
+}
+
 /// Compare interpreter output to expected value
 macro_rules! test_interpreter {
     ($func:ident, $input:tt, $expected:expr) => {
@@ -1614,7 +1626,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_formula_logic_not_vec1,
     "![false]",
-    Value::MatrixBool(Matrix::from_vec(vec![true], 1, 1))
+    Value::MatrixBool(standard_matrix(vec![true], 1, 1))
 );
 
 test_interpreter!(
@@ -1685,7 +1697,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_matrix_mat1,
     "[123]",
-    Value::MatrixF64(Matrix::from_vec(vec![123.0], 1, 1))
+    Value::MatrixF64(standard_matrix(vec![123.0], 1, 1))
 );
 test_interpreter!(
     interpret_matrix_row3_float,
@@ -1743,7 +1755,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_matrix_negate_mat1,
     "-[1]",
-    Value::MatrixF64(Matrix::from_vec(vec![-1.0], 1, 1))
+    Value::MatrixF64(standard_matrix(vec![-1.0], 1, 1))
 );
 
 test_interpreter!(
@@ -1851,7 +1863,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_matrix_matmul_mat1,
     "[2] ** [10]",
-    Value::MatrixF64(Matrix::from_vec(vec![20.0], 1, 1))
+    Value::MatrixF64(standard_matrix(vec![20.0], 1, 1))
 );
 test_interpreter!(
     interpret_matrix_matmul_mat2_ref,
@@ -2947,7 +2959,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_horzcat_m1,
     "x := [1]; y := [x]",
-    Value::MatrixF64(Matrix::from_vec(vec![1.0], 1, 1))
+    Value::MatrixF64(standard_matrix(vec![1.0], 1, 1))
 );
 test_interpreter!(
     interpret_horzcat_r2,
@@ -4115,7 +4127,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_formulas_no_whitespace,
     "x:=10*[1,2,3]**[4,5,6]';",
-    Value::MatrixF64(Matrix::from_vec(vec![320.0], 1, 1))
+    Value::MatrixF64(standard_matrix1(320.0))
 );
 
 test_interpreter!(

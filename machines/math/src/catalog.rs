@@ -2162,6 +2162,15 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+/// Installs the frozen runtime plus compiler-emitted representation bridges.
+#[cfg(feature = "native-plan")]
+pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    install_runtime(builder)?;
+    #[cfg(feature = "add")]
+    crate::install_math_add_native_plan(builder)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

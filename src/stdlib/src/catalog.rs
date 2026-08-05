@@ -103,7 +103,7 @@ pub fn build_native_plan_catalog() -> MResult<FunctionCatalog> {
     mech_engine::install_intrinsic_native_plan(&mut builder)?;
 
     #[cfg(feature = "mech-math")]
-    mech_math::install_runtime(&mut builder)?;
+    mech_math::install_native_plan(&mut builder)?;
     #[cfg(feature = "mech-compare")]
     mech_compare::install_runtime(&mut builder)?;
     #[cfg(feature = "mech-logic")]
@@ -241,22 +241,81 @@ mod tests {
                 );
 
                 let native_plan = native_plan_catalog();
-                assert_eq!(native_plan.runtime_factory_count(), 9_021);
+                assert_eq!(native_plan.runtime_factory_count(), 9_116);
                 assert!(!Arc::ptr_eq(&runtime, &native_plan));
                 let native_plan_entries = native_plan
                     .runtime_entries()
                     .map(|entry| (entry.id, entry.name.clone()))
                     .collect::<Vec<_>>();
+                let mut expected_native_plan_only = [
+                    "AddM1MD<i8>",
+                    "AddM1MD<i16>",
+                    "AddM1MD<i32>",
+                    "AddM1MD<i64>",
+                    "AddM1MD<i128>",
+                    "AddM1MD<u8>",
+                    "AddM1MD<u16>",
+                    "AddM1MD<u32>",
+                    "AddM1MD<u64>",
+                    "AddM1MD<u128>",
+                    "AddM1MD<f32>",
+                    "AddM1MD<f64>",
+                    "AddM1MD<rational>",
+                    "AddM1MD<complex>",
+                    "AddMDM1<i8>",
+                    "AddMDM1<i16>",
+                    "AddMDM1<i32>",
+                    "AddMDM1<i64>",
+                    "AddMDM1<i128>",
+                    "AddMDM1<u8>",
+                    "AddMDM1<u16>",
+                    "AddMDM1<u32>",
+                    "AddMDM1<u64>",
+                    "AddMDM1<u128>",
+                    "AddMDM1<f32>",
+                    "AddMDM1<f64>",
+                    "AddMDM1<rational>",
+                    "AddMDM1<complex>",
+                    "HorizontalConcatenateFourArgs<f64>",
+                    "HorizontalConcatenateNArgs<f64>",
+                    "RecordAccessField",
+                    "RecordAccessSwizzle",
+                    "TableAccessSwizzle",
+                    "VariableDefineMatrix<u8Matrix1>",
+                    "VariableDefineMatrix<u16Matrix1>",
+                    "VariableDefineMatrix<u32Matrix1>",
+                    "VariableDefineMatrix<u64Matrix1>",
+                    "VariableDefineMatrix<u128Matrix1>",
+                    "VariableDefineMatrix<i8Matrix1>",
+                    "VariableDefineMatrix<i16Matrix1>",
+                    "VariableDefineMatrix<i32Matrix1>",
+                    "VariableDefineMatrix<i64Matrix1>",
+                    "VariableDefineMatrix<i128Matrix1>",
+                    "VariableDefineMatrix<f32Matrix1>",
+                    "VariableDefineMatrix<f64Matrix1>",
+                    "VariableDefineMatrix<rationalMatrix1>",
+                    "VariableDefineMatrix<complexMatrix1>",
+                    "VariableDefineMatrix<boolMatrix1>",
+                    "VariableDefineMatrix<stringMatrix1>",
+                ]
+                .into_iter()
+                .map(str::to_string)
+                .collect::<std::collections::BTreeSet<_>>();
+                for scalar in [
+                    "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32",
+                    "f64", "bool", "string", "rational", "complex",
+                ] {
+                    for shape in ["DMatrix", "DVector", "RowDVector"] {
+                        expected_native_plan_only.insert(format!("Assign<{scalar}{shape}>"));
+                    }
+                }
                 assert_eq!(
                     native_plan_entries
                         .iter()
                         .filter(|entry| !runtime_entries.contains(entry))
-                        .map(|(_, name)| name.as_str())
-                        .collect::<Vec<_>>(),
-                    [
-                        "HorizontalConcatenateFourArgs<f64>",
-                        "HorizontalConcatenateNArgs<f64>",
-                    ],
+                        .map(|(_, name)| name.clone())
+                        .collect::<std::collections::BTreeSet<_>>(),
+                    expected_native_plan_only,
                 );
                 assert!(
                     runtime
@@ -277,13 +336,10 @@ mod tests {
                     ))
                     .expect("native-plan catalog must include dynamic matrix construction");
                 assert!(entry.native_linkage.is_some());
-                for name in [
-                    "HorizontalConcatenateFourArgs<f64>",
-                    "HorizontalConcatenateNArgs<f64>",
-                ] {
+                for name in expected_native_plan_only {
                     assert!(
                         native_plan
-                            .runtime_entry(RuntimeFunctionId::from_name(name))
+                            .runtime_entry(RuntimeFunctionId::from_name(&name))
                             .expect("native-plan catalog must include compiler-emitted horzcat")
                             .native_linkage
                             .is_some()

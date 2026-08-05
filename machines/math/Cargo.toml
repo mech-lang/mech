@@ -176,6 +176,10 @@ matrix4 = ["matrix", "mech-core/matrix4"]
 matrix3 = ["matrix", "mech-core/matrix3"]
 matrix2 = ["matrix", "mech-core/matrix2", "mech-core/matrix"]
 matrix1 = ["matrix", "mech-core/matrix1"]
+# Source programs can receive a fixed 1x1 result from the feature-invariant
+# dynamic row-vector x vector contract without enabling the full Matrix1 math
+# runtime surface.
+matrix1_interop = ["matrix", "mech-core/matrix1"]
 matrix2x3 = ["matrix", "mech-core/matrix2x3"]
 matrix3x2 = ["matrix", "mech-core/matrix3x2"]
 row_vectord =["matrix",  "mech-core/row_vectord"]
