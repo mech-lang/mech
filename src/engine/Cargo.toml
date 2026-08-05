@@ -313,6 +313,11 @@ matrix_matmul = []
 matrix_transpose = []
 matrix_dot = []
 
+# The dynamic row-vector × vector runtime contract has a feature-invariant
+# Matrix1 output. Standard source builds need to bind that result without
+# enabling the rest of the fixed-Matrix1 intrinsic surface.
+variable_define_matrix1 = ["variable_define", "matrix", "mech-core/matrix1"]
+
 logic_default = ["logic_and", "logic_or", "logic_not", "logic_xor"]
 logic = []
 logic_and = []

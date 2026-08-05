@@ -31,12 +31,119 @@ pub use self::tuple::*;
 #[macro_use]
 use crate::intrinsics::*;
 
+macro_rules! declare_structural_access_alias {
+    (
+        $factory:ident,
+        $registration:ident,
+        $installer:ident,
+        $name:literal,
+        $path:literal
+    ) => {
+        #[derive(Debug)]
+        struct $factory {
+            out: Value,
+        }
+
+        impl MechFunctionFactory for $factory {
+            const SIGNATURE: RuntimeFunctionSignature =
+                RuntimeFunctionSignature::nullary(FunctionValueRepresentation::AnyValue);
+
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                match args {
+                    FunctionArgs::Nullary(out) => Ok(Box::new(Self { out })),
+                    _ => Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 0,
+                            found: args.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
+                }
+            }
+        }
+
+        impl MechFunctionImpl for $factory {
+            fn solve_result(&self) -> MResult<()> {
+                Ok(())
+            }
+
+            fn out(&self) -> Value {
+                self.out.clone()
+            }
+
+            fn to_string(&self) -> String {
+                format!("{self:#?}")
+            }
+
+            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+                Ok(self.reactive_output_values())
+            }
+        }
+
+        #[cfg(feature = "compiler")]
+        impl MechFunctionCompiler for $factory {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let register = compile_register!(self.out, ctx);
+                ctx.emit_nullop(hash_str($name), register);
+                Ok(register)
+            }
+        }
+
+        mech_core::declare_native_runtime_factory! {
+            cfg: feature = "access",
+            registration: $registration,
+            installer: $installer,
+            name: $name,
+            factory_type: $factory,
+            contract: RuntimeFunctionContract::same_shape(
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+            ),
+            package: "mech-engine", crate_name: "mech_engine",
+            installer_path: $path,
+            extra_cargo_features: ["access"],
+        }
+    };
+}
+
+declare_structural_access_alias!(
+    RecordAccessFieldAliasFactory,
+    register_record_access_field,
+    install_record_access_field,
+    "RecordAccessField",
+    "mech_engine::__mech_native::install_record_access_field"
+);
+declare_structural_access_alias!(
+    RecordAccessSwizzleAliasFactory,
+    register_record_access_swizzle,
+    install_record_access_swizzle,
+    "RecordAccessSwizzle",
+    "mech_engine::__mech_native::install_record_access_swizzle"
+);
+declare_structural_access_alias!(
+    TableAccessSwizzleAliasFactory,
+    register_table_access_swizzle,
+    install_table_access_swizzle,
+    "TableAccessSwizzle",
+    "mech_engine::__mech_native::install_table_access_swizzle"
+);
+
 /// Installs every enabled concrete access factory into the supplied catalog.
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrix")]
     matrix::install_runtime(builder)?;
     #[cfg(feature = "tuple")]
     tuple::install_runtime(builder)?;
+    Ok(())
+}
+
+/// Installs structural access aliases emitted by the source compiler without
+/// adding them to the frozen standard runtime surface.
+#[cfg(feature = "native-plan")]
+pub(crate) fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register_record_access_field(builder)?;
+    register_record_access_swizzle(builder)?;
+    register_table_access_swizzle(builder)?;
     Ok(())
 }
 

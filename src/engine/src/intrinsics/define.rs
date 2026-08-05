@@ -307,36 +307,26 @@ pub mod __mech_native {
 
 macro_rules! for_each_variable_define_matrix_shape {
     ($callback:path, $context:tt) => {
-        #[cfg(feature = "matrix1")]
-        $callback!($context, Matrix1, "matrix1");
-        #[cfg(feature = "matrix2")]
-        $callback!($context, Matrix2, "matrix2");
-        #[cfg(feature = "matrix2x3")]
-        $callback!($context, Matrix2x3, "matrix2x3");
-        #[cfg(feature = "matrix3x2")]
-        $callback!($context, Matrix3x2, "matrix3x2");
-        #[cfg(feature = "matrix3")]
-        $callback!($context, Matrix3, "matrix3");
-        #[cfg(feature = "matrix4")]
-        $callback!($context, Matrix4, "matrix4");
-        #[cfg(feature = "matrixd")]
-        $callback!($context, DMatrix, "matrixd");
-        #[cfg(feature = "vector2")]
-        $callback!($context, Vector2, "vector2");
-        #[cfg(feature = "vector3")]
-        $callback!($context, Vector3, "vector3");
-        #[cfg(feature = "vector4")]
-        $callback!($context, Vector4, "vector4");
-        #[cfg(feature = "vectord")]
-        $callback!($context, DVector, "vectord");
-        #[cfg(feature = "row_vector2")]
-        $callback!($context, RowVector2, "row_vector2");
-        #[cfg(feature = "row_vector3")]
-        $callback!($context, RowVector3, "row_vector3");
-        #[cfg(feature = "row_vector4")]
-        $callback!($context, RowVector4, "row_vector4");
-        #[cfg(feature = "row_vectord")]
-        $callback!($context, RowDVector, "row_vectord");
+        $callback!(
+            $context,
+            Matrix1,
+            "matrix1",
+            any(feature = "matrix1", feature = "variable_define_matrix1")
+        );
+        $callback!($context, Matrix2, "matrix2", feature = "matrix2");
+        $callback!($context, Matrix2x3, "matrix2x3", feature = "matrix2x3");
+        $callback!($context, Matrix3x2, "matrix3x2", feature = "matrix3x2");
+        $callback!($context, Matrix3, "matrix3", feature = "matrix3");
+        $callback!($context, Matrix4, "matrix4", feature = "matrix4");
+        $callback!($context, DMatrix, "matrixd", feature = "matrixd");
+        $callback!($context, Vector2, "vector2", feature = "vector2");
+        $callback!($context, Vector3, "vector3", feature = "vector3");
+        $callback!($context, Vector4, "vector4", feature = "vector4");
+        $callback!($context, DVector, "vectord", feature = "vectord");
+        $callback!($context, RowVector2, "row_vector2", feature = "row_vector2");
+        $callback!($context, RowVector3, "row_vector3", feature = "row_vector3");
+        $callback!($context, RowVector4, "row_vector4", feature = "row_vector4");
+        $callback!($context, RowDVector, "row_vectord", feature = "row_vectord");
     };
 }
 
@@ -344,14 +334,15 @@ macro_rules! declare_variable_define_matrix_native {
     (
         ($value_feature:literal; $kind:ty; $kind_token:ident; $kind_name:literal),
         $shape:ident,
-        $shape_feature:literal
+        $shape_feature:literal,
+        $shape_cfg:meta
     ) => {
         paste! {
             mech_core::declare_native_runtime_factory! {
                 cfg: all(
                     feature = "variable_define",
                     feature = $value_feature,
-                    feature = $shape_feature
+                    $shape_cfg
                 ),
                 registration: [<register_variable_define_matrix_ $kind_token:lower _ $shape:lower>],
                 installer: [<install_variable_define_matrix_ $kind_token:lower _ $shape:lower>],
@@ -399,9 +390,22 @@ declare_variable_define_matrix_for_type!("string", String, String, "string");
 macro_rules! register_variable_define_matrix_native {
     (
         ($builder:ident; $kind_token:ident),
-        $shape:ident,
-        $_shape_feature:literal
+        Matrix1,
+        "matrix1",
+        $shape_cfg:meta
     ) => {
+        #[cfg(feature = "matrix1")]
+        paste! {
+            [<register_variable_define_matrix_ $kind_token:lower _matrix1>]($builder)?;
+        }
+    };
+    (
+        ($builder:ident; $kind_token:ident),
+        $shape:ident,
+        $_shape_feature:literal,
+        $shape_cfg:meta
+    ) => {
+        #[cfg($shape_cfg)]
         paste! {
             [<register_variable_define_matrix_ $kind_token:lower _ $shape:lower>]($builder)?;
         }
@@ -409,7 +413,8 @@ macro_rules! register_variable_define_matrix_native {
 }
 
 macro_rules! export_variable_define_matrix_native {
-    (($kind_token:ident), $shape:ident, $_shape_feature:literal) => {
+    (($kind_token:ident), $shape:ident, $_shape_feature:literal, $shape_cfg:meta) => {
+        #[cfg($shape_cfg)]
         paste::paste! {
             pub use super::[<install_variable_define_matrix_ $kind_token:lower _ $shape:lower>];
         }
@@ -559,7 +564,10 @@ macro_rules! impl_variable_define_match_arms {
       match $arg {
         #[cfg(feature = $feature)]
         (Value::[<$value_kind:camel>](sink), name, mutable, id) => box_mech_fxn(Ok(Box::new([<VariableDefine $value_kind:camel>]{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id } ))),
-        #[cfg(all(feature = $feature, feature = "matrix1"))]
+        #[cfg(all(
+          feature = $feature,
+          any(feature = "matrix1", feature = "variable_define_matrix1")
+        ))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
@@ -787,6 +795,40 @@ macro_rules! install_variable_define_matrix_runtime {
             ($builder; $kind_token)
         );
     };
+}
+
+#[cfg(feature = "native-plan")]
+pub(super) fn install_native_plan_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(all(feature = "variable_define_matrix1", not(feature = "matrix1")))]
+    {
+        macro_rules! install_matrix1_kind {
+            ($feature:literal, $kind_token:ident) => {
+                #[cfg(feature = $feature)]
+                paste! {
+                    [<register_variable_define_matrix_ $kind_token:lower _matrix1>](builder)?;
+                }
+            };
+        }
+
+        install_matrix1_kind!("u8", u8);
+        install_matrix1_kind!("u16", u16);
+        install_matrix1_kind!("u32", u32);
+        install_matrix1_kind!("u64", u64);
+        install_matrix1_kind!("u128", u128);
+        install_matrix1_kind!("i8", i8);
+        install_matrix1_kind!("i16", i16);
+        install_matrix1_kind!("i32", i32);
+        install_matrix1_kind!("i64", i64);
+        install_matrix1_kind!("i128", i128);
+        install_matrix1_kind!("f32", f32);
+        install_matrix1_kind!("f64", f64);
+        install_matrix1_kind!("r64", R64);
+        install_matrix1_kind!("c64", C64);
+        install_matrix1_kind!("bool", bool);
+        install_matrix1_kind!("string", String);
+    }
+
+    Ok(())
 }
 
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {

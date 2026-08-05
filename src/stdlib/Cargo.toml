@@ -208,7 +208,11 @@ range_exclusive_increment = ["range_exclusive", "mech-range/exclusive_increment"
 
 matrix_solve = ["mech-matrix", "mech-matrix/solve", "mech-engine/matrix_solve"]
 matrix_dot = ["mech-matrix", "mech-matrix/dot", "mech-engine/matrix_dot"]
-matrix_matmul = ["mech-matrix", "mech-matrix/matmul", "mech-engine/matrix_matmul"]
+matrix_matmul = [
+  "mech-matrix", "mech-matrix/matmul", "mech-engine/matrix_matmul",
+  "mech-engine/variable_define_matrix1",
+  "mech-math?/matrix1_interop",
+]
 matrix_transpose = ["mech-matrix", "mech-matrix/transpose", "mech-engine/matrix_transpose"]
 
 set_element_of = ["bool", "mech-set", "mech-set/element_of", "mech-engine/set_element_of"]

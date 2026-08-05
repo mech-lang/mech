@@ -32,6 +32,74 @@ pub use self::tuple::*;
 
 // x = 1 ----------------------------------------------------------------------
 
+trait AssignRuntimeName {
+    fn assign_runtime_name() -> String;
+}
+
+macro_rules! impl_scalar_assign_runtime_name {
+    ($type:ty, $name:literal, $feature:literal) => {
+        #[cfg(feature = $feature)]
+        impl AssignRuntimeName for $type {
+            fn assign_runtime_name() -> String {
+                concat!("Assign<", $name, ">").to_string()
+            }
+        }
+    };
+}
+
+impl_scalar_assign_runtime_name!(u8, "u8", "u8");
+impl_scalar_assign_runtime_name!(u16, "u16", "u16");
+impl_scalar_assign_runtime_name!(u32, "u32", "u32");
+impl_scalar_assign_runtime_name!(u64, "u64", "u64");
+impl_scalar_assign_runtime_name!(u128, "u128", "u128");
+impl_scalar_assign_runtime_name!(i8, "i8", "i8");
+impl_scalar_assign_runtime_name!(i16, "i16", "i16");
+impl_scalar_assign_runtime_name!(i32, "i32", "i32");
+impl_scalar_assign_runtime_name!(i64, "i64", "i64");
+impl_scalar_assign_runtime_name!(i128, "i128", "i128");
+impl_scalar_assign_runtime_name!(f32, "f32", "f32");
+impl_scalar_assign_runtime_name!(f64, "f64", "f64");
+impl_scalar_assign_runtime_name!(bool, "bool", "bool");
+impl_scalar_assign_runtime_name!(String, "string", "string");
+impl_scalar_assign_runtime_name!(R64, "r64", "r64");
+impl_scalar_assign_runtime_name!(C64, "c64", "c64");
+
+impl AssignRuntimeName for usize {
+    fn assign_runtime_name() -> String {
+        "Assign<index>".to_string()
+    }
+}
+
+macro_rules! impl_matrix_assign_runtime_name {
+    ($shape:ident, $feature:literal) => {
+        #[cfg(feature = $feature)]
+        impl<T> AssignRuntimeName for $shape<T>
+        where
+            T: AsValueKind,
+        {
+            fn assign_runtime_name() -> String {
+                format!("Assign<{}{}>", T::as_value_kind(), stringify!($shape))
+            }
+        }
+    };
+}
+
+impl_matrix_assign_runtime_name!(Matrix1, "matrix1");
+impl_matrix_assign_runtime_name!(Matrix2, "matrix2");
+impl_matrix_assign_runtime_name!(Matrix2x3, "matrix2x3");
+impl_matrix_assign_runtime_name!(Matrix3x2, "matrix3x2");
+impl_matrix_assign_runtime_name!(Matrix3, "matrix3");
+impl_matrix_assign_runtime_name!(Matrix4, "matrix4");
+impl_matrix_assign_runtime_name!(DMatrix, "matrixd");
+impl_matrix_assign_runtime_name!(Vector2, "vector2");
+impl_matrix_assign_runtime_name!(Vector3, "vector3");
+impl_matrix_assign_runtime_name!(Vector4, "vector4");
+impl_matrix_assign_runtime_name!(DVector, "vectord");
+impl_matrix_assign_runtime_name!(RowVector2, "row_vector2");
+impl_matrix_assign_runtime_name!(RowVector3, "row_vector3");
+impl_matrix_assign_runtime_name!(RowVector4, "row_vector4");
+impl_matrix_assign_runtime_name!(RowDVector, "row_vectord");
+
 #[derive(Debug)]
 struct Assign<T> {
     sink: Ref<T>,
@@ -46,6 +114,7 @@ where
     #[cfg(feature = "compiler")]
     T: CompileConst,
     T: FunctionRuntimeType,
+    T: AssignRuntimeName,
 {
     const SIGNATURE: RuntimeFunctionSignature =
         RuntimeFunctionSignature::unary(T::REPRESENTATION, T::REPRESENTATION);
@@ -108,10 +177,10 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for Assign<T>
 where
-    T: CompileConst + ConstElem + AsValueKind,
+    T: CompileConst + ConstElem + AsValueKind + AssignRuntimeName,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("Assign<{}>", T::as_value_kind());
+        let name = T::assign_runtime_name();
         compile_unop!(name, self.sink, self.source, ctx);
     }
 }
