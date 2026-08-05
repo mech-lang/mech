@@ -198,8 +198,6 @@ mod compact_reactive_turn_checkpoint_tests {
     }
 
     impl MechFunctionImpl for CompactTestFunction {
-        fn solve(&self) {}
-
         fn solve_result(&self) -> MResult<()> {
             self.execute()
         }

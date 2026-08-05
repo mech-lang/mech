@@ -43,7 +43,7 @@ impl MechFunctionFactory for SetEqualsFxn {
 }
 
 impl MechFunctionImpl for SetEqualsFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
             let lhs_ptr: &MechSet = &*(self.lhs.as_ptr());
@@ -51,7 +51,8 @@ impl MechFunctionImpl for SetEqualsFxn {
 
             // Uses the implementation of PartialEq for IndexSet (== operator)
             *out_ptr = lhs_ptr.set == rhs_ptr.set;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Bool(self.out.clone())

@@ -74,12 +74,13 @@ where
     T: Clone + Debug + 'static,
     Ref<T>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let source_ptr = self.source.as_ptr();
         let sink_ptr = self.sink.as_mut_ptr();
         unsafe {
             *sink_ptr = (*source_ptr).clone();
-        }
+        };
+        Ok(())
     }
     fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
         let next = self.source.borrow().clone();
@@ -129,7 +130,9 @@ impl MechErrorKind for EmptyAssignmentNotBytecodeCompilable {
 #[derive(Debug)]
 struct AssignEmpty;
 impl MechFunctionImpl for AssignEmpty {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
         Ok(Box::new(ReactiveRegisterNoopCommit::new(
             self.reactive_output_cell_ids(),

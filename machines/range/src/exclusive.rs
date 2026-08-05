@@ -53,7 +53,8 @@ where
             FunctionArgs::Binary(out, from, to) => {
                 let from: Ref<T> = from.try_function_ref(FunctionArgumentRole::Input(0))?;
                 let to: Ref<T> = to.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<naMatrix<T, R1, C1, S1>> = out.try_function_ref(FunctionArgumentRole::Output)?;
+                let out: Ref<naMatrix<T, R1, C1, S1>> =
+                    out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     from,
                     to,
@@ -90,7 +91,7 @@ where
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let out_ptr = self.out.as_ptr() as *mut naMatrix<T, R1, C1, S1>;
             let mut current = *self.from.as_ptr();
@@ -98,7 +99,8 @@ where
                 (&mut (*out_ptr))[i] = current;
                 current = current + T::one();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()

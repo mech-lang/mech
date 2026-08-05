@@ -294,7 +294,7 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &InterpreterExecution<'_>)
             }
         };
         if !expression_solves_deferred(p) {
-            new_fxn.solve();
+            new_fxn.solve_result()?;
         }
         let res = new_fxn.out();
         #[cfg(feature = "subscript_formula")]

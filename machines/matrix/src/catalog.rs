@@ -3,7 +3,7 @@ use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
 use mech_core::{
-    FunctionArgumentRole, FunctionArgs, FunctionCatalogBuilder, MResult, MechFunctionFactory,
+    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, MechFunctionFactory,
     RuntimeFunctionContract, RuntimeOutputAliasPolicy, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
@@ -318,7 +318,8 @@ macro_rules! declare_matrix_transpose_family {
 
 macro_rules! register_matrix_transpose_factory {
     (($builder:ident; $factory:ident); $token:ident; $_scalar:ty; $_name:literal; $scalar_cfg:literal; $_scalar_feature:literal) => {
-        #[cfg(feature = $scalar_cfg)] mech_core::paste::paste! { [<register_transpose_ $factory:snake _ $token>]($builder)?; }
+        #[cfg(feature = $scalar_cfg)]
+        mech_core::paste::paste! { [<register_transpose_ $factory:snake _ $token>]($builder)?; }
     };
 }
 
@@ -453,10 +454,7 @@ fn install_matmul_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(all(feature = "row_vector2", feature = "matrixd", feature = "row_vectord"))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulR2MD);
 
-    #[cfg(all(
-        feature = "row_vectord",
-        feature = "vectord"
-    ))]
+    #[cfg(all(feature = "row_vectord", feature = "vectord"))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulRDVD);
     #[cfg(all(feature = "row_vectord", feature = "matrixd"))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulRDMD);

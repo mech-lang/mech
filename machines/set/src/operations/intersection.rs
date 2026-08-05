@@ -38,7 +38,7 @@ impl MechFunctionFactory for SetIntersectionFxn {
     }
 }
 impl MechFunctionImpl for SetIntersectionFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             // Get mutable reference to the output set
             let out_ptr: &mut MechSet = &mut *(self.out.as_mut_ptr());
@@ -60,7 +60,8 @@ impl MechFunctionImpl for SetIntersectionFxn {
             } else {
                 ValueKind::Empty
             };
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Set(self.out.clone())

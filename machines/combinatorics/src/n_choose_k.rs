@@ -209,11 +209,8 @@ where
     Ref<T>: ToValue,
     T: FunctionRuntimeType,
 {
-    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
-        T::REPRESENTATION,
-        T::REPRESENTATION,
-        T::REPRESENTATION,
-    );
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::binary(T::REPRESENTATION, T::REPRESENTATION, T::REPRESENTATION);
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -253,7 +250,7 @@ where
         + PartialOrd,
     Ref<T>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let n_ptr = self.n.as_ptr();
         let k_ptr = self.k.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
@@ -261,7 +258,8 @@ where
             let n = *n_ptr;
             let k = *k_ptr;
             *out_ptr = crate::kernels::n_choose_k::scalar(n, k);
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -318,11 +316,7 @@ where
     if flat_data.len() != element_count {
         return Err(matrix_result_too_large(available, requested));
     }
-    Ok(DMatrix::from_vec(
-        requested,
-        combination_count,
-        flat_data,
-    ))
+    Ok(DMatrix::from_vec(requested, combination_count, flat_data))
 }
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
 impl<T> MechFunctionFactory for NChooseKMatrix<T>
@@ -399,9 +393,6 @@ where
     Ref<T>: ToValue,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
-        let _ = self.solve_result();
-    }
     fn solve_result(&self) -> MResult<()> {
         let next = n_choose_k_matrix_result(&self.n, *self.k.borrow())?;
         *self.out.borrow_mut() = next;

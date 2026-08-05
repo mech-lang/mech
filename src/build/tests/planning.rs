@@ -30,7 +30,8 @@ use isolated::{OwnerProfile, RunnerAction, fixture_path, run_owner};
 #[cfg(not(feature = "standard-hosts"))]
 use mech_runtime::{
     HostContextManifest, HostManifestConfig, RuntimeHostFactory, RuntimeHostInstallation,
-    RuntimeResourceProvider, RuntimeResourceReadRequest, materialize_host_manifest,
+    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
+    RuntimeResourceWritePreflightRequest, materialize_host_manifest,
 };
 
 const LITERAL_F64: &[u8] =
@@ -87,6 +88,24 @@ impl RuntimeResourceProvider for PlanningCliResourceProvider {
 
     fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
         unreachable!("native planning does not execute resource access")
+    }
+
+    fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+        let output = request.base_uri == format!("cli://{}/stdout", self.instance)
+            || request.base_uri == format!("cli://{}/stderr", self.instance);
+        if output
+            && request.intent == RuntimeResourceWriteIntent::Send
+            && matches!(request.path.as_str(), "text" | "line")
+        {
+            Ok(())
+        } else {
+            Err(mech_core::MechError::new(
+                mech_core::GenericError {
+                    msg: "unsupported planning CLI write".into(),
+                },
+                None,
+            ))
+        }
     }
 }
 
@@ -456,7 +475,9 @@ struct PlanningFunction {
 }
 
 impl MechFunctionImpl for PlanningFunction {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
 
     fn out(&self) -> Value {
         self.output.to_value()

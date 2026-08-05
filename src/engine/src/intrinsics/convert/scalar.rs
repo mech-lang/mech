@@ -32,7 +32,9 @@ impl MechFunctionFactory for ConvertSEnum {
 }
 #[cfg(feature = "enum")]
 impl MechFunctionImpl for ConvertSEnum {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         Value::Enum(self.out.clone())
     }
@@ -103,7 +105,9 @@ mech_core::declare_native_runtime_factory! {
 }
 
 impl MechFunctionImpl for ConvertSEmpty {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.out.borrow().clone()
     }
@@ -166,7 +170,7 @@ impl<T> MechFunctionImpl for ConvertMat2Table<T>
 where
     T: Debug + Clone + PartialEq + Into<Value> + 'static,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg = &self.arg;
         let mut out_table = self.out.borrow_mut();
         let rows = arg.rows().min(out_table.rows);
@@ -178,6 +182,7 @@ where
                 out_col.set_index1d(row_ix, converted_value);
             }
         }
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Table(self.out.clone())
@@ -302,7 +307,7 @@ struct ConvertMatToSet {
 
 #[cfg(all(feature = "matrix", feature = "set"))]
 impl MechFunctionImpl for ConvertMatToSet {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let values = matrix_to_values(&self.arg).unwrap_or_default();
         let converted_values = values
             .into_iter()
@@ -316,6 +321,7 @@ impl MechFunctionImpl for ConvertMatToSet {
             })
             .collect::<Vec<_>>();
         *self.out.borrow_mut() = MechSet::from_vec(converted_values);
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Set(self.out.clone())
@@ -345,12 +351,13 @@ struct ConvertSRationalToF64 {
 
 #[cfg(all(feature = "rational", feature = "f64"))]
 impl MechFunctionImpl for ConvertSRationalToF64 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = (*arg_ptr).into();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::F64(self.out.clone())
@@ -490,14 +497,15 @@ where
     F: LosslessInto<T> + Debug + Clone,
     T: Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
             let out_ref: &mut T = &mut *out_ptr;
             let arg_ref: &F = &*arg_ptr;
             *out_ref = arg_ref.clone().lossless_into();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -538,14 +546,15 @@ where
     F: Debug + Clone,
     T: Debug + LossyFrom<F>,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
             let out_ref: &mut T = &mut *out_ptr;
             let arg_ref: &F = &*arg_ptr;
             *out_ref = T::lossy_from(arg_ref.clone());
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()

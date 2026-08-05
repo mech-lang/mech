@@ -1,7 +1,6 @@
 use mech_core::{
-    FunctionArgumentRole, FunctionArgs, FunctionCatalogBuilder, MResult, MechFunctionFactory,
-    RuntimeFunctionContract, RuntimeOutputAliasPolicy, Value,
-    function_shape_contract_violation,
+    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, MechFunctionFactory,
+    RuntimeFunctionContract, RuntimeOutputAliasPolicy, Value, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
@@ -123,27 +122,31 @@ fn range_numeric_value(value: &Value) -> Option<f64> {
     }
 }
 
-fn validate_range_contract(
-    args: &FunctionArgs,
-    inclusive: bool,
-    incremented: bool,
-) -> MResult<()> {
+fn validate_range_contract(args: &FunctionArgs, inclusive: bool, incremented: bool) -> MResult<()> {
     let contract = "range_construction";
     let output = args
         .output_value()
         .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| function_shape_contract_violation(contract, "output must be matrix-backed"))?;
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "output must be matrix-backed")
+        })?;
     if output.rows != 1 {
         return Err(function_shape_contract_violation(
             contract,
-            format!("output must be a row, found {}x{}", output.rows, output.cols),
+            format!(
+                "output must be a row, found {}x{}",
+                output.rows, output.cols
+            ),
         ));
     }
     let expected_inputs = if incremented { 3 } else { 2 };
     if args.input_count() != expected_inputs {
         return Err(function_shape_contract_violation(
             contract,
-            format!("expected {expected_inputs} inputs, found {}", args.input_count()),
+            format!(
+                "expected {expected_inputs} inputs, found {}",
+                args.input_count()
+            ),
         ));
     }
     let mut values = Vec::with_capacity(expected_inputs);
@@ -219,10 +222,18 @@ fn validate_range_increment_inclusive(args: &FunctionArgs) -> MResult<()> {
 }
 
 macro_rules! range_contract_validator {
-    (exclusive) => { validate_range_exclusive };
-    (inclusive) => { validate_range_inclusive };
-    (exclusive_increment) => { validate_range_increment_exclusive };
-    (inclusive_increment) => { validate_range_increment_inclusive };
+    (exclusive) => {
+        validate_range_exclusive
+    };
+    (inclusive) => {
+        validate_range_inclusive
+    };
+    (exclusive_increment) => {
+        validate_range_increment_exclusive
+    };
+    (inclusive_increment) => {
+        validate_range_increment_inclusive
+    };
 }
 
 macro_rules! install_range_factories_for_type {
@@ -364,8 +375,12 @@ macro_rules! for_each_range_family_with_context {
 }
 
 macro_rules! for_each_range_family {
-    ($callback:ident) => { for_each_range_family_with_context!($callback, ()); };
-    ($callback:ident, $context:tt) => { for_each_range_family_with_context!($callback, $context); };
+    ($callback:ident) => {
+        for_each_range_family_with_context!($callback, ());
+    };
+    ($callback:ident, $context:tt) => {
+        for_each_range_family_with_context!($callback, $context);
+    };
 }
 
 macro_rules! declare_range_runtime_factory {

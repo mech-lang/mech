@@ -134,10 +134,11 @@ macro_rules! impl_stats_unop {
                 + PartialOrd,
             Ref<$out_type>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 let arg_ptr = self.arg.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(arg_ptr, out_ptr);
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()

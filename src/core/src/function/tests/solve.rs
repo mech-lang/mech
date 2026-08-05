@@ -1,13 +1,17 @@
 #[cfg(feature = "compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{
-    MechFunctionImpl, ReactiveNodeId, ReactiveNodeKind, ReactivePlan, ReactivePlanSolveOutcome,
-    ReactiveRegisterCommitOutcome, ReactiveSolveStatus, ReactiveTurnOutcome, ReactiveTurnState,
+    FunctionDefinition, MechFunctionImpl, ReactiveNodeId, ReactiveNodeKind, ReactivePlan,
+    ReactivePlanSolveOutcome, ReactiveRegisterCommitOutcome, ReactiveSolveStatus,
+    ReactiveTurnOutcome, ReactiveTurnState,
 };
 use super::support::reg;
 #[cfg(feature = "compiler")]
 use crate::{BytecodeCompilerContext, Register};
-use crate::{GenericError, MResult, MechError, Ref, ToValue, Value};
+use crate::{
+    FunctionDefine, GenericError, MResult, MechError, Ref, ToValue, Value, hash_str,
+    internal_pattern_value_identifier,
+};
 use std::{cell::RefCell, rc::Rc};
 
 #[cfg(feature = "f64")]
@@ -22,7 +26,9 @@ struct SchedulerFunction {
 }
 #[cfg(feature = "f64")]
 impl MechFunctionImpl for SchedulerFunction {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
         *self.count.borrow_mut() += 1;
         self.log.borrow_mut().push(self.label);
@@ -97,8 +103,97 @@ struct Comb {
     count: Rc<RefCell<usize>>,
     fail: bool,
 }
+
+#[cfg(feature = "f64")]
+struct FalliblePlanStep {
+    label: &'static str,
+    output: Ref<f64>,
+    next: f64,
+    calls: Rc<RefCell<usize>>,
+    fail: bool,
+}
+
+#[cfg(feature = "f64")]
+impl MechFunctionImpl for FalliblePlanStep {
+    fn solve_result(&self) -> MResult<()> {
+        *self.calls.borrow_mut() += 1;
+        if self.fail {
+            return Err(MechError::new(
+                GenericError {
+                    msg: self.label.into(),
+                },
+                None,
+            ));
+        }
+        *self.output.borrow_mut() = self.next;
+        Ok(())
+    }
+
+    fn out(&self) -> Value {
+        self.output.to_value()
+    }
+
+    fn to_string(&self) -> String {
+        self.label.into()
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+
+#[cfg(all(feature = "f64", feature = "compiler"))]
+impl MechFunctionCompiler for FalliblePlanStep {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
+    }
+}
+
+#[cfg(feature = "f64")]
+#[test]
+fn function_definition_plan_propagates_solve_failure_without_publishing_later_outputs() {
+    let definition = FunctionDefinition::new(
+        hash_str("fallible-plan"),
+        "fallible-plan".into(),
+        FunctionDefine {
+            name: internal_pattern_value_identifier("fallible-plan"),
+            input: Vec::new(),
+            output: Vec::new(),
+            statements: Vec::new(),
+            match_arms: Vec::new(),
+        },
+    );
+    let failed_output = Ref::new(7.0);
+    let later_output = Ref::new(11.0);
+    let failed_calls = Rc::new(RefCell::new(0));
+    let later_calls = Rc::new(RefCell::new(0));
+    definition.plan.add_function(Box::new(FalliblePlanStep {
+        label: "plan solve failed",
+        output: failed_output.clone(),
+        next: 8.0,
+        calls: failed_calls.clone(),
+        fail: true,
+    }));
+    definition.plan.add_function(Box::new(FalliblePlanStep {
+        label: "later plan step",
+        output: later_output.clone(),
+        next: 12.0,
+        calls: later_calls.clone(),
+        fail: false,
+    }));
+
+    let error = definition.solve_result().unwrap_err();
+
+    assert!(error.full_chain_message().contains("plan solve failed"));
+    assert_eq!(*failed_output.borrow(), 7.0);
+    assert_eq!(*later_output.borrow(), 11.0);
+    assert_eq!(*failed_calls.borrow(), 1);
+    assert_eq!(*later_calls.borrow(), 0);
+}
 impl MechFunctionImpl for Comb {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
         *self.count.borrow_mut() += 1;
         if self.fail {

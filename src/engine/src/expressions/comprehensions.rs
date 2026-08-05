@@ -158,7 +158,7 @@ impl FunctionSpecializer for MatrixComprehensionDefine {
             Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
         } else {
             let fxn = crate::intrinsics::horzcat::impl_horzcat_fxn(arguments)?;
-            fxn.solve();
+            fxn.solve_result()?;
             fxn.out()
         };
         Ok(Box::new(ValueMatrixComprehension {

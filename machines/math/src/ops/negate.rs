@@ -29,10 +29,8 @@ where
     Ref<O>: ToValue,
     O: FunctionRuntimeType,
 {
-    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
-        O::REPRESENTATION,
-        O::REPRESENTATION,
-    );
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::unary(O::REPRESENTATION, O::REPRESENTATION);
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -61,12 +59,13 @@ where
     O: Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static,
     Ref<O>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = (*arg_ptr).clone().neg();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -113,10 +112,8 @@ where
     Ref<O>: ToValue,
     O: FunctionRuntimeType,
 {
-    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
-        O::REPRESENTATION,
-        O::REPRESENTATION,
-    );
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::unary(O::REPRESENTATION, O::REPRESENTATION);
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -145,12 +142,13 @@ where
     O: Copy + Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static,
     Ref<O>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = -*arg_ptr;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()

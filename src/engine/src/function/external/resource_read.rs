@@ -27,10 +27,6 @@ impl ExternalResourceReadFunction {
 }
 
 impl MechFunctionImpl for ExternalResourceReadFunction {
-    fn solve(&self) {
-        let _ = self.solve_result();
-    }
-
     fn solve_result(&self) -> MResult<()> {
         self.solve_with_services(&mut NoMechExecutionServices)
     }

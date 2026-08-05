@@ -345,11 +345,7 @@ pub enum InitialSolvePolicy {
 }
 
 pub trait MechFunctionImpl {
-    fn solve(&self);
-    fn solve_result(&self) -> MResult<()> {
-        self.solve();
-        Ok(())
-    }
+    fn solve_result(&self) -> MResult<()>;
     fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
         let _ = services;
         self.solve_result()
@@ -645,11 +641,6 @@ impl FunctionDefinition {
         Ok(self.out.clone())
     }
 
-    pub fn solve(&self) -> ValRef {
-        let _ = self.solve_result();
-        self.out.clone()
-    }
-
     pub fn out(&self) -> ValRef {
         self.out.clone()
     }
@@ -662,9 +653,6 @@ pub struct UserFunction {
 }
 
 impl MechFunctionImpl for UserFunction {
-    fn solve(&self) {
-        let _ = self.solve_result();
-    }
     fn solve_result(&self) -> MResult<()> {
         self.fxn.solve_result()?;
         Ok(())

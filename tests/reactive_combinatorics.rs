@@ -182,10 +182,6 @@ struct MatrixDependent {
 }
 
 impl MechFunctionImpl for MatrixDependent {
-    fn solve(&self) {
-        let _ = self.solve_result();
-    }
-
     fn solve_result(&self) -> MResult<()> {
         let input = self.input.borrow();
         *self.out.borrow_mut() = (input.nrows() * 10 + input.ncols()) as f64;

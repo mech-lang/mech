@@ -40,7 +40,7 @@ a[:,1] = 4"#;
             let result = intrp.interpret(&tree);
             let fxn = &intrp.plan.borrow()[0];
             b.iter(|| {
-                let result = fxn.solve();
+                let result = fxn.solve_result();
             });
         }
         _ => (),
@@ -58,7 +58,7 @@ c := a ** b"#;
             let result = intrp.interpret(&tree);
             let fxn = &intrp.plan.borrow()[0];
             b.iter(|| {
-                let result = fxn.solve();
+                let result = fxn.solve_result();
             });
         }
         _ => (),
@@ -74,7 +74,7 @@ fn add_scalar(b: &mut Bencher) {
             let result = intrp.interpret(&tree);
             let fxn = &intrp.plan.borrow()[0];
             b.iter(|| {
-                fxn.solve();
+                fxn.solve_result().unwrap();
             });
         }
         _ => (),
@@ -92,7 +92,7 @@ c := a + b"#;
             let result = intrp.interpret(&tree);
             let fxn = &intrp.plan.borrow()[0];
             b.iter(|| {
-                fxn.solve();
+                fxn.solve_result().unwrap();
             });
         }
         _ => (),

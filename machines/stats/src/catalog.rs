@@ -1,5 +1,5 @@
 use mech_core::{
-    FunctionArgumentRole, FunctionArgs, FunctionCatalogBuilder, MResult, RuntimeFunctionContract,
+    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, RuntimeFunctionContract,
     RuntimeOutputAliasPolicy, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
@@ -71,12 +71,16 @@ fn validate_statistical_reduction(args: &FunctionArgs, column: bool) -> MResult<
     let output = args
         .output_value()
         .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        .ok_or_else(|| function_shape_contract_violation(contract, "output must be matrix-backed"))?;
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "output must be matrix-backed")
+        })?;
     let input = args
         .input_value(0)
         .ok_or_else(|| function_shape_contract_violation(contract, "missing input"))?
         .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
-        .ok_or_else(|| function_shape_contract_violation(contract, "input must be matrix-backed"))?;
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "input must be matrix-backed")
+        })?;
     let expected = if column {
         (input.rows, 1)
     } else {
@@ -95,8 +99,12 @@ fn validate_statistical_reduction(args: &FunctionArgs, column: bool) -> MResult<
 }
 
 macro_rules! statistical_reduction_contract {
-    (sum_column) => { validate_sum_column };
-    (sum_row) => { validate_sum_row };
+    (sum_column) => {
+        validate_sum_column
+    };
+    (sum_row) => {
+        validate_sum_row
+    };
 }
 
 #[cfg(feature = "source")]
@@ -264,8 +272,12 @@ macro_rules! for_each_stats_family_with_context {
 }
 
 macro_rules! for_each_stats_family {
-    ($callback:ident) => { for_each_stats_family_with_context!($callback, ()); };
-    ($callback:ident, $context:tt) => { for_each_stats_family_with_context!($callback, $context); };
+    ($callback:ident) => {
+        for_each_stats_family_with_context!($callback, ());
+    };
+    ($callback:ident, $context:tt) => {
+        for_each_stats_family_with_context!($callback, $context);
+    };
 }
 
 macro_rules! declare_stats_runtime_factory {

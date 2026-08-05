@@ -123,7 +123,9 @@ pub(super) struct Gate {
 }
 
 impl MechFunctionImpl for Gate {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
 
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
         if *self.selected.borrow() == self.arm {

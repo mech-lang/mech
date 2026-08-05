@@ -38,8 +38,10 @@ macro_rules! impl_transpose {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Unary(out, arg) => {
-                        let arg: Ref<$arg_type> = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
-                        let out: Ref<$out_type> = out.try_function_ref(FunctionArgumentRole::Output)?;
+                        let arg: Ref<$arg_type> =
+                            arg.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let out: Ref<$out_type> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new($struct_name { arg, out }))
                     }
                     _ => Err(MechError::new(
@@ -58,10 +60,11 @@ macro_rules! impl_transpose {
             T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
             Ref<$out_type>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 let arg_ptr = self.arg.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(arg_ptr, out_ptr);
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()

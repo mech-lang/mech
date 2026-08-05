@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
     FunctionCatalog, FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer,
-    MechFunction, MechFunctionImpl, MechSourceCode, ModuleManifestConfig,
+    MResult, MechFunction, MechFunctionImpl, MechSourceCode, ModuleManifestConfig,
     ModuleManifestExportConfig, ModuleManifestExportKind, Ref, Value, hash_str,
 };
 #[cfg(feature = "compiler")]
@@ -93,7 +93,9 @@ struct ConstantF64Function {
 }
 
 impl MechFunctionImpl for ConstantF64Function {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
 
     fn out(&self) -> Value {
         Value::F64(self.output.clone())
@@ -178,7 +180,7 @@ enum ModuleTestBinaryFunction {
 }
 
 impl MechFunctionImpl for ModuleTestBinaryFunction {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         match self {
             Self::F64Add { lhs, rhs, out } => {
                 *out.borrow_mut() = *lhs.borrow() + *rhs.borrow();
@@ -201,7 +203,8 @@ impl MechFunctionImpl for ModuleTestBinaryFunction {
             Self::BoolAnd { lhs, rhs, out } => {
                 *out.borrow_mut() = *lhs.borrow() && *rhs.borrow();
             }
-        }
+        };
+        Ok(())
     }
 
     fn out(&self) -> Value {

@@ -45,8 +45,9 @@ struct RegisterStageTestFunction {
     mismatch_outputs: Option<Vec<ReactiveCellId>>,
 }
 impl MechFunctionImpl for RegisterStageTestFunction {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         *self.solve_count.borrow_mut() += 1;
+        Ok(())
     }
     fn out(&self) -> Value {
         self.sink.to_value()
@@ -168,8 +169,9 @@ struct RegisterWithoutStaging {
     solves: Rc<RefCell<usize>>,
 }
 impl MechFunctionImpl for RegisterWithoutStaging {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         *self.solves.borrow_mut() += 1;
+        Ok(())
     }
     fn out(&self) -> Value {
         self.sink.to_value()
@@ -354,7 +356,9 @@ fn reactive_register_commit_rejects_combinational_node_without_staging() {
     let a = add(&mut p, "A", Ref::new(1.), vec![], l, c, t, false, None);
     struct Combinational;
     impl MechFunctionImpl for Combinational {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
         fn out(&self) -> Value {
             Value::Empty
         }
@@ -485,8 +489,9 @@ fn reactive_register_commit_does_not_execute_downstream_nodes() {
     let downstream = Rc::new(RefCell::new(0));
     struct C(Rc<RefCell<usize>>);
     impl MechFunctionImpl for C {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             *self.0.borrow_mut() += 1;
+            Ok(())
         }
         fn out(&self) -> Value {
             Value::Empty

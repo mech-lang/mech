@@ -141,13 +141,14 @@ impl MechFunctionFactory for AtomNeq {
 }
 #[cfg(feature = "atom")]
 impl MechFunctionImpl for AtomNeq {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let lhs_ptr = self.lhs.as_ptr();
         let rhs_ptr = self.rhs.as_ptr();
         let mut out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = (*lhs_ptr) != (*rhs_ptr);
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -205,13 +206,14 @@ impl MechFunctionFactory for TableNeq {
 }
 #[cfg(feature = "table")]
 impl MechFunctionImpl for TableNeq {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let lhs_ptr = self.lhs.as_ptr();
         let rhs_ptr = self.rhs.as_ptr();
         let mut out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = (*lhs_ptr) != (*rhs_ptr);
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()

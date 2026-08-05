@@ -888,10 +888,11 @@ mod tests {
     }
 
     impl MechFunctionImpl for IntegrityOperationFunction {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             *self.result.borrow_mut() = self.next_result.get();
             *self.output.borrow_mut() += 1;
             *self.hidden.borrow_mut() += 1;
+            Ok(())
         }
 
         fn out(&self) -> Value {

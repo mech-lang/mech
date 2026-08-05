@@ -26,7 +26,9 @@ mod bytecode_dependency_tests {
     }
 
     impl MechFunctionImpl for BytecodeDependencyTestFunction {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
 
         fn out(&self) -> Value {
             self.output.clone()
@@ -67,7 +69,9 @@ mod bytecode_dependency_tests {
     }
 
     impl MechFunctionImpl for ExactF64Nullary {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
 
         fn out(&self) -> Value {
             self.output.to_value()

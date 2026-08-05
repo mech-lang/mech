@@ -48,8 +48,9 @@ pub struct ClosureNativeFunction {
 }
 
 impl MechFunctionImpl for ClosureNativeFunction {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         // Pure closure functions are executed once during native function compilation.
+        Ok(())
     }
 
     fn out(&self) -> Value {

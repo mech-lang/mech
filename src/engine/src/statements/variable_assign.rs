@@ -134,7 +134,7 @@ pub fn subscript_ref(
             let key = x.hash();
             let fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), Value::Id(key)];
             let new_fxn = catalog_assignment_function(p, "assign/column", &fxn_input)?;
-            new_fxn.solve();
+            new_fxn.solve_result()?;
             let res = new_fxn.out();
             plan.borrow_mut().push(new_fxn);
             return Ok(res);
@@ -144,7 +144,7 @@ pub fn subscript_ref(
             let ix = real(x, p)?.as_index()?;
             let mut fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), ix.clone()];
             let new_fxn = catalog_assignment_function(p, "assign", &fxn_input)?;
-            new_fxn.solve();
+            new_fxn.solve_result()?;
             let res = new_fxn.out();
             plan.borrow_mut().push(new_fxn);
             return Ok(res);
@@ -375,7 +375,7 @@ pub fn subscript_ref(
             };
             let plan_brrw = plan.borrow();
             let mut new_fxn = &plan_brrw.last().unwrap();
-            new_fxn.solve();
+            new_fxn.solve_result()?;
             let res = new_fxn.out();
             return Ok(res);
         }
@@ -409,7 +409,7 @@ pub fn subscript_ref(
             };
             let plan_brrw = plan.borrow();
             let mut new_fxn = &plan_brrw.last().unwrap();
-            new_fxn.solve();
+            new_fxn.solve_result()?;
             let res = new_fxn.out();
             return Ok(res);
         }

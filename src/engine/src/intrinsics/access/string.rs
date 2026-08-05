@@ -108,9 +108,6 @@ impl StringAccessElement {
 }
 
 impl MechFunctionImpl for StringAccessElement {
-    fn solve(&self) {
-        let _ = self.solve_result();
-    }
     fn solve_result(&self) -> MResult<()> {
         let source = self.current_source_string()?;
         let ix = self.current_index()?;

@@ -246,10 +246,10 @@ pub mod __mech_native {
     export_compare_binop_native_factories!(NEQ, "neq");
     #[cfg(all(feature = "eq", feature = "atom"))]
     pub use super::install_atom_eq;
-    #[cfg(all(feature = "eq", feature = "table"))]
-    pub use super::install_table_eq;
     #[cfg(all(feature = "neq", feature = "atom"))]
     pub use super::install_atom_neq;
+    #[cfg(all(feature = "eq", feature = "table"))]
+    pub use super::install_table_eq;
     #[cfg(all(feature = "neq", feature = "table"))]
     pub use super::install_table_neq;
 }

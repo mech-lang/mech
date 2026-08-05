@@ -26,10 +26,8 @@ where
     Ref<T>: ToValue,
     T: FunctionRuntimeType,
 {
-    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
-        T::REPRESENTATION,
-        T::REPRESENTATION,
-    );
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::unary(T::REPRESENTATION, T::REPRESENTATION);
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -58,12 +56,13 @@ where
     T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + Not<Output = T>,
     Ref<T>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = !*arg_ptr;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -107,10 +106,8 @@ where
     Ref<MatA>: ToValue,
     MatA: FunctionRuntimeType,
 {
-    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
-        MatA::REPRESENTATION,
-        MatA::REPRESENTATION,
-    );
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::unary(MatA::REPRESENTATION, MatA::REPRESENTATION);
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -142,7 +139,7 @@ where
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
     MatA: Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let sink_ptr = self.out.as_mut_ptr();
             let source_ptr = self.arg.as_ptr();
@@ -151,7 +148,8 @@ where
             for (dst, src) in sink_ref.into_iter().zip(source_ref.into_iter()) {
                 *dst = !src.clone();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()

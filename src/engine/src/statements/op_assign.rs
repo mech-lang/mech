@@ -272,7 +272,7 @@ macro_rules! op_assign {
             };
             let plan_brrw = plan.borrow();
             let mut new_fxn = &plan_brrw.last().unwrap();
-            new_fxn.solve();
+            new_fxn.solve_result()?;
             let res = new_fxn.out();
             return Ok(res);
           },

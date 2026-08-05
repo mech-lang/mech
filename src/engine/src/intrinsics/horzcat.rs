@@ -42,7 +42,9 @@ macro_rules! horizontal_concatenate {
         T: Debug + Clone + Sync + Send + PartialEq + 'static,
         Ref<[<RowVector $vec_size>]<T>>: ToValue
       {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
         fn out(&self) -> Value { self.out.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
 
@@ -124,13 +126,14 @@ macro_rules! horzcat_two_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
                     let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -227,14 +230,15 @@ macro_rules! horzcat_three_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
                     let e2_ptr = (*(self.e2.as_ptr())).clone();
                     let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -343,7 +347,7 @@ macro_rules! horzcat_four_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -351,7 +355,8 @@ macro_rules! horzcat_four_args {
                     let e3_ptr = (*(self.e3.as_ptr())).clone();
                     let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -443,9 +448,10 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let offset = self.e0.copy_into(&self.out, 0);
         self.e1.copy_into(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -546,10 +552,11 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into(&self.out, 0);
         offset += self.e1.copy_into(&self.out, offset);
         self.e2.copy_into(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -661,11 +668,12 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into(&self.out, 0);
         offset += self.e1.copy_into(&self.out, offset);
         offset += self.e2.copy_into(&self.out, offset);
         self.e3.copy_into(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -776,7 +784,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = 0;
         for e in &self.e0 {
             match e {
@@ -789,6 +797,7 @@ where
                 }
             }
         }
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -880,7 +889,9 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowDVector<T>>: ToValue,
 {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.out.to_value()
     }
@@ -973,7 +984,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowDVector<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
             for (e, i) in &self.matrix {
@@ -982,7 +993,8 @@ where
             for (e, i) in &self.scalar {
                 out_ptr[*i] = e.borrow().clone();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1189,7 +1201,7 @@ mod compiler_tests {
             if arguments == &vec![scalar_register, matrix_register]
         ));
 
-        function.solve();
+        function.solve_result().unwrap();
         assert_eq!(function.out.borrow().as_slice(), &[9.0, 7.0]);
     }
 
@@ -1333,11 +1345,12 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
             out_ptr[0] = self.arg.borrow().clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1415,11 +1428,12 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<Matrix1<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
             out_ptr[0] = self.arg.borrow().clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1500,12 +1514,13 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector2<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
             out_ptr[0] = self.e0.borrow().clone();
             out_ptr[1] = self.e1.borrow().clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1610,13 +1625,14 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector3<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
             out_ptr[0] = self.e0.borrow().clone();
             out_ptr[1] = self.e1.borrow().clone();
             out_ptr[2] = self.e2.borrow().clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1709,14 +1725,15 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
             out_ptr[0] = self.e0.borrow().clone();
             out_ptr[1] = self.e1.borrow().clone();
             out_ptr[2] = self.e2.borrow().clone();
             out_ptr[3] = self.e3.borrow().clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1805,7 +1822,9 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowDVector<T>>: ToValue,
 {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.out.to_value()
     }
@@ -1880,7 +1899,9 @@ macro_rules! horzcat_single {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$shape<T>>: ToValue,
         {
-            fn solve(&self) {}
+            fn solve_result(&self) -> MResult<()> {
+                Ok(())
+            }
             fn out(&self) -> Value {
                 self.out.to_value()
             }
@@ -1985,7 +2006,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector3<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -1993,7 +2014,8 @@ where
             out_ptr[0] = e0_ptr.clone();
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e1_ptr[1].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -2075,14 +2097,15 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector3<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e0_ptr[1].clone();
             out_ptr[2] = self.e1.borrow().clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -2162,14 +2185,15 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector2<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -2250,14 +2274,15 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector2<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
             let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -2350,7 +2375,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_val = self.e1.borrow().clone();
@@ -2361,7 +2386,8 @@ where
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_val;
             out_ptr[3] = e3_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -2454,7 +2480,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_val = self.e1.borrow().clone();
@@ -2465,7 +2491,8 @@ where
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e3_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -2558,7 +2585,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -2569,7 +2596,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
             out_ptr[3] = e3_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -2662,7 +2690,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
@@ -2673,7 +2701,8 @@ where
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_val;
             out_ptr[3] = e3_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -2755,7 +2784,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -2764,7 +2793,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e1_ptr[1].clone();
             out_ptr[3] = e1_ptr[2].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -2846,7 +2876,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = self.e1.borrow().clone();
@@ -2855,7 +2885,8 @@ where
             out_ptr[1] = e0_ptr[1].clone();
             out_ptr[2] = e0_ptr[2].clone();
             out_ptr[3] = e1_ptr.clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -2939,7 +2970,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector3<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_val = self.e1.borrow().clone();
@@ -2948,7 +2979,8 @@ where
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -3032,7 +3064,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector3<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -3041,7 +3073,8 @@ where
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -3125,7 +3158,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector3<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
@@ -3134,7 +3167,8 @@ where
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -3219,7 +3253,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_val = self.e1.borrow().clone();
@@ -3229,7 +3263,8 @@ where
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e2_ptr[1].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -3314,7 +3349,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -3324,7 +3359,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e1_ptr[1].clone();
             out_ptr[3] = e2_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -3409,7 +3445,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
@@ -3419,7 +3455,8 @@ where
             out_ptr[1] = e0_ptr[1].clone();
             out_ptr[2] = e1_val;
             out_ptr[3] = e2_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -3503,7 +3540,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector3<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -3512,7 +3549,8 @@ where
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -3613,7 +3651,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector3<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
@@ -3622,7 +3660,8 @@ where
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -3706,7 +3745,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector3<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -3715,7 +3754,8 @@ where
             out_ptr[0] = e0_val;
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -3857,7 +3897,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -3867,7 +3907,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e2_ptr[1].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -3952,7 +3993,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
@@ -3962,7 +4003,8 @@ where
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e2_ptr[1].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -4055,7 +4097,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -4066,7 +4108,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
             out_ptr[3] = e3_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -4151,7 +4194,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -4161,7 +4204,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e1_ptr[1].clone();
             out_ptr[3] = e2_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -4246,7 +4290,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -4256,7 +4300,8 @@ where
             out_ptr[1] = e0_ptr[1].clone();
             out_ptr[2] = e1_ptr[0].clone();
             out_ptr[3] = e2_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -4341,7 +4386,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
@@ -4351,7 +4396,8 @@ where
             out_ptr[1] = e0_ptr[1].clone();
             out_ptr[2] = e1_val;
             out_ptr[3] = e2_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -4436,7 +4482,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -4446,7 +4492,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e1_ptr[1].clone();
             out_ptr[3] = e2_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -4539,7 +4586,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_val = self.e1.borrow().clone();
@@ -4550,7 +4597,8 @@ where
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e3_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -4643,7 +4691,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -4654,7 +4702,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
             out_ptr[3] = e3_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -4747,7 +4796,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -4758,7 +4807,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e3_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -4851,7 +4901,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
@@ -4862,7 +4912,8 @@ where
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_val;
             out_ptr[3] = e3_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -4955,7 +5006,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
@@ -4966,7 +5017,8 @@ where
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e3_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -5172,7 +5224,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_val = self.e0.borrow().clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -5183,7 +5235,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e3_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -5276,7 +5329,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_val = self.e1.borrow().clone();
@@ -5287,7 +5340,8 @@ where
             out_ptr[1] = e1_val;
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e3_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -5380,7 +5434,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -5391,7 +5445,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_val;
             out_ptr[3] = e3_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -5483,7 +5538,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -5494,7 +5549,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e3_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -5586,7 +5642,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<RowVector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -5597,7 +5653,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e3_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()

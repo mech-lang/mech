@@ -152,14 +152,15 @@ macro_rules! impl_range_range_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink = &mut *self.sink.as_mut_ptr();
                     let source = &*self.source.as_ptr();
                     let ix1 = (*self.ixes.0.as_ptr()).as_ref();
                     let ix2 = (*self.ixes.1.as_ptr()).as_ref();
                     $op!(sink, ix1, ix2, source);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -295,13 +296,14 @@ macro_rules! impl_all_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
                     let source_ptr = &*self.source.as_ptr();
                     let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
                     $op!(source_ptr, ix_ptr, sink_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()

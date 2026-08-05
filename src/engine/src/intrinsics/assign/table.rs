@@ -18,7 +18,7 @@ macro_rules! impl_col_set_fxn {
       sink: Ref<$vector_size_out<Value>>,
     }
     impl MechFunctionImpl for $fxn_name {
-      fn solve(&self) {
+      fn solve_result(&self) -> MResult<()> {
         let source_ptr = self.source.as_ptr();
         let sink_ptr = self.sink.as_mut_ptr();
         unsafe {
@@ -28,6 +28,8 @@ macro_rules! impl_col_set_fxn {
             }
           }
         }
+      ;
+          Ok(())
       }
       fn out(&self) -> Value { Value::MatrixValue(Matrix::$vector_size_out(self.sink.clone())) }
       fn to_string(&self) -> String { format!("{:#?}", self) }
@@ -216,12 +218,13 @@ struct TableAppendRecord {
     source: Ref<MechRecord>,
 }
 impl MechFunctionImpl for TableAppendRecord {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
             let source_ptr = &(*(self.source.as_ptr()));
             sink_ptr.append_record(source_ptr.clone());
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Table(self.sink.clone())
@@ -248,12 +251,13 @@ struct TableAppendTable {
     source: Ref<MechTable>,
 }
 impl MechFunctionImpl for TableAppendTable {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
             let source_ptr = &(*(self.source.as_ptr()));
             sink_ptr.append_table(&source_ptr);
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Table(self.sink.clone())

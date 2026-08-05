@@ -35,10 +35,6 @@ struct FailingInitialExpressionFunction {
 }
 
 impl MechFunctionImpl for FailingInitialExpressionFunction {
-    fn solve(&self) {
-        panic!("fallible expression initialization must use solve_result")
-    }
-
     fn solve_result(&self) -> MResult<()> {
         self.solve_result_calls.fetch_add(1, Ordering::SeqCst);
         Err(MechError::new(InitialExpressionSolveFailure, None))
@@ -65,8 +61,9 @@ impl MechFunctionCompiler for FailingInitialExpressionFunction {
 }
 
 impl MechFunctionImpl for IndexedExpressionTestFunction {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         self.solve_calls.fetch_add(1, Ordering::SeqCst);
+        Ok(())
     }
 
     fn out(&self) -> Value {
@@ -221,8 +218,8 @@ fn binary_term_batch_registration_preserves_order_and_edges() {
     let second = Arc::new(AtomicUsize::new(0));
     let f1 = function(mid.clone(), first.clone());
     let f2 = function(final_out, second.clone());
-    f1.solve();
-    f2.solve();
+    f1.solve_result().unwrap();
+    f2.solve_result().unwrap();
 
     register_expression_function_batch(&plan, vec![(f1, vec![a, b]), (f2, vec![mid, c])]).unwrap();
     let plan = plan.borrow();

@@ -38,7 +38,7 @@ impl MechFunctionFactory for SetRemoveFxn {
     }
 }
 impl MechFunctionImpl for SetRemoveFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             // Get mutable reference to the output set
             let mut out_ptr: &mut MechSet = &mut *(self.out.as_mut_ptr());
@@ -62,7 +62,8 @@ impl MechFunctionImpl for SetRemoveFxn {
             } else {
                 ValueKind::Empty
             };
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Set(self.out.clone())

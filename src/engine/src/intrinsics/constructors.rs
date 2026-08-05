@@ -20,7 +20,9 @@ pub struct ValueSet {
 
 #[cfg(all(feature = "set", feature = "functions"))]
 impl MechFunctionImpl for ValueSet {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
 
     fn out(&self) -> Value {
         Value::Set(self.out.clone())
@@ -104,13 +106,14 @@ pub struct ValueSetComprehension {
 
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionImpl for ValueSetComprehension {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let args = self
             .arguments
             .iter()
             .map(detach_comprehension_value)
             .collect::<Vec<Value>>();
         *self.out.borrow_mut() = MechSet::from_vec(args);
+        Ok(())
     }
 
     fn out(&self) -> Value {
@@ -173,7 +176,7 @@ pub struct ValueMatrixComprehension {
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl MechFunctionImpl for ValueMatrixComprehension {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let args = self
             .arguments
             .iter()
@@ -184,10 +187,11 @@ impl MechFunctionImpl for ValueMatrixComprehension {
         } else {
             let fxn = crate::intrinsics::horzcat::impl_horzcat_fxn(&args)
                 .expect("matrix/comprehension input kinds changed to incompatible values");
-            fxn.solve();
+            fxn.solve_result()?;
             fxn.out()
         };
         *self.out.borrow_mut() = out;
+        Ok(())
     }
 
     fn out(&self) -> Value {
