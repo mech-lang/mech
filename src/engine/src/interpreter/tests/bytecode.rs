@@ -554,6 +554,7 @@ mod external_bytecode_tests {
     #[derive(Default)]
     struct RecordingExternalServices {
         host_requests: Vec<ExecutionHostFunctionRequest>,
+        host_arguments: Vec<Vec<Value>>,
         read_requests: Vec<ExecutionResourceRequest>,
         writes: Vec<(ExecutionResourceRequest, Value)>,
         bindings: Vec<(u64, ExecutionResourceRequest, usize)>,
@@ -566,9 +567,15 @@ mod external_bytecode_tests {
         fn invoke_host_function(
             &mut self,
             request: &ExecutionHostFunctionRequest,
-            _arguments: &[Value],
+            arguments: &[Value],
         ) -> MResult<Value> {
             self.host_requests.push(request.clone());
+            self.host_arguments.push(
+                arguments
+                    .iter()
+                    .map(Value::try_deep_snapshot)
+                    .collect::<MResult<Vec<_>>>()?,
+            );
             Ok(self
                 .host_result
                 .clone()
@@ -831,6 +838,11 @@ mod external_bytecode_tests {
 
         assert_eq!(result, Value::Empty);
         assert_eq!(services.host_requests, vec![host_request]);
+        assert!(matches!(
+            services.host_arguments.as_slice(),
+            [arguments]
+                if matches!(arguments.as_slice(), [Value::F64(value)] if *value.borrow() == 3.0)
+        ));
         assert_eq!(services.read_requests, vec![read_request.clone()]);
         assert_eq!(services.writes.len(), 2);
         assert_eq!(services.writes[0].0, assign_request);
