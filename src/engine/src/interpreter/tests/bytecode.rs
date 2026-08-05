@@ -384,7 +384,11 @@ mod bytecode_dependency_tests {
         let prior_register = Value::F64(Ref::new(17.0));
         let prior_constant = Value::F64(Ref::new(23.0));
         interpreter.ip = 9;
-        interpreter.registers = vec![prior_register.clone()];
+        interpreter.bytecode_registers = super::super::super::BytecodeRegisterFile::new(1);
+        interpreter
+            .bytecode_registers
+            .load(0, prior_register.clone())
+            .unwrap();
         interpreter.constants = vec![prior_constant.clone()];
         interpreter.out = Value::F64(Ref::new(31.0));
         let prior_output = interpreter.out.clone();
@@ -446,7 +450,10 @@ mod bytecode_dependency_tests {
             .unwrap_err();
         assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
         assert_eq!(interpreter.ip, 9);
-        assert_eq!(interpreter.registers, vec![prior_register]);
+        assert_eq!(
+            interpreter.bytecode_registers.value(0).unwrap(),
+            prior_register
+        );
         assert_eq!(interpreter.constants, vec![prior_constant]);
         assert_eq!(interpreter.out, prior_output);
         assert_eq!(interpreter.plan_len(), prior_plan_len);
@@ -465,11 +472,84 @@ mod bytecode_dependency_tests {
 ))]
 mod external_bytecode_tests {
     use super::super::super::{
-        BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest,
+        ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
+        EncodedConstant, ExecutionHostFunctionRequest, ExecutionResourceRequest,
         ExternalHostCallFunction, ExternalResourceReadFunction, ExternalResourceWriteFunction,
-        InitialSolvePolicy, MResult, MechExecutionServices, MechProgram, MechProgramConfig,
-        ParsedProgram, Ref, ResourceDelivery, ResourceIntent, ValRef, Value,
+        FunctionArgs, FunctionArgumentRole, FunctionCatalog, FunctionCatalogBuilder,
+        FunctionRuntimeType, InitialSolvePolicy, MResult, MechError, MechExecutionServices,
+        MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl, MechProgram,
+        MechProgramConfig, ParsedProgram, ReactiveCellId, Ref, Register, ResourceDelivery,
+        ResourceIntent, RuntimeFunctionContract, RuntimeFunctionId, RuntimeFunctionSignature,
+        RuntimeOutputAliasPolicy, RuntimeType, ToValue, ValRef, Value, apply_stable_value_update,
+        hash_str, write_bytecode,
     };
+    use std::collections::{BTreeMap, BTreeSet};
+    use std::sync::Arc;
+
+    #[derive(Debug)]
+    struct CopyString {
+        output: Ref<String>,
+        input: Ref<String>,
+    }
+
+    impl MechFunctionFactory for CopyString {
+        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+            <String as FunctionRuntimeType>::REPRESENTATION,
+            <String as FunctionRuntimeType>::REPRESENTATION,
+        );
+
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            match args {
+                FunctionArgs::Unary(output, input) => Ok(Box::new(Self {
+                    output: output.try_function_ref(FunctionArgumentRole::Output)?,
+                    input: input.try_function_ref(FunctionArgumentRole::Input(0))?,
+                })),
+                _ => Err(MechError::new(
+                    super::super::super::IncorrectNumberOfArguments {
+                        expected: 1,
+                        found: args.len(),
+                    },
+                    None,
+                )),
+            }
+        }
+    }
+
+    impl MechFunctionImpl for CopyString {
+        fn solve_result(&self) -> MResult<()> {
+            *self.output.borrow_mut() = self.input.borrow().clone();
+            Ok(())
+        }
+
+        fn out(&self) -> Value {
+            self.output.to_value()
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            "CopyString".into()
+        }
+    }
+
+    impl MechFunctionCompiler for CopyString {
+        fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    fn copy_string_catalog() -> Arc<FunctionCatalog> {
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_runtime_factory::<CopyString>(
+                "CopyString",
+                RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            )
+            .unwrap();
+        Arc::new(builder.build().unwrap())
+    }
 
     #[derive(Default)]
     struct RecordingExternalServices {
@@ -477,6 +557,9 @@ mod external_bytecode_tests {
         read_requests: Vec<ExecutionResourceRequest>,
         writes: Vec<(ExecutionResourceRequest, Value)>,
         bindings: Vec<(u64, ExecutionResourceRequest, usize)>,
+        binding_targets: Vec<ValRef>,
+        host_result: Option<Value>,
+        read_result: Option<Value>,
     }
 
     impl MechExecutionServices for RecordingExternalServices {
@@ -486,12 +569,18 @@ mod external_bytecode_tests {
             _arguments: &[Value],
         ) -> MResult<Value> {
             self.host_requests.push(request.clone());
-            Ok(Value::F64(Ref::new(9.0)))
+            Ok(self
+                .host_result
+                .clone()
+                .unwrap_or_else(|| Value::F64(Ref::new(9.0))))
         }
 
         fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
             self.read_requests.push(request.clone());
-            Ok(Value::F64(Ref::new(8.0)))
+            Ok(self
+                .read_result
+                .clone()
+                .unwrap_or_else(|| Value::F64(Ref::new(8.0))))
         }
 
         fn write_resource(
@@ -499,7 +588,8 @@ mod external_bytecode_tests {
             request: &ExecutionResourceRequest,
             value: &Value,
         ) -> MResult<()> {
-            self.writes.push((request.clone(), value.clone()));
+            self.writes
+                .push((request.clone(), value.try_deep_snapshot()?));
             Ok(())
         }
 
@@ -511,8 +601,47 @@ mod external_bytecode_tests {
         ) -> MResult<()> {
             self.bindings
                 .push((interpreter_id, request.clone(), target.addr()));
+            self.binding_targets.push(target);
             Ok(())
         }
+    }
+
+    fn string_constant(value: &str) -> EncodedConstant {
+        EncodedConstant {
+            runtime_type: RuntimeType::String,
+            alignment: 1,
+            bytes: value.as_bytes().to_vec(),
+        }
+    }
+
+    fn parse_program(
+        register_count: u32,
+        constants: Vec<EncodedConstant>,
+        instructions: Vec<BytecodeInstruction>,
+        requirements: Vec<ApplicationRequirement>,
+        symbol_bindings: &[(&str, u32)],
+    ) -> ParsedProgram {
+        let symbols = symbol_bindings
+            .iter()
+            .map(|(name, register)| (hash_str(name), *register))
+            .collect::<BTreeMap<_, _>>();
+        let dictionary = symbol_bindings
+            .iter()
+            .map(|(name, _)| (hash_str(name), (*name).to_owned()))
+            .collect();
+        ParsedProgram::from_bytes(
+            &write_bytecode(&BytecodeProgram {
+                register_count,
+                constants,
+                symbols,
+                mutable_symbols: BTreeSet::new(),
+                instructions,
+                dictionary,
+                requirements,
+            })
+            .unwrap(),
+        )
+        .unwrap()
     }
 
     fn request(intent: ResourceIntent, delivery: ResourceDelivery) -> ExecutionResourceRequest {
@@ -532,6 +661,60 @@ mod external_bytecode_tests {
             intent,
             delivery,
         }
+    }
+
+    fn string_value(value: &str) -> Value {
+        Value::String(Ref::new(value.to_owned()))
+    }
+
+    fn assert_string(value: &Value, expected: &str) {
+        assert!(
+            matches!(value, Value::String(value) if value.borrow().as_str() == expected),
+            "expected String({expected:?}), found {value:?}",
+        );
+    }
+
+    fn symbol_cell(program: &MechProgram, name: &str) -> ValRef {
+        program
+            .interpreter()
+            .symbols()
+            .borrow()
+            .get(hash_str(name))
+            .unwrap_or_else(|| panic!("missing bytecode symbol {name:?}"))
+    }
+
+    fn host_program(
+        instructions: Vec<BytecodeInstruction>,
+        symbols: &[(&str, u32)],
+    ) -> ParsedProgram {
+        parse_program(
+            2,
+            vec![string_constant("seed")],
+            instructions,
+            vec![ApplicationRequirement::HostFunction(
+                ExecutionHostFunctionRequest {
+                    name: "test/host".into(),
+                },
+            )],
+            symbols,
+        )
+    }
+
+    fn resource_program(
+        delivery: ResourceDelivery,
+        instructions: Vec<BytecodeInstruction>,
+        symbols: &[(&str, u32)],
+    ) -> ParsedProgram {
+        parse_program(
+            2,
+            vec![string_constant("seed")],
+            instructions,
+            vec![ApplicationRequirement::Resource(request(
+                ResourceIntent::Read,
+                delivery,
+            ))],
+            symbols,
+        )
     }
 
     fn plan_shape(program: &MechProgram) -> Vec<(usize, usize, String)> {
@@ -657,7 +840,27 @@ mod external_bytecode_tests {
         assert_eq!(services.bindings.len(), 1);
         assert_eq!(services.bindings[0].0, loaded_interpreter_id);
         assert_eq!(services.bindings[0].1, read_request);
-        assert_eq!(plan_shape(&loaded), source_shape);
+        assert_eq!(
+            source_shape,
+            vec![
+                (1, 1, "ExternalHostCallFunction".into()),
+                (0, 1, "ExternalResourceReadFunction".into()),
+                (1, 0, "ExternalResourceWriteFunction".into()),
+                (1, 0, "ExternalResourceWriteFunction".into()),
+            ]
+        );
+        // Bytecode inputs retain both the stable outer register cell and the
+        // recursively observed payload cell. The source form has no outer
+        // register cell, while the executable node sequence remains identical.
+        assert_eq!(
+            plan_shape(&loaded),
+            vec![
+                (2, 1, "ExternalHostCallFunction".into()),
+                (0, 1, "ExternalResourceReadFunction".into()),
+                (2, 0, "ExternalResourceWriteFunction".into()),
+                (2, 0, "ExternalResourceWriteFunction".into()),
+            ]
+        );
 
         let live_target = services.bindings[0].2;
         loaded
@@ -668,5 +871,297 @@ mod external_bytecode_tests {
         assert_eq!(services.bindings[1].2, live_target);
         assert!(matches!(&services.writes[2].1, Value::F64(value) if *value.borrow() == 9.0));
         assert!(matches!(&services.writes[3].1, Value::F64(value) if *value.borrow() == 8.0));
+    }
+
+    #[test]
+    fn host_return_and_symbols_observe_the_actual_external_result() {
+        let parsed = host_program(
+            vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::HostCall {
+                    requirement: 0,
+                    dst: 0,
+                    arguments: Vec::new(),
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            &[("host-result", 0), ("host-alias", 0)],
+        );
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut services = RecordingExternalServices {
+            host_result: Some(string_value("host-actual")),
+            ..Default::default()
+        };
+
+        let result = program
+            .run_bytecode_program_with_services(&parsed, &mut services)
+            .unwrap();
+
+        assert_string(&result, "host-actual");
+        let register = program.interpreter().bytecode_registers.cell(0).unwrap();
+        let result_symbol = symbol_cell(&program, "host-result");
+        let alias_symbol = symbol_cell(&program, "host-alias");
+        assert!(result_symbol.same_handle(&register));
+        assert!(alias_symbol.same_handle(&register));
+        assert_string(&result_symbol.borrow(), "host-actual");
+    }
+
+    #[test]
+    fn resource_return_and_symbol_observe_the_actual_external_result() {
+        let parsed = resource_program(
+            ResourceDelivery::Snapshot,
+            vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::ResourceRead {
+                    requirement: 0,
+                    dst: 0,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            &[("resource-result", 0)],
+        );
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut services = RecordingExternalServices {
+            read_result: Some(string_value("resource-actual")),
+            ..Default::default()
+        };
+
+        let result = program
+            .run_bytecode_program_with_services(&parsed, &mut services)
+            .unwrap();
+
+        assert_string(&result, "resource-actual");
+        let register = program.interpreter().bytecode_registers.cell(0).unwrap();
+        let symbol = symbol_cell(&program, "resource-result");
+        assert!(symbol.same_handle(&register));
+        assert_string(&symbol.borrow(), "resource-actual");
+    }
+
+    #[test]
+    fn later_runtime_nodes_consume_host_and_resource_results() {
+        let cases = [
+            (
+                host_program(
+                    vec![
+                        BytecodeInstruction::ConstLoad {
+                            dst: 0,
+                            constant: 0,
+                        },
+                        BytecodeInstruction::ConstLoad {
+                            dst: 1,
+                            constant: 0,
+                        },
+                        BytecodeInstruction::HostCall {
+                            requirement: 0,
+                            dst: 0,
+                            arguments: Vec::new(),
+                        },
+                        BytecodeInstruction::RuntimeUnary {
+                            function: RuntimeFunctionId::from_name("CopyString").raw(),
+                            dst: 1,
+                            src: 0,
+                        },
+                        BytecodeInstruction::Return { src: 1 },
+                    ],
+                    &[("host-input", 0), ("host-copy", 1)],
+                ),
+                true,
+                "host-pipeline",
+            ),
+            (
+                resource_program(
+                    ResourceDelivery::Snapshot,
+                    vec![
+                        BytecodeInstruction::ConstLoad {
+                            dst: 0,
+                            constant: 0,
+                        },
+                        BytecodeInstruction::ConstLoad {
+                            dst: 1,
+                            constant: 0,
+                        },
+                        BytecodeInstruction::ResourceRead {
+                            requirement: 0,
+                            dst: 0,
+                        },
+                        BytecodeInstruction::RuntimeUnary {
+                            function: RuntimeFunctionId::from_name("CopyString").raw(),
+                            dst: 1,
+                            src: 0,
+                        },
+                        BytecodeInstruction::Return { src: 1 },
+                    ],
+                    &[("resource-input", 0), ("resource-copy", 1)],
+                ),
+                false,
+                "resource-pipeline",
+            ),
+        ];
+
+        for (parsed, is_host, actual) in cases {
+            let mut program = MechProgram::with_function_catalog(
+                MechProgramConfig::default(),
+                copy_string_catalog(),
+            );
+            let mut services = RecordingExternalServices {
+                host_result: Some(string_value(actual)),
+                read_result: Some(string_value(actual)),
+                ..Default::default()
+            };
+
+            let result = program
+                .run_bytecode_program_with_services(&parsed, &mut services)
+                .unwrap();
+
+            assert_string(&result, actual);
+            let copied = symbol_cell(
+                &program,
+                if is_host {
+                    "host-copy"
+                } else {
+                    "resource-copy"
+                },
+            );
+            assert_string(&copied.borrow(), actual);
+        }
+    }
+
+    #[test]
+    fn live_resource_updates_keep_register_identity_and_rerun_dependents() {
+        let parsed = resource_program(
+            ResourceDelivery::Live,
+            vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 1,
+                    constant: 0,
+                },
+                BytecodeInstruction::ResourceRead {
+                    requirement: 0,
+                    dst: 0,
+                },
+                BytecodeInstruction::RuntimeUnary {
+                    function: RuntimeFunctionId::from_name("CopyString").raw(),
+                    dst: 1,
+                    src: 0,
+                },
+                BytecodeInstruction::Return { src: 1 },
+            ],
+            &[("live-input", 0), ("live-copy", 1)],
+        );
+        let mut program =
+            MechProgram::with_function_catalog(MechProgramConfig::default(), copy_string_catalog());
+        let interpreter_id = program.interpreter().id;
+        let mut services = RecordingExternalServices {
+            read_result: Some(string_value("live-initial")),
+            ..Default::default()
+        };
+
+        let result = program
+            .run_bytecode_program_with_services(&parsed, &mut services)
+            .unwrap();
+        assert_string(&result, "live-initial");
+        let input_register = program.interpreter().bytecode_registers.cell(0).unwrap();
+        let output_register = program.interpreter().bytecode_registers.cell(1).unwrap();
+        let input_symbol = symbol_cell(&program, "live-input");
+        let output_symbol = symbol_cell(&program, "live-copy");
+        let live_target = services.binding_targets.first().unwrap().clone();
+        assert!(live_target.same_handle(&input_register));
+        assert!(input_symbol.same_handle(&input_register));
+        assert!(output_symbol.same_handle(&output_register));
+        let input_value = input_register.borrow().as_string().unwrap();
+        let output_value = output_register.borrow().as_string().unwrap();
+
+        apply_stable_value_update(live_target.clone(), string_value("live-updated")).unwrap();
+        let dirty_cells = live_target.borrow().reactive_root_cell_ids();
+        program
+            .advance_reactive_turn_with_services(interpreter_id, &dirty_cells, &mut services)
+            .unwrap();
+
+        assert!(
+            input_register.same_handle(&program.interpreter().bytecode_registers.cell(0).unwrap())
+        );
+        assert!(
+            output_register.same_handle(&program.interpreter().bytecode_registers.cell(1).unwrap())
+        );
+        assert_eq!(
+            input_value.addr(),
+            input_register.borrow().as_string().unwrap().addr()
+        );
+        assert_eq!(
+            output_value.addr(),
+            output_register.borrow().as_string().unwrap().addr()
+        );
+        assert_string(&output_symbol.borrow(), "live-updated");
+    }
+
+    #[test]
+    fn failed_bytecode_install_restores_register_and_symbol_cells() {
+        let prior = parse_program(
+            1,
+            vec![string_constant("prior")],
+            vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            Vec::new(),
+            &[("prior", 0)],
+        );
+        let failing = host_program(
+            vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::HostCall {
+                    requirement: 0,
+                    dst: 0,
+                    arguments: Vec::new(),
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            &[("replacement", 0)],
+        );
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        program.run_bytecode_program(&prior).unwrap();
+        let prior_register = program.interpreter().bytecode_registers.cell(0).unwrap();
+        let prior_symbol = symbol_cell(&program, "prior");
+        assert!(prior_symbol.same_handle(&prior_register));
+        let mut services = RecordingExternalServices {
+            host_result: Some(Value::F64(Ref::new(9.0))),
+            ..Default::default()
+        };
+
+        let error = program
+            .run_bytecode_program_with_services(&failing, &mut services)
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
+        let restored_register = program.interpreter().bytecode_registers.cell(0).unwrap();
+        let restored_symbol = symbol_cell(&program, "prior");
+        assert!(restored_register.same_handle(&prior_register));
+        assert!(restored_symbol.same_handle(&prior_symbol));
+        assert!(restored_symbol.same_handle(&restored_register));
+        assert_string(&restored_register.borrow(), "prior");
+        assert!(
+            program
+                .interpreter()
+                .symbols()
+                .borrow()
+                .get(hash_str("replacement"))
+                .is_none()
+        );
     }
 }
