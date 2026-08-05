@@ -31,6 +31,60 @@ pub(crate) fn invalid<T>(reason: impl Into<String>) -> MResult<T> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BytecodeUnreferencedType {
+    pub type_id: u32,
+}
+
+impl MechErrorKind for BytecodeUnreferencedType {
+    fn name(&self) -> &str {
+        "BytecodeUnreferencedType"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "bytecode v1 type-table row {} is not reachable from a constant",
+            self.type_id
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BytecodeUnreferencedConstant {
+    pub constant: u32,
+}
+
+impl MechErrorKind for BytecodeUnreferencedConstant {
+    fn name(&self) -> &str {
+        "BytecodeUnreferencedConstant"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "bytecode v1 constant-table row {} is not referenced by ConstLoad",
+            self.constant
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BytecodeUnreferencedRequirement {
+    pub requirement: u32,
+}
+
+impl MechErrorKind for BytecodeUnreferencedRequirement {
+    fn name(&self) -> &str {
+        "BytecodeUnreferencedRequirement"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "bytecode v1 application-requirement row {} is not referenced by an external instruction",
+            self.requirement
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BytecodeConstantUnsupported {
     pub runtime_type: RuntimeType,
     pub source_value_kind: ValueKind,

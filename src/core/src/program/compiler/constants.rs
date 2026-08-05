@@ -18,6 +18,12 @@ struct ConstantCodecContext {
 }
 
 #[cfg(feature = "compiler")]
+enum AnnotatedChild {
+    Concrete(EncodedConstant),
+    AbsentOption { declared: RuntimeType },
+}
+
+#[cfg(feature = "compiler")]
 impl ConstantCodecContext {
     fn new() -> Self {
         Self {
@@ -39,6 +45,129 @@ impl ConstantCodecContext {
     fn encode_child(&mut self, value: &Value) -> MResult<EncodedConstant> {
         self.nested(|context| encode_constant_value(value, context))
     }
+}
+
+#[cfg(feature = "compiler")]
+fn encode_annotated_child(
+    value: &Value,
+    declared: &RuntimeType,
+    context: &mut ConstantCodecContext,
+) -> MResult<AnnotatedChild> {
+    if let RuntimeType::Option(declared_inner) = declared {
+        let explicit_option = match value {
+            Value::Empty => None,
+            Value::EmptyKind(ValueKind::Option(inner)) => Some(inner.as_ref()),
+            Value::Typed(inner, ValueKind::Option(option))
+                if matches!(inner.as_ref(), Value::Empty) =>
+            {
+                Some(option.as_ref())
+            }
+            _ => {
+                let child = context.encode_child(value)?;
+                if matches!(child.runtime_type, RuntimeType::Option(_))
+                    || !runtime_type_matches_annotation(&child.runtime_type, declared_inner)
+                {
+                    return Ok(AnnotatedChild::Concrete(child));
+                }
+
+                let runtime_type = RuntimeType::Option(Box::new(child.runtime_type.clone()));
+                let mut bytes = vec![1];
+                append_child_payload(&mut bytes, &child)?;
+                return Ok(AnnotatedChild::Concrete(encoded_constant(
+                    runtime_type,
+                    4,
+                    bytes,
+                )));
+            }
+        };
+
+        if let Some(explicit_inner) = explicit_option {
+            let explicit =
+                RuntimeType::Option(Box::new(runtime_type_from_value_kind(explicit_inner)?));
+            if !runtime_type_matches_annotation(&explicit, declared) {
+                return Err(unsupported_constant(
+                    declared.clone(),
+                    value.kind(),
+                    "explicit absent option does not match the declared composite schema",
+                ));
+            }
+        }
+        return Ok(AnnotatedChild::AbsentOption {
+            declared: declared.clone(),
+        });
+    }
+
+    Ok(AnnotatedChild::Concrete(context.encode_child(value)?))
+}
+
+#[cfg(feature = "compiler")]
+fn encode_absent_option(runtime_type: RuntimeType) -> MResult<EncodedConstant> {
+    if !matches!(runtime_type, RuntimeType::Option(_)) {
+        return Err(unsupported_constant(
+            runtime_type,
+            ValueKind::Empty,
+            "an absent option requires an Option runtime type",
+        ));
+    }
+    Ok(encoded_constant(runtime_type, 1, vec![0]))
+}
+
+#[cfg(feature = "compiler")]
+fn finalize_annotated_children(
+    declared: &RuntimeType,
+    children: Vec<AnnotatedChild>,
+    source_kind: &ValueKind,
+    mismatch_reason: &'static str,
+) -> MResult<(RuntimeType, Vec<EncodedConstant>)> {
+    let mut exact_type = None::<RuntimeType>;
+    for child in &children {
+        match child {
+            AnnotatedChild::Concrete(child) => {
+                if !runtime_type_matches_annotation(&child.runtime_type, declared) {
+                    return Err(unsupported_constant(
+                        declared.clone(),
+                        source_kind.clone(),
+                        mismatch_reason,
+                    ));
+                }
+                if let Some(exact) = &exact_type {
+                    if exact != &child.runtime_type {
+                        return Err(unsupported_constant(
+                            declared.clone(),
+                            source_kind.clone(),
+                            mismatch_reason,
+                        ));
+                    }
+                } else {
+                    exact_type = Some(child.runtime_type.clone());
+                }
+            }
+            AnnotatedChild::AbsentOption {
+                declared: absent_declared,
+            } => {
+                if absent_declared != declared {
+                    return Err(unsupported_constant(
+                        declared.clone(),
+                        source_kind.clone(),
+                        mismatch_reason,
+                    ));
+                }
+            }
+        }
+    }
+
+    let runtime_type = exact_type.unwrap_or_else(|| declared.clone());
+    let mut encoded = Vec::new();
+    encoded.try_reserve_exact(children.len()).map_err(|_| {
+        invalid::<()>("unable to allocate annotated constant children").unwrap_err()
+    })?;
+    for child in children {
+        encoded.push(match child {
+            AnnotatedChild::Concrete(child) => child,
+            AnnotatedChild::AbsentOption { .. } => encode_absent_option(runtime_type.clone())?,
+        });
+    }
+    Ok((runtime_type, encoded))
 }
 
 #[cfg(feature = "compiler")]
@@ -683,7 +812,7 @@ fn encode_record_constant(
 ) -> MResult<EncodedConstant> {
     let mut fields = Vec::new();
     let mut children = Vec::new();
-    for (id, child_value) in &value.data {
+    for (field_index, (id, child_value)) in value.data.iter().enumerate() {
         let name = value.field_names.get(id).ok_or_else(|| {
             unsupported_constant(
                 RuntimeType::Any,
@@ -698,9 +827,22 @@ fn encode_record_constant(
                 "record field name does not match its stable ID",
             ));
         }
-        let child = context.encode_child(child_value)?;
-        fields.push((name.clone(), child.runtime_type.clone()));
-        children.push(child);
+        if let Some(annotation) = value.kinds.get(field_index) {
+            let declared = runtime_type_from_value_kind(annotation)?;
+            let annotated = encode_annotated_child(child_value, &declared, context)?;
+            let (field_type, mut encoded) = finalize_annotated_children(
+                &declared,
+                vec![annotated],
+                &value.kind(),
+                "record field type does not match its declared schema",
+            )?;
+            fields.push((name.clone(), field_type));
+            children.push(encoded.pop().expect("one annotated record field"));
+        } else {
+            let child = context.encode_child(child_value)?;
+            fields.push((name.clone(), child.runtime_type.clone()));
+            children.push(child);
+        }
     }
     let runtime_type = RuntimeType::Record(fields);
     let kind = value.kind();
@@ -727,48 +869,34 @@ fn encode_map_constant(
 ) -> MResult<EncodedConstant> {
     let declared_key_type = runtime_type_from_value_kind(&value.key_kind)?;
     let declared_value_type = runtime_type_from_value_kind(&value.value_kind)?;
-    let declared_runtime_type = RuntimeType::Map {
-        key: Box::new(declared_key_type.clone()),
-        value: Box::new(declared_value_type.clone()),
-    };
     let source_kind = value.kind();
-    let mut entries = Vec::new();
+    let mut keys = Vec::new();
+    let mut values = Vec::new();
     for (key, entry_value) in &value.map {
-        let encoded_key = context.encode_child(key)?;
-        let encoded_value = context.encode_child(entry_value)?;
-        if !runtime_type_matches_annotation(&encoded_key.runtime_type, &declared_key_type)
-            || !runtime_type_matches_annotation(&encoded_value.runtime_type, &declared_value_type)
-        {
-            return Err(unsupported_constant(
-                declared_runtime_type,
-                source_kind,
-                "map entry type does not match the declared map schema",
-            ));
-        }
-        entries.push((encoded_key, encoded_value));
+        keys.push(encode_annotated_child(key, &declared_key_type, context)?);
+        values.push(encode_annotated_child(
+            entry_value,
+            &declared_value_type,
+            context,
+        )?);
     }
-    let key_type = entries
-        .first()
-        .map(|(key, _)| key.runtime_type.clone())
-        .unwrap_or(declared_key_type);
-    let value_type = entries
-        .first()
-        .map(|(_, value)| value.runtime_type.clone())
-        .unwrap_or(declared_value_type);
+    let (key_type, keys) = finalize_annotated_children(
+        &declared_key_type,
+        keys,
+        &source_kind,
+        "map key type does not match the declared map schema",
+    )?;
+    let (value_type, values) = finalize_annotated_children(
+        &declared_value_type,
+        values,
+        &source_kind,
+        "map value type does not match the declared map schema",
+    )?;
     let runtime_type = RuntimeType::Map {
         key: Box::new(key_type.clone()),
         value: Box::new(value_type.clone()),
     };
-    if entries
-        .iter()
-        .any(|(key, value)| key.runtime_type != key_type || value.runtime_type != value_type)
-    {
-        return Err(unsupported_constant(
-            runtime_type,
-            source_kind,
-            "map entries do not share one exact runtime schema",
-        ));
-    }
+    let mut entries = keys.into_iter().zip(values).collect::<Vec<_>>();
     entries.sort_by(|lhs, rhs| (&lhs.0.bytes, &lhs.1.bytes).cmp(&(&rhs.0.bytes, &rhs.1.bytes)));
     if entries
         .windows(2)
@@ -814,41 +942,25 @@ fn encode_set_constant(
             )
         })
         .transpose()?;
-    let declared_runtime_type = RuntimeType::Set {
-        element: Box::new(declared_element_type.clone()),
-        max_len,
-    };
     let source_kind = value.kind();
     let mut elements = Vec::new();
     for element in &value.set {
-        let child = context.encode_child(element)?;
-        if !runtime_type_matches_annotation(&child.runtime_type, &declared_element_type) {
-            return Err(unsupported_constant(
-                declared_runtime_type,
-                source_kind,
-                "set element type does not match the declared set schema",
-            ));
-        }
-        elements.push(child);
+        elements.push(encode_annotated_child(
+            element,
+            &declared_element_type,
+            context,
+        )?);
     }
-    let element_type = elements
-        .first()
-        .map(|element| element.runtime_type.clone())
-        .unwrap_or(declared_element_type);
+    let (element_type, mut elements) = finalize_annotated_children(
+        &declared_element_type,
+        elements,
+        &source_kind,
+        "set element type does not match the declared set schema",
+    )?;
     let runtime_type = RuntimeType::Set {
         element: Box::new(element_type.clone()),
         max_len,
     };
-    if elements
-        .iter()
-        .any(|element| element.runtime_type != element_type)
-    {
-        return Err(unsupported_constant(
-            runtime_type,
-            source_kind,
-            "set elements do not share one exact runtime schema",
-        ));
-    }
     elements.sort_by(|lhs, rhs| lhs.bytes.cmp(&rhs.bytes));
     if elements
         .windows(2)
@@ -913,41 +1025,20 @@ fn encode_table_constant(
             ));
         }
         let declared_type = runtime_type_from_value_kind(kind)?;
-        let mut encoded_cells = Vec::new();
-        encoded_cells
+        let mut annotated_cells = Vec::new();
+        annotated_cells
             .try_reserve_exact(value.rows)
             .map_err(|_| invalid::<()>("unable to allocate table constant cells").unwrap_err())?;
         for cell in values.borrow().iter() {
-            let encoded = context.encode_child(cell)?;
-            if !runtime_type_matches_annotation(&encoded.runtime_type, &declared_type) {
-                return Err(unsupported_constant(
-                    RuntimeType::Table {
-                        columns: vec![(name.clone(), declared_type)],
-                        primary_key: 0,
-                    },
-                    ValueKind::Table(vec![(name.clone(), kind.clone())], value.rows),
-                    "table cell type does not match its declared column type",
-                ));
-            }
-            encoded_cells.push(encoded);
+            annotated_cells.push(encode_annotated_child(cell, &declared_type, context)?);
         }
-        let column_type = encoded_cells
-            .first()
-            .map(|cell| cell.runtime_type.clone())
-            .unwrap_or(declared_type);
-        if encoded_cells
-            .iter()
-            .any(|cell| cell.runtime_type != column_type)
-        {
-            return Err(unsupported_constant(
-                RuntimeType::Table {
-                    columns: vec![(name.clone(), column_type)],
-                    primary_key: 0,
-                },
-                ValueKind::Table(vec![(name.clone(), kind.clone())], value.rows),
-                "table cells do not share one exact runtime schema",
-            ));
-        }
+        let column_kind = ValueKind::Table(vec![(name.clone(), kind.clone())], value.rows);
+        let (column_type, encoded_cells) = finalize_annotated_children(
+            &declared_type,
+            annotated_cells,
+            &column_kind,
+            "table cell type does not match its declared column schema",
+        )?;
         columns.push((name.clone(), column_type));
         column_values.push(encoded_cells);
     }

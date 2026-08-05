@@ -95,9 +95,9 @@ mod tests {
     #[test]
     fn recursively_selects_composite_child_features() {
         let analysis = analyze_runtime_types(&[RuntimeType::Map {
-            key: Box::new(RuntimeType::U16),
+            key: Box::new(RuntimeType::String),
             value: Box::new(RuntimeType::Tuple(vec![
-                RuntimeType::String,
+                RuntimeType::F64,
                 RuntimeType::Matrix {
                     element: Box::new(RuntimeType::U8),
                     storage: MatrixStorage::Matrix2,
@@ -110,7 +110,7 @@ mod tests {
 
         assert_eq!(
             analysis.cargo_features,
-            ["map", "matrix2", "string", "tuple", "u16", "u8"]
+            ["f64", "map", "matrix2", "string", "tuple", "u8"]
         );
     }
 }

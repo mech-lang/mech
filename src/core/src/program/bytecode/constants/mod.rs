@@ -79,7 +79,7 @@ pub(crate) fn referenced_runtime_types(
     entries: &[ConstantEntry],
     blob: &[u8],
 ) -> MResult<Vec<RuntimeType>> {
-    let mut referenced = types.iter().cloned().collect::<BTreeSet<_>>();
+    let mut referenced = BTreeSet::new();
     for entry in entries {
         let type_id = checked_usize(u64::from(entry.type_id), "constant type ID")?;
         let ty = types
@@ -108,6 +108,7 @@ fn collect_inline_runtime_types(
         return Err(super::depth_exceeded(MAX_CONSTANT_NESTING));
     }
 
+    collect_runtime_type_closure(ty, referenced);
     let mut reader = ByteReader::new(bytes);
     match ty {
         RuntimeType::Tuple(types) => {
@@ -240,7 +241,6 @@ fn collect_inline_runtime_types(
                             "enum variant inline type",
                         )?)?;
                         let payload = read_child_payload(&mut reader, "enum variant payload")?;
-                        referenced.insert(payload_type.clone());
                         collect_inline_runtime_types(
                             &payload_type,
                             payload,
@@ -286,6 +286,62 @@ fn collect_inline_runtime_types(
         return invalid("constant has trailing bytes while collecting inline runtime types");
     }
     Ok(())
+}
+
+pub(crate) fn collect_runtime_type_closure(
+    runtime_type: &RuntimeType,
+    referenced: &mut BTreeSet<RuntimeType>,
+) {
+    if !referenced.insert(runtime_type.clone()) {
+        return;
+    }
+    match runtime_type {
+        RuntimeType::Matrix { element, .. }
+        | RuntimeType::Reference(element)
+        | RuntimeType::Set { element, .. }
+        | RuntimeType::Option(element) => collect_runtime_type_closure(element, referenced),
+        RuntimeType::Record(fields)
+        | RuntimeType::Table {
+            columns: fields, ..
+        } => {
+            for (_, child) in fields {
+                collect_runtime_type_closure(child, referenced);
+            }
+        }
+        RuntimeType::Map { key, value } => {
+            collect_runtime_type_closure(key, referenced);
+            collect_runtime_type_closure(value, referenced);
+        }
+        RuntimeType::Tuple(types) => {
+            for child in types {
+                collect_runtime_type_closure(child, referenced);
+            }
+        }
+        RuntimeType::Empty
+        | RuntimeType::Bool
+        | RuntimeType::String
+        | RuntimeType::U8
+        | RuntimeType::U16
+        | RuntimeType::U32
+        | RuntimeType::U64
+        | RuntimeType::U128
+        | RuntimeType::I8
+        | RuntimeType::I16
+        | RuntimeType::I32
+        | RuntimeType::I64
+        | RuntimeType::I128
+        | RuntimeType::F32
+        | RuntimeType::F64
+        | RuntimeType::C64
+        | RuntimeType::R64
+        | RuntimeType::Id
+        | RuntimeType::Index
+        | RuntimeType::Enum { .. }
+        | RuntimeType::Atom { .. }
+        | RuntimeType::Kind(_)
+        | RuntimeType::Any
+        | RuntimeType::None => {}
+    }
 }
 
 fn decode_value_payload(

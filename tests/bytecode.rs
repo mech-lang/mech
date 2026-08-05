@@ -237,3 +237,27 @@ fn tuple_source_constant_is_encoded_by_bytecode_v1() -> MResult<()> {
     );
     Ok(())
 }
+
+#[test]
+fn outer_join_option_columns_compile_through_bytecode_v1() -> MResult<()> {
+    let source = r#"
+a := |id<u64> hw1<u8>| 1 10 | 2 20 | 3 30 |
+b := |id<u64> hw2<u8>| 2 200 | 3 255 | 4 42 |
+x := a ⟗ b
+x
+"#;
+
+    let mut source_program = standard_program();
+    source_program.run_string(source)?;
+    let bytecode = source_program.compile_bytecode()?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+
+    parsed.decode_constants()?;
+    assert!(parsed.types.iter().any(|runtime_type| {
+        matches!(
+            runtime_type,
+            RuntimeType::Option(inner) if **inner == RuntimeType::U8
+        )
+    }));
+    Ok(())
+}
