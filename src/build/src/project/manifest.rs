@@ -1,16 +1,17 @@
 use std::collections::BTreeSet;
+use std::ffi::OsString;
 use std::path::{Component, Path, PathBuf};
 
-use mech_core::MResult;
+use mech_core::{MResult, MechError};
 use toml_edit::{Array, ArrayOfTables, DocumentMut, InlineTable, Item, Table, Value, value};
 
-use crate::dependency::validate_exact_registry_version;
-use crate::error::{NativeBuildErrorKind, native_build_error};
+use crate::dependency::{WORKSPACE_RESOLUTION_PATCHES, validate_exact_registry_version};
+use crate::error::{NativeBuildErrorKind, NativeProjectRelocationUnsupported, native_build_error};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GeneratedDependencySource {
     Registry { exact_version: String },
-    Workspace { relative_path: String },
+    Workspace { workspace_relative_path: PathBuf },
 }
 
 /// One dependency in a generated native application's Cargo manifest.
@@ -51,7 +52,9 @@ impl GeneratedDependency {
             package,
             crate_name,
             GeneratedDependencySource::Workspace {
-                relative_path: generated_dependency_path(workspace_relative_path)?,
+                workspace_relative_path: validate_generated_relative_path(
+                    workspace_relative_path.as_ref(),
+                )?,
             },
             cargo_features,
         )
@@ -143,7 +146,11 @@ impl NativeProjectManifest {
 /// Render a generated Cargo manifest through `toml_edit` in deterministic
 /// insertion order. No request-controlled value is interpolated into TOML
 /// source directly.
-pub fn render_native_project_manifest(manifest: &NativeProjectManifest) -> MResult<String> {
+pub fn render_native_project_manifest(
+    manifest: &NativeProjectManifest,
+    project_root: &Path,
+    workspace_root: Option<&Path>,
+) -> MResult<String> {
     let mut document = DocumentMut::new();
 
     let mut package = Table::new();
@@ -172,8 +179,23 @@ pub fn render_native_project_manifest(manifest: &NativeProjectManifest) -> MResu
             GeneratedDependencySource::Registry { exact_version } => {
                 specification.insert("version", Value::from(exact_version.clone()));
             }
-            GeneratedDependencySource::Workspace { relative_path } => {
-                specification.insert("path", Value::from(relative_path.clone()));
+            GeneratedDependencySource::Workspace {
+                workspace_relative_path,
+            } => {
+                let workspace_root = workspace_root.ok_or_else(|| {
+                    native_build_error(
+                        NativeBuildErrorKind::NativeProjectInvalid {
+                            reason: "workspace dependency rendering requires a workspace root"
+                                .into(),
+                        },
+                        None,
+                    )
+                })?;
+                let dependency_path = workspace_root.join(workspace_relative_path);
+                specification.insert(
+                    "path",
+                    Value::from(relative_cargo_path(project_root, &dependency_path)?),
+                );
             }
         }
         specification.insert("default-features", Value::from(false));
@@ -196,11 +218,26 @@ pub fn render_native_project_manifest(manifest: &NativeProjectManifest) -> MResu
     // Mech crate (which would also make shared public types incompatible).
     let mut patches = Table::new();
     for dependency in &manifest.dependencies {
-        let GeneratedDependencySource::Workspace { relative_path } = &dependency.source else {
+        let GeneratedDependencySource::Workspace {
+            workspace_relative_path,
+        } = &dependency.source
+        else {
             continue;
         };
+        let workspace_root = workspace_root.ok_or_else(|| {
+            native_build_error(
+                NativeBuildErrorKind::NativeProjectInvalid {
+                    reason: "workspace dependency rendering requires a workspace root".into(),
+                },
+                None,
+            )
+        })?;
+        let dependency_path = workspace_root.join(workspace_relative_path);
         let mut specification = InlineTable::new();
-        specification.insert("path", Value::from(relative_path.clone()));
+        specification.insert(
+            "path",
+            Value::from(relative_cargo_path(project_root, &dependency_path)?),
+        );
         specification.fmt();
         patches.insert(
             &dependency.package,
@@ -208,18 +245,22 @@ pub fn render_native_project_manifest(manifest: &NativeProjectManifest) -> MResu
         );
     }
     if !patches.is_empty() {
-        // `mech-engine` and `mech-runtime` use weak `mech-syntax?/feature`
-        // forwarding. Cargo must still inspect that optional package to resolve
-        // the feature graph, even though runtime/native-link does not activate
-        // it. Point resolution at the workspace copy so offline generation does
-        // not fetch a registry archive. This patch does not add a dependency.
-        let mut syntax = InlineTable::new();
-        syntax.insert(
-            "path",
-            Value::from(generated_dependency_path("src/syntax")?),
-        );
-        syntax.fmt();
-        patches.insert("mech-syntax", Item::Value(Value::InlineTable(syntax)));
+        let workspace_root = workspace_root.expect("workspace dependencies require a root");
+        for patch in WORKSPACE_RESOLUTION_PATCHES {
+            let mut specification = InlineTable::new();
+            specification.insert(
+                "path",
+                Value::from(relative_cargo_path(
+                    project_root,
+                    &workspace_root.join(patch.package_relative_path),
+                )?),
+            );
+            specification.fmt();
+            patches.insert(
+                patch.package,
+                Item::Value(Value::InlineTable(specification)),
+            );
+        }
     }
     if !patches.is_empty() {
         let mut crates_io = Table::new();
@@ -285,17 +326,211 @@ pub fn validate_project_installer_path(value: &str) -> MResult<()> {
     }
 }
 
-/// Return the path from
-/// `target/mech-native/projects/<digest>/Cargo.toml` to a selected package.
-pub fn generated_dependency_path(workspace_relative_path: impl AsRef<Path>) -> MResult<String> {
-    let path = validate_generated_relative_path(workspace_relative_path.as_ref())?;
-    let mut components = vec!["..", "..", "..", ".."];
-    components.extend(path.iter().map(|component| {
-        component
-            .to_str()
-            .expect("validated generated path is UTF-8")
-    }));
-    Ok(components.join("/"))
+pub fn relative_cargo_path(from_directory: &Path, to: &Path) -> MResult<String> {
+    let from = absolute_normal_components(from_directory)
+        .map_err(|reason| relocation_error(from_directory, to, format!("project root {reason}")))?;
+    let destination = absolute_normal_components(to)
+        .map_err(|reason| relocation_error(from_directory, to, format!("dependency {reason}")))?;
+
+    if !compatible_roots(&from, &destination) {
+        return Err(relocation_error(
+            from_directory,
+            to,
+            "paths have incompatible roots or volumes",
+        ));
+    }
+
+    let common = from
+        .components
+        .iter()
+        .zip(&destination.components)
+        .take_while(|(left, right)| left == right)
+        .count();
+    let mut relative =
+        Vec::with_capacity(from.components.len() - common + destination.components.len() - common);
+    relative.extend((common..from.components.len()).map(|_| "..".to_owned()));
+    for component in &destination.components[common..] {
+        relative.push(
+            component
+                .to_str()
+                .ok_or_else(|| relocation_error(from_directory, to, "relative path is not UTF-8"))?
+                .to_owned(),
+        );
+    }
+    Ok(if relative.is_empty() {
+        ".".to_owned()
+    } else {
+        relative.join("/")
+    })
+}
+
+pub(crate) fn normalized_absolute_project_root(path: &Path) -> MResult<PathBuf> {
+    let absolute = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .map_err(|error| {
+                native_build_error(
+                    NativeBuildErrorKind::NativeProjectInvalid {
+                        reason: format!("failed to resolve the generated project root: {error}"),
+                    },
+                    None,
+                )
+            })?
+            .join(path)
+    };
+    let mut prefix = None;
+    let mut rooted = false;
+    let mut components = Vec::new();
+    for component in absolute.components() {
+        match component {
+            Component::Prefix(value) => prefix = Some(value.as_os_str().to_os_string()),
+            Component::RootDir => rooted = true,
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if components.pop().is_none() {
+                    return project_invalid(format!(
+                        "generated project root `{}` escapes its filesystem root",
+                        path.display()
+                    ));
+                }
+            }
+            Component::Normal(value) => components.push(value.to_os_string()),
+        }
+    }
+    if !rooted {
+        return project_invalid(format!(
+            "generated project root `{}` is not absolute",
+            path.display()
+        ));
+    }
+    let mut normalized = PathBuf::new();
+    if let Some(prefix) = prefix {
+        normalized.push(prefix);
+    }
+    normalized.push(Path::new(std::path::MAIN_SEPARATOR_STR));
+    normalized.extend(components);
+
+    // Resolve the nearest existing parent so platform aliases such as macOS's
+    // `/var` -> `/private/var` do not make a lexically relative Cargo path point
+    // at the wrong location. Deliberately do not canonicalize the generated
+    // project path itself: materialization must still reject a symlink there.
+    let project_name = normalized.file_name().ok_or_else(|| {
+        native_build_error(
+            NativeBuildErrorKind::NativeProjectInvalid {
+                reason: format!(
+                    "generated project root `{}` has no final path component",
+                    path.display()
+                ),
+            },
+            None,
+        )
+    })?;
+    let mut ancestor = normalized
+        .parent()
+        .expect("a named absolute path has a parent");
+    let mut missing_parents = Vec::new();
+    while !ancestor.try_exists().map_err(|error| {
+        native_build_error(
+            NativeBuildErrorKind::NativeProjectInvalid {
+                reason: format!(
+                    "failed to inspect generated project parent `{}`: {error}",
+                    ancestor.display()
+                ),
+            },
+            None,
+        )
+    })? {
+        missing_parents.push(
+            ancestor
+                .file_name()
+                .expect("a missing rooted path above the filesystem root has a name")
+                .to_os_string(),
+        );
+        ancestor = ancestor.parent().ok_or_else(|| {
+            native_build_error(
+                NativeBuildErrorKind::NativeProjectInvalid {
+                    reason: format!(
+                        "generated project root `{}` has no existing filesystem ancestor",
+                        path.display()
+                    ),
+                },
+                None,
+            )
+        })?;
+    }
+    let mut resolved = ancestor.canonicalize().map_err(|error| {
+        native_build_error(
+            NativeBuildErrorKind::NativeProjectInvalid {
+                reason: format!(
+                    "failed to resolve generated project parent `{}`: {error}",
+                    ancestor.display()
+                ),
+            },
+            None,
+        )
+    })?;
+    resolved.extend(missing_parents.into_iter().rev());
+    resolved.push(project_name);
+    Ok(resolved)
+}
+
+struct AbsoluteNormalPath {
+    prefix: Option<OsString>,
+    rooted: bool,
+    components: Vec<OsString>,
+}
+
+fn absolute_normal_components(path: &Path) -> Result<AbsoluteNormalPath, &'static str> {
+    if !path.is_absolute() {
+        return Err("must be absolute");
+    }
+    let mut prefix = None;
+    let mut rooted = false;
+    let mut components = Vec::new();
+    for component in path.components() {
+        match component {
+            Component::Prefix(value) => prefix = Some(value.as_os_str().to_os_string()),
+            Component::RootDir => rooted = true,
+            Component::Normal(value) => components.push(value.to_os_string()),
+            Component::CurDir | Component::ParentDir => return Err("must be normalized"),
+        }
+    }
+    if !rooted {
+        return Err("must have a rooted absolute form");
+    }
+    Ok(AbsoluteNormalPath {
+        prefix,
+        rooted,
+        components,
+    })
+}
+
+fn compatible_roots(left: &AbsoluteNormalPath, right: &AbsoluteNormalPath) -> bool {
+    left.rooted == right.rooted
+        && match (&left.prefix, &right.prefix) {
+            (None, None) => true,
+            (Some(left), Some(right)) => left
+                .to_string_lossy()
+                .eq_ignore_ascii_case(&right.to_string_lossy()),
+            _ => false,
+        }
+}
+
+fn relocation_error(
+    project_root: &Path,
+    dependency: &Path,
+    reason: impl Into<String>,
+) -> MechError {
+    MechError::new(
+        NativeProjectRelocationUnsupported {
+            project_root: project_root.to_path_buf(),
+            dependency: dependency.to_path_buf(),
+            reason: reason.into(),
+        },
+        None,
+    )
+    .with_compiler_loc()
 }
 
 pub fn generated_project_root(workspace_root: &Path, plan_sha256: &str) -> MResult<PathBuf> {
@@ -440,7 +675,7 @@ mod tests {
         assert_eq!(
             dependency.source,
             GeneratedDependencySource::Workspace {
-                relative_path: "../../../../machines/math".into()
+                workspace_relative_path: PathBuf::from("machines/math")
             }
         );
         assert_eq!(dependency.cargo_features, ["add", "f64", "runtime"]);
@@ -490,8 +725,13 @@ mod tests {
         )
         .unwrap();
 
-        let first = render_native_project_manifest(&manifest).unwrap();
-        let second = render_native_project_manifest(&manifest).unwrap();
+        let workspace_root = std::env::temp_dir().join("mech-build-manifest-workspace");
+        let project_root = workspace_root.join("target/mech-native/projects/digest");
+        let first = render_native_project_manifest(&manifest, &project_root, Some(&workspace_root))
+            .unwrap();
+        let second =
+            render_native_project_manifest(&manifest, &project_root, Some(&workspace_root))
+                .unwrap();
         assert_eq!(first, second);
         first.parse::<DocumentMut>().unwrap();
         assert!(first.contains("[workspace]"));
@@ -501,5 +741,51 @@ mod tests {
         assert!(first.contains("mech-core = { path = \"../../../../src/core\" }"));
         assert!(first.contains("default-features = false"));
         assert!(first.contains("features = [\"add\", \"f64\", \"native-link\", \"runtime\"]"));
+    }
+
+    #[test]
+    fn cargo_paths_are_relative_to_the_actual_project_location() {
+        let workspace = std::env::temp_dir().join("mech-build-relative-workspace");
+        assert_eq!(
+            relative_cargo_path(
+                &workspace.join("target/mech/demo.cargo"),
+                &workspace.join("src/core")
+            )
+            .unwrap(),
+            "../../../src/core"
+        );
+        assert_eq!(
+            relative_cargo_path(
+                &workspace.join("exports/deeply/nested/demo.cargo"),
+                &workspace.join("src/syntax")
+            )
+            .unwrap(),
+            "../../../../src/syntax"
+        );
+        let error = relative_cargo_path(
+            &workspace.join("target/../target/demo.cargo"),
+            &workspace.join("src/core"),
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "NativeProjectRelocationUnsupported");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_cargo_paths_require_the_same_volume() {
+        assert_eq!(
+            relative_cargo_path(
+                Path::new(r"C:\workspace\target\mech\demo.cargo"),
+                Path::new(r"C:\workspace\src\core")
+            )
+            .unwrap(),
+            "../../../src/core"
+        );
+        let error = relative_cargo_path(
+            Path::new(r"C:\workspace\target\mech\demo.cargo"),
+            Path::new(r"D:\workspace\src\core"),
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "NativeProjectRelocationUnsupported");
     }
 }

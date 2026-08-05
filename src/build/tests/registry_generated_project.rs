@@ -52,7 +52,7 @@ fn registry_project_is_exact_unpatched_and_buildable_with_a_test_only_patch() {
     });
     let plan = builder.plan(&request).unwrap();
     let original =
-        render_generated_native_project(temporary.path().join("original"), &request, &plan)
+        render_generated_native_project(temporary.path().join("original"), &request, &plan, None)
             .unwrap();
     original.materialize().unwrap();
 
@@ -110,9 +110,13 @@ fn live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure() {
     });
     let plan = builder.plan(&request).unwrap();
     assert!(plan.live);
-    let original =
-        render_generated_native_project(temporary.path().join("original-live"), &request, &plan)
-            .unwrap();
+    let original = render_generated_native_project(
+        temporary.path().join("original-live"),
+        &request,
+        &plan,
+        None,
+    )
+    .unwrap();
     original.materialize().unwrap();
     assert!(original.cargo_manifest.contains("ctrlc = {"));
     assert!(original.cargo_manifest.contains("version = \"=3.5.2\""));

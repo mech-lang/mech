@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use mech_core::{ExecutionResourceRequest, MResult, ResourceDelivery};
 use mech_runtime::{ConfigValue, LogLevel, RuntimeConfig};
@@ -901,15 +901,17 @@ pub fn render_generated_native_project(
     root: impl Into<PathBuf>,
     request: &NativeBuildRequest,
     plan: &NativeBuildPlan,
+    workspace_root: Option<&Path>,
 ) -> MResult<GeneratedNativeProject> {
     validate_generation_identity(request, plan)?;
+    let root = root.into();
     let dependencies = generated_dependencies_from_plan(plan)?;
     let manifest = NativeProjectManifest::new(
         plan.binary_name.clone(),
         plan.binary_name.clone(),
         dependencies,
     )?;
-    let cargo_manifest = render_native_project_manifest(&manifest)?;
+    let cargo_manifest = render_native_project_manifest(&manifest, &root, workspace_root)?;
     let sources = render_project_sources(plan, request.runtime_config.as_ref())?;
     let mut build_plan_json = serde_json::to_string_pretty(plan).map_err(|error| {
         project_error(format!("failed to serialize native build plan: {error}"))
@@ -1321,7 +1323,7 @@ mod tests {
         let mut plan = base_plan(NativeApplicationKind::Engine);
         refresh_plan_sha256(&mut plan).unwrap();
         let request = request();
-        let project = render_generated_native_project("project", &request, &plan).unwrap();
+        let project = render_generated_native_project("project", &request, &plan, None).unwrap();
         assert_eq!(
             project
                 .sources
@@ -1335,7 +1337,7 @@ mod tests {
 
         let mut mismatched = request;
         mismatched.binary_name = "other".into();
-        assert!(render_generated_native_project("project", &mismatched, &plan).is_err());
+        assert!(render_generated_native_project("project", &mismatched, &plan, None).is_err());
     }
 
     #[test]
@@ -1354,7 +1356,7 @@ mod tests {
             run_grants: Vec::new(),
         });
 
-        let project = render_generated_native_project("project", &request, &plan).unwrap();
+        let project = render_generated_native_project("project", &request, &plan, None).unwrap();
         let runtime = &project.sources["src/runtime.rs"];
         assert!(runtime.contains("\"configured-native-runtime\".to_string()"));
         assert!(runtime.contains("max_steps_per_turn: Some(321u64)"));
@@ -1368,7 +1370,7 @@ mod tests {
             .runtime
             .limits
             .max_steps_per_turn = Some(322);
-        assert!(render_generated_native_project("project", &request, &plan).is_err());
+        assert!(render_generated_native_project("project", &request, &plan, None).is_err());
     }
 
     #[test]
@@ -1390,7 +1392,7 @@ mod tests {
             }],
         });
 
-        let error = render_generated_native_project("project", &request, &plan).unwrap_err();
+        let error = render_generated_native_project("project", &request, &plan, None).unwrap_err();
         assert_eq!(error.kind_name(), "NativeProjectInvalid");
     }
 }

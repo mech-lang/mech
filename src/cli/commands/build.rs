@@ -277,20 +277,14 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
     .as_ref()
     .map(mech_build::normalize_native_runtime_config)
     .transpose()?;
-    let (dependency_source, project_workspace_root) = match options.workspace_root.as_ref() {
+    let dependency_source = match options.workspace_root.as_ref() {
         Some(root) => {
             let root = root.canonicalize()?;
-            (
-                NativeDependencySource::Workspace { root: root.clone() },
-                root,
-            )
+            NativeDependencySource::Workspace { root }
         }
-        None => (
-            NativeDependencySource::Registry {
-                version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
-            },
-            std::env::current_dir()?,
-        ),
+        None => NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
     };
     let environment = NativeBuildEnvironment {
         function_catalog: mech_stdlib::native_plan_catalog(),
@@ -324,8 +318,9 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             })?;
             copy_exact_file_bytes(&plan_json, &requested_output)?;
             if options.keep_project {
-                let project = builder.generate(&request, &plan)?;
-                copy_project(&project.root, &project_output_path(&requested_output))?;
+                let project_output = project_output_path(&requested_output);
+                refuse_existing_project_output(&project_output)?;
+                builder.generate_at(&request, &plan, project_output)?;
             }
             println!(
                 "[Output] Native build plan written to: {}",
@@ -333,8 +328,8 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             );
         }
         BuildEmit::CargoProject => {
-            let project = builder.generate(&request, &plan)?;
-            copy_project(&project.root, &requested_output)?;
+            refuse_existing_project_output(&requested_output)?;
+            builder.generate_at(&request, &plan, &requested_output)?;
             println!(
                 "[Output] Native Cargo project written to: {}",
                 requested_output.display()
@@ -348,9 +343,9 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
                 .unwrap_or_else(|| default_native_output_path(&binary_name, &artifact.executable));
             copy_exact_file(&artifact.executable, &output)?;
             if options.keep_project {
-                let project_root =
-                    mech_build::generated_project_root(&project_workspace_root, &plan.plan_sha256)?;
-                copy_project(&project_root, &project_output_path(&output))?;
+                let project_output = project_output_path(&output);
+                refuse_existing_project_output(&project_output)?;
+                builder.generate_at(&request, &plan, project_output)?;
             }
             println!(
                 "[Output] Native Mech application written to: {}",
@@ -358,8 +353,9 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             );
         }
         BuildEmit::Bytecode => {
-            let project = builder.generate(&request, &plan)?;
-            copy_project(&project.root, &project_output_path(&requested_output))?;
+            let project_output = project_output_path(&requested_output);
+            refuse_existing_project_output(&project_output)?;
+            builder.generate_at(&request, &plan, project_output)?;
         }
     }
     Ok(CliOutcome::success())
@@ -566,28 +562,12 @@ fn copy_exact_file(source: &Path, destination: &Path) -> MResult<()> {
     Ok(())
 }
 
-fn copy_project(source: &Path, destination: &Path) -> MResult<()> {
+fn refuse_existing_project_output(destination: &Path) -> MResult<()> {
     if destination.exists() {
         return build_error(format!(
             "refusing to overwrite existing Cargo project output `{}`",
             destination.display()
         ));
-    }
-    copy_directory(source, destination)
-}
-
-fn copy_directory(source: &Path, destination: &Path) -> MResult<()> {
-    fs::create_dir_all(destination)?;
-    let mut entries = fs::read_dir(source)?.collect::<Result<Vec<_>, _>>()?;
-    entries.sort_by_key(|entry| entry.file_name());
-    for entry in entries {
-        let source_path = entry.path();
-        let destination_path = destination.join(entry.file_name());
-        if source_path.is_dir() {
-            copy_directory(&source_path, &destination_path)?;
-        } else {
-            fs::copy(&source_path, &destination_path)?;
-        }
     }
     Ok(())
 }

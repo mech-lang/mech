@@ -1,5 +1,6 @@
 mod fingerprint;
 mod registry;
+mod resolution;
 mod workspace;
 
 use std::path::PathBuf;
@@ -10,6 +11,7 @@ use crate::error::{NativeBuildErrorKind, native_build_error};
 
 pub use fingerprint::*;
 pub use registry::*;
+pub(crate) use resolution::*;
 pub use workspace::*;
 
 /// Trusted source used to resolve packages selected by native planning.
