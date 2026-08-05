@@ -13,6 +13,11 @@ pub(crate) struct SetPowersetFxn {
     out: Ref<MechSet>,
 }
 impl MechFunctionFactory for SetPowersetFxn {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::Set,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, input) => {

@@ -242,6 +242,12 @@ fn make_optional_kind(kind: &ValueKind) -> ValueKind {
 }
 
 impl MechFunctionFactory for TableJoinFxn {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Table,
+        FunctionValueRepresentation::Table,
+        FunctionValueRepresentation::Table,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {

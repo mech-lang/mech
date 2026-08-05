@@ -27,7 +27,13 @@ where
     #[cfg(feature = "compiler")]
     O: CompileConst + ConstElem,
     Ref<O>: ToValue,
+    O: FunctionRuntimeType,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        O::REPRESENTATION,
+        O::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg) => {
@@ -105,7 +111,13 @@ where
     #[cfg(feature = "compiler")]
     O: CompileConst + ConstElem,
     Ref<O>: ToValue,
+    O: FunctionRuntimeType,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        O::REPRESENTATION,
+        O::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg) => {

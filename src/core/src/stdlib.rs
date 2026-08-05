@@ -220,7 +220,16 @@ macro_rules! impl_binop {
                 + Zero
                 + One,
             Ref<$out_type>: ToValue,
+            $arg1_type: FunctionRuntimeType,
+            $arg2_type: FunctionRuntimeType,
+            $out_type: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
@@ -305,6 +314,11 @@ macro_rules! impl_unop {
             out: Ref<$out_type>,
         }
         impl MechFunctionFactory for $struct_name {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Unary(out, arg) => {
@@ -1766,7 +1780,7 @@ macro_rules! __mech_declare_native_binop_runtime_factory {
         ($cfg:meta; $package:literal; $crate_name:literal; [$($base_feature:literal),* $(,)?]),
         $lib:ident,
         $suffix:ident,
-        [$($shape_feature:literal),* $(,)?],
+        [$($_shape_feature:literal),* $(,)?],
         $scalar:ty,
         $scalar_name:literal,
         $scalar_token:ident
@@ -1777,7 +1791,7 @@ macro_rules! __mech_declare_native_binop_runtime_factory {
                 registration: [<register_ $lib:snake _ $suffix:lower _ $scalar_token>],
                 installer: [<install_ $lib:snake _ $suffix:lower _ $scalar_token>],
                 name: concat!(stringify!($lib), stringify!($suffix), "<", $scalar_name, ">"),
-                factory: <[<$lib $suffix>]<$scalar> as $crate::MechFunctionFactory>::new,
+                factory_type: [<$lib $suffix>]<$scalar>,
                 contract: $crate::__mech_elementwise_binop_contract!($suffix),
                 package: $package,
                 crate_name: $crate_name,
@@ -1786,7 +1800,7 @@ macro_rules! __mech_declare_native_binop_runtime_factory {
                     "::__mech_native::",
                     stringify!([<install_ $lib:snake _ $suffix:lower _ $scalar_token>])
                 ),
-                cargo_features: [$($base_feature,)* $($shape_feature),*],
+                extra_cargo_features: [$($base_feature),*],
             }
         }
     };
@@ -1814,10 +1828,6 @@ macro_rules! __mech_declare_native_binop_runtime_factories_for_scalar {
                 $crate_name;
                 [
                     $operation_feature,
-                    $scalar_feature,
-                    $($additional_feature,)*
-                    "native-link",
-                    "runtime",
                 ]
             ),
             $operation,
@@ -1988,7 +1998,7 @@ macro_rules! export_native_binop_runtime_factories {
 macro_rules! __mech_install_binop_runtime_factory {
     ($builder:expr, $lib:ident, $suffix:ident, $scalar:ty, $scalar_name:literal) => {
         paste! {
-            $builder.insert_runtime_factory(
+            $builder.insert_runtime_factory::<[<$lib $suffix>]<$scalar>>(
                 concat!(
                     stringify!($lib),
                     stringify!($suffix),
@@ -1996,7 +2006,6 @@ macro_rules! __mech_install_binop_runtime_factory {
                     $scalar_name,
                     ">"
                 ),
-                <[<$lib $suffix>]<$scalar> as $crate::MechFunctionFactory>::new,
                 $crate::__mech_elementwise_binop_contract!($suffix),
             )?;
         }
@@ -2217,9 +2226,8 @@ macro_rules! __mech_elementwise_unop_contract {
 macro_rules! __mech_install_unop_runtime_factory {
     ($builder:expr, $lib:ident, $scalar:ident, $suffix:ident) => {
         paste! {
-            $builder.insert_runtime_factory(
+            $builder.insert_runtime_factory::<[<$lib $scalar:camel $suffix>]>(
                 stringify!([<$lib $scalar:camel $suffix>]),
-                <[<$lib $scalar:camel $suffix>] as $crate::MechFunctionFactory>::new,
                 $crate::__mech_elementwise_unop_contract!($suffix),
             )?;
         }
@@ -2300,9 +2308,8 @@ macro_rules! install_unop_runtime_factories {
 #[macro_export]
 macro_rules! __mech_install_typed_runtime_factory {
     ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $contract:expr) => {
-        $builder.insert_runtime_factory(
+        $builder.insert_runtime_factory::<$factory<$scalar>>(
             concat!(stringify!($factory), "<", $scalar_name, ">"),
-            <$factory<$scalar> as $crate::MechFunctionFactory>::new,
             $contract,
         )?;
     };

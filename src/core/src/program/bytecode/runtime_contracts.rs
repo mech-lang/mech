@@ -337,8 +337,9 @@ mod tests {
     use super::*;
     use crate::{
         ApplicationRequirement, BytecodeProgram, EncodedConstant, ExecutionHostFunctionRequest,
-        ExecutionResourceRequest, FunctionArgumentRole, FunctionCatalogBuilder, MechFunction,
-        MechFunctionFactory, MechFunctionImpl, Ref, ResourceDelivery, RuntimeType, ToValue,
+        ExecutionResourceRequest, FunctionArgumentRole, FunctionCatalogBuilder,
+        FunctionRuntimeType, FunctionValueRepresentation, MechFunction, MechFunctionFactory,
+        MechFunctionImpl, Ref, ResourceDelivery, RuntimeFunctionSignature, RuntimeType, ToValue,
         write_bytecode,
     };
     #[cfg(feature = "compiler")]
@@ -350,6 +351,12 @@ mod tests {
     }
 
     impl MechFunctionFactory for ExactF64Binary {
+        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+            <f64 as FunctionRuntimeType>::REPRESENTATION,
+            <f64 as FunctionRuntimeType>::REPRESENTATION,
+            <f64 as FunctionRuntimeType>::REPRESENTATION,
+        );
+
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
             match args {
                 FunctionArgs::Binary(out, lhs, rhs) => {
@@ -437,9 +444,8 @@ mod tests {
     fn catalog() -> FunctionCatalog {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_runtime_factory(
+            .insert_runtime_factory::<ExactF64Binary>(
                 "ExactF64Binary",
-                ExactF64Binary::new,
                 crate::RuntimeFunctionContract::no_matrix(
                     crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),
@@ -480,8 +486,19 @@ mod tests {
     }
 
     #[cfg(all(feature = "matrix2", feature = "matrixd"))]
-    fn factory_must_not_run(_args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        panic!("shape and alias contracts must reject before invoking the factory")
+    struct FactoryMustNotRun;
+
+    #[cfg(all(feature = "matrix2", feature = "matrixd"))]
+    impl MechFunctionFactory for FactoryMustNotRun {
+        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+        );
+
+        fn new(_args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            panic!("shape and alias contracts must reject before invoking the factory")
+        }
     }
 
     #[cfg(all(feature = "matrix2", feature = "matrixd", feature = "vectord"))]
@@ -517,7 +534,7 @@ mod tests {
             ),
         ] {
             catalog
-                .insert_runtime_factory(name, factory_must_not_run, contract)
+                .insert_runtime_factory::<FactoryMustNotRun>(name, contract)
                 .unwrap();
         }
         let catalog = catalog.build().unwrap();
@@ -809,6 +826,12 @@ mod tests {
             out: Ref<Matrix2<f64>>,
         }
         impl MechFunctionFactory for ExactMatrix2Binary {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <Matrix2<f64> as FunctionRuntimeType>::REPRESENTATION,
+                <Matrix2<f64> as FunctionRuntimeType>::REPRESENTATION,
+                <Matrix2<f64> as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, lhs, rhs) => {
@@ -859,9 +882,8 @@ mod tests {
         );
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_runtime_factory(
+            .insert_runtime_factory::<ExactMatrix2Binary>(
                 NAME,
-                ExactMatrix2Binary::new,
                 crate::RuntimeFunctionContract::same_shape(
                     crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
                 ),

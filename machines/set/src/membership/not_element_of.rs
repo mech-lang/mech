@@ -16,6 +16,12 @@ pub(crate) struct SetNotElementOfFxn {
 }
 
 impl MechFunctionFactory for SetNotElementOfFxn {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Bool,
+        FunctionValueRepresentation::MutableValueCell,
+        FunctionValueRepresentation::Set,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {

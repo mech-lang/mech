@@ -24,6 +24,9 @@ impl MechFunctionImpl for TupleAccessElement {
     }
 }
 impl MechFunctionFactory for TupleAccessElement {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::AnyValue);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => Ok(Box::new(Self { out })),
@@ -44,11 +47,11 @@ mech_core::declare_native_runtime_factory! {
     registration: register_tuple_access_element,
     installer: install_tuple_access_element,
     name: "TupleAccessElement",
-    factory: TupleAccessElement::new,
+    factory_type: TupleAccessElement,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_tuple_access_element",
-    cargo_features: ["access", "native-link", "runtime", "tuple"],
+    extra_cargo_features: ["access"],
 }
 
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {

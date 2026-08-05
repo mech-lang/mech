@@ -590,7 +590,16 @@ macro_rules! impl_access_fxn {
             #[cfg(feature = "compiler")]
             T: CompileConst,
             Ref<$out_type>: ToValue,
+            $arg_type: FunctionRuntimeType,
+            $ix_type: FunctionRuntimeType,
+            $out_type: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg_type as FunctionRuntimeType>::REPRESENTATION,
+                <$ix_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
@@ -667,7 +676,18 @@ macro_rules! impl_access_fxn2 {
             #[cfg(feature = "compiler")]
             T: CompileConst,
             Ref<$out_type>: ToValue,
+            $arg_type: FunctionRuntimeType,
+            $ix1_type: FunctionRuntimeType,
+            $ix2_type: FunctionRuntimeType,
+            $out_type: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg_type as FunctionRuntimeType>::REPRESENTATION,
+                <$ix1_type as FunctionRuntimeType>::REPRESENTATION,
+                <$ix2_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
@@ -2534,7 +2554,7 @@ macro_rules! declare_access_typed_scalar {
                 registration: [<register_ $factory:snake _ $scalar:lower>],
                 installer: [<install_ $factory:snake _ $scalar:lower>],
                 name: concat!(stringify!($factory), "<", $runtime_name, ">"),
-                factory: <$factory<$scalar> as MechFunctionFactory>::new,
+                factory_type: $factory<$scalar>,
                 contract: RuntimeFunctionContract::custom(
                     "matrix_access",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -2548,13 +2568,7 @@ macro_rules! declare_access_typed_scalar {
                     "_",
                     stringify!([<$scalar:lower>]),
                 ),
-                cargo_features: [
-                    "access",
-                    "native-link",
-                    "runtime",
-                    $cargo_scalar,
-                    $($feature),+
-                ],
+                extra_cargo_features: ["access"],
             }
         }
     };
@@ -2744,13 +2758,13 @@ macro_rules! declare_access_range_range_scalar {
                     stringify!($ix2),
                     ">"
                 ),
-                factory: <$factory<
+                factory_type: $factory<
                     $scalar,
                     $output<$scalar>,
                     $input<$scalar>,
                     $ix1<$ix1_scalar>,
                     $ix2<$ix2_scalar>,
-                > as MechFunctionFactory>::new,
+                >,
                 contract: RuntimeFunctionContract::custom(
                     "matrix_access",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -2762,13 +2776,7 @@ macro_rules! declare_access_range_range_scalar {
                     "mech_engine::__mech_native::install_",
                     stringify!([<$factory:snake _ $output:snake _ $input:snake _ $ix1:snake _ $ix2:snake _ $scalar:lower>]),
                 ),
-                cargo_features: [
-                    "access",
-                    "native-link",
-                    "runtime",
-                    $cargo_scalar,
-                    $($feature),+
-                ],
+                extra_cargo_features: ["access"],
             }
         }
     };
@@ -2831,12 +2839,12 @@ macro_rules! declare_access_all_range_scalar {
                     stringify!($ix),
                     ">"
                 ),
-                factory: <$factory<
+                factory_type: $factory<
                     $scalar,
                     $output<$scalar>,
                     $input<$scalar>,
                     $ix<$ix_scalar>,
-                > as MechFunctionFactory>::new,
+                >,
                 contract: RuntimeFunctionContract::custom(
                     "matrix_access",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -2848,13 +2856,7 @@ macro_rules! declare_access_all_range_scalar {
                     "mech_engine::__mech_native::install_",
                     stringify!([<$factory:snake _ $output:snake _ $input:snake _ $ix:snake _ $scalar:lower>]),
                 ),
-                cargo_features: [
-                    "access",
-                    "native-link",
-                    "runtime",
-                    $cargo_scalar,
-                    $($feature),+
-                ],
+                extra_cargo_features: ["access"],
             }
         }
     };

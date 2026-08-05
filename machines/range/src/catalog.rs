@@ -76,7 +76,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 
 macro_rules! install_range_factory {
     ($builder:expr, $module:ident, $factory:ident, $scalar:ty, $scalar_name:literal, $shape:ident) => {
-        $builder.insert_runtime_factory(
+        $builder.insert_runtime_factory::<crate::$module::$factory<$scalar, $shape<$scalar>>>(
             concat!(
                 stringify!($factory),
                 "<",
@@ -84,7 +84,6 @@ macro_rules! install_range_factory {
                 stringify!($shape),
                 ">"
             ),
-            <crate::$module::$factory<$scalar, $shape<$scalar>> as MechFunctionFactory>::new,
             RuntimeFunctionContract::custom(
                 "range_construction",
                 RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -377,7 +376,7 @@ macro_rules! declare_range_runtime_factory {
                 registration: [<register_ $factory:snake _ $scalar_token _ $shape:snake>],
                 installer: [<install_ $factory:snake _ $scalar_token _ $shape:snake>],
                 name: concat!(stringify!($factory), "<", $scalar_feature, stringify!($shape), ">"),
-                factory: <crate::$module::$factory<$scalar, $shape<$scalar>> as MechFunctionFactory>::new,
+                factory_type: crate::$module::$factory<$scalar, $shape<$scalar>>,
                 contract: RuntimeFunctionContract::custom(
                     "range_construction",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
@@ -385,7 +384,7 @@ macro_rules! declare_range_runtime_factory {
                 ),
                 package: "mech-range", crate_name: "mech_range",
                 installer_path: concat!("mech_range::__mech_native::", stringify!([<install_ $factory:snake _ $scalar_token _ $shape:snake>])),
-                cargo_features: [$operation_feature, $scalar_feature, $($shape_feature,)* "native-link", "runtime"],
+                extra_cargo_features: [$operation_feature],
             }
         }
     };

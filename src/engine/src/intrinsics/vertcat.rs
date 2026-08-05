@@ -13,11 +13,28 @@ macro_rules! vertcat_two_args {
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + AsValueKind
+                + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
+            $e0<T>: FunctionRuntimeType,
+            $e1<T>: FunctionRuntimeType,
+            $out<T>: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e0<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e1<T> as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg0, arg1) => {
@@ -95,11 +112,30 @@ macro_rules! vertcat_three_args {
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + AsValueKind
+                + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
+            $e0<T>: FunctionRuntimeType,
+            $e1<T>: FunctionRuntimeType,
+            $e2<T>: FunctionRuntimeType,
+            $out<T>: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+                <$out<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e0<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e1<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e2<T> as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
@@ -174,11 +210,32 @@ macro_rules! vertcat_four_args {
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + AsValueKind
+                + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
+            $e0<T>: FunctionRuntimeType,
+            $e1<T>: FunctionRuntimeType,
+            $e2<T>: FunctionRuntimeType,
+            $e3<T>: FunctionRuntimeType,
+            $out<T>: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
+                <$out<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e0<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e1<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e2<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e3<T> as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
@@ -261,11 +318,25 @@ struct VerticalConcatenateTwoArgs<T> {
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateTwoArgs<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
@@ -347,11 +418,26 @@ struct VerticalConcatenateThreeArgs<T> {
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateThreeArgs<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
@@ -438,11 +524,27 @@ struct VerticalConcatenateFourArgs<T> {
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateFourArgs<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
+        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
@@ -537,11 +639,24 @@ struct VerticalConcatenateNArgs<T> {
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateNArgs<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Variadic(out, arg0) => {
@@ -623,23 +738,14 @@ mech_core::declare_native_runtime_factory! {
     installer: install_vertical_concatenate_n_args_f64,
 
     name: "VerticalConcatenateNArgs<f64>",
-    factory: <VerticalConcatenateNArgs<f64> as MechFunctionFactory>::new,
+    factory_type: VerticalConcatenateNArgs<f64>,
     contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
 
     package: "mech-engine",
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_vertical_concatenate_n_args_f64",
 
-    cargo_features: &[
-        "bool",
-        "f64",
-        "matrix_vertcat",
-        "matrixd",
-        "native-link",
-        "row_vectord",
-        "runtime",
-        "vectord",
-    ],
+    extra_cargo_features: ["matrix_vertcat"],
 }
 
 #[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "f64"))]
@@ -692,11 +798,17 @@ macro_rules! vertical_concatenate {
       impl<T> MechFunctionFactory for $name<T>
       where
         T: Debug + Clone + Sync + Send + PartialEq + 'static +
-        ConstElem + AsValueKind,
+        ConstElem + AsValueKind + FunctionRuntimeType,
         #[cfg(feature = "compiler")]
         T: CompileConst,
-        Ref<[<$vec_size>]<T>>: ToValue
+        Ref<[<$vec_size>]<T>>: ToValue,
+        [<$vec_size>]<T>: FunctionRuntimeType,
       {
+        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+          <[<$vec_size>]<T> as FunctionRuntimeType>::REPRESENTATION,
+          FunctionValueRepresentation::AnyValue,
+        );
+
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Unary(out, _arg0) => {
@@ -744,11 +856,25 @@ struct VerticalConcatenateVD2<T> {
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD2<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
@@ -828,11 +954,26 @@ struct VerticalConcatenateVD3<T> {
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD3<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+        <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
@@ -916,11 +1057,27 @@ struct VerticalConcatenateVD4<T> {
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD4<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
+        <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
@@ -1013,11 +1170,24 @@ struct VerticalConcatenateVDN<T> {
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVDN<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
+        FunctionValueRepresentation::AnyValue,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Variadic(out, vargs) => {
@@ -1114,11 +1284,22 @@ struct VerticalConcatenateS1<T> {
 #[cfg(feature = "matrix1")]
 impl<T> MechFunctionFactory for VerticalConcatenateS1<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<Matrix1<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(<Matrix1<T> as FunctionRuntimeType>::REPRESENTATION);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
@@ -1241,11 +1422,22 @@ struct VerticalConcatenateSD<T> {
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateSD<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(<DVector<T> as FunctionRuntimeType>::REPRESENTATION);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
@@ -1495,11 +1687,27 @@ struct VerticalConcatenateM1M1M1M1<T> {
 #[cfg(all(feature = "matrix1", feature = "vector4"))]
 impl<T> MechFunctionFactory for VerticalConcatenateM1M1M1M1<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<Vector4<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
+        <Vector4<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
@@ -1599,23 +1807,14 @@ mech_core::declare_native_runtime_factory! {
     installer: install_vertical_concatenate_r2_r2_f64,
 
     name: "VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>",
-    factory: <VerticalConcatenateR2R2<f64> as MechFunctionFactory>::new,
+    factory_type: VerticalConcatenateR2R2<f64>,
     contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
 
     package: "mech-engine",
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_vertical_concatenate_r2_r2_f64",
 
-    cargo_features: &[
-        "bool",
-        "f64",
-        "matrix2",
-        "matrix_vertcat",
-        "native-link",
-        "row_vector2",
-        "runtime",
-        "vector2",
-    ],
+    extra_cargo_features: ["matrix_vertcat"],
 }
 
 // VerticalConcatenateR3R3 ----------------------------------------------------
@@ -2522,11 +2721,11 @@ macro_rules! declare_vertcat_scalar {
             registration: [<register_ $factory:snake _ $token>],
             installer: [<install_ $factory:snake _ $token>],
             name: concat!(stringify!($factory), "<", $name, ">"),
-            factory: <$factory<$scalar> as MechFunctionFactory>::new,
+            factory_type: $factory<$scalar>,
             contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
             package: "mech-engine", crate_name: "mech_engine",
             installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token>])),
-            cargo_features: ["matrix_vertcat", "native-link", "runtime", $cargo, $($feature),+],
+            extra_cargo_features: ["matrix_vertcat"],
         }}
     };
 }
@@ -2644,11 +2843,11 @@ macro_rules! declare_vertcat_binary_scalar {
             registration: [<register_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>],
             installer: [<install_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>],
             name: concat!(stringify!($factory), "<", $name, stringify!($out), stringify!($e0), stringify!($e1), ">"),
-            factory: <$factory<$scalar> as MechFunctionFactory>::new,
+            factory_type: $factory<$scalar>,
             contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
             package: "mech-engine", crate_name: "mech_engine",
             installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>])),
-            cargo_features: ["matrix_vertcat", "native-link", "runtime", $cargo, $($feature),+],
+            extra_cargo_features: ["matrix_vertcat"],
         }}
     };
 }

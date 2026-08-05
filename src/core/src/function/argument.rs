@@ -23,7 +23,7 @@ pub struct FunctionArgumentTypeMismatch {
     pub found: String,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FunctionMatrixRepresentation {
     Matrix1,
     Matrix2,

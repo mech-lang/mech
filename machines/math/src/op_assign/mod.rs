@@ -70,9 +70,18 @@ macro_rules! impl_op_assign_range_fxn_s {
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: Debug + AsNaKind,
+            naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
+            IxVec: FunctionRuntimeType,
+            T: FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <naMatrix<T, R1, C1, S1> as FunctionRuntimeType>::REPRESENTATION,
+                T::REPRESENTATION,
+                IxVec::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
@@ -225,9 +234,18 @@ macro_rules! impl_op_assign_range_fxn_v {
             #[cfg(feature = "compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
             naMatrix<T, R2, C2, S2>: Debug + AsNaKind,
+            naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
+            naMatrix<T, R2, C2, S2>: FunctionRuntimeType,
+            IxVec: FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <naMatrix<T, R1, C1, S1> as FunctionRuntimeType>::REPRESENTATION,
+                <naMatrix<T, R2, C2, S2> as FunctionRuntimeType>::REPRESENTATION,
+                IxVec::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
@@ -405,7 +423,13 @@ macro_rules! impl_assign_scalar_scalar {
         #[cfg(feature = "compiler")]
         T: CompileConst + ConstElem,
         Ref<T>: ToValue
+        , T: FunctionRuntimeType
       {
+        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+          T::REPRESENTATION,
+          T::REPRESENTATION,
+        );
+
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Unary(out, arg1) => {
@@ -483,9 +507,16 @@ macro_rules! impl_assign_vector_vector {
         #[cfg(feature = "compiler")]
         MatA: CompileConst + ConstElem,
         MatB: Debug + AsValueKind + 'static,
+        MatA: FunctionRuntimeType,
+        MatB: FunctionRuntimeType,
         #[cfg(feature = "compiler")]
         MatB: CompileConst + ConstElem,
       {
+        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+          MatA::REPRESENTATION,
+          MatB::REPRESENTATION,
+        );
+
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Unary(out, arg1) => {
@@ -572,9 +603,17 @@ macro_rules! impl_assign_vector_scalar {
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         MatA: Debug + Clone + AsValueKind + 'static,
+        MatA: FunctionRuntimeType,
+        T: FunctionRuntimeType,
         #[cfg(feature = "compiler")]
         MatA: CompileConst + ConstElem,
       {
+        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+          MatA::REPRESENTATION,
+          FunctionValueRepresentation::AnyValue,
+          T::REPRESENTATION,
+        );
+
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Binary(out, arg1, arg2) => {

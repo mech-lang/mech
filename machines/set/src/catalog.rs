@@ -205,7 +205,7 @@ macro_rules! for_each_set_runtime_factory {
         $callback!(feature = "proper_subset"; register_set_proper_subset_fxn; install_set_proper_subset_fxn; "SetProperSubsetFxn"; crate::relations::proper_subset::SetProperSubsetFxn; ["proper_subset"]);
         $callback!(feature = "proper_superset"; register_set_proper_superset_fxn; install_set_proper_superset_fxn; "SetProperSupersetFxn"; crate::relations::proper_superset::SetProperSupersetFxn; ["proper_superset"]);
         $callback!(feature = "remove"; register_set_remove_fxn; install_set_remove_fxn; "SetRemoveFxn"; crate::modify::remove::SetRemoveFxn; ["remove"]);
-        $callback!(all(feature = "size", feature = "u64"); register_set_size_fxn; install_set_size_fxn; "SetSizeFxn"; crate::setdata::size::SetSizeFxn; ["size", "u64"]);
+        $callback!(all(feature = "size", feature = "u64"); register_set_size_fxn; install_set_size_fxn; "SetSizeFxn"; crate::setdata::size::SetSizeFxn; ["size"]);
         $callback!(feature = "subset"; register_set_subset_fxn; install_set_subset_fxn; "SetSubsetFxn"; crate::relations::subset::SetSubsetFxn; ["subset"]);
         $callback!(feature = "superset"; register_set_superset_fxn; install_set_superset_fxn; "SetSupersetFxn"; crate::relations::superset::SetSupersetFxn; ["superset"]);
         $callback!(feature = "symmetric_difference"; register_set_symmetric_difference_fxn; install_set_symmetric_difference_fxn; "SetSymDifferenceFxn"; crate::operations::symmetric_difference::SetSymDifferenceFxn; ["symmetric_difference"]);
@@ -220,12 +220,12 @@ macro_rules! declare_set_runtime_factory {
             registration: $registration,
             installer: $installer,
             name: $name,
-            factory: <$factory as MechFunctionFactory>::new,
+            factory_type: $factory,
             contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
             package: "mech-set",
             crate_name: "mech_set",
             installer_path: concat!("mech_set::__mech_native::", stringify!($installer)),
-            cargo_features: [$($feature,)* "native-link", "runtime"],
+            extra_cargo_features: [$($feature),*],
         }
     };
 }

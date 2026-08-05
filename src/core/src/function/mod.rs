@@ -1,9 +1,11 @@
 pub mod argument;
 pub mod catalog;
 pub mod contract;
+pub mod signature;
 pub use argument::*;
 pub use catalog::*;
 pub use contract::*;
+pub use signature::*;
 
 use crate::nodes::*;
 use crate::types::*;
@@ -225,6 +227,76 @@ impl FunctionArgs {
         (contract.validate_shapes)(self)
     }
 
+    pub fn validate_signature(&self, signature: RuntimeFunctionSignature) -> MResult<()> {
+        let arity_kind_matches = matches!(
+            (self, signature.inputs),
+            (FunctionArgs::Nullary(_), RuntimeFunctionInputs::Nullary)
+                | (FunctionArgs::Unary(_, _), RuntimeFunctionInputs::Unary(_))
+                | (
+                    FunctionArgs::Binary(_, _, _),
+                    RuntimeFunctionInputs::Binary(_, _)
+                )
+                | (
+                    FunctionArgs::Ternary(_, _, _, _),
+                    RuntimeFunctionInputs::Ternary(_, _, _)
+                )
+                | (
+                    FunctionArgs::Quaternary(_, _, _, _, _),
+                    RuntimeFunctionInputs::Quaternary(_, _, _, _)
+                )
+                | (
+                    FunctionArgs::Variadic(_, _),
+                    RuntimeFunctionInputs::Variadic { .. }
+                )
+        );
+        let expected_inputs: Vec<FunctionValueRepresentation> = match signature.inputs {
+            RuntimeFunctionInputs::Nullary => Vec::new(),
+            RuntimeFunctionInputs::Unary(argument) => vec![argument],
+            RuntimeFunctionInputs::Binary(lhs, rhs) => vec![lhs, rhs],
+            RuntimeFunctionInputs::Ternary(first, second, third) => {
+                vec![first, second, third]
+            }
+            RuntimeFunctionInputs::Quaternary(first, second, third, fourth) => {
+                vec![first, second, third, fourth]
+            }
+            RuntimeFunctionInputs::Variadic { element } => vec![element; self.input_count()],
+        };
+
+        if !arity_kind_matches || expected_inputs.len() != self.input_count() {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: expected_inputs.len(),
+                    found: self.input_count(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+
+        let found_output = FunctionValueRepresentation::from_value(self.output_value());
+        if !signature.output.matches(found_output) {
+            return Err(signature_violation(
+                FunctionArgumentRole::Output,
+                signature.output,
+                self.output_value(),
+            ));
+        }
+
+        for (index, expected) in expected_inputs.into_iter().enumerate() {
+            let input = self.input_value(index).expect("validated function arity");
+            let found = FunctionValueRepresentation::from_value(input);
+            if !expected.matches(found) {
+                return Err(signature_violation(
+                    FunctionArgumentRole::Input(index),
+                    expected,
+                    input,
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn len(&self) -> usize {
         match self {
             FunctionArgs::Nullary(_) => 0,
@@ -256,6 +328,8 @@ impl FunctionArgs {
 }
 
 pub trait MechFunctionFactory {
+    const SIGNATURE: RuntimeFunctionSignature;
+
     /// Constructs a runtime function from its authoritative argument contract.
     ///
     /// Implementations must be deterministic and side-effect-free, safely

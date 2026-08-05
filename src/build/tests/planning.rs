@@ -16,10 +16,11 @@ use mech_build::{NativeHostLinkage, NativeTargetFamily};
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
     EncodedConstant, ExecutionHostFunctionRequest, FunctionArgs, FunctionArgumentRole,
-    FunctionCatalog, FunctionCatalogBuilder, MResult, MatrixStorage, MechFunction,
-    MechFunctionCompiler, MechFunctionImpl, NativeFunctionLinkage, Ref, Register,
-    RuntimeFunctionContract, RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, ToValue, Value,
-    hash_str, write_bytecode,
+    FunctionCatalog, FunctionCatalogBuilder, FunctionRuntimeType, FunctionValueRepresentation,
+    MResult, MatrixStorage, MechFunction, MechFunctionCompiler, MechFunctionFactory,
+    MechFunctionImpl, NativeFunctionLinkage, Ref, Register, RuntimeFunctionContract,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, ToValue,
+    Value, hash_str, write_bytecode,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 
@@ -476,12 +477,17 @@ impl MechFunctionCompiler for PlanningFunction {
     }
 }
 
-fn unused_factory(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    match arguments {
-        FunctionArgs::Nullary(output) => Ok(Box::new(PlanningFunction {
-            output: output.try_function_ref(FunctionArgumentRole::Output)?,
-        })),
-        _ => unreachable!(),
+impl MechFunctionFactory for PlanningFunction {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(<f64 as FunctionRuntimeType>::REPRESENTATION);
+
+    fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match arguments {
+            FunctionArgs::Nullary(output) => Ok(Box::new(PlanningFunction {
+                output: output.try_function_ref(FunctionArgumentRole::Output)?,
+            })),
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -490,9 +496,8 @@ fn known_runtime_ids_without_native_metadata_fail_before_generation() {
     const NAME: &str = "KnownButUnlinked";
     let mut catalog = FunctionCatalogBuilder::new();
     catalog
-        .insert_runtime_factory(
+        .insert_runtime_factory::<PlanningFunction>(
             NAME,
-            unused_factory,
             RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
         )
         .unwrap();
@@ -509,15 +514,14 @@ fn malicious_runtime_type_mismatch_fails_before_native_analysis() {
     const NAME: &str = "LinkedPlanningFunction";
     let mut catalog = FunctionCatalogBuilder::new();
     catalog
-        .insert_runtime_factory_with_linkage(
+        .insert_runtime_factory_with_linkage::<PlanningFunction>(
             NAME,
-            unused_factory,
             RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
             NativeFunctionLinkage {
                 package: "mech-test",
                 crate_name: "mech_test",
                 installer_path: "mech_test::__mech_native::install",
-                cargo_features: &["native-link", "runtime"],
+                cargo_features: vec!["native-link", "runtime"],
             },
         )
         .unwrap();
@@ -539,8 +543,18 @@ fn malicious_runtime_type_mismatch_fails_before_native_analysis() {
 
 #[test]
 fn malicious_matrix_relations_and_aliases_fail_without_materializing_a_project() {
-    fn must_not_instantiate(_args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        panic!("malformed matrix relations must fail before factory construction")
+    struct MustNotInstantiate;
+
+    impl MechFunctionFactory for MustNotInstantiate {
+        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+            FunctionValueRepresentation::AnyValue,
+        );
+
+        fn new(_args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            panic!("malformed matrix relations must fail before factory construction")
+        }
     }
     let mut catalog = FunctionCatalogBuilder::new();
     for (name, installer_path, contract) in [
@@ -566,15 +580,14 @@ fn malicious_matrix_relations_and_aliases_fail_without_materializing_a_project()
         ),
     ] {
         catalog
-            .insert_runtime_factory_with_linkage(
+            .insert_runtime_factory_with_linkage::<MustNotInstantiate>(
                 name,
-                must_not_instantiate,
                 contract,
                 NativeFunctionLinkage {
                     package: "mech-test",
                     crate_name: "mech_test",
                     installer_path,
-                    cargo_features: &["native-link", "runtime"],
+                    cargo_features: vec!["native-link", "runtime"],
                 },
             )
             .unwrap();

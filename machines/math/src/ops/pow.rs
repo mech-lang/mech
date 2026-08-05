@@ -138,7 +138,16 @@ macro_rules! impl_powop {
             #[cfg(feature = "compiler")]
             T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
+            $arg1_type: FunctionRuntimeType,
+            $arg2_type: FunctionRuntimeType,
+            $out_type: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
@@ -229,6 +238,12 @@ pub struct PowRational {
 }
 #[cfg(all(feature = "rational", feature = "i32"))]
 impl MechFunctionFactory for PowRational {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::R64,
+        FunctionValueRepresentation::R64,
+        FunctionValueRepresentation::I32,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {

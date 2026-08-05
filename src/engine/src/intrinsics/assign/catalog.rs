@@ -67,11 +67,11 @@ macro_rules! declare_assign_scalar_factory {
                 registration: [<register_assign_ $installer_token>],
                 installer: [<install_assign_ $installer_token>],
                 name: concat!("Assign<", $runtime_name, ">"),
-                factory: <Assign<$scalar> as MechFunctionFactory>::new,
+                factory_type: Assign<$scalar>,
                 contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!("mech_engine::__mech_native::", stringify!([<install_assign_ $installer_token>])),
-                cargo_features: ["assign", $cargo_feature, "native-link", "runtime"],
+                extra_cargo_features: ["assign"],
             }
         }
     };
@@ -84,11 +84,11 @@ mech_core::declare_native_runtime_factory! {
     registration: register_assign_index,
     installer: install_assign_index,
     name: "Assign<index>",
-    factory: <Assign<usize> as MechFunctionFactory>::new,
+    factory_type: Assign<usize>,
     contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_assign_index",
-    cargo_features: ["assign", "native-link", "runtime"],
+    extra_cargo_features: ["assign"],
 }
 
 macro_rules! register_assign_scalar_factory {
@@ -201,7 +201,7 @@ macro_rules! declare_matrix_assign_factory {
     (
         $_context:tt;
         $fxn_name:ident, $scalar:ident, $scalar_name:literal, $scalar_feature:literal,
-        [$($shape:ident),+], [$($extra_feature:literal),*], $factory:expr
+        [$($shape:ident),+], [$($extra_feature:literal),*], $factory:ty
     ) => {
         mech_core::paste::paste! {
             mech_core::declare_native_runtime_factory! {
@@ -209,7 +209,7 @@ macro_rules! declare_matrix_assign_factory {
                 registration: [<register_assign_ $fxn_name:lower _ $scalar:lower $( _ $shape:lower )*>],
                 installer: [<install_assign_ $fxn_name:lower _ $scalar:lower $( _ $shape:lower )*>],
                 name: concat!(stringify!($fxn_name), "<", $scalar_name, $(stringify!($shape)),*, ">"),
-                factory: $factory,
+                factory_type: $factory,
                 contract: RuntimeFunctionContract::custom(
                     "assign_slice",
                     assign_output_alias_policy!($fxn_name),
@@ -220,14 +220,7 @@ macro_rules! declare_matrix_assign_factory {
                     "mech_engine::__mech_native::",
                     stringify!([<install_assign_ $fxn_name:lower _ $scalar:lower $( _ $shape:lower )*>]),
                 ),
-                cargo_features: [
-                    "assign",
-                    $scalar_feature,
-                    $(assign_matrix_feature!($shape)),*,
-                    $($extra_feature,)*
-                    "native-link",
-                    "runtime",
-                ],
+                extra_cargo_features: ["assign"],
             }
         }
     };
@@ -260,7 +253,7 @@ macro_rules! register_matrix_assign_factory {
 macro_rules! install_legacy_assign {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], [], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], [], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>>);
         }
     };
 }
@@ -268,7 +261,7 @@ macro_rules! install_legacy_assign {
 macro_rules! install_legacy_assign_s {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2], [], $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2], [], $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>>);
         }
     };
 }
@@ -276,7 +269,7 @@ macro_rules! install_legacy_assign_s {
 macro_rules! install_legacy_assign_srr {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], [], $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>,$row3<usize>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], [], $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>,$row3<usize>>);
         }
     };
 }
@@ -284,7 +277,7 @@ macro_rules! install_legacy_assign_srr {
 macro_rules! install_legacy_assign_srr_b {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>,$row3<bool>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>,$row3<bool>>);
         }
     };
 }
@@ -292,7 +285,7 @@ macro_rules! install_legacy_assign_srr_b {
 macro_rules! install_legacy_assign_srr_bu {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>,$row3<usize>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>,$row3<usize>>);
         }
     };
 }
@@ -300,7 +293,7 @@ macro_rules! install_legacy_assign_srr_bu {
 macro_rules! install_legacy_assign_srr_ub {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>,$row3<bool>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>,$row3<bool>>);
         }
     };
 }
@@ -308,7 +301,7 @@ macro_rules! install_legacy_assign_srr_ub {
 macro_rules! install_legacy_assign_srr_b2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3, $row4], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>,$row4<bool>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3, $row4], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>,$row4<bool>>);
         }
     };
 }
@@ -316,7 +309,7 @@ macro_rules! install_legacy_assign_srr_b2 {
 macro_rules! install_legacy_assign_srr_bu2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3, $row4], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>,$row4<usize>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3, $row4], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>,$row4<usize>>);
         }
     };
 }
@@ -324,7 +317,7 @@ macro_rules! install_legacy_assign_srr_bu2 {
 macro_rules! install_legacy_assign_srr_ub2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3, $row4], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>,$row4<bool>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3, $row4], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>,$row4<bool>>);
         }
     };
 }
@@ -332,7 +325,7 @@ macro_rules! install_legacy_assign_srr_ub2 {
 macro_rules! install_legacy_assign_srr2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3, $row4], [], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>,$row4<usize>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3, $row4], [], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>,$row4<usize>>);
         }
     };
 }
@@ -340,7 +333,7 @@ macro_rules! install_legacy_assign_srr2 {
 macro_rules! install_legacy_assign_s1 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1], [], $fxn_name::<$scalar,$row1<$scalar>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1], [], $fxn_name::<$scalar,$row1<$scalar>>);
         }
     };
 }
@@ -348,7 +341,7 @@ macro_rules! install_legacy_assign_s1 {
 macro_rules! install_legacy_assign_s2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2], [], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2], [], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>>);
         }
     };
 }
@@ -356,7 +349,7 @@ macro_rules! install_legacy_assign_s2 {
 macro_rules! install_legacy_assign_b {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2, $row3], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>>);
         }
     };
 }
@@ -364,7 +357,7 @@ macro_rules! install_legacy_assign_b {
 macro_rules! install_legacy_assign_s_b {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
         mech_core::paste::paste! {
-            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>>::new);
+            $emit!($context; $fxn_name, $scalar, $scalar_string, $scalar_string, [$row1, $row2], ["bool"], $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>>);
         }
     };
 }

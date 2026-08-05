@@ -45,7 +45,11 @@ where
     T: ConstElem + AsValueKind,
     #[cfg(feature = "compiler")]
     T: CompileConst,
+    T: FunctionRuntimeType,
 {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::unary(T::REPRESENTATION, T::REPRESENTATION);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, source) => {
