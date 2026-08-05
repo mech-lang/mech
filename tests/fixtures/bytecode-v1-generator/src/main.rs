@@ -14,13 +14,16 @@ use mech_build::{
     NativeRuntimeConfig, NativeTargetFamily, standard_native_host_catalog,
 };
 use mech_core::{
-    ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant, MatrixStorage,
-    ParsedProgram, RuntimeType, hash_str, write_bytecode,
+    ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant, MResult,
+    MatrixStorage, ParsedProgram, RuntimeType, hash_str, write_bytecode,
 };
 use mech_native_live_host_fixture::{
-    TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_PATH, TEST_LIVE_PROVIDER, empty_settings,
+    TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_PATH, TEST_LIVE_PROVIDER,
+    TestLiveHostFactory, empty_settings,
 };
-use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
+use mech_runtime::{
+    ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig, RuntimeHostFactory,
+};
 use serde_json::{Value as JsonValue, json};
 use sha2::{Digest, Sha256};
 
@@ -1003,6 +1006,10 @@ fn compile_fixed_source(source: &str) -> AppResult<(Vec<u8>, Vec<String>)> {
 }
 
 fn synthetic_live_host_catalog() -> AppResult<Arc<NativeHostCatalog>> {
+    fn planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
+        Ok(Box::new(TestLiveHostFactory::native()?))
+    }
+
     let mut catalog = NativeHostCatalog::new();
     catalog
         .insert_provider(NativeHostLinkage {
@@ -1014,6 +1021,7 @@ fn synthetic_live_host_catalog() -> AppResult<Arc<NativeHostCatalog>> {
             supported_targets: &[NativeTargetFamily::Unix, NativeTargetFamily::Windows],
             manifest: mech_native_live_host_fixture::test_live_manifest,
             validate_settings: mech_native_live_host_fixture::validate_settings,
+            planning_factory,
         })
         .map_err(|error| mech_error("synthetic live native host linkage", error))?;
     Ok(Arc::new(catalog))

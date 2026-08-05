@@ -24,6 +24,26 @@ impl MechErrorKind for NativeProjectRelocationUnsupported {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NativeHostAddressabilityInvalid {
+    pub instance: String,
+    pub provider: String,
+    pub reason: String,
+}
+
+impl MechErrorKind for NativeHostAddressabilityInvalid {
+    fn name(&self) -> &str {
+        "NativeHostAddressabilityInvalid"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "native host instance `{}` from provider `{}` has invalid resource addressability: {}",
+            self.instance, self.provider, self.reason
+        )
+    }
+}
+
 /// Structured failures raised while planning or constructing a native Mech
 /// application.
 ///

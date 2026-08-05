@@ -2,15 +2,20 @@
 
 mod support;
 
+use mech_build::PlannedApplicationRequirement;
 use support::*;
 
 #[test]
 fn cli_hosted_native_application_builds_and_emits_once() {
+    let temporary = tempfile::tempdir().unwrap();
+    let alias_case = generated_cli_alias_case();
+    let bytecode = temporary.path().join("cli-alias.mecb");
+    std::fs::write(&bytecode, alias_case.bytecode).unwrap();
     let result = run_owner(
         OwnerProfile::Standard,
         RunnerAction::Build,
         "cli",
-        fixture_path("cli-stdout.mecb"),
+        bytecode,
         "native_cli_hosted",
         false,
     );
@@ -25,6 +30,24 @@ fn cli_hosted_native_application_builds_and_emits_once() {
         Some(321)
     );
     assert!(result.plan.runtime_config.diagnostics.trace_enabled);
+    assert!(
+        result
+            .plan
+            .application_requirements
+            .iter()
+            .any(|requirement| {
+                matches!(
+                    requirement,
+                    PlannedApplicationRequirement::Resource {
+                        base_uri,
+                        host_instance,
+                        ..
+                    } if base_uri == "cli://stdout" && host_instance == "cli"
+                )
+            })
+    );
+    assert_eq!(result.plan.run_grants.len(), 1);
+    assert_eq!(result.plan.run_grants[0].target, "cli/stdout");
     let runtime = result.runtime_source.unwrap();
     assert!(runtime.contains("mech_host_cli::CliHostFactory::new"));
     assert_eq!(runtime.matches("CliHostFactory::new").count(), 1);

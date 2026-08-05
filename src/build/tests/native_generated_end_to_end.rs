@@ -2,6 +2,7 @@
 
 mod support;
 
+use mech_build::PlannedApplicationRequirement;
 use support::*;
 
 #[test]
@@ -33,6 +34,32 @@ fn every_generated_application_fixture_builds_and_executes() {
             "{}",
             generated.case,
         );
+        if let Some((requested, target)) = match generated.case {
+            "cli" => Some(("cli://stdout", "cli/stdout")),
+            "console" => Some(("console://output", "console/output")),
+            _ => None,
+        } {
+            assert!(
+                result
+                    .plan
+                    .application_requirements
+                    .iter()
+                    .any(|requirement| {
+                        matches!(
+                            requirement,
+                            PlannedApplicationRequirement::Resource { base_uri, .. }
+                                if base_uri == requested
+                        )
+                    })
+            );
+            assert!(
+                result
+                    .plan
+                    .run_grants
+                    .iter()
+                    .any(|grant| grant.target == target)
+            );
+        }
         if generated.case == "actor" {
             let runtime = result.runtime_source.unwrap();
             for installer in [

@@ -12,11 +12,6 @@ const STANDARD_TARGETS: &[NativeTargetFamily] =
     &[NativeTargetFamily::Unix, NativeTargetFamily::Windows];
 const ACTOR_FEATURES: &[&str] = &["native-link", "runtime", "string"];
 
-struct StandardNativeHostRegistration {
-    linkage: NativeHostLinkage,
-    planning_factory: fn() -> MResult<Box<dyn RuntimeHostFactory>>,
-}
-
 fn validate_cli_settings(instance: &str, settings: &ConfigValue) -> MResult<()> {
     mech_host_cli::CliHostFactory::new()?.validate_settings(instance, settings)
 }
@@ -84,84 +79,72 @@ fn robot_arm_planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
     Ok(Box::new(mech_host_robot_arm::RobotArmHostFactory::new()?))
 }
 
-fn standard_native_host_registrations() -> Vec<StandardNativeHostRegistration> {
+fn standard_native_host_registrations() -> Vec<NativeHostLinkage> {
     vec![
-        StandardNativeHostRegistration {
-            linkage: NativeHostLinkage {
-                provider: "cli",
-                package: "mech-host-cli",
-                crate_name: "mech_host_cli",
-                cargo_features: &["provider"],
-                factory_path: "mech_host_cli::CliHostFactory::new",
-                supported_targets: STANDARD_TARGETS,
-                manifest: mech_host_cli::cli_host_manifest,
-                validate_settings: validate_cli_settings,
-            },
+        NativeHostLinkage {
+            provider: "cli",
+            package: "mech-host-cli",
+            crate_name: "mech_host_cli",
+            cargo_features: &["provider"],
+            factory_path: "mech_host_cli::CliHostFactory::new",
+            supported_targets: STANDARD_TARGETS,
+            manifest: mech_host_cli::cli_host_manifest,
+            validate_settings: validate_cli_settings,
             planning_factory: cli_planning_factory,
         },
-        StandardNativeHostRegistration {
-            linkage: NativeHostLinkage {
-                provider: "console",
-                package: "mech-host-console",
-                crate_name: "mech_host_console",
-                cargo_features: &["native"],
-                factory_path: "mech_host_console::NativeConsoleHostFactory::new",
-                supported_targets: STANDARD_TARGETS,
-                manifest: mech_host_console::console_host_manifest,
-                validate_settings: validate_console_settings,
-            },
+        NativeHostLinkage {
+            provider: "console",
+            package: "mech-host-console",
+            crate_name: "mech_host_console",
+            cargo_features: &["native"],
+            factory_path: "mech_host_console::NativeConsoleHostFactory::new",
+            supported_targets: STANDARD_TARGETS,
+            manifest: mech_host_console::console_host_manifest,
+            validate_settings: validate_console_settings,
             planning_factory: console_planning_factory,
         },
-        StandardNativeHostRegistration {
-            linkage: NativeHostLinkage {
-                provider: "robot-arm",
-                package: "mech-host-robot-arm",
-                crate_name: "mech_host_robot_arm",
-                cargo_features: &["provider"],
-                factory_path: "mech_host_robot_arm::RobotArmHostFactory::new",
-                supported_targets: STANDARD_TARGETS,
-                manifest: mech_host_robot_arm::robot_arm_host_manifest,
-                validate_settings: validate_robot_arm_settings,
-            },
+        NativeHostLinkage {
+            provider: "robot-arm",
+            package: "mech-host-robot-arm",
+            crate_name: "mech_host_robot_arm",
+            cargo_features: &["provider"],
+            factory_path: "mech_host_robot_arm::RobotArmHostFactory::new",
+            supported_targets: STANDARD_TARGETS,
+            manifest: mech_host_robot_arm::robot_arm_host_manifest,
+            validate_settings: validate_robot_arm_settings,
             planning_factory: robot_arm_planning_factory,
         },
-        StandardNativeHostRegistration {
-            linkage: NativeHostLinkage {
-                provider: "scene",
-                package: "mech-host-scene",
-                crate_name: "mech_host_scene",
-                cargo_features: &["native"],
-                factory_path: "mech_host_scene::NativeSceneHostFactory::new",
-                supported_targets: STANDARD_TARGETS,
-                manifest: mech_host_scene::scene_host_manifest,
-                validate_settings: validate_scene_settings,
-            },
+        NativeHostLinkage {
+            provider: "scene",
+            package: "mech-host-scene",
+            crate_name: "mech_host_scene",
+            cargo_features: &["native"],
+            factory_path: "mech_host_scene::NativeSceneHostFactory::new",
+            supported_targets: STANDARD_TARGETS,
+            manifest: mech_host_scene::scene_host_manifest,
+            validate_settings: validate_scene_settings,
             planning_factory: scene_planning_factory,
         },
-        StandardNativeHostRegistration {
-            linkage: NativeHostLinkage {
-                provider: "time",
-                package: "mech-host-time",
-                crate_name: "mech_host_time",
-                cargo_features: &["native"],
-                factory_path: "mech_host_time::NativeTimeHostFactory::new",
-                supported_targets: STANDARD_TARGETS,
-                manifest: mech_host_time::time_host_manifest,
-                validate_settings: validate_time_settings,
-            },
+        NativeHostLinkage {
+            provider: "time",
+            package: "mech-host-time",
+            crate_name: "mech_host_time",
+            cargo_features: &["native"],
+            factory_path: "mech_host_time::NativeTimeHostFactory::new",
+            supported_targets: STANDARD_TARGETS,
+            manifest: mech_host_time::time_host_manifest,
+            validate_settings: validate_time_settings,
             planning_factory: time_planning_factory,
         },
-        StandardNativeHostRegistration {
-            linkage: NativeHostLinkage {
-                provider: "timer",
-                package: "mech-host-timer",
-                crate_name: "mech_host_timer",
-                cargo_features: &["native"],
-                factory_path: "mech_host_timer::NativeTimerHostFactory::new",
-                supported_targets: STANDARD_TARGETS,
-                manifest: mech_host_timer::timer_host_manifest,
-                validate_settings: validate_timer_settings,
-            },
+        NativeHostLinkage {
+            provider: "timer",
+            package: "mech-host-timer",
+            crate_name: "mech_host_timer",
+            cargo_features: &["native"],
+            factory_path: "mech_host_timer::NativeTimerHostFactory::new",
+            supported_targets: STANDARD_TARGETS,
+            manifest: mech_host_timer::timer_host_manifest,
+            validate_settings: validate_timer_settings,
             planning_factory: timer_planning_factory,
         },
     ]
@@ -210,8 +193,8 @@ fn actor_host_function_linkages() -> [NativeHostFunctionLinkage; 5] {
 /// Returns the complete trusted standard native-host and actor-function catalog.
 pub fn standard_native_host_catalog() -> MResult<Arc<NativeHostCatalog>> {
     let mut catalog = NativeHostCatalog::new();
-    for registration in standard_native_host_registrations() {
-        catalog.insert_provider(registration.linkage)?;
+    for linkage in standard_native_host_registrations() {
+        catalog.insert_provider(linkage)?;
     }
     for linkage in actor_host_function_linkages() {
         catalog.insert_function(linkage)?;
@@ -223,8 +206,8 @@ pub fn standard_native_host_catalog() -> MResult<Arc<NativeHostCatalog>> {
 pub fn standard_planning_host_factory(provider: &str) -> MResult<Box<dyn RuntimeHostFactory>> {
     standard_native_host_registrations()
         .into_iter()
-        .find(|registration| registration.linkage.provider == provider)
-        .map(|registration| (registration.planning_factory)())
+        .find(|linkage| linkage.provider == provider)
+        .map(|linkage| (linkage.planning_factory)())
         .unwrap_or_else(|| {
             Err(MechError::new(
                 NativeHostCatalogInvalid {
@@ -275,7 +258,7 @@ mod tests {
             .collect::<Vec<_>>();
         let planning_names = standard_native_host_registrations()
             .into_iter()
-            .map(|registration| registration.linkage.provider)
+            .map(|linkage| linkage.provider)
             .collect::<Vec<_>>();
         assert_eq!(catalog_names, planning_names);
         for provider in catalog_names {

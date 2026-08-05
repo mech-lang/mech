@@ -18,10 +18,10 @@ use mech_build::{
 use mech_core::FunctionCatalogBuilder;
 use mech_native_live_host_fixture::{
     TEST_LIVE_CONTEXT, TEST_LIVE_FAIL_AFTER_START_ENV, TEST_LIVE_INSTANCE, TEST_LIVE_PATH,
-    TEST_LIVE_PROVIDER, TEST_LIVE_START_MARKER_ENV, TEST_LIVE_STOP_MARKER_ENV, empty_settings,
-    test_live_manifest, validate_settings,
+    TEST_LIVE_PROVIDER, TEST_LIVE_START_MARKER_ENV, TEST_LIVE_STOP_MARKER_ENV, TestLiveHostFactory,
+    empty_settings, test_live_manifest, validate_settings,
 };
-use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
+use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig, RuntimeHostFactory};
 
 const LITERAL_F64: &[u8] =
     include_bytes!("../../../tests/architecture/bytecode-v1/literal-f64.mecb");
@@ -358,6 +358,10 @@ fn build_copied_project(original: &Path, temporary: &Path, workspace: &Path) -> 
 }
 
 fn synthetic_live_host_catalog() -> Arc<NativeHostCatalog> {
+    fn planning_factory() -> mech_core::MResult<Box<dyn RuntimeHostFactory>> {
+        Ok(Box::new(TestLiveHostFactory::native()?))
+    }
+
     let mut catalog = NativeHostCatalog::new();
     catalog
         .insert_provider(NativeHostLinkage {
@@ -369,6 +373,7 @@ fn synthetic_live_host_catalog() -> Arc<NativeHostCatalog> {
             supported_targets: &[NativeTargetFamily::Unix, NativeTargetFamily::Windows],
             manifest: test_live_manifest,
             validate_settings,
+            planning_factory,
         })
         .unwrap();
     Arc::new(catalog)
