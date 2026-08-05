@@ -39,6 +39,7 @@ pub struct NativeBuildPlanDigestInput {
     pub run_grants: Vec<PlannedResourceGrantKey>,
     pub live: bool,
     pub dependency_source: PlannedDependencySource,
+    pub dependency_resolution_seed_sha256: String,
     pub workspace_fingerprint: Option<String>,
 }
 
@@ -66,6 +67,7 @@ impl From<&NativeBuildPlan> for NativeBuildPlanDigestInput {
             run_grants: plan.run_grants.clone(),
             live: plan.live,
             dependency_source: plan.dependency_source.clone(),
+            dependency_resolution_seed_sha256: plan.dependency_resolution_seed_sha256.clone(),
             workspace_fingerprint: plan.workspace_fingerprint.clone(),
         }
     }
@@ -133,6 +135,7 @@ mod tests {
             dependency_source: PlannedDependencySource::Registry {
                 version: "0.3.5".to_owned(),
             },
+            dependency_resolution_seed_sha256: sha256_hex(b"registry lock seed"),
             workspace_fingerprint: None,
         }
     }
@@ -180,6 +183,9 @@ mod tests {
             changed.profile = NativeBuildProfile::Release
         });
         assert_digest_changes(&plan, |changed| changed.binary_name = "other".to_owned());
+        assert_digest_changes(&plan, |changed| {
+            changed.dependency_resolution_seed_sha256 = sha256_hex(b"different resolution seed")
+        });
 
         let mut with_function = plan.clone();
         with_function

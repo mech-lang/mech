@@ -1,3 +1,4 @@
+use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::io::Cursor;
@@ -20,9 +21,11 @@ pub struct CargoInvocation {
 }
 
 impl CargoInvocation {
-    pub fn generate_lockfile(manifest_path: impl AsRef<Path>, offline: bool) -> Self {
+    pub fn resolve_lockfile(manifest_path: impl AsRef<Path>, offline: bool) -> Self {
         let mut arguments = vec![
-            OsString::from("generate-lockfile"),
+            OsString::from("metadata"),
+            OsString::from("--format-version"),
+            OsString::from("1"),
             OsString::from("--manifest-path"),
             manifest_path.as_ref().as_os_str().to_owned(),
         ];
@@ -113,12 +116,17 @@ impl CargoInvocation {
     }
 }
 
-/// Generate the frozen project's lockfile with a direct Cargo invocation.
-pub fn generate_project_lockfile(project: &GeneratedNativeProject, offline: bool) -> MResult<()> {
+/// Derive the exact project lockfile from a frozen resolution seed.
+pub fn generate_project_lockfile(
+    project: &GeneratedNativeProject,
+    resolution_seed: &[u8],
+    offline: bool,
+) -> MResult<()> {
     require_regular_generated_file(&project.manifest_path(), "Cargo manifest")?;
-    reject_non_regular_generated_file_if_present(&project.lockfile_path(), "Cargo lockfile")?;
+    let frozen_registry_packages = frozen_resolution_packages(resolution_seed)?;
+    project.materialize_lockfile_seed(resolution_seed)?;
 
-    let invocation = CargoInvocation::generate_lockfile(project.manifest_path(), offline);
+    let invocation = CargoInvocation::resolve_lockfile(project.manifest_path(), offline);
     let output = invocation.output()?;
     if !output.status.success() {
         return Err(cargo_error(cargo_failure_reason(
@@ -128,6 +136,114 @@ pub fn generate_project_lockfile(project: &GeneratedNativeProject, offline: bool
         )));
     }
     require_regular_generated_file(&project.lockfile_path(), "generated Cargo lockfile")?;
+    let resolved_lockfile = fs::read(project.lockfile_path()).map_err(|error| {
+        cargo_error(format!("failed to read generated Cargo lockfile: {error}"))
+    })?;
+    validate_frozen_registry_resolution(&frozen_registry_packages, &resolved_lockfile)?;
+    Ok(())
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct FrozenRegistryPackage {
+    name: String,
+    version: String,
+    source: String,
+    checksum: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct RegistryCompatibilityLine {
+    name: String,
+    source: String,
+    major: u64,
+    minor: Option<u64>,
+    patch: Option<u64>,
+}
+
+impl RegistryCompatibilityLine {
+    fn new(package: &FrozenRegistryPackage) -> MResult<Self> {
+        let version = package
+            .version
+            .parse::<cargo_metadata::semver::Version>()
+            .map_err(|error| {
+                cargo_error(format!(
+                    "resolution seed contains invalid package version `{}`: {error}",
+                    package.version,
+                ))
+            })?;
+        Ok(Self {
+            name: package.name.clone(),
+            source: package.source.clone(),
+            major: version.major,
+            minor: (version.major == 0).then_some(version.minor),
+            patch: (version.major == 0 && version.minor == 0).then_some(version.patch),
+        })
+    }
+}
+
+fn registry_packages(bytes: &[u8], label: &str) -> MResult<BTreeSet<FrozenRegistryPackage>> {
+    let source = std::str::from_utf8(bytes)
+        .map_err(|error| cargo_error(format!("{label} is not UTF-8: {error}")))?;
+    let document = source
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| cargo_error(format!("{label} is not valid Cargo lock TOML: {error}")))?;
+    let packages = document
+        .get("package")
+        .and_then(toml_edit::Item::as_array_of_tables);
+    let mut registry = BTreeSet::new();
+    for package in packages.into_iter().flatten() {
+        let Some(source) = package.get("source").and_then(toml_edit::Item::as_str) else {
+            continue;
+        };
+        if !source.starts_with("registry+") {
+            return Err(cargo_error(format!(
+                "{label} contains unsupported non-registry dependency source `{source}`"
+            )));
+        }
+        let field = |name: &str| {
+            package
+                .get(name)
+                .and_then(toml_edit::Item::as_str)
+                .map(str::to_owned)
+                .ok_or_else(|| cargo_error(format!("{label} package lacks `{name}`")))
+        };
+        registry.insert(FrozenRegistryPackage {
+            name: field("name")?,
+            version: field("version")?,
+            source: source.to_owned(),
+            checksum: field("checksum")?,
+        });
+    }
+    Ok(registry)
+}
+
+fn frozen_resolution_packages(seed: &[u8]) -> MResult<BTreeSet<FrozenRegistryPackage>> {
+    let packages = registry_packages(seed, "resolution seed")?;
+    let mut compatibility_lines = BTreeMap::new();
+    for package in &packages {
+        let line = RegistryCompatibilityLine::new(package)?;
+        if let Some(other) = compatibility_lines.insert(line, package) {
+            return Err(cargo_error(format!(
+                "resolution seed permits interchangeable registry versions {} {} and {}",
+                package.name, other.version, package.version,
+            )));
+        }
+    }
+    Ok(packages)
+}
+
+fn validate_frozen_registry_resolution(
+    frozen_registry_packages: &BTreeSet<FrozenRegistryPackage>,
+    resolved: &[u8],
+) -> MResult<()> {
+    for package in registry_packages(resolved, "generated Cargo lockfile")? {
+        if !frozen_registry_packages.contains(&package) {
+            return Err(cargo_error(format!(
+                "generated Cargo lockfile selected unfrozen registry package {} {}",
+                package.name, package.version,
+            )));
+        }
+    }
     Ok(())
 }
 
@@ -181,23 +297,6 @@ fn require_regular_generated_file(path: &Path, label: &str) -> MResult<()> {
     Ok(())
 }
 
-fn reject_non_regular_generated_file_if_present(path: &Path, label: &str) -> MResult<()> {
-    match fs::symlink_metadata(path) {
-        Ok(metadata) if metadata.file_type().is_symlink() || !metadata.is_file() => {
-            Err(project_error(format!(
-                "{label} `{}` is not a regular file",
-                path.display()
-            )))
-        }
-        Ok(_) => Ok(()),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(error) => Err(project_error(format!(
-            "failed to inspect {label} `{}`: {error}",
-            path.display()
-        ))),
-    }
-}
-
 fn cargo_failure_reason(
     invocation: &CargoInvocation,
     output: &Output,
@@ -246,6 +345,9 @@ mod tests {
     use super::*;
     use crate::project::GeneratedSourceSet;
 
+    const MINIMAL_LOCK_SEED: &[u8] =
+        b"# This file is automatically @generated by Cargo.\nversion = 4\n";
+
     fn arguments(invocation: &CargoInvocation) -> Vec<String> {
         invocation
             .arguments()
@@ -254,18 +356,63 @@ mod tests {
     }
 
     #[test]
-    fn generate_lockfile_is_a_direct_offline_cargo_invocation() {
-        let invocation = CargoInvocation::generate_lockfile("project/Cargo.toml", true);
+    fn lockfile_resolution_is_a_direct_offline_cargo_invocation() {
+        let invocation = CargoInvocation::resolve_lockfile("project/Cargo.toml", true);
         assert_eq!(
             arguments(&invocation),
             [
-                "generate-lockfile",
+                "metadata",
+                "--format-version",
+                "1",
                 "--manifest-path",
                 "project/Cargo.toml",
                 "--offline",
             ]
         );
         assert_eq!(invocation.command().get_program(), "cargo");
+    }
+
+    #[test]
+    fn generated_resolution_cannot_introduce_a_registry_version_absent_from_the_seed() {
+        let resolved = br#"# This file is automatically @generated by Cargo.
+version = 4
+
+[[package]]
+name = "dependency"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+"#;
+        let frozen = frozen_resolution_packages(MINIMAL_LOCK_SEED).unwrap();
+        let error = validate_frozen_registry_resolution(&frozen, resolved).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeCargoFailed");
+        assert!(error.kind_message().contains("unfrozen registry package"));
+    }
+
+    #[test]
+    fn resolution_seed_cannot_permit_two_semver_interchangeable_versions() {
+        let seed = br#"# This file is automatically @generated by Cargo.
+version = 4
+
+[[package]]
+name = "dependency"
+version = "1.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+[[package]]
+name = "dependency"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+"#;
+        let error = frozen_resolution_packages(seed).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeCargoFailed");
+        assert!(
+            error
+                .kind_message()
+                .contains("interchangeable registry versions")
+        );
     }
 
     #[test]
@@ -358,10 +505,10 @@ mod tests {
         let target_dir = temporary.path().join("shared-cargo-target");
         project.materialize().unwrap();
 
-        generate_project_lockfile(&project, true).unwrap();
+        generate_project_lockfile(&project, MINIMAL_LOCK_SEED, true).unwrap();
         assert!(project.lockfile_path().is_file());
         let first_lock = fs::read(project.lockfile_path()).unwrap();
-        generate_project_lockfile(&project, true).unwrap();
+        generate_project_lockfile(&project, MINIMAL_LOCK_SEED, true).unwrap();
         assert_eq!(fs::read(project.lockfile_path()).unwrap(), first_lock);
 
         let artifact = build_native_project(
@@ -382,7 +529,7 @@ mod tests {
     fn cargo_helpers_require_materialized_regular_inputs() {
         let temporary = tempfile::tempdir().unwrap();
         let project = minimal_project(&temporary.path().join("missing"));
-        let error = generate_project_lockfile(&project, true).unwrap_err();
+        let error = generate_project_lockfile(&project, MINIMAL_LOCK_SEED, true).unwrap_err();
         assert_eq!(error.kind_name(), "NativeProjectInvalid");
     }
 
@@ -398,7 +545,7 @@ mod tests {
         fs::write(&outside, "outside").unwrap();
         symlink(&outside, project.lockfile_path()).unwrap();
 
-        let error = generate_project_lockfile(&project, true).unwrap_err();
+        let error = generate_project_lockfile(&project, MINIMAL_LOCK_SEED, true).unwrap_err();
         assert_eq!(error.kind_name(), "NativeProjectInvalid");
         assert_eq!(fs::read_to_string(outside).unwrap(), "outside");
     }

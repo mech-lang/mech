@@ -128,6 +128,99 @@ fn validate_external_program(
     resolver.finish().map(|_| ())
 }
 
+fn analyze_requirements_with_production_resolver(
+    requirements: &[ApplicationRequirement],
+    runtime_config: Option<&NativeRuntimeConfig>,
+    host_catalog: &NativeHostCatalog,
+    target: Option<&str>,
+) -> MResult<ApplicationRequirementAnalysis> {
+    let mut requirements = requirements.to_vec();
+    requirements.sort_by(mech_core::compare_application_requirements);
+    requirements.dedup();
+
+    let mut constants = Vec::new();
+    let mut instructions = Vec::new();
+    for (requirement_index, requirement) in requirements.iter().enumerate() {
+        match requirement {
+            ApplicationRequirement::HostFunction(_) => {
+                let dst = constants.len() as u32;
+                constants.push(string_constant(""));
+                instructions.push(BytecodeInstruction::ConstLoad { dst, constant: dst });
+                instructions.push(BytecodeInstruction::HostCall {
+                    requirement: requirement_index as u32,
+                    dst,
+                    arguments: Vec::new(),
+                });
+            }
+            ApplicationRequirement::Resource(request) if request.intent == ResourceIntent::Read => {
+                let dst = constants.len() as u32;
+                constants.push(if request.base_uri.starts_with("time://") {
+                    f64_constant(0.0)
+                } else if request.base_uri.starts_with("test://") {
+                    empty_constant()
+                } else {
+                    string_constant("")
+                });
+                instructions.push(BytecodeInstruction::ConstLoad { dst, constant: dst });
+                instructions.push(BytecodeInstruction::ResourceRead {
+                    requirement: requirement_index as u32,
+                    dst,
+                });
+            }
+            ApplicationRequirement::Resource(request) => {
+                let dst = constants.len() as u32;
+                constants.push(empty_constant());
+                instructions.push(BytecodeInstruction::ConstLoad { dst, constant: dst });
+                let src = constants.len() as u32;
+                constants.push(string_constant("value"));
+                instructions.push(BytecodeInstruction::ConstLoad {
+                    dst: src,
+                    constant: src,
+                });
+                instructions.push(match request.intent {
+                    ResourceIntent::Assign => BytecodeInstruction::ResourceWrite {
+                        requirement: requirement_index as u32,
+                        dst,
+                        src,
+                    },
+                    ResourceIntent::Send => BytecodeInstruction::ResourceSend {
+                        requirement: requirement_index as u32,
+                        dst,
+                        src,
+                    },
+                    ResourceIntent::Read => unreachable!(),
+                });
+            }
+        }
+    }
+    if constants.is_empty() {
+        constants.push(empty_constant());
+        instructions.push(BytecodeInstruction::ConstLoad {
+            dst: 0,
+            constant: 0,
+        });
+    }
+    instructions.push(BytecodeInstruction::Return { src: 0 });
+    let program = ParsedProgram::from_bytes(&write_bytecode(&BytecodeProgram {
+        register_count: constants.len() as u32,
+        constants,
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions,
+        dictionary: BTreeMap::new(),
+        requirements,
+    })?)?;
+
+    let mut resolver = NativeBytecodeContractResolver::new(
+        &program.requirements,
+        runtime_config,
+        host_catalog,
+        target,
+    )?;
+    program.validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut resolver)?;
+    resolver.finish()
+}
+
 fn empty_constant() -> EncodedConstant {
     EncodedConstant {
         runtime_type: RuntimeType::Empty,
@@ -392,7 +485,7 @@ fn host_catalog() -> NativeHostCatalog {
     let mut catalog = host_catalog_with(test_manifest, test_planning_factory);
     catalog
         .insert_function(NativeHostFunctionLinkage {
-            name: "test/actor-turn",
+            name: "actor/message/kind",
             context: NativeHostFunctionContext::ActorTurn,
             package: "mech-runtime",
             crate_name: "mech_runtime",
@@ -405,7 +498,7 @@ fn host_catalog() -> NativeHostCatalog {
 
 fn actor_requirement() -> ApplicationRequirement {
     ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
-        name: "test/actor-turn".to_owned(),
+        name: "actor/message/kind".to_owned(),
     })
 }
 
@@ -458,6 +551,46 @@ fn normalizes_hosts_and_grants_deterministically() {
 }
 
 #[test]
+fn normalizes_grant_paths_with_runtime_authorization_rules() {
+    let config = NativeRuntimeConfig {
+        runtime: RuntimeConfig::default(),
+        actor_bootstrap: None,
+        hosts: vec![host("terminal", "test")],
+        run_grants: vec![grant(
+            "terminal/output",
+            &["write"],
+            &["chapter//./one", "chapter//./*", "chapter/one"],
+        )],
+    };
+
+    let normalized = normalize_native_runtime_config(&config).unwrap();
+    assert_eq!(normalized.run_grants[0].paths, ["chapter/*", "chapter/one"]);
+}
+
+#[test]
+fn rejects_non_finite_host_settings_recursively() {
+    for value in [f64::INFINITY, f64::NEG_INFINITY, f64::NAN] {
+        let config = NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts: vec![HostInstanceConfig {
+                name: "terminal".to_owned(),
+                provider: "test".to_owned(),
+                settings: ConfigValue::Map(BTreeMap::from([(
+                    "nested".to_owned(),
+                    ConfigValue::List(vec![ConfigValue::Float(value)]),
+                )])),
+            }],
+            run_grants: Vec::new(),
+        };
+        let error = normalize_native_runtime_config(&config).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeRuntimeConfigUnsupported");
+        assert!(error.kind_message().contains("non-finite float"));
+        assert!(error.kind_message().contains("nested[0]"));
+    }
+}
+
+#[test]
 fn actor_bootstrap_normalization_trims_identity_but_preserves_empty_values() {
     let normalized =
         normalize_native_runtime_config(&actor_runtime_config("  actor:alpha  ", "  alpha  "))
@@ -486,12 +619,16 @@ fn actor_bootstrap_rejects_empty_subject_and_message_kind() {
 
 #[test]
 fn actor_turn_requires_exactly_one_explicit_bootstrap() {
-    let missing =
-        analyze_application_requirements(&[actor_requirement()], None, &host_catalog(), None)
-            .unwrap_err();
+    let missing = analyze_requirements_with_production_resolver(
+        &[actor_requirement()],
+        None,
+        &host_catalog(),
+        None,
+    )
+    .unwrap_err();
     assert_eq!(missing.kind_name(), "NativeActorBootstrapMissing");
 
-    let unused = analyze_application_requirements(
+    let unused = analyze_requirements_with_production_resolver(
         &[],
         Some(&actor_runtime_config("actor:alpha", "alpha")),
         &host_catalog(),
@@ -500,7 +637,7 @@ fn actor_turn_requires_exactly_one_explicit_bootstrap() {
     .unwrap_err();
     assert_eq!(unused.kind_name(), "NativeActorBootstrapUnused");
 
-    let analysis = analyze_application_requirements(
+    let analysis = analyze_requirements_with_production_resolver(
         &[actor_requirement()],
         Some(&actor_runtime_config(" actor:alpha ", " alpha ")),
         &host_catalog(),
@@ -526,7 +663,7 @@ fn actor_turn_cannot_be_combined_with_live_resources() {
     config
         .run_grants
         .push(grant("terminal/output", &["write"], &["line"]));
-    let error = analyze_application_requirements(
+    let error = analyze_requirements_with_production_resolver(
         &[actor_requirement(), ApplicationRequirement::Resource(live)],
         Some(&config),
         &host_catalog(),
@@ -618,7 +755,7 @@ fn exact_resource_requirement_prunes_unused_hosts_and_narrows_grants() {
         hosts: vec![host("unused", "test"), host("terminal", "test")],
         run_grants: vec![grant("terminal/output", &["read", "write"], &["*", "line"])],
     };
-    let analysis = analyze_application_requirements(
+    let analysis = analyze_requirements_with_production_resolver(
         &[ApplicationRequirement::Resource(request("write", "line"))],
         Some(&config),
         &host_catalog(),
@@ -641,6 +778,31 @@ fn exact_resource_requirement_prunes_unused_hosts_and_narrows_grants() {
 }
 
 #[test]
+fn runtime_normalized_grant_paths_authorize_canonical_bytecode_paths() {
+    let config = NativeRuntimeConfig {
+        runtime: RuntimeConfig::default(),
+        actor_bootstrap: None,
+        hosts: vec![host("terminal", "test")],
+        run_grants: vec![grant("terminal/output", &["write"], &["chapter//./one"])],
+    };
+    let analysis = analyze_requirements_with_production_resolver(
+        &[ApplicationRequirement::Resource(request(
+            "write",
+            "chapter/one",
+        ))],
+        Some(&config),
+        &host_catalog(),
+        Some("x86_64-unknown-linux-gnu"),
+    )
+    .unwrap();
+
+    assert_eq!(
+        analysis.run_grants,
+        [planned_grant("terminal", "output", "write", "chapter/one",)]
+    );
+}
+
+#[test]
 fn resource_requirement_context_name_must_match_resolved_owner() {
     let config = NativeRuntimeConfig {
         runtime: RuntimeConfig::default(),
@@ -651,7 +813,7 @@ fn resource_requirement_context_name_must_match_resolved_owner() {
     let mut mismatched = request("write", "line");
     mismatched.context_name = "different-output".to_owned();
 
-    let error = analyze_application_requirements(
+    let error = analyze_requirements_with_production_resolver(
         &[ApplicationRequirement::Resource(mismatched)],
         Some(&config),
         &host_catalog(),
@@ -667,7 +829,7 @@ fn resource_requirement_context_name_must_match_resolved_owner() {
 #[test]
 fn hosted_requirement_needs_config_and_grant() {
     let requirement = ApplicationRequirement::Resource(request("write", "line"));
-    let missing_config = analyze_application_requirements(
+    let missing_config = analyze_requirements_with_production_resolver(
         std::slice::from_ref(&requirement),
         None,
         &host_catalog(),
@@ -682,9 +844,13 @@ fn hosted_requirement_needs_config_and_grant() {
         hosts: vec![host("terminal", "test")],
         run_grants: Vec::new(),
     };
-    let missing_grant =
-        analyze_application_requirements(&[requirement], Some(&config), &host_catalog(), None)
-            .unwrap_err();
+    let missing_grant = analyze_requirements_with_production_resolver(
+        &[requirement],
+        Some(&config),
+        &host_catalog(),
+        None,
+    )
+    .unwrap_err();
     assert_eq!(missing_grant.kind_name(), "NativeRunGrantMissing");
 }
 
@@ -697,7 +863,8 @@ fn host_free_analysis_rejects_unaddressed_untrusted_config_strings() {
         run_grants: Vec::new(),
     };
     let error =
-        analyze_application_requirements(&[], Some(&config), &host_catalog(), None).unwrap_err();
+        analyze_requirements_with_production_resolver(&[], Some(&config), &host_catalog(), None)
+            .unwrap_err();
     assert_eq!(error.kind_name(), "NativeRuntimeConfigUnsupported");
 }
 
@@ -777,7 +944,7 @@ fn standard_default_instances_accept_canonical_and_alias_resource_uris() {
         let requirement = ApplicationRequirement::Resource(request_at(
             base_uri, context, operation, path, intent,
         ));
-        let analysis = analyze_application_requirements(
+        let analysis = analyze_requirements_with_production_resolver(
             &[requirement],
             Some(&config),
             &catalog,
@@ -814,7 +981,7 @@ fn cli_stdout_and_stderr_keep_distinct_structured_owners() {
             grant("cli/stderr", &["write"], &["line"]),
         ],
     };
-    let analysis = analyze_application_requirements(
+    let analysis = analyze_requirements_with_production_resolver(
         &[
             ApplicationRequirement::Resource(request_at(
                 "cli://stdout",
@@ -1140,7 +1307,7 @@ fn standard_aliases_do_not_address_non_default_instances() {
             hosts: vec![host(instance, provider)],
             run_grants: vec![grant(target, &["write"], &["line"])],
         };
-        let error = analyze_application_requirements(
+        let error = analyze_requirements_with_production_resolver(
             &[ApplicationRequirement::Resource(request_at(
                 alias,
                 "output",
@@ -1165,7 +1332,7 @@ fn trusted_alias_resolves_owner_but_preserves_requested_uri() {
         hosts: vec![host("terminal", "test")],
         run_grants: vec![grant("terminal/output", &["write"], &["line"])],
     };
-    let analysis = analyze_application_requirements(
+    let analysis = analyze_requirements_with_production_resolver(
         &[ApplicationRequirement::Resource(request_at(
             "test://alias",
             "output",
@@ -1199,7 +1366,7 @@ fn one_alias_claimed_by_two_configured_hosts_is_ambiguous() {
         hosts: vec![host("first", "test"), host("second", "test")],
         run_grants: Vec::new(),
     };
-    let error = analyze_application_requirements(
+    let error = analyze_requirements_with_production_resolver(
         &[ApplicationRequirement::Resource(request_at(
             "test://alias",
             "output",
@@ -1224,7 +1391,7 @@ fn configured_grant_cannot_cross_host_instance_ownership() {
         hosts: vec![host("first", "test"), host("second", "test")],
         run_grants: vec![grant("second/output", &["write"], &["line"])],
     };
-    let error = analyze_application_requirements(
+    let error = analyze_requirements_with_production_resolver(
         &[ApplicationRequirement::Resource(request_at(
             "test://first/output",
             "output",
@@ -1264,7 +1431,7 @@ fn malformed_planning_addressability_is_rejected() {
         (test_manifest, unattached_base_factory, "neither"),
         (two_context_manifest, conflicting_factory, "maps to both"),
     ] {
-        let error = analyze_application_requirements(
+        let error = analyze_requirements_with_production_resolver(
             std::slice::from_ref(&requirement),
             Some(&config),
             &host_catalog_with(manifest, factory),

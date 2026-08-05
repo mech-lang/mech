@@ -43,7 +43,7 @@ pub enum ResourcePathScope {
 }
 
 impl ResourcePathScope {
-    fn from_config_path(path: &str) -> MResult<Self> {
+    pub(crate) fn from_config_path(path: &str) -> MResult<Self> {
         if path.trim().is_empty() {
             return invalid_resource_capability("configuration path must not be empty");
         }
@@ -54,6 +54,14 @@ impl ResourcePathScope {
             return Ok(Self::Prefix(normalize_resource_path(prefix)?));
         }
         Ok(Self::Exact(normalize_resource_path(path)?))
+    }
+
+    pub(crate) fn config_path(&self) -> String {
+        match self {
+            Self::Exact(path) => path.clone(),
+            Self::Prefix(path) => format!("{path}/*"),
+            Self::Wildcard => "*".to_owned(),
+        }
     }
 
     fn matches(&self, path: &str) -> bool {

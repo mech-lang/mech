@@ -532,9 +532,8 @@ pub(crate) fn decode_canonical_runtime_type_key(bytes: &[u8]) -> MResult<Runtime
                     ));
                 }
                 let primary_key = reader.read_u32("canonical table primary key")?;
-                if (count == 0 && primary_key != 0) || (count > 0 && primary_key as usize >= count)
-                {
-                    return invalid("canonical table primary key is out of range");
+                if primary_key != 0 {
+                    return invalid("canonical table primary keys other than zero are unsupported");
                 }
                 RuntimeType::Table {
                     columns,
@@ -772,15 +771,15 @@ fn validate_kind(kind: &Kind, depth: usize) -> MResult<()> {
             validate_kind(element, depth + 1)?;
         }
         Kind::Table(columns, primary_key) => {
-            let count: u32 = columns
+            let _: u32 = columns
                 .len()
                 .try_into()
                 .map_err(|_| invalid::<()>("too many kind columns").unwrap_err())?;
             let primary_key: u32 = (*primary_key)
                 .try_into()
                 .map_err(|_| invalid::<()>("kind primary key exceeds u32").unwrap_err())?;
-            if (count == 0 && primary_key != 0) || (count > 0 && primary_key >= count) {
-                return invalid("kind table primary key is out of range");
+            if primary_key != 0 {
+                return invalid("kind table primary keys other than zero are unsupported");
             }
             validate_named_schema(
                 "kind table column",
@@ -834,12 +833,12 @@ fn validate_runtime_type(ty: &RuntimeType, depth: usize) -> MResult<()> {
             columns,
             primary_key,
         } => {
-            let count: u32 = columns
+            let _: u32 = columns
                 .len()
                 .try_into()
                 .map_err(|_| invalid::<()>("table column count exceeds u32").unwrap_err())?;
-            if (count == 0 && *primary_key != 0) || (count > 0 && *primary_key >= count) {
-                return invalid("table primary key is out of range");
+            if *primary_key != 0 {
+                return invalid("table primary keys other than zero are unsupported");
             }
             validate_named_schema(
                 "table column",
@@ -1206,10 +1205,8 @@ pub(crate) fn decode_raw_type(tag: RuntimeTypeTag, payload: &[u8]) -> MResult<Ra
                 ));
             }
             let primary_key = r.read_u32("table primary key")?;
-            if (encoded_count == 0 && primary_key != 0)
-                || (encoded_count > 0 && primary_key >= encoded_count)
-            {
-                return invalid("table primary key is out of range");
+            if primary_key != 0 {
+                return invalid("table primary keys other than zero are unsupported");
             }
             RawRuntimeType::Table {
                 columns,
@@ -1413,10 +1410,8 @@ fn decode_kind(r: &mut ByteReader<'_>, depth: usize) -> MResult<Kind> {
                 ));
             }
             let primary_key = r.read_u32("kind table primary key")?;
-            if (encoded_count == 0 && primary_key != 0)
-                || (encoded_count > 0 && primary_key >= encoded_count)
-            {
-                return invalid("kind table primary key is out of range");
+            if primary_key != 0 {
+                return invalid("kind table primary keys other than zero are unsupported");
             }
             Kind::Table(
                 columns,

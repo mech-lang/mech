@@ -35,6 +35,28 @@ pub struct ConstantEntry {
 use composite::read_child_payload;
 use limits::MAX_CONSTANT_NESTING;
 
+pub(crate) const MAX_TABLE_CONSTANT_ROWS: usize = 1_000_000;
+pub(crate) const MAX_TABLE_CONSTANT_CELLS: usize = 1_000_000;
+
+fn validate_table_payload_shape(rows: usize, columns: usize, remaining: usize) -> MResult<()> {
+    if rows > MAX_TABLE_CONSTANT_ROWS {
+        return invalid("table row count exceeds bytecode v1 limit");
+    }
+    let cells = rows
+        .checked_mul(columns)
+        .ok_or_else(|| invalid::<()>("table cell count overflow").unwrap_err())?;
+    if cells > MAX_TABLE_CONSTANT_CELLS {
+        return invalid("table cell count exceeds bytecode v1 limit");
+    }
+    let minimum_payload = cells
+        .checked_mul(4)
+        .ok_or_else(|| invalid::<()>("table cell framing length overflow").unwrap_err())?;
+    if minimum_payload > remaining {
+        return invalid("table row count exceeds the feasible framed cell payload");
+    }
+    Ok(())
+}
+
 struct ConstantCodecContext {
     active_references: BTreeSet<usize>,
     depth: usize,
@@ -191,6 +213,7 @@ fn collect_inline_runtime_types(
             if count != columns.len() {
                 return invalid("table column count does not match RuntimeType");
             }
+            validate_table_payload_shape(rows, count, reader.remaining())?;
             for _ in 0..rows {
                 for (_, child) in columns {
                     collect_inline_runtime_types(
@@ -686,15 +709,21 @@ fn decode_table_constant(
         u64::from(reader.read_u32("table column count")?),
         "table column count",
     )?;
-    if count != columns.len()
-        || (count == 0 && primary_key != 0)
-        || (count > 0 && primary_key as usize >= count)
-    {
-        return invalid("table schema does not match RuntimeType");
+    if count != columns.len() || primary_key != 0 {
+        return invalid("table schema is unsupported or does not match RuntimeType");
     }
-    let mut cell_columns = (0..count)
-        .map(|_| Vec::with_capacity(rows))
-        .collect::<Vec<_>>();
+    validate_table_payload_shape(rows, count, reader.remaining())?;
+    let mut cell_columns = Vec::new();
+    cell_columns
+        .try_reserve_exact(count)
+        .map_err(|_| invalid::<()>("unable to allocate table columns").unwrap_err())?;
+    for _ in 0..count {
+        let mut cells = Vec::new();
+        cells
+            .try_reserve_exact(rows)
+            .map_err(|_| invalid::<()>("unable to allocate table cells").unwrap_err())?;
+        cell_columns.push(cells);
+    }
     for _ in 0..rows {
         for (index, (_, ty)) in columns.iter().enumerate() {
             cell_columns[index]

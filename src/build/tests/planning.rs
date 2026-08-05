@@ -23,10 +23,11 @@ use mech_core::{
     Value, hash_str, write_bytecode,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
+use sha2::{Digest, Sha256};
 
 #[path = "support/isolated.rs"]
 mod isolated;
-use isolated::{OwnerProfile, RunnerAction, fixture_path, run_owner};
+use isolated::{OwnerProfile, RunnerAction, fixture_path, run_owner, workspace_root};
 #[cfg(not(feature = "standard-hosts"))]
 use mech_runtime::{
     HostContextManifest, HostManifestConfig, RuntimeHostFactory, RuntimeHostInstallation,
@@ -301,6 +302,11 @@ fn literal_only_bytecode_yields_an_engine_plan_without_runtime_config() {
     assert!(plan.application_requirements.is_empty());
     assert!(plan.hosts.is_empty());
     assert!(plan.run_grants.is_empty());
+    let workspace_lock = fs::read(workspace_root().join("Cargo.lock")).unwrap();
+    assert_eq!(
+        plan.dependency_resolution_seed_sha256,
+        format!("{:x}", Sha256::digest(workspace_lock))
+    );
     assert!(plan.core_features.iter().any(|feature| feature == "f64"));
     assert!(plan.engine_features.iter().any(|feature| feature == "f64"));
 }
@@ -1046,7 +1052,6 @@ fn host_function_only_bytecode(name: &str) -> Vec<u8> {
 }
 
 fn untrusted_string_bytecode(value: &str) -> Vec<u8> {
-    let dictionary = BTreeMap::from([(hash_str(value), value.to_owned())]);
     write_bytecode(&BytecodeProgram {
         register_count: 1,
         constants: vec![EncodedConstant {
@@ -1063,7 +1068,7 @@ fn untrusted_string_bytecode(value: &str) -> Vec<u8> {
             },
             BytecodeInstruction::Return { src: 0 },
         ],
-        dictionary,
+        dictionary: BTreeMap::new(),
         requirements: Vec::new(),
     })
     .unwrap()

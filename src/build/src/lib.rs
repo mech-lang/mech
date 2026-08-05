@@ -27,6 +27,8 @@ pub use project::*;
 /// cadence, so it is deliberately never consulted here.
 pub const MECH_COMPONENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+const NATIVE_REGISTRY_RESOLUTION_SEED: &[u8] = include_bytes!("../native-resolution-seed.lock");
+
 #[derive(Clone)]
 pub struct NativeBuildEnvironment {
     pub function_catalog: Arc<FunctionCatalog>,
@@ -178,6 +180,8 @@ impl NativeApplicationBuilder {
 
         let (packages, dependency_source, workspace_fingerprint) =
             resolve_packages(&self.environment.dependency_source, packages)?;
+        let dependency_lock_seed = self.dependency_lock_seed()?;
+        let dependency_resolution_seed_sha256 = plan::sha256_hex(&dependency_lock_seed);
         let mech_version = format!(
             "{}.{}.{}",
             program.header.mech_major, program.header.mech_minor, program.header.mech_patch
@@ -205,6 +209,7 @@ impl NativeApplicationBuilder {
             run_grants: requirements.run_grants,
             live: requirements.live,
             dependency_source,
+            dependency_resolution_seed_sha256,
             workspace_fingerprint,
         };
         refresh_plan_sha256(&mut plan)?;
@@ -266,8 +271,35 @@ impl NativeApplicationBuilder {
         let project =
             project::render_generated_native_project(root, request, plan, workspace_root)?;
         project.materialize()?;
-        cargo::generate_project_lockfile(&project, request.offline)?;
+        let dependency_lock_seed = self.dependency_lock_seed()?;
+        if plan::sha256_hex(&dependency_lock_seed) != plan.dependency_resolution_seed_sha256 {
+            return Err(error::native_build_error(
+                error::NativeBuildErrorKind::NativeProjectInvalid {
+                    reason: "native dependency lock seed does not match the build plan".to_owned(),
+                },
+                None,
+            ));
+        }
+        cargo::generate_project_lockfile(&project, &dependency_lock_seed, request.offline)?;
         Ok(project)
+    }
+
+    fn dependency_lock_seed(&self) -> MResult<Vec<u8>> {
+        match &self.environment.dependency_source {
+            NativeDependencySource::Registry { .. } => Ok(NATIVE_REGISTRY_RESOLUTION_SEED.to_vec()),
+            NativeDependencySource::Workspace { root } => {
+                let lockfile = root.join("Cargo.lock");
+                fs::read(&lockfile).map_err(|error| {
+                    error::native_build_error(
+                        error::NativeBuildErrorKind::NativeWorkspaceInputInvalid {
+                            path: lockfile,
+                            reason: format!("workspace dependency lock cannot be read: {error}"),
+                        },
+                        None,
+                    )
+                })
+            }
+        }
     }
 
     fn trusted_workspace_root(&self) -> MResult<Option<std::path::PathBuf>> {
