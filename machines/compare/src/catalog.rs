@@ -3,7 +3,10 @@ use crate::*;
 use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
-use mech_core::{FunctionCatalogBuilder, MResult, MechFunctionFactory};
+use mech_core::{
+    FunctionCatalogBuilder, MResult, MechFunctionFactory, RuntimeFunctionContract,
+    RuntimeOutputAliasPolicy,
+};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
 use paste::paste;
@@ -167,6 +170,7 @@ mech_core::declare_native_runtime_factory! {
     installer: install_atom_eq,
     name: "AtomEq",
     factory: <AtomEq as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_atom_eq",
@@ -179,6 +183,7 @@ mech_core::declare_native_runtime_factory! {
     installer: install_table_eq,
     name: "TableEq",
     factory: <TableEq as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_table_eq",
@@ -191,6 +196,7 @@ mech_core::declare_native_runtime_factory! {
     installer: install_atom_neq,
     name: "AtomNeq",
     factory: <AtomNeq as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_atom_neq",
@@ -203,6 +209,7 @@ mech_core::declare_native_runtime_factory! {
     installer: install_table_neq,
     name: "TableNeq",
     factory: <TableNeq as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-compare",
     crate_name: "mech_compare",
     installer_path: "mech_compare::__mech_native::install_table_neq",

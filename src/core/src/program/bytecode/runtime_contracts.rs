@@ -394,7 +394,13 @@ mod tests {
     fn catalog() -> FunctionCatalog {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_runtime_factory("ExactF64Binary", ExactF64Binary::new)
+            .insert_runtime_factory(
+                "ExactF64Binary",
+                ExactF64Binary::new,
+                crate::RuntimeFunctionContract::no_matrix(
+                    crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ),
+            )
             .unwrap();
         builder.build().unwrap()
     }
@@ -407,6 +413,136 @@ mod tests {
             "expected `{expected}` in `{}`",
             error.kind_message()
         );
+    }
+
+    #[cfg(all(feature = "matrix2", feature = "matrixd"))]
+    fn f64_matrix_constant(storage: crate::MatrixStorage, rows: u32, cols: u32) -> EncodedConstant {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&rows.to_le_bytes());
+        bytes.extend_from_slice(&cols.to_le_bytes());
+        for index in 0..rows.saturating_mul(cols) {
+            let value = f64::from(index + 1);
+            bytes.extend_from_slice(&value.to_bits().to_le_bytes());
+        }
+        EncodedConstant {
+            runtime_type: RuntimeType::Matrix {
+                element: Box::new(RuntimeType::F64),
+                storage,
+                rows,
+                cols,
+            },
+            alignment: 8,
+            bytes,
+        }
+    }
+
+    #[cfg(all(feature = "matrix2", feature = "matrixd"))]
+    fn factory_must_not_run(_args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        panic!("shape and alias contracts must reject before invoking the factory")
+    }
+
+    #[cfg(all(feature = "matrix2", feature = "matrixd", feature = "vectord"))]
+    #[test]
+    fn malicious_matrix_relations_and_output_aliases_fail_as_bytecode_contracts() {
+        use crate::MatrixStorage;
+
+        let mut catalog = FunctionCatalogBuilder::new();
+        for (name, contract) in [
+            (
+                "AddMDMD<f64>",
+                crate::RuntimeFunctionContract::same_shape(
+                    crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ),
+            ),
+            (
+                "AddM2M2<f64>",
+                crate::RuntimeFunctionContract::same_shape(
+                    crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ),
+            ),
+            (
+                "MatMulMDMD<f64>",
+                crate::RuntimeFunctionContract::matrix_product(
+                    crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ),
+            ),
+            (
+                "MatrixSolveMDVD<f64>",
+                crate::RuntimeFunctionContract::linear_solve(
+                    crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ),
+            ),
+        ] {
+            catalog
+                .insert_runtime_factory(name, factory_must_not_run, contract)
+                .unwrap();
+        }
+        let catalog = catalog.build().unwrap();
+
+        let dynamic = |rows, cols| f64_matrix_constant(MatrixStorage::MatrixD, rows, cols);
+        let fixed2 = || f64_matrix_constant(MatrixStorage::Matrix2, 2, 2);
+        let cases = [
+            (
+                "AddMDMD<f64>",
+                vec![dynamic(2, 2), dynamic(2, 2), dynamic(3, 3)],
+                (0, 1, 2),
+            ),
+            (
+                "AddMDMD<f64>",
+                vec![dynamic(3, 3), dynamic(2, 2), dynamic(2, 2)],
+                (0, 1, 2),
+            ),
+            (
+                "AddMDMD<f64>",
+                vec![dynamic(2, 2), dynamic(2, 2)],
+                (0, 0, 1),
+            ),
+            (
+                "AddMDMD<f64>",
+                vec![dynamic(2, 2), dynamic(2, 2)],
+                (1, 0, 1),
+            ),
+            ("AddM2M2<f64>", vec![fixed2(), fixed2()], (0, 0, 1)),
+            (
+                "MatMulMDMD<f64>",
+                vec![dynamic(2, 4), dynamic(2, 3), dynamic(2, 4)],
+                (0, 1, 2),
+            ),
+            (
+                "MatMulMDMD<f64>",
+                vec![dynamic(3, 4), dynamic(2, 3), dynamic(3, 4)],
+                (0, 1, 2),
+            ),
+            (
+                "MatrixSolveMDVD<f64>",
+                vec![dynamic(3, 1), dynamic(2, 3), dynamic(3, 1)],
+                (0, 1, 2),
+            ),
+            (
+                "MatrixSolveMDVD<f64>",
+                vec![dynamic(2, 1), dynamic(2, 2), dynamic(3, 1)],
+                (0, 1, 2),
+            ),
+        ];
+
+        for (name, constants, (dst, lhs, rhs)) in cases {
+            let program = parsed_runtime_program(
+                constants,
+                BytecodeInstruction::RuntimeBinary {
+                    function: RuntimeFunctionId::from_name(name).raw(),
+                    dst,
+                    lhs,
+                    rhs,
+                },
+            );
+            let error = program.validate_runtime_contracts(&catalog).unwrap_err();
+            assert_eq!(
+                error.kind_name(),
+                "BytecodeRuntimeContractViolation",
+                "{name}"
+            );
+            assert!(error.kind_message().contains(name));
+        }
     }
 
     #[test]
@@ -611,32 +747,13 @@ mod tests {
             }
         }
 
-        fn matrix(storage: crate::MatrixStorage) -> EncodedConstant {
-            let mut bytes = Vec::new();
-            bytes.extend_from_slice(&2_u32.to_le_bytes());
-            bytes.extend_from_slice(&2_u32.to_le_bytes());
-            for value in [1.0_f64, 0.0, 0.0, 1.0] {
-                bytes.extend_from_slice(&value.to_bits().to_le_bytes());
-            }
-            EncodedConstant {
-                runtime_type: RuntimeType::Matrix {
-                    element: Box::new(RuntimeType::F64),
-                    storage,
-                    rows: 2,
-                    cols: 2,
-                },
-                alignment: 8,
-                bytes,
-            }
-        }
-
         const NAME: &str = "ExactMatrix2Binary";
         let function = RuntimeFunctionId::from_name(NAME).raw();
         let program = parsed_runtime_program(
             vec![
-                matrix(crate::MatrixStorage::Matrix2),
-                matrix(crate::MatrixStorage::MatrixD),
-                matrix(crate::MatrixStorage::Matrix2),
+                f64_matrix_constant(crate::MatrixStorage::Matrix2, 2, 2),
+                f64_matrix_constant(crate::MatrixStorage::MatrixD, 2, 2),
+                f64_matrix_constant(crate::MatrixStorage::Matrix2, 2, 2),
             ],
             BytecodeInstruction::RuntimeBinary {
                 function,
@@ -647,7 +764,13 @@ mod tests {
         );
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_runtime_factory(NAME, ExactMatrix2Binary::new)
+            .insert_runtime_factory(
+                NAME,
+                ExactMatrix2Binary::new,
+                crate::RuntimeFunctionContract::same_shape(
+                    crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ),
+            )
             .unwrap();
         let error = program
             .validate_runtime_contracts(&builder.build().unwrap())

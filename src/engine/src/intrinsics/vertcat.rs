@@ -624,6 +624,7 @@ mech_core::declare_native_runtime_factory! {
 
     name: "VerticalConcatenateNArgs<f64>",
     factory: <VerticalConcatenateNArgs<f64> as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -1599,6 +1600,7 @@ mech_core::declare_native_runtime_factory! {
 
     name: "VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>",
     factory: <VerticalConcatenateR2R2<f64> as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -2521,6 +2523,7 @@ macro_rules! declare_vertcat_scalar {
             installer: [<install_ $factory:snake _ $token>],
             name: concat!(stringify!($factory), "<", $name, ">"),
             factory: <$factory<$scalar> as MechFunctionFactory>::new,
+            contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
             package: "mech-engine", crate_name: "mech_engine",
             installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token>])),
             cargo_features: ["matrix_vertcat", "native-link", "runtime", $cargo, $($feature),+],
@@ -2642,6 +2645,7 @@ macro_rules! declare_vertcat_binary_scalar {
             installer: [<install_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>],
             name: concat!(stringify!($factory), "<", $name, stringify!($out), stringify!($e0), stringify!($e1), ">"),
             factory: <$factory<$scalar> as MechFunctionFactory>::new,
+            contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
             package: "mech-engine", crate_name: "mech_engine",
             installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>])),
             cargo_features: ["matrix_vertcat", "native-link", "runtime", $cargo, $($feature),+],

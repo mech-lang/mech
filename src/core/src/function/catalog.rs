@@ -4,8 +4,8 @@ use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::V
 use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    FunctionArgs, GuardFunctionSafety, MResult, MechError, MechErrorKind, MechFunction, Value,
-    hash_str,
+    FunctionArgs, GuardFunctionSafety, MResult, MechError, MechErrorKind, MechFunction,
+    RuntimeFunctionContract, RuntimeOutputAliasPolicy, Value, hash_str,
 };
 
 #[repr(transparent)]
@@ -68,6 +68,7 @@ pub struct RuntimeFunctionEntry {
     pub id: RuntimeFunctionId,
     pub name: String,
     factory: RuntimeFunctionFactory,
+    contract: RuntimeFunctionContract,
 
     #[cfg(feature = "native-plan")]
     pub native_linkage: Option<NativeFunctionLinkage>,
@@ -96,6 +97,14 @@ impl MechErrorKind for RuntimeFunctionContractViolation {
 }
 
 impl RuntimeFunctionEntry {
+    pub fn contract_kind(&self) -> &'static str {
+        self.contract.kind
+    }
+
+    pub fn output_alias_policy(&self) -> RuntimeOutputAliasPolicy {
+        self.contract.output_alias
+    }
+
     fn wrap_contract_error(&self, error: MechError) -> MechError {
         MechError::new(
             RuntimeFunctionContractViolation {
@@ -110,6 +119,8 @@ impl RuntimeFunctionEntry {
     }
 
     pub fn validate_args(&self, args: &FunctionArgs) -> MResult<()> {
+        args.validate_contract(self.contract)
+            .map_err(|error| self.wrap_contract_error(error))?;
         let function =
             (self.factory)(args.clone()).map_err(|error| self.wrap_contract_error(error))?;
         drop(function);
@@ -117,6 +128,8 @@ impl RuntimeFunctionEntry {
     }
 
     pub fn instantiate(&self, args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        args.validate_contract(self.contract)
+            .map_err(|error| self.wrap_contract_error(error))?;
         (self.factory)(args).map_err(|error| self.wrap_contract_error(error))
     }
 }
@@ -525,6 +538,7 @@ impl FunctionCatalogBuilder {
         &mut self,
         name: impl Into<String>,
         factory: RuntimeFunctionFactory,
+        contract: RuntimeFunctionContract,
     ) -> MResult<()> {
         let name = name.into();
         let id = RuntimeFunctionId::from_name(&name);
@@ -532,6 +546,7 @@ impl FunctionCatalogBuilder {
             id,
             name,
             factory,
+            contract,
             #[cfg(feature = "native-plan")]
             native_linkage: None,
         })
@@ -542,6 +557,7 @@ impl FunctionCatalogBuilder {
         &mut self,
         name: impl Into<String>,
         factory: RuntimeFunctionFactory,
+        contract: RuntimeFunctionContract,
         linkage: NativeFunctionLinkage,
     ) -> MResult<()> {
         let name = name.into();
@@ -550,6 +566,7 @@ impl FunctionCatalogBuilder {
             id,
             name,
             factory,
+            contract,
             native_linkage: Some(linkage),
         })
     }
@@ -1069,6 +1086,7 @@ macro_rules! declare_native_runtime_factory {
 
         name: $name:expr,
         factory: $factory:expr,
+        contract: $contract:expr,
 
         package: $package:literal,
         crate_name: $crate_name:literal,
@@ -1088,6 +1106,7 @@ macro_rules! declare_native_runtime_factory {
                 return builder.insert_runtime_factory_with_linkage(
                     $name,
                     $factory,
+                    $contract,
                     $crate::NativeFunctionLinkage {
                         package: $package,
                         crate_name: $crate_name,
@@ -1099,7 +1118,7 @@ macro_rules! declare_native_runtime_factory {
 
             #[cfg(not(feature = "native-plan"))]
             {
-                builder.insert_runtime_factory($name, $factory)
+                builder.insert_runtime_factory($name, $factory, $contract)
             }
         }
 
@@ -1109,7 +1128,7 @@ macro_rules! declare_native_runtime_factory {
         pub fn $installer(
             builder: &mut $crate::FunctionCatalogBuilder,
         ) -> $crate::MResult<()> {
-            builder.insert_runtime_factory($name, $factory)
+            builder.insert_runtime_factory($name, $factory, $contract)
         }
     };
 
@@ -1121,6 +1140,7 @@ macro_rules! declare_native_runtime_factory {
 
         name: $name:expr,
         factory: $factory:expr,
+        contract: $contract:expr,
 
         package: $package:literal,
         crate_name: $crate_name:literal,
@@ -1137,6 +1157,7 @@ macro_rules! declare_native_runtime_factory {
                 return builder.insert_runtime_factory_with_linkage(
                     $name,
                     $factory,
+                    $contract,
                     $crate::NativeFunctionLinkage {
                         package: $package,
                         crate_name: $crate_name,
@@ -1148,7 +1169,7 @@ macro_rules! declare_native_runtime_factory {
 
             #[cfg(not(feature = "native-plan"))]
             {
-                builder.insert_runtime_factory($name, $factory)
+                builder.insert_runtime_factory($name, $factory, $contract)
             }
         }
 
@@ -1158,7 +1179,7 @@ macro_rules! declare_native_runtime_factory {
         pub fn $installer(
             builder: &mut $crate::FunctionCatalogBuilder,
         ) -> $crate::MResult<()> {
-            builder.insert_runtime_factory($name, $factory)
+            builder.insert_runtime_factory($name, $factory, $contract)
         }
     };
 }
@@ -1234,6 +1255,10 @@ mod tests {
         unreachable!("catalog tests do not instantiate runtime functions")
     }
 
+    fn test_runtime_contract() -> RuntimeFunctionContract {
+        RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias)
+    }
+
     fn rejecting_factory(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         Err(MechError::new(
             crate::IncorrectNumberOfArguments {
@@ -1261,6 +1286,9 @@ mod tests {
 
         name: concat!("MacroFactory", "<f64>"),
         factory: <MacroFactory as crate::MechFunctionFactory>::new,
+        contract: RuntimeFunctionContract::no_matrix(
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+        ),
 
         package: "mech-core",
         crate_name: "mech_core",
@@ -1335,6 +1363,7 @@ mod tests {
                 id,
                 name: String::from("first"),
                 factory: test_factory,
+                contract: test_runtime_contract(),
                 #[cfg(feature = "native-plan")]
                 native_linkage: None,
             })
@@ -1345,6 +1374,7 @@ mod tests {
                 id,
                 name: String::from("second"),
                 factory: test_factory,
+                contract: test_runtime_contract(),
                 #[cfg(feature = "native-plan")]
                 native_linkage: None,
             })
@@ -1384,10 +1414,10 @@ mod tests {
     fn duplicate_runtime_factories_are_rejected() {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_runtime_factory("AddSS<f64>", test_factory)
+            .insert_runtime_factory("AddSS<f64>", test_factory, test_runtime_contract())
             .unwrap();
         let error = builder
-            .insert_runtime_factory("AddSS<f64>", test_factory)
+            .insert_runtime_factory("AddSS<f64>", test_factory, test_runtime_contract())
             .unwrap_err();
         assert_eq!(error.kind_name(), "FunctionCatalogDuplicateRuntimeFactory");
     }
@@ -1396,7 +1426,11 @@ mod tests {
     fn runtime_entry_wraps_factory_argument_failures_with_identity() {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_runtime_factory("RejectingFactory", rejecting_factory)
+            .insert_runtime_factory(
+                "RejectingFactory",
+                rejecting_factory,
+                test_runtime_contract(),
+            )
             .unwrap();
         let catalog = builder.build().unwrap();
         let entry = catalog
@@ -1449,7 +1483,7 @@ mod tests {
     fn plain_runtime_registration_keeps_native_linkage_absent() {
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_runtime_factory("PlainFactory", test_factory)
+            .insert_runtime_factory("PlainFactory", test_factory, test_runtime_contract())
             .unwrap();
 
         let catalog = builder.build().unwrap();
@@ -1473,7 +1507,12 @@ mod tests {
         };
         let mut builder = FunctionCatalogBuilder::new();
         builder
-            .insert_runtime_factory_with_linkage("AddSS<f64>", test_factory, linkage.clone())
+            .insert_runtime_factory_with_linkage(
+                "AddSS<f64>",
+                test_factory,
+                test_runtime_contract(),
+                linkage.clone(),
+            )
             .unwrap();
 
         let catalog = builder.build().unwrap();
@@ -1506,7 +1545,12 @@ mod tests {
         ] {
             let mut builder = FunctionCatalogBuilder::new();
             builder
-                .insert_runtime_factory_with_linkage("ValidFactory", test_factory, linkage)
+                .insert_runtime_factory_with_linkage(
+                    "ValidFactory",
+                    test_factory,
+                    test_runtime_contract(),
+                    linkage,
+                )
                 .unwrap();
         }
     }
@@ -1637,7 +1681,12 @@ mod tests {
         for (linkage, expected_reason) in invalid {
             let mut builder = FunctionCatalogBuilder::new();
             let error = builder
-                .insert_runtime_factory_with_linkage("InvalidFactory", test_factory, linkage)
+                .insert_runtime_factory_with_linkage(
+                    "InvalidFactory",
+                    test_factory,
+                    test_runtime_contract(),
+                    linkage,
+                )
                 .unwrap_err();
             assert_eq!(error.kind_name(), "FunctionCatalogInvalidNativeLinkage");
             assert!(
@@ -1857,7 +1906,7 @@ mod tests {
             .unwrap();
         let runtime_id = RuntimeFunctionId::from_name("AddSS<f64>");
         builder
-            .insert_runtime_factory("AddSS<f64>", test_factory)
+            .insert_runtime_factory("AddSS<f64>", test_factory, test_runtime_contract())
             .unwrap();
         builder
             .insert_export(export(

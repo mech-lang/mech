@@ -154,6 +154,7 @@ mech_core::declare_native_runtime_factory! {
 
     name: "VariableDefineF64",
     factory: <VariableDefineF64 as MechFunctionFactory>::new,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
 
     package: "mech-engine",
     crate_name: "mech_engine",
@@ -223,6 +224,7 @@ macro_rules! declare_variable_define_scalar_native {
                 installer: [<install_variable_define_ $kind:lower>],
                 name: stringify!([<VariableDefine $kind:camel>]),
                 factory: <[<VariableDefine $kind:camel>] as MechFunctionFactory>::new,
+                contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -586,6 +588,7 @@ macro_rules! declare_variable_define_matrix_native {
                 installer: [<install_variable_define_matrix_ $kind_token:lower _ $shape:lower>],
                 name: concat!("VariableDefineMatrix<", $kind_name, stringify!($shape), ">"),
                 factory: VariableDefineMatrix::<$kind, $shape<$kind>>::new,
+                contract: RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
                 package: "mech-engine",
                 crate_name: "mech_engine",
                 installer_path: concat!(
@@ -919,6 +922,7 @@ mech_core::declare_native_runtime_factory! {
     installer: install_variable_define_empty,
     name: "VariableDefineEmpty",
     factory: variable_define_empty_factory,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
     package: "mech-engine",
     crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_variable_define_empty",

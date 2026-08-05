@@ -44,7 +44,7 @@ impl_dot!(DotR4R4, RowVector4<T>, RowVector4<T>, T);
 impl_dot!(DotV4V4, Vector4<T>, Vector4<T>, T);
 
 #[cfg(all(feature = "matrix1", feature = "matrix1"))]
-impl_dot!(DotM1M1, Matrix2<T>, Matrix2<T>, T);
+impl_dot!(DotM1M1, Matrix1<T>, Matrix1<T>, T);
 #[cfg(all(feature = "matrix2", feature = "matrix2"))]
 impl_dot!(DotM2M2, Matrix2<T>, Matrix2<T>, T);
 #[cfg(all(feature = "matrix3", feature = "matrix3"))]
@@ -84,7 +84,7 @@ macro_rules! impl_dot_match_arms {
           (Value::$matrix_kind(Matrix::RowVector4(lhs)), Value::$matrix_kind(Matrix::RowVector4(rhs))) => Ok(Box::new(DotR4R4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
 
           #[cfg(all(feature = $value_string, feature = "matrix1", feature = "matrix1"))]
-          (Value::$matrix_kind(Matrix::Matrix2(lhs)), Value::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new(DotM1M1 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (Value::$matrix_kind(Matrix::Matrix1(lhs)), Value::$matrix_kind(Matrix::Matrix1(rhs))) => Ok(Box::new(DotM1M1 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
           #[cfg(all(feature = $value_string, feature = "matrix2", feature = "matrix2"))]
           (Value::$matrix_kind(Matrix::Matrix2(lhs)), Value::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new(DotM2M2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
           #[cfg(all(feature = $value_string, feature = "matrix3", feature = "matrix3"))]

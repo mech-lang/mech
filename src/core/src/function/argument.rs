@@ -5,7 +5,8 @@ use std::string::{String, ToString};
 
 use core::any::type_name;
 
-use crate::{MResult, MechError, MechErrorKind, Ref, Value};
+use crate::structures::Matrix;
+use crate::{MResult, MechError, MechErrorKind, ReactiveCellId, Ref, Value};
 
 /// Identifies the argument whose exact runtime representation was rejected.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -19,6 +20,155 @@ pub struct FunctionArgumentTypeMismatch {
     pub role: FunctionArgumentRole,
     pub expected: String,
     pub found: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FunctionMatrixRepresentation {
+    Matrix1,
+    Matrix2,
+    Matrix3,
+    Matrix4,
+    Matrix2x3,
+    Matrix3x2,
+    RowVector2,
+    RowVector3,
+    RowVector4,
+    Vector2,
+    Vector3,
+    Vector4,
+    RowVectorD,
+    VectorD,
+    MatrixD,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FunctionMatrixDescriptor {
+    pub representation: FunctionMatrixRepresentation,
+    pub rows: usize,
+    pub cols: usize,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FunctionArgumentAliasViolation {
+    pub input: usize,
+    pub cell: ReactiveCellId,
+}
+
+impl MechErrorKind for FunctionArgumentAliasViolation {
+    fn name(&self) -> &str {
+        "FunctionArgumentAliasViolation"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "function output aliases input {} through reactive root cell {}",
+            self.input,
+            self.cell.get(),
+        )
+    }
+}
+
+fn matrix_descriptor<T>(matrix: &Matrix<T>) -> FunctionMatrixDescriptor
+where
+    T: core::fmt::Debug + Clone + PartialEq + 'static,
+{
+    let representation = match matrix {
+        #[cfg(feature = "matrix1")]
+        Matrix::Matrix1(_) => FunctionMatrixRepresentation::Matrix1,
+        #[cfg(feature = "matrix2")]
+        Matrix::Matrix2(_) => FunctionMatrixRepresentation::Matrix2,
+        #[cfg(feature = "matrix3")]
+        Matrix::Matrix3(_) => FunctionMatrixRepresentation::Matrix3,
+        #[cfg(feature = "matrix4")]
+        Matrix::Matrix4(_) => FunctionMatrixRepresentation::Matrix4,
+        #[cfg(feature = "matrix2x3")]
+        Matrix::Matrix2x3(_) => FunctionMatrixRepresentation::Matrix2x3,
+        #[cfg(feature = "matrix3x2")]
+        Matrix::Matrix3x2(_) => FunctionMatrixRepresentation::Matrix3x2,
+        #[cfg(feature = "row_vector2")]
+        Matrix::RowVector2(_) => FunctionMatrixRepresentation::RowVector2,
+        #[cfg(feature = "row_vector3")]
+        Matrix::RowVector3(_) => FunctionMatrixRepresentation::RowVector3,
+        #[cfg(feature = "row_vector4")]
+        Matrix::RowVector4(_) => FunctionMatrixRepresentation::RowVector4,
+        #[cfg(feature = "vector2")]
+        Matrix::Vector2(_) => FunctionMatrixRepresentation::Vector2,
+        #[cfg(feature = "vector3")]
+        Matrix::Vector3(_) => FunctionMatrixRepresentation::Vector3,
+        #[cfg(feature = "vector4")]
+        Matrix::Vector4(_) => FunctionMatrixRepresentation::Vector4,
+        #[cfg(feature = "row_vectord")]
+        Matrix::RowDVector(_) => FunctionMatrixRepresentation::RowVectorD,
+        #[cfg(feature = "vectord")]
+        Matrix::DVector(_) => FunctionMatrixRepresentation::VectorD,
+        #[cfg(feature = "matrixd")]
+        Matrix::DMatrix(_) => FunctionMatrixRepresentation::MatrixD,
+    };
+    FunctionMatrixDescriptor {
+        representation,
+        rows: matrix.rows(),
+        cols: matrix.cols(),
+    }
+}
+
+impl Value {
+    pub fn function_matrix_descriptor(
+        &self,
+        role: FunctionArgumentRole,
+    ) -> MResult<Option<FunctionMatrixDescriptor>> {
+        let descriptor = match self {
+            #[cfg(feature = "matrix")]
+            Value::MatrixIndex(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "bool"))]
+            Value::MatrixBool(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "u8"))]
+            Value::MatrixU8(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "u16"))]
+            Value::MatrixU16(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "u32"))]
+            Value::MatrixU32(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "u64"))]
+            Value::MatrixU64(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "u128"))]
+            Value::MatrixU128(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "i8"))]
+            Value::MatrixI8(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "i16"))]
+            Value::MatrixI16(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "i32"))]
+            Value::MatrixI32(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "i64"))]
+            Value::MatrixI64(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "i128"))]
+            Value::MatrixI128(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "f32"))]
+            Value::MatrixF32(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "f64"))]
+            Value::MatrixF64(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "string"))]
+            Value::MatrixString(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "rational"))]
+            Value::MatrixR64(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(all(feature = "matrix", feature = "complex"))]
+            Value::MatrixC64(matrix) => Some(matrix_descriptor(matrix)),
+            #[cfg(feature = "matrix")]
+            Value::MatrixValue(matrix) => Some(matrix_descriptor(matrix)),
+            Value::Typed(_, _) | Value::MutableReference(_) => {
+                return Err(MechError::new(
+                    FunctionArgumentTypeMismatch {
+                        role,
+                        expected: "an unwrapped scalar, nonmatrix, or exact matrix backing"
+                            .to_string(),
+                        found: self.exact_runtime_representation_name(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+            _ => None,
+        };
+        Ok(descriptor)
+    }
 }
 
 impl MechErrorKind for FunctionArgumentTypeMismatch {

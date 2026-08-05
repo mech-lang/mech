@@ -11,7 +11,8 @@ use std::{
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, FunctionArgs, FunctionCatalog,
     FunctionCatalogBuilder, MResult, MechError, MechErrorKind, MechFunction, MechFunctionFactory,
-    MechFunctionImpl, ParsedProgram, Ref, ResourceDelivery, ResourceIntent, Value, hash_str,
+    MechFunctionImpl, ParsedProgram, Ref, ResourceDelivery, ResourceIntent,
+    RuntimeFunctionContract, RuntimeOutputAliasPolicy, Value, hash_str,
 };
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
@@ -136,12 +137,17 @@ impl MechErrorKind for ControlledAddInvalidArguments {
 fn function_catalog() -> Arc<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
     builder
-        .insert_runtime_factory("AddSS<f64>", controlled_add_factory)
+        .insert_runtime_factory(
+            "AddSS<f64>",
+            controlled_add_factory,
+            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+        )
         .unwrap();
     builder
         .insert_runtime_factory(
             "VariableDefineF64",
             <mech_engine::intrinsics::define::VariableDefineF64 as MechFunctionFactory>::new,
+            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
         )
         .unwrap();
     Arc::new(builder.build().unwrap())

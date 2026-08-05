@@ -39,7 +39,11 @@ impl_matmul!(MatMulR4MD, RowVector4<T>, DMatrix<T>, RowDVector<T>);
 impl_matmul!(MatMulR3V3, RowVector3<T>, Vector3<T>, Matrix1<T>);
 #[cfg(all(feature = "row_vector3", feature = "matrix3"))]
 impl_matmul!(MatMulR3M3, RowVector3<T>, Matrix3<T>, RowVector3<T>);
-#[cfg(all(feature = "row_vector3", feature = "matrix3x2"))]
+#[cfg(all(
+    feature = "row_vector3",
+    feature = "matrix3x2",
+    feature = "row_vector2"
+))]
 impl_matmul!(MatMulR3M3x2, RowVector3<T>, Matrix3x2<T>, RowVector2<T>);
 #[cfg(all(feature = "row_vector3", feature = "matrixd", feature = "row_vectord"))]
 impl_matmul!(MatMulR3MD, RowVector3<T>, DMatrix<T>, RowDVector<T>);

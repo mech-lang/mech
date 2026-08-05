@@ -103,6 +103,8 @@ struct LinkageEntry<'a> {
     crate_name: Option<&'static str>,
     installer_path: Option<&'static str>,
     cargo_features: Option<&'static [&'static str]>,
+    contract_kind: &'static str,
+    output_alias_policy: &'static str,
 }
 
 #[cfg(any(
@@ -133,6 +135,13 @@ fn emit(catalog: &FunctionCatalog) {
                 crate_name: linkage.map(|value| value.crate_name),
                 installer_path: linkage.map(|value| value.installer_path),
                 cargo_features: linkage.map(|value| value.cargo_features),
+                contract_kind: entry.contract_kind(),
+                output_alias_policy: match entry.output_alias_policy() {
+                    mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias => {
+                        "disallow_input_alias"
+                    }
+                    mech_core::RuntimeOutputAliasPolicy::AllowInputAlias => "allow_input_alias",
+                },
             }
         })
         .collect::<Vec<_>>();
@@ -155,6 +164,8 @@ fn emit(catalog: &FunctionCatalog) {
 struct RuntimeEntry<'a> {
     name: &'a str,
     id_hex: String,
+    contract_kind: &'static str,
+    output_alias_policy: &'static str,
 }
 
 #[cfg(any(
@@ -175,6 +186,11 @@ fn emit_runtime(catalog: &FunctionCatalog) {
         .map(|entry| RuntimeEntry {
             name: &entry.name,
             id_hex: format!("{:016x}", entry.id.raw()),
+            contract_kind: entry.contract_kind(),
+            output_alias_policy: match entry.output_alias_policy() {
+                mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias => "disallow_input_alias",
+                mech_core::RuntimeOutputAliasPolicy::AllowInputAlias => "allow_input_alias",
+            },
         })
         .collect::<Vec<_>>();
     serde_json::to_writer_pretty(std::io::stdout(), &entries).unwrap();
