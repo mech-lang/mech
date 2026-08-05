@@ -40,6 +40,15 @@ pub struct NativeRuntimeConfig {
     pub runtime: RuntimeConfig,
     pub hosts: Vec<HostInstanceConfig>,
     pub run_grants: Vec<RunResourceGrantConfig>,
+    pub actor_bootstrap: Option<NativeActorBootstrap>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct NativeActorBootstrap {
+    pub subject: String,
+    pub message_kind: String,
+    pub message_payload: String,
+    pub initial_state: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -64,6 +73,7 @@ pub struct PlannedRuntimeFunction {
 pub enum PlannedApplicationRequirement {
     HostFunction {
         name: String,
+        context: crate::NativeHostFunctionContext,
         package: String,
         crate_name: String,
         installer_path: String,
@@ -121,6 +131,7 @@ pub struct NativeBuildPlan {
     pub mech_version: String,
     pub application_kind: NativeApplicationKind,
     pub runtime_config: RuntimeConfig,
+    pub actor_bootstrap: Option<NativeActorBootstrap>,
     pub bytecode_sha256: String,
     pub plan_sha256: String,
     pub target: Option<String>,

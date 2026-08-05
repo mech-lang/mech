@@ -6,8 +6,9 @@ use sha2::{Digest, Sha256};
 use crate::error::{NativeBuildErrorKind, native_build_error};
 
 use super::{
-    NativeApplicationKind, NativeBuildPlan, NativeBuildProfile, PlannedApplicationRequirement,
-    PlannedDependencySource, PlannedHostInstance, PlannedPackage, PlannedRuntimeFunction,
+    NativeActorBootstrap, NativeApplicationKind, NativeBuildPlan, NativeBuildProfile,
+    PlannedApplicationRequirement, PlannedDependencySource, PlannedHostInstance, PlannedPackage,
+    PlannedRuntimeFunction,
 };
 
 /// The complete, stable input to the v1 native-build plan digest.
@@ -22,6 +23,7 @@ pub struct NativeBuildPlanDigestInput {
     pub mech_version: String,
     pub application_kind: NativeApplicationKind,
     pub runtime_config: RuntimeConfig,
+    pub actor_bootstrap: Option<NativeActorBootstrap>,
     pub bytecode_sha256: String,
     pub target: Option<String>,
     pub profile: NativeBuildProfile,
@@ -48,6 +50,7 @@ impl From<&NativeBuildPlan> for NativeBuildPlanDigestInput {
             mech_version: plan.mech_version.clone(),
             application_kind: plan.application_kind,
             runtime_config: plan.runtime_config.clone(),
+            actor_bootstrap: plan.actor_bootstrap.clone(),
             bytecode_sha256: plan.bytecode_sha256.clone(),
             target: plan.target.clone(),
             profile: plan.profile,
@@ -109,6 +112,7 @@ mod tests {
             mech_version: "0.3.5".to_owned(),
             application_kind: NativeApplicationKind::Engine,
             runtime_config: RuntimeConfig::default(),
+            actor_bootstrap: None,
             bytecode_sha256: sha256_hex(b"bytecode"),
             plan_sha256: String::new(),
             target: None,
@@ -153,6 +157,19 @@ mod tests {
         assert_digest_changes(&plan, |changed| changed.mech_version = "0.3.6".to_owned());
         assert_digest_changes(&plan, |changed| {
             changed.runtime_config.limits.max_steps_per_turn = Some(123)
+        });
+        let mut with_actor = plan.clone();
+        with_actor.actor_bootstrap = Some(NativeActorBootstrap {
+            subject: "actor:alpha".to_owned(),
+            message_kind: "alpha".to_owned(),
+            message_payload: "payload-a".to_owned(),
+            initial_state: Some("state-a".to_owned()),
+        });
+        assert_digest_changes(&with_actor, |changed| {
+            changed.actor_bootstrap.as_mut().unwrap().subject = "actor:beta".to_owned()
+        });
+        assert_digest_changes(&with_actor, |changed| {
+            changed.actor_bootstrap.as_mut().unwrap().message_payload = "payload-b".to_owned()
         });
         assert_digest_changes(&plan, |changed| {
             changed.target = Some("aarch64-unknown-linux-gnu".to_owned())

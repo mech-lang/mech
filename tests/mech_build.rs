@@ -38,6 +38,24 @@ fn run_build(root: &Path, input: &Path, emit: &str, output: &Path, keep: bool) -
 }
 
 fn run_configured_build(root: &Path, input: &Path, config: &Path, output: &Path) -> Output {
+    run_configured_emit(
+        root,
+        input,
+        config,
+        "cargo-project",
+        output,
+        "configured-host-free",
+    )
+}
+
+fn run_configured_emit(
+    root: &Path,
+    input: &Path,
+    config: &Path,
+    emit: &str,
+    output: &Path,
+    name: &str,
+) -> Output {
     Command::new(env!("CARGO_BIN_EXE_mech"))
         .current_dir(root)
         .arg("--config")
@@ -45,9 +63,9 @@ fn run_configured_build(root: &Path, input: &Path, config: &Path, output: &Path)
         .arg("build")
         .arg(input)
         .arg("--emit")
-        .arg("cargo-project")
+        .arg(emit)
         .arg("--name")
-        .arg("configured-host-free")
+        .arg(name)
         .arg("--out")
         .arg(output)
         .arg("--workspace-root")
@@ -55,6 +73,19 @@ fn run_configured_build(root: &Path, input: &Path, config: &Path, output: &Path)
         .arg("--offline")
         .output()
         .unwrap()
+}
+
+fn write_actor_config(path: &Path, subject: &str, kind: &str, payload: &str, state: Option<&str>) {
+    let initial_state = state
+        .map(|state| format!(r#", initial-state: "{state}""#))
+        .unwrap_or_default();
+    std::fs::write(
+        path,
+        format!(
+            r#"config := {{build: {{actor: {{subject: "{subject}", message-kind: "{kind}", message-payload: "{payload}"{initial_state}}}}}}}"#,
+        ),
+    )
+    .unwrap();
 }
 
 fn assert_success(output: Output, label: &str) {
@@ -269,6 +300,144 @@ fn host_free_build_preserves_configured_runtime_settings() {
     assert!(runtime.contains("max_steps_per_turn: Some(47u64)"));
     assert!(runtime.contains("trace_enabled: true"));
     assert!(runtime.contains("log_level: LogLevel::Debug"));
+
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn actor_build_requires_explicit_bootstrap_and_covers_source_and_bytecode_emits() {
+    let root = temp_root("actor-bootstrap-emits");
+    let source = root.join("actor.mec");
+    std::fs::write(
+        &source,
+        concat!(
+            "kind := actor/message/kind()\n",
+            "payload := actor/message/payload()\n",
+            "updated := actor/state/put(kind)\n",
+            "state-id := actor/state/id()\n",
+            "state := actor/state/get()\n",
+            "payload\n",
+        ),
+    )
+    .unwrap();
+    let alpha = root.join("alpha.mcfg");
+    let beta = root.join("beta.mcfg");
+    write_actor_config(&alpha, "actor:alpha", "alpha", "payload-a", None);
+    write_actor_config(&beta, "actor:beta", "beta", "payload-b", Some("state-b"));
+
+    let bytecode = root.join("actor.mecb");
+    assert_success(
+        run_configured_emit(
+            &root,
+            &source,
+            &alpha,
+            "bytecode",
+            &bytecode,
+            "actor-app-alpha",
+        ),
+        "actor source to bytecode",
+    );
+
+    let alpha_plan = root.join("alpha-plan.json");
+    assert_success(
+        run_configured_emit(
+            &root,
+            &source,
+            &alpha,
+            "plan",
+            &alpha_plan,
+            "actor-app-alpha",
+        ),
+        "actor source to plan",
+    );
+    let plan: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&alpha_plan).unwrap()).unwrap();
+    assert_eq!(plan["actor_bootstrap"]["subject"], "actor:alpha");
+    assert_eq!(plan["actor_bootstrap"]["message_kind"], "alpha");
+    assert_eq!(plan["actor_bootstrap"]["message_payload"], "payload-a");
+    assert_eq!(
+        plan["actor_bootstrap"]["initial_state"],
+        serde_json::Value::Null
+    );
+    let contexts = plan["application_requirements"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|requirement| requirement["context"].as_str().unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(contexts, vec!["actor_turn"; 5]);
+
+    let alpha_project = root.join("alpha-project");
+    assert_success(
+        run_configured_emit(
+            &root,
+            &source,
+            &alpha,
+            "cargo-project",
+            &alpha_project,
+            "actor-app-alpha",
+        ),
+        "actor source to Cargo project",
+    );
+    let runtime = std::fs::read_to_string(alpha_project.join("src/runtime.rs")).unwrap();
+    for value in ["actor:alpha", "alpha", "payload-a"] {
+        assert!(runtime.contains(value), "runtime source omitted {value}");
+    }
+
+    let alpha_native = root.join("alpha-native");
+    assert_success(
+        run_configured_emit(
+            &root,
+            &source,
+            &alpha,
+            "native",
+            &alpha_native,
+            "actor-app-alpha",
+        ),
+        "actor source to native",
+    );
+    let alpha_output = Command::new(&alpha_native).output().unwrap();
+    let alpha_stdout = String::from_utf8_lossy(&alpha_output.stdout).into_owned();
+    assert_success(alpha_output, "running alpha actor native application");
+    assert_eq!(alpha_stdout.trim(), "\"payload-a\"");
+
+    let beta_plan = root.join("beta-plan.json");
+    assert_success(
+        run_configured_emit(
+            &root,
+            &bytecode,
+            &beta,
+            "plan",
+            &beta_plan,
+            "actor-app-beta",
+        ),
+        "actor bytecode to plan",
+    );
+    assert_ne!(plan_digest(&alpha_plan), plan_digest(&beta_plan));
+
+    let beta_native = root.join("beta-native");
+    assert_success(
+        run_configured_emit(
+            &root,
+            &bytecode,
+            &beta,
+            "native",
+            &beta_native,
+            "actor-app-beta",
+        ),
+        "actor bytecode to native",
+    );
+    let beta_output = Command::new(&beta_native).output().unwrap();
+    let beta_stdout = String::from_utf8_lossy(&beta_output.stdout).into_owned();
+    assert_success(beta_output, "running beta actor native application");
+    assert_eq!(beta_stdout.trim(), "\"payload-b\"");
+
+    let missing_output = root.join("missing-plan.json");
+    let missing = run_build(&root, &bytecode, "plan", &missing_output, false);
+    assert!(!missing.status.success());
+    assert!(String::from_utf8_lossy(&missing.stderr).contains("NativeActorBootstrapMissing"));
+    assert!(!missing_output.exists());
+    assert!(!root.join("missing-plan.json.project").exists());
 
     std::fs::remove_dir_all(root).unwrap();
 }

@@ -115,6 +115,82 @@ fn runtime_managed_actor_identity_transitions_commit() {
 }
 
 #[test]
+fn actor_state_put_followed_by_failure_aborts_state_and_acknowledgement() {
+    let mut host_registry = InMemoryHostRegistry::new();
+    crate::register_actor_context_host_functions(&mut host_registry).unwrap();
+    let subject = "actor:abort-state-put";
+    let capability_id = CapabilityId(101);
+    let mut runtime = MechRuntime::builder()
+        .host_registry(host_registry)
+        .capability_kernel(BasicCapabilityKernel::new())
+        .build()
+        .unwrap();
+    runtime
+        .grant_capability(Arc::new(BasicCapability::new(
+            capability_id,
+            &BasicSubject::new(subject),
+            &BasicResource::new("host:actor/state/put"),
+            [BasicOperation::new("call")],
+        )))
+        .unwrap();
+    let initial_state = runtime.next_object_id();
+    runtime
+        .put_object(ObjectRecord::text(initial_state, "actor-state", "before"))
+        .unwrap();
+    let actor = runtime
+        .create_actor(subject, None, Some(initial_state), vec![capability_id])
+        .unwrap();
+    runtime
+        .send_message(actor, "update", b"payload".to_vec())
+        .unwrap();
+    let actor_record = runtime.get_actor(actor).unwrap().unwrap();
+    let mut context = runtime.context_for_actor(&actor_record).unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+    let turn = runtime
+        .next_actor_turn_with_context(&mut context, actor)
+        .unwrap()
+        .unwrap();
+    runtime
+        .run_actor_turn_envelope(&mut context, &turn)
+        .unwrap();
+    runtime
+        .call_host_with_context(
+            &mut context,
+            HostCall::new(
+                "actor/state/put",
+                vec![Value::String(Ref::new("after".to_string()))],
+            ),
+        )
+        .unwrap();
+    let staged_state = context.actor_state().unwrap();
+    assert_ne!(staged_state, initial_state);
+
+    let failure = runtime
+        .call_host_with_context(
+            &mut context,
+            HostCall::new("actor/test/failure", Vec::new()),
+        )
+        .unwrap_err();
+    assert_eq!(failure.kind_name(), "HostFunctionNotFound");
+    runtime
+        .abort_runtime_transaction(&mut context, "actor execution failed")
+        .unwrap();
+
+    assert_eq!(
+        runtime.get_actor(actor).unwrap().unwrap().state,
+        Some(initial_state)
+    );
+    assert_eq!(
+        runtime.get_object(initial_state).unwrap().unwrap().data,
+        b"before"
+    );
+    assert!(runtime.get_object(staged_state).unwrap().is_none());
+    let pending = runtime.peek_message(actor).unwrap().unwrap();
+    assert_eq!(pending.kind, "update");
+    assert_eq!(pending.payload, b"payload");
+}
+
+#[test]
 fn actor_state_get_plan_and_invoke_keep_string_shape_for_dangling_state() {
     let mut host_registry = InMemoryHostRegistry::new();
     crate::register_actor_context_host_functions(&mut host_registry).unwrap();

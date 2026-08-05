@@ -1092,6 +1092,13 @@ mod compiler_tests {
         ));
 
         HorizontalConcatenateRD::<f64>::new(FunctionArgs::Nullary(out.to_value())).unwrap();
+        FunctionArgs::Nullary(out.to_value())
+            .validate_contract(RuntimeFunctionContract::custom(
+                "horizontal_concatenation_nullary",
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                validate_nullary_horizontal_concatenation,
+            ))
+            .unwrap();
     }
 
     #[test]
@@ -5966,7 +5973,42 @@ macro_rules! for_each_horzcat_scalar {
     };
 }
 
+fn validate_nullary_horizontal_concatenation(args: &FunctionArgs) -> MResult<()> {
+    let contract = "horizontal_concatenation_nullary";
+    if args.input_count() != 0 {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("expected no inputs, found {}", args.input_count()),
+        ));
+    }
+    args.output_value()
+        .function_matrix_descriptor(FunctionArgumentRole::Output)?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "output must be matrix-backed")
+        })?;
+    Ok(())
+}
+
 macro_rules! declare_horzcat_scalar {
+    (HorizontalConcatenateRD, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "matrix_horzcat", feature = $cargo, $(feature = $feature),+),
+                registration: [<register_horizontal_concatenate_r_d_ $token>],
+                installer: [<install_horizontal_concatenate_r_d_ $token>],
+                name: concat!("HorizontalConcatenateRD<", $name, ">"),
+                factory: <HorizontalConcatenateRD<$scalar> as MechFunctionFactory>::new,
+                contract: RuntimeFunctionContract::custom(
+                    "horizontal_concatenation_nullary",
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                    validate_nullary_horizontal_concatenation,
+                ),
+                package: "mech-engine", crate_name: "mech_engine",
+                installer_path: concat!("mech_engine::__mech_native::install_horizontal_concatenate_r_d_", stringify!($token)),
+                cargo_features: ["matrix_horzcat", "native-link", "runtime", $cargo, $($feature),+],
+            }
+        }
+    };
     ($factory:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
         paste! {
             mech_core::declare_native_runtime_factory! {

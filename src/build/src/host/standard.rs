@@ -4,8 +4,8 @@ use mech_core::{MResult, MechError};
 use mech_runtime::{ConfigValue, RuntimeHostFactory};
 
 use super::{
-    NativeHostCatalog, NativeHostCatalogInvalid, NativeHostFunctionLinkage, NativeHostLinkage,
-    NativeTargetFamily,
+    NativeHostCatalog, NativeHostCatalogInvalid, NativeHostFunctionContext,
+    NativeHostFunctionLinkage, NativeHostLinkage, NativeTargetFamily,
 };
 
 const STANDARD_TARGETS: &[NativeTargetFamily] =
@@ -154,6 +154,7 @@ fn actor_host_function_linkages() -> [NativeHostFunctionLinkage; 5] {
     [
         NativeHostFunctionLinkage {
             name: "actor/message/kind",
+            context: NativeHostFunctionContext::ActorTurn,
             package: "mech-runtime",
             crate_name: "mech_runtime",
             cargo_features: ACTOR_FEATURES,
@@ -161,6 +162,7 @@ fn actor_host_function_linkages() -> [NativeHostFunctionLinkage; 5] {
         },
         NativeHostFunctionLinkage {
             name: "actor/message/payload",
+            context: NativeHostFunctionContext::ActorTurn,
             package: "mech-runtime",
             crate_name: "mech_runtime",
             cargo_features: ACTOR_FEATURES,
@@ -168,6 +170,7 @@ fn actor_host_function_linkages() -> [NativeHostFunctionLinkage; 5] {
         },
         NativeHostFunctionLinkage {
             name: "actor/state/get",
+            context: NativeHostFunctionContext::ActorTurn,
             package: "mech-runtime",
             crate_name: "mech_runtime",
             cargo_features: ACTOR_FEATURES,
@@ -175,6 +178,7 @@ fn actor_host_function_linkages() -> [NativeHostFunctionLinkage; 5] {
         },
         NativeHostFunctionLinkage {
             name: "actor/state/id",
+            context: NativeHostFunctionContext::ActorTurn,
             package: "mech-runtime",
             crate_name: "mech_runtime",
             cargo_features: ACTOR_FEATURES,
@@ -182,6 +186,7 @@ fn actor_host_function_linkages() -> [NativeHostFunctionLinkage; 5] {
         },
         NativeHostFunctionLinkage {
             name: "actor/state/put",
+            context: NativeHostFunctionContext::ActorTurn,
             package: "mech-runtime",
             crate_name: "mech_runtime",
             cargo_features: ACTOR_FEATURES,

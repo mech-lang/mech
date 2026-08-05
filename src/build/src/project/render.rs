@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use mech_core::{ExecutionResourceRequest, MResult, ResourceDelivery};
 use mech_runtime::{ConfigValue, LogLevel, RuntimeConfig};
 
+use crate::NativeHostFunctionContext;
 use crate::analysis::requirements::{grant_covers_resource, normalize_native_runtime_config};
 use crate::error::{NativeBuildErrorKind, native_build_error};
 use crate::plan::{
@@ -183,9 +184,13 @@ fn validate_runtime_config_implications(
             runtime: RuntimeConfig::default(),
             hosts: Vec::new(),
             run_grants: Vec::new(),
+            actor_bootstrap: None,
         });
     if normalized_config.runtime != plan.runtime_config {
         return project_invalid("request runtime settings do not match the normalized build plan");
+    }
+    if normalized_config.actor_bootstrap != plan.actor_bootstrap {
+        return project_invalid("request actor bootstrap does not match the normalized build plan");
     }
     if runtime_config.is_some() && plan.application_kind != NativeApplicationKind::Hosted {
         return project_invalid(
@@ -217,6 +222,20 @@ fn validate_runtime_config_implications(
             PlannedApplicationRequirement::HostFunction { .. } => None,
         })
         .collect::<Vec<_>>();
+    let actor_turn_required = plan.application_requirements.iter().any(|requirement| {
+        matches!(
+            requirement,
+            PlannedApplicationRequirement::HostFunction {
+                context: NativeHostFunctionContext::ActorTurn,
+                ..
+            }
+        )
+    });
+    match (actor_turn_required, plan.actor_bootstrap.is_some()) {
+        (true, false) => return project_invalid("actor-turn plan has no actor bootstrap"),
+        (false, true) => return project_invalid("plan has an unused actor bootstrap"),
+        _ => {}
+    }
     if plan.live
         != resource_requirements
             .iter()
@@ -225,6 +244,9 @@ fn validate_runtime_config_implications(
         return project_invalid(
             "native build plan live mode contradicts its resource requirements",
         );
+    }
+    if actor_turn_required && plan.live {
+        return project_invalid("actor-turn plans cannot contain live resources");
     }
 
     if resource_requirements.is_empty() {
@@ -642,11 +664,11 @@ fn render_hosted_main_source_for_plan(plan: &NativeBuildPlan) -> String {
         .application_requirements
         .iter()
         .filter_map(|requirement| match requirement {
-            PlannedApplicationRequirement::HostFunction { name, .. }
-                if name.starts_with("actor/") =>
-            {
-                Some(name.as_str())
-            }
+            PlannedApplicationRequirement::HostFunction {
+                name,
+                context: NativeHostFunctionContext::ActorTurn,
+                ..
+            } => Some(name.as_str()),
             _ => None,
         })
         .collect::<Vec<_>>();
@@ -657,6 +679,10 @@ fn render_hosted_main_source_for_plan(plan: &NativeBuildPlan) -> String {
     if actor_functions.is_empty() {
         return source;
     }
+    assert!(
+        plan.actor_bootstrap.is_some(),
+        "actor-turn plans must carry an actor bootstrap"
+    );
 
     let ordinary_install = "        let mut context = runtime.runtime_context()?;\n        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;";
     assert!(
@@ -702,14 +728,20 @@ fn install_actor_bytecode(
     const REQUIRED_ACTOR_FUNCTIONS: &[&str] = &[{actor_functions}];
     const VERIFIES_STATE_MUTATION: bool = {verifies_state_mutation};
 
-    let subject_name = "actor:generated-native";
+    let subject_name = runtime::ACTOR_BOOTSTRAP_SUBJECT;
     let subject = mech_runtime::BasicSubject::new(subject_name);
-    let initial_state = runtime.next_object_id();
-    runtime.put_object(mech_runtime::ObjectRecord::text(
-        initial_state,
-        "actor-state",
-        "generated-initial-state",
-    ))?;
+    let initial_state = match runtime::ACTOR_BOOTSTRAP_INITIAL_STATE {{
+        Some(value) => {{
+            let state = runtime.next_object_id();
+            runtime.put_object(mech_runtime::ObjectRecord::text(
+                state,
+                "actor-state",
+                value,
+            ))?;
+            Some(state)
+        }}
+        None => None,
+    }};
 
     let mut capabilities = Vec::with_capacity(REQUIRED_ACTOR_FUNCTIONS.len());
     for function in REQUIRED_ACTOR_FUNCTIONS {{
@@ -728,13 +760,13 @@ fn install_actor_bytecode(
     let actor = runtime.create_actor(
         subject_name,
         None,
-        Some(initial_state),
+        initial_state,
         capabilities,
     )?;
     runtime.send_message(
         actor,
-        "generated-message",
-        b"generated-payload".to_vec(),
+        runtime::ACTOR_BOOTSTRAP_MESSAGE_KIND,
+        runtime::ACTOR_BOOTSTRAP_MESSAGE_PAYLOAD.as_bytes().to_vec(),
     )?;
     let actor_record = runtime
         .get_actor(actor)?
@@ -765,7 +797,9 @@ fn install_actor_bytecode(
                     .get_actor(actor)?
                     .and_then(|actor| actor.state)
                     .ok_or_else(|| actor_error("generated actor state is missing after commit"))?;
-                if state == initial_state || runtime.get_object(state)?.is_none() {{
+                if initial_state.is_some_and(|initial| state == initial)
+                    || runtime.get_object(state)?.is_none()
+                {{
                     return Err(actor_error(
                         "generated actor state mutation did not commit",
                     ));
@@ -814,7 +848,28 @@ pub fn render_runtime_source(
     }
 
     let mut source = String::from(
-        "use std::{collections::BTreeMap, sync::Arc};\n\nuse mech_core::{FunctionCatalog, MResult};\nuse mech_runtime::{\n    ConfigValue, DiagnosticsConfig, HostInstanceConfig, LogLevel,\n    RunResourceGrantConfig, RuntimeBuilder, RuntimeConfig, RuntimeLimits,\n};\n\npub fn runtime_builder(\n    catalog: Arc<FunctionCatalog>,\n) -> MResult<RuntimeBuilder> {\n",
+        "use std::{collections::BTreeMap, sync::Arc};\n\nuse mech_core::{FunctionCatalog, MResult};\nuse mech_runtime::{\n    ConfigValue, DiagnosticsConfig, HostInstanceConfig, LogLevel,\n    RunResourceGrantConfig, RuntimeBuilder, RuntimeConfig, RuntimeLimits,\n};\n",
+    );
+    if let Some(actor) = &plan.actor_bootstrap {
+        write!(
+            &mut source,
+            "\npub const ACTOR_BOOTSTRAP_SUBJECT: &str = {};\n\
+             pub const ACTOR_BOOTSTRAP_MESSAGE_KIND: &str = {};\n\
+             pub const ACTOR_BOOTSTRAP_MESSAGE_PAYLOAD: &str = {};\n\
+             pub const ACTOR_BOOTSTRAP_INITIAL_STATE: Option<&str> = {};\n",
+            rust_string_literal(&actor.subject),
+            rust_string_literal(&actor.message_kind),
+            rust_string_literal(&actor.message_payload),
+            actor
+                .initial_state
+                .as_ref()
+                .map(|state| format!("Some({})", rust_string_literal(state)))
+                .unwrap_or_else(|| "None".to_owned()),
+        )
+        .expect("writing to String cannot fail");
+    }
+    source.push_str(
+        "\npub fn runtime_builder(\n    catalog: Arc<FunctionCatalog>,\n) -> MResult<RuntimeBuilder> {\n",
     );
     write!(
         &mut source,
@@ -1031,7 +1086,7 @@ mod tests {
     use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 
     use crate::plan::{
-        NativeBuildProfile, NativeEmit, PlannedHostInstance, PlannedPackage,
+        NativeActorBootstrap, NativeBuildProfile, NativeEmit, PlannedHostInstance, PlannedPackage,
         PlannedRuntimeFunction, refresh_plan_sha256,
     };
     use crate::project::GeneratedDependencySource;
@@ -1073,6 +1128,7 @@ mod tests {
             mech_version: "0.3.5".into(),
             application_kind: kind,
             runtime_config: RuntimeConfig::default(),
+            actor_bootstrap: None,
             bytecode_sha256: sha256_hex(b"bytecode"),
             plan_sha256: String::new(),
             target: None,
@@ -1147,6 +1203,7 @@ mod tests {
         let mut plan = base_plan(NativeApplicationKind::Hosted);
         plan.application_requirements = vec![PlannedApplicationRequirement::HostFunction {
             name: "actor/message/kind".into(),
+            context: NativeHostFunctionContext::Standalone,
             package: "mech-runtime".into(),
             crate_name: "mech_runtime".into(),
             installer_path: "mech_runtime::__mech_native::install_actor_message_kind".into(),
@@ -1164,20 +1221,32 @@ mod tests {
     #[test]
     fn actor_main_bootstraps_message_state_capabilities_and_transaction() {
         let mut plan = base_plan(NativeApplicationKind::Hosted);
-        plan.application_requirements =
-            ["actor/message/kind", "actor/state/get", "actor/state/put"]
-                .into_iter()
-                .map(|name| PlannedApplicationRequirement::HostFunction {
-                    name: name.into(),
-                    package: "mech-runtime".into(),
-                    crate_name: "mech_runtime".into(),
-                    installer_path: format!(
-                        "mech_runtime::__mech_native::install_{}",
-                        name.replace('/', "_")
-                    ),
-                    cargo_features: vec!["native-link".into(), "runtime".into(), "string".into()],
-                })
-                .collect();
+        plan.application_requirements = [
+            "actor/message/kind",
+            "actor/message/payload",
+            "actor/state/get",
+            "actor/state/id",
+            "actor/state/put",
+        ]
+        .into_iter()
+        .map(|name| PlannedApplicationRequirement::HostFunction {
+            name: name.into(),
+            context: NativeHostFunctionContext::ActorTurn,
+            package: "mech-runtime".into(),
+            crate_name: "mech_runtime".into(),
+            installer_path: format!(
+                "mech_runtime::__mech_native::install_{}",
+                name.replace('/', "_")
+            ),
+            cargo_features: vec!["native-link".into(), "runtime".into(), "string".into()],
+        })
+        .collect();
+        plan.actor_bootstrap = Some(NativeActorBootstrap {
+            subject: "render-test-actor".into(),
+            message_kind: "render-test-message".into(),
+            message_payload: "render-test-payload".into(),
+            initial_state: Some("render-test-state".into()),
+        });
 
         let source = render_hosted_main_source_for_plan(&plan);
         assert!(source.contains("REQUIRED_ACTOR_FUNCTIONS"));
@@ -1188,6 +1257,69 @@ mod tests {
         assert!(source.contains("generated actor state mutation did not commit"));
         assert!(source.contains("BasicCapability::new"));
         assert!(source.contains("let value = install_actor_bytecode(&mut runtime)?;"));
+
+        let config = NativeRuntimeConfig {
+            runtime: plan.runtime_config.clone(),
+            actor_bootstrap: plan.actor_bootstrap.clone(),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+        };
+        let runtime = render_runtime_source(&plan, Some(&config)).unwrap();
+        for expected in [
+            "render-test-actor",
+            "render-test-message",
+            "render-test-payload",
+            "render-test-state",
+        ] {
+            assert!(runtime.contains(expected));
+        }
+    }
+
+    #[test]
+    fn distinct_actor_bootstraps_change_generated_runtime_identity() {
+        let mut alpha = base_plan(NativeApplicationKind::Hosted);
+        alpha.application_requirements = vec![PlannedApplicationRequirement::HostFunction {
+            name: "actor/message/kind".into(),
+            context: NativeHostFunctionContext::ActorTurn,
+            package: "mech-runtime".into(),
+            crate_name: "mech_runtime".into(),
+            installer_path: "mech_runtime::__mech_native::install_actor_message_kind".into(),
+            cargo_features: vec!["native-link".into(), "runtime".into(), "string".into()],
+        }];
+        alpha.actor_bootstrap = Some(NativeActorBootstrap {
+            subject: "actor:alpha".into(),
+            message_kind: "alpha".into(),
+            message_payload: "payload-a".into(),
+            initial_state: Some("state-a".into()),
+        });
+        let mut beta = alpha.clone();
+        beta.actor_bootstrap = Some(NativeActorBootstrap {
+            subject: "actor:beta".into(),
+            message_kind: "beta".into(),
+            message_payload: "payload-b".into(),
+            initial_state: Some("state-b".into()),
+        });
+        let alpha_config = NativeRuntimeConfig {
+            runtime: alpha.runtime_config.clone(),
+            actor_bootstrap: alpha.actor_bootstrap.clone(),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+        };
+        let beta_config = NativeRuntimeConfig {
+            runtime: beta.runtime_config.clone(),
+            actor_bootstrap: beta.actor_bootstrap.clone(),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+        };
+        let alpha_source = render_runtime_source(&alpha, Some(&alpha_config)).unwrap();
+        let beta_source = render_runtime_source(&beta, Some(&beta_config)).unwrap();
+        assert_ne!(alpha_source, beta_source);
+        assert!(alpha_source.contains("actor:alpha"));
+        assert!(beta_source.contains("actor:beta"));
+        assert_ne!(
+            compute_plan_sha256(&alpha).unwrap(),
+            compute_plan_sha256(&beta).unwrap()
+        );
     }
 
     #[test]
@@ -1295,6 +1427,7 @@ mod tests {
         }];
         let config = NativeRuntimeConfig {
             runtime: plan.runtime_config.clone(),
+            actor_bootstrap: None,
             hosts: vec![HostInstanceConfig {
                 name: "cli".into(),
                 provider: "cli".into(),
@@ -1352,6 +1485,7 @@ mod tests {
         let mut request = request();
         request.runtime_config = Some(NativeRuntimeConfig {
             runtime: plan.runtime_config.clone(),
+            actor_bootstrap: None,
             hosts: Vec::new(),
             run_grants: Vec::new(),
         });
@@ -1380,6 +1514,7 @@ mod tests {
         let mut request = request();
         request.runtime_config = Some(NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: vec![HostInstanceConfig {
                 name: "unused".into(),
                 provider: "cli".into(),

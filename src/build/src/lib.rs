@@ -64,6 +64,12 @@ impl NativeApplicationBuilder {
             &self.environment.host_catalog,
             request.target.as_deref(),
         )?;
+        analysis::validate_application_instruction_contracts(
+            &program,
+            request.runtime_config.as_ref(),
+            &self.environment.host_catalog,
+            request.target.as_deref(),
+        )?;
         let application_kind = if analysis::application_requires_hosting(&program.requirements)
             || request.runtime_config.is_some()
         {
@@ -184,6 +190,7 @@ impl NativeApplicationBuilder {
             mech_version,
             application_kind,
             runtime_config: requirements.runtime_config,
+            actor_bootstrap: requirements.actor_bootstrap,
             bytecode_sha256: plan::sha256_hex(&request.bytecode),
             plan_sha256: String::new(),
             target: request.target.clone(),

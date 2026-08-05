@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use mech_build::{
-    NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest,
-    NativeDependencySource, NativeEmit, NativeRuntimeConfig,
+    NativeActorBootstrap, NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile,
+    NativeBuildRequest, NativeDependencySource, NativeEmit, NativeRuntimeConfig,
 };
 use mech_core::*;
 use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
@@ -243,6 +243,10 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             planner_config,
             &configured_hosts,
             &run_grants,
+            loaded_config
+                .as_ref()
+                .and_then(|config| config.document.build.as_ref())
+                .and_then(|build| build.actor.as_ref()),
             &source_roots,
         )?;
         (runtime.compile_program_bytecode()?, loaded_config)
@@ -525,6 +529,7 @@ fn native_runtime_config(
             runtime: RuntimeConfig::new(binary_name),
             hosts: Vec::new(),
             run_grants: Vec::new(),
+            actor_bootstrap: None,
         }));
     };
     let runtime = crate::apply_runtime_config_patch(
@@ -543,6 +548,17 @@ fn native_runtime_config(
         runtime,
         hosts,
         run_grants,
+        actor_bootstrap: config
+            .document
+            .build
+            .as_ref()
+            .and_then(|build| build.actor.as_ref())
+            .map(|actor| NativeActorBootstrap {
+                subject: actor.subject.clone(),
+                message_kind: actor.message_kind.clone(),
+                message_payload: actor.message_payload.clone(),
+                initial_state: actor.initial_state.clone(),
+            }),
     }))
 }
 

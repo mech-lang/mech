@@ -8,8 +8,8 @@ use std::process::Command;
 use std::sync::Arc;
 
 use mech_build::{
-    NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildPlan, NativeBuildProfile,
-    NativeBuildRequest, NativeDependencySource, NativeEmit, NativeRuntimeConfig,
+    NativeActorBootstrap, NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildPlan,
+    NativeBuildProfile, NativeBuildRequest, NativeDependencySource, NativeEmit, NativeRuntimeConfig,
 };
 use mech_core::{
     BytecodeInstruction, BytecodeProgram, EncodedConstant, FunctionCatalog, ParsedProgram,
@@ -151,6 +151,28 @@ fn request(
 
 fn runtime_config(case: &str) -> Option<NativeRuntimeConfig> {
     match case {
+        "actor-alpha" => Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::new("generated-actor-runtime"),
+            actor_bootstrap: Some(NativeActorBootstrap {
+                subject: "actor:alpha".to_owned(),
+                message_kind: "alpha".to_owned(),
+                message_payload: "payload-a".to_owned(),
+                initial_state: Some("state-a".to_owned()),
+            }),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+        }),
+        "actor-beta" => Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::new("generated-actor-runtime"),
+            actor_bootstrap: Some(NativeActorBootstrap {
+                subject: "actor:beta".to_owned(),
+                message_kind: "beta".to_owned(),
+                message_payload: "payload-b".to_owned(),
+                initial_state: Some("state-b".to_owned()),
+            }),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+        }),
         "cli" => Some(cli_runtime_config()),
         "console" => Some(single_host_runtime_config(
             "console",
@@ -215,6 +237,7 @@ fn single_host_runtime_config(
 ) -> NativeRuntimeConfig {
     NativeRuntimeConfig {
         runtime: RuntimeConfig::new(format!("generated-{provider}-runtime")),
+        actor_bootstrap: None,
         hosts: vec![HostInstanceConfig {
             name: instance.to_owned(),
             provider: provider.to_owned(),
@@ -235,6 +258,7 @@ fn cli_runtime_config() -> NativeRuntimeConfig {
     runtime.diagnostics.log_level = mech_runtime::LogLevel::Debug;
     NativeRuntimeConfig {
         runtime,
+        actor_bootstrap: None,
         hosts: vec![HostInstanceConfig {
             name: "cli".to_owned(),
             provider: "cli".to_owned(),

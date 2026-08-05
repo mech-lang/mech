@@ -78,6 +78,19 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
         ))
     }
 
+    /// Effect-free native/source planning hook that validates both the target
+    /// and the value a write or send would carry. Providers with typed payloads
+    /// must override this method; the default retains path/intent validation.
+    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        self.preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri,
+            path: request.path,
+            context_name: request.context_name,
+            operation: request.operation,
+            intent: request.intent,
+        })
+    }
+
     fn prepare_write(
         &self,
         request: RuntimeResourceWriteRequest,

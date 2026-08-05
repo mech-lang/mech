@@ -9,9 +9,10 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mech_build::{
-    MECH_COMPONENT_VERSION, NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile,
-    NativeBuildRequest, NativeDependencySource, NativeEmit, NativeHostCatalog, NativeHostLinkage,
-    NativeRuntimeConfig, NativeTargetFamily, standard_native_host_catalog,
+    MECH_COMPONENT_VERSION, NativeActorBootstrap, NativeApplicationBuilder,
+    NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest, NativeDependencySource,
+    NativeEmit, NativeHostCatalog, NativeHostLinkage, NativeRuntimeConfig, NativeTargetFamily,
+    standard_native_host_catalog,
 };
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant, MResult,
@@ -401,7 +402,7 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             construction: None,
             runtime_functions: actor_functions,
             bytes: actor,
-            runtime_config: None,
+            runtime_config: Some(actor_runtime_config()),
             plan_catalog: PlanCatalog::Standard,
             expected_output: json!("actor-done"),
         },
@@ -885,6 +886,7 @@ fn compile_source(
 fn cli_runtime_config() -> NativeRuntimeConfig {
     NativeRuntimeConfig {
         runtime: RuntimeConfig::new("bytecode-v1-cli"),
+        actor_bootstrap: None,
         hosts: vec![HostInstanceConfig {
             name: "cli".to_owned(),
             provider: "cli".to_owned(),
@@ -937,6 +939,7 @@ fn host_runtime_config(provider: &str) -> AppResult<NativeRuntimeConfig> {
     };
     Ok(NativeRuntimeConfig {
         runtime: RuntimeConfig::new(format!("bytecode-v1-{provider}")),
+        actor_bootstrap: None,
         hosts: vec![HostInstanceConfig {
             name: instance.to_owned(),
             provider: provider.to_owned(),
@@ -953,6 +956,7 @@ fn host_runtime_config(provider: &str) -> AppResult<NativeRuntimeConfig> {
 fn synthetic_live_runtime_config() -> NativeRuntimeConfig {
     NativeRuntimeConfig {
         runtime: RuntimeConfig::new("bytecode-v1-synthetic-live"),
+        actor_bootstrap: None,
         hosts: vec![HostInstanceConfig {
             name: TEST_LIVE_INSTANCE.to_owned(),
             provider: TEST_LIVE_PROVIDER.to_owned(),
@@ -963,6 +967,20 @@ fn synthetic_live_runtime_config() -> NativeRuntimeConfig {
             operations: vec!["read".to_owned()],
             paths: vec![TEST_LIVE_PATH.to_owned()],
         }],
+    }
+}
+
+fn actor_runtime_config() -> NativeRuntimeConfig {
+    NativeRuntimeConfig {
+        runtime: RuntimeConfig::new("bytecode-v1-actor"),
+        actor_bootstrap: Some(NativeActorBootstrap {
+            subject: "fixture-actor".to_owned(),
+            message_kind: "fixture-message".to_owned(),
+            message_payload: "fixture-payload".to_owned(),
+            initial_state: Some("fixture-state".to_owned()),
+        }),
+        hosts: Vec::new(),
+        run_grants: Vec::new(),
     }
 }
 
