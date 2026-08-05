@@ -107,7 +107,12 @@ pub fn generated_cases() -> Vec<GeneratedCase> {
             "@arm := robot://arm/commands{:move(move)}\n@arm/move <- true\n\"robot-done\"",
             "\"robot-done\"",
         ),
-        actor_case(),
+        actor_case(
+            "actor-alpha",
+            "generated_native_actor_alpha",
+            "\"payload-a\"",
+        ),
+        actor_case("actor-beta", "generated_native_actor_beta", "\"payload-b\""),
     ]
 }
 
@@ -192,11 +197,21 @@ fn hosted(
     }
 }
 
-fn actor_case() -> GeneratedCase {
+fn actor_case(
+    case: &'static str,
+    binary_name: &'static str,
+    expected: &'static str,
+) -> GeneratedCase {
     let mut builder = RuntimeBuilder::new()
         .planning()
         .function_catalog(mech_stdlib::source_catalog());
-    for name in ["actor/message/kind", "actor/state/get", "actor/state/put"] {
+    for name in [
+        "actor/message/kind",
+        "actor/message/payload",
+        "actor/state/id",
+        "actor/state/get",
+        "actor/state/put",
+    ] {
         builder = builder
             .host_function(PlannedPureHostFunction::new(
                 name,
@@ -209,16 +224,21 @@ fn actor_case() -> GeneratedCase {
     }
     let mut runtime = builder.build().unwrap();
     runtime
-        .run_string(
-            "kind := actor/message/kind()\nupdated := actor/state/put(kind)\nactor/state/get()",
-        )
+        .run_string(concat!(
+            "kind := actor/message/kind()\n",
+            "payload := actor/message/payload()\n",
+            "state-id := actor/state/id()\n",
+            "state := actor/state/get()\n",
+            "updated := actor/state/put(kind)\n",
+            "payload",
+        ))
         .unwrap();
     GeneratedCase {
         profile: OwnerProfile::Standard,
-        case: "actor",
-        binary_name: "generated_native_actor",
+        case,
+        binary_name,
         bytecode: runtime.compile_program_bytecode().unwrap(),
-        expected_stdout: "\"generated-message\"",
+        expected_stdout: expected,
     }
 }
 

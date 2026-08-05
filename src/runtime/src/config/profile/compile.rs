@@ -138,7 +138,12 @@ impl ConfigCompiler {
                         "addressed resources are not allowed in Mech config",
                     ));
                 }
-                Ok(ConfigExpr::Var(var.name.to_string()))
+                let name = var.name.to_string();
+                if name == "null" {
+                    Ok(ConfigExpr::Null)
+                } else {
+                    Ok(ConfigExpr::Var(name))
+                }
             }
             Expression::Structure(structure) => self.compile_structure(structure),
             Expression::FunctionCall(call) => {

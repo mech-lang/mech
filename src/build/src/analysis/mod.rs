@@ -9,5 +9,8 @@ pub(crate) mod requirements;
 pub(crate) mod runtime_types;
 
 pub(crate) use bytecode::analyze_runtime_functions;
-pub(crate) use requirements::{analyze_application_requirements, application_requires_hosting};
+pub(crate) use requirements::{
+    analyze_application_requirements, application_requires_hosting,
+    validate_application_instruction_contracts,
+};
 pub(crate) use runtime_types::analyze_runtime_types;

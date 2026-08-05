@@ -100,6 +100,16 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
         }
         Ok(())
     }
+    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        self.preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri,
+            path: request.path,
+            context_name: request.context_name,
+            operation: request.operation,
+            intent: request.intent,
+        })?;
+        SceneSnapshot::from_value(&request.value).map(|_| ())
+    }
     fn prepare_write(
         &self,
         request: RuntimeResourceWriteRequest,

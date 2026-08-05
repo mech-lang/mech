@@ -382,6 +382,7 @@ fn synthetic_live_host_catalog() -> Arc<NativeHostCatalog> {
 fn synthetic_live_runtime_config() -> NativeRuntimeConfig {
     NativeRuntimeConfig {
         runtime: RuntimeConfig::new("registry-synthetic-live"),
+        actor_bootstrap: None,
         hosts: vec![HostInstanceConfig {
             name: TEST_LIVE_INSTANCE.to_owned(),
             provider: TEST_LIVE_PROVIDER.to_owned(),

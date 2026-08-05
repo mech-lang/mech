@@ -1,15 +1,20 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
+#[cfg(feature = "build")]
+use std::sync::{Arc, Mutex};
 
 use mech_core::*;
 #[cfg(feature = "test")]
 use mech_engine::IntegrityConstraintReport;
+#[cfg(feature = "build")]
+use mech_runtime::{
+    ActorBootstrapConfig, ActorHostPlanningState, HostInstanceConfig, PlannedPureHostFunction,
+    RunResourceGrantConfig, RuntimeValueSnapshot,
+};
 use mech_runtime::{
     FileSourceResolver, MechRuntime, ModuleBuildOptions, RuntimeBuilder, RuntimeConfig,
     SourceRequest,
 };
-#[cfg(feature = "build")]
-use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig};
 
 #[cfg(feature = "test")]
 pub(crate) struct SourceModuleExecution {
@@ -154,6 +159,7 @@ pub(crate) fn execute_planning_source_module_roots(
     config: RuntimeConfig,
     configured_hosts: &[HostInstanceConfig],
     run_grants: &[RunResourceGrantConfig],
+    actor_bootstrap: Option<&ActorBootstrapConfig>,
     roots: &[PathBuf],
 ) -> MResult<MechRuntime> {
     let (builder, canonical_roots) = source_module_runtime_builder(config, roots)?;
@@ -168,11 +174,7 @@ pub(crate) fn execute_planning_source_module_roots(
         run_grants,
         &providers,
     )?;
-    builder = mech_runtime::__mech_native::install_actor_message_kind(builder)?;
-    builder = mech_runtime::__mech_native::install_actor_message_payload(builder)?;
-    builder = mech_runtime::__mech_native::install_actor_state_get(builder)?;
-    builder = mech_runtime::__mech_native::install_actor_state_id(builder)?;
-    builder = mech_runtime::__mech_native::install_actor_state_put(builder)?;
+    builder = install_actor_planning_functions(builder, actor_bootstrap.cloned())?;
 
     let mut runtime = builder.build()?;
     for root in canonical_roots {
@@ -182,6 +184,87 @@ pub(crate) fn execute_planning_source_module_roots(
         )?;
     }
     Ok(runtime)
+}
+
+#[cfg(feature = "build")]
+fn actor_planning_call(
+    state: &Mutex<Option<ActorHostPlanningState>>,
+    name: &str,
+    arguments: &[RuntimeValueSnapshot],
+) -> MResult<RuntimeValueSnapshot> {
+    let mut state = state.lock().map_err(|_| {
+        mech_build::error::native_build_error(
+            mech_build::error::NativeBuildErrorKind::NativeRuntimeConfigUnsupported {
+                reason: "actor planning state lock is poisoned".to_owned(),
+            },
+            None,
+        )
+    })?;
+    let state = state.as_mut().ok_or_else(|| {
+        mech_build::error::native_build_error(
+            mech_build::error::NativeBuildErrorKind::NativeActorBootstrapMissing,
+            None,
+        )
+    })?;
+    let values = arguments
+        .iter()
+        .map(RuntimeValueSnapshot::to_value)
+        .collect::<Vec<_>>();
+    RuntimeValueSnapshot::try_capture(&state.plan(name, &values)?)
+}
+
+#[cfg(feature = "build")]
+fn install_actor_planning_functions(
+    mut builder: RuntimeBuilder,
+    bootstrap: Option<ActorBootstrapConfig>,
+) -> MResult<RuntimeBuilder> {
+    let state = Arc::new(Mutex::new(bootstrap.map(|bootstrap| {
+        ActorHostPlanningState::new(
+            &bootstrap.subject,
+            bootstrap.message_kind,
+            bootstrap.message_payload,
+            bootstrap.initial_state,
+        )
+    })));
+
+    let kind_state = Arc::clone(&state);
+    builder = builder.host_function(PlannedPureHostFunction::new(
+        "actor/message/kind",
+        move |_context, arguments| {
+            actor_planning_call(&kind_state, "actor/message/kind", arguments)
+        },
+        |_context, _arguments| panic!("actor/message/kind executed while source planning"),
+    ))?;
+
+    let payload_state = Arc::clone(&state);
+    builder = builder.host_function(PlannedPureHostFunction::new(
+        "actor/message/payload",
+        move |_context, arguments| {
+            actor_planning_call(&payload_state, "actor/message/payload", arguments)
+        },
+        |_context, _arguments| panic!("actor/message/payload executed while source planning"),
+    ))?;
+
+    let get_state = Arc::clone(&state);
+    builder = builder.host_function(PlannedPureHostFunction::new(
+        "actor/state/get",
+        move |_context, arguments| actor_planning_call(&get_state, "actor/state/get", arguments),
+        |_context, _arguments| panic!("actor/state/get executed while source planning"),
+    ))?;
+
+    let id_state = Arc::clone(&state);
+    builder = builder.host_function(PlannedPureHostFunction::new(
+        "actor/state/id",
+        move |_context, arguments| actor_planning_call(&id_state, "actor/state/id", arguments),
+        |_context, _arguments| panic!("actor/state/id executed while source planning"),
+    ))?;
+
+    let put_state = state;
+    builder.host_function(PlannedPureHostFunction::new(
+        "actor/state/put",
+        move |_context, arguments| actor_planning_call(&put_state, "actor/state/put", arguments),
+        |_context, _arguments| panic!("actor/state/put executed while source planning"),
+    ))
 }
 
 #[cfg(feature = "test")]
@@ -294,6 +377,57 @@ mod tests {
             },
             other => panic!("expected f64 value, got {other:?}"),
         }
+    }
+
+    #[cfg(feature = "build")]
+    fn assert_string(value: RuntimeValueSnapshot, expected: &str) {
+        match value.into_value() {
+            Value::String(value) => assert_eq!(value.borrow().as_str(), expected),
+            Value::MutableReference(value) => match &*value.borrow() {
+                Value::String(value) => assert_eq!(value.borrow().as_str(), expected),
+                other => panic!("expected string value, got {other:?}"),
+            },
+            other => panic!("expected string value, got {other:?}"),
+        }
+    }
+
+    #[cfg(feature = "build")]
+    #[test]
+    fn actor_source_planning_tracks_state_put_before_later_reads() {
+        let root = temp_root("actor-state-sequence");
+        let source = root.join("main.mec");
+        std::fs::write(
+            &source,
+            "updated := actor/state/put(\"created\")\nstate := actor/state/get()\nidentifier := actor/state/id()\nidentifier\n",
+        )
+        .unwrap();
+        let bootstrap = ActorBootstrapConfig {
+            subject: "actor:planning".to_owned(),
+            message_kind: "test".to_owned(),
+            message_payload: String::new(),
+            initial_state: None,
+        };
+
+        let runtime =
+            execute_planning_source_module_roots(config(), &[], &[], Some(&bootstrap), &[source])
+                .unwrap();
+
+        assert_string(runtime.root_symbol_value("state").unwrap(), "created");
+        match runtime
+            .root_symbol_value("identifier")
+            .unwrap()
+            .into_value()
+        {
+            Value::String(value) => assert!(value.borrow().starts_with("planning-state-put-")),
+            Value::MutableReference(value) => match &*value.borrow() {
+                Value::String(value) => {
+                    assert!(value.borrow().starts_with("planning-state-put-"))
+                }
+                other => panic!("expected string value, got {other:?}"),
+            },
+            other => panic!("expected string value, got {other:?}"),
+        }
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

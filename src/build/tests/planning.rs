@@ -8,7 +8,8 @@ use std::{
 use mech_build::{
     NativeApplicationBuilder, NativeApplicationKind, NativeBuildEnvironment, NativeBuildProfile,
     NativeBuildRequest, NativeDependencySource, NativeEmit, NativeHostCatalog,
-    NativeHostFunctionLinkage, NativeRuntimeConfig, WorkspacePackage, fingerprint_workspace,
+    NativeHostFunctionContext, NativeHostFunctionLinkage, NativeRuntimeConfig, WorkspacePackage,
+    fingerprint_workspace,
 };
 #[cfg(not(feature = "standard-hosts"))]
 use mech_build::{NativeHostLinkage, NativeTargetFamily};
@@ -186,6 +187,7 @@ fn request(bytecode: &[u8]) -> NativeBuildRequest {
 fn cli_runtime_config(provider: &str, operations: &[&str], paths: &[&str]) -> NativeRuntimeConfig {
     NativeRuntimeConfig {
         runtime: RuntimeConfig::default(),
+        actor_bootstrap: None,
         hosts: vec![HostInstanceConfig {
             name: "cli".to_owned(),
             provider: provider.to_owned(),
@@ -206,6 +208,7 @@ fn unaddressed_runtime_configs() -> Vec<NativeRuntimeConfig> {
     vec![
         NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: vec![HostInstanceConfig {
                 name: "unused".to_owned(),
                 provider: "cli".to_owned(),
@@ -215,6 +218,7 @@ fn unaddressed_runtime_configs() -> Vec<NativeRuntimeConfig> {
         },
         NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: Vec::new(),
             run_grants: vec![RunResourceGrantConfig {
                 target: "unused/output".to_owned(),
@@ -290,6 +294,7 @@ fn host_free_plan_accepts_scalar_runtime_config_as_plan_identity() {
     runtime.limits.max_steps_per_turn = Some(777);
     request.runtime_config = Some(NativeRuntimeConfig {
         runtime: runtime.clone(),
+        actor_bootstrap: None,
         hosts: Vec::new(),
         run_grants: Vec::new(),
     });
@@ -318,6 +323,7 @@ fn host_function_only_plan_rejects_unaddressed_runtime_config() {
     host_catalog
         .insert_function(NativeHostFunctionLinkage {
             name: HOST_FUNCTION,
+            context: NativeHostFunctionContext::Standalone,
             package: "mech-host-test",
             crate_name: "mech_host_test",
             cargo_features: &["provider"],

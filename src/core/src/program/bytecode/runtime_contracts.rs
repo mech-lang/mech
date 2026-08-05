@@ -206,7 +206,11 @@ impl ParsedProgram {
                         FunctionArgs::Variadic(register(*dst)?, arguments),
                     )?;
                 }
-                BytecodeInstruction::HostCall { requirement, .. } => {
+                BytecodeInstruction::HostCall {
+                    requirement,
+                    dst,
+                    arguments,
+                } => {
                     if !matches!(
                         self.requirements.get(*requirement as usize),
                         Some(ApplicationRequirement::HostFunction(_))
@@ -218,27 +222,46 @@ impl ParsedProgram {
                             format!("HostCall requirement {requirement} must be a HostFunction"),
                         ));
                     }
+                    register(*dst)?;
+                    for argument in arguments {
+                        register(*argument)?;
+                    }
                 }
-                BytecodeInstruction::ResourceRead { requirement, .. } => {
+                BytecodeInstruction::ResourceRead { requirement, dst } => {
                     self.validate_resource_requirement(
                         instruction_index,
                         *requirement,
                         ResourceIntent::Read,
                     )?;
+                    register(*dst)?;
                 }
-                BytecodeInstruction::ResourceWrite { requirement, .. } => {
+                BytecodeInstruction::ResourceWrite {
+                    requirement,
+                    dst,
+                    src,
+                } => {
                     self.validate_resource_requirement(
                         instruction_index,
                         *requirement,
                         ResourceIntent::Assign,
                     )?;
+                    let output = register(*dst)?;
+                    register(*src)?;
+                    self.validate_resource_write_seed(instruction_index, *dst, output)?;
                 }
-                BytecodeInstruction::ResourceSend { requirement, .. } => {
+                BytecodeInstruction::ResourceSend {
+                    requirement,
+                    dst,
+                    src,
+                } => {
                     self.validate_resource_requirement(
                         instruction_index,
                         *requirement,
                         ResourceIntent::Send,
                     )?;
+                    let output = register(*dst)?;
+                    register(*src)?;
+                    self.validate_resource_write_seed(instruction_index, *dst, output)?;
                 }
                 BytecodeInstruction::Return { .. } => {}
             }
@@ -284,6 +307,26 @@ impl ParsedProgram {
                 ),
             )),
         }
+    }
+
+    fn validate_resource_write_seed(
+        &self,
+        instruction: usize,
+        destination: u32,
+        output: Value,
+    ) -> MResult<()> {
+        if output == Value::Empty {
+            return Ok(());
+        }
+        Err(violation(
+            instruction,
+            None,
+            None,
+            format!(
+                "resource write/send destination register {destination} must have an Empty seed, found {:?}",
+                output.kind(),
+            ),
+        ))
     }
 }
 
@@ -701,6 +744,58 @@ mod tests {
             assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
             assert!(error.kind_message().contains(expected));
         }
+    }
+
+    #[test]
+    fn resource_writes_require_empty_output_seeds() {
+        let program = ParsedProgram::from_bytes(
+            &write_bytecode(&BytecodeProgram {
+                register_count: 2,
+                constants: vec![
+                    EncodedConstant {
+                        runtime_type: RuntimeType::F64,
+                        alignment: 8,
+                        bytes: 0.0_f64.to_bits().to_le_bytes().to_vec(),
+                    },
+                    EncodedConstant {
+                        runtime_type: RuntimeType::String,
+                        alignment: 1,
+                        bytes: b"payload".to_vec(),
+                    },
+                ],
+                symbols: BTreeMap::new(),
+                mutable_symbols: BTreeSet::new(),
+                instructions: vec![
+                    BytecodeInstruction::ConstLoad {
+                        dst: 0,
+                        constant: 0,
+                    },
+                    BytecodeInstruction::ConstLoad {
+                        dst: 1,
+                        constant: 1,
+                    },
+                    BytecodeInstruction::ResourceSend {
+                        requirement: 0,
+                        dst: 0,
+                        src: 1,
+                    },
+                    BytecodeInstruction::Return { src: 0 },
+                ],
+                dictionary: BTreeMap::new(),
+                requirements: vec![ApplicationRequirement::Resource(ExecutionResourceRequest {
+                    base_uri: "test://provider/output".into(),
+                    path: "line".into(),
+                    context_name: "output".into(),
+                    operation: "write".into(),
+                    intent: ResourceIntent::Send,
+                    delivery: ResourceDelivery::Snapshot,
+                })],
+            })
+            .unwrap(),
+        )
+        .unwrap();
+
+        assert_contract_violation(&program, "must have an Empty seed");
     }
 
     #[cfg(all(feature = "matrix2", feature = "matrixd"))]

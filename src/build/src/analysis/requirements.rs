@@ -1,17 +1,19 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    ApplicationRequirement, ExecutionResourceRequest, MResult, MechError, ResourceDelivery,
+    ApplicationRequirement, BytecodeInstruction, ExecutionResourceRequest, MResult, MechError,
+    ParsedProgram, ResourceDelivery, Value,
 };
 use mech_runtime::{
-    HostInstanceConfig, MaterializedHostContext, MaterializedHostInterface, RunResourceGrantConfig,
-    RuntimeCapabilityOperation, RuntimeConfig, RuntimeResourceKey, RuntimeResourceProvider,
-    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
-    materialize_host_manifest, validate_run_resource_grant,
+    ActorHostPlanningState, HostInstanceConfig, MaterializedHostContext, MaterializedHostInterface,
+    RunResourceGrantConfig, RuntimeCapabilityOperation, RuntimeConfig, RuntimeResourceKey,
+    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
+    validate_run_resource_grant,
 };
 
 use crate::{
-    NativeRuntimeConfig,
+    NativeActorBootstrap, NativeHostFunctionContext, NativeRuntimeConfig,
     error::{NativeBuildErrorKind, NativeHostAddressabilityInvalid, native_build_error},
     host::{NativeHostCatalog, NativeHostLinkage, NativeTargetFamily},
     plan::{PlannedApplicationRequirement, PlannedHostInstance},
@@ -20,6 +22,7 @@ use crate::{
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct ApplicationRequirementAnalysis {
     pub runtime_config: RuntimeConfig,
+    pub actor_bootstrap: Option<NativeActorBootstrap>,
     pub application_requirements: Vec<PlannedApplicationRequirement>,
     pub hosts: Vec<PlannedHostInstance>,
     pub run_grants: Vec<RunResourceGrantConfig>,
@@ -48,6 +51,50 @@ pub(crate) fn analyze_application_requirements(
         .as_ref()
         .map(|config| config.runtime.clone())
         .unwrap_or_default();
+    let actor_bootstrap = normalized_supplied_config
+        .as_ref()
+        .and_then(|config| config.actor_bootstrap.clone());
+    let mut actor_turn_required = false;
+    let mut live_resource_required = false;
+    for requirement in requirements {
+        match requirement {
+            ApplicationRequirement::HostFunction(request) => {
+                let linkage = host_catalog.function(&request.name).ok_or_else(|| {
+                    native_build_error(
+                        NativeBuildErrorKind::NativeHostFunctionLinkageMissing {
+                            name: request.name.clone(),
+                        },
+                        None,
+                    )
+                })?;
+                actor_turn_required |= linkage.context == NativeHostFunctionContext::ActorTurn;
+            }
+            ApplicationRequirement::Resource(request) => {
+                live_resource_required |= request.delivery == ResourceDelivery::Live;
+            }
+        }
+    }
+    match (actor_turn_required, actor_bootstrap.is_some()) {
+        (true, false) => {
+            return Err(native_build_error(
+                NativeBuildErrorKind::NativeActorBootstrapMissing,
+                None,
+            ));
+        }
+        (false, true) => {
+            return Err(native_build_error(
+                NativeBuildErrorKind::NativeActorBootstrapUnused,
+                None,
+            ));
+        }
+        _ => {}
+    }
+    if actor_turn_required && live_resource_required {
+        return Err(native_build_error(
+            NativeBuildErrorKind::NativeActorLiveApplicationUnsupported,
+            None,
+        ));
+    }
     let needs_resources = requirements
         .iter()
         .any(|requirement| matches!(requirement, ApplicationRequirement::Resource(_)));
@@ -68,6 +115,7 @@ pub(crate) fn analyze_application_requirements(
     if requirements.is_empty() {
         return Ok(ApplicationRequirementAnalysis {
             runtime_config: planned_runtime_config,
+            actor_bootstrap,
             application_requirements: Vec::new(),
             hosts: Vec::new(),
             run_grants: Vec::new(),
@@ -115,6 +163,7 @@ pub(crate) fn analyze_application_requirements(
                 })?;
                 planned.push(PlannedApplicationRequirement::HostFunction {
                     name: request.name.clone(),
+                    context: linkage.context,
                     package: linkage.package.to_owned(),
                     crate_name: linkage.crate_name.to_owned(),
                     installer_path: linkage.installer_path.to_owned(),
@@ -160,11 +209,278 @@ pub(crate) fn analyze_application_requirements(
     run_grants.dedup();
     Ok(ApplicationRequirementAnalysis {
         runtime_config: planned_runtime_config,
+        actor_bootstrap,
         application_requirements: planned,
         hosts,
         run_grants,
         live,
     })
+}
+
+/// Replays the detached constant seeds used by external bytecode instructions
+/// through the trusted host/provider planning contracts. Requirement analysis
+/// proves linkage and authorization; this pass proves that the generated
+/// runtime can actually bind every input and stable output cell.
+pub(crate) fn validate_application_instruction_contracts(
+    program: &ParsedProgram,
+    runtime_config: Option<&NativeRuntimeConfig>,
+    host_catalog: &NativeHostCatalog,
+    target: Option<&str>,
+) -> MResult<()> {
+    let normalized_config = runtime_config
+        .map(normalize_native_runtime_config)
+        .transpose()?;
+    let materialized = if program
+        .requirements
+        .iter()
+        .any(|requirement| matches!(requirement, ApplicationRequirement::Resource(_)))
+    {
+        materialize_configured_hosts(
+            normalized_config.as_ref().ok_or_else(|| {
+                native_build_error(
+                    NativeBuildErrorKind::NativeRuntimeConfigMissing {
+                        requirement: "resource requirement".to_owned(),
+                    },
+                    None,
+                )
+            })?,
+            host_catalog,
+            target,
+        )?
+    } else {
+        Vec::new()
+    };
+    let mut actor_state = normalized_config
+        .as_ref()
+        .and_then(|config| config.actor_bootstrap.as_ref())
+        .map(|bootstrap| {
+            ActorHostPlanningState::new(
+                &bootstrap.subject,
+                bootstrap.message_kind.clone(),
+                bootstrap.message_payload.clone(),
+                bootstrap.initial_state.clone(),
+            )
+        });
+    let constants = program.decode_constants()?;
+    let mut registers = vec![None::<Value>; program.header.register_count as usize];
+
+    for (instruction_index, instruction) in program.instructions.iter().enumerate() {
+        if let BytecodeInstruction::ConstLoad { dst, constant } = instruction {
+            let value = constants
+                .get(*constant as usize)
+                .expect("validated bytecode constant index")
+                .try_deep_snapshot()?;
+            *registers
+                .get_mut(*dst as usize)
+                .expect("validated bytecode register index") = Some(value);
+            continue;
+        }
+
+        let seed = |register: u32| -> MResult<Value> {
+            registers
+                .get(register as usize)
+                .and_then(Option::as_ref)
+                .cloned()
+                .ok_or_else(|| {
+                    application_instruction_error(
+                        instruction_index,
+                        format!("register {register} has no detached constant seed"),
+                    )
+                })
+        };
+
+        match instruction {
+            BytecodeInstruction::HostCall {
+                requirement,
+                dst,
+                arguments,
+            } => {
+                let request = match program.requirements.get(*requirement as usize) {
+                    Some(ApplicationRequirement::HostFunction(request)) => request,
+                    _ => unreachable!("core runtime-contract validation checks requirement kind"),
+                };
+                let linkage = host_catalog.function(&request.name).ok_or_else(|| {
+                    native_build_error(
+                        NativeBuildErrorKind::NativeHostFunctionLinkageMissing {
+                            name: request.name.clone(),
+                        },
+                        None,
+                    )
+                })?;
+                let arguments = arguments
+                    .iter()
+                    .map(|argument| seed(*argument))
+                    .collect::<MResult<Vec<_>>>()?;
+                let planned = match linkage.context {
+                    NativeHostFunctionContext::ActorTurn => actor_state
+                        .as_mut()
+                        .ok_or_else(|| {
+                            native_build_error(
+                                NativeBuildErrorKind::NativeActorBootstrapMissing,
+                                None,
+                            )
+                        })?
+                        .plan(&request.name, &arguments)
+                        .map_err(|error| {
+                            application_instruction_error(
+                                instruction_index,
+                                format!(
+                                    "host function `{}` rejected its arguments: {}",
+                                    request.name,
+                                    error.display_message(),
+                                ),
+                            )
+                            .with_source(error)
+                        })?,
+                    NativeHostFunctionContext::Standalone => {
+                        return Err(application_instruction_error(
+                            instruction_index,
+                            format!(
+                                "host function `{}` has no trusted native planning contract",
+                                request.name,
+                            ),
+                        ));
+                    }
+                };
+                validate_stable_output_seed(
+                    instruction_index,
+                    *dst,
+                    &seed(*dst)?,
+                    &planned,
+                    &format!("host function `{}`", request.name),
+                )?;
+            }
+            BytecodeInstruction::ResourceRead { requirement, dst } => {
+                let request = resource_requirement(program, *requirement);
+                let owner = resolve_resource_owner(request, &materialized)?;
+                let planned = owner
+                    .provider
+                    .plan_read(RuntimeResourceReadRequest {
+                        base_uri: request.base_uri.clone(),
+                        path: request.path.clone(),
+                        context_name: request.context_name.clone(),
+                    })
+                    .map_err(|error| {
+                        application_instruction_error(
+                            instruction_index,
+                            format!(
+                                "resource read `{}/{}` failed trusted planning: {}",
+                                request.base_uri,
+                                request.path,
+                                error.display_message(),
+                            ),
+                        )
+                        .with_source(error)
+                    })?;
+                validate_stable_output_seed(
+                    instruction_index,
+                    *dst,
+                    &seed(*dst)?,
+                    &planned,
+                    "resource read",
+                )?;
+            }
+            BytecodeInstruction::ResourceWrite {
+                requirement, src, ..
+            }
+            | BytecodeInstruction::ResourceSend {
+                requirement, src, ..
+            } => {
+                let request = resource_requirement(program, *requirement);
+                let owner = resolve_resource_owner(request, &materialized)?;
+                let intent = match request.intent {
+                    mech_core::ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
+                    mech_core::ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
+                    mech_core::ResourceIntent::Read => {
+                        unreachable!("core runtime-contract validation checks resource intent")
+                    }
+                };
+                let operation = RuntimeCapabilityOperation::from_name(request.operation.clone())
+                    .map_err(|error| {
+                        application_instruction_error(
+                            instruction_index,
+                            format!("invalid resource operation `{}`", request.operation),
+                        )
+                        .with_source(error)
+                    })?;
+                owner
+                    .provider
+                    .plan_write(RuntimeResourceWriteRequest {
+                        base_uri: request.base_uri.clone(),
+                        path: request.path.clone(),
+                        context_name: request.context_name.clone(),
+                        operation,
+                        value: seed(*src)?,
+                        intent,
+                    })
+                    .map_err(|error| {
+                        application_instruction_error(
+                            instruction_index,
+                            format!(
+                                "resource write/send `{}/{}` rejected its payload: {}",
+                                request.base_uri,
+                                request.path,
+                                error.display_message(),
+                            ),
+                        )
+                        .with_source(error)
+                    })?;
+            }
+            BytecodeInstruction::RuntimeNullary { dst, .. }
+            | BytecodeInstruction::RuntimeUnary { dst, .. }
+            | BytecodeInstruction::RuntimeBinary { dst, .. }
+            | BytecodeInstruction::RuntimeTernary { dst, .. }
+            | BytecodeInstruction::RuntimeQuaternary { dst, .. }
+            | BytecodeInstruction::RuntimeVariadic { dst, .. } => {
+                // Runtime producers mutate their already initialized output
+                // cell. Preserve that cell's detached planned value here so a
+                // later resource write can validate a computed payload such
+                // as `@out/line <- x + 1`. Catalog-aware bytecode validation,
+                // which runs immediately before this pass, proves the output
+                // seed and every input have the exact factory representation.
+                let _ = seed(*dst)?;
+            }
+            BytecodeInstruction::ConstLoad { .. } | BytecodeInstruction::Return { .. } => {}
+        }
+    }
+    Ok(())
+}
+
+fn resource_requirement(program: &ParsedProgram, requirement: u32) -> &ExecutionResourceRequest {
+    match program.requirements.get(requirement as usize) {
+        Some(ApplicationRequirement::Resource(request)) => request,
+        _ => unreachable!("core runtime-contract validation checks requirement kind"),
+    }
+}
+
+fn validate_stable_output_seed(
+    instruction: usize,
+    register: u32,
+    seed: &Value,
+    planned: &Value,
+    source: &str,
+) -> MResult<()> {
+    let expected = seed.kind();
+    let actual = planned.kind();
+    if expected == actual {
+        return Ok(());
+    }
+    Err(application_instruction_error(
+        instruction,
+        format!(
+            "{source} destination register {register} has seed kind {expected:?}, but trusted planning returns {actual:?}",
+        ),
+    ))
+}
+
+fn application_instruction_error(instruction: usize, reason: impl Into<String>) -> MechError {
+    native_build_error(
+        NativeBuildErrorKind::NativeApplicationInstructionInvalid {
+            instruction: u32::try_from(instruction).unwrap_or(u32::MAX),
+            reason: reason.into(),
+        },
+        None,
+    )
 }
 
 fn exact_resource_grant(
@@ -209,10 +525,42 @@ pub fn normalize_native_runtime_config(
     });
     run_grants.dedup();
 
+    let actor_bootstrap = config
+        .actor_bootstrap
+        .as_ref()
+        .map(|bootstrap| {
+            let subject = bootstrap.subject.trim().to_owned();
+            if subject.is_empty() {
+                return Err(native_build_error(
+                    NativeBuildErrorKind::NativeRuntimeConfigUnsupported {
+                        reason: "actor bootstrap subject must be non-empty".to_owned(),
+                    },
+                    None,
+                ));
+            }
+            let message_kind = bootstrap.message_kind.trim().to_owned();
+            if message_kind.is_empty() {
+                return Err(native_build_error(
+                    NativeBuildErrorKind::NativeRuntimeConfigUnsupported {
+                        reason: "actor bootstrap message kind must be non-empty".to_owned(),
+                    },
+                    None,
+                ));
+            }
+            Ok(NativeActorBootstrap {
+                subject,
+                message_kind,
+                message_payload: bootstrap.message_payload.clone(),
+                initial_state: bootstrap.initial_state.clone(),
+            })
+        })
+        .transpose()?;
+
     Ok(NativeRuntimeConfig {
         runtime: config.runtime.clone(),
         hosts,
         run_grants,
+        actor_bootstrap,
     })
 }
 
@@ -709,16 +1057,19 @@ fn resource_path_scope_matches(scope: &str, path: &str) -> bool {
 mod tests {
     use std::collections::BTreeMap;
 
-    use mech_core::{ResourceIntent, Value};
+    use mech_core::{
+        BytecodeProgram, EncodedConstant, ExecutionHostFunctionRequest, ResourceIntent,
+        RuntimeType, Value, write_bytecode,
+    };
     use mech_runtime::{
         ConfigValue, HostContextManifest, HostManifestConfig, LogLevel, RuntimeConfig,
         RuntimeHostFactory, RuntimeHostInstallation, RuntimeResourceReadRequest,
     };
 
     use super::*;
-    use crate::host::NativeTargetFamily;
     #[cfg(feature = "standard-hosts")]
     use crate::host::standard_native_host_catalog;
+    use crate::host::{NativeHostFunctionLinkage, NativeTargetFamily};
 
     fn host(name: &str, provider: &str) -> HostInstanceConfig {
         HostInstanceConfig {
@@ -764,6 +1115,60 @@ mod tests {
             operation: operation.to_owned(),
             intent,
             delivery: ResourceDelivery::Snapshot,
+        }
+    }
+
+    fn parsed_external_program(
+        constants: Vec<EncodedConstant>,
+        instruction: BytecodeInstruction,
+        requirement: ApplicationRequirement,
+    ) -> ParsedProgram {
+        let mut instructions = constants
+            .iter()
+            .enumerate()
+            .map(|(register, _)| BytecodeInstruction::ConstLoad {
+                dst: register as u32,
+                constant: register as u32,
+            })
+            .collect::<Vec<_>>();
+        instructions.push(instruction);
+        instructions.push(BytecodeInstruction::Return { src: 0 });
+        ParsedProgram::from_bytes(
+            &write_bytecode(&BytecodeProgram {
+                register_count: constants.len() as u32,
+                constants,
+                symbols: BTreeMap::new(),
+                mutable_symbols: BTreeSet::new(),
+                instructions,
+                dictionary: BTreeMap::new(),
+                requirements: vec![requirement],
+            })
+            .unwrap(),
+        )
+        .unwrap()
+    }
+
+    fn empty_constant() -> EncodedConstant {
+        EncodedConstant {
+            runtime_type: RuntimeType::Empty,
+            alignment: 1,
+            bytes: Vec::new(),
+        }
+    }
+
+    fn string_constant(value: &str) -> EncodedConstant {
+        EncodedConstant {
+            runtime_type: RuntimeType::String,
+            alignment: 1,
+            bytes: value.as_bytes().to_vec(),
+        }
+    }
+
+    fn f64_constant(value: f64) -> EncodedConstant {
+        EncodedConstant {
+            runtime_type: RuntimeType::F64,
+            alignment: 8,
+            bytes: value.to_bits().to_le_bytes().to_vec(),
         }
     }
 
@@ -1005,13 +1410,49 @@ mod tests {
     }
 
     fn host_catalog() -> NativeHostCatalog {
-        host_catalog_with(test_manifest, test_planning_factory)
+        let mut catalog = host_catalog_with(test_manifest, test_planning_factory);
+        catalog
+            .insert_function(NativeHostFunctionLinkage {
+                name: "test/actor-turn",
+                context: NativeHostFunctionContext::ActorTurn,
+                package: "mech-runtime",
+                crate_name: "mech_runtime",
+                cargo_features: &["native-link", "runtime", "string"],
+                installer_path: "mech_runtime::__mech_native::install_actor_message_kind",
+            })
+            .unwrap();
+        catalog
+    }
+
+    fn actor_requirement() -> ApplicationRequirement {
+        ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
+            name: "test/actor-turn".to_owned(),
+        })
+    }
+
+    fn actor_bootstrap(subject: &str, message_kind: &str) -> NativeActorBootstrap {
+        NativeActorBootstrap {
+            subject: subject.to_owned(),
+            message_kind: message_kind.to_owned(),
+            message_payload: String::new(),
+            initial_state: Some(String::new()),
+        }
+    }
+
+    fn actor_runtime_config(subject: &str, message_kind: &str) -> NativeRuntimeConfig {
+        NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: Some(actor_bootstrap(subject, message_kind)),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+        }
     }
 
     #[test]
     fn normalizes_hosts_and_grants_deterministically() {
         let config = NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: vec![host("z", "test"), host("a", "test")],
             run_grants: vec![
                 grant("z/output", &["write"], &["text"]),
@@ -1038,9 +1479,89 @@ mod tests {
     }
 
     #[test]
+    fn actor_bootstrap_normalization_trims_identity_but_preserves_empty_values() {
+        let normalized =
+            normalize_native_runtime_config(&actor_runtime_config("  actor:alpha  ", "  alpha  "))
+                .unwrap();
+        assert_eq!(
+            normalized.actor_bootstrap,
+            Some(NativeActorBootstrap {
+                subject: "actor:alpha".to_owned(),
+                message_kind: "alpha".to_owned(),
+                message_payload: String::new(),
+                initial_state: Some(String::new()),
+            })
+        );
+    }
+
+    #[test]
+    fn actor_bootstrap_rejects_empty_subject_and_message_kind() {
+        for config in [
+            actor_runtime_config("  ", "message"),
+            actor_runtime_config("actor:alpha", "  "),
+        ] {
+            let error = normalize_native_runtime_config(&config).unwrap_err();
+            assert_eq!(error.kind_name(), "NativeRuntimeConfigUnsupported");
+        }
+    }
+
+    #[test]
+    fn actor_turn_requires_exactly_one_explicit_bootstrap() {
+        let missing =
+            analyze_application_requirements(&[actor_requirement()], None, &host_catalog(), None)
+                .unwrap_err();
+        assert_eq!(missing.kind_name(), "NativeActorBootstrapMissing");
+
+        let unused = analyze_application_requirements(
+            &[],
+            Some(&actor_runtime_config("actor:alpha", "alpha")),
+            &host_catalog(),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(unused.kind_name(), "NativeActorBootstrapUnused");
+
+        let analysis = analyze_application_requirements(
+            &[actor_requirement()],
+            Some(&actor_runtime_config(" actor:alpha ", " alpha ")),
+            &host_catalog(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(analysis.actor_bootstrap.unwrap().subject, "actor:alpha");
+        assert!(matches!(
+            &analysis.application_requirements[0],
+            PlannedApplicationRequirement::HostFunction {
+                context: NativeHostFunctionContext::ActorTurn,
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn actor_turn_cannot_be_combined_with_live_resources() {
+        let mut live = request("write", "line");
+        live.delivery = ResourceDelivery::Live;
+        let mut config = actor_runtime_config("actor:alpha", "alpha");
+        config.hosts.push(host("terminal", "test"));
+        config
+            .run_grants
+            .push(grant("terminal/output", &["write"], &["line"]));
+        let error = analyze_application_requirements(
+            &[actor_requirement(), ApplicationRequirement::Resource(live)],
+            Some(&config),
+            &host_catalog(),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "NativeActorLiveApplicationUnsupported");
+    }
+
+    #[test]
     fn duplicate_host_instances_are_rejected() {
         let config = NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: vec![host("terminal", "other"), host("terminal", "test")],
             run_grants: Vec::new(),
         };
@@ -1060,6 +1581,7 @@ mod tests {
         runtime.diagnostics.log_level = LogLevel::Debug;
         let config = NativeRuntimeConfig {
             runtime: runtime.clone(),
+            actor_bootstrap: None,
             hosts: vec![host("terminal", "test")],
             run_grants: Vec::new(),
         };
@@ -1074,6 +1596,7 @@ mod tests {
         runtime.limits.max_steps_per_turn = Some(0);
         let error = normalize_native_runtime_config(&NativeRuntimeConfig {
             runtime,
+            actor_bootstrap: None,
             hosts: Vec::new(),
             run_grants: Vec::new(),
         })
@@ -1117,6 +1640,7 @@ mod tests {
     fn exact_resource_requirement_prunes_unused_hosts_and_narrows_grants() {
         let config = NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: vec![host("unused", "test"), host("terminal", "test")],
             run_grants: vec![grant("terminal/output", &["read", "write"], &["*", "line"])],
         };
@@ -1156,6 +1680,7 @@ mod tests {
 
         let config = NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: vec![host("terminal", "test")],
             run_grants: Vec::new(),
         };
@@ -1169,6 +1694,7 @@ mod tests {
     fn host_free_analysis_rejects_unaddressed_untrusted_config_strings() {
         let config = NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: vec![host("cargo-feature-from-bytecode", "evil-provider")],
             run_grants: Vec::new(),
         };
@@ -1182,6 +1708,7 @@ mod tests {
     fn standard_default_instances_accept_canonical_and_alias_resource_uris() {
         let config = NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: vec![host("cli", "cli"), host("console", "console")],
             run_grants: vec![
                 grant("cli/env", &["read"], &["HOME"]),
@@ -1302,6 +1829,144 @@ mod tests {
 
     #[cfg(feature = "standard-hosts")]
     #[test]
+    fn standard_provider_plans_resource_read_output_seed_types() {
+        let requirement = request_at(
+            "time://clock/clock",
+            "clock",
+            "read",
+            "second",
+            ResourceIntent::Read,
+        );
+        let program = parsed_external_program(
+            vec![string_constant("wrong-seed")],
+            BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            ApplicationRequirement::Resource(requirement),
+        );
+        let config = NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts: vec![host("clock", "time")],
+            run_grants: vec![grant("clock/clock", &["read"], &["second"])],
+        };
+
+        let error = validate_application_instruction_contracts(
+            &program,
+            Some(&config),
+            &standard_native_host_catalog().unwrap(),
+            Some("x86_64-unknown-linux-gnu"),
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "NativeApplicationInstructionInvalid");
+        assert!(error.kind_message().contains("seed kind String"));
+        assert!(error.kind_message().contains("F64"));
+    }
+
+    #[cfg(feature = "standard-hosts")]
+    #[test]
+    fn standard_provider_plans_resource_write_payload_types() {
+        let requirement = request_at(
+            "scene://scene/frame",
+            "frame",
+            "write",
+            "replace",
+            ResourceIntent::Send,
+        );
+        let program = parsed_external_program(
+            vec![empty_constant(), string_constant("not-a-scene")],
+            BytecodeInstruction::ResourceSend {
+                requirement: 0,
+                dst: 0,
+                src: 1,
+            },
+            ApplicationRequirement::Resource(requirement),
+        );
+        let config = NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts: vec![HostInstanceConfig {
+                name: "scene".to_owned(),
+                provider: "scene".to_owned(),
+                settings: ConfigValue::Map(BTreeMap::from([
+                    (
+                        "renderer".to_owned(),
+                        ConfigValue::String("canvas".to_owned()),
+                    ),
+                    (
+                        "selector".to_owned(),
+                        ConfigValue::String("#scene".to_owned()),
+                    ),
+                ])),
+            }],
+            run_grants: vec![grant("scene/frame", &["write"], &["replace"])],
+        };
+
+        let error = validate_application_instruction_contracts(
+            &program,
+            Some(&config),
+            &standard_native_host_catalog().unwrap(),
+            Some("x86_64-unknown-linux-gnu"),
+        )
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "NativeApplicationInstructionInvalid");
+        assert!(error.kind_message().contains("rejected its payload"));
+    }
+
+    #[cfg(feature = "standard-hosts")]
+    #[test]
+    fn trusted_actor_host_calls_plan_arity_and_output_seed_types() {
+        let catalog = standard_native_host_catalog().unwrap();
+        let config = actor_runtime_config("actor:planner", "message");
+        let missing_argument = parsed_external_program(
+            vec![string_constant("")],
+            BytecodeInstruction::HostCall {
+                requirement: 0,
+                dst: 0,
+                arguments: Vec::new(),
+            },
+            ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
+                name: "actor/state/put".to_owned(),
+            }),
+        );
+        let error = validate_application_instruction_contracts(
+            &missing_argument,
+            Some(&config),
+            &catalog,
+            Some("x86_64-unknown-linux-gnu"),
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "NativeApplicationInstructionInvalid");
+        assert!(error.kind_message().contains("expected 1 arguments"));
+
+        let wrong_output = parsed_external_program(
+            vec![f64_constant(0.0)],
+            BytecodeInstruction::HostCall {
+                requirement: 0,
+                dst: 0,
+                arguments: Vec::new(),
+            },
+            ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
+                name: "actor/message/kind".to_owned(),
+            }),
+        );
+        let error = validate_application_instruction_contracts(
+            &wrong_output,
+            Some(&config),
+            &catalog,
+            Some("x86_64-unknown-linux-gnu"),
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "NativeApplicationInstructionInvalid");
+        assert!(error.kind_message().contains("seed kind F64"));
+        assert!(error.kind_message().contains("String"));
+    }
+
+    #[cfg(feature = "standard-hosts")]
+    #[test]
     fn standard_aliases_do_not_address_non_default_instances() {
         let catalog = standard_native_host_catalog().unwrap();
         for (instance, provider, target, alias) in [
@@ -1310,6 +1975,7 @@ mod tests {
         ] {
             let config = NativeRuntimeConfig {
                 runtime: RuntimeConfig::default(),
+                actor_bootstrap: None,
                 hosts: vec![host(instance, provider)],
                 run_grants: vec![grant(target, &["write"], &["line"])],
             };
@@ -1334,6 +2000,7 @@ mod tests {
     fn trusted_alias_resolves_owner_but_preserves_requested_uri() {
         let config = NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: vec![host("terminal", "test")],
             run_grants: vec![grant("terminal/output", &["write"], &["line"])],
         };
@@ -1366,6 +2033,7 @@ mod tests {
     fn one_alias_claimed_by_two_configured_hosts_is_ambiguous() {
         let config = NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: vec![host("first", "test"), host("second", "test")],
             run_grants: Vec::new(),
         };
@@ -1390,6 +2058,7 @@ mod tests {
     fn malformed_planning_addressability_is_rejected() {
         let config = NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
             hosts: vec![host("terminal", "test")],
             run_grants: vec![grant("terminal/output", &["write"], &["line"])],
         };

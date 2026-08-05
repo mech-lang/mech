@@ -5,6 +5,7 @@ use std::string::{String, ToString};
 
 use core::any::type_name;
 
+#[cfg(feature = "matrix")]
 use crate::structures::Matrix;
 use crate::{MResult, MechError, MechErrorKind, ReactiveCellId, Ref, Value};
 
@@ -68,6 +69,7 @@ impl MechErrorKind for FunctionArgumentAliasViolation {
     }
 }
 
+#[cfg(feature = "matrix")]
 fn matrix_descriptor<T>(matrix: &Matrix<T>) -> FunctionMatrixDescriptor
 where
     T: core::fmt::Debug + Clone + PartialEq + 'static,

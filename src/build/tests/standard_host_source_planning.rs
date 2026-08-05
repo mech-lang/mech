@@ -1,12 +1,19 @@
 #![cfg(feature = "standard-hosts")]
 
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 
-use mech_build::standard_planning_host_factory;
-use mech_core::{ApplicationRequirement, ParsedProgram, Ref, ResourceIntent, Value};
+use mech_build::{
+    NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest,
+    NativeDependencySource, NativeEmit, NativeRuntimeConfig, standard_native_host_catalog,
+    standard_planning_host_factory,
+};
+use mech_core::{
+    ApplicationRequirement, BytecodeInstruction, ParsedProgram, Ref, ResourceIntent, Value,
+};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, PlannedPureHostFunction, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeValueSnapshot,
+    RuntimeBuilder, RuntimeConfig, RuntimeValueSnapshot,
 };
 
 struct ProviderCase {
@@ -170,6 +177,85 @@ fn every_standard_provider_plans_source_to_bytecode() {
             case.provider
         );
     }
+}
+
+#[test]
+fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
+    let case = ProviderCase {
+        provider: "cli",
+        instance: "cli",
+        target: "cli/stdout",
+        operations: &["write"],
+        paths: &["line"],
+        source: "@out := cli://stdout{:write(line)}\nx := 1\n@out/line <- x + 1",
+        base_uri: "cli://stdout",
+        path: "line",
+        intent: ResourceIntent::Send,
+    };
+    let parsed = compile_provider(&case);
+    let source = parsed
+        .instructions
+        .iter()
+        .find_map(|instruction| match instruction {
+            BytecodeInstruction::ResourceSend { src, .. } => Some(*src),
+            _ => None,
+        })
+        .expect("computed source emits a resource send");
+    assert!(parsed.instructions.iter().any(|instruction| {
+        matches!(instruction, BytecodeInstruction::RuntimeBinary { dst, .. } if *dst == source)
+    }));
+
+    let mut planning_runtime = RuntimeBuilder::new()
+        .planning()
+        .function_catalog(mech_stdlib::source_catalog())
+        .host_factory(standard_planning_host_factory("cli").unwrap())
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: "cli".to_owned(),
+            provider: "cli".to_owned(),
+            settings: ConfigValue::Map(BTreeMap::new()),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "cli/stdout".to_owned(),
+            operations: vec!["write".to_owned()],
+            paths: vec!["line".to_owned()],
+        })
+        .build()
+        .unwrap();
+    planning_runtime.run_string(case.source).unwrap();
+    let request = NativeBuildRequest {
+        bytecode: planning_runtime.compile_program_bytecode().unwrap(),
+        runtime_config: Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts: vec![HostInstanceConfig {
+                name: "cli".to_owned(),
+                provider: "cli".to_owned(),
+                settings: ConfigValue::Map(BTreeMap::new()),
+            }],
+            run_grants: vec![RunResourceGrantConfig {
+                target: "cli/stdout".to_owned(),
+                operations: vec!["write".to_owned()],
+                paths: vec!["line".to_owned()],
+            }],
+        }),
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "computed-resource-send".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
 }
 
 const ACTOR_FUNCTIONS: &[(&str, &str)] = &[

@@ -52,6 +52,7 @@ fn configured_standard_hosts_are_pruned_to_exact_bytecode_owners() {
     ]));
     let runtime_config = NativeRuntimeConfig {
         runtime: RuntimeConfig::new("pruned-host-runtime"),
+        actor_bootstrap: None,
         hosts: vec![
             host("cli", "cli", empty_settings()),
             host("console", "console", empty_settings()),

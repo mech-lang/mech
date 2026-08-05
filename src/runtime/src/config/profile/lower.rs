@@ -15,12 +15,26 @@ use super::{ConfigValue, InvalidConfigField};
 pub struct MechConfigDocument {
     pub source_name: String,
     pub runtime: RuntimeConfigPatch,
+    pub build: Option<BuildHostConfig>,
     pub serve: Option<ServeHostConfig>,
     pub run: Option<RunHostConfig>,
     pub hosts: Vec<HostInstanceConfig>,
     pub capabilities: Vec<ConfigCapabilityGrant>,
     pub host: Option<HostManifestConfig>,
     pub module: Option<ModuleManifestConfig>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ActorBootstrapConfig {
+    pub subject: String,
+    pub message_kind: String,
+    pub message_payload: String,
+    pub initial_state: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct BuildHostConfig {
+    pub actor: Option<ActorBootstrapConfig>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -98,6 +112,7 @@ impl ConfigLowerer {
         let mut doc = MechConfigDocument {
             source_name,
             runtime: RuntimeConfigPatch::default(),
+            build: None,
             serve: None,
             run: None,
             hosts: Vec::new(),
@@ -108,6 +123,7 @@ impl ConfigLowerer {
         for (key, value) in map {
             match key.as_str() {
                 "runtime" => doc.runtime = self.lower_runtime(value)?,
+                "build" => doc.build = Some(self.lower_build(value)?),
                 "serve" => doc.serve = Some(self.lower_serve(value)?),
                 "run" => doc.run = Some(self.lower_run(value)?),
                 "hosts" => doc.hosts = self.lower_hosts(value)?,
@@ -118,6 +134,61 @@ impl ConfigLowerer {
             }
         }
         Ok(doc)
+    }
+
+    fn lower_build(&self, value: &ConfigValue) -> MResult<BuildHostConfig> {
+        let map = expect_map("build", value)?;
+        let mut out = BuildHostConfig::default();
+        for (key, value) in map {
+            match key.as_str() {
+                "actor" => out.actor = Some(self.lower_actor_bootstrap(value)?),
+                other => return invalid(format!("unknown build field `{other}`")),
+            }
+        }
+        Ok(out)
+    }
+
+    fn lower_actor_bootstrap(&self, value: &ConfigValue) -> MResult<ActorBootstrapConfig> {
+        let map = expect_map("build.actor", value)?;
+        let mut subject = None;
+        let mut message_kind = None;
+        let mut message_payload = None;
+        let mut initial_state = None;
+        for (key, value) in map {
+            match key.as_str() {
+                "subject" => subject = Some(expect_string("build.actor.subject", value)?),
+                "message-kind" => {
+                    message_kind = Some(expect_string("build.actor.message-kind", value)?)
+                }
+                "message-payload" => {
+                    message_payload = Some(expect_string("build.actor.message-payload", value)?)
+                }
+                "initial-state" => {
+                    initial_state = Some(match value {
+                        ConfigValue::Null => None,
+                        _ => Some(expect_string("build.actor.initial-state", value)?),
+                    })
+                }
+                other => return invalid(format!("unknown build.actor field `{other}`")),
+            }
+        }
+        let subject = subject.ok_or_else(|| invalid_error("build.actor.subject is required"))?;
+        if subject.trim().is_empty() {
+            return invalid("build.actor.subject must be non-empty");
+        }
+        let message_kind =
+            message_kind.ok_or_else(|| invalid_error("build.actor.message-kind is required"))?;
+        if message_kind.trim().is_empty() {
+            return invalid("build.actor.message-kind must be non-empty");
+        }
+        let message_payload = message_payload
+            .ok_or_else(|| invalid_error("build.actor.message-payload is required"))?;
+        Ok(ActorBootstrapConfig {
+            subject,
+            message_kind,
+            message_payload,
+            initial_state: initial_state.unwrap_or(None),
+        })
     }
 
     fn lower_hosts(&self, value: &ConfigValue) -> MResult<Vec<HostInstanceConfig>> {
@@ -713,5 +784,62 @@ mod tests {
 
         let error = format!("{err:?}");
         assert!(error.contains("unknown run field `cli`"), "got {error}");
+    }
+
+    #[test]
+    fn actor_build_bootstrap_lowers_exact_fields() {
+        let doc = parse(
+            r#"config := {
+  build: {
+    actor: {
+      subject: "actor:main"
+      message-kind: "startup"
+      message-payload: "hello"
+      initial-state: "initial"
+    }
+  }
+}"#,
+        )
+        .unwrap();
+
+        assert_eq!(
+            doc.build.unwrap().actor,
+            Some(ActorBootstrapConfig {
+                subject: "actor:main".to_owned(),
+                message_kind: "startup".to_owned(),
+                message_payload: "hello".to_owned(),
+                initial_state: Some("initial".to_owned()),
+            })
+        );
+    }
+
+    #[test]
+    fn actor_build_bootstrap_accepts_empty_payload_and_null_state() {
+        let doc = parse(
+            r#"config := {build: {actor: {
+  subject: "actor:main"
+  message-kind: "startup"
+  message-payload: ""
+  initial-state: null
+}}}"#,
+        )
+        .unwrap();
+
+        let actor = doc.build.unwrap().actor.unwrap();
+        assert_eq!(actor.message_payload, "");
+        assert_eq!(actor.initial_state, None);
+    }
+
+    #[test]
+    fn actor_build_bootstrap_rejects_missing_empty_mistyped_and_unknown_fields() {
+        for source in [
+            r#"config := {build: {actor: {message-kind: "startup" message-payload: "hello"}}}"#,
+            r#"config := {build: {actor: {subject: "  " message-kind: "startup" message-payload: "hello"}}}"#,
+            r#"config := {build: {actor: {subject: "actor:main" message-kind: "  " message-payload: "hello"}}}"#,
+            r#"config := {build: {actor: {subject: "actor:main" message-kind: "startup" message-payload: 1}}}"#,
+            r#"config := {build: {actor: {subject: "actor:main" message-kind: "startup" message-payload: "hello" extra: true}}}"#,
+        ] {
+            assert!(parse(source).is_err(), "unexpectedly accepted {source}");
+        }
     }
 }

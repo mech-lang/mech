@@ -88,6 +88,13 @@ pub enum NativeBuildErrorKind {
     NativeHostFunctionLinkageMissing {
         name: String,
     },
+    NativeApplicationInstructionInvalid {
+        instruction: u32,
+        reason: String,
+    },
+    NativeActorBootstrapMissing,
+    NativeActorBootstrapUnused,
+    NativeActorLiveApplicationUnsupported,
     NativeResourceOwnerAmbiguous {
         target: String,
         instances: Vec<String>,
@@ -179,6 +186,12 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeHostInstanceUnknown { .. } => "NativeHostInstanceUnknown",
             Self::NativeHostProviderUnknown { .. } => "NativeHostProviderUnknown",
             Self::NativeHostFunctionLinkageMissing { .. } => "NativeHostFunctionLinkageMissing",
+            Self::NativeApplicationInstructionInvalid { .. } => {
+                "NativeApplicationInstructionInvalid"
+            }
+            Self::NativeActorBootstrapMissing => "NativeActorBootstrapMissing",
+            Self::NativeActorBootstrapUnused => "NativeActorBootstrapUnused",
+            Self::NativeActorLiveApplicationUnsupported => "NativeActorLiveApplicationUnsupported",
             Self::NativeResourceOwnerAmbiguous { .. } => "NativeResourceOwnerAmbiguous",
             Self::NativeTargetUnsupported { .. } => "NativeTargetUnsupported",
             Self::NativeHostSettingsInvalid { .. } => "NativeHostSettingsInvalid",
@@ -235,6 +248,23 @@ impl MechErrorKind for NativeBuildErrorKind {
             }
             Self::NativeHostFunctionLinkageMissing { name } => {
                 format!("host function `{name}` has no trusted native linkage")
+            }
+            Self::NativeApplicationInstructionInvalid {
+                instruction,
+                reason,
+            } => format!(
+                "native application bytecode instruction {instruction} is invalid: {reason}"
+            ),
+            Self::NativeActorBootstrapMissing => {
+                "an actor-turn native application requires an explicit actor bootstrap".to_owned()
+            }
+            Self::NativeActorBootstrapUnused => {
+                "an actor bootstrap was configured for an application with no actor-turn requirements"
+                    .to_owned()
+            }
+            Self::NativeActorLiveApplicationUnsupported => {
+                "actor-turn native applications cannot also contain live resource requirements"
+                    .to_owned()
             }
             Self::NativeResourceOwnerAmbiguous { target, instances } => format!(
                 "resource target `{target}` is owned by multiple host instances: {}",

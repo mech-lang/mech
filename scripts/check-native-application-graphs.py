@@ -132,7 +132,12 @@ EXPECTED_FEATURES = {
         "mech-host-robot-arm": {"provider"},
         "mech-runtime": {"bool", "runtime", "string"},
     },
-    "generated_native_actor": {
+    "generated_native_actor_alpha": {
+        "mech-core": {"bool", "program", "string"},
+        "mech-engine": {"bool", "native-link", "runtime", "string", "variable_define"},
+        "mech-runtime": {"bool", "native-link", "runtime", "string"},
+    },
+    "generated_native_actor_beta": {
         "mech-core": {"bool", "program", "string"},
         "mech-engine": {"bool", "native-link", "runtime", "string", "variable_define"},
         "mech-runtime": {"bool", "native-link", "runtime", "string"},
@@ -624,7 +629,7 @@ def main() -> int:
     except (OSError, ValueError, KeyError, StopIteration, RuntimeError) as error:
         print(f"native application graph contract failed: {error}", file=sys.stderr)
         return 1
-    print("native application graph contract passed (15 exact Cargo graphs)")
+    print(f"native application graph contract passed ({len(EXPECTED)} exact Cargo graphs)")
     return 0
 
 

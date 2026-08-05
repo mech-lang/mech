@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use mech_core::{MResult, MechError, MechErrorKind};
 use mech_runtime::{ConfigValue, HostManifestConfig, RuntimeHostFactory};
+use serde::{Deserialize, Serialize};
 
 /// Broad target families used by trusted native-host metadata.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -86,10 +87,18 @@ impl std::fmt::Debug for NativeHostLinkage {
 #[derive(Clone, Debug)]
 pub struct NativeHostFunctionLinkage {
     pub name: &'static str,
+    pub context: NativeHostFunctionContext,
     pub package: &'static str,
     pub crate_name: &'static str,
     pub cargo_features: &'static [&'static str],
     pub installer_path: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NativeHostFunctionContext {
+    Standalone,
+    ActorTurn,
 }
 
 /// Trusted native linkage metadata keyed deterministically by provider and
