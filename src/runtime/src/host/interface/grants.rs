@@ -1,6 +1,7 @@
 use crate::InvalidConfigField;
 use mech_core::{MResult, MechError};
 
+#[cfg(feature = "runtime")]
 use crate::ResourcePathScope;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -41,6 +42,7 @@ pub fn validate_grant_path(path: &str) -> MResult<()> {
 
 /// Normalize one configured resource-grant path with the exact rules used by
 /// runtime capability authorization.
+#[cfg(feature = "runtime")]
 pub fn normalize_run_resource_grant_path(path: &str) -> MResult<String> {
     validate_grant_path(path)?;
     Ok(ResourcePathScope::from_config_path(path)?.config_path())
