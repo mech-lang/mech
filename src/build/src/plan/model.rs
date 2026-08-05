@@ -69,6 +69,32 @@ pub struct PlannedRuntimeFunction {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct PlannedResourceRequest {
+    pub base_uri: String,
+    pub path: String,
+    pub context_name: String,
+    pub operation: String,
+    pub intent: ResourceIntent,
+    pub delivery: ResourceDelivery,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct PlannedResourceOwner {
+    pub host_instance: String,
+    pub provider: String,
+    pub host_context: String,
+    pub canonical_base_uri: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct PlannedResourceGrantKey {
+    pub host_instance: String,
+    pub host_context: String,
+    pub operation: String,
+    pub path: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum PlannedApplicationRequirement {
     HostFunction {
@@ -80,15 +106,8 @@ pub enum PlannedApplicationRequirement {
         cargo_features: Vec<String>,
     },
     Resource {
-        base_uri: String,
-        path: String,
-        context_name: String,
-        host_context: String,
-        operation: String,
-        intent: ResourceIntent,
-        delivery: ResourceDelivery,
-        host_instance: String,
-        provider: String,
+        request: PlannedResourceRequest,
+        owner: PlannedResourceOwner,
     },
 }
 
@@ -146,7 +165,7 @@ pub struct NativeBuildPlan {
     pub engine_features: Vec<String>,
     pub runtime_features: Vec<String>,
     pub hosts: Vec<PlannedHostInstance>,
-    pub run_grants: Vec<RunResourceGrantConfig>,
+    pub run_grants: Vec<PlannedResourceGrantKey>,
     pub live: bool,
     pub dependency_source: PlannedDependencySource,
     pub workspace_fingerprint: Option<String>,

@@ -29,6 +29,7 @@ jobs:
           scripts/check-unsafe-boundaries.sh
           scripts/test-unsafe-boundaries.sh
           scripts/check-runtime-factory-safety.py
+          scripts/check-native-build-analysis-layout.py
 
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh

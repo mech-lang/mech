@@ -14,11 +14,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
-EXPECTED_MANIFEST_SHA256 = "cd392421bc407449a854bf0e903bce56abdb1a3a2b182b6a13a1ed1cddc41492"
+EXPECTED_MANIFEST_SHA256 = "3e47aed9205383296307565604a521856b777bbc1da5d84b27b8f731eb006096"
 EXPECTED_FIXTURE_SHA256 = {
-    "canonical-scalars.mecb": "f470d9afe5397a93dc7f52c88a81d9e72810d6789fbdb1588ec8494277effc88",
-    "canonical-matrices.mecb": "753c19e2b41ad2b7984bb8adc40dd5c3623c2d12aa238cf954a51ad7e723b193",
-    "canonical-composites.mecb": "21b2c1247be183d5b13c5f5c9ed7964a9c7f848cd173824af7185e2240652c02",
+    "canonical-scalars.mecb": "a437e67ca6120b90c928eb55ee0479c4a95afbb23a854c406c7fd531df2c85cc",
+    "canonical-matrices.mecb": "1e0d08eabb54b9c4edc5caae095dbab607cd633867d1c0b642126f5451ecf55d",
+    "canonical-composites.mecb": "b825bdb8a73062a8463a55aab2e2bffc9c6c20e6183f3f04a183d03d4dec6eb0",
     "literal-f64.mecb": "dd9596d0a47e87de8b0a6455bbf0058583649c7db16dab4336a5a91694bcac92",
     "scalar-add-f64.mecb": "732def592c0ba921b7dd8e782163a2803a0ac21adfa5469c133bbeca5fe0f4f2",
     "fixed-matrix-add-f64.mecb": "d60ec57aadbc280bca7a3fa577cc10cc2727acb146193eada141f44c80189227",

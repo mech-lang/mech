@@ -34,6 +34,7 @@ EXPECTED_FEATURES = {
         "mech-engine": {
             "bool",
             "f64",
+            "matrix",
             "matrix_horzcat",
             "matrix_vertcat",
             "matrixd",
@@ -51,7 +52,6 @@ EXPECTED_FEATURES = {
             "bool",
             "f64",
             "matrix_horzcat",
-            "matrixd",
             "native-link",
             "row_vectord",
             "runtime",
@@ -61,7 +61,6 @@ EXPECTED_FEATURES = {
     "generated_native_fixed_matrix": {
         "mech-core": {"f64", "matrix2", "program", "row_vector2"},
         "mech-engine": {
-            "bool",
             "f64",
             "matrix2",
             "matrix_horzcat",
@@ -69,7 +68,6 @@ EXPECTED_FEATURES = {
             "native-link",
             "row_vector2",
             "runtime",
-            "vector2",
         },
         "mech-math": {"add", "f64", "matrix2", "native-link", "runtime"},
     },
@@ -78,6 +76,7 @@ EXPECTED_FEATURES = {
         "mech-engine": {
             "bool",
             "f64",
+            "matrix",
             "matrix_horzcat",
             "matrix_vertcat",
             "matrixd",
