@@ -50,7 +50,16 @@ impl NativeApplicationBuilder {
         }
 
         let program = ParsedProgram::from_bytes(&request.bytecode)?;
-        program.validate_runtime_contracts(&self.environment.function_catalog)?;
+        let mut native_resolver = analysis::NativeBytecodeContractResolver::new(
+            &program.requirements,
+            request.runtime_config.as_ref(),
+            &self.environment.host_catalog,
+            request.target.as_deref(),
+        )?;
+        program.validate_runtime_contracts_with(
+            &self.environment.function_catalog,
+            &mut native_resolver,
+        )?;
         let runtime_functions =
             analysis::analyze_runtime_functions(&program, &self.environment.function_catalog)?;
         for function in &runtime_functions {
@@ -58,18 +67,7 @@ impl NativeApplicationBuilder {
         }
         let referenced_runtime_types = program.referenced_runtime_types()?;
         let runtime_types = analysis::analyze_runtime_types(&referenced_runtime_types)?;
-        let requirements = analysis::analyze_application_requirements(
-            &program.requirements,
-            request.runtime_config.as_ref(),
-            &self.environment.host_catalog,
-            request.target.as_deref(),
-        )?;
-        analysis::validate_application_instruction_contracts(
-            &program,
-            request.runtime_config.as_ref(),
-            &self.environment.host_catalog,
-            request.target.as_deref(),
-        )?;
+        let requirements = native_resolver.finish()?;
         let application_kind = if analysis::application_requires_hosting(&program.requirements)
             || request.runtime_config.is_some()
         {

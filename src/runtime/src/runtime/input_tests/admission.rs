@@ -100,7 +100,7 @@ fn runtime_reactive_host_input_preflight_failure_mutates_nothing() {
             .unwrap(),
         )
         .unwrap_err();
-    assert!(format!("{error:?}").contains("StableValueUpdateKindMismatch"));
+    assert!(format!("{error:?}").contains("StableValueUpdateContractViolation"));
     assert_eq!(f64_value(&source_value(&runtime, &a_source)), a_before);
     assert_eq!(f64_value(&source_value(&runtime, &b_source)), b_before);
     assert_eq!(f64_value(&symbol_value(&runtime, "sum")), sum_before);

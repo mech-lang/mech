@@ -1,23 +1,29 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use mech_core::{
-    ApplicationRequirement, BytecodeInstruction, ExecutionResourceRequest, MResult, MechError,
-    ParsedProgram, ResourceDelivery, Value,
-};
+use mech_core::{ApplicationRequirement, ExecutionResourceRequest, MResult, MechError};
+#[cfg(test)]
+use mech_core::{BytecodeInstruction, ParsedProgram, ResourceDelivery};
 use mech_runtime::{
-    ActorHostPlanningState, HostInstanceConfig, MaterializedHostContext, MaterializedHostInterface,
-    RunResourceGrantConfig, RuntimeCapabilityOperation, RuntimeConfig, RuntimeResourceKey,
-    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
-    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, materialize_host_manifest,
-    validate_run_resource_grant,
+    HostInstanceConfig, MaterializedHostContext, MaterializedHostInterface, RunResourceGrantConfig,
+    RuntimeCapabilityOperation, RuntimeConfig, RuntimeResourceKey, RuntimeResourceProvider,
+    materialize_host_manifest, validate_run_resource_grant,
+};
+#[cfg(test)]
+use mech_runtime::{
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
 };
 
+#[cfg(test)]
+use crate::NativeHostFunctionContext;
 use crate::{
-    NativeActorBootstrap, NativeHostFunctionContext, NativeRuntimeConfig,
+    NativeActorBootstrap, NativeRuntimeConfig,
     error::{NativeBuildErrorKind, NativeHostAddressabilityInvalid, native_build_error},
     host::{NativeHostCatalog, NativeHostLinkage, NativeTargetFamily},
     plan::{PlannedApplicationRequirement, PlannedHostInstance},
 };
+
+mod external;
+pub(crate) use external::NativeBytecodeContractResolver;
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct ApplicationRequirementAnalysis {
@@ -35,6 +41,7 @@ pub(crate) fn application_requires_hosting(requirements: &[ApplicationRequiremen
 
 /// Resolves host and resource requirements exclusively through the trusted
 /// native-host catalog and normalized runtime configuration.
+#[cfg(test)]
 pub(crate) fn analyze_application_requirements(
     requirements: &[ApplicationRequirement],
     runtime_config: Option<&NativeRuntimeConfig>,
@@ -216,272 +223,6 @@ pub(crate) fn analyze_application_requirements(
         run_grants,
         live,
     })
-}
-
-/// Replays the detached constant seeds used by external bytecode instructions
-/// through the trusted host/provider planning contracts. Requirement analysis
-/// proves linkage and authorization; this pass proves that the generated
-/// runtime can actually bind every input and stable output cell.
-pub(crate) fn validate_application_instruction_contracts(
-    program: &ParsedProgram,
-    runtime_config: Option<&NativeRuntimeConfig>,
-    host_catalog: &NativeHostCatalog,
-    target: Option<&str>,
-) -> MResult<()> {
-    let normalized_config = runtime_config
-        .map(normalize_native_runtime_config)
-        .transpose()?;
-    let materialized = if program
-        .requirements
-        .iter()
-        .any(|requirement| matches!(requirement, ApplicationRequirement::Resource(_)))
-    {
-        materialize_configured_hosts(
-            normalized_config.as_ref().ok_or_else(|| {
-                native_build_error(
-                    NativeBuildErrorKind::NativeRuntimeConfigMissing {
-                        requirement: "resource requirement".to_owned(),
-                    },
-                    None,
-                )
-            })?,
-            host_catalog,
-            target,
-        )?
-    } else {
-        Vec::new()
-    };
-    let mut actor_state = normalized_config
-        .as_ref()
-        .and_then(|config| config.actor_bootstrap.as_ref())
-        .map(|bootstrap| {
-            ActorHostPlanningState::new(
-                &bootstrap.subject,
-                bootstrap.message_kind.clone(),
-                bootstrap.message_payload.clone(),
-                bootstrap.initial_state.clone(),
-            )
-        });
-    let constants = program.decode_constants()?;
-    let mut registers = vec![None::<Value>; program.header.register_count as usize];
-
-    for (instruction_index, instruction) in program.instructions.iter().enumerate() {
-        if let BytecodeInstruction::ConstLoad { dst, constant } = instruction {
-            let value = constants
-                .get(*constant as usize)
-                .expect("validated bytecode constant index")
-                .try_deep_snapshot()?;
-            *registers
-                .get_mut(*dst as usize)
-                .expect("validated bytecode register index") = Some(value);
-            continue;
-        }
-
-        let seed = |register: u32| -> MResult<Value> {
-            registers
-                .get(register as usize)
-                .and_then(Option::as_ref)
-                .cloned()
-                .ok_or_else(|| {
-                    application_instruction_error(
-                        instruction_index,
-                        format!("register {register} has no detached constant seed"),
-                    )
-                })
-        };
-
-        match instruction {
-            BytecodeInstruction::HostCall {
-                requirement,
-                dst,
-                arguments,
-            } => {
-                let request = match program.requirements.get(*requirement as usize) {
-                    Some(ApplicationRequirement::HostFunction(request)) => request,
-                    _ => unreachable!("core runtime-contract validation checks requirement kind"),
-                };
-                let linkage = host_catalog.function(&request.name).ok_or_else(|| {
-                    native_build_error(
-                        NativeBuildErrorKind::NativeHostFunctionLinkageMissing {
-                            name: request.name.clone(),
-                        },
-                        None,
-                    )
-                })?;
-                let arguments = arguments
-                    .iter()
-                    .map(|argument| seed(*argument))
-                    .collect::<MResult<Vec<_>>>()?;
-                let planned = match linkage.context {
-                    NativeHostFunctionContext::ActorTurn => actor_state
-                        .as_mut()
-                        .ok_or_else(|| {
-                            native_build_error(
-                                NativeBuildErrorKind::NativeActorBootstrapMissing,
-                                None,
-                            )
-                        })?
-                        .plan(&request.name, &arguments)
-                        .map_err(|error| {
-                            application_instruction_error(
-                                instruction_index,
-                                format!(
-                                    "host function `{}` rejected its arguments: {}",
-                                    request.name,
-                                    error.display_message(),
-                                ),
-                            )
-                            .with_source(error)
-                        })?,
-                    NativeHostFunctionContext::Standalone => {
-                        return Err(application_instruction_error(
-                            instruction_index,
-                            format!(
-                                "host function `{}` has no trusted native planning contract",
-                                request.name,
-                            ),
-                        ));
-                    }
-                };
-                validate_stable_output_seed(
-                    instruction_index,
-                    *dst,
-                    &seed(*dst)?,
-                    &planned,
-                    &format!("host function `{}`", request.name),
-                )?;
-            }
-            BytecodeInstruction::ResourceRead { requirement, dst } => {
-                let request = resource_requirement(program, *requirement);
-                let owner = resolve_resource_owner(request, &materialized)?;
-                let planned = owner
-                    .provider
-                    .plan_read(RuntimeResourceReadRequest {
-                        base_uri: request.base_uri.clone(),
-                        path: request.path.clone(),
-                        context_name: request.context_name.clone(),
-                    })
-                    .map_err(|error| {
-                        application_instruction_error(
-                            instruction_index,
-                            format!(
-                                "resource read `{}/{}` failed trusted planning: {}",
-                                request.base_uri,
-                                request.path,
-                                error.display_message(),
-                            ),
-                        )
-                        .with_source(error)
-                    })?;
-                validate_stable_output_seed(
-                    instruction_index,
-                    *dst,
-                    &seed(*dst)?,
-                    &planned,
-                    "resource read",
-                )?;
-            }
-            BytecodeInstruction::ResourceWrite {
-                requirement, src, ..
-            }
-            | BytecodeInstruction::ResourceSend {
-                requirement, src, ..
-            } => {
-                let request = resource_requirement(program, *requirement);
-                let owner = resolve_resource_owner(request, &materialized)?;
-                let intent = match request.intent {
-                    mech_core::ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
-                    mech_core::ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
-                    mech_core::ResourceIntent::Read => {
-                        unreachable!("core runtime-contract validation checks resource intent")
-                    }
-                };
-                let operation = RuntimeCapabilityOperation::from_name(request.operation.clone())
-                    .map_err(|error| {
-                        application_instruction_error(
-                            instruction_index,
-                            format!("invalid resource operation `{}`", request.operation),
-                        )
-                        .with_source(error)
-                    })?;
-                owner
-                    .provider
-                    .plan_write(RuntimeResourceWriteRequest {
-                        base_uri: request.base_uri.clone(),
-                        path: request.path.clone(),
-                        context_name: request.context_name.clone(),
-                        operation,
-                        value: seed(*src)?,
-                        intent,
-                    })
-                    .map_err(|error| {
-                        application_instruction_error(
-                            instruction_index,
-                            format!(
-                                "resource write/send `{}/{}` rejected its payload: {}",
-                                request.base_uri,
-                                request.path,
-                                error.display_message(),
-                            ),
-                        )
-                        .with_source(error)
-                    })?;
-            }
-            BytecodeInstruction::RuntimeNullary { dst, .. }
-            | BytecodeInstruction::RuntimeUnary { dst, .. }
-            | BytecodeInstruction::RuntimeBinary { dst, .. }
-            | BytecodeInstruction::RuntimeTernary { dst, .. }
-            | BytecodeInstruction::RuntimeQuaternary { dst, .. }
-            | BytecodeInstruction::RuntimeVariadic { dst, .. } => {
-                // Runtime producers mutate their already initialized output
-                // cell. Preserve that cell's detached planned value here so a
-                // later resource write can validate a computed payload such
-                // as `@out/line <- x + 1`. Catalog-aware bytecode validation,
-                // which runs immediately before this pass, proves the output
-                // seed and every input have the exact factory representation.
-                let _ = seed(*dst)?;
-            }
-            BytecodeInstruction::ConstLoad { .. } | BytecodeInstruction::Return { .. } => {}
-        }
-    }
-    Ok(())
-}
-
-fn resource_requirement(program: &ParsedProgram, requirement: u32) -> &ExecutionResourceRequest {
-    match program.requirements.get(requirement as usize) {
-        Some(ApplicationRequirement::Resource(request)) => request,
-        _ => unreachable!("core runtime-contract validation checks requirement kind"),
-    }
-}
-
-fn validate_stable_output_seed(
-    instruction: usize,
-    register: u32,
-    seed: &Value,
-    planned: &Value,
-    source: &str,
-) -> MResult<()> {
-    let expected = seed.kind();
-    let actual = planned.kind();
-    if expected == actual {
-        return Ok(());
-    }
-    Err(application_instruction_error(
-        instruction,
-        format!(
-            "{source} destination register {register} has seed kind {expected:?}, but trusted planning returns {actual:?}",
-        ),
-    ))
-}
-
-fn application_instruction_error(instruction: usize, reason: impl Into<String>) -> MechError {
-    native_build_error(
-        NativeBuildErrorKind::NativeApplicationInstructionInvalid {
-            instruction: u32::try_from(instruction).unwrap_or(u32::MAX),
-            reason: reason.into(),
-        },
-        None,
-    )
 }
 
 fn exact_resource_grant(
@@ -932,7 +673,56 @@ fn resolve_resource_owner<'host, 'catalog>(
     }
 }
 
+#[cfg(test)]
 fn validate_resource_requirement(
+    request: &ExecutionResourceRequest,
+    owner: &ResolvedResourceOwner<'_, '_>,
+    run_grants: &[RunResourceGrantConfig],
+) -> MResult<String> {
+    let context_target = validate_resource_authorization(request, owner, run_grants)?;
+    let key = RuntimeResourceKey::new(&request.base_uri, &request.path)
+        .expect("resource authorization validated the canonical resource key");
+
+    let provider_result = match request.intent {
+        mech_core::ResourceIntent::Read => owner
+            .provider
+            .plan_read(RuntimeResourceReadRequest {
+                base_uri: key.base_uri.clone(),
+                path: key.path.clone(),
+                context_name: request.context_name.clone(),
+            })
+            .map(|_| ()),
+        mech_core::ResourceIntent::Assign | mech_core::ResourceIntent::Send => {
+            let intent = match request.intent {
+                mech_core::ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
+                mech_core::ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
+                mech_core::ResourceIntent::Read => unreachable!(),
+            };
+            owner
+                .provider
+                .preflight_write(RuntimeResourceWritePreflightRequest {
+                    base_uri: key.base_uri.clone(),
+                    path: key.path.clone(),
+                    context_name: request.context_name.clone(),
+                    operation: RuntimeCapabilityOperation::from_name(request.operation.clone())
+                        .expect("resource authorization validated the capability operation"),
+                    intent,
+                })
+        }
+    };
+    provider_result.map_err(|_| {
+        native_build_error(
+            NativeBuildErrorKind::NativeResourcePathInvalid {
+                target: context_target.clone(),
+                path: request.path.clone(),
+            },
+            None,
+        )
+    })?;
+    Ok(context_target)
+}
+
+fn validate_resource_authorization(
     request: &ExecutionResourceRequest,
     owner: &ResolvedResourceOwner<'_, '_>,
     run_grants: &[RunResourceGrantConfig],
@@ -973,42 +763,7 @@ fn validate_resource_requirement(
         ));
     }
 
-    let provider_result = match request.intent {
-        mech_core::ResourceIntent::Read => owner
-            .provider
-            .plan_read(RuntimeResourceReadRequest {
-                base_uri: key.base_uri.clone(),
-                path: key.path.clone(),
-                context_name: request.context_name.clone(),
-            })
-            .map(|_| ()),
-        mech_core::ResourceIntent::Assign | mech_core::ResourceIntent::Send => {
-            let intent = match request.intent {
-                mech_core::ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
-                mech_core::ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
-                mech_core::ResourceIntent::Read => unreachable!(),
-            };
-            owner
-                .provider
-                .preflight_write(RuntimeResourceWritePreflightRequest {
-                    base_uri: key.base_uri.clone(),
-                    path: key.path.clone(),
-                    context_name: request.context_name.clone(),
-                    operation: RuntimeCapabilityOperation::from_name(request.operation.clone())
-                        .map_err(|_| {
-                            native_build_error(
-                                NativeBuildErrorKind::NativeResourcePathInvalid {
-                                    target: context_target.clone(),
-                                    path: request.path.clone(),
-                                },
-                                None,
-                            )
-                        })?,
-                    intent,
-                })
-        }
-    };
-    provider_result.map_err(|_| {
+    RuntimeCapabilityOperation::from_name(request.operation.clone()).map_err(|_| {
         native_build_error(
             NativeBuildErrorKind::NativeResourcePathInvalid {
                 target: context_target.clone(),
@@ -1059,8 +814,8 @@ mod tests {
     use std::collections::BTreeMap;
 
     use mech_core::{
-        BytecodeProgram, EncodedConstant, ExecutionHostFunctionRequest, ResourceIntent,
-        RuntimeType, Value, write_bytecode,
+        BytecodeProgram, EncodedConstant, ExecutionHostFunctionRequest, FunctionCatalog,
+        ResourceIntent, RuntimeType, Value, write_bytecode,
     };
     use mech_runtime::{
         ConfigValue, HostContextManifest, HostManifestConfig, LogLevel, RuntimeConfig,
@@ -1147,6 +902,22 @@ mod tests {
             .unwrap(),
         )
         .unwrap()
+    }
+
+    fn validate_external_program(
+        program: &ParsedProgram,
+        runtime_config: Option<&NativeRuntimeConfig>,
+        host_catalog: &NativeHostCatalog,
+        target: Option<&str>,
+    ) -> MResult<()> {
+        let mut resolver = NativeBytecodeContractResolver::new(
+            &program.requirements,
+            runtime_config,
+            host_catalog,
+            target,
+        )?;
+        program.validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut resolver)?;
+        resolver.finish().map(|_| ())
     }
 
     fn empty_constant() -> EncodedConstant {
@@ -1804,20 +1575,29 @@ mod tests {
     #[cfg(feature = "standard-hosts")]
     #[test]
     fn standard_provider_rejects_invalid_bytecode_resource_paths() {
+        let requirement = request_at(
+            "time://clock/clock",
+            "clock",
+            "read",
+            "seconds",
+            ResourceIntent::Read,
+        );
+        let program = parsed_external_program(
+            vec![f64_constant(0.0)],
+            BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            ApplicationRequirement::Resource(requirement),
+        );
         let config = NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
             actor_bootstrap: None,
             hosts: vec![host("clock", "time")],
             run_grants: vec![grant("clock/clock", &["read"], &["*"])],
         };
-        let error = analyze_application_requirements(
-            &[ApplicationRequirement::Resource(request_at(
-                "time://clock/clock",
-                "clock",
-                "read",
-                "seconds",
-                ResourceIntent::Read,
-            ))],
+        let error = validate_external_program(
+            &program,
             Some(&config),
             &standard_native_host_catalog().unwrap(),
             Some("x86_64-unknown-linux-gnu"),
@@ -1853,7 +1633,7 @@ mod tests {
             run_grants: vec![grant("clock/clock", &["read"], &["second"])],
         };
 
-        let error = validate_application_instruction_contracts(
+        let error = validate_external_program(
             &program,
             Some(&config),
             &standard_native_host_catalog().unwrap(),
@@ -1905,7 +1685,7 @@ mod tests {
             run_grants: vec![grant("scene/frame", &["write"], &["replace"])],
         };
 
-        let error = validate_application_instruction_contracts(
+        let error = validate_external_program(
             &program,
             Some(&config),
             &standard_native_host_catalog().unwrap(),
@@ -1933,7 +1713,7 @@ mod tests {
                 name: "actor/state/put".to_owned(),
             }),
         );
-        let error = validate_application_instruction_contracts(
+        let error = validate_external_program(
             &missing_argument,
             Some(&config),
             &catalog,
@@ -1954,7 +1734,7 @@ mod tests {
                 name: "actor/message/kind".to_owned(),
             }),
         );
-        let error = validate_application_instruction_contracts(
+        let error = validate_external_program(
             &wrong_output,
             Some(&config),
             &catalog,
@@ -1964,6 +1744,93 @@ mod tests {
         assert_eq!(error.kind_name(), "NativeApplicationInstructionInvalid");
         assert!(error.kind_message().contains("seed kind F64"));
         assert!(error.kind_message().contains("String"));
+
+        let wrong_input = parsed_external_program(
+            vec![string_constant(""), f64_constant(1.0)],
+            BytecodeInstruction::HostCall {
+                requirement: 0,
+                dst: 0,
+                arguments: vec![1],
+            },
+            ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
+                name: "actor/state/put".to_owned(),
+            }),
+        );
+        let error = validate_external_program(
+            &wrong_input,
+            Some(&config),
+            &catalog,
+            Some("x86_64-unknown-linux-gnu"),
+        )
+        .unwrap_err();
+        assert_eq!(error.kind_name(), "NativeApplicationInstructionInvalid");
+        assert!(error.kind_message().contains("expected string argument 0"));
+    }
+
+    #[cfg(feature = "standard-hosts")]
+    #[test]
+    fn actor_put_before_get_updates_the_shared_abstract_register_sequence() {
+        let mut config = actor_runtime_config("actor:planner", "message");
+        config.actor_bootstrap.as_mut().unwrap().initial_state = None;
+        let put = ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
+            name: "actor/state/put".to_owned(),
+        });
+        let get = ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
+            name: "actor/state/get".to_owned(),
+        });
+        let mut requirements = vec![put.clone(), get.clone()];
+        requirements.sort();
+        let put_requirement = requirements.iter().position(|item| item == &put).unwrap() as u32;
+        let get_requirement = requirements.iter().position(|item| item == &get).unwrap() as u32;
+        let program = ParsedProgram::from_bytes(
+            &write_bytecode(&BytecodeProgram {
+                register_count: 3,
+                constants: vec![
+                    string_constant(""),
+                    string_constant("created"),
+                    string_constant(""),
+                ],
+                symbols: BTreeMap::new(),
+                mutable_symbols: BTreeSet::new(),
+                instructions: vec![
+                    BytecodeInstruction::ConstLoad {
+                        dst: 0,
+                        constant: 0,
+                    },
+                    BytecodeInstruction::ConstLoad {
+                        dst: 1,
+                        constant: 1,
+                    },
+                    BytecodeInstruction::ConstLoad {
+                        dst: 2,
+                        constant: 2,
+                    },
+                    BytecodeInstruction::HostCall {
+                        requirement: put_requirement,
+                        dst: 0,
+                        arguments: vec![1],
+                    },
+                    BytecodeInstruction::HostCall {
+                        requirement: get_requirement,
+                        dst: 2,
+                        arguments: Vec::new(),
+                    },
+                    BytecodeInstruction::Return { src: 2 },
+                ],
+                dictionary: BTreeMap::new(),
+                requirements,
+            })
+            .unwrap(),
+        )
+        .unwrap();
+
+        validate_external_program(
+            &program,
+            Some(&config),
+            &standard_native_host_catalog().unwrap(),
+            Some("x86_64-unknown-linux-gnu"),
+        )
+        .unwrap();
     }
 
     #[cfg(feature = "standard-hosts")]
