@@ -932,12 +932,23 @@ fn runtime_binary_bytecode(
     lhs: u32,
     rhs: u32,
 ) -> Vec<u8> {
+    let register_count = constants.len() as u32;
+    let mut canonical_constants = Vec::new();
     let mut instructions = constants
-        .iter()
+        .into_iter()
         .enumerate()
-        .map(|(register, _)| BytecodeInstruction::ConstLoad {
-            dst: register as u32,
-            constant: register as u32,
+        .map(|(register, constant)| {
+            let constant_id = canonical_constants
+                .iter()
+                .position(|existing| existing == &constant)
+                .unwrap_or_else(|| {
+                    canonical_constants.push(constant);
+                    canonical_constants.len() - 1
+                }) as u32;
+            BytecodeInstruction::ConstLoad {
+                dst: register as u32,
+                constant: constant_id,
+            }
         })
         .collect::<Vec<_>>();
     instructions.push(BytecodeInstruction::RuntimeBinary {
@@ -948,8 +959,8 @@ fn runtime_binary_bytecode(
     });
     instructions.push(BytecodeInstruction::Return { src: dst });
     write_bytecode(&BytecodeProgram {
-        register_count: constants.len() as u32,
-        constants,
+        register_count,
+        constants: canonical_constants,
         symbols: BTreeMap::new(),
         mutable_symbols: BTreeSet::new(),
         instructions,
