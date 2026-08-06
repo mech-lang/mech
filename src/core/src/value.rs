@@ -1602,6 +1602,40 @@ impl Value {
             Value::Atom(v) => v.addr(),
             #[cfg(feature = "matrix")]
             Value::MatrixIndex(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "bool"))]
+            Value::MatrixBool(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "u8"))]
+            Value::MatrixU8(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "u16"))]
+            Value::MatrixU16(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "u32"))]
+            Value::MatrixU32(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "u64"))]
+            Value::MatrixU64(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "u128"))]
+            Value::MatrixU128(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "i8"))]
+            Value::MatrixI8(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "i16"))]
+            Value::MatrixI16(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "i32"))]
+            Value::MatrixI32(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "i64"))]
+            Value::MatrixI64(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "i128"))]
+            Value::MatrixI128(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "f32"))]
+            Value::MatrixF32(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "f64"))]
+            Value::MatrixF64(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "string"))]
+            Value::MatrixString(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "rational"))]
+            Value::MatrixR64(v) => v.addr(),
+            #[cfg(all(feature = "matrix", feature = "complex"))]
+            Value::MatrixC64(v) => v.addr(),
+            #[cfg(feature = "matrix")]
+            Value::MatrixValue(v) => v.addr(),
             Value::Index(v) => v.addr(),
             Value::MutableReference(v) => v.addr(),
             _ => todo!(),
@@ -3825,6 +3859,14 @@ mod reactive_cell_tests {
             &[1.0, 2.0, 3.0, 4.0],
         )));
         assert_eq!(Value::MatrixF64(matrix).format_value_inline(), "[1 2; 3 4]");
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrixd"))]
+    #[test]
+    fn matrix_value_addr_uses_backing_matrix_identity() {
+        let matrix = Matrix::DMatrix(Ref::new(na::DMatrix::from_element(2, 2, 1.0)));
+
+        assert_eq!(Value::MatrixF64(matrix.clone()).addr(), matrix.addr());
     }
 
     #[cfg(all(feature = "f64", feature = "matrix2", feature = "matrixd"))]
