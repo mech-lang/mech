@@ -26,6 +26,35 @@ pub(crate) fn validate_application_requirement(
             }
             validate_canonical_resource_base_uri(&request.base_uri)?;
             validate_normalized_resource_path(&request.path)?;
+            match request.intent {
+                ResourceIntent::Read => {
+                    if request.operation != "read" {
+                        return invalid(
+                            "resource read intent requires the canonical `read` operation",
+                        );
+                    }
+                }
+                ResourceIntent::Assign => {
+                    if request.operation != "write" {
+                        return invalid(
+                            "resource assign intent requires the canonical `write` operation",
+                        );
+                    }
+                    if request.delivery != ResourceDelivery::Snapshot {
+                        return invalid("resource assign intent cannot request live delivery");
+                    }
+                }
+                ResourceIntent::Send => {
+                    if request.operation == "read" {
+                        return invalid(
+                            "resource send intent cannot use the reserved `read` operation",
+                        );
+                    }
+                    if request.delivery != ResourceDelivery::Snapshot {
+                        return invalid("resource send intent cannot request live delivery");
+                    }
+                }
+            }
         }
     }
     Ok(())

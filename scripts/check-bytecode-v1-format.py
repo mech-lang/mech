@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
-EXPECTED_MANIFEST_SHA256 = "17d96ade50d80f9880596d0325bb38eb004ec629a7e5507ad8659c288da1f0ea"
+EXPECTED_MANIFEST_SHA256 = "3bf6fa8436a1e309c11d1e0bb16b1f94e0c67d86bc05562fc50b8aad6260a4a5"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "a437e67ca6120b90c928eb55ee0479c4a95afbb23a854c406c7fd531df2c85cc",
     "canonical-matrices.mecb": "1e0d08eabb54b9c4edc5caae095dbab607cd633867d1c0b642126f5451ecf55d",
@@ -33,10 +33,10 @@ EXPECTED_FIXTURE_SHA256 = {
     "console.mecb": "9f504a06f716328d0b516a247ebe7560abf7fffc5bcceb34a08034e24d788015",
     "time.mecb": "e1fad86d1a908f13477a96e5317596842f74a3d70637f38d7bd0e4ff1396638f",
     "timer.mecb": "5c0beb99d395e3903e76db7d3cac700e9a24ad2fc8ead2036c80238e871ced2f",
-    "scene.mecb": "3d014a27bf8a34a6af74c6a05b14be8656508c2bdbb540c708b1587ef653c30c",
+    "scene.mecb": "387423ec89fd0b66e387bb390f0e72fae26a3e7460f3461e5562aa4bbf6017a0",
     "robot-arm.mecb": "eca24602a7ce456ec410f65bcbc50624188c890b105377cce3264d470984c941",
     "actor-host-function.mecb": "feaec635e1e33399fb4148ec7ec789373b065ca60161c995cbb61b71b2e7d917",
-    "synthetic-live-read.mecb": "d4141713973607c9e02cbed6d67b5010022035a95bcd88a7218834606bd35609",
+    "synthetic-live-read.mecb": "49874edb1d9015122d14e01943dadc82b9bfafe23d0d1b59021fe5643576c5af",
 }
 EXPECTED_FILES = [
     "canonical-scalars.mecb",
@@ -676,6 +676,14 @@ def decode_instructions(
         if opcode == 0x01:
             register(reader.u32())
             require(reader.u32() < constants, f"{name}: constant index is out of bounds")
+        elif opcode == 0x02:
+            register(reader.u32())
+            require(
+                reader.u32() < constants,
+                f"{name}: composite template index is out of bounds",
+            )
+            for _ in range(reader.u32()):
+                register(reader.u32())
         elif opcode in {0x10, 0x11, 0x12, 0x13, 0x14}:
             runtime_ids.add(runtime_function())
             operand_count = {0x10: 1, 0x11: 2, 0x12: 3, 0x13: 4, 0x14: 5}[opcode]

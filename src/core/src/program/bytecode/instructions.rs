@@ -7,6 +7,7 @@ use alloc::vec::Vec;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Opcode {
     ConstLoad = 0x01,
+    CompositePack = 0x02,
     RuntimeNullary = 0x10,
     RuntimeUnary = 0x11,
     RuntimeBinary = 0x12,
@@ -24,6 +25,7 @@ impl Opcode {
     pub(crate) fn from_u8(value: u8) -> Option<Self> {
         match value {
             0x01 => Some(Self::ConstLoad),
+            0x02 => Some(Self::CompositePack),
             0x10 => Some(Self::RuntimeNullary),
             0x11 => Some(Self::RuntimeUnary),
             0x12 => Some(Self::RuntimeBinary),
@@ -45,6 +47,11 @@ pub enum BytecodeInstruction {
     ConstLoad {
         dst: u32,
         constant: u32,
+    },
+    CompositePack {
+        dst: u32,
+        template: u32,
+        children: Vec<u32>,
     },
     RuntimeNullary {
         function: u64,

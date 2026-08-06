@@ -1,3 +1,4 @@
+pub mod aggregates;
 pub mod constants;
 pub mod errors;
 pub mod header;
@@ -12,6 +13,7 @@ pub mod types;
 pub mod validation;
 pub mod writer;
 
+pub use aggregates::*;
 pub use constants::*;
 pub use errors::*;
 pub use header::*;

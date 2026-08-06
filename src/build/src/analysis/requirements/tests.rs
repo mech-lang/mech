@@ -7,9 +7,9 @@ use mech_core::{
 };
 use mech_runtime::{
     ConfigValue, HostContextManifest, HostInstanceConfig, HostManifestConfig, LogLevel,
-    RunResourceGrantConfig, RuntimeConfig, RuntimeHostFactory, RuntimeHostInstallation,
-    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWritePreflightRequest,
-    materialize_host_manifest,
+    RunResourceGrantConfig, RuntimeConfig, RuntimeHostFactory, RuntimeHostInputDriver,
+    RuntimeHostInputSource, RuntimeHostInstallation, RuntimeIngress, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, RuntimeResourceWritePreflightRequest, materialize_host_manifest,
 };
 
 use super::*;
@@ -407,6 +407,102 @@ fn test_planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
     }))
 }
 
+fn live_test_manifest() -> MResult<HostManifestConfig> {
+    Ok(HostManifestConfig {
+        provider: "test".to_owned(),
+        contexts: vec![HostContextManifest {
+            name: "output".to_owned(),
+            base_uri_template: "test://{instance}/output".to_owned(),
+            operations: vec!["read".to_owned()],
+        }],
+    })
+}
+
+#[derive(Debug)]
+struct PlanningInputDriver;
+
+impl RuntimeHostInputDriver for PlanningInputDriver {
+    fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+        source.base_uri() == "test://terminal/output" && source.path() == "line"
+    }
+
+    fn attach(&mut self, _ingress: RuntimeIngress) -> MResult<()> {
+        unreachable!("native requirement analysis never attaches planning drivers")
+    }
+
+    fn start(&mut self) -> MResult<()> {
+        unreachable!("native requirement analysis never starts planning drivers")
+    }
+
+    fn stop(&mut self) -> MResult<()> {
+        unreachable!("native requirement analysis never stops planning drivers")
+    }
+
+    fn is_live(&self) -> bool {
+        false
+    }
+}
+
+#[derive(Debug)]
+struct LiveTestHostFactory {
+    manifest: HostManifestConfig,
+    driven: bool,
+}
+
+impl RuntimeHostFactory for LiveTestHostFactory {
+    fn provider_name(&self) -> &str {
+        "test"
+    }
+
+    fn manifest(&self) -> &HostManifestConfig {
+        &self.manifest
+    }
+
+    fn validate_settings(&self, instance: &str, settings: &ConfigValue) -> MResult<()> {
+        validate_test_settings(instance, settings)
+    }
+
+    fn instantiate(
+        &self,
+        instance: &str,
+        settings: &ConfigValue,
+    ) -> MResult<RuntimeHostInstallation> {
+        self.validate_settings(instance, settings)?;
+        let interface = materialize_host_manifest(instance, &self.manifest)?;
+        let bases = interface
+            .contexts
+            .iter()
+            .map(|context| context.base_uri.clone())
+            .collect();
+        Ok(RuntimeHostInstallation {
+            interface,
+            resource_providers: vec![Box::new(TestResourceProvider {
+                bases,
+                groups: Vec::new(),
+            })],
+            input_drivers: self
+                .driven
+                .then(|| Box::new(PlanningInputDriver) as Box<dyn RuntimeHostInputDriver>)
+                .into_iter()
+                .collect(),
+        })
+    }
+}
+
+fn driven_live_planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
+    Ok(Box::new(LiveTestHostFactory {
+        manifest: live_test_manifest()?,
+        driven: true,
+    }))
+}
+
+fn undriven_live_planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
+    Ok(Box::new(LiveTestHostFactory {
+        manifest: live_test_manifest()?,
+        driven: false,
+    }))
+}
+
 fn alias_planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
     Ok(Box::new(TestHostFactory {
         manifest: test_manifest()?,
@@ -482,7 +578,10 @@ fn host_catalog_with(
 }
 
 fn host_catalog() -> NativeHostCatalog {
-    let mut catalog = host_catalog_with(test_manifest, test_planning_factory);
+    catalog_with_actor(host_catalog_with(test_manifest, test_planning_factory))
+}
+
+fn catalog_with_actor(mut catalog: NativeHostCatalog) -> NativeHostCatalog {
     catalog
         .insert_function(NativeHostFunctionLinkage {
             name: "actor/message/kind",
@@ -656,21 +755,67 @@ fn actor_turn_requires_exactly_one_explicit_bootstrap() {
 
 #[test]
 fn actor_turn_cannot_be_combined_with_live_resources() {
-    let mut live = request("write", "line");
-    live.delivery = ResourceDelivery::Live;
+    let live = ExecutionResourceRequest {
+        base_uri: "test://terminal/output".to_owned(),
+        path: "line".to_owned(),
+        context_name: "output".to_owned(),
+        operation: "read".to_owned(),
+        intent: ResourceIntent::Read,
+        delivery: ResourceDelivery::Live,
+    };
     let mut config = actor_runtime_config("actor:alpha", "alpha");
     config.hosts.push(host("terminal", "test"));
     config
         .run_grants
-        .push(grant("terminal/output", &["write"], &["line"]));
+        .push(grant("terminal/output", &["read"], &["line"]));
     let error = analyze_requirements_with_production_resolver(
         &[actor_requirement(), ApplicationRequirement::Resource(live)],
         Some(&config),
-        &host_catalog(),
+        &catalog_with_actor(host_catalog_with(
+            live_test_manifest,
+            driven_live_planning_factory,
+        )),
         None,
     )
     .unwrap_err();
     assert_eq!(error.kind_name(), "NativeActorLiveApplicationUnsupported");
+}
+
+#[test]
+fn live_native_plans_require_an_exact_materialized_input_driver() {
+    let request = ApplicationRequirement::Resource(ExecutionResourceRequest {
+        base_uri: "test://terminal/output".to_owned(),
+        path: "line".to_owned(),
+        context_name: "output".to_owned(),
+        operation: "read".to_owned(),
+        intent: ResourceIntent::Read,
+        delivery: ResourceDelivery::Live,
+    });
+    let config = NativeRuntimeConfig {
+        runtime: RuntimeConfig::default(),
+        actor_bootstrap: None,
+        hosts: vec![host("terminal", "test")],
+        run_grants: vec![grant("terminal/output", &["read"], &["line"])],
+    };
+
+    let driven = analyze_requirements_with_production_resolver(
+        std::slice::from_ref(&request),
+        Some(&config),
+        &host_catalog_with(live_test_manifest, driven_live_planning_factory),
+        None,
+    )
+    .unwrap();
+    assert!(driven.live);
+
+    let error = analyze_requirements_with_production_resolver(
+        &[request],
+        Some(&config),
+        &host_catalog_with(live_test_manifest, undriven_live_planning_factory),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeApplicationInstructionInvalid");
+    assert!(error.kind_message().contains("not driven"));
 }
 
 #[test]

@@ -171,6 +171,7 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
     }
     let initialized =
         validate_instructions(&instructions, &header, constants.len(), requirements.len())?;
+    validate_composite_packs(&instructions, &types, &constants, &constant_blob)?;
     validate_constant_and_requirement_reachability(
         &instructions,
         constants.len(),
@@ -196,6 +197,45 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         dictionary,
         requirements,
     })
+}
+
+fn validate_composite_packs(
+    instructions: &[BytecodeInstruction],
+    types: &[RuntimeType],
+    constants: &[ConstantEntry],
+    blob: &[u8],
+) -> MResult<()> {
+    if !instructions
+        .iter()
+        .any(|instruction| matches!(instruction, BytecodeInstruction::CompositePack { .. }))
+    {
+        return Ok(());
+    }
+    let values = decode_constants(types, constants, blob)?;
+    for instruction in instructions {
+        let BytecodeInstruction::CompositePack {
+            template, children, ..
+        } = instruction
+        else {
+            continue;
+        };
+        let value = &values[*template as usize];
+        let expected = crate::bytecode_composite_children(value).ok_or_else(|| {
+            invalid::<()>(format!(
+                "CompositePack template kind {:?} is not structurally lowerable",
+                value.kind(),
+            ))
+            .unwrap_err()
+        })?;
+        if expected.len() != children.len() {
+            return invalid(format!(
+                "CompositePack template expects {} children, found {}",
+                expected.len(),
+                children.len(),
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn parse_header(bytes: &[u8]) -> MResult<BytecodeHeader> {
@@ -351,8 +391,9 @@ fn validate_sections(
         if section.flags != 0 || section.reserved != 0 {
             return invalid("section flags and reserved fields must be zero");
         }
-        if section.offset % 8 != 0 || section.offset < previous_end {
-            return invalid("section is unaligned, overlapping, or out of order");
+        let expected_offset = align_up(previous_end, 8)?;
+        if section.offset != expected_offset {
+            return invalid("section does not begin at its minimal aligned offset");
         }
         let end = section
             .offset
@@ -371,12 +412,11 @@ fn validate_sections(
         }
         previous_end = end;
     }
-    let trailer_start = checked_usize(previous_end, "final section end")?;
-    let trailer_padding = bytes
-        .get(trailer_start..checksum_end)
-        .ok_or_else(|| invalid::<()>("trailing padding is out of bounds").unwrap_err())?;
-    if trailer_padding.iter().any(|byte| *byte != 0) {
-        return invalid("bytes before checksum must be zero padding");
+    if previous_end != checksum_offset {
+        return invalid("checksum does not immediately follow the final section");
+    }
+    if checked_usize(previous_end, "final section end")? != checksum_end {
+        return invalid("checksum offset exceeds address space");
     }
     Ok(())
 }
@@ -520,7 +560,10 @@ fn validate_constant_and_requirement_reachability(
     let mut requirements = vec![false; requirement_count];
     for instruction in instructions {
         match instruction {
-            BytecodeInstruction::ConstLoad { constant, .. } => {
+            BytecodeInstruction::ConstLoad { constant, .. }
+            | BytecodeInstruction::CompositePack {
+                template: constant, ..
+            } => {
                 constants[*constant as usize] = true;
             }
             BytecodeInstruction::HostCall { requirement, .. }
@@ -597,11 +640,20 @@ fn validate_constant_entries(
         let end = start
             .checked_add(length)
             .ok_or_else(|| invalid::<()>("constant range overflow").unwrap_err())?;
-        if start < previous_end || end > blob.len() {
-            return invalid("constant entries overlap or exceed ConstantBlob");
+        let expected_start = usize::try_from(align_up(
+            u64::try_from(previous_end)
+                .map_err(|_| invalid::<()>("constant offset exceeds u64").unwrap_err())?,
+            u64::from(entry.alignment),
+        )?)
+        .map_err(|_| invalid::<()>("constant offset exceeds address space").unwrap_err())?;
+        if start != expected_start {
+            return invalid("constant offset is not the minimal aligned offset");
+        }
+        if end > blob.len() {
+            return invalid("constant entry exceeds ConstantBlob");
         }
         if blob[previous_end..start].iter().any(|byte| *byte != 0) {
-            return invalid("constant padding bytes must be zero");
+            return invalid("constant alignment padding bytes must be zero");
         }
         let type_id = checked_item_count(entry.type_id, "constant type ID")?;
         let ty = types
@@ -610,8 +662,8 @@ fn validate_constant_entries(
         validate_constant_payload(ty, &blob[start..end])?;
         previous_end = end;
     }
-    if blob[previous_end..].iter().any(|byte| *byte != 0) {
-        return invalid("trailing ConstantBlob bytes must be zero");
+    if previous_end != blob.len() {
+        return invalid("ConstantBlob contains noncanonical trailing bytes");
     }
     Ok(())
 }
@@ -697,6 +749,22 @@ fn parse_instructions(
                 dst: r.read_u32("ConstLoad destination")?,
                 constant: r.read_u32("ConstLoad constant")?,
             },
+            Opcode::CompositePack => {
+                let dst = r.read_u32("CompositePack destination")?;
+                let template = r.read_u32("CompositePack template")?;
+                let child_count = r.read_u32("CompositePack child count")?;
+                let children = parse_register_arguments(
+                    &mut r,
+                    child_count,
+                    max_variadic_arguments,
+                    "CompositePack child count",
+                )?;
+                BytecodeInstruction::CompositePack {
+                    dst,
+                    template,
+                    children,
+                }
+            }
             Opcode::RuntimeNullary => BytecodeInstruction::RuntimeNullary {
                 function: r.read_u64("runtime function ID")?,
                 dst: r.read_u32("runtime destination")?,
@@ -927,6 +995,26 @@ fn validate_instructions(
                     return invalid(format!(
                         "instruction {index} register {dst} is initialized more than once"
                     ));
+                }
+                initialized[destination] = true;
+            }
+            BytecodeInstruction::CompositePack {
+                dst,
+                template,
+                children,
+            } => {
+                let destination = register(index, *dst)?;
+                let template = checked_item_count(*template, "CompositePack template index")?;
+                if template >= constant_count {
+                    return invalid("CompositePack template index is out of range");
+                }
+                if initialized[destination] {
+                    return invalid(format!(
+                        "instruction {index} register {dst} is initialized more than once"
+                    ));
+                }
+                for child in children {
+                    require_initialized_register(&register, &initialized, index, *child)?;
                 }
                 initialized[destination] = true;
             }

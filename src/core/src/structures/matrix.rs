@@ -111,6 +111,41 @@ pub trait ToIndex: Clone {
 
 pub type MechMatrix<T> = Matrix<T>;
 
+/// Exact backing form retained across a detached matrix snapshot recipe.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum MatrixStorageForm {
+    #[cfg(feature = "row_vector4")]
+    RowVector4,
+    #[cfg(feature = "row_vector3")]
+    RowVector3,
+    #[cfg(feature = "row_vector2")]
+    RowVector2,
+    #[cfg(feature = "vector4")]
+    Vector4,
+    #[cfg(feature = "vector3")]
+    Vector3,
+    #[cfg(feature = "vector2")]
+    Vector2,
+    #[cfg(feature = "matrix4")]
+    Matrix4,
+    #[cfg(feature = "matrix3")]
+    Matrix3,
+    #[cfg(feature = "matrix2")]
+    Matrix2,
+    #[cfg(feature = "matrix1")]
+    Matrix1,
+    #[cfg(feature = "matrix3x2")]
+    Matrix3x2,
+    #[cfg(feature = "matrix2x3")]
+    Matrix2x3,
+    #[cfg(feature = "vectord")]
+    DVector,
+    #[cfg(feature = "row_vectord")]
+    RowDVector,
+    #[cfg(feature = "matrixd")]
+    DMatrix,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Matrix<T> {
     #[cfg(feature = "row_vector4")]
@@ -825,6 +860,96 @@ impl<T> Matrix<T>
 where
     T: Debug + Clone + PartialEq + 'static,
 {
+    pub(crate) fn storage_form(&self) -> MatrixStorageForm {
+        match self {
+            #[cfg(feature = "row_vector4")]
+            Matrix::RowVector4(_) => MatrixStorageForm::RowVector4,
+            #[cfg(feature = "row_vector3")]
+            Matrix::RowVector3(_) => MatrixStorageForm::RowVector3,
+            #[cfg(feature = "row_vector2")]
+            Matrix::RowVector2(_) => MatrixStorageForm::RowVector2,
+            #[cfg(feature = "vector4")]
+            Matrix::Vector4(_) => MatrixStorageForm::Vector4,
+            #[cfg(feature = "vector3")]
+            Matrix::Vector3(_) => MatrixStorageForm::Vector3,
+            #[cfg(feature = "vector2")]
+            Matrix::Vector2(_) => MatrixStorageForm::Vector2,
+            #[cfg(feature = "matrix4")]
+            Matrix::Matrix4(_) => MatrixStorageForm::Matrix4,
+            #[cfg(feature = "matrix3")]
+            Matrix::Matrix3(_) => MatrixStorageForm::Matrix3,
+            #[cfg(feature = "matrix2")]
+            Matrix::Matrix2(_) => MatrixStorageForm::Matrix2,
+            #[cfg(feature = "matrix1")]
+            Matrix::Matrix1(_) => MatrixStorageForm::Matrix1,
+            #[cfg(feature = "matrix3x2")]
+            Matrix::Matrix3x2(_) => MatrixStorageForm::Matrix3x2,
+            #[cfg(feature = "matrix2x3")]
+            Matrix::Matrix2x3(_) => MatrixStorageForm::Matrix2x3,
+            #[cfg(feature = "vectord")]
+            Matrix::DVector(_) => MatrixStorageForm::DVector,
+            #[cfg(feature = "row_vectord")]
+            Matrix::RowDVector(_) => MatrixStorageForm::RowDVector,
+            #[cfg(feature = "matrixd")]
+            Matrix::DMatrix(_) => MatrixStorageForm::DMatrix,
+        }
+    }
+
+    pub(crate) fn from_storage_form(
+        storage: MatrixStorageForm,
+        elements: Vec<T>,
+        rows: usize,
+        cols: usize,
+    ) -> Matrix<T> {
+        assert_eq!(elements.len(), rows.saturating_mul(cols));
+        match storage {
+            #[cfg(feature = "row_vector4")]
+            MatrixStorageForm::RowVector4 => {
+                Matrix::RowVector4(Ref::new(RowVector4::from_vec(elements)))
+            }
+            #[cfg(feature = "row_vector3")]
+            MatrixStorageForm::RowVector3 => {
+                Matrix::RowVector3(Ref::new(RowVector3::from_vec(elements)))
+            }
+            #[cfg(feature = "row_vector2")]
+            MatrixStorageForm::RowVector2 => {
+                Matrix::RowVector2(Ref::new(RowVector2::from_vec(elements)))
+            }
+            #[cfg(feature = "vector4")]
+            MatrixStorageForm::Vector4 => Matrix::Vector4(Ref::new(Vector4::from_vec(elements))),
+            #[cfg(feature = "vector3")]
+            MatrixStorageForm::Vector3 => Matrix::Vector3(Ref::new(Vector3::from_vec(elements))),
+            #[cfg(feature = "vector2")]
+            MatrixStorageForm::Vector2 => Matrix::Vector2(Ref::new(Vector2::from_vec(elements))),
+            #[cfg(feature = "matrix4")]
+            MatrixStorageForm::Matrix4 => Matrix::Matrix4(Ref::new(Matrix4::from_vec(elements))),
+            #[cfg(feature = "matrix3")]
+            MatrixStorageForm::Matrix3 => Matrix::Matrix3(Ref::new(Matrix3::from_vec(elements))),
+            #[cfg(feature = "matrix2")]
+            MatrixStorageForm::Matrix2 => Matrix::Matrix2(Ref::new(Matrix2::from_vec(elements))),
+            #[cfg(feature = "matrix1")]
+            MatrixStorageForm::Matrix1 => Matrix::Matrix1(Ref::new(Matrix1::from_vec(elements))),
+            #[cfg(feature = "matrix3x2")]
+            MatrixStorageForm::Matrix3x2 => {
+                Matrix::Matrix3x2(Ref::new(Matrix3x2::from_vec(elements)))
+            }
+            #[cfg(feature = "matrix2x3")]
+            MatrixStorageForm::Matrix2x3 => {
+                Matrix::Matrix2x3(Ref::new(Matrix2x3::from_vec(elements)))
+            }
+            #[cfg(feature = "vectord")]
+            MatrixStorageForm::DVector => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
+            #[cfg(feature = "row_vectord")]
+            MatrixStorageForm::RowDVector => {
+                Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements)))
+            }
+            #[cfg(feature = "matrixd")]
+            MatrixStorageForm::DMatrix => {
+                Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, elements)))
+            }
+        }
+    }
+
     /// Returns whether `replace_payload_from` can update this matrix without
     /// replacing its reactive root.
     pub fn can_replace_payload_from(&self, source: &Matrix<T>) -> bool {

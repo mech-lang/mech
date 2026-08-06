@@ -17,6 +17,26 @@ fn empty_constant() -> EncodedConstant {
     }
 }
 
+fn u8_constant(value: u8) -> EncodedConstant {
+    EncodedConstant {
+        runtime_type: RuntimeType::U8,
+        alignment: 1,
+        bytes: vec![value],
+    }
+}
+
+fn u8_tuple_constant(values: &[u8]) -> EncodedConstant {
+    let mut bytes = (values.len() as u32).to_le_bytes().to_vec();
+    for value in values {
+        append_child_payload(&mut bytes, &[*value]);
+    }
+    EncodedConstant {
+        runtime_type: RuntimeType::Tuple(vec![RuntimeType::U8; values.len()]),
+        alignment: 4,
+        bytes,
+    }
+}
+
 fn program(constants: Vec<EncodedConstant>) -> BytecodeProgram {
     let register_count = constants.len().max(1) as u32;
     let mut instructions = constants
@@ -1314,7 +1334,7 @@ fn rejects_noncanonical_header_and_section_fields() {
         (second_section_offset + 1) as u64,
     );
     refresh_crc(&mut unaligned);
-    assert_validation_reason(&unaligned, "unaligned");
+    assert_validation_reason(&unaligned, "minimal aligned offset");
 
     let mut padding = original;
     let instructions = BytecodeSectionKind::Instructions as usize - 1;
@@ -1325,6 +1345,26 @@ fn rejects_noncanonical_header_and_section_fields() {
     padding[instruction_end] = 1;
     refresh_crc(&mut padding);
     assert_validation_reason(&padding, "section padding");
+
+    let mut nonminimal_padding = write_bytecode(&program(vec![empty_constant()])).unwrap();
+    let second_section = 1;
+    let second_offset = section_offset(&nonminimal_padding, second_section);
+    nonminimal_padding.splice(second_offset..second_offset, [0; 8]);
+    for following in second_section..BYTECODE_SECTION_COUNT {
+        let entry = section_entry_offset(following);
+        let offset = read_u64(&nonminimal_padding, entry + 8);
+        write_u64(&mut nonminimal_padding, entry + 8, offset + 8);
+    }
+    let file_len = read_u64(&nonminimal_padding, HEADER_FILE_LEN);
+    let checksum_offset = read_u64(&nonminimal_padding, HEADER_CHECKSUM_OFFSET);
+    write_u64(&mut nonminimal_padding, HEADER_FILE_LEN, file_len + 8);
+    write_u64(
+        &mut nonminimal_padding,
+        HEADER_CHECKSUM_OFFSET,
+        checksum_offset + 8,
+    );
+    refresh_crc(&mut nonminimal_padding);
+    assert_validation_reason(&nonminimal_padding, "minimal aligned offset");
 }
 
 #[test]
@@ -1353,14 +1393,16 @@ fn rejects_duplicate_missing_unknown_overlapping_and_oob_sections() {
         section_offset(&original, 0) as u64,
     );
     refresh_crc(&mut overlap);
-    assert_validation_reason(&overlap, "overlapping");
+    assert_validation_reason(&overlap, "minimal aligned offset");
 
     let mut oob = original;
     let checksum_offset = read_u64(&oob, HEADER_CHECKSUM_OFFSET);
+    let last = BYTECODE_SECTION_COUNT - 1;
+    let last_offset = section_offset(&oob, last) as u64;
     write_u64(
         &mut oob,
-        section_entry_offset(BYTECODE_SECTION_COUNT - 1) + 8,
-        checksum_offset + 8,
+        section_entry_offset(last) + 16,
+        checksum_offset - last_offset + 1,
     );
     refresh_crc(&mut oob);
     assert_validation_reason(&oob, "extends into checksum");
@@ -1514,13 +1556,9 @@ fn rejects_unreferenced_dictionary_entries_in_writer_and_reader() {
     canonical.dictionary.insert(id, name.to_owned());
     let mut bytes = write_bytecode(&canonical).unwrap();
     let symbols = BytecodeSectionKind::Symbols as usize - 1;
-    let symbols_offset = section_offset(&bytes, symbols);
     let symbols_length = section_length(&bytes, symbols);
     assert_eq!(symbols_length, 16);
-    bytes[symbols_offset..symbols_offset + symbols_length].fill(0);
-    write_u32(&mut bytes, section_entry_offset(symbols) + 4, 0);
-    write_u64(&mut bytes, section_entry_offset(symbols) + 16, 0);
-    refresh_crc(&mut bytes);
+    replace_section_contents(&mut bytes, symbols, &[], 0);
 
     assert_validation_reason(&bytes, "not referenced by a symbol");
 }
@@ -1792,6 +1830,18 @@ fn rejects_unknown_requirement_fields_utf8_opcode_and_trailing_bytes() {
     refresh_crc(&mut utf8);
     assert_validation_reason(&utf8, "invalid UTF-8 in requirement operation");
 
+    let mut mismatched_operation = write_bytecode(&input).unwrap();
+    let requirement_offset = section_offset(
+        &mismatched_operation,
+        BytecodeSectionKind::ApplicationRequirements as usize - 1,
+    );
+    mismatched_operation[requirement_offset + 16..requirement_offset + 20].copy_from_slice(b"writ");
+    refresh_crc(&mut mismatched_operation);
+    assert_validation_reason(
+        &mismatched_operation,
+        "read intent requires the canonical `read` operation",
+    );
+
     let mut opcode = write_bytecode(&program(vec![empty_constant()])).unwrap();
     let instruction_offset =
         section_offset(&opcode, BytecodeSectionKind::Instructions as usize - 1);
@@ -1810,7 +1860,290 @@ fn rejects_unknown_requirement_fields_utf8_opcode_and_trailing_bytes() {
         (checksum_offset + 1) as u64,
     );
     refresh_crc(&mut trailing);
-    assert_validation_reason(&trailing, "bytes before checksum must be zero padding");
+    assert_validation_reason(&trailing, "checksum does not immediately follow");
+}
+
+#[test]
+fn composite_pack_round_trips_and_reconstructs_from_child_registers() {
+    let input = BytecodeProgram {
+        register_count: 3,
+        constants: vec![u8_tuple_constant(&[0, 0]), u8_constant(7), u8_constant(9)],
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions: vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 1,
+            },
+            BytecodeInstruction::ConstLoad {
+                dst: 1,
+                constant: 2,
+            },
+            BytecodeInstruction::CompositePack {
+                dst: 2,
+                template: 0,
+                children: vec![0, 1],
+            },
+            BytecodeInstruction::Return { src: 2 },
+        ],
+        dictionary: BTreeMap::new(),
+        requirements: Vec::new(),
+    };
+    let parsed = ParsedProgram::from_bytes(&write_bytecode(&input).unwrap()).unwrap();
+    assert_eq!(parsed.instructions, input.instructions);
+    parsed
+        .validate_runtime_contracts(&crate::FunctionCatalog::empty())
+        .unwrap();
+
+    let constants = parsed.decode_constants().unwrap();
+    let rebuilt = rebuild_bytecode_composite(
+        &constants[0],
+        vec![constants[1].clone(), constants[2].clone()],
+    )
+    .unwrap();
+    let crate::Value::Tuple(tuple) = rebuilt else {
+        panic!("CompositePack must reconstruct the tuple template");
+    };
+    assert_eq!(
+        tuple.borrow().elements,
+        vec![
+            Box::new(crate::Value::U8(crate::Ref::new(7))),
+            Box::new(crate::Value::U8(crate::Ref::new(9))),
+        ],
+    );
+}
+
+#[test]
+fn composite_pack_rejects_invalid_templates_arities_and_register_flow() {
+    let cases = [
+        (
+            BytecodeProgram {
+                register_count: 2,
+                constants: vec![empty_constant()],
+                symbols: BTreeMap::new(),
+                mutable_symbols: BTreeSet::new(),
+                instructions: vec![
+                    BytecodeInstruction::ConstLoad {
+                        dst: 0,
+                        constant: 0,
+                    },
+                    BytecodeInstruction::CompositePack {
+                        dst: 1,
+                        template: 0,
+                        children: vec![0],
+                    },
+                    BytecodeInstruction::Return { src: 1 },
+                ],
+                dictionary: BTreeMap::new(),
+                requirements: Vec::new(),
+            },
+            "not structurally lowerable",
+        ),
+        (
+            BytecodeProgram {
+                register_count: 2,
+                constants: vec![u8_tuple_constant(&[0]), u8_constant(1)],
+                symbols: BTreeMap::new(),
+                mutable_symbols: BTreeSet::new(),
+                instructions: vec![
+                    BytecodeInstruction::ConstLoad {
+                        dst: 0,
+                        constant: 1,
+                    },
+                    BytecodeInstruction::CompositePack {
+                        dst: 1,
+                        template: 0,
+                        children: vec![],
+                    },
+                    BytecodeInstruction::Return { src: 1 },
+                ],
+                dictionary: BTreeMap::new(),
+                requirements: Vec::new(),
+            },
+            "expects 1 children",
+        ),
+        (
+            BytecodeProgram {
+                register_count: 2,
+                constants: vec![u8_tuple_constant(&[0])],
+                symbols: BTreeMap::new(),
+                mutable_symbols: BTreeSet::new(),
+                instructions: vec![
+                    BytecodeInstruction::CompositePack {
+                        dst: 1,
+                        template: 0,
+                        children: vec![0],
+                    },
+                    BytecodeInstruction::Return { src: 1 },
+                ],
+                dictionary: BTreeMap::new(),
+                requirements: Vec::new(),
+            },
+            "register 0 is uninitialized",
+        ),
+        (
+            BytecodeProgram {
+                register_count: 1,
+                constants: vec![u8_tuple_constant(&[0])],
+                symbols: BTreeMap::new(),
+                mutable_symbols: BTreeSet::new(),
+                instructions: vec![
+                    BytecodeInstruction::ConstLoad {
+                        dst: 0,
+                        constant: 0,
+                    },
+                    BytecodeInstruction::CompositePack {
+                        dst: 0,
+                        template: 0,
+                        children: vec![0],
+                    },
+                    BytecodeInstruction::Return { src: 0 },
+                ],
+                dictionary: BTreeMap::new(),
+                requirements: Vec::new(),
+            },
+            "initialized more than once",
+        ),
+    ];
+
+    for (program, reason) in cases {
+        let error = write_bytecode(&program).unwrap_err();
+        assert!(
+            error.kind_message().contains(reason),
+            "expected `{reason}` in `{}`",
+            error.kind_message(),
+        );
+    }
+}
+
+#[test]
+fn writer_rejects_resource_intent_operation_and_delivery_mismatches() {
+    let cases = [
+        (
+            ResourceIntent::Read,
+            "write",
+            ResourceDelivery::Snapshot,
+            "read intent requires",
+        ),
+        (
+            ResourceIntent::Assign,
+            "send",
+            ResourceDelivery::Snapshot,
+            "assign intent requires",
+        ),
+        (
+            ResourceIntent::Assign,
+            "write",
+            ResourceDelivery::Live,
+            "assign intent cannot request live delivery",
+        ),
+        (
+            ResourceIntent::Send,
+            "read",
+            ResourceDelivery::Snapshot,
+            "send intent cannot use the reserved `read` operation",
+        ),
+        (
+            ResourceIntent::Send,
+            "write",
+            ResourceDelivery::Live,
+            "send intent cannot request live delivery",
+        ),
+    ];
+    for (intent, operation, delivery, expected) in cases {
+        let mut input = resource_program("test://clock", "value");
+        let ApplicationRequirement::Resource(request) = &mut input.requirements[0] else {
+            unreachable!()
+        };
+        request.intent = intent;
+        request.operation = operation.to_owned();
+        request.delivery = delivery;
+        input.instructions[1] = match intent {
+            ResourceIntent::Read => BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            ResourceIntent::Assign => BytecodeInstruction::ResourceWrite {
+                requirement: 0,
+                dst: 0,
+                src: 0,
+            },
+            ResourceIntent::Send => BytecodeInstruction::ResourceSend {
+                requirement: 0,
+                dst: 0,
+                src: 0,
+            },
+        };
+        let error = write_bytecode(&input).unwrap_err();
+        assert!(error.kind_message().contains(expected));
+    }
+}
+
+#[test]
+fn rejects_nonminimal_constant_blob_layout() {
+    let mut bytes = write_bytecode(&program(vec![
+        EncodedConstant {
+            runtime_type: RuntimeType::U8,
+            alignment: 1,
+            bytes: vec![1],
+        },
+        EncodedConstant {
+            runtime_type: RuntimeType::U8,
+            alignment: 1,
+            bytes: vec![2],
+        },
+    ]))
+    .unwrap();
+    let blob_index = BytecodeSectionKind::ConstantBlob as usize - 1;
+    replace_section_contents(&mut bytes, blob_index, &[1, 0, 2], 0);
+    let second_entry = constant_entry_offset(&bytes, 1);
+    write_u64(&mut bytes, second_entry + 8, 2);
+    refresh_crc(&mut bytes);
+    assert_validation_reason(&bytes, "constant offset is not the minimal aligned offset");
+
+    let mut trailing = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::U8,
+        alignment: 1,
+        bytes: vec![1],
+    }]))
+    .unwrap();
+    replace_section_contents(&mut trailing, blob_index, &[1, 0], 0);
+    assert_validation_reason(&trailing, "noncanonical trailing bytes");
+}
+
+#[test]
+fn rejects_exponentially_expanding_runtime_type_dag_before_materialization() {
+    let mut bytes = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::U8,
+        alignment: 1,
+        bytes: vec![1],
+    }]))
+    .unwrap();
+    let mut types = Vec::new();
+    types.extend_from_slice(&(RuntimeTypeTag::U8 as u16).to_le_bytes());
+    types.extend_from_slice(&0_u16.to_le_bytes());
+    types.extend_from_slice(&0_u32.to_le_bytes());
+    for child in 0..24_u32 {
+        types.extend_from_slice(&(RuntimeTypeTag::Tuple as u16).to_le_bytes());
+        types.extend_from_slice(&0_u16.to_le_bytes());
+        types.extend_from_slice(&12_u32.to_le_bytes());
+        types.extend_from_slice(&2_u32.to_le_bytes());
+        types.extend_from_slice(&child.to_le_bytes());
+        types.extend_from_slice(&child.to_le_bytes());
+    }
+    replace_section_contents(
+        &mut bytes,
+        BytecodeSectionKind::Types as usize - 1,
+        &types,
+        25,
+    );
+    let constant_entry = constant_entry_offset(&bytes, 0);
+    write_u32(&mut bytes, constant_entry, 24);
+    refresh_crc(&mut bytes);
+    assert_validation_reason(
+        &bytes,
+        "expanded runtime type graph exceeds bytecode v1 node limit",
+    );
 }
 
 #[test]
@@ -1987,7 +2320,7 @@ fn requirements_use_the_explicit_canonical_order() {
             context_name: "ctx".into(),
             operation: "write".into(),
             intent: ResourceIntent::Assign,
-            delivery: ResourceDelivery::Live,
+            delivery: ResourceDelivery::Snapshot,
         }),
         ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
             name: "host".into(),
@@ -2406,6 +2739,13 @@ mod compiler_tests {
         }
 
         fn emit_const_load(&mut self, _destination: Register, _constant: u32) {}
+        fn emit_composite_pack(
+            &mut self,
+            _destination: Register,
+            _template: u32,
+            _children: Vec<Register>,
+        ) {
+        }
         fn emit_nullop(&mut self, _function: u64, _destination: Register) {}
         fn emit_unop(&mut self, _function: u64, _destination: Register, _source: Register) {}
         fn emit_binop(

@@ -19,8 +19,9 @@ use mech_core::{
     MatrixStorage, ParsedProgram, RuntimeType, hash_str, write_bytecode,
 };
 use mech_native_live_host_fixture::{
-    TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_PATH, TEST_LIVE_PROVIDER,
-    TestLiveHostFactory, empty_settings,
+    TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_OUTPUT_CONTEXT, TEST_LIVE_PROVIDER,
+    TEST_LIVE_PATH, TEST_LIVE_RECORD_PATH, TEST_LIVE_TUPLE_PATH, TestLiveHostFactory,
+    empty_settings,
 };
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig, RuntimeHostFactory,
@@ -121,9 +122,14 @@ const ROBOT_ARM_SOURCE: &str = concat!(
 const ACTOR_SOURCE: &str = "state := actor/state/id()\n\"actor-done\"";
 const LIVE_SOURCE: &str = concat!(
     "+> @clock := test-live/clock\n\n",
+    "+> @out := test-live/output\n\n",
     "value := @clock/value\n",
     "doubled := value + value\n\n",
-    "doubled",
+    "payload := (value, doubled)\n",
+    "frame := {rotation: value}\n",
+    "@out/tuple <- payload\n",
+    "@out/frame <- frame\n\n",
+    "payload",
 );
 
 #[derive(Clone, Copy)]
@@ -415,7 +421,7 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             bytes: live,
             runtime_config: Some(synthetic_live_runtime_config()),
             plan_catalog: PlanCatalog::SyntheticLive,
-            expected_output: json!(0.0),
+            expected_output: json!([0.0, 0.0]),
         },
     ])
 }
@@ -973,11 +979,21 @@ fn synthetic_live_runtime_config() -> NativeRuntimeConfig {
             provider: TEST_LIVE_PROVIDER.to_owned(),
             settings: empty_settings(),
         }],
-        run_grants: vec![RunResourceGrantConfig {
-            target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_CONTEXT}"),
-            operations: vec!["read".to_owned()],
-            paths: vec![TEST_LIVE_PATH.to_owned()],
-        }],
+        run_grants: vec![
+            RunResourceGrantConfig {
+                target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_CONTEXT}"),
+                operations: vec!["read".to_owned()],
+                paths: vec![TEST_LIVE_PATH.to_owned()],
+            },
+            RunResourceGrantConfig {
+                target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_OUTPUT_CONTEXT}"),
+                operations: vec!["write".to_owned()],
+                paths: vec![
+                    TEST_LIVE_TUPLE_PATH.to_owned(),
+                    TEST_LIVE_RECORD_PATH.to_owned(),
+                ],
+            },
+        ],
     }
 }
 

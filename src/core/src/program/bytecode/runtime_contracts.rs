@@ -346,6 +346,43 @@ impl ParsedProgram {
                 continue;
             }
 
+            if let BytecodeInstruction::CompositePack {
+                dst,
+                template,
+                children,
+            } = instruction
+            {
+                let template = constants.get(*template as usize).ok_or_else(|| {
+                    violation(
+                        instruction_index,
+                        None,
+                        None,
+                        format!("composite template {template} is out of range"),
+                    )
+                })?;
+                let children = children
+                    .iter()
+                    .map(|child| {
+                        registers
+                            .get(*child as usize)
+                            .and_then(Option::as_ref)
+                            .cloned()
+                            .ok_or_else(|| {
+                                violation(
+                                    instruction_index,
+                                    None,
+                                    None,
+                                    format!("composite child register {child} has no seed"),
+                                )
+                            })
+                    })
+                    .collect::<MResult<Vec<_>>>()?;
+                let value = crate::rebuild_bytecode_composite(template, children)
+                    .map_err(|error| violation_with_source(instruction_index, None, None, error))?;
+                registers[*dst as usize] = Some(value);
+                continue;
+            }
+
             let register = |index: u32| -> MResult<Value> {
                 registers
                     .get(index as usize)
@@ -362,7 +399,8 @@ impl ParsedProgram {
             };
 
             match instruction {
-                BytecodeInstruction::ConstLoad { .. } => unreachable!(),
+                BytecodeInstruction::ConstLoad { .. }
+                | BytecodeInstruction::CompositePack { .. } => unreachable!(),
                 BytecodeInstruction::RuntimeNullary { function, dst } => {
                     self.validate_runtime_instruction(
                         catalog,
@@ -960,7 +998,12 @@ mod tests {
                 base_uri: "test://provider".into(),
                 path: "value".into(),
                 context_name: "test".into(),
-                operation: "operate".into(),
+                operation: match intent {
+                    ResourceIntent::Read => "read",
+                    ResourceIntent::Assign => "write",
+                    ResourceIntent::Send => "operate",
+                }
+                .into(),
                 intent,
                 delivery: ResourceDelivery::Snapshot,
             })

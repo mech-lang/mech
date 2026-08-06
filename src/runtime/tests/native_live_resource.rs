@@ -2,6 +2,7 @@
 
 use std::{
     cell::RefCell,
+    collections::BTreeSet,
     sync::{
         Arc,
         atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
@@ -17,8 +18,10 @@ use mech_core::{
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_native_live_host_fixture::{
-    TEST_LIVE_BASE_URI, TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_PATH, TEST_LIVE_PROVIDER,
-    TestLiveDriverHandle, TestLiveHostFactory, empty_settings,
+    ObservedResourceValue, ObservedResourceWrite, TEST_LIVE_BASE_URI, TEST_LIVE_CONTEXT,
+    TEST_LIVE_INSTANCE, TEST_LIVE_OUTPUT_CONTEXT, TEST_LIVE_PATH, TEST_LIVE_PROVIDER,
+    TEST_LIVE_RECORD_PATH, TEST_LIVE_TUPLE_PATH, TestLiveDriverHandle, TestLiveHostFactory,
+    empty_settings,
 };
 use mech_runtime::{
     HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder, RuntimeHostInputOutcome,
@@ -152,6 +155,18 @@ fn function_catalog() -> Arc<FunctionCatalog> {
             RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
         )
         .unwrap();
+    builder
+        .insert_runtime_factory::<mech_engine::intrinsics::define::VariableDefineMechTuple>(
+            "VariableDefineMechTuple",
+            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+        )
+        .unwrap();
+    builder
+        .insert_runtime_factory::<mech_engine::intrinsics::define::VariableDefineMechRecord>(
+            "VariableDefineMechRecord",
+            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::AllowInputAlias),
+        )
+        .unwrap();
     Arc::new(builder.build().unwrap())
 }
 
@@ -176,6 +191,14 @@ fn configured_builder(
             target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_CONTEXT}"),
             operations: vec!["read".to_owned()],
             paths: vec![TEST_LIVE_PATH.to_owned()],
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_OUTPUT_CONTEXT}"),
+            operations: vec!["write".to_owned()],
+            paths: vec![
+                TEST_LIVE_TUPLE_PATH.to_owned(),
+                TEST_LIVE_RECORD_PATH.to_owned(),
+            ],
         });
     (builder, driver)
 }
@@ -202,11 +225,38 @@ fn reset_controlled_add() {
     ADD_OBSERVATION.with(|observation| *observation.borrow_mut() = None);
 }
 
-fn snapshot_f64(snapshot: RuntimeValueSnapshot) -> f64 {
-    match snapshot.into_value() {
-        Value::F64(value) => *value.borrow(),
-        other => panic!("expected F64 snapshot, got {other:?}"),
-    }
+fn snapshot_tuple(snapshot: RuntimeValueSnapshot) -> Vec<f64> {
+    let Value::Tuple(tuple) = snapshot.into_value() else {
+        panic!("expected tuple snapshot");
+    };
+    tuple
+        .borrow()
+        .elements
+        .iter()
+        .map(|value| match value.as_ref() {
+            Value::F64(value) => *value.borrow(),
+            other => panic!("expected F64 tuple element, got {other:?}"),
+        })
+        .collect()
+}
+
+fn expected_writes(value: f64) -> Vec<ObservedResourceWrite> {
+    vec![
+        ObservedResourceWrite {
+            path: TEST_LIVE_TUPLE_PATH.to_owned(),
+            value: ObservedResourceValue::Tuple(vec![
+                ObservedResourceValue::F64(value),
+                ObservedResourceValue::F64(value + value),
+            ]),
+        },
+        ObservedResourceWrite {
+            path: TEST_LIVE_RECORD_PATH.to_owned(),
+            value: ObservedResourceValue::Record(std::collections::BTreeMap::from([(
+                "rotation".to_owned(),
+                ObservedResourceValue::F64(value),
+            )])),
+        },
+    ]
 }
 
 fn only_turn(outcomes: &[RuntimeHostInputOutcome]) -> &mech_engine::ProgramInputTurnOutcome {
@@ -230,6 +280,8 @@ fn synthetic_native_live_input_is_planned_driven_and_rolled_back_atomically() {
             hash_str("VariableDefineF64"),
             hash_str("AddSS<f64>"),
             hash_str("VariableDefineF64"),
+            hash_str("VariableDefineMechTuple"),
+            hash_str("VariableDefineMechRecord"),
         ],
         "the authoritative source fixture must retain its real compiler-emitted factories",
     );
@@ -248,15 +300,46 @@ fn synthetic_native_live_input_is_planned_driven_and_rolled_back_atomically() {
         parsed.instructions.last(),
         Some(BytecodeInstruction::Return { .. })
     ));
-    let [ApplicationRequirement::Resource(requirement)] = parsed.requirements.as_slice() else {
-        panic!("planning must emit exactly one resource requirement");
-    };
+    let requirement = parsed
+        .requirements
+        .iter()
+        .find_map(|requirement| match requirement {
+            ApplicationRequirement::Resource(requirement)
+                if requirement.intent == ResourceIntent::Read =>
+            {
+                Some(requirement)
+            }
+            _ => None,
+        })
+        .expect("planning must emit its live read requirement");
     assert_eq!(requirement.base_uri, TEST_LIVE_BASE_URI);
     assert_eq!(requirement.path, TEST_LIVE_PATH);
     assert_eq!(requirement.context_name, TEST_LIVE_CONTEXT);
     assert_eq!(requirement.operation, "read");
     assert_eq!(requirement.intent, ResourceIntent::Read);
     assert_eq!(requirement.delivery, ResourceDelivery::Live);
+    let composite_registers = parsed
+        .instructions
+        .iter()
+        .filter_map(|instruction| match instruction {
+            BytecodeInstruction::CompositePack { dst, .. } => Some(*dst),
+            _ => None,
+        })
+        .collect::<BTreeSet<_>>();
+    assert!(composite_registers.len() >= 2);
+    for source in parsed
+        .instructions
+        .iter()
+        .filter_map(|instruction| match instruction {
+            BytecodeInstruction::ResourceSend { src, .. } => Some(*src),
+            _ => None,
+        })
+    {
+        assert!(
+            composite_registers.contains(&source),
+            "reactive resource-send aggregates must be produced by CompositePack",
+        );
+    }
 
     reset_controlled_add();
     let (planning_builder, planning_driver) = configured_builder(true, function_catalog());
@@ -269,7 +352,7 @@ fn synthetic_native_live_input_is_planned_driven_and_rolled_back_atomically() {
     let planned = planning_runtime
         .install_bytecode_with_context(&mut planning_context, PROGRAM)
         .unwrap();
-    assert_eq!(snapshot_f64(planned), 0.0);
+    assert_eq!(snapshot_tuple(planned), vec![0.0, 0.0]);
     assert_eq!(planning_runtime.live_input_binding_count(), 0);
     assert_eq!(planning_runtime.input_driver_count(), 0);
     assert_eq!(planning_driver.attach_count(), 0);
@@ -288,7 +371,7 @@ fn synthetic_native_live_input_is_planned_driven_and_rolled_back_atomically() {
     let initial = runtime
         .install_bytecode_with_context(&mut context, PROGRAM)
         .unwrap();
-    assert_eq!(snapshot_f64(initial), 0.0);
+    assert_eq!(snapshot_tuple(initial), vec![0.0, 0.0]);
     assert_eq!(runtime.live_input_binding_count(), 1);
     assert_eq!(runtime.driven_live_input_binding_count().unwrap(), 1);
 
@@ -297,8 +380,9 @@ fn synthetic_native_live_input_is_planned_driven_and_rolled_back_atomically() {
     let duplicate = runtime
         .install_bytecode_with_context(&mut context, PROGRAM)
         .unwrap();
-    assert_eq!(snapshot_f64(duplicate), 0.0);
+    assert_eq!(snapshot_tuple(duplicate), vec![0.0, 0.0]);
     assert_eq!(runtime.live_input_binding_count(), 1);
+    driver.clear_writes();
 
     ADD_SOLVE_COUNT.store(0, Ordering::SeqCst);
     let initial_state = observed_add_state();
@@ -320,8 +404,8 @@ fn synthetic_native_live_input_is_planned_driven_and_rolled_back_atomically() {
             .before_commit
             .executed_nodes
             .len(),
-        1,
-        "the dependent AddSS<f64> node must run exactly once",
+        3,
+        "the dependent add and both aggregate resource sends must run exactly once",
     );
     assert_eq!(ADD_SOLVE_COUNT.load(Ordering::SeqCst), 1);
     let stable_dirty_cells = successful_turn.interpreter_turns[0].dirty_cells.clone();
@@ -330,7 +414,10 @@ fn synthetic_native_live_input_is_planned_driven_and_rolled_back_atomically() {
     assert_eq!(committed.output_identity, initial_state.output_identity);
     assert_eq!(committed.input, 7.0);
     assert_eq!(committed.output, 14.0);
-    assert_eq!(runtime.out_string(), "14");
+    let committed_output = runtime.out_string();
+    assert!(committed_output.contains('7'));
+    assert!(committed_output.contains("14"));
+    assert_eq!(driver.writes(), expected_writes(7.0));
 
     ADD_SHOULD_FAIL.store(true, Ordering::SeqCst);
     driver.submit(9.0).unwrap();
@@ -348,7 +435,8 @@ fn synthetic_native_live_input_is_planned_driven_and_rolled_back_atomically() {
     assert_eq!(rolled_back.output_identity, initial_state.output_identity);
     assert_eq!(rolled_back.input, 7.0);
     assert_eq!(rolled_back.output, 14.0);
-    assert_eq!(runtime.out_string(), "14");
+    assert_eq!(runtime.out_string(), committed_output);
+    assert_eq!(driver.writes(), expected_writes(7.0));
     assert_eq!(runtime.live_input_binding_count(), 1);
 
     ADD_SHOULD_FAIL.store(false, Ordering::SeqCst);
@@ -367,6 +455,10 @@ fn synthetic_native_live_input_is_planned_driven_and_rolled_back_atomically() {
     );
     assert_eq!(recovered_state.input, 8.0);
     assert_eq!(recovered_state.output, 16.0);
+    assert_eq!(
+        driver.writes(),
+        [expected_writes(7.0), expected_writes(8.0)].concat(),
+    );
 
     runtime.shutdown().unwrap();
     assert!(!driver.is_live());

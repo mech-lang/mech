@@ -145,7 +145,7 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
         self.run_grants.push(grant);
         self.live |= request.delivery == mech_core::ResourceDelivery::Live;
         self.planned.push(PlannedApplicationRequirement::Resource {
-            request: planned_resource_request(request),
+            request: planned_resource_request(request, &owner.host_context),
             owner,
         });
     }
@@ -213,7 +213,7 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
         &mut self,
         contract: BytecodeResourceReadContract<'_>,
     ) -> MResult<Value> {
-        let (planned, owner, grant) = {
+        let (planned, owner, grant, driven_live) = {
             let owner = resolve_resource_owner(contract.request, &self.materialized)?;
             let configured_grants = self
                 .normalized_config
@@ -227,7 +227,7 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                 .plan_read(mech_runtime::RuntimeResourceReadRequest {
                     base_uri: contract.request.base_uri.clone(),
                     path: contract.request.path.clone(),
-                    context_name: contract.request.context_name.clone(),
+                    context_name: owner.context.name.clone(),
                 })
                 .map_err(|error| {
                     native_build_error(
@@ -239,8 +239,35 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                     )
                     .with_source(error)
                 })?;
-            (planned, owner.planned_owner(), grant)
+            let driven_live = if contract.request.delivery == mech_core::ResourceDelivery::Live {
+                owner
+                    .has_input_driver_for(contract.request)
+                    .map_err(|error| {
+                        application_instruction_error(
+                            contract.instruction,
+                            format!(
+                                "live resource read `{}/{}` has an invalid input source: {}",
+                                contract.request.base_uri,
+                                contract.request.path,
+                                error.display_message(),
+                            ),
+                        )
+                        .with_source(error)
+                    })?
+            } else {
+                false
+            };
+            (planned, owner.planned_owner(), grant, driven_live)
         };
+        if contract.request.delivery == mech_core::ResourceDelivery::Live && !driven_live {
+            return Err(application_instruction_error(
+                contract.instruction,
+                format!(
+                    "live resource read `{}/{}` is not driven by its materialized native host",
+                    contract.request.base_uri, contract.request.path,
+                ),
+            ));
+        }
         validate_stable_value_update(contract.output_seed, &planned).map_err(|error| {
             application_instruction_error(
                 contract.instruction,
@@ -300,7 +327,7 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                 .preflight_write(RuntimeResourceWritePreflightRequest {
                     base_uri: contract.request.base_uri.clone(),
                     path: contract.request.path.clone(),
-                    context_name: contract.request.context_name.clone(),
+                    context_name: owner.context.name.clone(),
                     operation: operation.clone(),
                     intent,
                 })
@@ -319,7 +346,7 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                 .plan_write(RuntimeResourceWriteRequest {
                     base_uri: contract.request.base_uri.clone(),
                     path: contract.request.path.clone(),
-                    context_name: contract.request.context_name.clone(),
+                    context_name: owner.context.name.clone(),
                     operation,
                     value: contract.source.clone(),
                     intent,

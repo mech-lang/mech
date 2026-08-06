@@ -1987,6 +1987,19 @@ impl Interpreter {
                         let value = self.constants[*constant as usize].try_deep_snapshot()?;
                         self.bytecode_registers.load(*dst, value)?;
                     }
+                    BytecodeInstruction::CompositePack {
+                        dst,
+                        template,
+                        children,
+                    } => {
+                        let template = self.constants[*template as usize].clone();
+                        let children = children
+                            .iter()
+                            .map(|register| self.bytecode_registers.function_argument(*register))
+                            .collect::<MResult<Vec<_>>>()?;
+                        let value = mech_core::rebuild_bytecode_composite(&template, children)?;
+                        self.bytecode_registers.load(*dst, value)?;
+                    }
                     BytecodeInstruction::RuntimeNullary { function, dst } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);
                         match function_catalog.runtime_entry(runtime_id) {

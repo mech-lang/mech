@@ -24,7 +24,7 @@ mech-native-live-host-fixture = { path = "../native-live-host" }
 mech-runtime = {
   path = "../../../src/runtime",
   default-features = false,
-  features = ["compiler", "f64", "string"],
+  features = ["compiler", "runtime_default", "serde"],
 }
 mech-stdlib = {
   path = "../../../src/stdlib",
