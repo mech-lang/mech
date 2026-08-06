@@ -13,6 +13,8 @@ use crate::project::{
     GeneratedNativeProject, validate_project_binary_name, validate_project_target_triple,
 };
 
+pub const NATIVE_RUST_TOOLCHAIN: &str = "nightly-2026-03-03";
+
 /// A direct, shell-free Cargo invocation.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CargoInvocation {
@@ -23,6 +25,7 @@ pub struct CargoInvocation {
 impl CargoInvocation {
     pub fn resolve_lockfile(manifest_path: impl AsRef<Path>, offline: bool) -> Self {
         let mut arguments = vec![
+            OsString::from(format!("+{NATIVE_RUST_TOOLCHAIN}")),
             OsString::from("metadata"),
             OsString::from("--format-version"),
             OsString::from("1"),
@@ -53,6 +56,7 @@ impl CargoInvocation {
         }
 
         let mut arguments = vec![
+            OsString::from(format!("+{NATIVE_RUST_TOOLCHAIN}")),
             OsString::from("build"),
             OsString::from("--manifest-path"),
             manifest_path.as_ref().as_os_str().to_owned(),
@@ -361,6 +365,7 @@ mod tests {
         assert_eq!(
             arguments(&invocation),
             [
+                "+nightly-2026-03-03",
                 "metadata",
                 "--format-version",
                 "1",
@@ -429,6 +434,7 @@ checksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         assert_eq!(
             arguments(&invocation),
             [
+                "+nightly-2026-03-03",
                 "build",
                 "--manifest-path",
                 "project/Cargo.toml",

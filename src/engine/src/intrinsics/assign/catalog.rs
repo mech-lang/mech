@@ -7,7 +7,7 @@ use mech_core::{
 };
 
 #[cfg(feature = "matrix")]
-fn validate_assign_slice_contract(args: &FunctionArgs) -> MResult<()> {
+fn validate_assign_matrix_sizes(args: &FunctionArgs) -> MResult<()> {
     let contract = "assign_slice";
     let output = args
         .output_value()
@@ -33,6 +33,97 @@ fn validate_assign_slice_contract(args: &FunctionArgs) -> MResult<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(feature = "matrix")]
+#[derive(Clone, Copy)]
+enum AssignIndexAxis {
+    Linear,
+    Row,
+    Column,
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_index(
+    args: &FunctionArgs,
+    input_index: usize,
+    axis: AssignIndexAxis,
+) -> MResult<()> {
+    let contract = "assign_slice";
+    let output = args
+        .output_value()
+        .function_matrix_descriptor(FunctionArgumentRole::Output)?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "output must be matrix-backed")
+        })?;
+    let bound = match axis {
+        AssignIndexAxis::Linear => output.rows.checked_mul(output.cols).ok_or_else(|| {
+            function_shape_contract_violation(contract, "output element count overflowed")
+        })?,
+        AssignIndexAxis::Row => output.rows,
+        AssignIndexAxis::Column => output.cols,
+    };
+    let axis_name = match axis {
+        AssignIndexAxis::Linear => "linear",
+        AssignIndexAxis::Row => "row",
+        AssignIndexAxis::Column => "column",
+    };
+    let input = args
+        .input_value(input_index)
+        .expect("assignment index input is fixed by its runtime factory");
+    let invalid = |index: usize| {
+        function_shape_contract_violation(
+            contract,
+            format!("input {input_index} contains {axis_name} index {index}, expected 1..={bound}",),
+        )
+    };
+    match input {
+        Value::Index(index) => {
+            let index = *index.borrow();
+            if index == 0 || index > bound {
+                return Err(invalid(index));
+            }
+        }
+        Value::MatrixIndex(indices) => {
+            for index in indices.as_vec() {
+                if index == 0 || index > bound {
+                    return Err(invalid(index));
+                }
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_without_indices(args: &FunctionArgs) -> MResult<()> {
+    validate_assign_matrix_sizes(args)
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_linear_index(args: &FunctionArgs) -> MResult<()> {
+    validate_assign_matrix_sizes(args)?;
+    validate_assign_index(args, 1, AssignIndexAxis::Linear)
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_row_index(args: &FunctionArgs) -> MResult<()> {
+    validate_assign_matrix_sizes(args)?;
+    validate_assign_index(args, 1, AssignIndexAxis::Row)
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_column_index(args: &FunctionArgs) -> MResult<()> {
+    validate_assign_matrix_sizes(args)?;
+    validate_assign_index(args, 1, AssignIndexAxis::Column)
+}
+
+#[cfg(feature = "matrix")]
+fn validate_assign_row_and_column_indices(args: &FunctionArgs) -> MResult<()> {
+    validate_assign_matrix_sizes(args)?;
+    validate_assign_index(args, 1, AssignIndexAxis::Row)?;
+    validate_assign_index(args, 2, AssignIndexAxis::Column)
 }
 
 // Assignment's scalar factories deliberately keep the Rust type, emitted
@@ -317,6 +408,34 @@ macro_rules! assign_output_alias_policy {
     };
 }
 
+#[cfg(feature = "matrix")]
+macro_rules! assign_contract_validator {
+    (Assign1D) => {
+        validate_assign_linear_index
+    };
+    (Assign1DR) => {
+        validate_assign_linear_index
+    };
+    (Set1DA) => {
+        validate_assign_without_indices
+    };
+    (Assign2DAS) => {
+        validate_assign_column_index
+    };
+    (Set2DAR) => {
+        validate_assign_column_index
+    };
+    (Assign2DSA) => {
+        validate_assign_row_index
+    };
+    (Set2DRA) => {
+        validate_assign_row_index
+    };
+    ($_assign:ident) => {
+        validate_assign_row_and_column_indices
+    };
+}
+
 // All three consumers below are fed by the same concrete-factory traversal:
 // declarations for native plans, direct runtime registrations, and hidden
 // generated-application exports.  This deliberately replaces the historic
@@ -338,7 +457,7 @@ macro_rules! declare_matrix_assign_factory {
                 contract: RuntimeFunctionContract::custom(
                     "assign_slice",
                     assign_output_alias_policy!($fxn_name),
-                    validate_assign_slice_contract,
+                    assign_contract_validator!($fxn_name),
                 ),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!(
@@ -2088,4 +2207,68 @@ pub mod __mech_native {
         export_matrix_assign_factory,
         ()
     );
+}
+
+#[cfg(all(test, feature = "matrix", feature = "u8"))]
+mod tests {
+    use super::*;
+    use mech_core::{Ref, matrix::Matrix};
+
+    fn output() -> Value {
+        Value::MatrixU8(Matrix::from_vec(vec![0; 6], 2, 3))
+    }
+
+    fn source() -> Value {
+        Value::U8(Ref::new(7))
+    }
+
+    #[test]
+    fn scalar_assignment_indices_are_one_based_and_bounded() {
+        for index in [1, 6] {
+            validate_assign_linear_index(&FunctionArgs::Binary(
+                output(),
+                source(),
+                Value::Index(Ref::new(index)),
+            ))
+            .unwrap();
+        }
+        for index in [0, 7] {
+            let error = validate_assign_linear_index(&FunctionArgs::Binary(
+                output(),
+                source(),
+                Value::Index(Ref::new(index)),
+            ))
+            .unwrap_err();
+            assert!(error.kind_message().contains("expected 1..=6"));
+        }
+    }
+
+    #[test]
+    fn two_dimensional_assignment_indices_use_their_exact_axes() {
+        validate_assign_row_and_column_indices(&FunctionArgs::Ternary(
+            output(),
+            source(),
+            Value::MatrixIndex(Matrix::from_vec(vec![1, 2], 1, 2)),
+            Value::Index(Ref::new(3)),
+        ))
+        .unwrap();
+
+        let row_error = validate_assign_row_and_column_indices(&FunctionArgs::Ternary(
+            output(),
+            source(),
+            Value::MatrixIndex(Matrix::from_vec(vec![3], 1, 1)),
+            Value::Index(Ref::new(1)),
+        ))
+        .unwrap_err();
+        assert!(row_error.kind_message().contains("row index 3"));
+
+        let column_error = validate_assign_row_and_column_indices(&FunctionArgs::Ternary(
+            output(),
+            source(),
+            Value::Index(Ref::new(1)),
+            Value::Index(Ref::new(4)),
+        ))
+        .unwrap_err();
+        assert!(column_error.kind_message().contains("column index 4"));
+    }
 }

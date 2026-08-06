@@ -260,6 +260,13 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         .output_path
         .clone()
         .unwrap_or_else(|| default_output_path(options.emit, &binary_name));
+    let requested_project_output = if options.keep_project && options.emit != BuildEmit::Native {
+        let project_output = project_output_path(&requested_output);
+        refuse_existing_project_output(&project_output)?;
+        Some(project_output)
+    } else {
+        None
+    };
 
     if options.emit == BuildEmit::Bytecode {
         copy_exact_file_bytes(&bytecode, &requested_output)?;
@@ -325,9 +332,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
                 .with_compiler_loc()
             })?;
             copy_exact_file_bytes(&plan_json, &requested_output)?;
-            if options.keep_project {
-                let project_output = project_output_path(&requested_output);
-                refuse_existing_project_output(&project_output)?;
+            if let Some(project_output) = requested_project_output {
                 builder.generate_at(&request, &plan, project_output)?;
             }
             println!(
@@ -349,10 +354,15 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
                 .output_path
                 .clone()
                 .unwrap_or_else(|| default_native_output_path(&binary_name, &artifact.executable));
-            copy_exact_file(&artifact.executable, &output)?;
-            if options.keep_project {
+            let project_output = if options.keep_project {
                 let project_output = project_output_path(&output);
                 refuse_existing_project_output(&project_output)?;
+                Some(project_output)
+            } else {
+                None
+            };
+            copy_exact_file(&artifact.executable, &output)?;
+            if let Some(project_output) = project_output {
                 builder.generate_at(&request, &plan, project_output)?;
             }
             println!(
@@ -361,8 +371,8 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             );
         }
         BuildEmit::Bytecode => {
-            let project_output = project_output_path(&requested_output);
-            refuse_existing_project_output(&project_output)?;
+            let project_output = requested_project_output
+                .expect("bytecode keep-project output was preflighted before artifact writes");
             builder.generate_at(&request, &plan, project_output)?;
         }
     }

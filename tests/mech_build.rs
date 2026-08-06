@@ -142,12 +142,23 @@ fn assert_workspace_project(project: &Path, cargo_target: &Path) {
         ]
     );
 
-    let output = Command::new(env!("CARGO"))
+    assert_eq!(
+        std::fs::read_to_string(project.join("rust-toolchain.toml")).unwrap(),
+        concat!(
+            "[toolchain]\n",
+            "channel = \"nightly-2026-03-03\"\n",
+            "profile = \"minimal\"\n",
+        ),
+    );
+    let output = Command::new("cargo")
+        .current_dir(project)
         .arg("build")
         .arg("--manifest-path")
         .arg(project.join("Cargo.toml"))
         .arg("--locked")
         .arg("--offline")
+        .env_remove("RUSTC_BOOTSTRAP")
+        .env_remove("RUSTUP_TOOLCHAIN")
         .env("CARGO_TARGET_DIR", cargo_target)
         .output()
         .unwrap();
@@ -273,6 +284,24 @@ fn source_and_bytecode_cover_every_authoritative_build_emit() {
     );
     assert!(bytecode_native.is_file());
 
+    for emit in ["bytecode", "plan", "native"] {
+        let protected_output = root.join(format!("protected-{emit}"));
+        let protected_bytes = format!("preserve-{emit}").into_bytes();
+        std::fs::write(&protected_output, &protected_bytes).unwrap();
+        std::fs::create_dir(project_output_path_for_test(&protected_output)).unwrap();
+
+        let output = run_build(&root, &bytecode, emit, &protected_output, true);
+        assert!(
+            !output.status.success(),
+            "{emit} unexpectedly overwrote an output with an occupied project sidecar",
+        );
+        assert!(
+            String::from_utf8_lossy(&output.stderr)
+                .contains("refusing to overwrite existing Cargo project output"),
+        );
+        assert_eq!(std::fs::read(&protected_output).unwrap(), protected_bytes);
+    }
+
     for project in [
         &source_project,
         &external_project,
@@ -290,6 +319,10 @@ fn source_and_bytecode_cover_every_authoritative_build_emit() {
 
     std::fs::remove_dir_all(workspace_export_root).unwrap();
     std::fs::remove_dir_all(root).unwrap();
+}
+
+fn project_output_path_for_test(output: &Path) -> PathBuf {
+    PathBuf::from(format!("{}.project", output.display()))
 }
 
 #[test]
