@@ -117,13 +117,57 @@ and 1024. Solve measured +8.0%, +0.29%, and +0.01%. Multiplication includes
 the extra O(n^2) scaling node needed to make the matrix input reactive, so
 these are full-graph costs rather than isolated runtime overhead percentages.
 
+## Rectangular follow-up: NumPy's rank-one boundary
+
+Follow-up run date: 2026-08-06.
+
+The rectangular sweep tested `M x K` by `K x N` products through raw nalgebra,
+the persistent Mech function, direct reactive scheduling, complete retained
+source and bytecode runtimes, and NumPy. All paths reuse their output buffers.
+The same warmup, nine-sample median, single-thread environment, deterministic
+inputs, and correctness checks apply.
+
+`K = 1` exposes a sharp NumPy/Accelerate general-matmul boundary. To keep the
+comparison honest, the table includes both `numpy.matmul(..., out=...)` and the
+equivalent optimized `numpy.multiply(..., out=...)` broadcast formulation.
+Times are milliseconds per operation.
+
+| Shape | Raw nalgebra | Mech source runtime | Mech bytecode runtime | NumPy matmul | NumPy optimized outer |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 512 x 1 x 512 | 0.0272 | 0.5471 | 0.5172 | 1.2118 | 0.0969 |
+| 1024 x 1 x 1024 | 0.2185 | 1.3009 | 1.3069 | 6.4649 | 0.4077 |
+| 2048 x 1 x 2048 | 0.8819 | 4.3334 | 4.3637 | 34.7773 | 1.8089 |
+| 3072 x 1 x 3072 | 2.0630 | 9.9527 | n/a | 47.2163 | 2.9732 |
+| 4096 x 1 x 4096 | 3.6868 | 17.3846 | n/a | 139.2732 | 5.3459 |
+
+Against NumPy's general matrix-multiplication API, the complete source runtime
+is 2.2x faster at 512, 5.0x at 1024, 8.0x at 2048, 4.7x at 3072, and 8.0x at
+4096. The 1024 result and representative rectangular one-million-element
+outputs were reproduced in independent runs. This is a specific `K = 1`
+dispatch weakness: at `1024 x 2 x 1024`, NumPy takes 0.249 ms while the Mech
+source runtime takes 1.452 ms.
+
+The specialized NumPy outer-product formulation reverses the runtime result.
+It is 2.4x to 3.4x faster than the complete Mech turn from 1024 through 4096.
+Raw nalgebra is still 1.4x to 2.1x faster than optimized NumPy at those sizes,
+which locates the remaining gap above the multiplication kernel. The Mech turn
+cost grows with the retained output state: at 4096, the kernel takes 3.69 ms
+but the full source turn takes 17.38 ms.
+
+Bytecode entries are unavailable at 3072 and 4096 because the dense `f64`
+result alone is about 72 MiB and 128 MiB, respectively. Bytecode v1's default
+read limit is 64 MiB (`67,108,864` bytes), and the retained result is serialized
+into the program image. The source-only benchmark mode records these sizes
+without weakening that safety limit.
+
 ## Interpretation
 
 The plan-level Mech execution machinery is not the matrix bottleneck. On the
 shared nalgebra kernel, `solve_result`, virtual dispatch, borrowing, and direct
 reactive scheduling add roughly one tenth of one percent at 256. Complete
 runtime transaction cost is visible for shorter kernels but is amortized as
-matrix work grows. Source and bytecode installation converge on the same
-steady-state executor. The largest performance gap remains between nalgebra's
-generic native kernels and NumPy's Accelerate-backed kernels, not between Mech
-and raw Rust or between source and bytecode Mech.
+square matrix work grows. Source and bytecode installation converge on the same
+steady-state executor. NumPy's optimized BLAS/LAPACK kernels dominate ordinary
+dense square work, while nalgebra is stronger on rank-one output generation.
+For large retained outputs, transaction-level state handling can outweigh that
+kernel advantage even though source and bytecode execution remain equivalent.

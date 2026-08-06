@@ -28,6 +28,18 @@ input drives a matrix-scaling node so the matrix kernel is dirty every turn.
 The runtime uses trusted local limits so large setup and turns are not rejected
 by the default one-second safety limit.
 
+`rectangular_runtime_benchmark` applies the same retained-runtime protocol to
+`M x K` by `K x N` products and also reports raw nalgebra, the persistent Mech
+function, and direct reactive scheduling. Its default mode requires source and
+bytecode fixtures. `--source-only` supports result matrices whose serialized
+bytecode exceeds bytecode v1's 64 MiB read limit, while `--direct-only` measures
+only the raw, kernel, and plan-level controls.
+
+`rectangular_numpy_benchmark.py` reports general `numpy.matmul` for every shape.
+For `K = 1`, it additionally reports the equivalent optimized broadcast
+multiplication as `numpy-outer`; this avoids claiming a general NumPy loss when
+a knowledgeable caller can select the rank-one operation explicitly.
+
 Matrix multiplication reuses the output allocation in every runtime. Linear
 solve includes factorization on every iteration, matching the current Mech
 implementation. Python's cyclic GC and Lua's collector are disabled only
@@ -48,8 +60,21 @@ cargo run --release --manifest-path machines/matrix/Cargo.toml \
   --example runtime_loop_benchmark --no-default-features \
   --features compiler,source,f64,matrixd,vectord,matmul,solve -- 64 128 256 512
 
+cargo run --release --manifest-path machines/matrix/Cargo.toml \
+  --example rectangular_runtime_benchmark --no-default-features \
+  --features compiler,source,f64,matrixd,matmul -- \
+  1024x1x1024 2048x1x2048
+
+cargo run --release --manifest-path machines/matrix/Cargo.toml \
+  --example rectangular_runtime_benchmark --no-default-features \
+  --features compiler,source,f64,matrixd,matmul -- \
+  --source-only 3072x1x3072 4096x1x4096
+
 python3 machines/matrix/benchmarks/steady_state/python_benchmark.py \
   numpy 64 128 256 512
+
+python3 machines/matrix/benchmarks/steady_state/rectangular_numpy_benchmark.py \
+  1024x1x1024 2048x1x2048
 
 lua machines/matrix/benchmarks/steady_state/lua_benchmark.lua \
   lua 64 128 256
