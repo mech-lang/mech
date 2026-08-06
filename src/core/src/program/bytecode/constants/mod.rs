@@ -922,6 +922,8 @@ fn decode_matrix_constant(
     bytes: &[u8],
 ) -> MResult<Value> {
     #[cfg(feature = "matrix")]
+    validate_matrix_payload_feasibility(element, rows, cols, bytes)?;
+    #[cfg(feature = "matrix")]
     match element {
         #[cfg(feature = "bool")]
         RuntimeType::Bool => decode_matrix(storage, rows, cols, bytes, |reader| {
@@ -1070,6 +1072,34 @@ fn decode_matrix_constant(
         let _ = (element, storage, rows, cols, bytes);
         invalid("matrix constants are unavailable in this runtime")
     }
+}
+
+#[cfg(feature = "matrix")]
+fn validate_matrix_payload_feasibility(
+    element: &RuntimeType,
+    rows: u32,
+    cols: u32,
+    bytes: &[u8],
+) -> MResult<()> {
+    let minimum_element_bytes = match element {
+        RuntimeType::Bool | RuntimeType::U8 | RuntimeType::I8 => 1,
+        RuntimeType::U16 | RuntimeType::I16 => 2,
+        RuntimeType::U32 | RuntimeType::I32 | RuntimeType::F32 | RuntimeType::String => 4,
+        RuntimeType::U64 | RuntimeType::I64 | RuntimeType::F64 | RuntimeType::Index => 8,
+        RuntimeType::U128 | RuntimeType::I128 | RuntimeType::C64 | RuntimeType::R64 => 16,
+        _ => return Ok(()),
+    };
+    let (_, _, element_count) = matrix::element_count(rows, cols)?;
+    let element_payload_bytes = bytes.len().checked_sub(8).ok_or_else(|| {
+        invalid::<()>("matrix constant is shorter than its shape prefix").unwrap_err()
+    })?;
+    let minimum_payload_bytes = element_count
+        .checked_mul(minimum_element_bytes)
+        .ok_or_else(|| invalid::<()>("matrix element payload length overflow").unwrap_err())?;
+    if minimum_payload_bytes > element_payload_bytes {
+        return invalid("matrix element count exceeds the feasible remaining payload");
+    }
+    Ok(())
 }
 
 #[cfg(feature = "matrix")]

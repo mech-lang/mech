@@ -19,6 +19,7 @@ use super::{
 /// children must be charged once for every expanded occurrence before any
 /// cloning or allocation takes place.
 const MAX_EXPANDED_RUNTIME_TYPE_NODES: usize = 1_000_000;
+const MAX_INLINE_RUNTIME_TYPE_NODES: usize = MAX_EXPANDED_RUNTIME_TYPE_NODES;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -436,26 +437,36 @@ pub(crate) fn canonical_runtime_type_key(ty: &RuntimeType) -> MResult<Vec<u8>> {
 }
 
 pub(crate) fn decode_canonical_runtime_type_key(bytes: &[u8]) -> MResult<RuntimeType> {
-    fn decode(reader: &mut ByteReader<'_>, depth: usize) -> MResult<RuntimeType> {
+    fn decode(
+        reader: &mut ByteReader<'_>,
+        depth: usize,
+        remaining_nodes: &mut usize,
+    ) -> MResult<RuntimeType> {
         if depth > MAX_TYPE_RECURSION {
             return invalid("canonical runtime type key exceeds bytecode v1 recursion limit");
         }
+        *remaining_nodes = remaining_nodes.checked_sub(1).ok_or_else(|| {
+            invalid::<()>("canonical runtime type key exceeds inline node limit").unwrap_err()
+        })?;
         let tag = RuntimeTypeTag::from_u16(reader.read_u16("canonical runtime type tag")?)
             .ok_or_else(|| invalid::<()>("unknown canonical runtime type tag").unwrap_err())?;
-        let child =
-            |reader: &mut ByteReader<'_>, depth: usize, what: &str| -> MResult<RuntimeType> {
-                let length = checked_usize(
-                    u64::from(reader.read_u32(&format!("{what} length"))?),
-                    &format!("{what} length"),
-                )?;
-                let bytes = reader.read_exact(length, what)?;
-                let mut nested = ByteReader::new(bytes);
-                let ty = decode(&mut nested, depth + 1)?;
-                if !nested.is_empty() {
-                    return invalid(format!("{what} has trailing bytes"));
-                }
-                Ok(ty)
-            };
+        let child = |reader: &mut ByteReader<'_>,
+                     depth: usize,
+                     remaining_nodes: &mut usize,
+                     what: &str|
+         -> MResult<RuntimeType> {
+            let length = checked_usize(
+                u64::from(reader.read_u32(&format!("{what} length"))?),
+                &format!("{what} length"),
+            )?;
+            let bytes = reader.read_exact(length, what)?;
+            let mut nested = ByteReader::new(bytes);
+            let ty = decode(&mut nested, depth + 1, remaining_nodes)?;
+            if !nested.is_empty() {
+                return invalid(format!("{what} has trailing bytes"));
+            }
+            Ok(ty)
+        };
         Ok(match tag {
             RuntimeTypeTag::U8 => RuntimeType::U8,
             RuntimeTypeTag::U16 => RuntimeType::U16,
@@ -492,7 +503,12 @@ pub(crate) fn decode_canonical_runtime_type_key(bytes: &[u8]) -> MResult<Runtime
                     storage,
                     rows,
                     cols,
-                    element: Box::new(child(reader, depth, "canonical matrix element type")?),
+                    element: Box::new(child(
+                        reader,
+                        depth,
+                        remaining_nodes,
+                        "canonical matrix element type",
+                    )?),
                 }
             }
             RuntimeTypeTag::Enum => {
@@ -508,33 +524,63 @@ pub(crate) fn decode_canonical_runtime_type_key(bytes: &[u8]) -> MResult<Runtime
                 RuntimeType::Atom { id, name }
             }
             RuntimeTypeTag::Record => {
-                let count = checked_usize(
-                    u64::from(reader.read_u32("canonical record field count")?),
+                let encoded_count = reader.read_u32("canonical record field count")?;
+                let count = checked_inline_type_count(
+                    reader,
+                    encoded_count,
+                    8,
+                    0,
+                    *remaining_nodes,
                     "canonical record field count",
                 )?;
                 let mut fields = try_vec_with_capacity(count, "canonical record fields")?;
                 for _ in 0..count {
                     fields.push((
                         reader.read_string("canonical record field name")?,
-                        child(reader, depth, "canonical record field type")?,
+                        child(
+                            reader,
+                            depth,
+                            remaining_nodes,
+                            "canonical record field type",
+                        )?,
                     ));
                 }
                 RuntimeType::Record(fields)
             }
             RuntimeTypeTag::Map => RuntimeType::Map {
-                key: Box::new(child(reader, depth, "canonical map key type")?),
-                value: Box::new(child(reader, depth, "canonical map value type")?),
+                key: Box::new(child(
+                    reader,
+                    depth,
+                    remaining_nodes,
+                    "canonical map key type",
+                )?),
+                value: Box::new(child(
+                    reader,
+                    depth,
+                    remaining_nodes,
+                    "canonical map value type",
+                )?),
             },
             RuntimeTypeTag::Table => {
-                let count = checked_usize(
-                    u64::from(reader.read_u32("canonical table column count")?),
+                let encoded_count = reader.read_u32("canonical table column count")?;
+                let count = checked_inline_type_count(
+                    reader,
+                    encoded_count,
+                    8,
+                    4,
+                    *remaining_nodes,
                     "canonical table column count",
                 )?;
                 let mut columns = try_vec_with_capacity(count, "canonical table columns")?;
                 for _ in 0..count {
                     columns.push((
                         reader.read_string("canonical table column name")?,
-                        child(reader, depth, "canonical table column type")?,
+                        child(
+                            reader,
+                            depth,
+                            remaining_nodes,
+                            "canonical table column type",
+                        )?,
                     ));
                 }
                 let primary_key = reader.read_u32("canonical table primary key")?;
@@ -547,23 +593,39 @@ pub(crate) fn decode_canonical_runtime_type_key(bytes: &[u8]) -> MResult<Runtime
                 }
             }
             RuntimeTypeTag::Tuple => {
-                let count = checked_usize(
-                    u64::from(reader.read_u32("canonical tuple type count")?),
+                let encoded_count = reader.read_u32("canonical tuple type count")?;
+                let count = checked_inline_type_count(
+                    reader,
+                    encoded_count,
+                    4,
+                    0,
+                    *remaining_nodes,
                     "canonical tuple type count",
                 )?;
                 let mut types = try_vec_with_capacity(count, "canonical tuple types")?;
                 for _ in 0..count {
-                    types.push(child(reader, depth, "canonical tuple child type")?);
+                    types.push(child(
+                        reader,
+                        depth,
+                        remaining_nodes,
+                        "canonical tuple child type",
+                    )?);
                 }
                 RuntimeType::Tuple(types)
             }
             RuntimeTypeTag::Reference => RuntimeType::Reference(Box::new(child(
                 reader,
                 depth,
+                remaining_nodes,
                 "canonical reference child type",
             )?)),
             RuntimeTypeTag::Set => {
-                let element = Box::new(child(reader, depth, "canonical set element type")?);
+                let element = Box::new(child(
+                    reader,
+                    depth,
+                    remaining_nodes,
+                    "canonical set element type",
+                )?);
                 let max_len = match reader.read_u8("canonical set limit presence")? {
                     0 => None,
                     1 => Some(reader.read_u32("canonical set limit")?),
@@ -574,6 +636,7 @@ pub(crate) fn decode_canonical_runtime_type_key(bytes: &[u8]) -> MResult<Runtime
             RuntimeTypeTag::Option => RuntimeType::Option(Box::new(child(
                 reader,
                 depth,
+                remaining_nodes,
                 "canonical option child type",
             )?)),
             RuntimeTypeTag::Kind => RuntimeType::Kind(decode_kind(reader, depth + 1)?),
@@ -581,7 +644,8 @@ pub(crate) fn decode_canonical_runtime_type_key(bytes: &[u8]) -> MResult<Runtime
     }
 
     let mut reader = ByteReader::new(bytes);
-    let ty = decode(&mut reader, 0)?;
+    let mut remaining_nodes = MAX_INLINE_RUNTIME_TYPE_NODES;
+    let ty = decode(&mut reader, 0, &mut remaining_nodes)?;
     if !reader.is_empty() {
         return invalid("canonical runtime type key has trailing bytes");
     }
@@ -1116,6 +1180,21 @@ fn checked_embedded_count(
         .ok_or_else(|| invalid::<()>(format!("{what} byte length overflow")).unwrap_err())?;
     if minimum_bytes > reader.remaining() {
         return invalid(format!("{what} exceeds the remaining payload"));
+    }
+    Ok(count)
+}
+
+fn checked_inline_type_count(
+    reader: &ByteReader<'_>,
+    count: u32,
+    minimum_item_bytes: usize,
+    trailing_bytes: usize,
+    remaining_nodes: usize,
+    what: &str,
+) -> MResult<usize> {
+    let count = checked_embedded_count(reader, count, minimum_item_bytes, trailing_bytes, what)?;
+    if count > remaining_nodes {
+        return invalid(format!("{what} exceeds the inline type node limit"));
     }
     Ok(count)
 }

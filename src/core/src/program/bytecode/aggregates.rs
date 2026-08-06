@@ -1,4 +1,4 @@
-use crate::{BytecodeValidationError, MResult, MechError, Ref, Value};
+use crate::{BytecodeValidationError, MResult, MechError, Ref, Value, ValueKind};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, format, vec, vec::Vec};
@@ -57,7 +57,7 @@ pub fn bytecode_composite_children(value: &Value) -> Option<Vec<Value>> {
 fn wrong_arity(kind: &str, expected: usize, actual: usize) -> MechError {
     MechError::new(
         BytecodeValidationError {
-            reason: format!("{kind} CompositePack expected {expected} children, found {actual}"),
+            reason: format!("{kind} CompositePack expects {expected} children, found {actual}"),
         },
         None,
     )
@@ -76,8 +76,58 @@ fn duplicate_hashed_child(kind: &str) -> MechError {
     .with_compiler_loc()
 }
 
+fn compiled_child_kind(value: &Value) -> ValueKind {
+    let mut kind = value.kind();
+    while let ValueKind::Reference(inner) = kind {
+        kind = *inner;
+    }
+    kind
+}
+
+fn wrong_child_kind(index: usize, expected: &ValueKind, actual: &ValueKind) -> MechError {
+    MechError::new(
+        BytecodeValidationError {
+            reason: format!(
+                "CompositePack child {index} has kind {:?}, expected {:?} from the template schema",
+                actual, expected,
+            ),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+/// Validates the exact child schema shared by bytecode reading, contract
+/// planning, and runtime reconstruction.
+pub fn validate_bytecode_composite_children(template: &Value, children: &[Value]) -> MResult<()> {
+    let expected = bytecode_composite_children(template).ok_or_else(|| {
+        MechError::new(
+            BytecodeValidationError {
+                reason: format!(
+                    "CompositePack template kind {:?} is not structurally lowerable",
+                    template.kind(),
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    if children.len() != expected.len() {
+        return Err(wrong_arity("Template", expected.len(), children.len()));
+    }
+    for (index, (expected, actual)) in expected.iter().zip(children).enumerate() {
+        let expected_kind = compiled_child_kind(expected);
+        let actual_kind = actual.kind();
+        if actual_kind != expected_kind {
+            return Err(wrong_child_kind(index, &expected_kind, &actual_kind));
+        }
+    }
+    Ok(())
+}
+
 /// Rebuilds one composite layer from a constant template and live child values.
 pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MResult<Value> {
+    validate_bytecode_composite_children(template, &children)?;
     match template {
         #[cfg(feature = "tuple")]
         Value::Tuple(value) => {
@@ -125,14 +175,14 @@ pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MRe
             }
             let mut children = children.into_iter();
             // Map keys must never retain producer-owned cells: mutating a key
-            // after insertion invalidates the hash table's buckets. Snapshot
-            // the complete entry before hashing it, and reject keys that only
-            // become equal after their producers settle.
+            // after insertion invalidates the hash table's buckets. Values are
+            // deliberately retained so a downstream access that captured the
+            // original value cell continues to observe producer updates.
             let entries = (0..value.map.len())
                 .map(|_| {
                     Ok((
                         children.next().unwrap().try_deep_snapshot()?,
-                        children.next().unwrap().try_deep_snapshot()?,
+                        children.next().unwrap(),
                     ))
                 })
                 .collect::<MResult<Vec<_>>>()?;
