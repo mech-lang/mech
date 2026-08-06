@@ -76,7 +76,26 @@ macro_rules! impl_unchecked_arithmetic {
 
 impl_unchecked_arithmetic!(f32, f64);
 #[cfg(feature = "rational")]
-impl_unchecked_arithmetic!(crate::R64);
+impl RuntimeCheckedArithmetic for crate::R64 {
+    fn runtime_checked_add(self, rhs: Self) -> Option<Self> {
+        self.checked_add(rhs)
+    }
+
+    fn runtime_checked_sub(self, rhs: Self) -> Option<Self> {
+        self.checked_sub(rhs)
+    }
+
+    fn runtime_checked_mul(self, rhs: Self) -> Option<Self> {
+        self.checked_mul(rhs)
+    }
+}
+
+#[cfg(feature = "rational")]
+impl RuntimeCheckedNeg for crate::R64 {
+    fn runtime_checked_neg(&self) -> Option<Self> {
+        (*self).checked_neg()
+    }
+}
 #[cfg(feature = "complex")]
 impl_unchecked_arithmetic!(crate::C64);
 
@@ -302,3 +321,23 @@ pub use self::negate::*;
 pub use self::pow::*;
 #[cfg(feature = "sub")]
 pub use self::sub::*;
+
+#[cfg(all(test, feature = "rational"))]
+mod checked_rational_tests {
+    use super::*;
+
+    #[test]
+    fn bounded_rationals_reject_every_overflowing_runtime_operation() {
+        let max = R64::new(i64::MAX, 1);
+        let min = R64::new(i64::MIN, 1);
+        let one = R64::new(1, 1);
+        let two = R64::new(2, 1);
+        let negative_one = R64::new(-1, 1);
+
+        assert!(RuntimeCheckedArithmetic::runtime_checked_add(max, one).is_none());
+        assert!(RuntimeCheckedArithmetic::runtime_checked_sub(min, one).is_none());
+        assert!(RuntimeCheckedArithmetic::runtime_checked_mul(max, two).is_none());
+        assert!(min.runtime_checked_neg().is_none());
+        assert!(min.checked_div(negative_one).is_none());
+    }
+}

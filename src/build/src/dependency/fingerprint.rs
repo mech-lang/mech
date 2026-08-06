@@ -141,15 +141,12 @@ fn collect_package_inputs(
 ) -> MResult<()> {
     let manifest = package.manifest_relative_path();
     inputs.insert(manifest.clone());
-    let build_script = validated_package_build_script(root, canonical_root, package, &manifest)?;
+    validate_package_build_script(root, canonical_root, package, &manifest)?;
 
     let source_root = package.source_relative_path();
     let mut rust_inputs = Vec::new();
     collect_rust_files(root, &source_root, &mut rust_inputs)?;
 
-    if let Some(build_script) = build_script {
-        rust_inputs.push(build_script);
-    }
     rust_inputs.sort();
     rust_inputs.dedup();
 
@@ -190,12 +187,12 @@ fn collect_package_inputs(
 /// build script. The current workspace registry deliberately fingerprints the
 /// complete conventional `src` tree; reject redirects rather than silently
 /// hashing files Cargo will not compile or omitting files that it will.
-fn validated_package_build_script(
+fn validate_package_build_script(
     root: &Path,
     canonical_root: &Path,
     package: &WorkspacePackage,
     manifest: &Path,
-) -> MResult<Option<PathBuf>> {
+) -> MResult<()> {
     let manifest_file = resolve_input_file(root, canonical_root, manifest)?;
     let source = fs::read_to_string(&manifest_file).map_err(|error| {
         invalid_input(
@@ -234,9 +231,16 @@ fn validated_package_build_script(
         .and_then(|item| item.as_table())
         .and_then(|table| table.get("build"));
     match build {
-        None => Ok(root.join(&default).is_file().then_some(default)),
-        Some(item) if item.as_bool() == Some(false) => Ok(None),
-        Some(item) if item.as_str() == Some("build.rs") => Ok(Some(default)),
+        None if root.join(&default).is_file() => Err(invalid_input(
+            manifest,
+            "package build scripts are unsupported by deterministic workspace fingerprinting",
+        )),
+        None => Ok(()),
+        Some(item) if item.as_bool() == Some(false) => Ok(()),
+        Some(item) if item.as_str() == Some("build.rs") => Err(invalid_input(
+            manifest,
+            "package build scripts are unsupported by deterministic workspace fingerprinting",
+        )),
         Some(item) if item.as_str().is_some() => {
             let path = item.as_str().expect("checked string build path");
             Err(invalid_input(
@@ -248,7 +252,7 @@ fn validated_package_build_script(
         }
         Some(_) => Err(invalid_input(
             manifest,
-            "package.build must be `false`, omitted, or the default `build.rs` string",
+            "package.build must be `false` or omitted without a default build.rs",
         )),
     }
 }
@@ -1000,6 +1004,30 @@ mod tests {
         let changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
 
         assert_eq!(initial, changed);
+    }
+
+    #[test]
+    fn enabled_default_build_scripts_are_rejected() {
+        for manifest in [
+            "[package]\nname = \"mech-math\"\n",
+            "[package]\nname = \"mech-math\"\nbuild = \"build.rs\"\n",
+        ] {
+            let workspace = TestWorkspace::new("enabled-build-script");
+            fs::write(workspace.0.join("machines/math/Cargo.toml"), manifest).unwrap();
+            fs::write(
+                workspace.0.join("machines/math/build.rs"),
+                "fn main() { println!(\"cargo:rerun-if-env-changed=HOST_INPUT\"); }\n",
+            )
+            .unwrap();
+
+            let error = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap_err();
+            assert_eq!(error.kind_name(), "NativeWorkspaceInputInvalid");
+            assert!(
+                error
+                    .kind_message()
+                    .contains("build scripts are unsupported")
+            );
+        }
     }
 
     #[test]

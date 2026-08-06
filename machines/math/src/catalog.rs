@@ -39,7 +39,7 @@ use crate::logarithm::log10::*;
 #[cfg(feature = "op_assign")]
 use crate::op_assign::*;
 
-#[cfg(feature = "op_assign")]
+#[cfg(all(feature = "op_assign", feature = "matrix"))]
 fn validate_op_assign_slice(args: &FunctionArgs) -> MResult<()> {
     let contract = "op_assign_slice";
     let output = args
@@ -48,21 +48,46 @@ fn validate_op_assign_slice(args: &FunctionArgs) -> MResult<()> {
         .ok_or_else(|| {
             function_shape_contract_violation(contract, "output must be matrix-backed")
         })?;
-    for index in 0..args.input_count() {
-        if let Some(input) = args
-            .input_value(index)
-            .expect("input index is bounded")
-            .function_matrix_descriptor(FunctionArgumentRole::Input(index))?
-            && input.rows.saturating_mul(input.cols) > output.rows.saturating_mul(output.cols)
+    let output_elements = output.rows.saturating_mul(output.cols);
+    for input_index in 0..args.input_count() {
+        let input_value = args
+            .input_value(input_index)
+            .expect("input index is bounded");
+        if let Some(input) = input_value
+            .function_matrix_descriptor(FunctionArgumentRole::Input(input_index))?
+            && input.rows.saturating_mul(input.cols) > output_elements
         {
             return Err(function_shape_contract_violation(
                 contract,
                 format!(
-                    "matrix input {index} has {} elements, output has {}",
+                    "matrix input {input_index} has {} elements, output has {}",
                     input.rows.saturating_mul(input.cols),
-                    output.rows.saturating_mul(output.cols),
+                    output_elements,
                 ),
             ));
+        }
+        let validate_indices = |indices: Vec<usize>| -> MResult<()> {
+            for index in indices {
+                if index == 0 || index > output_elements {
+                    return Err(function_shape_contract_violation(
+                        contract,
+                        format!(
+                            "input {input_index} contains index {index}, expected 1..={output_elements}",
+                        ),
+                    ));
+                }
+            }
+            Ok(())
+        };
+        match input_value {
+            mech_core::Value::Index(index) => validate_indices(vec![*index.borrow()])?,
+            mech_core::Value::MatrixIndex(indices) => validate_indices(indices.as_vec())?,
+            mech_core::Value::MutableReference(reference) => match &*reference.borrow() {
+                mech_core::Value::Index(index) => validate_indices(vec![*index.borrow()])?,
+                mech_core::Value::MatrixIndex(indices) => validate_indices(indices.as_vec())?,
+                _ => {}
+            },
+            _ => {}
         }
     }
     Ok(())
@@ -2176,6 +2201,24 @@ mod tests {
     use super::*;
     use mech_core::{FunctionCatalog, OperationId, RuntimeFunctionId};
     use std::collections::BTreeSet;
+
+    #[cfg(all(feature = "op_assign", feature = "u8", feature = "vectord"))]
+    #[test]
+    fn op_assign_contract_rejects_zero_and_out_of_range_index_payloads() {
+        for indices in [vec![0usize], vec![3usize]] {
+            let args = FunctionArgs::Binary(
+                mech_core::Value::MatrixU8(mech_core::matrix::Matrix::DVector(mech_core::Ref::new(
+                    DVector::from_vec(vec![1u8, 2]),
+                ))),
+                mech_core::Value::U8(mech_core::Ref::new(1)),
+                mech_core::Value::MatrixIndex(mech_core::matrix::Matrix::DVector(mech_core::Ref::new(
+                    DVector::from_vec(indices),
+                ))),
+            );
+            let error = validate_op_assign_slice(&args).unwrap_err();
+            assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        }
+    }
 
     #[cfg(all(
         feature = "native-plan",

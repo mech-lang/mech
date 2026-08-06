@@ -89,6 +89,13 @@ impl ConfigCompiler {
             Statement::SplitTable | Statement::FlattenTable => Err(ConfigProfileViolation::error(
                 "table mutation transforms are not allowed in Mech config",
             )),
+            // Dependency feature unification can expose a core statement
+            // variant that this runtime profile does not enable locally.
+            // Config remains deny-by-default for every such statement.
+            #[allow(unreachable_patterns)]
+            _ => Err(ConfigProfileViolation::error(
+                "this statement is not allowed in Mech config v1",
+            )),
         }
     }
 

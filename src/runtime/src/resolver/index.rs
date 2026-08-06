@@ -594,6 +594,12 @@ fn index_statement_address_references(
         Statement::InvariantDefine(invariant) => {
             index_expression_address_references(index, scope, order, &invariant.expression);
         }
+        // A sibling dependency can expose additional core statement variants
+        // through Cargo feature unification. Profiles that enable those
+        // statements add an explicit indexing arm above; other profiles must
+        // still compile without inventing references for unsupported syntax.
+        #[allow(unreachable_patterns)]
+        _ => {}
     }
 }
 

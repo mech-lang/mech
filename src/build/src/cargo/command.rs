@@ -96,6 +96,11 @@ impl CargoInvocation {
     pub fn command(&self) -> Command {
         let mut command = Command::new("cargo");
         command.args(&self.arguments);
+        for (key, _) in std::env::vars_os() {
+            if is_ambient_cargo_build_input(&key) {
+                command.env_remove(key);
+            }
+        }
         if let Some(current_dir) = &self.current_dir {
             command.current_dir(current_dir);
         }
@@ -120,6 +125,57 @@ impl CargoInvocation {
     }
 }
 
+/// Cargo and rustc accept a broad ambient configuration surface. Generated
+/// applications deliberately inherit only the cache/install locations needed
+/// to find the pinned toolchain and already-fetched crates.
+fn is_ambient_cargo_build_input(key: &OsStr) -> bool {
+    let key = key.to_string_lossy();
+    (key.starts_with("CARGO_") && key != "CARGO_HOME")
+        || (key.starts_with("RUST") && key != "RUSTUP_HOME")
+}
+
+fn isolated_cargo_working_directory(manifest_path: &Path) -> MResult<PathBuf> {
+    let manifest = fs::canonicalize(manifest_path).map_err(|error| {
+        cargo_error(format!(
+            "generated Cargo manifest `{}` cannot be resolved: {error}",
+            manifest_path.display(),
+        ))
+    })?;
+    manifest
+        .ancestors()
+        .last()
+        .map(Path::to_path_buf)
+        .ok_or_else(|| cargo_error("generated Cargo manifest has no filesystem root"))
+}
+
+fn reject_ambient_cargo_configuration() -> MResult<()> {
+    let cargo_home = std::env::var_os("CARGO_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".cargo")))
+        .or_else(|| std::env::var_os("USERPROFILE").map(|home| PathBuf::from(home).join(".cargo")));
+    let Some(cargo_home) = cargo_home else {
+        return Ok(());
+    };
+    for name in ["config.toml", "config"] {
+        let path = cargo_home.join(name);
+        if path.exists() {
+            return Err(cargo_error(format!(
+                "ambient Cargo configuration `{}` is unsupported for deterministic native builds",
+                path.display(),
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn isolate_cargo_invocation(
+    invocation: CargoInvocation,
+    manifest_path: &Path,
+) -> MResult<CargoInvocation> {
+    reject_ambient_cargo_configuration()?;
+    Ok(invocation.with_current_dir(isolated_cargo_working_directory(manifest_path)?))
+}
+
 /// Derive the exact project lockfile from a frozen resolution seed.
 pub fn generate_project_lockfile(
     project: &GeneratedNativeProject,
@@ -130,7 +186,11 @@ pub fn generate_project_lockfile(
     let frozen_registry_packages = frozen_resolution_packages(resolution_seed)?;
     project.materialize_lockfile_seed(resolution_seed)?;
 
-    let invocation = CargoInvocation::resolve_lockfile(project.manifest_path(), offline);
+    let manifest_path = project.manifest_path();
+    let invocation = isolate_cargo_invocation(
+        CargoInvocation::resolve_lockfile(&manifest_path, offline),
+        &manifest_path,
+    )?;
     let output = invocation.output()?;
     if !output.status.success() {
         return Err(cargo_error(cargo_failure_reason(
@@ -265,13 +325,17 @@ pub fn build_native_project(
     require_regular_generated_file(&project.manifest_path(), "Cargo manifest")?;
     require_regular_generated_file(&project.lockfile_path(), "Cargo lockfile")?;
 
-    let invocation = CargoInvocation::build(
-        project.manifest_path(),
-        binary_name,
-        target,
-        target_dir,
-        release,
-        offline,
+    let manifest_path = project.manifest_path();
+    let invocation = isolate_cargo_invocation(
+        CargoInvocation::build(
+            &manifest_path,
+            binary_name,
+            target,
+            target_dir,
+            release,
+            offline,
+        )?,
+        &manifest_path,
     )?;
     let output = invocation.output()?;
     let messages = parse_cargo_build_messages(Cursor::new(&output.stdout))?;
@@ -375,6 +439,41 @@ mod tests {
             ]
         );
         assert_eq!(invocation.command().get_program(), "cargo");
+    }
+
+    #[test]
+    fn ambient_cargo_and_rust_build_settings_are_removed() {
+        for key in [
+            "RUSTFLAGS",
+            "CARGO_ENCODED_RUSTFLAGS",
+            "RUSTC_WRAPPER",
+            "CARGO_BUILD_TARGET",
+            "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS",
+        ] {
+            assert!(is_ambient_cargo_build_input(OsStr::new(key)), "{key}");
+        }
+        for key in ["CARGO_HOME", "RUSTUP_HOME", "PATH", "HOME"] {
+            assert!(!is_ambient_cargo_build_input(OsStr::new(key)), "{key}");
+        }
+    }
+
+    #[test]
+    fn cargo_runs_from_the_filesystem_root_not_manifest_ancestors() {
+        let temporary = tempfile::tempdir().unwrap();
+        let project = minimal_project(&temporary.path().join("parent/project"));
+        project.materialize().unwrap();
+        let root = isolated_cargo_working_directory(&project.manifest_path()).unwrap();
+        assert_eq!(
+            root,
+            project
+                .manifest_path()
+                .canonicalize()
+                .unwrap()
+                .ancestors()
+                .last()
+                .unwrap()
+        );
+        assert!(!root.starts_with(temporary.path()));
     }
 
     #[test]

@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
-EXPECTED_MANIFEST_SHA256 = "326cd5ed06069d1cc3738dbbaa9ce1a27e077c5a4c229118f240d5aa08c2458e"
+EXPECTED_MANIFEST_SHA256 = "d58c839b1e3525aaddb6903c9abd0e7380a0a3a5dab1fcf3aa24cffbad198e25"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "a437e67ca6120b90c928eb55ee0479c4a95afbb23a854c406c7fd531df2c85cc",
     "canonical-matrices.mecb": "1e0d08eabb54b9c4edc5caae095dbab607cd633867d1c0b642126f5451ecf55d",

@@ -54,6 +54,12 @@ pub fn generated_cases() -> Vec<GeneratedCase> {
             "variadic-horzcat-f64.mecb",
             "[1 2 3 4 5]",
         ),
+        compiled(
+            "integrity",
+            "generated_native_integrity",
+            "x := 1.0\nsafe! := x <= 2.0\n\"integrity-done\"",
+            "\"integrity-done\"",
+        ),
         GeneratedCase {
             profile: OwnerProfile::Fixed,
             case: "fixed-matrix",

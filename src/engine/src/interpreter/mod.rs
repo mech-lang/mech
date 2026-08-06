@@ -1,6 +1,8 @@
 use crate::*;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::cell::RefCell as StdRefCell;
+#[cfg(feature = "invariant_define")]
+use std::collections::BTreeMap;
 use std::collections::{HashMap, HashSet};
 use std::io::{Cursor, Read, Write};
 use std::ops::Deref;
@@ -2338,7 +2340,7 @@ impl Interpreter {
         // Bind symbols to the decoded register values, then load the exact
         // checked dictionary. A bytecode install replaces these tables.
         {
-            let state_brrw = self.state.borrow_mut();
+            let mut state_brrw = self.state.borrow_mut();
             let mut symbol_table = state_brrw.symbol_table.borrow_mut();
             *symbol_table = SymbolTable::new();
             state_brrw.dictionary.borrow_mut().clear();
@@ -2352,6 +2354,185 @@ impl Interpreter {
                     .borrow_mut()
                     .insert(*id, name.clone());
                 state_brrw.dictionary.borrow_mut().insert(*id, name.clone());
+            }
+            drop(symbol_table);
+            #[cfg(feature = "invariant_define")]
+            {
+                let constraints = &mut state_brrw.integrity_constraints;
+                constraints.clear();
+                let marker_id = hash_str("integrity/constraint");
+                let mut markers = BTreeMap::new();
+                for instruction in &program.instructions {
+                    let BytecodeInstruction::RuntimeVariadic {
+                        function,
+                        arguments,
+                        ..
+                    } = instruction
+                    else {
+                        continue;
+                    };
+                    if *function != marker_id {
+                        continue;
+                    }
+                    if arguments.len() != 6 {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint marker has {} metadata inputs, expected 6",
+                                    arguments.len()
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                    let result = arguments[0];
+                    if markers.insert(result, arguments.clone()).is_some() {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint register {result} has duplicate markers"
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                }
+                for (id, register) in &program.symbols {
+                    let Some(name) = program.dictionary.get(id) else {
+                        continue;
+                    };
+                    if !name.ends_with('!') {
+                        continue;
+                    }
+                    if program.mutable_symbols.contains(id) {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint symbol {name:?} must be immutable"
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                    let Some(metadata) = markers.remove(register) else {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint symbol {name:?} is missing its runtime marker"
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    };
+                    let metadata_string = |index: usize, label: &str| -> MResult<String> {
+                        match self.bytecode_registers.value(metadata[index])? {
+                            Value::String(value) => Ok(value.borrow().clone()),
+                            value => Err(MechError::new(
+                                BytecodeValidationError {
+                                    reason: format!(
+                                        "integrity constraint {label} metadata must be String, found {:?}",
+                                        value.kind()
+                                    ),
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()),
+                        }
+                    };
+                    let encoded_name = metadata_string(1, "name")?;
+                    if encoded_name != *name {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint marker name {encoded_name:?} does not match symbol {name:?}"
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                    let expression = metadata_string(2, "expression")?;
+                    let operator = match self.bytecode_registers.value(metadata[3])? {
+                        Value::Empty => None,
+                        Value::String(value) => Some(match value.borrow().as_str() {
+                            "eq" => FormulaOperator::Comparison(ComparisonOp::Equal),
+                            "neq" => FormulaOperator::Comparison(ComparisonOp::NotEqual),
+                            "lt" => FormulaOperator::Comparison(ComparisonOp::LessThan),
+                            "lte" => FormulaOperator::Comparison(ComparisonOp::LessThanEqual),
+                            "gt" => FormulaOperator::Comparison(ComparisonOp::GreaterThan),
+                            "gte" => FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual),
+                            code => {
+                                return Err(MechError::new(
+                                    BytecodeValidationError {
+                                        reason: format!(
+                                            "integrity constraint marker has unknown operator {code:?}"
+                                        ),
+                                    },
+                                    None,
+                                )
+                                .with_compiler_loc());
+                            }
+                        }),
+                        value => {
+                            return Err(MechError::new(
+                                BytecodeValidationError {
+                                    reason: format!(
+                                        "integrity constraint operator metadata must be Empty or String, found {:?}",
+                                        value.kind()
+                                    ),
+                                },
+                                None,
+                            )
+                            .with_compiler_loc());
+                        }
+                    };
+                    let optional_operand = |index: usize| -> MResult<Option<ValRef>> {
+                        match self.bytecode_registers.value(metadata[index])? {
+                            Value::Empty => Ok(None),
+                            value if operator.is_none() => Err(MechError::new(
+                                BytecodeValidationError {
+                                    reason: format!(
+                                        "integrity constraint without an operator has {:?} operand metadata",
+                                        value.kind()
+                                    ),
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()),
+                            _ => Ok(Some(self.bytecode_registers.cell(metadata[index])?)),
+                        }
+                    };
+                    let lhs = optional_operand(4)?;
+                    let rhs = optional_operand(5)?;
+                    constraints.insert(
+                        *id,
+                        IntegrityConstraint {
+                            id: *id,
+                            name: name.clone(),
+                            expression,
+                            result: self.bytecode_registers.cell(*register)?,
+                            lhs,
+                            operator,
+                            rhs,
+                            tokens: Vec::new(),
+                        },
+                    );
+                }
+                if let Some(register) = markers.keys().next() {
+                    return Err(MechError::new(
+                        BytecodeValidationError {
+                            reason: format!(
+                                "integrity constraint marker for register {register} has no immutable `!` symbol"
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
             }
         }
 

@@ -50,18 +50,29 @@ where
 #[cfg(feature = "matrix_comprehensions")]
 fn validate_matrix_comprehension(args: &FunctionArgs) -> MResult<()> {
     let contract = "matrix_comprehension";
-    if args.input_count() != 0 {
-        return Err(function_shape_contract_violation(
-            contract,
-            format!("expected no inputs, found {}", args.input_count()),
-        ));
-    }
     args.output_value()
         .function_matrix_descriptor(FunctionArgumentRole::Output)?
         .ok_or_else(|| {
             function_shape_contract_violation(contract, "output must be matrix-backed")
         })?;
     Ok(())
+}
+
+#[cfg(feature = "set_comprehensions")]
+fn validate_set_comprehension(_args: &FunctionArgs) -> MResult<()> {
+    Ok(())
+}
+
+#[cfg(feature = "invariant_define")]
+fn validate_integrity_constraint_marker(args: &FunctionArgs) -> MResult<()> {
+    if args.input_count() == 6 {
+        Ok(())
+    } else {
+        Err(function_shape_contract_violation(
+            "integrity_constraint_marker",
+            format!("expected 6 metadata inputs, found {}", args.input_count()),
+        ))
+    }
 }
 
 #[cfg(feature = "source")]
@@ -170,12 +181,32 @@ mech_core::declare_native_runtime_factory! {
 }
 
 mech_core::declare_native_runtime_factory! {
+    cfg: feature = "invariant_define",
+    registration: register_integrity_constraint_marker,
+    installer: install_integrity_constraint_marker,
+    name: "integrity/constraint",
+    factory_type: crate::intrinsics::define::BytecodeIntegrityConstraintMarker,
+    contract: RuntimeFunctionContract::custom(
+        "integrity_constraint_marker",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_integrity_constraint_marker,
+    ),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_integrity_constraint_marker",
+    extra_cargo_features: ["invariant_define"],
+}
+
+mech_core::declare_native_runtime_factory! {
     cfg: feature = "set_comprehensions",
     registration: register_set_comprehension,
     installer: install_set_comprehension,
     name: "set/comprehension",
     factory_type: ValueSetComprehension,
-    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    contract: RuntimeFunctionContract::custom(
+        "set_comprehension",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_set_comprehension,
+    ),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_set_comprehension",
     extra_cargo_features: ["set_comprehensions"],
@@ -213,6 +244,8 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register_set_comprehension(builder)?;
     #[cfg(feature = "matrix_comprehensions")]
     register_matrix_comprehension(builder)?;
+    #[cfg(feature = "invariant_define")]
+    register_integrity_constraint_marker(builder)?;
 
     #[cfg(feature = "matrix_horzcat")]
     super::horzcat::install_runtime(builder)?;

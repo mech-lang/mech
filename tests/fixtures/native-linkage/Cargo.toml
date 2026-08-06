@@ -67,6 +67,7 @@ extended-engine-shard = [
 ]
 extended-engine-shard-unsigned = [
   "extended-engine-shard",
+  "mech-engine/invariant_define",
   "mech-engine/u8", "mech-engine/u16", "mech-engine/u32", "mech-engine/u64", "mech-engine/u128",
 ]
 extended-engine-shard-signed = [
