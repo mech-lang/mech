@@ -58,20 +58,22 @@ check_profile() {
 
   package="mech-$machine"
   graph_path="$scratch/$machine-$profile.tree"
+  # This contract describes the graph shipped to downstream users. Benchmark
+  # and test tooling may depend on broader compiler layers through dev edges.
   cargo +nightly-2026-03-03 tree \
     --manifest-path "$manifest" \
     --config "$core_patch" \
     --config "$abi_patch" \
     --no-default-features \
     --features "$features" \
-    -e features > "$graph_path"
+    -e normal,build,features > "$graph_path"
   cargo +nightly-2026-03-03 tree \
     --manifest-path "$manifest" \
     --config "$core_patch" \
     --config "$abi_patch" \
     --no-default-features \
     --features "$features" \
-    -e features \
+    -e normal,build,features \
     -i "$package" >> "$graph_path"
   cargo +nightly-2026-03-03 tree \
     --manifest-path "$manifest" \
@@ -79,7 +81,7 @@ check_profile() {
     --config "$abi_patch" \
     --no-default-features \
     --features "$features" \
-    -e features \
+    -e normal,build,features \
     -i mech-core >> "$graph_path"
   graph=$(cat "$graph_path")
   runtime_feature="$package feature \"runtime\""
