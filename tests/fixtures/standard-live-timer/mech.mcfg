@@ -1,0 +1,33 @@
+config := {
+  hosts: [
+    {
+      name: "timer"
+      provider: "timer"
+      settings: {
+        frequency-hz: 20
+        max-catch-up-steps: 4
+      }
+    }
+    {
+      name: "console"
+      provider: "console"
+      settings: {}
+    }
+  ]
+
+  run: {
+    paths: ["live.mec"]
+    grants: [
+      {
+        target: "timer/tick"
+        operations: ["read"]
+        paths: ["tick"]
+      }
+      {
+        target: "console/output"
+        operations: ["write"]
+        paths: ["line"]
+      }
+    ]
+  }
+}

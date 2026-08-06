@@ -27,9 +27,9 @@ class ImpactClassifierTests(unittest.TestCase):
         self.assertFalse(result["windows_canary_required"])
         self.assertEqual(result["changed_owners"], [])
 
-    def test_local_machine_change_selects_only_that_owner(self):
+    def test_machine_change_runs_mech_integration_not_machine_private_tests(self):
         result = self.classify(["machines/math/src/add.rs"])
-        self.assertEqual(result["changed_owners"], ["mech-math"])
+        self.assertEqual(result["changed_owners"], [])
         self.assertTrue(result["standard_canaries_required"])
         self.assertFalse(result["cross_cutting_standard_suite_required"])
 
@@ -42,7 +42,7 @@ class ImpactClassifierTests(unittest.TestCase):
         )
         self.assertEqual(result["changed_owners"], expected)
         self.assertTrue(result["cross_cutting_standard_suite_required"])
-        self.assertLessEqual(len(result["owner_shards"]), 10)
+        self.assertEqual(len(result["owner_shards"]), len(expected))
 
     def test_browser_related_change_requests_browser_canary(self):
         result = self.classify(["hosts/scene/src/lib.rs"])
@@ -59,10 +59,10 @@ class ImpactClassifierTests(unittest.TestCase):
         self.assertTrue(result["cross_cutting_standard_suite_required"])
         self.assertEqual(result["unmatched_paths"], ["new-top-level-area/file.rs"])
 
-    def test_shards_never_exceed_runner_budget(self):
+    def test_every_owner_gets_an_independent_runner(self):
         names = [f"owner-{index:02}" for index in range(31)]
         shards = CI_IMPACT.make_shards(names)
-        self.assertEqual(len(shards), 10)
+        self.assertEqual(len(shards), len(names))
         flattened = sorted(
             owner
             for shard in shards

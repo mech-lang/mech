@@ -14,9 +14,6 @@ from typing import Any, Dict, Iterable
 from ci_owners import DEFAULT_OWNER_CONFIG, load_owners, matching_owners
 
 
-MAX_OWNER_SHARDS = 10
-
-
 def changed_paths(base: str, head: str) -> list[str]:
     result = subprocess.run(
         ["git", "diff", "--name-only", "--diff-filter=ACDMRTUXB", f"{base}...{head}"],
@@ -42,16 +39,12 @@ def normalize_labels(values: Iterable[str]) -> set[str]:
     return labels
 
 
-def make_shards(owner_names: list[str], limit: int = MAX_OWNER_SHARDS) -> list[Dict[str, str]]:
+def make_shards(owner_names: list[str]) -> list[Dict[str, str]]:
     if not owner_names:
         return []
-    shard_count = min(limit, len(owner_names))
-    buckets: list[list[str]] = [[] for _ in range(shard_count)]
-    for index, owner_name in enumerate(owner_names):
-        buckets[index % shard_count].append(owner_name)
     return [
-        {"id": str(index + 1), "owners": ",".join(bucket)}
-        for index, bucket in enumerate(buckets)
+        {"id": str(index + 1), "owners": owner_name}
+        for index, owner_name in enumerate(owner_names)
     ]
 
 
