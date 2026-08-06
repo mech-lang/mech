@@ -6,7 +6,7 @@ mod dynamic_matrix_factory;
 use mech_core::matrix::Matrix;
 use mech_core::{
     BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult,
-    MechExecutionServices, ParsedProgram, Ref, RuntimeType, ValRef, Value, hash_str,
+    MechExecutionServices, ParsedProgram, Ref, RuntimeType, ValRef, Value, ValueKind, hash_str,
 };
 use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
 use nalgebra::DMatrix;
@@ -141,6 +141,63 @@ fn dynamic_strict_inequality_round_trips_through_bytecode() -> MResult<()> {
         BytecodeInstruction::RuntimeBinary { function, .. }
             if *function == hash_str("compare/sneq")
     )));
+    Ok(())
+}
+
+#[test]
+fn ordinary_set_elements_round_trip_through_bytecode() -> MResult<()> {
+    let (inserted_program, inserted) = run_compiled_source("set/insert({1, 2}, 3)")?;
+    assert!(
+        inserted_program
+            .instructions
+            .iter()
+            .any(|instruction| matches!(
+                instruction,
+                BytecodeInstruction::RuntimeBinary { function, .. }
+                    if *function == hash_str("SetInsertFxn")
+            ))
+    );
+    let Value::Set(inserted) = inserted else {
+        panic!("set/insert must return a set");
+    };
+    assert_eq!(inserted.borrow().kind, ValueKind::F64);
+    assert!(inserted.borrow().set.contains(&Value::F64(Ref::new(3.0))));
+
+    let (_, removed) = run_compiled_source("set/remove({1}, 1)")?;
+    let Value::Set(removed) = removed else {
+        panic!("set/remove must return a set");
+    };
+    assert!(removed.borrow().set.is_empty());
+    assert_eq!(removed.borrow().kind, ValueKind::F64);
+
+    let (_, member) = run_compiled_source("2 ∈ {1, 2, 3}")?;
+    assert_eq!(member, Value::Bool(Ref::new(true)));
+    let (_, not_member) = run_compiled_source("4 ∉ {1, 2, 3}")?;
+    assert_eq!(not_member, Value::Bool(Ref::new(true)));
+    Ok(())
+}
+
+#[test]
+fn compiled_set_membership_retains_reactive_element_cells() -> MResult<()> {
+    let bytecode = compile_source("x := 2\nitems := {1, 2, 3}\nmember := x ∈ items\nmember")?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    let mut compiled = standard_program();
+    assert_eq!(
+        compiled.run_bytecode_program(&parsed)?,
+        Value::Bool(Ref::new(true))
+    );
+
+    compiled.update_inputs_and_advance_turn(&[ProgramInputUpdate {
+        input: ProgramInputId {
+            interpreter_id: compiled.interpreter().id,
+            symbol_id: hash_str("x"),
+        },
+        value: Value::F64(Ref::new(4.0)),
+    }])?;
+    assert_eq!(
+        compiled.root_symbol_value("member")?,
+        Value::Bool(Ref::new(false))
+    );
     Ok(())
 }
 

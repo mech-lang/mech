@@ -8,21 +8,21 @@ use mech_core::set::MechSet;
 #[derive(Debug)]
 pub(crate) struct SetRemoveFxn {
     arg1: Ref<MechSet>,
-    arg2: Ref<Value>,
+    arg2: Value,
     out: Ref<MechSet>,
 }
 impl MechFunctionFactory for SetRemoveFxn {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Set,
         FunctionValueRepresentation::Set,
-        FunctionValueRepresentation::MutableValueCell,
+        FunctionValueRepresentation::AnyValue,
     );
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
                 let arg1: Ref<MechSet> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let arg2: Ref<Value> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let arg2 = normalize_set_element(arg2);
                 let out: Ref<MechSet> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(SetRemoveFxn { arg1, arg2, out }))
             }
@@ -45,7 +45,7 @@ impl MechFunctionImpl for SetRemoveFxn {
 
             // Get references to arg1 and arg2 sets
             let set_ptr: &MechSet = &*(self.arg1.as_ptr());
-            let elem_ptr: &Value = &*(self.arg2.as_ptr());
+            let elem_ptr = &self.arg2;
 
             // Clear the output set first (optional, depending on semantics)
             out_ptr.set.clear();
@@ -57,11 +57,7 @@ impl MechFunctionImpl for SetRemoveFxn {
             }
             // Update metadata
             out_ptr.sync_cardinality_from_contents();
-            out_ptr.kind = if out_ptr.set.len() > 0 {
-                out_ptr.set.iter().next().unwrap().kind()
-            } else {
-                ValueKind::Empty
-            };
+            out_ptr.kind = set_ptr.kind.clone();
         };
         Ok(())
     }
@@ -79,8 +75,15 @@ impl MechFunctionImpl for SetRemoveFxn {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetRemoveFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("SetRemoveFxn");
-        compile_binop!(name, self.out, self.arg1, self.arg2, ctx);
+        let destination = compile_register_brrw!(self.out, ctx);
+        let set = compile_register_brrw!(self.arg1, ctx);
+        let element = compile_value_register(
+            &self.arg2,
+            core::ptr::from_ref(&self.arg2).addr(),
+            ctx,
+        )?;
+        ctx.emit_binop(hash_str("SetRemoveFxn"), destination, set, element);
+        Ok(destination)
     }
 }
 
@@ -89,7 +92,7 @@ fn set_remove_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
     match (arg1, arg2) {
         (Value::Set(arg1), arg2) => Ok(Box::new(SetRemoveFxn {
             arg1: arg1.clone(),
-            arg2: Ref::new(arg2.clone()),
+            arg2: normalize_set_element(arg2),
             out: Ref::new(MechSet::new(
                 arg1.borrow().kind.clone(),
                 arg1.borrow().num_elements + 1,

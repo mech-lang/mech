@@ -366,6 +366,57 @@ mod matrix_access_contract_tests {
 
         assert!(result.is_err());
     }
+
+    #[cfg(feature = "bool")]
+    #[test]
+    fn reactive_logical_linear_selection_regrows_from_empty() {
+        let source = Ref::new(DVector::from_vec(vec![10, 20, 30]));
+        let ixes = Ref::new(DVector::from_vec(vec![true, false, true]));
+        let out = Ref::new(DVector::from_element(2, 0));
+        let function = Access1DVDbVD::<u8> {
+            source,
+            ixes: ixes.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[10, 30]);
+
+        *ixes.borrow_mut() = DVector::from_vec(vec![false, false, false]);
+        function.solve_result().unwrap();
+        assert!(out.borrow().is_empty());
+
+        *ixes.borrow_mut() = DVector::from_vec(vec![false, true, false]);
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[20]);
+    }
+
+    #[cfg(feature = "bool")]
+    #[test]
+    fn reactive_logical_matrix_selection_regrows_from_empty() {
+        let source = Ref::new(DMatrix::from_row_slice(3, 2, &[10, 11, 20, 21, 30, 31]));
+        let ixes = Ref::new(DVector::from_vec(vec![true, false, true]));
+        let out = Ref::new(DMatrix::from_element(2, 2, 0));
+        let function = Access2DVDbAMD::<u8> {
+            source,
+            ixes: ixes.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(
+            *out.borrow(),
+            DMatrix::from_row_slice(2, 2, &[10, 11, 30, 31])
+        );
+
+        *ixes.borrow_mut() = DVector::from_vec(vec![false, false, false]);
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().shape(), (0, 2));
+
+        *ixes.borrow_mut() = DVector::from_vec(vec![false, true, false]);
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), DMatrix::from_row_slice(1, 2, &[20, 21]));
+    }
 }
 
 // Access ---------------------------------------------------------------------
@@ -493,23 +544,13 @@ macro_rules! access_1d_slice {
 macro_rules! access_1d_slice_bool {
     ($source:expr, $ix:expr, $out:expr) => {
         unsafe {
-            let mut j = 0;
-            let out_len = (*$out).len();
+            let mut selected = Vec::new();
             for i in 0..(*$ix).len() {
-                if (*$ix)[i] == true {
-                    j += 1;
+                if (*$ix)[i] {
+                    selected.push((*$source).index(i).clone());
                 }
             }
-            if j != out_len {
-                (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
-            for i in 0..(*$source).len() {
-                if (*$ix)[i] == true {
-                    (&mut (*$out))[j] = (*$source).index(i).clone();
-                    j += 1;
-                }
-            }
+            *$out = DVector::from_vec(selected);
         }
     };
 }
@@ -517,23 +558,13 @@ macro_rules! access_1d_slice_bool {
 macro_rules! access_1d_slice_bool_v {
     ($source:expr, $ix:expr, $out:expr) => {
         unsafe {
-            let mut j = 0;
-            let out_len = (*$out).len();
+            let mut selected = Vec::new();
             for i in 0..(*$ix).len() {
-                if (&(*$ix))[i] == true {
-                    j += 1;
+                if (&(*$ix))[i] {
+                    selected.push((*$source).index(i).clone());
                 }
             }
-            if j != out_len {
-                (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
-            for i in 0..(*$source).len() {
-                if (&(*$ix))[i] == true {
-                    (&mut (*$out))[j] = (*$source).index(i).clone();
-                    j += 1;
-                }
-            }
+            *$out = DVector::from_vec(selected);
         }
     };
 }
@@ -543,23 +574,13 @@ macro_rules! access_2d_row_slice_bool {
         unsafe {
             let scalar_ix = &(*$ix1);
             let vec_ix = &(*$ix2);
-            let mut j = 0;
-            let out_len = (*$out).len();
+            let mut selected = Vec::new();
             for i in 0..vec_ix.len() {
-                if vec_ix[i] == true {
-                    j += 1;
+                if vec_ix[i] {
+                    selected.push((*$source).index((scalar_ix - 1, i)).clone());
                 }
             }
-            if j != out_len {
-                (*$out).resize_horizontally_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
-            for i in 0..vec_ix.len() {
-                if vec_ix[i] == true {
-                    (&mut (*$out))[j] = (*$source).index((scalar_ix - 1, i)).clone();
-                    j += 1;
-                }
-            }
+            *$out = RowDVector::from_row_slice(&selected);
         }
     };
 }
@@ -569,23 +590,13 @@ macro_rules! access_2d_col_slice_bool {
         unsafe {
             let vec_ix = &(*$ix1);
             let scalar_ix = &(*$ix2);
-            let mut j = 0;
-            let out_len = (*$out).len();
+            let mut selected = Vec::new();
             for i in 0..vec_ix.len() {
-                if vec_ix[i] == true {
-                    j += 1;
+                if vec_ix[i] {
+                    selected.push((*$source).index((i, scalar_ix - 1)).clone());
                 }
             }
-            if j != out_len {
-                (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
-            for i in 0..vec_ix.len() {
-                if vec_ix[i] == true {
-                    (&mut (*$out))[j] = (*$source).index((i, scalar_ix - 1)).clone();
-                    j += 1;
-                }
-            }
+            *$out = DVector::from_vec(selected);
         }
     };
 }
@@ -613,25 +624,16 @@ macro_rules! access_2d_slice_bool {
         unsafe {
             let ix1 = &(*$ix1);
             let ix2 = &(*$ix2);
-            let mut j = 0;
-            let out_len = (*$out).len();
-            for i in 0..ix1.len() {
-                if ix1[i] == true {
-                    j += 1;
-                }
-            }
-            if j != (*$out).nrows() {
-                (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
+            let rows = ix1.iter().filter(|selected| **selected).count();
+            let mut selected = Vec::with_capacity(rows.saturating_mul(ix2.len()));
             for k in 0..ix2.len() {
                 for i in 0..ix1.len() {
-                    if ix1[i] == true {
-                        (&mut (*$out))[j] = (*$source).index((i, ix2[k] - 1)).clone();
-                        j += 1;
+                    if ix1[i] {
+                        selected.push((*$source).index((i, ix2[k] - 1)).clone());
                     }
                 }
             }
+            *$out = DMatrix::from_column_slice(rows, ix2.len(), &selected);
         }
     };
 }
@@ -641,25 +643,16 @@ macro_rules! access_2d_slice_bool2 {
         unsafe {
             let ix1 = &(*$ix1);
             let ix2 = &(*$ix2);
-            let mut j = 0;
-            let out_len = (*$out).len();
-            for i in 0..ix2.len() {
-                if ix2[i] == true {
-                    j += 1;
-                }
-            }
-            if j != (*$out).ncols() {
-                (*$out).resize_horizontally_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
+            let cols = ix2.iter().filter(|selected| **selected).count();
+            let mut selected = Vec::with_capacity(ix1.len().saturating_mul(cols));
             for k in 0..ix2.len() {
                 for i in 0..ix1.len() {
-                    if ix2[k] == true {
-                        (&mut (*$out))[j] = (*$source).index((ix1[i] - 1, k)).clone();
-                        j += 1;
+                    if ix2[k] {
+                        selected.push((*$source).index((ix1[i] - 1, k)).clone());
                     }
                 }
             }
+            *$out = DMatrix::from_column_slice(ix1.len(), cols, &selected);
         }
     };
 }
@@ -669,31 +662,17 @@ macro_rules! access_2d_slice_bool_bool {
         unsafe {
             let ix1 = &(*$ix1);
             let ix2 = &(*$ix2);
-            let mut k = 0;
-            let mut j = 0;
-            let out_len = (*$out).len();
-            for i in 0..ix1.len() {
-                if ix1[i] == true {
-                    j += 1;
-                }
-            }
-            for i in 0..ix2.len() {
-                if ix2[i] == true {
-                    k += 1;
-                }
-            }
-            if j != (*$out).nrows() || k != (*$out).ncols() {
-                (*$out).resize_mut(j, k, (&(*$out))[0].clone());
-            }
-            let mut out_ix = 0;
+            let rows = ix1.iter().filter(|selected| **selected).count();
+            let cols = ix2.iter().filter(|selected| **selected).count();
+            let mut selected = Vec::with_capacity(rows.saturating_mul(cols));
             for k in 0..ix2.len() {
                 for j in 0..ix1.len() {
-                    if ix1[j] == true && ix2[k] == true {
-                        (&mut (*$out))[out_ix] = (*$source).index((j, k)).clone();
-                        out_ix += 1;
+                    if ix1[j] && ix2[k] {
+                        selected.push((*$source).index((j, k)).clone());
                     }
                 }
             }
+            *$out = DMatrix::from_column_slice(rows, cols, &selected);
         }
     };
 }
@@ -718,25 +697,17 @@ macro_rules! access_2d_slice_all_bool {
     ($source:expr, $ix:expr, $out:expr) => {
         unsafe {
             let vec_ix = &(*$ix);
-            let mut j = 0;
-            let out_len = (*$out).len();
-            for i in 0..vec_ix.len() {
-                if vec_ix[i] == true {
-                    j += 1;
-                }
-            }
-            if j != out_len {
-                (*$out).resize_vertically_mut(j, (&mut (*$out))[0].clone());
-            }
-            j = 0;
-            for i in 0..vec_ix.len() {
-                for k in 0..(*$source).ncols() {
-                    if vec_ix[i] == true {
-                        (&mut (*$out))[j] = (*$source).index((i, k)).clone();
-                        j += 1;
+            let rows = vec_ix.iter().filter(|selected| **selected).count();
+            let cols = (*$source).ncols();
+            let mut selected = Vec::with_capacity(rows.saturating_mul(cols));
+            for k in 0..cols {
+                for i in 0..vec_ix.len() {
+                    if vec_ix[i] {
+                        selected.push((*$source).index((i, k)).clone());
                     }
                 }
             }
+            *$out = DMatrix::from_column_slice(rows, cols, &selected);
         }
     };
 }
