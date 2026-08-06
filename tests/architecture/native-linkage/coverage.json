@@ -13,21 +13,21 @@
     "runtime_contract_surface_digest": "21ef2bbc588150f22def229f8cb744a584c61e73c55956aa4163ac1a00a1af65",
     "runtime_signature_count": 9022,
     "missing_signature_count": 0,
-    "runtime_signature_surface_digest": "44b3064fe8b2000a6283b321419dfdc99dfed9fe01c9d993b60d3c811c4d92b9"
+    "runtime_signature_surface_digest": "08af065e0c2d56ed8b99acecdfd0a14c811c7a6a84a4627ca5c1ee56f16aed54"
   },
   "extended": {
-    "entry_count": 120017,
-    "linked_entry_count": 120017,
+    "entry_count": 120016,
+    "linked_entry_count": 120016,
     "missing_linkage_count": 0,
-    "runtime_surface_digest": "8062a516449b94995b3a859bbbd51bf267d04b0534393106d5569a213f1146dc",
-    "installer_surface_digest": "6a4e9a83be5cd71abca6496872a9885c8f0555a2588b341f25bfefe3ea1313f1",
-    "feature_surface_digest": "4b5c65e4c0082fb20d05785f71a47e182c9a55f6d03ab5933e89ec15c40a249e",
-    "runtime_contract_count": 120017,
+    "runtime_surface_digest": "4c765cce56c0def682f098a988f8f1c88af01ca28f857175d2de0d2a4e36f104",
+    "installer_surface_digest": "b5a5a1aced3bc9ab5c902c40c50ca851a0d6a79c2c7deec52a4119fc74ee533c",
+    "feature_surface_digest": "467e3a8297aaf226a0f4bc32ba89ed53bb26ef757b2f8a3e704e3829884d4c5d",
+    "runtime_contract_count": 120016,
     "missing_contract_count": 0,
-    "runtime_contract_surface_digest": "4da34fa51c293e61a55d96aeb53a892bd50744bce0d5f1293f9dac8a7e6adf47",
-    "runtime_signature_count": 120017,
+    "runtime_contract_surface_digest": "d417fb8e574a5dc2334b9f2fbf5fd932eb99cee8a86a8e6f1fb468ea7d17d0f7",
+    "runtime_signature_count": 120016,
     "missing_signature_count": 0,
-    "runtime_signature_surface_digest": "b7b67cbfcce217d943f8a9035ce72fb8f5c59daad5607010f2414e23ad382e62"
+    "runtime_signature_surface_digest": "bcd73e7eb1eeeb69f3afec159ed962b7c6dfd466dd1d100e7b5b5b9ddf913199"
   },
   "signature_invariants": {
     "same_runtime_id_different_signature_count": 0,
@@ -48,7 +48,7 @@
   },
   "coverage_digest": {
     "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
-    "sha256": "b15bc996e09e57cb5dc5c610c35a91770f0c81942f5ce08a93433c6c789a8fa0"
+    "sha256": "e323ab7da37e0f2b0df1fc50d29ecfbacb3dc58323cea7263092d4f2f60cadfb"
   },
   "detail_artifact": {
     "path": "target/native-linkage/coverage-full.json",
