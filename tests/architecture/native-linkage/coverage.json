@@ -10,7 +10,7 @@
     "feature_surface_digest": "cabf3cb5f8ef1979b70f4e128c48590d6e2371dd722c5b724ed209f3e3536d6b",
     "runtime_contract_count": 9019,
     "missing_contract_count": 0,
-    "runtime_contract_surface_digest": "4ee4f8c7b06d24434d2bdcfbc611bee6026075285b7c6c79b26ea16fcb5c49b1",
+    "runtime_contract_surface_digest": "f4c2474595ff36b9d769cadac6fc4405ff0d7e7c52e7aa1eaf99a3523d2a0d70",
     "runtime_signature_count": 9019,
     "missing_signature_count": 0,
     "runtime_signature_surface_digest": "f6b5460b73f1ddfd1236935f2b16fadd496be999bf7cacff12daf48e9146b8a6"
@@ -24,7 +24,7 @@
     "feature_surface_digest": "52a0ab5b112f14e45bb48ac1e4bdddce0f20c84261eecf6ae4e5f3119c591ff5",
     "runtime_contract_count": 120014,
     "missing_contract_count": 0,
-    "runtime_contract_surface_digest": "1e781262d987f1a71ef6168e021b92b9f1aaabfb4cada604f9f4efa9982007f5",
+    "runtime_contract_surface_digest": "a0f485bddbd84badae86e9d8282f90a64652a3297f6aea100be306ebd5c246a6",
     "runtime_signature_count": 120014,
     "missing_signature_count": 0,
     "runtime_signature_surface_digest": "98a9447a8b308e442057aa15f51f60d8fedbfb532191963bdfaea72a7f099b77"
@@ -48,7 +48,7 @@
   },
   "coverage_digest": {
     "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
-    "sha256": "25051b9bf713f5e7efb7c9088ae47a02d83803338749013b65c1c387335f108d"
+    "sha256": "8d9ee1fc2ff540f0921f3bafa3dc977c02124ae2826484bb5323ddce4597a142"
   },
   "detail_artifact": {
     "path": "target/native-linkage/coverage-full.json",

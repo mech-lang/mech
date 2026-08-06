@@ -32,6 +32,7 @@ where
         + Add<Output = T>,
     #[cfg(feature = "compiler")]
     T: CompileConst + ConstElem,
+    Ref<T>: ToValue,
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
     naMatrix<T, R1, C1, S1>: AsNaKind,
     naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
@@ -76,6 +77,7 @@ where
 impl<T, R1, C1, S1> MechFunctionImpl for RangeExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+    Ref<T>: ToValue,
     T: Copy
         + Scalar
         + Clone
@@ -92,6 +94,11 @@ where
     S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
     fn solve_result(&self) -> MResult<()> {
+        crate::catalog::validate_range_exclusive(&FunctionArgs::Binary(
+            self.out.to_value(),
+            self.from.to_value(),
+            self.to.to_value(),
+        ))?;
         unsafe {
             let out_ptr = self.out.as_ptr() as *mut naMatrix<T, R1, C1, S1>;
             let mut current = *self.from.as_ptr();
@@ -116,6 +123,34 @@ where
         Ok(self.reactive_output_values())
     }
 }
+
+#[cfg(all(test, feature = "u128", feature = "matrixd"))]
+mod tests {
+    use super::*;
+    use nalgebra::DMatrix;
+
+    #[test]
+    fn exclusive_range_revalidates_reactive_cardinality() {
+        let to = Ref::new(3_u128);
+        let out = Ref::new(DMatrix::from_element(1, 2, 0));
+        let function = RangeExclusiveScalar::<u128, DMatrix<u128>> {
+            from: Ref::new(1),
+            to: to.clone(),
+            out: out.clone(),
+            phantom: PhantomData::default(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[1, 2]);
+        let previous = out.borrow().clone();
+
+        *to.borrow_mut() = 4;
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        assert_eq!(*out.borrow(), previous);
+    }
+}
+
 #[cfg(feature = "compiler")]
 impl<T, R1, C1, S1> MechFunctionCompiler for RangeExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where

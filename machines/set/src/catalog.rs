@@ -221,12 +221,25 @@ macro_rules! declare_set_runtime_factory {
             installer: $installer,
             name: $name,
             factory_type: $factory,
-            contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            contract: set_runtime_contract!($name),
             package: "mech-set",
             crate_name: "mech_set",
             installer_path: concat!("mech_set::__mech_native::", stringify!($installer)),
             extra_cargo_features: [$($feature),*],
         }
+    };
+}
+
+macro_rules! set_runtime_contract {
+    ("SetCartesianProductFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_cartesian_product",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            crate::operations::cartesian_product::validate_set_cartesian_product_contract,
+        )
+    };
+    ($_name:literal) => {
+        RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias)
     };
 }
 
