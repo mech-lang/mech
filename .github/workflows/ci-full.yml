@@ -3,19 +3,19 @@ name: Full CI
 on:
   workflow_call:
     inputs:
-      release-channel:
+      release_channel:
         description: Artifact channel used by the full-validation dry run
         required: false
         type: string
         default: stable
-      release-date:
+      release_date:
         description: UTC date for nightly artifact names
         required: false
         type: string
         default: ""
   workflow_dispatch:
     inputs:
-      release-channel:
+      release_channel:
         description: Artifact channel used by the full-validation dry run
         required: true
         type: choice
@@ -23,14 +23,14 @@ on:
         options:
           - stable
           - nightly
-      release-date:
+      release_date:
         description: UTC date for nightly artifact names (YYYY-MM-DD)
         required: false
         type: string
 
 concurrency:
   group: ci-full-${{ github.sha }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   cargo-features:
@@ -1248,11 +1248,6 @@ jobs:
 
   release-package-dry-run:
     name: ${{ matrix.distribution }} release package (${{ matrix.os }})
-    needs:
-      - cargo
-      - run-only
-      - windows-cli
-      - dynamic-modules
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -1275,10 +1270,10 @@ jobs:
         id: package
         run: >-
           python3 scripts/build-distribution-artifact.py
-          --channel "${{ inputs.release-channel }}"
+          --channel "${{ inputs.release_channel }}"
           --distribution "${{ matrix.distribution }}"
           --output-dir target/distribution-artifacts
-          --date "${{ inputs.release-date }}"
+          --date "${{ inputs.release_date }}"
       - name: Retain the dry-run distribution artifact
         uses: actions/upload-artifact@v4
         with:

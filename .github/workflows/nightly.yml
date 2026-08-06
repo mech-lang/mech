@@ -1,0 +1,65 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nightly-release
+  cancel-in-progress: true
+
+jobs:
+  context:
+    name: Nightly context
+    runs-on: ubuntu-latest
+    outputs:
+      date: ${{ steps.context.outputs.date }}
+    steps:
+      - name: Freeze the UTC release date
+        id: context
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+  full-validation:
+    name: Exact-head full validation
+    needs: context
+    uses: ./.github/workflows/ci-full.yml
+    with:
+      release_channel: nightly
+      release_date: ${{ needs.context.outputs.date }}
+
+  publish:
+    name: Publish rolling nightly
+    needs:
+      - context
+      - full-validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Download validated standard and full packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: distribution-*
+          path: target/nightly-assets
+          merge-multiple: true
+      - name: Generate release-level checksums
+        working-directory: target/nightly-assets
+        run: sha256sum mech-* > SHA256SUMS
+      - name: Replace the rolling nightly prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete nightly --cleanup-tag --yes || true
+          gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/nightly" || true
+          gh release create nightly \
+            target/nightly-assets/mech-* \
+            target/nightly-assets/SHA256SUMS \
+            --target "${{ github.sha }}" \
+            --prerelease \
+            --title "Mech nightly ${{ needs.context.outputs.date }} (${{ github.sha }})" \
+            --notes "Validated rolling nightly. Standard is the recommended distribution; full is the optional broad distribution. Assets are identified by UTC date and exact commit."

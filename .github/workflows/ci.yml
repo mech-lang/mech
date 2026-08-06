@@ -56,6 +56,7 @@ jobs:
           scripts/check-unsafe-boundaries.sh
           python3 scripts/check-runtime-factory-safety.py
           python3 scripts/check-bytecode-v1-format.py
+          cargo +nightly-2026-03-03 fetch --locked
           python3 -B scripts/check-distribution-contracts.py
           python3 -B scripts/check-distribution-packaging.py
           python3 scripts/check-native-host-catalog.py
@@ -99,7 +100,7 @@ jobs:
           status=$?
           set -e
           test "$status" -eq 0
-          grep '^│' /tmp/mech-standard-live-timer.out > /tmp/mech-standard-live-values.out
+          grep -E '^[0-9]+$' /tmp/mech-standard-live-timer.out > /tmp/mech-standard-live-values.out
           test "$(wc -l < /tmp/mech-standard-live-values.out)" -ge 2
           test "$(sort -u /tmp/mech-standard-live-values.out | wc -l)" -ge 2
 
@@ -203,7 +204,7 @@ jobs:
       }}
     uses: ./.github/workflows/ci-full.yml
     with:
-      release-channel: stable
+      release_channel: stable
 
   pr-gate:
     name: PR gate

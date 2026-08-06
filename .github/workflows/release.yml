@@ -1,0 +1,62 @@
+name: Stable release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stable-release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  verify-tag:
+    name: Verify exact stable tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Match the tag, package version, and checkout commit
+        run: python3 scripts/check-release-tag.py --tag "${{ github.ref_name }}"
+
+  full-validation:
+    name: Exact-tag full validation
+    needs: verify-tag
+    uses: ./.github/workflows/ci-full.yml
+    with:
+      release_channel: stable
+
+  publish:
+    name: Publish immutable stable release
+    needs:
+      - verify-tag
+      - full-validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Download validated standard and full packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: distribution-*
+          path: target/release-assets
+          merge-multiple: true
+      - name: Generate release-level checksums
+        working-directory: target/release-assets
+        run: sha256sum mech-* > SHA256SUMS
+      - name: Publish the immutable GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            target/release-assets/mech-* \
+            target/release-assets/SHA256SUMS \
+            --verify-tag \
+            --title "Mech ${{ github.ref_name }}" \
+            --generate-notes \
+            --notes "The standard distribution is the recommended download. The full distribution is available as the optional broad scalar, machine, and robot-arm build."
