@@ -1,0 +1,173 @@
+version = 1
+
+[owners.mech-core]
+paths = ["src/core/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--all-features"]
+standard = true
+cross_cutting = true
+
+[owners.mech-bytecode]
+paths = ["src/bytecode/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-bytecode", "--all-features"]
+standard = true
+cross_cutting = true
+
+[owners.mech-syntax]
+paths = ["src/syntax/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-syntax", "--lib", "--all-features"]
+standard = true
+cross_cutting = true
+
+[owners.mech-engine]
+paths = ["src/engine/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-engine", "--lib", "--no-default-features", "--features", "full_compiler"]
+standard = true
+cross_cutting = true
+
+[owners.mech-runtime]
+paths = ["src/runtime/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-runtime", "--lib", "--no-default-features", "--features", "full_compiler"]
+standard = true
+cross_cutting = true
+
+[owners.mech-build]
+paths = ["src/build/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-build", "--lib", "--no-default-features", "--features", "standard-hosts"]
+standard = true
+cross_cutting = true
+
+[owners.mech-stdlib]
+paths = ["src/stdlib/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "profile_contracts", "--no-default-features", "--features", "standard_compiler"]
+standard = true
+cross_cutting = true
+
+[owners.mech-math]
+paths = ["machines/math/**"]
+command = ["cargo", "test", "--offline", "--manifest-path", "machines/math/Cargo.toml", "--no-default-features", "--features", "standard_compiler"]
+standard = true
+cross_cutting = false
+
+[owners.mech-compare]
+paths = ["machines/compare/**"]
+command = ["cargo", "test", "--offline", "--manifest-path", "machines/compare/Cargo.toml", "--no-default-features", "--features", "standard_compiler"]
+standard = true
+cross_cutting = false
+
+[owners.mech-logic]
+paths = ["machines/logic/**"]
+command = ["cargo", "test", "--offline", "--manifest-path", "machines/logic/Cargo.toml", "--no-default-features", "--features", "standard_compiler"]
+standard = true
+cross_cutting = false
+
+[owners.mech-range]
+paths = ["machines/range/**"]
+command = ["cargo", "test", "--offline", "--manifest-path", "machines/range/Cargo.toml", "--no-default-features", "--features", "standard_compiler"]
+standard = true
+cross_cutting = false
+
+[owners.mech-matrix]
+paths = ["machines/matrix/**"]
+command = ["cargo", "test", "--offline", "--manifest-path", "machines/matrix/Cargo.toml", "--no-default-features", "--features", "standard_compiler"]
+standard = true
+cross_cutting = false
+
+[owners.mech-set]
+paths = ["machines/set/**"]
+command = ["cargo", "test", "--offline", "--manifest-path", "machines/set/Cargo.toml", "--no-default-features", "--features", "standard_compiler"]
+standard = true
+cross_cutting = false
+
+[owners.mech-string]
+paths = ["machines/string/**"]
+command = ["cargo", "test", "--offline", "--manifest-path", "machines/string/Cargo.toml", "--no-default-features", "--features", "standard_compiler"]
+standard = true
+cross_cutting = false
+
+[owners.mech-stats]
+paths = ["machines/stats/**"]
+command = ["cargo", "test", "--offline", "--manifest-path", "machines/stats/Cargo.toml", "--no-default-features", "--features", "standard_compiler"]
+standard = true
+cross_cutting = false
+
+[owners.mech-combinatorics]
+paths = ["machines/combinatorics/**"]
+command = ["cargo", "test", "--offline", "--manifest-path", "machines/combinatorics/Cargo.toml", "--no-default-features", "--features", "source,compiler,n_choose_k,f64,matrixd"]
+standard = false
+cross_cutting = false
+
+[owners.mech-terminal]
+paths = ["hosts/terminal/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-terminal", "--all-features"]
+standard = true
+cross_cutting = false
+
+[owners.mech-console]
+paths = ["hosts/console/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-console", "--all-features"]
+standard = true
+cross_cutting = false
+
+[owners.mech-time]
+paths = ["hosts/time/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-time", "--all-features"]
+standard = true
+cross_cutting = false
+
+[owners.mech-timer]
+paths = ["hosts/timer/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-timer", "--all-features"]
+standard = true
+cross_cutting = false
+
+[owners.mech-scene]
+paths = ["hosts/scene/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-scene", "--all-features"]
+standard = true
+cross_cutting = false
+browser = true
+
+[owners.mech-browser]
+paths = ["hosts/browser/**", "src/wasm/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-browser", "--all-features"]
+standard = true
+cross_cutting = false
+browser = true
+
+[owners.mech-robot-arm]
+paths = ["hosts/robot-arm/**"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-robot-arm", "--all-features"]
+standard = false
+cross_cutting = false
+
+[owners.root-cli]
+paths = ["src/cli/**", "src/bin/**", "src/lib.rs", "src/repl/**", "src/serve.rs", "src/test.rs"]
+command = []
+standard = true
+cross_cutting = false
+
+[owners.distribution]
+paths = ["Cargo.toml", "Cargo.lock", "build.rs", "tests/architecture/distributions/**"]
+command = []
+standard = true
+cross_cutting = true
+browser = true
+
+[owners.root-tests]
+paths = ["tests/**", "examples/**"]
+command = []
+standard = true
+cross_cutting = false
+
+[owners.ci-tools]
+paths = [".github/**", "scripts/**"]
+command = []
+standard = false
+cross_cutting = false
+
+[owners.docs]
+paths = ["docs/**", "*.md", "LICENSE"]
+command = []
+standard = false
+cross_cutting = false
+docs = true
