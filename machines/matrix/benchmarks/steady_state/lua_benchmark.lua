@@ -88,6 +88,28 @@ local function matmul(size)
   return median, minimum, maximum, iterations, output[1]
 end
 
+local function transpose(size)
+  local input_matrix = multiply_inputs(size)
+  local scaled = {}
+  local output = {}
+  for index = 1, size * size do scaled[index], output[index] = 0.0, 0.0 end
+  local pulse = 1.0
+  local function operation()
+    pulse = pulse == 1.0 and 1.000001 or 1.0
+    for index = 1, size * size do scaled[index] = input_matrix[index] * pulse end
+    for row = 0, size - 1 do
+      local row_offset = row * size
+      for column = 0, size - 1 do
+        output[column * size + row + 1] = scaled[row_offset + column + 1]
+      end
+    end
+  end
+  local median, minimum, maximum, iterations = measure(operation)
+  local check_index = math.min(1, size - 1)
+  assert(math.abs(output[check_index + 1] - input_matrix[check_index * size + 1] * pulse) < 1e-12)
+  return median, minimum, maximum, iterations, output[check_index + 1]
+end
+
 local function solve(size)
   local matrix, rhs = solve_inputs(size)
   local work, work_rhs, output = {}, {}, {}
@@ -151,6 +173,8 @@ for index = 2, #arg do
   local size = assert(tonumber(arg[index]), "sizes must be integers")
   local mm, mm_min, mm_max, mm_iterations, mm_check = matmul(size)
   print(string.format("%s,matmul,%d,%.9f,%.9f,%.9f,%d,%.12f", runtime, size, mm, mm_min, mm_max, mm_iterations, mm_check))
+  local tr, tr_min, tr_max, tr_iterations, tr_check = transpose(size)
+  print(string.format("%s,transpose,%d,%.9f,%.9f,%.9f,%d,%.12f", runtime, size, tr, tr_min, tr_max, tr_iterations, tr_check))
   local slv, slv_min, slv_max, slv_iterations, slv_check = solve(size)
   print(string.format("%s,solve,%d,%.9f,%.9f,%.9f,%d,%.12f", runtime, size, slv, slv_min, slv_max, slv_iterations, slv_check))
 end

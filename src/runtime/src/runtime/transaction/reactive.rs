@@ -146,6 +146,12 @@ enum RuntimeReactiveFinalization {
     RollbackRequired,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(in crate::runtime) enum RuntimeReactiveTurnRecovery {
+    Rollback,
+    FailStop,
+}
+
 pub(in crate::runtime) struct PreparedRuntimeHostInput {
     pub(in crate::runtime) update_count: usize,
     pub(in crate::runtime) ignored_update_count: usize,
@@ -266,10 +272,11 @@ impl MechRuntime {
         Ok(())
     }
 
-    pub(in crate::runtime) fn with_atomic_reactive_turn<T>(
+    pub(in crate::runtime) fn with_coordinated_reactive_turn<T>(
         &mut self,
         context: &mut RuntimeContext,
         operation: &'static str,
+        recovery: RuntimeReactiveTurnRecovery,
         execute: impl FnOnce(
             &mut MechProgram,
             &mut dyn MechExecutionServices,
@@ -277,6 +284,16 @@ impl MechRuntime {
         ) -> MResult<T>,
         after_program: impl FnOnce(&mut MechRuntime, &mut RuntimeContext, &T) -> MResult<()>,
     ) -> MResult<T> {
+        if recovery == RuntimeReactiveTurnRecovery::FailStop && context.transaction.is_some() {
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation,
+                    reason: "fail-stop reactive turns cannot run inside an explicit transaction"
+                        .to_string(),
+                },
+                None,
+            ));
+        }
         self.preflight_atomic_program_operation(context, operation)?;
 
         let implicit = context.transaction.is_none();
@@ -472,17 +489,57 @@ impl MechRuntime {
                 // runtime finalizer. A rejected candidate therefore intentionally
                 // leaves finalization pending so the runtime savepoint can discard
                 // provisional effects and context changes.
-                self.finish_failed_reactive_runtime_turn(
-                    context,
-                    operation,
-                    transaction_id,
-                    &runtime_savepoint,
-                    error,
-                    implicit,
-                    newly_acquired_ownership,
-                )
+                match recovery {
+                    RuntimeReactiveTurnRecovery::Rollback => self
+                        .finish_failed_reactive_runtime_turn(
+                            context,
+                            operation,
+                            transaction_id,
+                            &runtime_savepoint,
+                            error,
+                            implicit,
+                            newly_acquired_ownership,
+                        ),
+                    RuntimeReactiveTurnRecovery::FailStop => self
+                        .finish_failed_fail_stop_reactive_turn(
+                            context,
+                            operation,
+                            transaction_id,
+                            &runtime_savepoint,
+                            error,
+                        ),
+                }
             }
         }
+    }
+
+    fn finish_failed_fail_stop_reactive_turn<T>(
+        &mut self,
+        context: &mut RuntimeContext,
+        operation: &'static str,
+        transaction_id: TransactionId,
+        runtime_savepoint: &RuntimeOperationSavepoint,
+        original_error: MechError,
+    ) -> MResult<T> {
+        let original_error = format!("{:?}", original_error);
+        let mut cleanup_failures =
+            self.rollback_runtime_operation(context, transaction_id, runtime_savepoint);
+        cleanup_failures.extend(self.cleanup_failed_implicit_operation(
+            context,
+            operation,
+            transaction_id,
+            &format!("fail-stop reactive operation `{operation}` failed"),
+        ));
+        cleanup_failures.push(
+            "retained program rollback was disabled; program state may be partially updated"
+                .to_string(),
+        );
+        Err(self.poison_program_operation(
+            operation,
+            Some(transaction_id),
+            original_error,
+            cleanup_failures,
+        ))
     }
 
     fn finish_failed_reactive_runtime_turn<T>(
@@ -611,9 +668,10 @@ impl MechRuntime {
         operation: &'static str,
         execute: impl FnOnce(&mut MechRuntime, &mut RuntimeContext) -> MResult<()>,
     ) -> MResult<()> {
-        self.with_atomic_reactive_turn(
+        self.with_coordinated_reactive_turn(
             context,
             operation,
+            RuntimeReactiveTurnRecovery::Rollback,
             |program, services, finalize| program.step_coordinated(0, services, || finalize(&())),
             |runtime, context, _| execute(runtime, context),
         )

@@ -23,6 +23,7 @@ const WARMUP_MIN: Duration = Duration::from_millis(250);
 #[derive(Clone, Copy)]
 enum Operation {
     MatMul,
+    Transpose,
     Solve,
 }
 
@@ -30,6 +31,7 @@ impl Operation {
     fn name(self) -> &'static str {
         match self {
             Self::MatMul => "matmul",
+            Self::Transpose => "transpose",
             Self::Solve => "solve",
         }
     }
@@ -42,6 +44,13 @@ impl Operation {
                  @rhs := bench://matrix-runtime{:read(rhs)}\n\
                  scaled-lhs := @lhs/lhs * @pulse/pulse\n\
                  result := scaled-lhs ** @rhs/rhs\n\
+                 result"
+            }
+            Self::Transpose => {
+                "@pulse := bench://matrix-runtime{:read(pulse)}\n\
+                 @lhs := bench://matrix-runtime{:read(lhs)}\n\
+                 scaled-lhs := @lhs/lhs * @pulse/pulse\n\
+                 result := scaled-lhs'\n\
                  result"
             }
             Self::Solve => {
@@ -120,6 +129,31 @@ fn measure_pair(
     )
 }
 
+fn measure(mut operation: impl FnMut()) -> Measurement {
+    let warmup_start = Instant::now();
+    let mut warmup_iterations = 0usize;
+    while warmup_iterations < 2 || warmup_start.elapsed() < WARMUP_MIN {
+        operation();
+        warmup_iterations += 1;
+    }
+
+    let calibration_start = Instant::now();
+    operation();
+    let per_iteration = calibration_start.elapsed().as_secs_f64().max(1e-9);
+    let batch_iterations = (TARGET_SAMPLE.as_secs_f64() / per_iteration)
+        .ceil()
+        .clamp(1.0, 100_000.0) as usize;
+    let mut samples = Vec::with_capacity(SAMPLE_COUNT);
+    for _ in 0..SAMPLE_COUNT {
+        let start = Instant::now();
+        for _ in 0..batch_iterations {
+            operation();
+        }
+        samples.push(start.elapsed().as_secs_f64() * 1_000.0 / batch_iterations as f64);
+    }
+    measurement(samples, batch_iterations)
+}
+
 fn matrix_value(row: usize, column: usize, salt: usize) -> f64 {
     ((row * 17 + column * 13 + salt * 19) % 101 + 1) as f64 / 101.0
 }
@@ -158,6 +192,14 @@ impl MatrixInputProvider {
                 Self {
                     lhs,
                     rhs_matrix: Some(rhs),
+                    rhs_vector: None,
+                }
+            }
+            Operation::Transpose => {
+                let (lhs, _) = multiply_inputs(size);
+                Self {
+                    lhs,
+                    rhs_matrix: None,
                     rhs_vector: None,
                 }
             }
@@ -258,12 +300,22 @@ fn function_catalog() -> Arc<FunctionCatalog> {
     }))
 }
 
-fn runtime(size: usize, operation: Operation) -> (MechRuntime, RuntimeContext) {
-    let mut runtime = RuntimeBuilder::new()
+fn runtime(
+    size: usize,
+    operation: Operation,
+    rollback: bool,
+) -> (MechRuntime, RuntimeContext) {
+    let builder = RuntimeBuilder::new()
         .config(RuntimeConfig::new("matrix benchmark").with_limits(RuntimeLimits::trusted()))
         .function_catalog(function_catalog())
         .resource_provider(Box::new(MatrixInputProvider::new(size, operation)))
-        .input_driver(BenchmarkInputDriver::default())
+        .input_driver(BenchmarkInputDriver::default());
+    let builder = if rollback {
+        builder
+    } else {
+        builder.fail_stop_host_input_turns()
+    };
+    let mut runtime = builder
         .build()
         .unwrap();
     let subject = runtime.runtime_context().unwrap().subject().to_string();
@@ -283,8 +335,8 @@ struct RuntimeFixture {
 }
 
 impl RuntimeFixture {
-    fn source(size: usize, operation: Operation) -> (Self, Vec<u8>) {
-        let (mut runtime, mut context) = runtime(size, operation);
+    fn source(size: usize, operation: Operation, rollback: bool) -> (Self, Vec<u8>) {
+        let (mut runtime, mut context) = runtime(size, operation, rollback);
         runtime
             .run_string_with_context(&mut context, operation.source())
             .unwrap();
@@ -300,8 +352,8 @@ impl RuntimeFixture {
         )
     }
 
-    fn bytecode(size: usize, operation: Operation, bytecode: &[u8]) -> Self {
-        let (mut runtime, mut context) = runtime(size, operation);
+    fn bytecode(size: usize, operation: Operation, bytecode: &[u8], rollback: bool) -> Self {
+        let (mut runtime, mut context) = runtime(size, operation, rollback);
         runtime
             .install_bytecode_with_context(&mut context, bytecode)
             .unwrap();
@@ -361,6 +413,25 @@ fn validate_solve(size: usize, fixture: &RuntimeFixture) -> f64 {
     output.borrow()[0]
 }
 
+fn validate_transpose(size: usize, fixture: &RuntimeFixture) -> f64 {
+    let Value::MatrixF64(ValueMatrix::DMatrix(output)) = fixture.result() else {
+        panic!("transpose runtime benchmark result is not a dynamic matrix");
+    };
+    let (input, _) = multiply_inputs(size);
+    let expected = input[(1.min(size - 1), 0)] * fixture.pulse;
+    let check = output.borrow()[(0, 1.min(size - 1))];
+    assert!((check - expected).abs() < 1e-8);
+    check
+}
+
+fn validate(size: usize, operation: Operation, fixture: &RuntimeFixture) -> f64 {
+    match operation {
+        Operation::MatMul => validate_matmul(size, fixture),
+        Operation::Transpose => validate_transpose(size, fixture),
+        Operation::Solve => validate_solve(size, fixture),
+    }
+}
+
 fn print_result(
     runtime: &str,
     operation: Operation,
@@ -379,9 +450,31 @@ fn print_result(
     );
 }
 
+fn raw_transpose(size: usize) {
+    let (input, _) = multiply_inputs(size);
+    let mut scaled = DMatrix::zeros(size, size);
+    let mut output = DMatrix::zeros(size, size);
+    let mut pulse = 1.0;
+    let result = measure(|| {
+        pulse = if pulse == 1.0 { 1.000_001 } else { 1.0 };
+        scaled.copy_from(&input);
+        scaled.scale_mut(pulse);
+        output = scaled.transpose();
+    });
+    let check = output[(0, 1.min(size - 1))];
+    assert!((check - input[(1.min(size - 1), 0)] * pulse).abs() < 1e-8);
+    print_result(
+        "raw-rust",
+        Operation::Transpose,
+        size,
+        &result,
+        black_box(check),
+    );
+}
+
 fn benchmark(size: usize, operation: Operation) {
-    let (mut source, bytecode_bytes) = RuntimeFixture::source(size, operation);
-    let mut bytecode = RuntimeFixture::bytecode(size, operation, &bytecode_bytes);
+    let (mut source, bytecode_bytes) = RuntimeFixture::source(size, operation, true);
+    let mut bytecode = RuntimeFixture::bytecode(size, operation, &bytecode_bytes, true);
     assert_eq!(
         source.runtime.root_plan_len(),
         bytecode.runtime.root_plan_len()
@@ -393,10 +486,7 @@ fn benchmark(size: usize, operation: Operation) {
 
     let (source_measurement, bytecode_measurement) =
         measure_pair(|| source.turn(), || bytecode.turn());
-    let source_check = match operation {
-        Operation::MatMul => validate_matmul(size, &source),
-        Operation::Solve => validate_solve(size, &source),
-    };
+    let source_check = validate(size, operation, &source);
     print_result(
         "mech-runtime-source",
         operation,
@@ -405,16 +495,32 @@ fn benchmark(size: usize, operation: Operation) {
         black_box(source_check),
     );
 
-    let bytecode_check = match operation {
-        Operation::MatMul => validate_matmul(size, &bytecode),
-        Operation::Solve => validate_solve(size, &bytecode),
-    };
+    let bytecode_check = validate(size, operation, &bytecode);
     print_result(
         "mech-runtime-bytecode",
         operation,
         size,
         &bytecode_measurement,
         black_box(bytecode_check),
+    );
+
+    let (mut source, _) = RuntimeFixture::source(size, operation, false);
+    let mut bytecode = RuntimeFixture::bytecode(size, operation, &bytecode_bytes, false);
+    let (source_measurement, bytecode_measurement) =
+        measure_pair(|| source.turn(), || bytecode.turn());
+    print_result(
+        "mech-runtime-source-fail-stop",
+        operation,
+        size,
+        &source_measurement,
+        black_box(validate(size, operation, &source)),
+    );
+    print_result(
+        "mech-runtime-bytecode-fail-stop",
+        operation,
+        size,
+        &bytecode_measurement,
+        black_box(validate(size, operation, &bytecode)),
     );
 }
 
@@ -433,6 +539,8 @@ fn main() {
     println!("runtime,operation,size,median_ms,min_ms,max_ms,batch_iterations,check");
     for size in sizes() {
         benchmark(size, Operation::MatMul);
+        raw_transpose(size);
+        benchmark(size, Operation::Transpose);
         benchmark(size, Operation::Solve);
     }
 }

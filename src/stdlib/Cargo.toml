@@ -249,6 +249,7 @@ range_inclusive_increment = ["range_inclusive", "mech-range/inclusive_increment"
 range_exclusive_increment = ["range_exclusive", "mech-range/exclusive_increment", "mech-engine/range_exclusive_increment"]
 
 matrix_solve = ["mech-matrix", "mech-matrix/solve", "mech-engine/matrix_solve"]
+matrix_solve_accelerate = ["matrix_solve", "mech-matrix/solve_accelerate"]
 matrix_dot = ["mech-matrix", "mech-matrix/dot", "mech-engine/matrix_dot"]
 matrix_matmul = [
   "mech-matrix", "mech-matrix/matmul", "mech-engine/matrix_matmul",

@@ -78,6 +78,8 @@ macro_rules! impl_binop_solve {
                 + DivAssign
                 + Zero
                 + One,
+            #[cfg(all(feature = "solve_accelerate", target_os = "macos"))]
+            T: nalgebra_lapack::LUScalar,
             Ref<$out_type>: ToValue,
             $arg1_type: FunctionRuntimeType,
             $arg2_type: FunctionRuntimeType,
@@ -133,6 +135,8 @@ macro_rules! impl_binop_solve {
                 + DivAssign
                 + Zero
                 + One,
+            #[cfg(all(feature = "solve_accelerate", target_os = "macos"))]
+            T: nalgebra_lapack::LUScalar,
             Ref<$out_type>: ToValue,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -166,12 +170,25 @@ macro_rules! impl_binop_solve {
     };
 }
 
+#[cfg(not(all(feature = "solve_accelerate", target_os = "macos")))]
 macro_rules! solve_op {
     ($a:expr, $b:expr, $out:expr) => {
         unsafe {
             let solution = (*$a).clone().lu().solve(&*$b).ok_or_else(|| {
                 MechError::new(MatrixSolveSingular, None).with_compiler_loc()
             })?;
+            *$out = solution;
+        }
+    };
+}
+
+#[cfg(all(feature = "solve_accelerate", target_os = "macos"))]
+macro_rules! solve_op {
+    ($a:expr, $b:expr, $out:expr) => {
+        unsafe {
+            let solution = nalgebra_lapack::LU::new((*$a).clone())
+                .solve(&*$b)
+                .ok_or_else(|| MechError::new(MatrixSolveSingular, None).with_compiler_loc())?;
             *$out = solution;
         }
     };
@@ -208,6 +225,29 @@ mod tests {
         let error = function.solve_result().unwrap_err();
         assert_eq!(error.kind_name(), "MatrixSolveSingular");
         assert_eq!(*out.borrow(), previous);
+    }
+
+    #[test]
+    fn dynamic_matrix_vector_solve_has_a_small_residual() {
+        let matrix = DMatrix::from_row_slice(
+            3,
+            3,
+            &[
+                6.0_f64, 1.0, -1.0, 2.0, 7.0, 1.0, 1.0, -1.0, 8.0,
+            ],
+        );
+        let rhs = DVector::from_row_slice(&[7.0, 18.0, 22.0]);
+        let output = Ref::new(DVector::zeros(3));
+        let function = MatrixSolveMDVD {
+            lhs: Ref::new(matrix.clone()),
+            rhs: Ref::new(rhs.clone()),
+            out: output.clone(),
+        };
+
+        function.solve_result().unwrap();
+
+        let residual = (&matrix * &*output.borrow() - rhs).amax();
+        assert!(residual < 1e-12, "solve residual {residual}");
     }
 }
 

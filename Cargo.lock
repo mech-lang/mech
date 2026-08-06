@@ -3,6 +3,12 @@
 version = 4
 
 [[package]]
+name = "accelerate-src"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "415ed64958754dbe991900f3940677e6a7eefb4d7367afd70d642677b0c7d19d"
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -266,6 +272,35 @@ dependencies = [
  "cfg-if",
  "constant_time_eq",
  "cpufeatures 0.3.0",
+]
+
+[[package]]
+name = "blas"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "280f3f48ac4edf086d59c7aa71fb28b78df2b14db8f591fb4eb29b88b77ac6ad"
+dependencies = [
+ "blas-sys",
+ "libc",
+ "num-complex",
+]
+
+[[package]]
+name = "blas-src"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5bd439b48f5425c9f4597141b52476358e05e08471bc30f4d1c2a1f4084d7c9f"
+dependencies = [
+ "accelerate-src",
+]
+
+[[package]]
+name = "blas-sys"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b49cc48acc7ead5c33d2e3cac9c47e55bfd04c929abd1456459084a8c8cdf2cb"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -1919,6 +1954,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "lapack"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "508f7f48955e5e4ec3feb771a4d981c6e59ff2400d750cf41733a3350fdb2dc4"
+dependencies = [
+ "lapack-sys",
+ "libc",
+ "num-complex",
+]
+
+[[package]]
+name = "lapack-src"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1bcb4a410d9e39126db6ef1b71814618d9f9c3db128e6db674a449cf6a8b668"
+dependencies = [
+ "accelerate-src",
+]
+
+[[package]]
+name = "lapack-sys"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "314b879030845b68571809a6978e52d3b67ac5fba07e77b1b317b484092e2fb5"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.189"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2200,6 +2264,7 @@ version = "0.3.5"
 dependencies = [
  "mech-core",
  "nalgebra",
+ "nalgebra-lapack",
  "num-traits",
  "paste",
 ]
@@ -2500,6 +2565,23 @@ dependencies = [
  "num-traits",
  "simba",
  "typenum",
+]
+
+[[package]]
+name = "nalgebra-lapack"
+version = "0.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c3fada944cb81d198c5e9f2c04168c7bbade833ec6eefa0b518be92ae9bbb8a"
+dependencies = [
+ "blas",
+ "blas-src",
+ "lapack",
+ "lapack-src",
+ "nalgebra",
+ "num-complex",
+ "num-traits",
+ "simba",
+ "thiserror 1.0.69",
 ]
 
 [[package]]

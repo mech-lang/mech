@@ -1,9 +1,10 @@
 # Matrix steady-state benchmark
 
-This benchmark compares persistent, warmed matrix multiplication and linear
-solve execution across Mech, raw Rust/nalgebra, Python, NumPy, Lua, and LuaJIT.
-Parsing, specialization, process startup, input generation, and correctness
-validation are outside the timed regions.
+This benchmark compares persistent, warmed matrix multiplication,
+scale-plus-materialized-transpose, and linear solve execution across Mech, raw
+Rust/nalgebra, Python, NumPy, Lua, and LuaJIT. Parsing, specialization, process
+startup, input generation, and correctness validation are outside the timed
+regions.
 
 Mech is reported in two modes:
 
@@ -30,10 +31,19 @@ by the default one-second safety limit.
 
 `rectangular_runtime_benchmark` applies the same retained-runtime protocol to
 `M x K` by `K x N` products and also reports raw nalgebra, the persistent Mech
-function, and direct reactive scheduling. Its default mode requires source and
-bytecode fixtures. `--source-only` supports result matrices whose serialized
-bytecode exceeds bytecode v1's 64 MiB read limit, while `--direct-only` measures
-only the raw, kernel, and plan-level controls.
+function, direct reactive scheduling, and output-only rollback-journal capture.
+Its default mode reports source and bytecode fixtures with both atomic and
+fail-stop host-input turns. `--source-only` supports result matrices whose
+serialized bytecode exceeds bytecode v1's 64 MiB read limit, while
+`--direct-only` measures only the raw, kernel, journal, and plan-level controls.
+
+The `*-fail-stop` lanes construct the runtime with
+`RuntimeBuilder::fail_stop_host_input_turns()`. They skip retained-program
+rollback snapshots on successful host-input turns. If a turn fails after
+mutation begins, the runtime may contain partially updated cells; it is
+immediately poisoned and rejects all later operations. This mode is intended
+only for trusted, restartable compute loops where throughput is more important
+than in-process recovery. Atomic turns remain the default.
 
 `rectangular_numpy_benchmark.py` reports general `numpy.matmul` for every shape.
 For `K = 1`, it additionally reports the equivalent optimized broadcast
@@ -45,6 +55,11 @@ solve includes factorization on every iteration, matching the current Mech
 implementation. Python's cyclic GC and Lua's collector are disabled only
 during timed samples; the runners reuse their large scratch buffers.
 
+On macOS, the opt-in `solve_accelerate` feature switches dynamic matrix/vector
+solve from nalgebra's portable LU to `nalgebra-lapack` backed by Apple
+Accelerate. The benchmark then emits `raw-rust-accelerate` beside the portable
+`raw-rust` control. Other platforms retain the portable implementation.
+
 Each result is the median of nine samples after at least 250 ms of warmup.
 Sample batches target 75 ms and all runners emit the same CSV columns.
 The runtime-loop runner measures source and bytecode as paired samples and
@@ -54,11 +69,13 @@ Example commands:
 
 ```sh
 cargo run --release --manifest-path machines/matrix/Cargo.toml \
-  --example steady_state_benchmark --features runtime_default -- 64 128 256 512
+  --example steady_state_benchmark \
+  --features runtime_default,solve_accelerate -- 64 128 256 512
 
 cargo run --release --manifest-path machines/matrix/Cargo.toml \
   --example runtime_loop_benchmark --no-default-features \
-  --features compiler,source,f64,matrixd,vectord,matmul,solve -- 64 128 256 512
+  --features compiler,source,f64,matrixd,vectord,matmul,transpose,solve,solve_accelerate \
+  -- 64 128 256 512
 
 cargo run --release --manifest-path machines/matrix/Cargo.toml \
   --example rectangular_runtime_benchmark --no-default-features \

@@ -1755,6 +1755,25 @@ impl Interpreter {
         })
     }
 
+    /// Advances a reactive turn without capturing rollback state.
+    ///
+    /// If this returns an error, input cells, function outputs, registers, and
+    /// scheduler state may already have changed. The caller must stop using the
+    /// interpreter rather than attempt to continue from that partial turn.
+    #[cfg(feature = "functions")]
+    pub fn advance_reactive_turn_fail_stop_with_services(
+        &mut self,
+        dirty_cells: &[ReactiveCellId],
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveTurnOutcome> {
+        let plan = self.plan();
+        plan.advance_reactive_turn_with_services(
+            &mut self.reactive_turn_state,
+            dirty_cells,
+            services,
+        )
+    }
+
     /// Participates in one coordinator-backed reactive operation.
     ///
     /// The capability can only be received by value inside the auto-finalizing
