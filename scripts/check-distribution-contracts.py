@@ -28,11 +28,11 @@ SURFACE_COUNTS = {
         "runtime_surface_digest_algorithm": "sha256-canonical-id-tab-name-lf-v1",
     },
     "full": {
-        "runtime_factory_count": 9_022,
+        "runtime_factory_count": 9_010,
         "source_specializer_count": 119,
         "native_planning_owner_count": 6,
-        "runtime_surface_digest": "b7385da248524bcfbd1a20768fc13648b01054625459985251e5f53cae872322",
-        "runtime_surface_digest_algorithm": "sha256-raw-frozen-runtime-surface-json",
+        "runtime_surface_digest": "8beffad53bcd4d6905a883e23e34441371f4adc6faaf8ceaee030703b3a41d06",
+        "runtime_surface_digest_algorithm": "sha256-canonical-id-tab-name-lf-v1",
     },
 }
 MACHINE_OPERATION_FEATURES = {
@@ -81,6 +81,16 @@ STANDARD_FORBIDDEN_FEATURES = {
     "stat_error_default", "combinatorics_default", "n_choose_k", "cartesian_product",
     "powerset", "experimental-actors", "full_operations", "full_runtime", "full_source",
     "full_compiler", "full_values", "full-hosts", "full-language", "distribution-full",
+}
+FULL_FORBIDDEN_MACHINE_FEATURES = {
+    # Fixed storage remains available to custom builds and owner-level
+    # exhaustive profiles, but is not part of either product distribution.
+    "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+    "row_vector2", "row_vector3", "row_vector4",
+    "vector2", "vector3", "vector4",
+    # Machine `full_*` profiles are exhaustive owner profiles. The product
+    # composes full operation families over its own dynamic-shape value set.
+    "full_runtime", "full_source", "full_compiler", "full_values",
 }
 PACKAGE_LINE = re.compile(r"^(?P<name>\S+) v(?P<version>\S+)(?:\s|$)")
 
@@ -168,6 +178,17 @@ def snapshot(profile: str) -> dict[str, object]:
         if leaked_features:
             raise DistributionContractError(
                 f"standard graph contains forbidden features: {leaked_features}"
+            )
+    elif profile == "full":
+        leaked_features = {
+            package: sorted(selected.intersection(FULL_FORBIDDEN_MACHINE_FEATURES))
+            for package, selected in features.items()
+            if package in MACHINE_OPERATION_FEATURES
+            and selected.intersection(FULL_FORBIDDEN_MACHINE_FEATURES)
+        }
+        if leaked_features:
+            raise DistributionContractError(
+                f"full product graph contains exhaustive machine features: {leaked_features}"
             )
 
     machine_features = {

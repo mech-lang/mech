@@ -1,5 +1,5 @@
 #[cfg(any(
-    feature = "standard",
+    feature = "full",
     feature = "representatives",
     feature = "extended-engine",
     feature = "extended-engine-shard",
@@ -52,7 +52,7 @@ use mech_core::FunctionCatalog;
 ))]
 use mech_core::FunctionCatalogBuilder;
 #[cfg(any(
-    feature = "standard",
+    feature = "full",
     feature = "representatives",
     feature = "extended-engine",
     feature = "extended-engine-shard",
@@ -80,7 +80,7 @@ use mech_core::FunctionCatalogBuilder;
 use serde::Serialize;
 
 #[cfg(any(
-    feature = "standard",
+    feature = "full",
     feature = "representatives",
     feature = "extended-engine",
     feature = "extended-engine-shard",
@@ -110,7 +110,7 @@ struct LinkageEntry<'a> {
 }
 
 #[cfg(any(
-    feature = "standard",
+    feature = "full",
     feature = "representatives",
     feature = "extended-engine",
     feature = "extended-engine-shard",
@@ -222,11 +222,11 @@ fn emit_runtime(catalog: &FunctionCatalog) {
     serde_json::to_writer_pretty(std::io::stdout(), &entries).unwrap();
 }
 
-#[cfg(all(feature = "standard", not(feature = "representatives")))]
+#[cfg(all(feature = "full", not(feature = "representatives")))]
 fn main() {
-    // The frozen standard surface is the executable runtime catalog. Native
+    // The frozen full surface is the broad dynamic-shape runtime catalog. Native
     // planning may add compiler-only factories, which are covered by the
-    // extended owner profiles below rather than redefining this 9,019-entry
+    // extended owner profiles below rather than redefining this product
     // contract.
     emit(&mech_stdlib::runtime_catalog());
 }
@@ -333,7 +333,7 @@ extended_owner_runtime_main!(
     mech_combinatorics::install_runtime
 );
 
-#[cfg(all(feature = "representatives", not(feature = "standard")))]
+#[cfg(all(feature = "representatives", not(feature = "full")))]
 fn main() {
     let mut builder = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
@@ -343,7 +343,7 @@ fn main() {
 
 #[cfg(all(
     feature = "installer-profile",
-    not(feature = "standard"),
+    not(feature = "full"),
     not(feature = "representatives")
 ))]
 fn main() {
@@ -351,7 +351,7 @@ fn main() {
 }
 
 #[cfg(all(
-    not(feature = "standard"),
+    not(feature = "full"),
     not(feature = "representatives"),
     not(feature = "installer-profile"),
     not(feature = "owner-native-link"),
@@ -379,22 +379,22 @@ fn main() {
     not(feature = "extended-combinatorics-runtime")
 ))]
 fn main() {
-    panic!("enable exactly one of `standard`, `representatives`, or `installers`");
+    panic!("enable exactly one of `full`, `representatives`, or `installers`");
 }
 
 #[cfg(all(
     feature = "owner-native-link",
-    not(feature = "standard"),
+    not(feature = "full"),
     not(feature = "representatives"),
     not(feature = "installer-profile")
 ))]
 fn main() {}
 
 #[cfg(any(
-    all(feature = "standard", feature = "representatives"),
-    all(feature = "standard", feature = "installer-profile"),
+    all(feature = "full", feature = "representatives"),
+    all(feature = "full", feature = "installer-profile"),
     all(feature = "representatives", feature = "installer-profile"),
-    all(feature = "standard", feature = "owner-native-link"),
+    all(feature = "full", feature = "owner-native-link"),
     all(feature = "representatives", feature = "owner-native-link"),
     all(feature = "installer-profile", feature = "owner-native-link")
 ))]

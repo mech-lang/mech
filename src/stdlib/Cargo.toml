@@ -129,15 +129,19 @@ full_operations = [
   "mech-engine/math_default", "mech-engine/compare_default", "mech-engine/logic_default",
   "mech-engine/range_default", "mech-engine/matrix_default", "mech-engine/set_default",
   "mech-engine/string_default", "mech-engine/stats_default", "mech-engine/combinatorics_default",
-  "mech-math", "mech-math/full_runtime",
-  "mech-compare", "mech-compare/full_runtime",
-  "mech-logic", "mech-logic/full_runtime",
-  "mech-range", "mech-range/full_runtime",
-  "mech-matrix", "mech-matrix/full_runtime",
-  "mech-set", "mech-set/full_runtime",
-  "mech-string", "mech-string/full_runtime",
-  "mech-stats", "mech-stats/full_runtime",
-  "mech-combinatorics", "mech-combinatorics/full_runtime",
+  # Select the complete operation families, but let this crate's `full_values`
+  # forward the product's dynamic-shape value set. Machine `full_runtime`
+  # profiles intentionally remain owner-level exhaustive profiles and include
+  # fixed storage shapes for their independent validation.
+  "mech-math", "mech-math/runtime", "mech-math/full_operations",
+  "mech-compare", "mech-compare/runtime", "mech-compare/full_operations",
+  "mech-logic", "mech-logic/runtime", "mech-logic/full_operations",
+  "mech-range", "mech-range/runtime", "mech-range/full_operations",
+  "mech-matrix", "mech-matrix/runtime", "mech-matrix/full_operations",
+  "mech-set", "mech-set/runtime", "mech-set/full_operations",
+  "mech-string", "mech-string/runtime", "mech-string/full_operations",
+  "mech-stats", "mech-stats/runtime", "mech-stats/full_operations",
+  "mech-combinatorics", "mech-combinatorics/runtime", "mech-combinatorics/full_operations",
 ]
 
 # Engine-owned intrinsic operations.

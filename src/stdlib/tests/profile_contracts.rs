@@ -8,7 +8,7 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "full_runtime")]
-const EXPECTED_RUNTIME_FACTORIES: usize = 9_022;
+const EXPECTED_RUNTIME_FACTORIES: usize = 9_010;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_RUNTIME_FACTORIES: usize = 1_300;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
@@ -29,8 +29,8 @@ const EXPECTED_MODULE_EXPORTS: usize = 50;
 #[cfg(feature = "full_source")]
 const EXPECTED_ALL_EXPORTS: usize = 120;
 #[cfg(feature = "full_runtime")]
-const EXPECTED_RUNTIME_SURFACE_DIGEST: &str =
-    "b7385da248524bcfbd1a20768fc13648b01054625459985251e5f53cae872322";
+const EXPECTED_RUNTIME_SURFACE_FILE_SHA256: &str =
+    "a43771067d0abd251d92ffe5ecfbdeecdbfe58176e651d49f113a22bb1aa932a";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
     "4bf16c1523cdc584d4e0479c3210903f0000679ba180601804388e94938b9c07";
@@ -236,7 +236,7 @@ fn assert_runtime_surface(catalog: &FunctionCatalog) {
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect::<String>();
-    assert_eq!(digest, EXPECTED_RUNTIME_SURFACE_DIGEST);
+    assert_eq!(digest, EXPECTED_RUNTIME_SURFACE_FILE_SHA256);
 }
 
 #[cfg(feature = "full_source")]

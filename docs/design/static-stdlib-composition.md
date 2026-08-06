@@ -156,7 +156,7 @@ cargo build --bin mech --no-default-features --features distribution-full
 ```
 
 The standard runtime contains 1,300 factories and 63 source specializers. The
-full runtime contains 9,022 factories and 119 source specializers. Their exact
+full runtime contains 9,010 factories and 119 source specializers. Their exact
 package, feature, operation, host, count, and digest contracts live in
 `tests/architecture/distributions/standard.json` and `full.json`.
 
