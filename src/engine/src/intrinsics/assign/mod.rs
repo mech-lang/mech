@@ -105,6 +105,166 @@ struct Assign<T> {
     sink: Ref<T>,
     source: Ref<T>,
 }
+
+/// A whole-value assignment for stable composite cells. The outer [`Ref`]
+/// remains unchanged so reactive dependencies keep pointing at the same cell,
+/// while the validated composite snapshot replaces its contents atomically.
+#[derive(Debug)]
+struct AssignComposite<T> {
+    sink: Ref<T>,
+    source: Ref<T>,
+}
+
+impl<T> MechFunctionImpl for AssignComposite<T>
+where
+    T: Clone + Debug + 'static,
+    Ref<T>: ToValue,
+{
+    fn solve_result(&self) -> MResult<()> {
+        let next = self.source.borrow().clone();
+        *self.sink.borrow_mut() = next;
+        Ok(())
+    }
+
+    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+        let next = self.source.borrow().clone();
+        Ok(Box::new(ReactiveRegisterWrite::new(
+            self.sink.clone(),
+            next,
+            self.reactive_output_cell_ids(),
+        )))
+    }
+
+    fn out(&self) -> Value {
+        self.sink.to_value()
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Register
+    }
+
+    fn to_string(&self) -> String {
+        format!("{self:#?}")
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for AssignComposite<T>
+where
+    T: Clone + Debug + 'static,
+    Ref<T>: ToValue,
+{
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Err(MechError::new(
+            GenericError {
+                msg: "stable composite assignments are runtime external-update nodes and cannot be emitted as bytecode instructions"
+                    .to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn assign_index_matrix_fxn(
+    sink: Matrix<usize>,
+    source: Matrix<usize>,
+) -> MResult<Box<dyn MechFunction>> {
+    match (sink, source) {
+        #[cfg(feature = "matrix1")]
+        (Matrix::Matrix1(sink), Matrix::Matrix1(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrix2")]
+        (Matrix::Matrix2(sink), Matrix::Matrix2(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrix2x3")]
+        (Matrix::Matrix2x3(sink), Matrix::Matrix2x3(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrix3x2")]
+        (Matrix::Matrix3x2(sink), Matrix::Matrix3x2(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrix3")]
+        (Matrix::Matrix3(sink), Matrix::Matrix3(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrix4")]
+        (Matrix::Matrix4(sink), Matrix::Matrix4(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrixd")]
+        (Matrix::DMatrix(sink), Matrix::DMatrix(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "vector2")]
+        (Matrix::Vector2(sink), Matrix::Vector2(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "vector3")]
+        (Matrix::Vector3(sink), Matrix::Vector3(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "vector4")]
+        (Matrix::Vector4(sink), Matrix::Vector4(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "vectord")]
+        (Matrix::DVector(sink), Matrix::DVector(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "row_vector2")]
+        (Matrix::RowVector2(sink), Matrix::RowVector2(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "row_vector3")]
+        (Matrix::RowVector3(sink), Matrix::RowVector3(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "row_vector4")]
+        (Matrix::RowVector4(sink), Matrix::RowVector4(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "row_vectord")]
+        (Matrix::RowDVector(sink), Matrix::RowDVector(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        (sink, source) => Err(MechError::new(
+            UnhandledFunctionArgumentKind2 {
+                arg: (
+                    Value::MatrixIndex(sink).kind(),
+                    Value::MatrixIndex(source).kind(),
+                ),
+                fxn_name: "assign".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
+}
+
 impl<T> MechFunctionFactory for Assign<T>
 where
     T: Clone + Debug + Sync + Send + 'static,
@@ -290,6 +450,59 @@ fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>
         }
         (Value::Index(sink), Value::Index(source)) => {
             return Ok(Box::new(Assign {
+                sink: sink.clone(),
+                source: source.clone(),
+            }));
+        }
+        #[cfg(feature = "matrix")]
+        (Value::MatrixIndex(sink), Value::MatrixIndex(source)) => {
+            return assign_index_matrix_fxn(sink.clone(), source.clone());
+        }
+        #[cfg(feature = "record")]
+        (Value::Record(sink), Value::Record(source)) => {
+            return Ok(Box::new(AssignComposite {
+                sink: sink.clone(),
+                source: source.clone(),
+            }));
+        }
+        #[cfg(feature = "map")]
+        (Value::Map(sink), Value::Map(source)) => {
+            return Ok(Box::new(AssignComposite {
+                sink: sink.clone(),
+                source: source.clone(),
+            }));
+        }
+        #[cfg(feature = "set")]
+        (Value::Set(sink), Value::Set(source)) => {
+            return Ok(Box::new(AssignComposite {
+                sink: sink.clone(),
+                source: source.clone(),
+            }));
+        }
+        #[cfg(feature = "table")]
+        (Value::Table(sink), Value::Table(source)) => {
+            return Ok(Box::new(AssignComposite {
+                sink: sink.clone(),
+                source: source.clone(),
+            }));
+        }
+        #[cfg(feature = "tuple")]
+        (Value::Tuple(sink), Value::Tuple(source)) => {
+            return Ok(Box::new(AssignComposite {
+                sink: sink.clone(),
+                source: source.clone(),
+            }));
+        }
+        #[cfg(feature = "atom")]
+        (Value::Atom(sink), Value::Atom(source)) => {
+            return Ok(Box::new(AssignComposite {
+                sink: sink.clone(),
+                source: source.clone(),
+            }));
+        }
+        #[cfg(feature = "enum")]
+        (Value::Enum(sink), Value::Enum(source)) => {
+            return Ok(Box::new(AssignComposite {
                 sink: sink.clone(),
                 source: source.clone(),
             }));

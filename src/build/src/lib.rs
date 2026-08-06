@@ -52,6 +52,7 @@ impl NativeApplicationBuilder {
         }
 
         let program = ParsedProgram::from_bytes(&request.bytecode)?;
+        plan::validate_target_index_constants(&program, request.target.as_deref())?;
         let mut native_resolver = analysis::NativeBytecodeContractResolver::new(
             &program.requirements,
             request.runtime_config.as_ref(),

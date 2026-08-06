@@ -5,8 +5,8 @@ use std::{format, string::String, vec, vec::Vec};
 
 use crate::{
     ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest, FunctionArgs,
-    FunctionCatalog, FunctionValueRepresentation, MResult, MechError, MechErrorKind,
-    ResourceIntent, RuntimeFunctionId, Value,
+    FunctionCatalog, FunctionMatrixElement, FunctionValueRepresentation, MResult, MechError,
+    MechErrorKind, ResourceIntent, RuntimeFunctionId, Value,
 };
 
 use super::{BytecodeInstruction, ParsedProgram};
@@ -195,7 +195,8 @@ fn composite_schema_matches(current: &Value, incoming: &Value) -> bool {
         (Value::Table(current), Value::Table(incoming)) => {
             let current = current.borrow();
             let incoming = incoming.borrow();
-            current.cols == incoming.cols
+            current.rows == incoming.rows
+                && current.cols == incoming.cols
                 && current.data.len() == incoming.data.len()
                 && current.data.iter().zip(incoming.data.iter()).all(
                     |((current_id, (current_kind, _)), (incoming_id, (incoming_kind, _)))| {
@@ -266,6 +267,22 @@ pub fn validate_stable_value_update(current: &Value, incoming: &Value) -> MResul
         ));
     }
 
+    if matches!(
+        current_representation,
+        FunctionValueRepresentation::Matrix { .. }
+    ) && current.shape() != incoming.shape()
+    {
+        return Err(stable_update_violation(
+            current,
+            incoming,
+            format!(
+                "matrix dimensions differ: current is {:?}, incoming is {:?}",
+                current.shape(),
+                incoming.shape(),
+            ),
+        ));
+    }
+
     match current_representation {
         FunctionValueRepresentation::Record
         | FunctionValueRepresentation::Map
@@ -285,6 +302,23 @@ pub fn validate_stable_value_update(current: &Value, incoming: &Value) -> MResul
                 current,
                 incoming,
                 "only bare Empty values share the stable empty backing",
+            ));
+        }
+        FunctionValueRepresentation::Id | FunctionValueRepresentation::Kind => {
+            return Err(stable_update_violation(
+                current,
+                incoming,
+                "the immediate value has no stable mutable backing",
+            ));
+        }
+        FunctionValueRepresentation::Matrix {
+            element: FunctionMatrixElement::Value,
+            ..
+        } => {
+            return Err(stable_update_violation(
+                current,
+                incoming,
+                "heterogeneous value matrices have no stable whole-value assignment",
             ));
         }
         FunctionValueRepresentation::AnyValue | FunctionValueRepresentation::MutableValueCell => {
@@ -1136,14 +1170,16 @@ mod tests {
 
     #[cfg(feature = "matrixd")]
     #[test]
-    fn stable_updates_allow_dynamic_matrix_dimension_changes() {
+    fn stable_updates_reject_dynamic_matrix_dimension_changes() {
         use crate::structures::matrix::Matrix as ValueMatrix;
         use nalgebra::DMatrix;
 
         let current = Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(2, 3))));
         let incoming = Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(5, 7))));
 
-        validate_stable_value_update(&current, &incoming).unwrap();
+        let error = validate_stable_value_update(&current, &incoming).unwrap_err();
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
+        assert!(error.kind_message().contains("matrix dimensions differ"));
     }
 
     #[test]

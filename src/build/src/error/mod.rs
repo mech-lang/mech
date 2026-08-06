@@ -135,6 +135,14 @@ pub enum NativeBuildErrorKind {
     NativeBuildTargetInvalid {
         value: String,
     },
+    NativeBuildTargetPointerWidthUnknown {
+        target: String,
+    },
+    NativeBuildIndexConstantOutOfRange {
+        target: String,
+        pointer_width: u32,
+        value: u64,
+    },
     NativeBuildInstallerPathInvalid {
         value: String,
     },
@@ -207,6 +215,10 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeIdentifierInvalid { .. } => "NativeIdentifierInvalid",
             Self::NativeBuildBinaryNameInvalid { .. } => "NativeBuildBinaryNameInvalid",
             Self::NativeBuildTargetInvalid { .. } => "NativeBuildTargetInvalid",
+            Self::NativeBuildTargetPointerWidthUnknown { .. } => {
+                "NativeBuildTargetPointerWidthUnknown"
+            }
+            Self::NativeBuildIndexConstantOutOfRange { .. } => "NativeBuildIndexConstantOutOfRange",
             Self::NativeBuildInstallerPathInvalid { .. } => "NativeBuildInstallerPathInvalid",
             Self::NativeDependencyInvalid { .. } => "NativeDependencyInvalid",
             Self::NativeComponentVersionMismatch { .. } => "NativeComponentVersionMismatch",
@@ -310,6 +322,16 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeBuildTargetInvalid { value } => {
                 format!("invalid native target triple `{value}`")
             }
+            Self::NativeBuildTargetPointerWidthUnknown { target } => format!(
+                "native target `{target}` has an unknown pointer width; Index constants cannot be validated deterministically"
+            ),
+            Self::NativeBuildIndexConstantOutOfRange {
+                target,
+                pointer_width,
+                value,
+            } => format!(
+                "Index constant {value} exceeds the {pointer_width}-bit address space of native target `{target}`"
+            ),
             Self::NativeBuildInstallerPathInvalid { value } => {
                 format!("invalid native installer path `{value}`")
             }

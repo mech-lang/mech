@@ -26,6 +26,51 @@ macro_rules! uabs_vec_op {
     };
 }
 
+trait RuntimeCheckedAbs: Copy {
+    fn runtime_checked_abs(self) -> Option<Self>;
+}
+
+macro_rules! impl_runtime_checked_abs {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl RuntimeCheckedAbs for $type {
+                fn runtime_checked_abs(self) -> Option<Self> {
+                    self.checked_abs()
+                }
+            }
+        )+
+    };
+}
+
+impl_runtime_checked_abs!(i8, i16, i32, i64, i128);
+
+fn checked_abs_value<T: RuntimeCheckedAbs>(value: T) -> MResult<T> {
+    value
+        .runtime_checked_abs()
+        .ok_or_else(|| arithmetic_overflow::<T>("absolute value"))
+}
+
+macro_rules! checked_abs_op {
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            let next = checked_abs_value(*$arg)?;
+            *$out = next;
+        }
+    };
+}
+
+macro_rules! checked_abs_vec_op {
+    ($arg:expr, $out:expr) => {
+        unsafe {
+            let mut next = (*$arg).clone();
+            for value in next.iter_mut() {
+                *value = checked_abs_value(*value)?;
+            }
+            *$out = next;
+        }
+    };
+}
+
 macro_rules! abs_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -92,15 +137,15 @@ impl_math_unop!(MathAbs, u64, uabs);
 impl_math_unop!(MathAbs, u128, uabs);
 
 #[cfg(feature = "i8")]
-impl_math_unop!(MathAbs, i8, abs);
+impl_math_unop!(MathAbs, i8, checked_abs);
 #[cfg(feature = "i16")]
-impl_math_unop!(MathAbs, i16, abs);
+impl_math_unop!(MathAbs, i16, checked_abs);
 #[cfg(feature = "i32")]
-impl_math_unop!(MathAbs, i32, abs);
+impl_math_unop!(MathAbs, i32, checked_abs);
 #[cfg(feature = "i64")]
-impl_math_unop!(MathAbs, i64, abs);
+impl_math_unop!(MathAbs, i64, checked_abs);
 #[cfg(feature = "i128")]
-impl_math_unop!(MathAbs, i128, abs);
+impl_math_unop!(MathAbs, i128, checked_abs);
 
 #[cfg(feature = "f32")]
 impl_math_unop!(MathAbs, f32, fabsf);
@@ -112,6 +157,48 @@ impl_math_unop!(MathAbs, C64, abs);
 
 #[cfg(feature = "r64")]
 impl_math_unop!(MathAbs, R64, abs);
+
+#[cfg(all(test, feature = "i8"))]
+mod checked_abs_tests {
+    use super::*;
+
+    #[test]
+    fn signed_scalar_abs_rejects_minimum_and_retains_output() {
+        let arg = Ref::new(7_i8);
+        let out = Ref::new(19_i8);
+        let function = MathAbsI8S {
+            arg: arg.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), 7);
+        *arg.borrow_mut() = i8::MIN;
+
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+        assert_eq!(*out.borrow(), 7);
+    }
+
+    #[cfg(feature = "matrixd")]
+    #[test]
+    fn signed_matrix_abs_is_transactional_when_any_element_is_minimum() {
+        let arg = Ref::new(DMatrix::from_row_slice(1, 2, &[-2_i8, 3]));
+        let out = Ref::new(DMatrix::from_row_slice(1, 2, &[11_i8, 12]));
+        let function = MathAbsI8MD {
+            arg: arg.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(&*out.borrow(), &DMatrix::from_row_slice(1, 2, &[2, 3]));
+        *arg.borrow_mut() = DMatrix::from_row_slice(1, 2, &[-4, i8::MIN]);
+
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+        assert_eq!(&*out.borrow(), &DMatrix::from_row_slice(1, 2, &[2, 3]));
+    }
+}
 
 #[cfg(feature = "source")]
 fn impl_abs_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

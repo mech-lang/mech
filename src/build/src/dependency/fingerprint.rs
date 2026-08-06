@@ -5,6 +5,7 @@ use std::path::{Component, Path, PathBuf};
 
 use mech_core::MResult;
 use sha2::{Digest, Sha256};
+use toml_edit::DocumentMut;
 
 use super::{WORKSPACE_RESOLUTION_PATCHES, WorkspacePackage, workspace_path_string};
 use crate::error::{NativeBuildErrorKind, native_build_error};
@@ -138,14 +139,15 @@ fn collect_package_inputs(
     package: &WorkspacePackage,
     inputs: &mut BTreeSet<PathBuf>,
 ) -> MResult<()> {
-    inputs.insert(package.manifest_relative_path());
+    let manifest = package.manifest_relative_path();
+    inputs.insert(manifest.clone());
+    let build_script = validated_package_build_script(root, canonical_root, package, &manifest)?;
 
     let source_root = package.source_relative_path();
     let mut rust_inputs = Vec::new();
     collect_rust_files(root, &source_root, &mut rust_inputs)?;
 
-    let build_script = package.build_script_relative_path();
-    if root.join(&build_script).is_file() {
+    if let Some(build_script) = build_script {
         rust_inputs.push(build_script);
     }
     rust_inputs.sort();
@@ -182,6 +184,73 @@ fn collect_package_inputs(
     }
 
     Ok(())
+}
+
+/// Cargo permits package manifests to redirect both the library target and the
+/// build script. The current workspace registry deliberately fingerprints the
+/// complete conventional `src` tree; reject redirects rather than silently
+/// hashing files Cargo will not compile or omitting files that it will.
+fn validated_package_build_script(
+    root: &Path,
+    canonical_root: &Path,
+    package: &WorkspacePackage,
+    manifest: &Path,
+) -> MResult<Option<PathBuf>> {
+    let manifest_file = resolve_input_file(root, canonical_root, manifest)?;
+    let source = fs::read_to_string(&manifest_file).map_err(|error| {
+        invalid_input(
+            manifest,
+            format!("package manifest cannot be read as UTF-8: {error}"),
+        )
+    })?;
+    let document = source.parse::<DocumentMut>().map_err(|error| {
+        invalid_input(
+            manifest,
+            format!("package manifest is invalid TOML: {error}"),
+        )
+    })?;
+
+    if let Some(path) = document
+        .get("lib")
+        .and_then(|item| item.as_table())
+        .and_then(|table| table.get("path"))
+    {
+        let Some(path) = path.as_str() else {
+            return Err(invalid_input(manifest, "package lib.path must be a string"));
+        };
+        if path != "src/lib.rs" {
+            return Err(invalid_input(
+                manifest,
+                format!(
+                    "custom package lib.path `{path}` is unsupported by deterministic workspace fingerprinting"
+                ),
+            ));
+        }
+    }
+
+    let default = package.build_script_relative_path();
+    let build = document
+        .get("package")
+        .and_then(|item| item.as_table())
+        .and_then(|table| table.get("build"));
+    match build {
+        None => Ok(root.join(&default).is_file().then_some(default)),
+        Some(item) if item.as_bool() == Some(false) => Ok(None),
+        Some(item) if item.as_str() == Some("build.rs") => Ok(Some(default)),
+        Some(item) if item.as_str().is_some() => {
+            let path = item.as_str().expect("checked string build path");
+            Err(invalid_input(
+                manifest,
+                format!(
+                    "custom package.build path `{path}` is unsupported by deterministic workspace fingerprinting"
+                ),
+            ))
+        }
+        Some(_) => Err(invalid_input(
+            manifest,
+            "package.build must be `false`, omitted, or the default `build.rs` string",
+        )),
+    }
 }
 
 fn collect_rust_files(root: &Path, relative: &Path, files: &mut Vec<PathBuf>) -> MResult<()> {
@@ -869,6 +938,68 @@ mod tests {
         .unwrap();
         let changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
         assert_ne!(initial, changed, "included Rust must be fingerprinted");
+    }
+
+    #[test]
+    fn custom_cargo_library_and_build_script_paths_are_rejected() {
+        let custom_library = TestWorkspace::new("custom-library-path");
+        fs::create_dir_all(custom_library.0.join("machines/math/generated")).unwrap();
+        fs::write(
+            custom_library.0.join("machines/math/generated/lib.rs"),
+            "pub const GENERATED: u8 = 1;\n",
+        )
+        .unwrap();
+        fs::write(
+            custom_library.0.join("machines/math/Cargo.toml"),
+            "[package]\nname = \"mech-math\"\n[lib]\npath = \"generated/lib.rs\"\n",
+        )
+        .unwrap();
+
+        let error = fingerprint_workspace(&custom_library.0, &[math_package()]).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeWorkspaceInputInvalid");
+        assert!(error.kind_message().contains("custom package lib.path"));
+
+        let custom_build = TestWorkspace::new("custom-build-path");
+        fs::create_dir_all(custom_build.0.join("machines/math/tools")).unwrap();
+        fs::write(
+            custom_build.0.join("machines/math/tools/build.rs"),
+            "fn main() {}\n",
+        )
+        .unwrap();
+        fs::write(
+            custom_build.0.join("machines/math/Cargo.toml"),
+            "[package]\nname = \"mech-math\"\nbuild = \"tools/build.rs\"\n",
+        )
+        .unwrap();
+
+        let error = fingerprint_workspace(&custom_build.0, &[math_package()]).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeWorkspaceInputInvalid");
+        assert!(error.kind_message().contains("custom package.build path"));
+    }
+
+    #[test]
+    fn disabled_default_build_script_is_not_fingerprinted() {
+        let workspace = TestWorkspace::new("disabled-build-script");
+        fs::write(
+            workspace.0.join("machines/math/Cargo.toml"),
+            "[package]\nname = \"mech-math\"\nbuild = false\n",
+        )
+        .unwrap();
+        fs::write(
+            workspace.0.join("machines/math/build.rs"),
+            "fn main() { println!(\"cargo:rerun-if-changed=first\"); }\n",
+        )
+        .unwrap();
+        let initial = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+
+        fs::write(
+            workspace.0.join("machines/math/build.rs"),
+            "fn main() { println!(\"cargo:rerun-if-changed=second\"); }\n",
+        )
+        .unwrap();
+        let changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+
+        assert_eq!(initial, changed);
     }
 
     #[test]
