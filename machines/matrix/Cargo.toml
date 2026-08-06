@@ -101,4 +101,22 @@ default-features = false
 features = ["libm"]
 optional = true
 
+[dev-dependencies]
+mech-engine = { path = "../../src/engine", default-features = false, features = [
+  "compiler", "f64", "matrixd", "vectord", "variable_define", "formulas",
+  "math_mul", "matrix_matmul", "matrix_solve",
+] }
+mech-math = { path = "../math", default-features = false, features = [
+  "compiler", "source", "f64", "matrixd", "vectord", "mul",
+] }
+mech-runtime = { path = "../../src/runtime", default-features = false, features = [
+  "compiler", "f64", "matrixd", "vectord", "variables", "formulas",
+] }
+
+[patch.crates-io]
+mech-bytecode = { path = "../../src/bytecode" }
+mech-core = { path = "../../src/core" }
+mech-engine = { path = "../../src/engine" }
+mech-syntax = { path = "../../src/syntax" }
+
 [workspace]

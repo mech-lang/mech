@@ -123,13 +123,14 @@ impl RuntimeBuilder {
         Self::default()
     }
 
-    #[cfg(test)]
-    pub(crate) fn test_input_driver(
-        mut self,
-        driver: impl RuntimeHostInputDriver + 'static,
-    ) -> Self {
+    pub fn input_driver(mut self, driver: impl RuntimeHostInputDriver + 'static) -> Self {
         self.input_drivers.push(Box::new(driver));
         self
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_input_driver(self, driver: impl RuntimeHostInputDriver + 'static) -> Self {
+        self.input_driver(driver)
     }
 
     pub fn config(mut self, config: RuntimeConfig) -> Self {

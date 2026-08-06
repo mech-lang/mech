@@ -191,3 +191,8 @@ criterion = { version = "0.8.2", default-features = false, features = ["cargo_be
 name = "value_state_journal"
 harness = false
 required-features = ["baselib"]
+
+[[bench]]
+name = "solve_result_overhead"
+harness = false
+required-features = ["baselib"]
