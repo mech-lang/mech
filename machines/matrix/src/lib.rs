@@ -60,6 +60,238 @@ use std::ops::*;
 
 use std::fmt::Display;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MatrixArithmeticOverflow {
+    pub operation: &'static str,
+    pub operand_type: &'static str,
+}
+
+impl MechErrorKind for MatrixArithmeticOverflow {
+    fn name(&self) -> &str {
+        "MatrixArithmeticOverflow"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "{} overflows operand type {}",
+            self.operation, self.operand_type,
+        )
+    }
+}
+
+/// Arithmetic shared by every dot-product and matrix-product factory. Integer
+/// implementations are checked so debug and release applications have the
+/// same behavior; IEEE and exact non-primitive numeric types retain their
+/// established unbounded/IEEE operations.
+pub trait RuntimeMatrixArithmetic:
+    Copy
+    + Debug
+    + Display
+    + Clone
+    + Sync
+    + Send
+    + 'static
+    + PartialEq
+    + PartialOrd
+    + AsValueKind
+    + Add<Output = Self>
+    + AddAssign
+    + Sub<Output = Self>
+    + SubAssign
+    + Mul<Output = Self>
+    + MulAssign
+    + Div<Output = Self>
+    + DivAssign
+    + Zero
+    + One
+{
+    fn runtime_checked_add(self, rhs: Self) -> Option<Self>;
+    fn runtime_checked_mul(self, rhs: Self) -> Option<Self>;
+}
+
+macro_rules! impl_checked_matrix_arithmetic {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl RuntimeMatrixArithmetic for $type {
+                fn runtime_checked_add(self, rhs: Self) -> Option<Self> {
+                    self.checked_add(rhs)
+                }
+
+                fn runtime_checked_mul(self, rhs: Self) -> Option<Self> {
+                    self.checked_mul(rhs)
+                }
+            }
+        )+
+    };
+}
+
+#[cfg(feature = "i8")]
+impl_checked_matrix_arithmetic!(i8);
+#[cfg(feature = "i16")]
+impl_checked_matrix_arithmetic!(i16);
+#[cfg(feature = "i32")]
+impl_checked_matrix_arithmetic!(i32);
+#[cfg(feature = "i64")]
+impl_checked_matrix_arithmetic!(i64);
+#[cfg(feature = "i128")]
+impl_checked_matrix_arithmetic!(i128);
+#[cfg(feature = "u8")]
+impl_checked_matrix_arithmetic!(u8);
+#[cfg(feature = "u16")]
+impl_checked_matrix_arithmetic!(u16);
+#[cfg(feature = "u32")]
+impl_checked_matrix_arithmetic!(u32);
+#[cfg(feature = "u64")]
+impl_checked_matrix_arithmetic!(u64);
+#[cfg(feature = "u128")]
+impl_checked_matrix_arithmetic!(u128);
+
+macro_rules! impl_unchecked_matrix_arithmetic {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl RuntimeMatrixArithmetic for $type {
+                fn runtime_checked_add(self, rhs: Self) -> Option<Self> {
+                    Some(self + rhs)
+                }
+
+                fn runtime_checked_mul(self, rhs: Self) -> Option<Self> {
+                    Some(self * rhs)
+                }
+            }
+        )+
+    };
+}
+
+#[cfg(feature = "f32")]
+impl_unchecked_matrix_arithmetic!(f32);
+#[cfg(feature = "f64")]
+impl_unchecked_matrix_arithmetic!(f64);
+#[cfg(feature = "rational")]
+impl_unchecked_matrix_arithmetic!(mech_core::R64);
+#[cfg(feature = "complex")]
+impl_unchecked_matrix_arithmetic!(mech_core::C64);
+
+fn checked_matrix_add<T: RuntimeMatrixArithmetic>(
+    lhs: T,
+    rhs: T,
+    operation: &'static str,
+) -> MResult<T> {
+    lhs.runtime_checked_add(rhs).ok_or_else(|| {
+        MechError::new(
+            MatrixArithmeticOverflow {
+                operation,
+                operand_type: std::any::type_name::<T>(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })
+}
+
+fn checked_matrix_mul<T: RuntimeMatrixArithmetic>(
+    lhs: T,
+    rhs: T,
+    operation: &'static str,
+) -> MResult<T> {
+    lhs.runtime_checked_mul(rhs).ok_or_else(|| {
+        MechError::new(
+            MatrixArithmeticOverflow {
+                operation,
+                operand_type: std::any::type_name::<T>(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })
+}
+
+/// Fallible counterpart to `impl_binop!` for reduction kernels. The operation
+/// macro computes a complete staged result and may use `?`; it publishes only
+/// after every multiplication and accumulation succeeds.
+macro_rules! impl_checked_matrix_binop {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
+        #[derive(Debug)]
+        pub struct $struct_name<T> {
+            pub lhs: Ref<$arg1_type>,
+            pub rhs: Ref<$arg2_type>,
+            pub out: Ref<$out_type>,
+        }
+
+        impl<T> MechFunctionFactory for $struct_name<T>
+        where
+            T: RuntimeMatrixArithmetic,
+            #[cfg(feature = "compiler")]
+            T: ConstElem + CompileConst,
+            Ref<$out_type>: ToValue,
+            $arg1_type: FunctionRuntimeType,
+            $arg2_type: FunctionRuntimeType,
+            $out_type: FunctionRuntimeType,
+        {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                match args {
+                    FunctionArgs::Binary(out, arg1, arg2) => {
+                        let lhs = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let rhs = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let out = out.try_function_ref(FunctionArgumentRole::Output)?;
+                        Ok(Box::new(Self { lhs, rhs, out }))
+                    }
+                    _ => Err(MechError::new(
+                        IncorrectNumberOfArguments {
+                            expected: 2,
+                            found: args.len(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()),
+                }
+            }
+        }
+
+        impl<T> MechFunctionImpl for $struct_name<T>
+        where
+            T: RuntimeMatrixArithmetic,
+            Ref<$out_type>: ToValue,
+        {
+            fn solve_result(&self) -> MResult<()> {
+                let lhs_ptr = self.lhs.as_ptr();
+                let rhs_ptr = self.rhs.as_ptr();
+                let out_ptr = self.out.as_mut_ptr();
+                $op!(lhs_ptr, rhs_ptr, out_ptr);
+                Ok(())
+            }
+
+            fn out(&self) -> Value {
+                self.out.to_value()
+            }
+
+            fn to_string(&self) -> String {
+                format!("{self:#?}")
+            }
+
+            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+                Ok(self.reactive_output_values())
+            }
+        }
+
+        #[cfg(feature = "compiler")]
+        impl<T> MechFunctionCompiler for $struct_name<T>
+        where
+            T: RuntimeMatrixArithmetic + ConstElem + CompileConst,
+        {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+                compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
+            }
+        }
+    };
+}
+
 #[cfg(feature = "runtime")]
 pub mod catalog;
 #[cfg(feature = "runtime")]

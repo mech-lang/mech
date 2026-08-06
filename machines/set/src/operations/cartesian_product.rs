@@ -153,11 +153,10 @@ impl MechFunctionImpl for SetCartesianProductFxn {
                 }
             }
             next.sync_cardinality_from_contents();
-            next.kind = if next.set.is_empty() {
-                ValueKind::Empty
-            } else {
-                output_kind
-            };
+            // Empty materialization does not erase the declared element
+            // schema. Downstream native contracts must see the same tuple
+            // kind regardless of the current input cardinalities.
+            next.kind = output_kind;
 
             *self.out.as_mut_ptr() = next;
         };
@@ -247,6 +246,30 @@ mod tests {
         let error = function.solve_result().unwrap_err();
         assert_eq!(error.kind_name(), "SetCartesianProductLimitExceeded");
         assert_eq!(*out.borrow(), previous);
+    }
+
+    #[test]
+    fn cartesian_product_preserves_tuple_schema_when_either_input_is_empty() {
+        let lhs = Ref::new(MechSet::new(ValueKind::Index, 0));
+        let rhs = Ref::new(index_set(2));
+        let output_kind = ValueKind::Tuple(vec![ValueKind::Index, ValueKind::Index]);
+        let out = Ref::new(MechSet::new(output_kind.clone(), 0));
+        let function = SetCartesianProductFxn {
+            lhs: lhs.clone(),
+            rhs: rhs.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+
+        assert!(out.borrow().set.is_empty());
+        assert_eq!(out.borrow().kind, output_kind);
+        validate_set_cartesian_product_contract(&FunctionArgs::Binary(
+            Value::Set(out),
+            Value::Set(lhs),
+            Value::Set(rhs),
+        ))
+        .unwrap();
     }
 }
 

@@ -47,6 +47,12 @@ impl ParsedProgram {
     pub fn referenced_runtime_types(&self) -> MResult<Vec<RuntimeType>> {
         constants::referenced_runtime_types(&self.types, &self.constants, &self.constant_blob)
     }
+
+    /// Largest canonical `Index` payload, read independently of this process's
+    /// pointer width for native cross-target validation.
+    pub fn maximum_index_constant(&self) -> MResult<Option<u64>> {
+        constants::maximum_index_constant(&self.types, &self.constants, &self.constant_blob)
+    }
 }
 
 #[cfg(not(feature = "no_std"))]

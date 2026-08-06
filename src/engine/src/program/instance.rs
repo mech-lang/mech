@@ -2200,10 +2200,10 @@ mod live_input_tests {
 
     #[cfg(all(feature = "matrix", feature = "f64"))]
     #[test]
-    fn stable_value_update_allows_dynamic_matrix_shape_change() {
+    fn stable_value_update_rejects_dynamic_matrix_shape_change() {
         let sink_matrix = MechMatrix::from_vec((1..=25).map(|x| x as f64).collect(), 5, 5);
         let source_matrix = MechMatrix::from_vec((1..=36).map(|x| x as f64).collect(), 6, 6);
-        let expected = source_matrix.clone();
+        let expected = sink_matrix.clone();
         let sink = Ref::new(Value::MatrixF64(sink_matrix));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
@@ -2211,13 +2211,15 @@ mod live_input_tests {
             other => panic!("expected f64 matrix, got {other:?}"),
         };
 
-        apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix)).unwrap();
+        let error =
+            apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix)).unwrap_err();
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
 
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
             Value::MatrixF64(value) => {
                 assert_eq!(inner_pointer, value.addr());
-                assert_eq!(value.shape(), vec![6, 6]);
+                assert_eq!(value.shape(), vec![5, 5]);
                 assert_eq!(value, &expected);
             }
             other => panic!("expected f64 matrix, got {other:?}"),
@@ -2226,7 +2228,7 @@ mod live_input_tests {
 
     #[cfg(all(feature = "matrixd", feature = "f64"))]
     #[test]
-    fn stable_value_update_allows_equal_length_dynamic_shape_change() {
+    fn stable_value_update_rejects_equal_length_dynamic_shape_change() {
         let sink_matrix = MechMatrix::DMatrix(Ref::new(crate::na::DMatrix::from_vec(
             2,
             3,
@@ -2237,19 +2239,21 @@ mod live_input_tests {
             2,
             vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0],
         )));
-        let expected = source_matrix.clone();
+        let expected = sink_matrix.clone();
         let sink = Ref::new(Value::MatrixF64(sink_matrix));
         let inner_pointer = match &*sink.borrow() {
             Value::MatrixF64(value) => value.addr(),
             other => panic!("expected f64 matrix, got {other:?}"),
         };
 
-        apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix)).unwrap();
+        let error =
+            apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix)).unwrap_err();
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
 
         match &*sink.borrow() {
             Value::MatrixF64(value) => {
                 assert_eq!(inner_pointer, value.addr());
-                assert_eq!(value.shape(), vec![3, 2]);
+                assert_eq!(value.shape(), vec![2, 3]);
                 assert_eq!(value, &expected);
             }
             other => panic!("expected f64 matrix, got {other:?}"),
@@ -2284,32 +2288,101 @@ mod live_input_tests {
 
     #[cfg(feature = "matrix")]
     #[test]
-    fn stable_value_update_rejects_matrix_index() {
+    fn stable_value_update_preserves_matrix_index_reference() {
         let matrix = MechMatrix::from_vec(vec![1usize, 2, 3, 4], 2, 2);
-        let original = matrix.clone();
         let sink = Ref::new(Value::MatrixIndex(matrix));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
             Value::MatrixIndex(value) => value.addr(),
             other => panic!("expected index matrix, got {other:?}"),
         };
-        let result = apply_stable_value_update(
+        apply_stable_value_update(
             sink.clone(),
             Value::MatrixIndex(MechMatrix::from_vec(vec![5usize, 6, 7, 8], 2, 2)),
-        );
-        let rendered = format!("{:?}", result.unwrap_err());
-        assert!(
-            rendered.contains("UnhandledFunctionArgumentKind2"),
-            "{rendered}"
-        );
+        )
+        .unwrap();
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
             Value::MatrixIndex(value) => {
                 assert_eq!(inner_pointer, value.addr());
                 assert_eq!(value.shape(), vec![2, 2]);
-                assert_eq!(value, &original);
+                assert_eq!(value, &MechMatrix::from_vec(vec![5usize, 6, 7, 8], 2, 2));
             }
             other => panic!("expected index matrix, got {other:?}"),
+        }
+    }
+
+    #[cfg(all(
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table",
+        feature = "tuple",
+        feature = "f64",
+        any(feature = "string", feature = "variable_define")
+    ))]
+    #[test]
+    fn stable_value_update_publishes_every_composite_without_replacing_its_cell() {
+        let record = |value| {
+            Value::Record(Ref::new(mech_core::MechRecord::new(vec![(
+                "value",
+                Value::F64(Ref::new(value)),
+            )])))
+        };
+        let map = |value| {
+            Value::Map(Ref::new(mech_core::MechMap::from_typed_vec(
+                ValueKind::String,
+                ValueKind::F64,
+                1,
+                vec![(
+                    Value::String(Ref::new("key".to_owned())),
+                    Value::F64(Ref::new(value)),
+                )],
+            )))
+        };
+        let set = |value| {
+            Value::Set(Ref::new(mech_core::MechSet::from_vec(vec![Value::F64(
+                Ref::new(value),
+            )])))
+        };
+        let table = |value| {
+            Value::Table(Ref::new(
+                mech_core::MechTable::from_records(vec![mech_core::MechRecord::new(vec![(
+                    "value",
+                    Value::F64(Ref::new(value)),
+                )])])
+                .unwrap(),
+            ))
+        };
+        let tuple = |value| {
+            Value::Tuple(Ref::new(mech_core::MechTuple::from_vec(vec![Value::F64(
+                Ref::new(value),
+            )])))
+        };
+        let composite_addr = |value: &Value| match value {
+            Value::Record(value) => value.addr(),
+            Value::Map(value) => value.addr(),
+            Value::Set(value) => value.addr(),
+            Value::Table(value) => value.addr(),
+            Value::Tuple(value) => value.addr(),
+            other => panic!("expected composite, got {other:?}"),
+        };
+
+        for (current, incoming) in [
+            (record(1.0), record(2.0)),
+            (map(1.0), map(2.0)),
+            (set(1.0), set(2.0)),
+            (table(1.0), table(2.0)),
+            (tuple(1.0), tuple(2.0)),
+        ] {
+            let expected = incoming.clone();
+            let inner_pointer = composite_addr(&current);
+            let sink = Ref::new(current);
+
+            apply_stable_value_update(sink.clone(), incoming).unwrap();
+
+            assert_eq!(composite_addr(&sink.borrow()), inner_pointer);
+            assert_eq!(*sink.borrow(), expected);
         }
     }
 

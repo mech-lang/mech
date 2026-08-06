@@ -1,25 +1,6 @@
 #[macro_use]
 use crate::*;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MathArithmeticOverflow {
-    pub operation: &'static str,
-    pub operand_type: &'static str,
-}
-
-impl MechErrorKind for MathArithmeticOverflow {
-    fn name(&self) -> &str {
-        "MathArithmeticOverflow"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "{} overflows operand type {}",
-            self.operation, self.operand_type,
-        )
-    }
-}
-
 /// Arithmetic used by retained native functions must have identical debug and
 /// release behavior. Integers therefore use checked operations while the
 /// unbounded/IEEE numeric families preserve their existing semantics.
@@ -162,17 +143,6 @@ impl_checked_matrix_neg!(feature = "vector3", Vector3);
 impl_checked_matrix_neg!(feature = "vector4", Vector4);
 impl_checked_matrix_neg!(feature = "vectord", DVector);
 impl_checked_matrix_neg!(feature = "matrixd", DMatrix);
-
-pub(crate) fn arithmetic_overflow<T>(operation: &'static str) -> MechError {
-    MechError::new(
-        MathArithmeticOverflow {
-            operation,
-            operand_type: std::any::type_name::<T>(),
-        },
-        None,
-    )
-    .with_compiler_loc()
-}
 
 /// Fallible counterpart to the legacy generic binop factory. The operation
 /// macro computes into staged storage and may use `?`; output replacement only

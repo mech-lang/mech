@@ -830,6 +830,24 @@ fn official_v1_layout_is_deterministic_and_round_trips() {
     );
 }
 
+#[cfg(feature = "matrixd")]
+#[test]
+fn maximum_index_scan_is_pointer_independent_for_scalars_and_matrices() {
+    let scalar = u64::from(u32::MAX) + 1;
+    let matrix = scalar + 7;
+    let constants = vec![
+        EncodedConstant {
+            runtime_type: RuntimeType::Index,
+            alignment: 8,
+            bytes: scalar.to_le_bytes().to_vec(),
+        },
+        matrixd_constant(RuntimeType::Index, matrix.to_le_bytes().to_vec()),
+    ];
+    let parsed = ParsedProgram::from_bytes(&write_bytecode(&program(constants)).unwrap()).unwrap();
+
+    assert_eq!(parsed.maximum_index_constant().unwrap(), Some(matrix));
+}
+
 #[test]
 fn every_canonical_scalar_encoding_round_trips_exactly() {
     let f32_bits = 0x7fc0_1234_u32;

@@ -46,6 +46,39 @@ use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 use std::ops::*;
 
+#[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MathArithmeticOverflow {
+    pub operation: &'static str,
+    pub operand_type: &'static str,
+}
+
+#[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
+impl MechErrorKind for MathArithmeticOverflow {
+    fn name(&self) -> &str {
+        "MathArithmeticOverflow"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "{} overflows operand type {}",
+            self.operation, self.operand_type,
+        )
+    }
+}
+
+#[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
+pub(crate) fn arithmetic_overflow<T>(operation: &'static str) -> MechError {
+    MechError::new(
+        MathArithmeticOverflow {
+            operation,
+            operand_type: std::any::type_name::<T>(),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
 #[cfg(any(feature = "round", feature = "dynamic-module"))]
 pub mod kernels;
 
