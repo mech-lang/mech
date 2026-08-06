@@ -1,10 +1,10 @@
-use super::super::{CaptureSide, ValueStateKey};
+use super::super::{CaptureSide, HashSet, ValueStateKey};
 use super::support::{scalar, scalar_value};
 use crate::{
     ReactiveCellId, Ref, Value, ValueKind, ValueStateEntryTypeMismatch, ValueStateJournal,
 };
 use core::any::type_name;
-use std::{cell::Cell, collections::HashSet, rc::Rc};
+use std::{cell::Cell, rc::Rc};
 
 struct CountedClone {
     clone_count: Rc<Cell<usize>>,
@@ -31,7 +31,7 @@ fn state_journal_plain_preflight_does_not_clone_payload() {
         .preflight_ref(
             &target,
             CaptureSide::Before,
-            &mut HashSet::new(),
+            &mut HashSet::default(),
             |_, _, _| Ok(()),
         )
         .unwrap();
@@ -41,7 +41,7 @@ fn state_journal_plain_preflight_does_not_clone_payload() {
         .visit_ref(
             &target,
             CaptureSide::Before,
-            &mut HashSet::new(),
+            &mut HashSet::default(),
             |_, _, _| Ok(()),
         )
         .unwrap();
