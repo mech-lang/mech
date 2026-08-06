@@ -1,8 +1,9 @@
 use mech_core::matrix::Matrix as ValueMatrix;
-use mech_core::{MechFunction, ReactiveCellId, ReactivePlan, Ref, Value};
+use mech_core::{MResult, MechFunction, ReactiveCellId, ReactivePlan, Ref, Value};
 use mech_matrix::{MatMulMDMD, MatrixSolveMDVD};
 use nalgebra::{DMatrix, DVector};
 use std::{
+    convert::Infallible,
     env,
     hint::black_box,
     time::{Duration, Instant},
@@ -19,16 +20,16 @@ struct Measurement {
     batch_iterations: usize,
 }
 
-fn measure(mut operation: impl FnMut()) -> Measurement {
+fn try_measure<E>(mut operation: impl FnMut() -> Result<(), E>) -> Result<Measurement, E> {
     let warmup_start = Instant::now();
     let mut warmup_iterations = 0usize;
     while warmup_iterations < 2 || warmup_start.elapsed() < WARMUP_MIN {
-        operation();
+        operation()?;
         warmup_iterations += 1;
     }
 
     let calibration_start = Instant::now();
-    operation();
+    operation()?;
     let per_iteration = calibration_start.elapsed().as_secs_f64().max(1e-9);
     let batch_iterations = (TARGET_SAMPLE.as_secs_f64() / per_iteration)
         .ceil()
@@ -38,16 +39,26 @@ fn measure(mut operation: impl FnMut()) -> Measurement {
     for _ in 0..SAMPLE_COUNT {
         let start = Instant::now();
         for _ in 0..batch_iterations {
-            operation();
+            operation()?;
         }
         samples.push(start.elapsed().as_secs_f64() * 1_000.0 / batch_iterations as f64);
     }
     samples.sort_by(f64::total_cmp);
-    Measurement {
+    Ok(Measurement {
         median_ms: samples[SAMPLE_COUNT / 2],
         min_ms: samples[0],
         max_ms: samples[SAMPLE_COUNT - 1],
         batch_iterations,
+    })
+}
+
+fn measure(mut operation: impl FnMut()) -> Measurement {
+    match try_measure(|| {
+        operation();
+        Ok::<(), Infallible>(())
+    }) {
+        Ok(measurement) => measurement,
+        Err(never) => match never {},
     }
 }
 
@@ -148,9 +159,9 @@ fn mech_solve_function(
     (Box::new(function), output, matrix, rhs)
 }
 
-fn mech_kernel_matmul(size: usize) {
+fn mech_kernel_matmul(size: usize) -> MResult<()> {
     let (function, output) = mech_matmul_function(size);
-    let measurement = measure(|| function.solve_result().unwrap());
+    let measurement = try_measure(|| function.solve_result())?;
     let check = output.borrow()[(0, 0)];
     assert!(check.is_finite());
     print_result(
@@ -160,11 +171,12 @@ fn mech_kernel_matmul(size: usize) {
         &measurement,
         black_box(check),
     );
+    Ok(())
 }
 
-fn mech_kernel_solve(size: usize) {
+fn mech_kernel_solve(size: usize) -> MResult<()> {
     let (function, output, matrix, rhs) = mech_solve_function(size);
-    let measurement = measure(|| function.solve_result().unwrap());
+    let measurement = try_measure(|| function.solve_result())?;
     let residual = (&matrix * &*output.borrow() - rhs).amax();
     assert!(residual < 1e-8, "Mech kernel solve residual {residual}");
     print_result(
@@ -174,6 +186,7 @@ fn mech_kernel_solve(size: usize) {
         &measurement,
         black_box(output.borrow()[0]),
     );
+    Ok(())
 }
 
 fn reactive_matmul_fixture(size: usize) -> (ReactivePlan, ReactiveCellId, Ref<DMatrix<f64>>) {
@@ -274,14 +287,15 @@ fn sizes() -> Vec<usize> {
         .collect()
 }
 
-fn main() {
+fn main() -> MResult<()> {
     println!("runtime,operation,size,median_ms,min_ms,max_ms,batch_iterations,check");
     for size in sizes() {
         raw_matmul(size);
-        mech_kernel_matmul(size);
+        mech_kernel_matmul(size)?;
         mech_reactive_matmul(size);
         raw_solve(size);
-        mech_kernel_solve(size);
+        mech_kernel_solve(size)?;
         mech_reactive_solve(size);
     }
+    Ok(())
 }

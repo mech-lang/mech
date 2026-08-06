@@ -21,7 +21,7 @@ type CellId = u64;
 type NodeId = usize;
 
 trait VoidSolve {
-    fn solve(&self);
+    fn run_void(&self);
 }
 
 trait ResultSolve {
@@ -85,7 +85,7 @@ impl DispatchKernel {
 }
 
 impl VoidSolve for DispatchKernel {
-    fn solve(&self) {
+    fn run_void(&self) {
         self.tick();
     }
 }
@@ -121,7 +121,7 @@ fn dispatch_direct(node: &DispatchKernel, calls: usize) -> u64 {
 #[inline(never)]
 fn dispatch_void(node: &dyn VoidSolve, calls: usize) -> u64 {
     for _ in 0..calls {
-        node.solve();
+        node.run_void();
     }
     calls as u64
 }
@@ -156,7 +156,7 @@ impl TrivialScalarKernel {
 }
 
 impl VoidSolve for TrivialScalarKernel {
-    fn solve(&self) {
+    fn run_void(&self) {
         self.solve_core();
     }
 }
@@ -191,7 +191,7 @@ fn trivial_fixture(count: usize) -> (Vec<Box<TrivialScalarKernel>>, Ref<f64>) {
 #[inline(never)]
 fn run_void_nodes(nodes: &[&dyn VoidSolve]) -> usize {
     for node in nodes {
-        node.solve();
+        node.run_void();
     }
     nodes.len()
 }
@@ -311,7 +311,7 @@ impl SchedulerOutcome {
 fn run_void_graph(graph: &Graph<Box<dyn VoidSolve>>, dirty_cells: &[CellId]) -> SchedulerOutcome {
     let mut run = SchedulerRun::new(graph, dirty_cells);
     while let Some(node) = run.pop() {
-        graph.nodes[node].execution.solve();
+        graph.nodes[node].execution.run_void();
         run.mark_changed(node);
     }
     run.finish()
@@ -375,7 +375,7 @@ impl InfallibleScalarKernel {
 }
 
 impl VoidSolve for InfallibleScalarKernel {
-    fn solve(&self) {
+    fn run_void(&self) {
         self.solve_core();
     }
 }
@@ -416,7 +416,7 @@ impl FallibleScalarKernel {
 }
 
 impl VoidSolve for FallibleScalarKernel {
-    fn solve(&self) {
+    fn run_void(&self) {
         self.solve_checked()
             .expect("mixed benchmark inputs remain finite");
     }
@@ -502,7 +502,7 @@ impl MatrixKernel {
 }
 
 impl VoidSolve for MatrixKernel {
-    fn solve(&self) {
+    fn run_void(&self) {
         self.solve_core();
     }
 }
