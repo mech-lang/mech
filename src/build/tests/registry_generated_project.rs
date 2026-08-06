@@ -17,9 +17,10 @@ use mech_build::{
 };
 use mech_core::FunctionCatalogBuilder;
 use mech_native_live_host_fixture::{
-    TEST_LIVE_CONTEXT, TEST_LIVE_FAIL_AFTER_START_ENV, TEST_LIVE_INSTANCE, TEST_LIVE_PATH,
-    TEST_LIVE_PROVIDER, TEST_LIVE_START_MARKER_ENV, TEST_LIVE_STOP_MARKER_ENV, TestLiveHostFactory,
-    empty_settings, test_live_manifest, validate_settings,
+    TEST_LIVE_CONTEXT, TEST_LIVE_FAIL_AFTER_START_ENV, TEST_LIVE_INSTANCE,
+    TEST_LIVE_OUTPUT_CONTEXT, TEST_LIVE_PATH, TEST_LIVE_PROVIDER, TEST_LIVE_RECORD_PATH,
+    TEST_LIVE_START_MARKER_ENV, TEST_LIVE_STOP_MARKER_ENV, TEST_LIVE_TUPLE_PATH,
+    TestLiveHostFactory, empty_settings, test_live_manifest, validate_settings,
 };
 use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig, RuntimeHostFactory};
 
@@ -133,7 +134,7 @@ fn live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure() {
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr),
     );
-    assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), "0");
+    assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), "(0, 0)");
 
     let start_marker = temporary.path().join("ctrlc-started");
     let stop_marker = temporary.path().join("ctrlc-stopped");
@@ -388,11 +389,21 @@ fn synthetic_live_runtime_config() -> NativeRuntimeConfig {
             provider: TEST_LIVE_PROVIDER.to_owned(),
             settings: empty_settings(),
         }],
-        run_grants: vec![RunResourceGrantConfig {
-            target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_CONTEXT}"),
-            operations: vec!["read".to_owned()],
-            paths: vec![TEST_LIVE_PATH.to_owned()],
-        }],
+        run_grants: vec![
+            RunResourceGrantConfig {
+                target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_CONTEXT}"),
+                operations: vec!["read".to_owned()],
+                paths: vec![TEST_LIVE_PATH.to_owned()],
+            },
+            RunResourceGrantConfig {
+                target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_OUTPUT_CONTEXT}"),
+                operations: vec!["write".to_owned()],
+                paths: vec![
+                    TEST_LIVE_TUPLE_PATH.to_owned(),
+                    TEST_LIVE_RECORD_PATH.to_owned(),
+                ],
+            },
+        ],
     }
 }
 
