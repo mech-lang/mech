@@ -11,6 +11,7 @@ jobs:
   impact:
     name: Impact
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     outputs:
       owner_shards: ${{ steps.classify.outputs.owner_shards }}
       docs_only: ${{ steps.classify.outputs.docs_only }}
@@ -39,6 +40,7 @@ jobs:
     needs: impact
     if: needs.impact.outputs.static_contracts_required == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v7.0.1
       - name: Install formatting and contract tools
@@ -67,6 +69,7 @@ jobs:
     needs: impact
     if: needs.impact.outputs.standard_canaries_required == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -109,6 +112,7 @@ jobs:
     needs: impact
     if: needs.impact.outputs.owner_shards != '[]'
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     strategy:
       fail-fast: false
       matrix:
@@ -131,6 +135,7 @@ jobs:
     needs: impact
     if: needs.impact.outputs.windows_canary_required == 'true'
     runs-on: windows-latest
+    timeout-minutes: 12
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -154,6 +159,7 @@ jobs:
     needs: impact
     if: needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -218,6 +224,7 @@ jobs:
       - browser-canary
       - full-validation
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - name: Require exactly the selected validation set
         env:

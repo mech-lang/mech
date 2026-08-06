@@ -136,28 +136,39 @@ distributions therefore use the source catalog and add lowering capability
 without changing operation names, operation IDs, runtime factory names, or
 runtime factory IDs.
 
-## Standard and selected profiles
+## Standard, full, and selected profiles
 
-`mech-stdlib` provides three full-distribution profiles:
+`mech-stdlib` provides explicit standard and full profiles at each layer:
 
-| Profile | Catalog and tooling surface |
+| Profile family | Catalog and tooling surface |
 | --- | --- |
-| `full_runtime` | The frozen standard runtime factories; no source specializers or bytecode lowering. |
-| `full_source` | The same factories plus the frozen source specializers and exports; no bytecode lowering. |
-| `full_compiler` | The `full_source` catalog plus bytecode lowering. |
+| `standard_runtime`, `standard_source`, `standard_compiler` | The lean release surface: f64, structural values, dynamic row/vector/matrix storage, and ordinary machine operations. |
+| `full_runtime`, `full_source`, `full_compiler` | The broad release surface: all supported scalar families and mature operation families over dynamic storage. |
 
-The frozen PR2 runtime artifact is the `standard-linked-dynamic-shape`
-distribution. Standard profiles therefore include the dynamic shapes
-`row_vectord`, `vectord`, and `matrixd`, while fixed shapes remain individually
-selectable and are exercised by the specialization fixtures. Adding every
-fixed shape would change the catalog from 9,019 to 116,603 entries and break
-the frozen raw-catalog digest, so frozen compatibility defines the standard
-shape closure.
+The root product selects exactly one distribution:
 
-The standard profiles are convenience feature closures, not special catalog
-constructors. Smaller distributions select the same layer features together
-with only the required operations, values, and shapes. For example, a
-bytecode-only scalar-add distribution can select:
+```text
+cargo build --bin mech
+  -> distribution-standard
+
+cargo build --bin mech --no-default-features --features distribution-full
+  -> distribution-full
+```
+
+The standard runtime contains 1,300 factories and 63 source specializers. The
+full runtime contains 9,022 factories and 119 source specializers. Their exact
+package, feature, operation, host, count, and digest contracts live in
+`tests/architecture/distributions/standard.json` and `full.json`.
+
+Both release profiles use dynamic shapes (`row_vectord`, `vectord`, and
+`matrixd`). Fixed-storage shapes remain individually selectable by custom and
+exact generated applications. The 120,000-plus extended factory universe is a
+nightly compatibility surface, not a monolithic CLI distribution.
+
+Profiles are feature closures, not special catalog constructors. Custom
+distributions select the same layer features together with only the required
+operations, values, and shapes. For example, a bytecode-only scalar-add
+distribution can select:
 
 ```toml
 mech-stdlib = {
@@ -174,19 +185,40 @@ already selected, but never activate a machine by themselves. Consequently,
 the resolved dependency graph and catalog contain only the requested static
 distribution.
 
-The root CLI selects the standard profiles for its commands, while the WASM
-package selects its curated browser operation and value subset. Both inject a
-source catalog explicitly. `mech-runtime` and host-provider crates remain
-distribution-neutral and do not depend on `mech-stdlib`.
+The root CLI defaults to the standard compiler and standard host pack. The
+WASM package selects its curated browser operation and value subset. Both
+inject a source catalog explicitly. `mech-runtime` and host-provider crates
+remain distribution-neutral and do not depend on `mech-stdlib`.
 
-## Compatibility and next step
+## Repository validation ownership
+
+Machine directories are synchronized subtrees of their owning repositories.
+Machine repositories own operation semantics, specializer/lowering behavior,
+and their local runtime/source/compiler feature combinations. Their CI should
+test the machine against a pinned, published Mech SDK or Mech development
+container; it must not build the root standard or full Mech distributions.
+
+The Mech repository owns the other side of that boundary:
+
+- standard and full composition contracts;
+- catalog identity, uniqueness, and linkage integration;
+- exact native closure planning;
+- standard source, bytecode, native, hosted, live, and browser canaries; and
+- complete extended compatibility validation in the reusable full workflow.
+
+A machine subtree change therefore runs Mech's static integration contracts
+and standard vertical canaries here. Machine-private semantic suites run in
+the machine repository. Cross-cutting Mech changes do not rebuild every
+machine's private test matrix.
+
+## Compatibility
 
 This composition boundary does not change bytecode version 1, canonical
 operation names, function IDs, runtime factory IDs, specialization choices, or
 module exports. Runtime-only and source/compiler distributions select
 different implementation layers around the same stable function identity.
 
-PR4 will read operation, value, and shape requirements from `.mecb` artifacts
-and derive the exact `mech-stdlib` feature closure for native builds. It will
-reuse these installers and catalogs; automatic requirement metadata and
-feature planning are intentionally outside the static PR3 boundary.
+Native builds read operation, value, shape, host, and resource requirements
+from validated `.mecb` artifacts and derive an exact static feature closure.
+Generated applications reuse the same installers and catalog identities while
+linking only their planned requirements.
