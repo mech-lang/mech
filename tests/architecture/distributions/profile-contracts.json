@@ -44,7 +44,7 @@
       ]
     },
     {
-      "profile_name": "standard-runtime",
+      "profile_name": "full-runtime",
       "catalog_factory_count": 9022,
       "source_specializer_count": 0,
       "intrinsic_count": 0,
@@ -107,7 +107,7 @@
       ]
     },
     {
-      "profile_name": "standard-source",
+      "profile_name": "full-source",
       "catalog_factory_count": 9022,
       "source_specializer_count": 119,
       "intrinsic_count": 10,
@@ -171,7 +171,7 @@
       ]
     },
     {
-      "profile_name": "standard-compiler",
+      "profile_name": "full-compiler",
       "catalog_factory_count": 9022,
       "source_specializer_count": 119,
       "intrinsic_count": 10,

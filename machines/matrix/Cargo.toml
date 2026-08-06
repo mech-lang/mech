@@ -46,7 +46,7 @@ full_source = ["full_runtime", "source"]
 full_compiler = ["full_source", "compiler"]
 
 matrix_default = ["matmul", "transpose", "dot", "solve"]
-matmul = ["runtime", "dep:num-traits", "matrix", "mech-core/matrix1"]
+matmul = ["runtime", "dep:num-traits", "matrix"]
 transpose = ["runtime", "dep:num-traits", "matrix"]
 dot = ["runtime", "dep:num-traits", "matrix"]
 solve = ["runtime", "dep:num-traits", "matrix"]

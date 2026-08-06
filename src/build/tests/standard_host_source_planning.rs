@@ -327,6 +327,7 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
     .unwrap();
 }
 
+#[cfg(feature = "experimental-actors")]
 const ACTOR_FUNCTIONS: &[(&str, &str)] = &[
     ("actor/message/kind", "actor/message/kind()"),
     ("actor/message/payload", "actor/message/payload()"),
@@ -335,6 +336,7 @@ const ACTOR_FUNCTIONS: &[(&str, &str)] = &[
     ("actor/state/put", "actor/state/put(\"planned\")"),
 ];
 
+#[cfg(feature = "experimental-actors")]
 #[test]
 fn every_trusted_actor_function_plans_source_to_bytecode() {
     for (name, source) in ACTOR_FUNCTIONS {

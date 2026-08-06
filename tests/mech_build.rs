@@ -75,6 +75,7 @@ fn run_configured_emit(
         .unwrap()
 }
 
+#[cfg(feature = "experimental-actors")]
 fn write_actor_config(path: &Path, subject: &str, kind: &str, payload: &str, state: Option<&str>) {
     let initial_state = state
         .map(|state| format!(r#", initial-state: "{state}""#))
@@ -189,6 +190,35 @@ fn bytecode_only_build_accepts_a_non_cargo_input_stem() {
         .unwrap();
     assert_success(output, "bytecode-only build with a non-Cargo input stem");
     assert!(bytecode.is_file());
+
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn distribution_source_bytecode_native_canary() {
+    let root = temp_root("distribution-canary");
+    let source = root.join("canary.mec");
+    let bytecode = root.join("canary.mecb");
+    let native = root.join(if cfg!(windows) {
+        "canary-native.exe"
+    } else {
+        "canary-native"
+    });
+    std::fs::write(&source, "answer := 20.0 + 22.0\nanswer\n").unwrap();
+
+    assert_success(
+        run_build(&root, &source, "bytecode", &bytecode, false),
+        "distribution canary source to bytecode",
+    );
+    assert_success(
+        run_build(&root, &bytecode, "native", &native, false),
+        "distribution canary bytecode to native",
+    );
+
+    let output = Command::new(&native).output().unwrap();
+    let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+    assert_success(output, "distribution canary native execution");
+    assert_eq!(stdout.trim(), "42");
 
     std::fs::remove_dir_all(root).unwrap();
 }
@@ -362,6 +392,7 @@ fn host_free_build_preserves_configured_runtime_settings() {
     std::fs::remove_dir_all(root).unwrap();
 }
 
+#[cfg(feature = "experimental-actors")]
 #[test]
 fn actor_build_requires_explicit_bootstrap_and_covers_source_and_bytecode_emits() {
     let root = temp_root("actor-bootstrap-emits");

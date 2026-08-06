@@ -5,7 +5,7 @@ use std::fs;
 fn main() {
     let input = env::args_os()
         .nth(1)
-        .expect("usage: standard-bytecode-runtime <input.mecb>");
+        .expect("usage: full-bytecode-runtime <input.mecb>");
     let bytecode = fs::read(input).expect("failed to read bytecode");
     let mut program = MechProgram::with_function_catalog(
         MechProgramConfig::default(),

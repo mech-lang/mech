@@ -67,10 +67,10 @@ fn compile_standard(source: &str) -> Vec<u8> {
     );
     program
         .run_string(source)
-        .expect("standard source fixture execution failed");
+        .expect("full source fixture execution failed");
     program
         .compile_bytecode()
-        .expect("standard source fixture bytecode compilation failed")
+        .expect("full source fixture bytecode compilation failed")
 }
 
 fn compile_planning(builder: RuntimeBuilder, source: &str) -> Vec<u8> {

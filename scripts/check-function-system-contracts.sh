@@ -37,11 +37,11 @@ check_machines() {
 }
 
 check_source() {
-  bash "$repository_root/scripts/check-static-distribution-profiles.sh" standard-source
+  bash "$repository_root/scripts/check-static-distribution-profiles.sh" full-source
 }
 
 check_consumer() {
-  bash "$repository_root/scripts/check-static-distribution-profiles.sh" standard-runtime
+  bash "$repository_root/scripts/check-static-distribution-profiles.sh" full-runtime
 }
 
 case "$mode" in

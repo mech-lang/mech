@@ -9,6 +9,13 @@ use sha2::{Digest, Sha256};
 
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_FACTORIES: usize = 9_022;
+#[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
+const EXPECTED_STANDARD_RUNTIME_FACTORIES: usize = 1_300;
+#[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
+const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 63;
+#[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
+const EXPECTED_STANDARD_RUNTIME_SURFACE_DIGEST: &str =
+    "1a0a7748947c8c97aacacc04bcce0a115ce837c1c74981d0be3346550f90b689";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_017;
 #[cfg(feature = "full_source")]
@@ -94,6 +101,22 @@ fn canonical_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect()
+}
+
+#[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
+fn assert_standard_compiler_surface(catalog: &FunctionCatalog) {
+    assert_eq!(
+        catalog.runtime_factory_count(),
+        EXPECTED_STANDARD_RUNTIME_FACTORIES
+    );
+    assert_eq!(
+        canonical_runtime_surface_digest(catalog),
+        EXPECTED_STANDARD_RUNTIME_SURFACE_DIGEST
+    );
+    assert_eq!(
+        catalog.specializer_count(),
+        EXPECTED_STANDARD_SOURCE_SPECIALIZERS
+    );
 }
 
 fn with_catalog_test_stack(test: impl FnOnce() + Send + 'static) {
@@ -317,5 +340,14 @@ fn selected_compiler_preserves_the_frozen_source_catalog() {
         let catalog = mech_stdlib::source_catalog();
         assert_runtime_surface(&catalog);
         assert_source_surface(&catalog);
+    });
+}
+
+#[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
+#[test]
+fn standard_compiler_matches_the_frozen_lean_surface() {
+    with_catalog_test_stack(|| {
+        let catalog = mech_stdlib::source_catalog();
+        assert_standard_compiler_surface(&catalog);
     });
 }

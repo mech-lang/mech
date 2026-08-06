@@ -191,7 +191,7 @@ declare_matrix_numeric_family! { cfg: feature = "matmul", operation: "matmul", m
 declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "matrixd"), operation: "matmul", module: matmul, factory: MatMulMDMD, features: ["matrixd"] }
 declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "matrixd", feature = "vectord"), operation: "matmul", module: matmul, factory: MatMulMDVD, features: ["matrixd", "vectord"] }
 declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "matrixd", feature = "row_vectord"), operation: "matmul", module: matmul, factory: MatMulMDRD, features: ["matrixd", "row_vectord"] }
-declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "vectord"), operation: "matmul", module: matmul, factory: MatMulRDVD, features: ["matrix1", "row_vectord", "vectord"] }
+declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "vectord", feature = "matrix1"), operation: "matmul", module: matmul, factory: MatMulRDVD, features: ["matrix1", "row_vectord", "vectord"] }
 declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "matrixd"), operation: "matmul", module: matmul, factory: MatMulRDMD, features: ["matrixd", "row_vectord"] }
 declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "vectord", feature = "row_vectord", feature = "matrixd"), operation: "matmul", module: matmul, factory: MatMulVDRD, features: ["matrixd", "row_vectord", "vectord"] }
 
@@ -454,7 +454,11 @@ fn install_matmul_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(all(feature = "row_vector2", feature = "matrixd", feature = "row_vectord"))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulR2MD);
 
-    #[cfg(all(feature = "row_vectord", feature = "vectord"))]
+    #[cfg(all(
+        feature = "row_vectord",
+        feature = "vectord",
+        feature = "matrix1"
+    ))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulRDVD);
     #[cfg(all(feature = "row_vectord", feature = "matrixd"))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulRDMD);
@@ -599,7 +603,7 @@ pub mod __mech_native {
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "matrixd"), module: matmul, factory: MatMulMDMD }
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "matrixd", feature = "vectord"), module: matmul, factory: MatMulMDVD }
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "matrixd", feature = "row_vectord"), module: matmul, factory: MatMulMDRD }
-    export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "vectord"), module: matmul, factory: MatMulRDVD }
+    export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "vectord", feature = "matrix1"), module: matmul, factory: MatMulRDVD }
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "matrixd"), module: matmul, factory: MatMulRDMD }
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "vectord", feature = "row_vectord", feature = "matrixd"), module: matmul, factory: MatMulVDRD }
     for_each_matrix_matmul_fixed_family!(export_matrix_matmul_fixed_family, ());
@@ -712,7 +716,8 @@ mod runtime_signature_tests {
         feature = "matmul",
         feature = "f64",
         feature = "row_vectord",
-        feature = "vectord"
+        feature = "vectord",
+        feature = "matrix1"
     ))]
     #[test]
     fn dynamic_row_by_vector_matmul_always_returns_matrix1() {

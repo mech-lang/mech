@@ -15,7 +15,7 @@ fail() {
 }
 
 case "$requested_profile" in
-  all|selected-bytecode-runtime|standard-bytecode-runtime|standard-source-runtime|standard-compiler-tooling|wasm-browser-project) ;;
+  all|selected-bytecode-runtime|full-bytecode-runtime|full-source-runtime|full-compiler-tooling|wasm-browser-project) ;;
   *) fail "unknown distribution profile: $requested_profile" ;;
 esac
 
@@ -81,8 +81,8 @@ PY
 }
 
 selected_manifest="$repository_root/tests/fixtures/bytecode-runtime-consumer/Cargo.toml"
-runtime_manifest="$repository_root/tests/fixtures/standard-bytecode-runtime/Cargo.toml"
-source_manifest="$repository_root/tests/fixtures/standard-source-runtime/Cargo.toml"
+runtime_manifest="$repository_root/tests/fixtures/full-bytecode-runtime/Cargo.toml"
+source_manifest="$repository_root/tests/fixtures/full-source-runtime/Cargo.toml"
 compiler_manifest="$repository_root/tests/fixtures/bytecode-compiler-producer/Cargo.toml"
 host_target=$(rustc +nightly-2026-03-03 -vV | sed -n 's/^host: //p')
 test -n "$host_target" || fail "could not determine the nightly toolchain host target"
@@ -94,21 +94,21 @@ then
     --manifest-path "$selected_manifest" \
     --target-dir "$build_target"
 fi
-if include_profile standard-bytecode-runtime
+if include_profile full-bytecode-runtime
 then
   CARGO_PROFILE_RELEASE_DEBUG=0 cargo_nightly build \
     --release \
     --manifest-path "$runtime_manifest" \
     --target-dir "$build_target"
 fi
-if include_profile standard-source-runtime
+if include_profile full-source-runtime
 then
   CARGO_PROFILE_RELEASE_DEBUG=0 cargo_nightly build \
     --release \
     --manifest-path "$source_manifest" \
     --target-dir "$build_target"
 fi
-if include_profile standard-compiler-tooling
+if include_profile full-compiler-tooling
 then
   CARGO_PROFILE_RELEASE_DEBUG=0 cargo_nightly build \
     --release \
@@ -128,8 +128,8 @@ then
 fi
 
 selected_artifact="$build_target/release/bytecode-runtime-consumer"
-runtime_artifact="$build_target/release/standard-bytecode-runtime"
-source_artifact="$build_target/release/standard-source-runtime"
+runtime_artifact="$build_target/release/full-bytecode-runtime"
+source_artifact="$build_target/release/full-source-runtime"
 compiler_artifact="$build_target/release/bytecode-compiler-producer"
 wasm_artifact="$build_target/wasm32-unknown-unknown/release/mech_wasm.wasm"
 
@@ -141,29 +141,29 @@ then
     --target "$host_target")
   selected_counts=$(catalog_counts selected-runtime "runtime,f64,math_add")
 fi
-if include_profile standard-bytecode-runtime
+if include_profile full-bytecode-runtime
 then
   test -f "$runtime_artifact" || fail "expected release artifact is missing: $runtime_artifact"
   runtime_packages=$(package_count \
     --manifest-path "$runtime_manifest" \
     --target "$host_target")
-  runtime_counts=$(catalog_counts standard-runtime full_runtime)
+  runtime_counts=$(catalog_counts full-runtime full_runtime)
 fi
-if include_profile standard-source-runtime
+if include_profile full-source-runtime
 then
   test -f "$source_artifact" || fail "expected release artifact is missing: $source_artifact"
   source_packages=$(package_count \
     --manifest-path "$source_manifest" \
     --target "$host_target")
-  source_counts=$(catalog_counts standard-source full_source)
+  source_counts=$(catalog_counts full-source full_source)
 fi
-if include_profile standard-compiler-tooling
+if include_profile full-compiler-tooling
 then
   test -f "$compiler_artifact" || fail "expected release artifact is missing: $compiler_artifact"
   compiler_packages=$(package_count \
     --manifest-path "$compiler_manifest" \
     --target "$host_target")
-  compiler_counts=$(catalog_counts standard-compiler full_compiler)
+  compiler_counts=$(catalog_counts full-compiler full_compiler)
 fi
 if include_profile wasm-browser-project
 then
@@ -206,19 +206,19 @@ mkdir -p "$(dirname -- "$report_path")"
     printf 'selected-bytecode-runtime\t%s\t%s\t%s\t%s\n' \
       "$selected_artifact" "$(wc -c < "$selected_artifact" | tr -d ' ')" "$selected_packages" "$selected_counts"
   fi
-  if include_profile standard-bytecode-runtime
+  if include_profile full-bytecode-runtime
   then
-    printf 'standard-bytecode-runtime\t%s\t%s\t%s\t%s\n' \
+    printf 'full-bytecode-runtime\t%s\t%s\t%s\t%s\n' \
       "$runtime_artifact" "$(wc -c < "$runtime_artifact" | tr -d ' ')" "$runtime_packages" "$runtime_counts"
   fi
-  if include_profile standard-source-runtime
+  if include_profile full-source-runtime
   then
-    printf 'standard-source-runtime\t%s\t%s\t%s\t%s\n' \
+    printf 'full-source-runtime\t%s\t%s\t%s\t%s\n' \
       "$source_artifact" "$(wc -c < "$source_artifact" | tr -d ' ')" "$source_packages" "$source_counts"
   fi
-  if include_profile standard-compiler-tooling
+  if include_profile full-compiler-tooling
   then
-    printf 'standard-compiler-tooling\t%s\t%s\t%s\t%s\n' \
+    printf 'full-compiler-tooling\t%s\t%s\t%s\t%s\n' \
       "$compiler_artifact" "$(wc -c < "$compiler_artifact" | tr -d ' ')" "$compiler_packages" "$compiler_counts"
   fi
   if include_profile wasm-browser-project

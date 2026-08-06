@@ -1,5 +1,5 @@
 [package]
-name = "standard-source-runtime"
+name = "full-source-runtime"
 version = "0.0.0"
 edition = "2024"
 publish = false
