@@ -53,5 +53,5 @@ pub use self::external::{
     ExternalRequirementCatalog, ExternalRequirementDigestCollision, hidden_external_operation_name,
 };
 pub use self::resources::{RuntimeResourceBinding, RuntimeResourceBindingError};
-pub use self::state::{MechRuntime, RuntimeExecutionMode};
+pub use self::state::{MechRuntime, RuntimeExecutionMode, RuntimeHostInputTurnMode};
 pub use self::transaction::{RuntimeHealth, RuntimePoisonRecord};

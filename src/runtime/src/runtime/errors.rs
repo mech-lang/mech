@@ -167,7 +167,7 @@ impl MechErrorKind for RuntimePoisoned {
 
     fn message(&self) -> String {
         format!(
-            "runtime operation `{}` rejected because `{}` rollback poisoned the runtime: {}",
+            "runtime operation `{}` rejected because `{}` poisoned the runtime: {}",
             self.operation,
             self.poison.operation,
             self.poison.rollback_failures.join("; "),

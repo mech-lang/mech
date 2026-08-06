@@ -1,9 +1,52 @@
-use super::super::ValueStateKey;
+use super::super::{CaptureSide, ValueStateKey};
 use super::support::{scalar, scalar_value};
 use crate::{
     ReactiveCellId, Ref, Value, ValueKind, ValueStateEntryTypeMismatch, ValueStateJournal,
 };
 use core::any::type_name;
+use std::{cell::Cell, collections::HashSet, rc::Rc};
+
+struct CountedClone {
+    clone_count: Rc<Cell<usize>>,
+}
+
+impl Clone for CountedClone {
+    fn clone(&self) -> Self {
+        self.clone_count.set(self.clone_count.get() + 1);
+        Self {
+            clone_count: self.clone_count.clone(),
+        }
+    }
+}
+
+#[test]
+fn state_journal_plain_preflight_does_not_clone_payload() {
+    let clone_count = Rc::new(Cell::new(0));
+    let target = Ref::new(CountedClone {
+        clone_count: clone_count.clone(),
+    });
+    let mut journal = ValueStateJournal::new();
+
+    journal
+        .preflight_ref(
+            &target,
+            CaptureSide::Before,
+            &mut HashSet::new(),
+            |_, _, _| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(clone_count.get(), 0);
+
+    journal
+        .visit_ref(
+            &target,
+            CaptureSide::Before,
+            &mut HashSet::new(),
+            |_, _, _| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(clone_count.get(), 1);
+}
 
 #[test]
 fn state_journal_scalar_restore_preserves_address_and_reactive_identity() {

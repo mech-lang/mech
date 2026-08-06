@@ -44,6 +44,7 @@ matmul = ["runtime", "dep:num-traits", "matrix", "mech-core/matrix1"]
 transpose = ["runtime", "dep:num-traits", "matrix"]
 dot = ["runtime", "dep:num-traits", "matrix"]
 solve = ["runtime", "dep:num-traits", "matrix"]
+solve_accelerate = ["solve", "dep:nalgebra-lapack"]
 
 bool = ["mech-core/bool"]
 string = ["mech-core/string"]
@@ -104,7 +105,7 @@ optional = true
 [dev-dependencies]
 mech-engine = { path = "../../src/engine", default-features = false, features = [
   "compiler", "f64", "matrixd", "vectord", "variable_define", "formulas",
-  "math_mul", "matrix_matmul", "matrix_solve",
+  "math_mul", "matrix_matmul", "matrix_solve", "matrix_transpose",
 ] }
 mech-math = { path = "../math", default-features = false, features = [
   "compiler", "source", "f64", "matrixd", "vectord", "mul",
@@ -112,6 +113,9 @@ mech-math = { path = "../math", default-features = false, features = [
 mech-runtime = { path = "../../src/runtime", default-features = false, features = [
   "compiler", "f64", "matrixd", "vectord", "variables", "formulas",
 ] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+nalgebra-lapack = { version = "0.27", optional = true, default-features = false, features = ["lapack-accelerate"] }
 
 [patch.crates-io]
 mech-bytecode = { path = "../../src/bytecode" }

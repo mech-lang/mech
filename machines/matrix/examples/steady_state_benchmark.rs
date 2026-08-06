@@ -2,6 +2,8 @@ use mech_core::matrix::Matrix as ValueMatrix;
 use mech_core::{MResult, MechFunction, ReactiveCellId, ReactivePlan, Ref, Value};
 use mech_matrix::{MatMulMDMD, MatrixSolveMDVD};
 use nalgebra::{DMatrix, DVector};
+#[cfg(all(feature = "solve_accelerate", target_os = "macos"))]
+use nalgebra_lapack::LU;
 use std::{
     convert::Infallible,
     env,
@@ -123,6 +125,26 @@ fn raw_solve(size: usize) {
     assert!(residual < 1e-8, "raw Rust solve residual {residual}");
     print_result(
         "raw-rust",
+        "solve",
+        size,
+        &measurement,
+        black_box(output[0]),
+    );
+}
+
+#[cfg(all(feature = "solve_accelerate", target_os = "macos"))]
+fn raw_accelerate_solve(size: usize) {
+    let (matrix, rhs) = solve_inputs(size);
+    let mut output = DVector::zeros(size);
+    let measurement = measure(|| {
+        output = LU::new(matrix.clone())
+            .solve(&rhs)
+            .expect("benchmark system is nonsingular");
+    });
+    let residual = (&matrix * &output - &rhs).amax();
+    assert!(residual < 1e-8, "Accelerate solve residual {residual}");
+    print_result(
+        "raw-rust-accelerate",
         "solve",
         size,
         &measurement,
@@ -294,6 +316,8 @@ fn main() -> MResult<()> {
         mech_kernel_matmul(size)?;
         mech_reactive_matmul(size);
         raw_solve(size);
+        #[cfg(all(feature = "solve_accelerate", target_os = "macos"))]
+        raw_accelerate_solve(size);
         mech_kernel_solve(size)?;
         mech_reactive_solve(size);
     }

@@ -5,7 +5,7 @@ use super::{ReactiveTransactionalProbe, add_panicking_test_function, add_test_fu
 use crate::runtime::test_support::{
     capabilities::grant_read,
     providers::{test_provider_with, test_runtime},
-    values::source_cell,
+    values::{f64_value, source_cell, source_value},
 };
 use crate::{
     MechRuntime, ObjectId, ObjectRecord, PreparedRuntimeEffect, ResourceBudget, RuntimeEventKind,
@@ -87,6 +87,92 @@ fn failed_implicit_turn_restores_program_and_removes_envelope() {
     assert!(runtime.active_transactions.is_empty());
     assert_eq!(runtime.program_transaction_owner, None);
     assert!(matches!(runtime.health, RuntimeHealth::Healthy));
+}
+
+#[test]
+fn fail_stop_host_input_failure_retains_partial_state_and_poisons_runtime() {
+    const CLOCK_URI: &str = "test://clock/ticks";
+
+    let mut runtime = crate::runtime::test_support::providers::test_runtime_builder()
+        .fail_stop_host_input_turns()
+        .resource_provider(Box::new(test_provider_with(CLOCK_URI, "value", 1.0)))
+        .build()
+        .unwrap();
+    grant_read(&mut runtime, CLOCK_URI, "value");
+    let mut context = runtime.runtime_context().unwrap();
+    runtime
+        .run_string_with_context(
+            &mut context,
+            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
+        )
+        .unwrap();
+    let source = RuntimeHostInputSource::new(CLOCK_URI, "value").unwrap();
+    let (output, calls) = add_test_function(&mut runtime, Some(1));
+    let input_cell = source_cell(&runtime, &source);
+    let plan = runtime.program.interpreter().plan();
+    let failing_node = plan.borrow().len() - 1;
+    assert!(
+        plan.borrow_mut()
+            .add_reactive_dependency(failing_node, input_cell)
+    );
+
+    let error = runtime
+        .apply_host_input_with_context(
+            &mut context,
+            RuntimeHostInput::single(source.clone(), RuntimeHostInputValue::F64(9.0)),
+        )
+        .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeProgramRollbackFailed");
+    assert_eq!(f64_value(&source_value(&runtime, &source)), 9.0);
+    assert_eq!((*output.borrow(), *calls.borrow()), (1, 1));
+    assert!(runtime.is_poisoned());
+    assert!(runtime.active_transactions.is_empty());
+    assert_eq!(runtime.program_transaction_owner, None);
+    assert_eq!(context.transaction, None);
+    assert_eq!(
+        runtime
+            .run_string("must-not-run := 1")
+            .unwrap_err()
+            .kind_name(),
+        "RuntimePoisoned"
+    );
+}
+
+#[test]
+fn fail_stop_host_input_is_rejected_inside_explicit_transaction() {
+    const CLOCK_URI: &str = "test://clock/ticks";
+
+    let mut runtime = crate::runtime::test_support::providers::test_runtime_builder()
+        .fail_stop_host_input_turns()
+        .resource_provider(Box::new(test_provider_with(CLOCK_URI, "value", 1.0)))
+        .build()
+        .unwrap();
+    grant_read(&mut runtime, CLOCK_URI, "value");
+    let mut context = runtime.runtime_context().unwrap();
+    runtime
+        .run_string_with_context(
+            &mut context,
+            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
+        )
+        .unwrap();
+    let source = RuntimeHostInputSource::new(CLOCK_URI, "value").unwrap();
+    runtime.begin_transaction(&mut context).unwrap();
+
+    let error = runtime
+        .apply_host_input_with_context(
+            &mut context,
+            RuntimeHostInput::single(source.clone(), RuntimeHostInputValue::F64(9.0)),
+        )
+        .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeInvalidOperation");
+    assert!(error.kind_message().contains("fail-stop reactive turns"));
+    assert_eq!(f64_value(&source_value(&runtime, &source)), 1.0);
+    assert!(!runtime.is_poisoned());
+    runtime
+        .abort_runtime_transaction(&mut context, "fail-stop rejection test")
+        .unwrap();
 }
 
 #[test]

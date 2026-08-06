@@ -160,14 +160,94 @@ read limit is 64 MiB (`67,108,864` bytes), and the retained result is serialized
 into the program image. The source-only benchmark mode records these sizes
 without weakening that safety limit.
 
+### Retained-output rollback cost and fail-stop mode
+
+The rank-one result exposed two complete copies of every executed function's
+output during journal capture. Plain cell preflight cloned the payload once and
+discarded it, then capture cloned it again for the actual rollback snapshot.
+Map and set preflight can fail while constructing canonical hashed snapshots,
+but an ordinary `Clone` has no recoverable error to probe. Making plain
+preflight borrow-only removes the discarded copy while preserving the retained
+before-state and rollback behavior.
+
+The benchmark now includes `mech-journal-output`, which captures and drops only
+the result matrix's rollback journal. Times below are milliseconds per turn.
+The original atomic column is the pre-optimization source-runtime result above;
+the optimized atomic and fail-stop columns are from the 2026-08-06 rerun.
+
+| Shape | Kernel | Journal, two copies | Journal, one copy | Atomic original | Atomic optimized | Fail-stop |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1024 x 1 x 1024 | 0.2002 | 0.9191 | 0.4515 | 1.3009 | 0.8037 | 0.5794 |
+| 2048 x 1 x 2048 | 0.8764 | 3.7866 | 1.8679 | 4.3334 | 2.4853 | 0.8279 |
+| 3072 x 1 x 3072 | 2.0291 | 8.4253 | 4.2808 | 9.9527 | 5.5568 | 2.1886 |
+| 4096 x 1 x 4096 | 3.6546 | 15.3897 | 7.5874 | 17.3846 | 9.7755 | 3.7634 |
+
+Removing the redundant clone reduces the 4096 atomic turn by 43.8%. The
+remaining atomic overhead is the one 128 MiB before-state snapshot required to
+restore an output that the kernel mutates in place. Explicit fail-stop mode
+skips program snapshots and poisons the runtime on any failed turn. At 4096 it
+runs in 3.76 ms, 3.0% above the specialized Mech kernel and 3.7% above raw
+nalgebra on this run.
+
+Fail-stop source and bytecode installation are also equivalent: 0.5263 versus
+0.4990 ms at 1024 and 0.9974 versus 1.0162 ms at 2048. The sub-millisecond
+spread is consistent with the M1's performance/efficiency-core noise rather
+than a different hot executor.
+
+## Square graph follow-up: transpose and language runtimes
+
+The 2026-08-06 follow-up added a live scalar scale followed by a materialized
+transpose. Every runner performs both operations in the timed region. This
+avoids timing NumPy's zero-copy transpose view against a Mech graph that must
+actually produce a new matrix. Times below are single-run nine-sample medians
+at 256; the Mech rows use the complete retained source runtime.
+
+| Runtime | Multiply | Scale + transpose | Portable solve |
+| --- | ---: | ---: | ---: |
+| NumPy / Accelerate | 0.1002 ms | 0.0616 ms | 0.1816 ms |
+| raw Rust / nalgebra | 0.7182 ms | 0.0694 ms | 1.2198 ms |
+| Mech atomic | 0.9864 ms | 0.5608 ms | 1.3109 ms |
+| Mech fail-stop | 0.9324 ms | 0.5641 ms | 1.3160 ms |
+| LuaJIT | 20.3873 ms | 0.1344 ms | 7.1819 ms |
+| Lua 5.5 | 651.100 ms | 3.1941 ms | 211.846 ms |
+| Python 3.14 | 1212.733 ms | 6.3897 ms | 410.110 ms |
+
+The 256 Mech transpose/runtime samples are bimodal, so their medians should not
+be used as a precise overhead ratio. At 1024, raw Rust scale plus transpose is
+2.085 ms, Mech atomic is 4.741 ms, Mech fail-stop is 3.544 ms, and NumPy is
+1.393 ms. Source and bytecode remain equivalent for all three operations.
+
+## Accelerate-backed solve
+
+The portable nalgebra LU, not `solve_result` or the runtime scheduler, caused
+the large solve gap. `nalgebra-lapack 0.27` can call the same single-threaded
+Apple Accelerate backend as NumPy. Mech now exposes that path through the
+opt-in `solve_accelerate` feature on macOS.
+
+| Size | Portable Rust | Rust / Accelerate | Mech kernel / Accelerate | Mech reactive / Accelerate | NumPy / Accelerate |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 256 | 1.2198 ms | 0.1660 ms | 0.1707 ms | 0.1658 ms | 0.1816 ms |
+| 1024 | 77.9412 ms | 5.5672 ms | 5.5245 ms | 5.5781 ms | 5.7597 ms |
+
+At 1024, the complete retained source runtime is 5.7523 ms and bytecode is
+5.7980 ms with Accelerate, effectively matching NumPy while still including
+host-input admission, dirty scheduling, and atomic transaction work. Fail-stop
+measured 5.8611 ms in this run; the small inversion is ordinary run-to-run
+noise because the 8 MiB factorization dominates and rollback retains only the
+vector output.
+
 ## Interpretation
 
-The plan-level Mech execution machinery is not the matrix bottleneck. On the
-shared nalgebra kernel, `solve_result`, virtual dispatch, borrowing, and direct
-reactive scheduling add roughly one tenth of one percent at 256. Complete
-runtime transaction cost is visible for shorter kernels but is amortized as
-square matrix work grows. Source and bytecode installation converge on the same
-steady-state executor. NumPy's optimized BLAS/LAPACK kernels dominate ordinary
-dense square work, while nalgebra is stronger on rank-one output generation.
-For large retained outputs, transaction-level state handling can outweigh that
-kernel advantage even though source and bytecode execution remain equivalent.
+The plan-level Mech execution machinery is not the matrix bottleneck. On a
+shared kernel, `solve_result`, virtual dispatch, borrowing, and direct reactive
+scheduling add no meaningful cost. Complete runtime transaction cost is visible
+for shorter kernels but is amortized as square matrix work grows. Source and
+bytecode installation converge on the same steady-state executor. NumPy's
+optimized BLAS/LAPACK kernels dominate ordinary dense square work, and Mech
+matches its large-solve performance once it selects the same Accelerate
+backend. Portable nalgebra remains stronger on rank-one output generation. For
+large retained outputs, atomic rollback copying can outweigh that kernel
+advantage even though source and bytecode execution remain equivalent. The
+opt-in fail-stop path demonstrates that the rest of the retained runtime loop
+can run within a few percent of the kernel when restart-on-error semantics are
+acceptable.

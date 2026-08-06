@@ -25,7 +25,7 @@ pub(super) use envelope::{
 pub use health::{RuntimeHealth, RuntimePoisonRecord};
 pub(super) use modules::RuntimeModuleJournal;
 pub(super) use program::{ActiveRuntimeProgramOperation, RuntimeProgramOwnershipAcquisition};
-pub(super) use reactive::PreparedRuntimeHostInput;
+pub(super) use reactive::{PreparedRuntimeHostInput, RuntimeReactiveTurnRecovery};
 pub(super) use savepoint::{RuntimeOperationSavepoint, RuntimeProgramOperationSavepoint};
 
 #[cfg(test)]

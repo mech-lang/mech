@@ -1,7 +1,7 @@
 use mech_core::matrix::Matrix as ValueMatrix;
 use mech_core::{
     FunctionCatalog, FunctionCatalogBuilder, GenericError, MResult, MechError, MechFunction,
-    ReactiveCellId, ReactivePlan, Ref, Value,
+    ReactiveCellId, ReactivePlan, Ref, Value, ValueStateJournal,
 };
 use mech_matrix::MatMulMDMD;
 use mech_runtime::{
@@ -218,6 +218,24 @@ fn kernel(shape: Shape) -> MResult<()> {
     Ok(())
 }
 
+fn journal_output(shape: Shape) -> MResult<()> {
+    let output = Ref::new(DMatrix::zeros(shape.rows, shape.columns));
+    let output_value = Value::MatrixF64(ValueMatrix::DMatrix(output));
+    let result = measure_result(|| {
+        let mut journal = ValueStateJournal::new();
+        journal.capture_value(&output_value)?;
+        black_box(journal.cell_count());
+        Ok(())
+    })?;
+    print_result(
+        "mech-journal-output",
+        shape,
+        &result,
+        black_box(result.batch_iterations as f64),
+    );
+    Ok(())
+}
+
 fn reactive(shape: Shape) {
     let (lhs, rhs) = inputs(shape);
     let lhs = Ref::new(lhs);
@@ -336,14 +354,18 @@ fn function_catalog() -> Arc<FunctionCatalog> {
     }))
 }
 
-fn runtime(shape: Shape) -> (MechRuntime, RuntimeContext) {
-    let mut runtime = RuntimeBuilder::new()
+fn runtime_with_recovery(shape: Shape, rollback: bool) -> (MechRuntime, RuntimeContext) {
+    let builder = RuntimeBuilder::new()
         .config(RuntimeConfig::new("rectangular benchmark").with_limits(RuntimeLimits::trusted()))
         .function_catalog(function_catalog())
         .resource_provider(Box::new(MatrixInputProvider::new(shape)))
-        .input_driver(BenchmarkInputDriver::default())
-        .build()
-        .unwrap();
+        .input_driver(BenchmarkInputDriver::default());
+    let builder = if rollback {
+        builder
+    } else {
+        builder.fail_stop_host_input_turns()
+    };
+    let mut runtime = builder.build().unwrap();
     let subject = runtime.runtime_context().unwrap().subject().to_string();
     let capability =
         ResourcePathCapability::wildcard(runtime.next_capability_id(), subject, BASE_URI, ["read"])
@@ -362,7 +384,15 @@ struct RuntimeFixture {
 
 impl RuntimeFixture {
     fn source(shape: Shape) -> Self {
-        let (mut runtime, mut context) = runtime(shape);
+        Self::source_with_recovery(shape, true)
+    }
+
+    fn source_fail_stop(shape: Shape) -> Self {
+        Self::source_with_recovery(shape, false)
+    }
+
+    fn source_with_recovery(shape: Shape, rollback: bool) -> Self {
+        let (mut runtime, mut context) = runtime_with_recovery(shape, rollback);
         runtime
             .run_string_with_context(
                 &mut context,
@@ -383,7 +413,15 @@ impl RuntimeFixture {
     }
 
     fn bytecode(shape: Shape, bytecode: &[u8]) -> Self {
-        let (mut runtime, mut context) = runtime(shape);
+        Self::bytecode_with_recovery(shape, bytecode, true)
+    }
+
+    fn bytecode_fail_stop(shape: Shape, bytecode: &[u8]) -> Self {
+        Self::bytecode_with_recovery(shape, bytecode, false)
+    }
+
+    fn bytecode_with_recovery(shape: Shape, bytecode: &[u8], rollback: bool) -> Self {
+        let (mut runtime, mut context) = runtime_with_recovery(shape, rollback);
         runtime
             .install_bytecode_with_context(&mut context, bytecode)
             .unwrap();
@@ -453,6 +491,22 @@ fn retained_runtime(shape: Shape) {
         &bytecode_result,
         black_box(bytecode.validate(shape)),
     );
+
+    let mut source = RuntimeFixture::source_fail_stop(shape);
+    let mut bytecode = RuntimeFixture::bytecode_fail_stop(shape, &bytecode_bytes);
+    let (source_result, bytecode_result) = measure_pair(|| source.turn(), || bytecode.turn());
+    print_result(
+        "mech-runtime-source-fail-stop",
+        shape,
+        &source_result,
+        black_box(source.validate(shape)),
+    );
+    print_result(
+        "mech-runtime-bytecode-fail-stop",
+        shape,
+        &bytecode_result,
+        black_box(bytecode.validate(shape)),
+    );
 }
 
 fn retained_source_runtime(shape: Shape) {
@@ -460,6 +514,15 @@ fn retained_source_runtime(shape: Shape) {
     let result = measure(|| source.turn());
     print_result(
         "mech-runtime-source",
+        shape,
+        &result,
+        black_box(source.validate(shape)),
+    );
+
+    let mut source = RuntimeFixture::source_fail_stop(shape);
+    let result = measure(|| source.turn());
+    print_result(
+        "mech-runtime-source-fail-stop",
         shape,
         &result,
         black_box(source.validate(shape)),
@@ -505,6 +568,7 @@ fn main() -> MResult<()> {
     for shape in shapes {
         raw(shape);
         kernel(shape)?;
+        journal_output(shape)?;
         reactive(shape);
         match mode {
             Mode::Full => retained_runtime(shape),

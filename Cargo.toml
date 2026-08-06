@@ -206,6 +206,7 @@ range_inclusive_increment = ["mech-stdlib/range_inclusive_increment"]
 range_exclusive_increment = ["mech-stdlib/range_exclusive_increment"]
 
 matrix_solve = ["mech-stdlib/matrix_solve"]
+matrix_solve_accelerate = ["matrix_solve", "mech-stdlib/matrix_solve_accelerate"]
 matrix_dot = ["mech-stdlib/matrix_dot"]
 matrix_matmul = ["mech-stdlib/matrix_matmul"]
 matrix_transpose = ["mech-stdlib/matrix_transpose"]
