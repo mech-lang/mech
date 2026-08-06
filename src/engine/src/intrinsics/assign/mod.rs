@@ -170,6 +170,227 @@ where
     }
 }
 
+/// A stable composite assignment that updates the already-installed child
+/// cells instead of replacing them. Source specialization aliases record,
+/// map, table, and tuple children directly, so preserving only the outer cell
+/// would leave those downstream aliases attached to stale values.
+#[derive(Debug)]
+struct AssignStructuredComposite {
+    sink: Value,
+    source: Value,
+}
+
+fn collect_structured_assignments(
+    sink: Value,
+    source: Value,
+    assignments: &mut Vec<Box<dyn MechFunction>>,
+) -> MResult<()> {
+    match (&sink, &source) {
+        (Value::Typed(sink, sink_annotation), Value::Typed(source, source_annotation))
+            if sink_annotation == source_annotation =>
+        {
+            return collect_structured_assignments(
+                sink.as_ref().clone(),
+                source.as_ref().clone(),
+                assignments,
+            );
+        }
+        #[cfg(feature = "record")]
+        (Value::Record(sink), Value::Record(source)) => {
+            let pairs = {
+                let sink = sink.borrow();
+                let source = source.borrow();
+                sink.data
+                    .iter()
+                    .map(|(id, sink)| {
+                        source
+                            .data
+                            .get(id)
+                            .cloned()
+                            .map(|source| (sink.clone(), source))
+                            .ok_or_else(|| {
+                                MechError::new(
+                                    GenericError {
+                                        msg: format!(
+                                            "stable record update lost validated field {id}"
+                                        ),
+                                    },
+                                    None,
+                                )
+                                .with_compiler_loc()
+                            })
+                    })
+                    .collect::<MResult<Vec<_>>>()?
+            };
+            for (sink, source) in pairs {
+                collect_structured_assignments(sink, source, assignments)?;
+            }
+            return Ok(());
+        }
+        #[cfg(feature = "map")]
+        (Value::Map(sink), Value::Map(source)) => {
+            let pairs = {
+                let sink = sink.borrow();
+                let source = source.borrow();
+                sink.map
+                    .iter()
+                    .map(|(key, sink)| {
+                        source
+                            .map
+                            .get(key)
+                            .cloned()
+                            .map(|source| (sink.clone(), source))
+                            .ok_or_else(|| {
+                                MechError::new(
+                                    GenericError {
+                                        msg: "stable map update lost a validated key".to_owned(),
+                                    },
+                                    None,
+                                )
+                                .with_compiler_loc()
+                            })
+                    })
+                    .collect::<MResult<Vec<_>>>()?
+            };
+            for (sink, source) in pairs {
+                collect_structured_assignments(sink, source, assignments)?;
+            }
+            return Ok(());
+        }
+        #[cfg(feature = "table")]
+        (Value::Table(sink), Value::Table(source)) => {
+            let pairs = {
+                let sink = sink.borrow();
+                let source = source.borrow();
+                sink.data
+                    .iter()
+                    .map(|(id, (_, sink))| {
+                        source
+                            .data
+                            .get(id)
+                            .map(|(_, source)| (sink.as_vec(), source.as_vec()))
+                            .ok_or_else(|| {
+                                MechError::new(
+                                    GenericError {
+                                        msg: format!(
+                                            "stable table update lost validated column {id}"
+                                        ),
+                                    },
+                                    None,
+                                )
+                                .with_compiler_loc()
+                            })
+                    })
+                    .collect::<MResult<Vec<_>>>()?
+            };
+            for (sink, source) in pairs {
+                for (sink, source) in sink.into_iter().zip(source) {
+                    collect_structured_assignments(sink, source, assignments)?;
+                }
+            }
+            return Ok(());
+        }
+        #[cfg(feature = "tuple")]
+        (Value::Tuple(sink), Value::Tuple(source)) => {
+            let pairs = {
+                let sink = sink.borrow();
+                let source = source.borrow();
+                sink.elements
+                    .iter()
+                    .zip(source.elements.iter())
+                    .map(|(sink, source)| (sink.as_ref().clone(), source.as_ref().clone()))
+                    .collect::<Vec<_>>()
+            };
+            for (sink, source) in pairs {
+                collect_structured_assignments(sink, source, assignments)?;
+            }
+            return Ok(());
+        }
+        _ => {}
+    }
+
+    assignments.push(assign_value_fxn(sink, source)?);
+    Ok(())
+}
+
+impl AssignStructuredComposite {
+    fn assignments(&self) -> MResult<Vec<Box<dyn MechFunction>>> {
+        let mut assignments = Vec::new();
+        collect_structured_assignments(self.sink.clone(), self.source.clone(), &mut assignments)?;
+        let mut output_cells = Vec::new();
+        for assignment in &assignments {
+            for cell in assignment.reactive_output_cell_ids() {
+                if output_cells.contains(&cell) {
+                    return Err(MechError::new(
+                        GenericError {
+                            msg: format!(
+                                "stable structured update cannot preserve aliased child cell {:?}",
+                                cell,
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                output_cells.push(cell);
+            }
+        }
+        Ok(assignments)
+    }
+}
+
+impl MechFunctionImpl for AssignStructuredComposite {
+    fn solve_result(&self) -> MResult<()> {
+        let assignments = self.assignments()?;
+        for assignment in assignments {
+            assignment.solve_result()?;
+        }
+        Ok(())
+    }
+
+    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+        let assignments = self.assignments()?;
+        let commits = assignments
+            .iter()
+            .map(|assignment| assignment.stage_register())
+            .collect::<MResult<Vec<_>>>()?;
+        Ok(Box::new(ReactiveRegisterCommitBatch::new(
+            commits,
+            self.reactive_output_cell_ids(),
+        )))
+    }
+
+    fn out(&self) -> Value {
+        self.sink.clone()
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Register
+    }
+
+    fn to_string(&self) -> String {
+        format!("{self:#?}")
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for AssignStructuredComposite {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Err(MechError::new(
+            GenericError {
+                msg: "stable structured assignments are runtime external-update nodes and cannot be emitted as bytecode instructions"
+                    .to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
 #[cfg(feature = "matrix")]
 fn assign_index_matrix_fxn(
     sink: Matrix<usize>,
@@ -460,16 +681,16 @@ fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>
         }
         #[cfg(feature = "record")]
         (Value::Record(sink), Value::Record(source)) => {
-            return Ok(Box::new(AssignComposite {
-                sink: sink.clone(),
-                source: source.clone(),
+            return Ok(Box::new(AssignStructuredComposite {
+                sink: Value::Record(sink.clone()),
+                source: Value::Record(source.clone()),
             }));
         }
         #[cfg(feature = "map")]
         (Value::Map(sink), Value::Map(source)) => {
-            return Ok(Box::new(AssignComposite {
-                sink: sink.clone(),
-                source: source.clone(),
+            return Ok(Box::new(AssignStructuredComposite {
+                sink: Value::Map(sink.clone()),
+                source: Value::Map(source.clone()),
             }));
         }
         #[cfg(feature = "set")]
@@ -481,16 +702,16 @@ fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>
         }
         #[cfg(feature = "table")]
         (Value::Table(sink), Value::Table(source)) => {
-            return Ok(Box::new(AssignComposite {
-                sink: sink.clone(),
-                source: source.clone(),
+            return Ok(Box::new(AssignStructuredComposite {
+                sink: Value::Table(sink.clone()),
+                source: Value::Table(source.clone()),
             }));
         }
         #[cfg(feature = "tuple")]
         (Value::Tuple(sink), Value::Tuple(source)) => {
-            return Ok(Box::new(AssignComposite {
-                sink: sink.clone(),
-                source: source.clone(),
+            return Ok(Box::new(AssignStructuredComposite {
+                sink: Value::Tuple(sink.clone()),
+                source: Value::Tuple(source.clone()),
             }));
         }
         #[cfg(feature = "atom")]

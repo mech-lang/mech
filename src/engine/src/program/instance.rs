@@ -2367,6 +2367,29 @@ mod live_input_tests {
             Value::Tuple(value) => value.addr(),
             other => panic!("expected composite, got {other:?}"),
         };
+        let nested_f64 = |value: &Value| -> Option<Ref<f64>> {
+            let nested = match value {
+                Value::Record(value) => value.borrow().data.values().next().cloned(),
+                Value::Map(value) => value.borrow().map.values().next().cloned(),
+                Value::Table(value) => value
+                    .borrow()
+                    .data
+                    .values()
+                    .next()
+                    .and_then(|(_, values)| values.as_vec().into_iter().next()),
+                Value::Tuple(value) => value
+                    .borrow()
+                    .elements
+                    .first()
+                    .map(|value| value.as_ref().clone()),
+                Value::Set(_) => None,
+                other => panic!("expected composite, got {other:?}"),
+            };
+            nested.map(|value| match value {
+                Value::F64(value) => value,
+                other => panic!("expected nested F64, got {other:?}"),
+            })
+        };
 
         for (current, incoming) in [
             (record(1.0), record(2.0)),
@@ -2377,13 +2400,49 @@ mod live_input_tests {
         ] {
             let expected = incoming.clone();
             let inner_pointer = composite_addr(&current);
+            let nested = nested_f64(&current);
+            let nested_pointer = nested.as_ref().map(Ref::addr);
             let sink = Ref::new(current);
 
-            apply_stable_value_update(sink.clone(), incoming).unwrap();
+            compile_stable_value_update(sink.clone(), incoming)
+                .unwrap()
+                .stage_register()
+                .unwrap()
+                .commit();
 
             assert_eq!(composite_addr(&sink.borrow()), inner_pointer);
             assert_eq!(*sink.borrow(), expected);
+            if let Some(nested) = nested {
+                let updated = nested_f64(&sink.borrow()).expect("nested cell must remain present");
+                assert_eq!(Some(updated.addr()), nested_pointer);
+                assert_eq!(updated.addr(), nested.addr());
+                assert_eq!(*nested.borrow(), 2.0);
+            }
         }
+
+        let shared = Ref::new(1.0);
+        let aliased = Value::Record(Ref::new(mech_core::MechRecord::new(vec![
+            ("left", Value::F64(shared.clone())),
+            ("right", Value::F64(shared.clone())),
+        ])));
+        let distinct = Value::Record(Ref::new(mech_core::MechRecord::new(vec![
+            ("left", Value::F64(Ref::new(2.0))),
+            ("right", Value::F64(Ref::new(3.0))),
+        ])));
+        let aliased = Ref::new(aliased);
+        let error = match compile_stable_value_update(aliased, distinct)
+            .unwrap()
+            .stage_register()
+        {
+            Ok(_) => panic!("aliased structured update unexpectedly staged"),
+            Err(error) => error,
+        };
+        assert!(
+            error
+                .kind_message()
+                .contains("cannot preserve aliased child cell")
+        );
+        assert_eq!(*shared.borrow(), 1.0);
     }
 
     #[test]
