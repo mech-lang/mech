@@ -95,9 +95,12 @@ where
         unsafe {
             let out_ptr = self.out.as_ptr() as *mut naMatrix<T, R1, C1, S1>;
             let mut current = *self.from.as_ptr();
-            for i in 0..(*out_ptr).len() {
+            let output_len = (*out_ptr).len();
+            for i in 0..output_len {
                 (&mut (*out_ptr))[i] = current;
-                current = current + T::one();
+                if i + 1 < output_len {
+                    current = current + T::one();
+                }
             }
         };
         Ok(())
@@ -111,6 +114,28 @@ where
 
     fn transaction_state_values(&self) -> MResult<Vec<Value>> {
         Ok(self.reactive_output_values())
+    }
+}
+
+#[cfg(all(test, feature = "u128", feature = "matrixd"))]
+mod tests {
+    use super::*;
+    use nalgebra::DMatrix;
+
+    #[test]
+    fn inclusive_range_does_not_increment_past_the_final_max_value() {
+        let from = Ref::new(u128::MAX - 1);
+        let to = Ref::new(u128::MAX);
+        let out = Ref::new(DMatrix::from_element(1, 2, 0));
+        let function = RangeInclusiveScalar::<u128, DMatrix<u128>> {
+            from,
+            to,
+            out: out.clone(),
+            phantom: PhantomData::default(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[u128::MAX - 1, u128::MAX]);
     }
 }
 #[cfg(feature = "compiler")]
