@@ -65,7 +65,7 @@ pub fn fingerprint_workspace(
     }
 
     for package in &packages {
-        collect_package_inputs(root, package, &mut inputs)?;
+        collect_package_inputs(root, &canonical_root, package, &mut inputs)?;
     }
 
     let mut entries = Vec::with_capacity(inputs.len());
@@ -134,6 +134,7 @@ fn fingerprint_entries<'a>(
 
 fn collect_package_inputs(
     root: &Path,
+    canonical_root: &Path,
     package: &WorkspacePackage,
     inputs: &mut BTreeSet<PathBuf>,
 ) -> MResult<()> {
@@ -164,7 +165,8 @@ fn collect_package_inputs(
             continue;
         }
         inputs.insert(rust_input.clone());
-        let source = fs::read_to_string(root.join(&rust_input)).map_err(|error| {
+        let rust_file = resolve_input_file(root, canonical_root, &rust_input)?;
+        let source = fs::read_to_string(rust_file).map_err(|error| {
             invalid_input(
                 &rust_input,
                 format!("Rust input cannot be read as UTF-8: {error}"),
@@ -897,6 +899,32 @@ mod tests {
         .unwrap();
         let changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
         assert_ne!(initial, changed, "nested includes must be fingerprinted");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn included_rust_is_validated_before_following_a_symlink_outside_the_workspace() {
+        use std::os::unix::fs::symlink;
+
+        let workspace = TestWorkspace::new("included-rust-symlink");
+        fs::write(
+            workspace.0.join("machines/math/src/lib.rs"),
+            "include!(\"../generated.rs\");\n",
+        )
+        .unwrap();
+        let outside = workspace.0.with_extension("outside.rs");
+        fs::write(&outside, "pub const OUTSIDE: u8 = 1;\n").unwrap();
+        symlink(&outside, workspace.0.join("machines/math/generated.rs")).unwrap();
+
+        let error = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeWorkspaceInputInvalid");
+        assert!(
+            error
+                .kind_message()
+                .contains("resolves outside the workspace")
+        );
+
+        fs::remove_file(outside).unwrap();
     }
 
     #[test]
