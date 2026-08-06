@@ -154,9 +154,10 @@ fn collect_package_inputs(
         inputs.insert(package.resource_relative_path(resource));
     }
 
-    // `include!` contributes Rust tokens, and those tokens may contain further
-    // compile-time includes. Walk that graph transitively so every input Cargo
-    // can compile is represented in the workspace fingerprint.
+    // `include!` and `#[path] mod` contribute Rust tokens, and those tokens may
+    // contain further compile-time inputs. Walk both graphs transitively so
+    // every explicitly redirected Rust module Cargo can compile is represented
+    // in the workspace fingerprint.
     let mut pending_rust_inputs = rust_inputs;
     let mut scanned_rust_inputs = BTreeSet::new();
     while let Some(rust_input) = pending_rust_inputs.pop() {
@@ -178,6 +179,7 @@ fn collect_package_inputs(
                 pending_rust_inputs.push(include);
             }
         }
+        pending_rust_inputs.extend(discover_path_modules(&source, &rust_input)?);
     }
 
     Ok(())
@@ -350,6 +352,94 @@ fn discover_compile_time_resources(
     resources.sort();
     resources.dedup();
     Ok(resources)
+}
+
+fn discover_path_modules(source: &str, source_relative_path: &Path) -> MResult<Vec<PathBuf>> {
+    let base = source_relative_path
+        .parent()
+        .unwrap_or_else(|| Path::new(""));
+    let mut modules = active_path_attributes(source, source_relative_path)?
+        .into_iter()
+        .map(|path| normalize_join(base, Path::new(&path)))
+        .collect::<MResult<Vec<_>>>()?;
+    modules.sort();
+    modules.dedup();
+    Ok(modules)
+}
+
+fn active_path_attributes(source: &str, source_relative_path: &Path) -> MResult<Vec<String>> {
+    let bytes = source.as_bytes();
+    let mut paths = Vec::new();
+    let mut index = 0usize;
+    while index < bytes.len() {
+        if let Some(end) = rust_non_code_end(source, index) {
+            index = end;
+            continue;
+        }
+        if bytes[index] != b'#' {
+            index += 1;
+            continue;
+        }
+
+        let mut cursor = skip_rust_trivia(source, index + 1);
+        if bytes.get(cursor) == Some(&b'!') {
+            cursor = skip_rust_trivia(source, cursor + 1);
+        }
+        if bytes.get(cursor) != Some(&b'[') {
+            index += 1;
+            continue;
+        }
+        cursor = skip_rust_trivia(source, cursor + 1);
+        let identifier_start = cursor;
+        while bytes
+            .get(cursor)
+            .is_some_and(|byte| byte.is_ascii_alphanumeric() || *byte == b'_')
+        {
+            cursor += 1;
+        }
+        if &source[identifier_start..cursor] != "path" {
+            index += 1;
+            continue;
+        }
+        cursor = skip_rust_trivia(source, cursor);
+        if bytes.get(cursor) != Some(&b'=') {
+            return Err(invalid_input(
+                source_relative_path,
+                "unsupported #[path] attribute; expected a string literal",
+            ));
+        }
+        cursor = skip_rust_trivia(source, cursor + 1);
+        let literal_end = rust_raw_string_end(source, cursor)
+            .or_else(|| rust_quoted_literal_end(source, cursor))
+            .ok_or_else(|| {
+                invalid_input(
+                    source_relative_path,
+                    "unsupported #[path] attribute; expected a string literal",
+                )
+            })?;
+        let path = parse_rust_string(&source[cursor..literal_end]).ok_or_else(|| {
+            invalid_input(
+                source_relative_path,
+                "unsupported #[path] attribute; expected a string literal",
+            )
+        })?;
+        if path.is_empty() {
+            return Err(invalid_input(
+                source_relative_path,
+                "unsupported #[path] attribute; module path is empty",
+            ));
+        }
+        let close = skip_rust_trivia(source, literal_end);
+        if bytes.get(close) != Some(&b']') {
+            return Err(invalid_input(
+                source_relative_path,
+                "unsupported #[path] attribute; expected closing bracket",
+            ));
+        }
+        paths.push(path);
+        index = close + 1;
+    }
+    Ok(paths)
 }
 
 fn active_include_macros(source: &str) -> Vec<(&'static str, &str)> {
@@ -942,6 +1032,68 @@ mod tests {
         .unwrap();
         let changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
         assert_ne!(initial, changed, "included Rust must be fingerprinted");
+    }
+
+    #[test]
+    fn path_modules_and_nested_path_modules_change_the_workspace_fingerprint() {
+        let workspace = TestWorkspace::new("path-module");
+        fs::write(
+            workspace.0.join("machines/math/src/lib.rs"),
+            "#[path = \"../generated/module.rs\"]\nmod generated;\n",
+        )
+        .unwrap();
+        fs::create_dir_all(workspace.0.join("machines/math/generated/nested")).unwrap();
+        fs::write(
+            workspace.0.join("machines/math/generated/module.rs"),
+            "#[path = \"nested/child.rs\"]\nmod child;\npub const GENERATED: u8 = 1;\n",
+        )
+        .unwrap();
+        fs::write(
+            workspace.0.join("machines/math/generated/nested/child.rs"),
+            "pub const CHILD: u8 = 1;\n",
+        )
+        .unwrap();
+
+        let initial = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+        fs::write(
+            workspace.0.join("machines/math/generated/module.rs"),
+            "#[path = \"nested/child.rs\"]\nmod child;\npub const GENERATED: u8 = 2;\n",
+        )
+        .unwrap();
+        let module_changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+        assert_ne!(
+            initial, module_changed,
+            "#[path] module must be fingerprinted"
+        );
+
+        fs::write(
+            workspace.0.join("machines/math/generated/nested/child.rs"),
+            "pub const CHILD: u8 = 2;\n",
+        )
+        .unwrap();
+        let child_changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+        assert_ne!(
+            module_changed, child_changed,
+            "nested #[path] module must be fingerprinted"
+        );
+    }
+
+    #[test]
+    fn path_attribute_text_inside_comments_and_literals_is_ignored() {
+        let workspace = TestWorkspace::new("inactive-path-module");
+        fs::write(
+            workspace.0.join("machines/math/src/lib.rs"),
+            r###"
+// #[path = "../generated/missing-line.rs"]
+/* #[path = "../generated/missing-block.rs"] */
+const EXAMPLE: &str = "#[path = \"../generated/missing-string.rs\"]";
+const RAW: &str = r#"#[path = "../generated/missing-raw.rs"]"#;
+const DATA: &[u8] = include_bytes!("../assets/data.bin");
+"###,
+        )
+        .unwrap();
+
+        fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
     }
 
     #[test]

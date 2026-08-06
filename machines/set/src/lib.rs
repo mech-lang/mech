@@ -47,6 +47,13 @@ pub use self::setdata::*;
 // Set Library
 // ----------------------------------------------------------------------------
 
+fn normalize_set_element(value: Value) -> Value {
+    match value {
+        Value::MutableReference(reference) => reference.borrow().clone(),
+        value => value,
+    }
+}
+
 #[macro_export]
 macro_rules! impl_set_fxns {
     ($lib:ident) => {

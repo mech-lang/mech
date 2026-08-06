@@ -10,7 +10,7 @@ use mech_core::set::MechSet;
 
 #[derive(Debug)]
 pub(crate) struct SetNotElementOfFxn {
-    elem: Ref<Value>,
+    elem: Value,
     set: Ref<MechSet>,
     out: Ref<bool>,
 }
@@ -18,14 +18,14 @@ pub(crate) struct SetNotElementOfFxn {
 impl MechFunctionFactory for SetNotElementOfFxn {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
         FunctionValueRepresentation::Bool,
-        FunctionValueRepresentation::MutableValueCell,
+        FunctionValueRepresentation::AnyValue,
         FunctionValueRepresentation::Set,
     );
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let elem: Ref<Value> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let elem = normalize_set_element(arg1);
                 let set: Ref<MechSet> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
                 let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(SetNotElementOfFxn { elem, set, out }))
@@ -46,7 +46,7 @@ impl MechFunctionImpl for SetNotElementOfFxn {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
             let out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
-            let elem_ptr: &Value = &*(self.elem.as_ptr());
+            let elem_ptr = &self.elem;
             let set_ptr: &MechSet = &*(self.set.as_ptr());
 
             // Only true if kinds are incompatible or the set does not contain elem.
@@ -73,9 +73,16 @@ impl MechFunctionImpl for SetNotElementOfFxn {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for SetNotElementOfFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = "SetNotElementOfFxn".to_string();
+        let destination = compile_register_brrw!(self.out, ctx);
+        let element = compile_value_register(
+            &self.elem,
+            core::ptr::from_ref(&self.elem).addr(),
+            ctx,
+        )?;
+        let set = compile_register_brrw!(self.set, ctx);
         // Builtin operator ∉
-        compile_binop!(name, self.out, self.elem, self.set, ctx);
+        ctx.emit_binop(hash_str("SetNotElementOfFxn"), destination, element, set);
+        Ok(destination)
     }
 }
 
@@ -83,7 +90,7 @@ impl MechFunctionCompiler for SetNotElementOfFxn {
 fn set_not_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFunction>> {
     match (elem, set) {
         (elem, Value::Set(set)) => Ok(Box::new(SetNotElementOfFxn {
-            elem: Ref::new(elem.clone()),
+            elem: normalize_set_element(elem),
             set: set.clone(),
             out: Ref::new(false),
         })),
