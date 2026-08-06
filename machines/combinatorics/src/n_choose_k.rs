@@ -12,6 +12,104 @@ use paste::paste;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
 
+fn scalar_selection_count(value: &Value) -> Option<u128> {
+    match value {
+        #[cfg(feature = "u8")]
+        Value::U8(value) => Some(u128::from(*value.borrow())),
+        #[cfg(feature = "u16")]
+        Value::U16(value) => Some(u128::from(*value.borrow())),
+        #[cfg(feature = "u32")]
+        Value::U32(value) => Some(u128::from(*value.borrow())),
+        #[cfg(feature = "u64")]
+        Value::U64(value) => Some(u128::from(*value.borrow())),
+        #[cfg(feature = "u128")]
+        Value::U128(value) => Some(*value.borrow()),
+        #[cfg(feature = "i8")]
+        Value::I8(value) => u128::try_from(*value.borrow()).ok(),
+        #[cfg(feature = "i16")]
+        Value::I16(value) => u128::try_from(*value.borrow()).ok(),
+        #[cfg(feature = "i32")]
+        Value::I32(value) => u128::try_from(*value.borrow()).ok(),
+        #[cfg(feature = "i64")]
+        Value::I64(value) => u128::try_from(*value.borrow()).ok(),
+        #[cfg(feature = "i128")]
+        Value::I128(value) => u128::try_from(*value.borrow()).ok(),
+        #[cfg(feature = "f32")]
+        Value::F32(value) => {
+            let value = *value.borrow();
+            (value.is_finite()
+                && value >= 0.0
+                && value.fract() == 0.0
+                && value <= u128::MAX as f32)
+                .then_some(value as u128)
+        }
+        #[cfg(feature = "f64")]
+        Value::F64(value) => {
+            let value = *value.borrow();
+            (value.is_finite()
+                && value >= 0.0
+                && value.fract() == 0.0
+                && value <= u128::MAX as f64)
+                .then_some(value as u128)
+        }
+        #[cfg(feature = "r64")]
+        Value::R64(value) => {
+            let value = value.borrow();
+            (*value.denom() == 1).then(|| u128::try_from(*value.numer()).ok()).flatten()
+        }
+        #[cfg(feature = "c64")]
+        Value::C64(value) => {
+            let value = value.borrow().0;
+            (value.re.is_finite()
+                && value.im.is_finite()
+                && value.im == 0.0
+                && value.re >= 0.0
+                && value.re.fract() == 0.0
+                && value.re <= u128::MAX as f64)
+                .then_some(value.re as u128)
+        }
+        _ => None,
+    }
+}
+
+fn validate_n_choose_k_scalar_values(n: &Value, k: &Value) -> MResult<()> {
+    let contract = "n_choose_k_scalar";
+    let n = scalar_selection_count(n).ok_or_else(|| {
+        function_shape_contract_violation(
+            contract,
+            "input 0 must be a finite, non-negative whole-number scalar",
+        )
+    })?;
+    let k = scalar_selection_count(k).ok_or_else(|| {
+        function_shape_contract_violation(
+            contract,
+            "input 1 must be a finite, non-negative whole-number scalar",
+        )
+    })?;
+    let steps = if k > n { 0 } else { k.min(n - k) };
+    if steps > crate::kernels::n_choose_k::MAX_SCALAR_STEPS {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "selection requires {steps} kernel steps, exceeding the bytecode v1 limit of {}",
+                crate::kernels::n_choose_k::MAX_SCALAR_STEPS,
+            ),
+        ));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_n_choose_k_scalar_contract(args: &FunctionArgs) -> MResult<()> {
+    let contract = "n_choose_k_scalar";
+    let n = args.input_value(0).ok_or_else(|| {
+        function_shape_contract_violation(contract, "missing input 0")
+    })?;
+    let k = args.input_value(1).ok_or_else(|| {
+        function_shape_contract_violation(contract, "missing input 1")
+    })?;
+    validate_n_choose_k_scalar_values(n, k)
+}
+
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
 fn checked_combination_count(n: usize, k: usize) -> Option<usize> {
     let k = k.min(n.saturating_sub(k));
@@ -251,6 +349,9 @@ where
     Ref<T>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
+        // Validate every reactive solve, not only bytecode installation: host
+        // or live-resource producers may replace a previously safe operand.
+        validate_n_choose_k_scalar_values(&self.n.to_value(), &self.k.to_value())?;
         let n_ptr = self.n.as_ptr();
         let k_ptr = self.k.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
@@ -270,6 +371,50 @@ where
 
     fn transaction_state_values(&self) -> MResult<Vec<Value>> {
         Ok(self.reactive_output_values())
+    }
+}
+
+#[cfg(all(test, feature = "f64"))]
+mod scalar_contract_tests {
+    use super::*;
+
+    fn args(n: f64, k: f64) -> FunctionArgs {
+        FunctionArgs::Binary(
+            Value::F64(Ref::new(0.0)),
+            Value::F64(Ref::new(n)),
+            Value::F64(Ref::new(k)),
+        )
+    }
+
+    #[test]
+    fn scalar_contract_rejects_non_finite_fractional_and_unbounded_selections() {
+        for (n, k) in [
+            (10.0, f64::INFINITY),
+            (f64::NAN, 1.0),
+            (10.0, 1.5),
+            (-1.0, 0.0),
+            (2_000_002.0, 1_000_001.0),
+            (1.0e100, 1.0e50),
+        ] {
+            let error = validate_n_choose_k_scalar_contract(&args(n, k)).unwrap_err();
+            assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        }
+        validate_n_choose_k_scalar_contract(&args(10.0, 2.0)).unwrap();
+        validate_n_choose_k_scalar_contract(&args(2.0, 10.0)).unwrap();
+    }
+
+    #[test]
+    fn scalar_runtime_revalidates_live_selection_values() {
+        let k = Ref::new(2.0);
+        let function = NChooseK {
+            n: Ref::new(10.0),
+            k: k.clone(),
+            out: Ref::new(0.0),
+        };
+        function.solve_result().unwrap();
+        *k.borrow_mut() = f64::INFINITY;
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
     }
 }
 #[cfg(feature = "compiler")]

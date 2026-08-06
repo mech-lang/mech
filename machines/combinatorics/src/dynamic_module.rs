@@ -24,6 +24,9 @@ pub unsafe extern "C" fn combinatorics_n_choose_k_f64_v1(
     if out.is_null() {
         return MechStatusV1::NullPointer;
     }
+    if !crate::kernels::n_choose_k::supports_f64(n, k) {
+        return MechStatusV1::Unsupported;
+    }
 
     unsafe {
         *out = crate::kernels::n_choose_k::scalar(n, k);
@@ -127,5 +130,20 @@ mod tests {
 
         assert_eq!(status, MechStatusV1::Ok);
         assert_eq!(out, crate::kernels::n_choose_k::scalar(2.0_f64, 10.0_f64));
+    }
+
+    #[test]
+    fn n_choose_k_rejects_non_finite_or_unbounded_dynamic_inputs() {
+        for (n, k) in [
+            (10.0, f64::INFINITY),
+            (f64::NAN, 1.0),
+            (2_000_002.0, 1_000_001.0),
+            (1.0e100, 1.0e50),
+        ] {
+            let mut out = 123.0;
+            let status = unsafe { combinatorics_n_choose_k_f64_v1(n, k, &mut out) };
+            assert_eq!(status, MechStatusV1::Unsupported);
+            assert_eq!(out, 123.0);
+        }
     }
 }

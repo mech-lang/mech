@@ -509,10 +509,11 @@ def decode_constants(
     blob: bytes,
     types: list[dict[str, object]],
     name: str,
-) -> None:
+) -> list[tuple[int, bytes]]:
     require(len(table) == count * 24, f"{name}: constant table length is not exact")
     reader = Reader(table, f"{name}: constant table")
     previous_end = 0
+    canonical_entries: list[tuple[int, bytes]] = []
     for index in range(count):
         type_id = reader.u32()
         storage = reader.u8()
@@ -532,9 +533,15 @@ def decode_constants(
         runtime_type = types[type_id]["type"]
         require(isinstance(runtime_type, dict), f"{name}: malformed runtime type metadata")
         validate_constant_payload(runtime_type, value, name)
+        canonical_entries.append((type_id, value))
         previous_end = offset + length
     reader.finish()
     require(previous_end == len(blob), f"{name}: constant blob has trailing bytes")
+    require(
+        len(canonical_entries) == len(set(canonical_entries)),
+        f"{name}: constant table contains duplicate canonical entries",
+    )
+    return canonical_entries
 
 
 def decode_symbols(payload: bytes, count: int, registers: int, name: str) -> set[int]:
@@ -654,16 +661,24 @@ def decode_instructions(
     constants: int,
     requirements: list[dict[str, object]],
     name: str,
-) -> set[int]:
+) -> tuple[set[int], list[int]]:
     reader = Reader(payload, f"{name}: instructions")
     runtime_ids: set[int] = set()
     opcodes: list[int] = []
+    constant_reference_order: list[int] = []
+    referenced_constants: set[int] = set()
 
     def register(value: int) -> None:
         require(value < registers, f"{name}: instruction register is out of bounds")
 
     def requirement(index: int) -> None:
         require(index < len(requirements), f"{name}: requirement index is out of bounds")
+
+    def constant(index: int) -> None:
+        require(index < constants, f"{name}: constant index is out of bounds")
+        if index not in referenced_constants:
+            referenced_constants.add(index)
+            constant_reference_order.append(index)
 
     def runtime_function() -> int:
         function = reader.u64()
@@ -675,13 +690,10 @@ def decode_instructions(
         opcodes.append(opcode)
         if opcode == 0x01:
             register(reader.u32())
-            require(reader.u32() < constants, f"{name}: constant index is out of bounds")
+            constant(reader.u32())
         elif opcode == 0x02:
             register(reader.u32())
-            require(
-                reader.u32() < constants,
-                f"{name}: composite template index is out of bounds",
-            )
+            constant(reader.u32())
             for _ in range(reader.u32()):
                 register(reader.u32())
         elif opcode in {0x10, 0x11, 0x12, 0x13, 0x14}:
@@ -711,7 +723,11 @@ def decode_instructions(
     reader.finish()
     require(opcodes and opcodes[-1] == 0xFF, f"{name}: final instruction is not Return")
     require(opcodes.count(0xFF) == 1, f"{name}: fixture must contain one Return")
-    return runtime_ids
+    require(
+        constant_reference_order == list(range(constants)),
+        f"{name}: constant IDs are not in canonical first-reference order",
+    )
+    return runtime_ids, constant_reference_order
 
 
 def validate_fixture(entry: dict[str, object]) -> None:
@@ -932,7 +948,7 @@ def validate_fixture(entry: dict[str, object]) -> None:
         decoded_requirements == entry.get("application_requirements"),
         f"{name}: decoded requirements disagree with manifest",
     )
-    decoded_runtime_ids = decode_instructions(
+    decoded_runtime_ids, _ = decode_instructions(
         section_payloads[4],
         int(sections[4]["item_count"]),
         register_count,

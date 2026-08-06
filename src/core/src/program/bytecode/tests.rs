@@ -1867,21 +1867,21 @@ fn rejects_unknown_requirement_fields_utf8_opcode_and_trailing_bytes() {
 fn composite_pack_round_trips_and_reconstructs_from_child_registers() {
     let input = BytecodeProgram {
         register_count: 3,
-        constants: vec![u8_tuple_constant(&[0, 0]), u8_constant(7), u8_constant(9)],
+        constants: vec![u8_constant(7), u8_constant(9), u8_tuple_constant(&[0, 0])],
         symbols: BTreeMap::new(),
         mutable_symbols: BTreeSet::new(),
         instructions: vec![
             BytecodeInstruction::ConstLoad {
                 dst: 0,
-                constant: 1,
+                constant: 0,
             },
             BytecodeInstruction::ConstLoad {
                 dst: 1,
-                constant: 2,
+                constant: 1,
             },
             BytecodeInstruction::CompositePack {
                 dst: 2,
-                template: 0,
+                template: 2,
                 children: vec![0, 1],
             },
             BytecodeInstruction::Return { src: 2 },
@@ -1897,8 +1897,8 @@ fn composite_pack_round_trips_and_reconstructs_from_child_registers() {
 
     let constants = parsed.decode_constants().unwrap();
     let rebuilt = rebuild_bytecode_composite(
-        &constants[0],
-        vec![constants[1].clone(), constants[2].clone()],
+        &constants[2],
+        vec![constants[0].clone(), constants[1].clone()],
     )
     .unwrap();
     let crate::Value::Tuple(tuple) = rebuilt else {
@@ -1911,6 +1911,44 @@ fn composite_pack_round_trips_and_reconstructs_from_child_registers() {
             Box::new(crate::Value::U8(crate::Ref::new(9))),
         ],
     );
+}
+
+#[test]
+fn rejects_duplicate_canonical_constants_even_when_each_id_is_reachable() {
+    let bytes =
+        write_bytecode_without_reader_validation(&program(vec![u8_constant(7), u8_constant(7)]))
+            .unwrap();
+
+    assert_validation_reason(
+        &bytes,
+        "duplicate canonical runtime type and payload entries",
+    );
+}
+
+#[test]
+fn rejects_constant_ids_outside_canonical_first_reference_order() {
+    let input = BytecodeProgram {
+        register_count: 2,
+        constants: vec![u8_constant(7), u8_constant(9)],
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions: vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 1,
+            },
+            BytecodeInstruction::ConstLoad {
+                dst: 1,
+                constant: 0,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+        dictionary: BTreeMap::new(),
+        requirements: Vec::new(),
+    };
+    let bytes = write_bytecode_without_reader_validation(&input).unwrap();
+
+    assert_validation_reason(&bytes, "expected first-reference ID 0");
 }
 
 #[test]

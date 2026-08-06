@@ -907,11 +907,12 @@ mod tests {
     #[test]
     fn rejects_valid_runtime_id_with_wrong_scalar_inputs_and_output() {
         let function = RuntimeFunctionId::from_name("ExactF64Binary").raw();
-        let f64_constant = || scalar(RuntimeType::F64, 1.0_f64.to_bits().to_le_bytes().to_vec());
+        let f64_constant =
+            |value: f64| scalar(RuntimeType::F64, value.to_bits().to_le_bytes().to_vec());
         let i8_constant = || scalar(RuntimeType::I8, vec![1]);
 
         let wrong_input = parsed_runtime_program(
-            vec![f64_constant(), i8_constant(), f64_constant()],
+            vec![f64_constant(1.0), i8_constant(), f64_constant(2.0)],
             BytecodeInstruction::RuntimeBinary {
                 function,
                 dst: 0,
@@ -922,7 +923,7 @@ mod tests {
         assert_contract_violation(&wrong_input, "Input(0)");
 
         let wrong_output = parsed_runtime_program(
-            vec![i8_constant(), f64_constant(), f64_constant()],
+            vec![i8_constant(), f64_constant(1.0), f64_constant(2.0)],
             BytecodeInstruction::RuntimeBinary {
                 function,
                 dst: 0,

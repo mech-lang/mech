@@ -273,9 +273,12 @@ fn discover_compile_time_resources(
 }
 
 fn macro_argument(input: &str) -> Option<&str> {
-    if !input.starts_with('(') {
-        return None;
-    }
+    let (open, close) = match input.as_bytes().first().copied()? {
+        b'(' => (b'(', b')'),
+        b'[' => (b'[', b']'),
+        b'{' => (b'{', b'}'),
+        _ => return None,
+    };
     let bytes = input.as_bytes();
     let mut depth = 0usize;
     let mut quoted = false;
@@ -293,8 +296,8 @@ fn macro_argument(input: &str) -> Option<&str> {
         }
         match byte {
             b'"' => quoted = true,
-            b'(' => depth += 1,
-            b')' => {
+            byte if byte == open => depth += 1,
+            byte if byte == close => {
                 depth = depth.checked_sub(1)?;
                 if depth == 0 {
                     return Some(&input[1..index]);
@@ -644,5 +647,48 @@ mod tests {
                 "/assets/data.bin".into()
             ))
         );
+    }
+
+    #[test]
+    fn include_macro_argument_supports_every_rust_delimiter() {
+        for input in [
+            "(\"assets/data.bin\")",
+            "[\"assets/data.bin\"]",
+            "{\"assets/data.bin\"}",
+        ] {
+            assert_eq!(macro_argument(input), Some("\"assets/data.bin\""));
+        }
+        assert_eq!(
+            macro_argument("{concat![\"a\", \"b\"]}"),
+            Some("concat![\"a\", \"b\"]")
+        );
+    }
+
+    #[test]
+    fn bracket_and_brace_includes_change_the_workspace_fingerprint() {
+        for (label, source) in [
+            (
+                "bracket-include",
+                "const DATA: &[u8] = include_bytes![\"../assets/data.bin\"];\n",
+            ),
+            (
+                "brace-include",
+                "const DATA: &str = include_str!{\"../assets/data.bin\"};\n",
+            ),
+        ] {
+            let workspace = TestWorkspace::new(label);
+            fs::write(workspace.0.join("machines/math/src/lib.rs"), source).unwrap();
+            let initial = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+            fs::write(
+                workspace.0.join("machines/math/assets/data.bin"),
+                b"delimiter-resource-v2",
+            )
+            .unwrap();
+            let changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+            assert_ne!(
+                initial, changed,
+                "{label} resource bytes must be fingerprinted"
+            );
+        }
     }
 }

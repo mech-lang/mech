@@ -353,12 +353,12 @@ mod bytecode_dependency_tests {
                 panic!("malformed matrix relations must fail before factory construction")
             }
         }
-        fn matrix(rows: u32, cols: u32) -> EncodedConstant {
+        fn matrix(rows: u32, cols: u32, first: u32) -> EncodedConstant {
             let mut bytes = Vec::new();
             bytes.extend_from_slice(&rows.to_le_bytes());
             bytes.extend_from_slice(&cols.to_le_bytes());
             for index in 0..rows.saturating_mul(cols) {
-                bytes.extend_from_slice(&f64::from(index + 1).to_bits().to_le_bytes());
+                bytes.extend_from_slice(&f64::from(index + first).to_bits().to_le_bytes());
             }
             EncodedConstant {
                 runtime_type: RuntimeType::Matrix {
@@ -413,7 +413,7 @@ mod bytecode_dependency_tests {
         let program = super::super::super::ParsedProgram::from_bytes(
             &write_bytecode(&BytecodeProgram {
                 register_count: 3,
-                constants: vec![matrix(2, 2), matrix(2, 2), matrix(3, 3)],
+                constants: vec![matrix(2, 2, 1), matrix(2, 2, 10), matrix(3, 3, 20)],
                 symbols: BTreeMap::new(),
                 mutable_symbols: BTreeSet::new(),
                 instructions: vec![
@@ -459,6 +459,280 @@ mod bytecode_dependency_tests {
         assert_eq!(interpreter.plan_len(), prior_plan_len);
         assert_eq!(interpreter.symbols().borrow().snapshot(), prior_symbols);
         assert_eq!(*interpreter.dictionary().borrow(), prior_dictionary);
+    }
+}
+
+#[cfg(all(
+    test,
+    feature = "compiler",
+    feature = "program",
+    feature = "functions",
+    feature = "symbol_table",
+    feature = "map",
+    feature = "set",
+    feature = "u8"
+))]
+mod hashed_composite_pack_tests {
+    use super::super::super::{
+        BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram, EncodedConstant,
+        FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, FunctionRuntimeType,
+        Interpreter, MResult, MechError, MechFunction, MechFunctionCompiler, MechFunctionFactory,
+        MechFunctionImpl, ParsedProgram, Ref, Register, RuntimeFunctionContract, RuntimeFunctionId,
+        RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, ToValue, Value,
+        write_bytecode,
+    };
+    use std::collections::{BTreeMap, BTreeSet};
+    use std::sync::Arc;
+
+    const PRODUCER: &str = "BytecodeComputedU8";
+
+    #[derive(Debug)]
+    struct ComputedU8 {
+        output: Ref<u8>,
+    }
+
+    impl MechFunctionFactory for ComputedU8 {
+        const SIGNATURE: RuntimeFunctionSignature =
+            RuntimeFunctionSignature::nullary(<u8 as FunctionRuntimeType>::REPRESENTATION);
+
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            match args {
+                FunctionArgs::Nullary(output) => Ok(Box::new(Self {
+                    output: output.try_function_ref(FunctionArgumentRole::Output)?,
+                })),
+                _ => Err(MechError::new(
+                    super::super::super::IncorrectNumberOfArguments {
+                        expected: 0,
+                        found: args.len(),
+                    },
+                    None,
+                )),
+            }
+        }
+    }
+
+    impl MechFunctionImpl for ComputedU8 {
+        fn solve_result(&self) -> MResult<()> {
+            *self.output.borrow_mut() = 7;
+            Ok(())
+        }
+
+        fn out(&self) -> Value {
+            self.output.to_value()
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            PRODUCER.to_string()
+        }
+    }
+
+    impl MechFunctionCompiler for ComputedU8 {
+        fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    fn constant(runtime_type: RuntimeType, alignment: u8, bytes: Vec<u8>) -> EncodedConstant {
+        EncodedConstant {
+            runtime_type,
+            alignment,
+            bytes,
+        }
+    }
+
+    fn child(bytes: &mut Vec<u8>, payload: &[u8]) {
+        bytes.extend_from_slice(&(payload.len() as u32).to_le_bytes());
+        bytes.extend_from_slice(payload);
+    }
+
+    fn run_result(program: BytecodeProgram) -> MResult<Value> {
+        let mut catalog = FunctionCatalogBuilder::new();
+        catalog
+            .insert_runtime_factory::<ComputedU8>(
+                PRODUCER,
+                RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            )
+            .unwrap();
+        let mut interpreter =
+            Interpreter::with_function_catalog(1, 100, Arc::new(catalog.build().unwrap()));
+        let parsed = ParsedProgram::from_bytes(&write_bytecode(&program).unwrap()).unwrap();
+        interpreter.run_program(&parsed)
+    }
+
+    fn run(program: BytecodeProgram) -> Value {
+        run_result(program).unwrap()
+    }
+
+    #[test]
+    fn computed_map_keys_are_rehashed_after_their_producer_solves() {
+        let mut template = 1_u32.to_le_bytes().to_vec();
+        child(&mut template, &[1]);
+        child(&mut template, &[9]);
+        let output = run(BytecodeProgram {
+            register_count: 3,
+            constants: vec![
+                constant(RuntimeType::U8, 1, vec![1]),
+                constant(RuntimeType::U8, 1, vec![9]),
+                constant(
+                    RuntimeType::Map {
+                        key: Box::new(RuntimeType::U8),
+                        value: Box::new(RuntimeType::U8),
+                    },
+                    4,
+                    template,
+                ),
+            ],
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::RuntimeNullary {
+                    function: RuntimeFunctionId::from_name(PRODUCER).raw(),
+                    dst: 0,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 1,
+                    constant: 1,
+                },
+                BytecodeInstruction::CompositePack {
+                    dst: 2,
+                    template: 2,
+                    children: vec![0, 1],
+                },
+                BytecodeInstruction::Return { src: 2 },
+            ],
+            dictionary: BTreeMap::new(),
+            requirements: Vec::new(),
+        });
+
+        let Value::Map(output) = output else {
+            panic!("expected map output");
+        };
+        let key = Value::U8(Ref::new(7));
+        assert_eq!(output.borrow().map.get(&key), Some(&Value::U8(Ref::new(9))));
+        assert!(!output.borrow().map.contains_key(&Value::U8(Ref::new(1))));
+    }
+
+    #[test]
+    fn computed_set_elements_are_rehashed_after_their_producer_solves() {
+        let mut template = 1_u32.to_le_bytes().to_vec();
+        child(&mut template, &[1]);
+        let output = run(BytecodeProgram {
+            register_count: 2,
+            constants: vec![
+                constant(RuntimeType::U8, 1, vec![1]),
+                constant(
+                    RuntimeType::Set {
+                        element: Box::new(RuntimeType::U8),
+                        max_len: Some(1),
+                    },
+                    4,
+                    template,
+                ),
+            ],
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::RuntimeNullary {
+                    function: RuntimeFunctionId::from_name(PRODUCER).raw(),
+                    dst: 0,
+                },
+                BytecodeInstruction::CompositePack {
+                    dst: 1,
+                    template: 1,
+                    children: vec![0],
+                },
+                BytecodeInstruction::Return { src: 1 },
+            ],
+            dictionary: BTreeMap::new(),
+            requirements: Vec::new(),
+        });
+
+        let Value::Set(output) = output else {
+            panic!("expected set output");
+        };
+        assert!(output.borrow().set.contains(&Value::U8(Ref::new(7))));
+        assert!(!output.borrow().set.contains(&Value::U8(Ref::new(1))));
+    }
+
+    #[test]
+    fn computed_map_key_collisions_fail_instead_of_overwriting_an_entry() {
+        let mut template = 2_u32.to_le_bytes().to_vec();
+        for payload in [[1], [9], [2], [10]] {
+            child(&mut template, &payload);
+        }
+        let error = run_result(BytecodeProgram {
+            register_count: 5,
+            constants: vec![
+                constant(RuntimeType::U8, 1, vec![1]),
+                constant(RuntimeType::U8, 1, vec![2]),
+                constant(RuntimeType::U8, 1, vec![9]),
+                constant(RuntimeType::U8, 1, vec![10]),
+                constant(
+                    RuntimeType::Map {
+                        key: Box::new(RuntimeType::U8),
+                        value: Box::new(RuntimeType::U8),
+                    },
+                    4,
+                    template,
+                ),
+            ],
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::RuntimeNullary {
+                    function: RuntimeFunctionId::from_name(PRODUCER).raw(),
+                    dst: 0,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 1,
+                    constant: 1,
+                },
+                BytecodeInstruction::RuntimeNullary {
+                    function: RuntimeFunctionId::from_name(PRODUCER).raw(),
+                    dst: 1,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 2,
+                    constant: 2,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 3,
+                    constant: 3,
+                },
+                BytecodeInstruction::CompositePack {
+                    dst: 4,
+                    template: 4,
+                    children: vec![0, 2, 1, 3],
+                },
+                BytecodeInstruction::Return { src: 4 },
+            ],
+            dictionary: BTreeMap::new(),
+            requirements: Vec::new(),
+        })
+        .unwrap_err();
+
+        assert_eq!(error.kind_name(), "BytecodeValidation");
+        assert!(
+            error
+                .kind_message()
+                .contains("duplicate-equal hashed children")
+        );
     }
 }
 
