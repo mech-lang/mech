@@ -53,19 +53,21 @@ use nalgebra::Vector4;
 
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
-#[cfg(any(feature = "dot", feature = "transpose", feature = "matmul"))]
+#[cfg(any(feature = "dot", feature = "matmul"))]
 use num_traits::*;
 use std::fmt::Debug;
 use std::ops::*;
 
 use std::fmt::Display;
 
+#[cfg(any(feature = "dot", feature = "matmul"))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MatrixArithmeticOverflow {
     pub operation: &'static str,
     pub operand_type: &'static str,
 }
 
+#[cfg(any(feature = "dot", feature = "matmul"))]
 impl MechErrorKind for MatrixArithmeticOverflow {
     fn name(&self) -> &str {
         "MatrixArithmeticOverflow"
@@ -83,6 +85,7 @@ impl MechErrorKind for MatrixArithmeticOverflow {
 /// implementations are checked so debug and release applications have the
 /// same behavior; IEEE and exact non-primitive numeric types retain their
 /// established unbounded/IEEE operations.
+#[cfg(any(feature = "dot", feature = "matmul"))]
 pub trait RuntimeMatrixArithmetic:
     Copy
     + Debug
@@ -109,6 +112,7 @@ pub trait RuntimeMatrixArithmetic:
     fn runtime_checked_mul(self, rhs: Self) -> Option<Self>;
 }
 
+#[cfg(any(feature = "dot", feature = "matmul"))]
 macro_rules! impl_checked_matrix_arithmetic {
     ($($type:ty),+ $(,)?) => {
         $(
@@ -125,27 +129,28 @@ macro_rules! impl_checked_matrix_arithmetic {
     };
 }
 
-#[cfg(feature = "i8")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "i8"))]
 impl_checked_matrix_arithmetic!(i8);
-#[cfg(feature = "i16")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "i16"))]
 impl_checked_matrix_arithmetic!(i16);
-#[cfg(feature = "i32")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "i32"))]
 impl_checked_matrix_arithmetic!(i32);
-#[cfg(feature = "i64")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "i64"))]
 impl_checked_matrix_arithmetic!(i64);
-#[cfg(feature = "i128")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "i128"))]
 impl_checked_matrix_arithmetic!(i128);
-#[cfg(feature = "u8")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "u8"))]
 impl_checked_matrix_arithmetic!(u8);
-#[cfg(feature = "u16")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "u16"))]
 impl_checked_matrix_arithmetic!(u16);
-#[cfg(feature = "u32")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "u32"))]
 impl_checked_matrix_arithmetic!(u32);
-#[cfg(feature = "u64")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "u64"))]
 impl_checked_matrix_arithmetic!(u64);
-#[cfg(feature = "u128")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "u128"))]
 impl_checked_matrix_arithmetic!(u128);
 
+#[cfg(any(feature = "dot", feature = "matmul"))]
 macro_rules! impl_unchecked_matrix_arithmetic {
     ($($type:ty),+ $(,)?) => {
         $(
@@ -162,15 +167,22 @@ macro_rules! impl_unchecked_matrix_arithmetic {
     };
 }
 
-#[cfg(feature = "f32")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "f32"))]
 impl_unchecked_matrix_arithmetic!(f32);
-#[cfg(feature = "f64")]
+#[cfg(all(any(feature = "dot", feature = "matmul"), feature = "f64"))]
 impl_unchecked_matrix_arithmetic!(f64);
-#[cfg(feature = "rational")]
+#[cfg(all(
+    any(feature = "dot", feature = "matmul"),
+    feature = "rational"
+))]
 impl_unchecked_matrix_arithmetic!(mech_core::R64);
-#[cfg(feature = "complex")]
+#[cfg(all(
+    any(feature = "dot", feature = "matmul"),
+    feature = "complex"
+))]
 impl_unchecked_matrix_arithmetic!(mech_core::C64);
 
+#[cfg(any(feature = "dot", feature = "matmul"))]
 fn checked_matrix_add<T: RuntimeMatrixArithmetic>(
     lhs: T,
     rhs: T,
@@ -188,6 +200,7 @@ fn checked_matrix_add<T: RuntimeMatrixArithmetic>(
     })
 }
 
+#[cfg(any(feature = "dot", feature = "matmul"))]
 fn checked_matrix_mul<T: RuntimeMatrixArithmetic>(
     lhs: T,
     rhs: T,
@@ -208,6 +221,7 @@ fn checked_matrix_mul<T: RuntimeMatrixArithmetic>(
 /// Fallible counterpart to `impl_binop!` for reduction kernels. The operation
 /// macro computes a complete staged result and may use `?`; it publishes only
 /// after every multiplication and accumulation succeeds.
+#[cfg(any(feature = "dot", feature = "matmul"))]
 macro_rules! impl_checked_matrix_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
