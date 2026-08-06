@@ -8,9 +8,9 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "standard_runtime")]
-const EXPECTED_RUNTIME_FACTORIES: usize = 9_019;
+const EXPECTED_RUNTIME_FACTORIES: usize = 9_022;
 #[cfg(feature = "standard_runtime")]
-const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 119_771;
+const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_017;
 #[cfg(feature = "standard_source")]
 const EXPECTED_NAMED_SPECIALIZERS: usize = 119;
 #[cfg(feature = "standard_source")]
@@ -23,10 +23,10 @@ const EXPECTED_MODULE_EXPORTS: usize = 50;
 const EXPECTED_ALL_EXPORTS: usize = 120;
 #[cfg(feature = "standard_runtime")]
 const EXPECTED_RUNTIME_SURFACE_DIGEST: &str =
-    "b9db9003bb9da704d5b61a5a6a3d5fcc6438ef7e433f49fc1918c466fc2fcc62";
+    "b7385da248524bcfbd1a20768fc13648b01054625459985251e5f53cae872322";
 #[cfg(feature = "standard_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
-    "adba5528babe462cd80a138e849c1ee1d203083bfac3780b6f498355843cc6d9";
+    "4bf16c1523cdc584d4e0479c3210903f0000679ba180601804388e94938b9c07";
 
 static CATALOG_TEST_LOCK: Mutex<()> = Mutex::new(());
 
