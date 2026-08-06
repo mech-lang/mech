@@ -1,5 +1,4 @@
 machines/combinatorics/src/dynamic_module.rs|ffi|mech-combinatorics|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
-machines/combinatorics/src/n_choose_k.rs|typed-machine-kernel|mech-combinatorics|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/eq.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/gt.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/gte.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
