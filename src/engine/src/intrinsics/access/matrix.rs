@@ -7,15 +7,145 @@ use nalgebra::{
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-fn matrix_access_indices(value: &Value) -> Option<Vec<usize>> {
-    match value {
-        Value::Index(value) => Some(vec![*value.borrow()]),
-        Value::MatrixIndex(value) => Some(value.as_vec()),
-        _ => None,
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MatrixAccessSelection {
+    Scalar,
+    All,
+    Explicit(usize),
+    Logical(usize),
+}
+
+impl MatrixAccessSelection {
+    fn count(self, upper: usize) -> usize {
+        match self {
+            Self::Scalar => 1,
+            Self::All => upper,
+            Self::Explicit(count) | Self::Logical(count) => count,
+        }
     }
 }
 
-fn validate_matrix_access_contract(args: &FunctionArgs) -> MResult<()> {
+fn matrix_access_selection(
+    value: &Value,
+    upper: usize,
+    input_index: usize,
+) -> MResult<MatrixAccessSelection> {
+    let contract = "matrix_access";
+    match value {
+        Value::Index(value) => {
+            let found = *value.borrow();
+            if found == 0 || found > upper {
+                return Err(function_shape_contract_violation(
+                    contract,
+                    format!("input {input_index} index {found} is outside 1..={upper}"),
+                ));
+            }
+            Ok(MatrixAccessSelection::Scalar)
+        }
+        Value::IndexAll => Ok(MatrixAccessSelection::All),
+        Value::MatrixIndex(value) => {
+            let indices = value.as_vec();
+            if let Some(found) = indices
+                .iter()
+                .copied()
+                .find(|value| *value == 0 || *value > upper)
+            {
+                return Err(function_shape_contract_violation(
+                    contract,
+                    format!("input {input_index} index {found} is outside 1..={upper}"),
+                ));
+            }
+            Ok(MatrixAccessSelection::Explicit(indices.len()))
+        }
+        #[cfg(feature = "bool")]
+        Value::MatrixBool(value) => {
+            let mask = value.as_vec();
+            if mask.len() != upper {
+                return Err(function_shape_contract_violation(
+                    contract,
+                    format!(
+                        "input {input_index} logical mask has {} elements, expected {upper}",
+                        mask.len(),
+                    ),
+                ));
+            }
+            Ok(MatrixAccessSelection::Logical(
+                mask.into_iter().filter(|selected| *selected).count(),
+            ))
+        }
+        _ => Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "input {input_index} must be a scalar index, index vector, logical mask, or all-index selector"
+            ),
+        )),
+    }
+}
+
+fn matrix_access_binary_output_shape(
+    source: FunctionMatrixDescriptor,
+    selection: MatrixAccessSelection,
+    output: Option<FunctionMatrixDescriptor>,
+) -> MResult<(usize, usize)> {
+    let contract = "matrix_access";
+    use FunctionMatrixRepresentation::*;
+
+    match (
+        selection,
+        output.map(|descriptor| descriptor.representation),
+    ) {
+        (MatrixAccessSelection::Scalar, None) => Ok((1, 1)),
+        (MatrixAccessSelection::Scalar, Some(VectorD)) => Ok((source.rows, 1)),
+        (
+            MatrixAccessSelection::Scalar,
+            Some(RowVector2 | RowVector3 | RowVector4 | RowVectorD | Matrix1),
+        ) => Ok((1, source.cols)),
+        (MatrixAccessSelection::All, Some(VectorD)) => Ok((
+            source.rows.checked_mul(source.cols).ok_or_else(|| {
+                function_shape_contract_violation(contract, "source element count overflowed")
+            })?,
+            1,
+        )),
+        (
+            MatrixAccessSelection::Explicit(count) | MatrixAccessSelection::Logical(count),
+            Some(VectorD),
+        ) => Ok((count, 1)),
+        (
+            MatrixAccessSelection::Explicit(count) | MatrixAccessSelection::Logical(count),
+            Some(MatrixD),
+        ) => Ok((count, source.cols)),
+        (selection, output) => Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "selector {selection:?} is incompatible with binary output representation {output:?}"
+            ),
+        )),
+    }
+}
+
+fn matrix_access_binary_upper_bound(
+    source: FunctionMatrixDescriptor,
+    selector: &Value,
+    output: Option<FunctionMatrixDescriptor>,
+) -> MResult<usize> {
+    use FunctionMatrixRepresentation::*;
+
+    match (selector, output.map(|descriptor| descriptor.representation)) {
+        (Value::Index(_), Some(VectorD)) => Ok(source.cols),
+        (Value::Index(_), Some(RowVector2 | RowVector3 | RowVector4 | RowVectorD | Matrix1))
+        | (Value::MatrixIndex(_), Some(MatrixD)) => Ok(source.rows),
+        #[cfg(feature = "bool")]
+        (Value::MatrixBool(_), Some(MatrixD)) => Ok(source.rows),
+        _ => source.rows.checked_mul(source.cols).ok_or_else(|| {
+            function_shape_contract_violation("matrix_access", "source element count overflowed")
+        }),
+    }
+}
+
+fn validate_matrix_access_contract_impl(
+    args: &FunctionArgs,
+    require_exact_output_shape: bool,
+) -> MResult<()> {
     let contract = "matrix_access";
     let source_value = args
         .input_value(0)
@@ -25,39 +155,217 @@ fn validate_matrix_access_contract(args: &FunctionArgs) -> MResult<()> {
         .ok_or_else(|| {
             function_shape_contract_violation(contract, "input 0 must be matrix-backed")
         })?;
-    if let Some(output) = args
-        .output_value()
-        .function_matrix_descriptor(FunctionArgumentRole::Output)?
-        && output.rows.saturating_mul(output.cols) > source.rows.saturating_mul(source.cols)
+    let output_value = args.output_value();
+    let output = output_value.function_matrix_descriptor(FunctionArgumentRole::Output)?;
+    let output_shape = output_value.shape();
+    let output_shape = output_shape.as_slice();
+    let (expected_rows, expected_cols) = match args.input_count() {
+        2 => {
+            let selector = args
+                .input_value(1)
+                .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?;
+            let upper = matrix_access_binary_upper_bound(source, selector, output)?;
+            let selection = matrix_access_selection(selector, upper, 1)?;
+            matrix_access_binary_output_shape(source, selection, output)?
+        }
+        3 => {
+            let rows = matrix_access_selection(
+                args.input_value(1).ok_or_else(|| {
+                    function_shape_contract_violation(contract, "missing input 1")
+                })?,
+                source.rows,
+                1,
+            )?
+            .count(source.rows);
+            let cols = matrix_access_selection(
+                args.input_value(2).ok_or_else(|| {
+                    function_shape_contract_violation(contract, "missing input 2")
+                })?,
+                source.cols,
+                2,
+            )?
+            .count(source.cols);
+            (rows, cols)
+        }
+        found => {
+            return Err(function_shape_contract_violation(
+                contract,
+                format!("expected 2 or 3 inputs including the source, found {found}"),
+            ));
+        }
+    };
+    if output_shape.len() != 2 {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("output has invalid shape {output_shape:?}"),
+        ));
+    }
+    if require_exact_output_shape
+        && (output_shape[0] != expected_rows || output_shape[1] != expected_cols)
     {
         return Err(function_shape_contract_violation(
             contract,
             format!(
-                "output {}x{} exceeds source {}x{}",
-                output.rows, output.cols, source.rows, source.cols,
+                "output is {}x{}, selected indices require {expected_rows}x{expected_cols}",
+                output_shape[0], output_shape[1],
             ),
         ));
     }
-    for index in 1..args.input_count() {
-        let Some(indices) = args.input_value(index).and_then(matrix_access_indices) else {
-            continue;
-        };
-        let upper = if args.input_count() >= 3 {
-            if index == 1 { source.rows } else { source.cols }
-        } else {
-            source.rows.saturating_mul(source.cols)
-        };
-        if let Some(found) = indices
-            .into_iter()
-            .find(|value| *value == 0 || *value > upper)
-        {
-            return Err(function_shape_contract_violation(
-                contract,
-                format!("input {index} index {found} is outside 1..={upper}"),
-            ));
-        }
+    Ok(())
+}
+
+fn validate_matrix_access_contract(args: &FunctionArgs) -> MResult<()> {
+    validate_matrix_access_contract_impl(args, true)
+}
+
+fn validate_matrix_access_all_range_contract(args: &FunctionArgs) -> MResult<()> {
+    let contract = "matrix_access_all_range";
+    if args.input_count() != 2 {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "expected 2 inputs including the source, found {}",
+                args.input_count(),
+            ),
+        ));
+    }
+    let source = args
+        .input_value(0)
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing matrix input"))?
+        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "input 0 must be matrix-backed")
+        })?;
+    let columns = matrix_access_selection(
+        args.input_value(1)
+            .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?,
+        source.cols,
+        1,
+    )?
+    .count(source.cols);
+    let output_shape = args.output_value().shape();
+    if output_shape.as_slice() != [source.rows, columns] {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "output is {}x{}, selected columns require {}x{}",
+                output_shape.first().copied().unwrap_or(0),
+                output_shape.get(1).copied().unwrap_or(0),
+                source.rows,
+                columns,
+            ),
+        ));
     }
     Ok(())
+}
+
+fn validate_matrix_access_runtime_contract(args: &FunctionArgs) -> MResult<()> {
+    // Logical-index kernels intentionally resize dynamic outputs as the number
+    // of selected entries changes. Numeric selectors cannot resize their fixed
+    // output representation and must continue matching exactly on every solve.
+    #[cfg(feature = "bool")]
+    let has_logical_selector = (1..args.input_count())
+        .any(|index| matches!(args.input_value(index), Some(Value::MatrixBool(_))));
+    #[cfg(not(feature = "bool"))]
+    let has_logical_selector = false;
+    validate_matrix_access_contract_impl(args, !has_logical_selector)
+}
+
+#[cfg(all(test, feature = "u8", feature = "matrixd", feature = "vectord"))]
+mod matrix_access_contract_tests {
+    use super::*;
+
+    fn matrix(rows: usize, cols: usize) -> Value {
+        Value::MatrixU8(Matrix::DMatrix(Ref::new(DMatrix::from_element(
+            rows, cols, 0,
+        ))))
+    }
+
+    fn indices(values: Vec<usize>) -> Value {
+        Value::MatrixIndex(Matrix::DVector(Ref::new(DVector::from_vec(values))))
+    }
+
+    fn vector(len: usize) -> Value {
+        Value::MatrixU8(Matrix::DVector(Ref::new(DVector::from_element(len, 0))))
+    }
+
+    #[test]
+    fn exact_contract_rejects_linear_output_with_wrong_selected_length() {
+        let result = validate_matrix_access_contract(&FunctionArgs::Binary(
+            vector(1),
+            matrix(2, 2),
+            indices(vec![1, 2, 3]),
+        ));
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn exact_contract_checks_scalar_column_against_column_count() {
+        let result = validate_matrix_access_contract(&FunctionArgs::Binary(
+            vector(2),
+            matrix(2, 2),
+            Value::Index(Ref::new(3)),
+        ));
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn exact_contract_rejects_two_dimensional_output_with_wrong_orientation() {
+        let result = validate_matrix_access_contract(&FunctionArgs::Ternary(
+            matrix(1, 6),
+            matrix(3, 3),
+            indices(vec![1, 2]),
+            indices(vec![1, 2, 3]),
+        ));
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn all_range_contract_rejects_selected_row_orientation() {
+        let result = validate_matrix_access_all_range_contract(&FunctionArgs::Binary(
+            matrix(2, 4),
+            matrix(3, 4),
+            indices(vec![1, 2]),
+        ));
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn reactive_numeric_selector_cannot_outgrow_fixed_output() {
+        let source = Ref::new(DMatrix::from_row_slice(2, 2, &[10, 20, 30, 40]));
+        let ixes = Ref::new(DVector::from_vec(vec![1, 2]));
+        let out = Ref::new(DVector::from_element(2, 0));
+        let function = Access1DVDMD::<u8> {
+            source,
+            ixes: ixes.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[10, 30]);
+
+        *ixes.borrow_mut() = DVector::from_vec(vec![1, 2, 3]);
+        assert!(function.solve_result().is_err());
+        assert_eq!(out.borrow().as_slice(), &[10, 30]);
+    }
+
+    #[cfg(feature = "bool")]
+    #[test]
+    fn exact_contract_rejects_logical_mask_with_wrong_axis_length() {
+        let mask = Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(vec![true]))));
+        let result = validate_matrix_access_contract(&FunctionArgs::Ternary(
+            matrix(1, 2),
+            matrix(2, 2),
+            mask,
+            Value::IndexAll,
+        ));
+
+        assert!(result.is_err());
+    }
 }
 
 // Access ---------------------------------------------------------------------
@@ -591,6 +899,8 @@ macro_rules! impl_access_fxn {
             T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
             #[cfg(feature = "compiler")]
             T: CompileConst,
+            Ref<$arg_type>: ToValue,
+            Ref<$ix_type>: ToValue,
             Ref<$out_type>: ToValue,
             $arg_type: FunctionRuntimeType,
             $ix_type: FunctionRuntimeType,
@@ -631,9 +941,16 @@ macro_rules! impl_access_fxn {
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            Ref<$arg_type>: ToValue,
+            Ref<$ix_type>: ToValue,
             Ref<$out_type>: ToValue,
         {
             fn solve_result(&self) -> MResult<()> {
+                validate_matrix_access_runtime_contract(&FunctionArgs::Binary(
+                    self.out.to_value(),
+                    self.source.to_value(),
+                    self.ixes.to_value(),
+                ))?;
                 let source_ptr = self.source.as_ptr();
                 let ixes_ptr = self.ixes.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
@@ -678,6 +995,9 @@ macro_rules! impl_access_fxn2 {
             T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
             #[cfg(feature = "compiler")]
             T: CompileConst,
+            Ref<$arg_type>: ToValue,
+            Ref<$ix1_type>: ToValue,
+            Ref<$ix2_type>: ToValue,
             Ref<$out_type>: ToValue,
             $arg_type: FunctionRuntimeType,
             $ix1_type: FunctionRuntimeType,
@@ -723,9 +1043,18 @@ macro_rules! impl_access_fxn2 {
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            Ref<$arg_type>: ToValue,
+            Ref<$ix1_type>: ToValue,
+            Ref<$ix2_type>: ToValue,
             Ref<$out_type>: ToValue,
         {
             fn solve_result(&self) -> MResult<()> {
+                validate_matrix_access_runtime_contract(&FunctionArgs::Ternary(
+                    self.out.to_value(),
+                    self.source.to_value(),
+                    self.ix1.to_value(),
+                    self.ix2.to_value(),
+                ))?;
                 let source_ptr = self.source.as_ptr();
                 let ix1_ptr = self.ix1.as_ptr();
                 let ix2_ptr = self.ix2.as_ptr();
@@ -2851,9 +3180,9 @@ macro_rules! declare_access_all_range_scalar {
                     $ix<$ix_scalar>,
                 >,
                 contract: RuntimeFunctionContract::custom(
-                    "matrix_access",
+                    "matrix_access_all_range",
                     RuntimeOutputAliasPolicy::DisallowInputAlias,
-                    validate_matrix_access_contract,
+                    validate_matrix_access_all_range_contract,
                 ),
                 package: "mech-engine",
                 crate_name: "mech_engine",

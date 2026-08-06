@@ -6,6 +6,66 @@ use num_traits::*;
 
 // Mod ------------------------------------------------------------------------
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MathRemainderInvalid {
+    pub operand_type: &'static str,
+}
+
+impl MechErrorKind for MathRemainderInvalid {
+    fn name(&self) -> &str {
+        "MathRemainderInvalid"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "remainder is undefined or overflows for operand type {}",
+            self.operand_type,
+        )
+    }
+}
+
+pub trait RuntimeCheckedRem: Copy {
+    fn runtime_checked_rem(self, rhs: Self) -> Option<Self>;
+}
+
+macro_rules! impl_checked_integer_rem {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl RuntimeCheckedRem for $type {
+                fn runtime_checked_rem(self, rhs: Self) -> Option<Self> {
+                    self.checked_rem(rhs)
+                }
+            }
+        )+
+    };
+}
+
+impl_checked_integer_rem!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+
+impl RuntimeCheckedRem for f32 {
+    fn runtime_checked_rem(self, rhs: Self) -> Option<Self> {
+        Some(self % rhs)
+    }
+}
+
+impl RuntimeCheckedRem for f64 {
+    fn runtime_checked_rem(self, rhs: Self) -> Option<Self> {
+        Some(self % rhs)
+    }
+}
+
+fn checked_runtime_rem<T: RuntimeCheckedRem>(lhs: T, rhs: T) -> MResult<T> {
+    lhs.runtime_checked_rem(rhs).ok_or_else(|| {
+        MechError::new(
+            MathRemainderInvalid {
+                operand_type: std::any::type_name::<T>(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })
+}
+
 #[macro_export]
 macro_rules! impl_binop2 {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
@@ -37,7 +97,8 @@ macro_rules! impl_binop2 {
                 + RemAssign
                 + Zero
                 + One
-                + AsValueKind,
+                + AsValueKind
+                + RuntimeCheckedRem,
             #[cfg(feature = "compiler")]
             T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
@@ -94,7 +155,8 @@ macro_rules! impl_binop2 {
                 + Rem<Output = T>
                 + RemAssign
                 + Zero
-                + One,
+                + One
+                + RuntimeCheckedRem,
             Ref<$out_type>: ToValue,
         {
             fn solve_result(&self) -> MResult<()> {
@@ -118,7 +180,7 @@ macro_rules! impl_binop2 {
         #[cfg(feature = "compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + AsValueKind,
+            T: CompileConst + ConstElem + AsValueKind + RuntimeCheckedRem,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
@@ -131,7 +193,8 @@ macro_rules! impl_binop2 {
 macro_rules! mod_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            *$out = *$lhs % *$rhs;
+            let next = checked_runtime_rem(*$lhs, *$rhs)?;
+            *$out = next;
         }
     };
 }
@@ -139,15 +202,16 @@ macro_rules! mod_op {
 macro_rules! mod_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (o, (l, r)) in out_deref
+            for (o, (l, r)) in next
                 .iter_mut()
                 .zip(lhs_deref.iter().zip(rhs_deref.iter()))
             {
-                *o = *l % *r;
+                *o = checked_runtime_rem(*l, *r)?;
             }
+            *$out = next;
         }
     };
 }
@@ -155,12 +219,13 @@ macro_rules! mod_vec_op {
 macro_rules! mod_scalar_lhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = (*$rhs);
-            for (o, l) in out_deref.iter_mut().zip(lhs_deref.iter()) {
-                *o = *l % rhs_deref;
+            for (o, l) in next.iter_mut().zip(lhs_deref.iter()) {
+                *o = checked_runtime_rem(*l, rhs_deref)?;
             }
+            *$out = next;
         }
     };
 }
@@ -168,12 +233,13 @@ macro_rules! mod_scalar_lhs_op {
 macro_rules! mod_scalar_rhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = (*$lhs);
             let rhs_deref = &(*$rhs);
-            for (o, r) in out_deref.iter_mut().zip(rhs_deref.iter()) {
-                *o = lhs_deref % *r;
+            for (o, r) in next.iter_mut().zip(rhs_deref.iter()) {
+                *o = checked_runtime_rem(lhs_deref, *r)?;
             }
+            *$out = next;
         }
     };
 }
@@ -181,14 +247,15 @@ macro_rules! mod_scalar_rhs_op {
 macro_rules! mod_mat_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut col, lhs_col) in out_deref.column_iter_mut().zip(lhs_deref.column_iter()) {
+            for (mut col, lhs_col) in next.column_iter_mut().zip(lhs_deref.column_iter()) {
                 for i in 0..col.len() {
-                    col[i] = lhs_col[i] % rhs_deref[i];
+                    col[i] = checked_runtime_rem(lhs_col[i], rhs_deref[i])?;
                 }
             }
+            *$out = next;
         }
     };
 }
@@ -196,14 +263,15 @@ macro_rules! mod_mat_vec_op {
 macro_rules! mod_vec_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut col, rhs_col) in out_deref.column_iter_mut().zip(rhs_deref.column_iter()) {
+            for (mut col, rhs_col) in next.column_iter_mut().zip(rhs_deref.column_iter()) {
                 for i in 0..col.len() {
-                    col[i] = lhs_deref[i] % rhs_col[i];
+                    col[i] = checked_runtime_rem(lhs_deref[i], rhs_col[i])?;
                 }
             }
+            *$out = next;
         }
     };
 }
@@ -211,14 +279,15 @@ macro_rules! mod_vec_mat_op {
 macro_rules! mod_mat_row_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut row, lhs_row) in out_deref.row_iter_mut().zip(lhs_deref.row_iter()) {
+            for (mut row, lhs_row) in next.row_iter_mut().zip(lhs_deref.row_iter()) {
                 for i in 0..row.len() {
-                    row[i] = lhs_row[i] % rhs_deref[i];
+                    row[i] = checked_runtime_rem(lhs_row[i], rhs_deref[i])?;
                 }
             }
+            *$out = next;
         }
     };
 }
@@ -226,14 +295,15 @@ macro_rules! mod_mat_row_op {
 macro_rules! mod_row_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut row, rhs_row) in out_deref.row_iter_mut().zip(rhs_deref.row_iter()) {
+            for (mut row, rhs_row) in next.row_iter_mut().zip(rhs_deref.row_iter()) {
                 for i in 0..row.len() {
-                    row[i] = lhs_deref[i] % rhs_row[i];
+                    row[i] = checked_runtime_rem(lhs_deref[i], rhs_row[i])?;
                 }
             }
+            *$out = next;
         }
     };
 }
@@ -245,6 +315,32 @@ macro_rules! impl_math_fxns2 {
 }
 
 impl_math_fxns2!(Mod);
+
+#[cfg(all(test, feature = "i32"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn integer_remainder_rejects_zero_and_signed_overflow_on_reactive_resolve() {
+        let lhs = Ref::new(i32::MIN);
+        let rhs = Ref::new(2_i32);
+        let out = Ref::new(17_i32);
+        let function = ModSS {
+            lhs,
+            rhs: rhs.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        let previous = *out.borrow();
+        for invalid in [-1, 0] {
+            *rhs.borrow_mut() = invalid;
+            let error = function.solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "MathRemainderInvalid");
+            assert_eq!(*out.borrow(), previous);
+        }
+    }
+}
 
 #[cfg(feature = "source")]
 fn impl_mod_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {

@@ -12,6 +12,137 @@ use paste::paste;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NChooseKResultUnrepresentable {
+    pub operand_type: &'static str,
+}
+
+impl MechErrorKind for NChooseKResultUnrepresentable {
+    fn name(&self) -> &str {
+        "NChooseKResultUnrepresentable"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "n-choose-k result is not representable by operand type {}",
+            self.operand_type,
+        )
+    }
+}
+
+fn greatest_common_divisor(mut lhs: u128, mut rhs: u128) -> u128 {
+    while rhs != 0 {
+        let remainder = lhs % rhs;
+        lhs = rhs;
+        rhs = remainder;
+    }
+    lhs
+}
+
+/// Computes an exact integer binomial coefficient without forming the
+/// potentially overflowing `result * numerator` intermediate used by the
+/// generic numeric kernel.
+fn checked_integer_n_choose_k(n: u128, k: u128) -> Option<u128> {
+    if k > n {
+        return Some(0);
+    }
+    let k = k.min(n - k);
+    let mut result = 1_u128;
+    for divisor in 1..=k {
+        let mut numerator = n - k + divisor;
+        let mut denominator = divisor;
+
+        let numerator_gcd = greatest_common_divisor(numerator, denominator);
+        numerator /= numerator_gcd;
+        denominator /= numerator_gcd;
+
+        let result_gcd = greatest_common_divisor(result, denominator);
+        result /= result_gcd;
+        denominator /= result_gcd;
+        debug_assert_eq!(denominator, 1);
+
+        result = result.checked_mul(numerator)?;
+    }
+    Some(result)
+}
+
+pub trait RuntimeNChooseK: Copy {
+    fn runtime_n_choose_k(self, k: Self) -> Option<Self>;
+}
+
+macro_rules! impl_runtime_integer_n_choose_k {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl RuntimeNChooseK for $type {
+                fn runtime_n_choose_k(self, k: Self) -> Option<Self> {
+                    let n = u128::try_from(self).ok()?;
+                    let k = u128::try_from(k).ok()?;
+                    <$type>::try_from(checked_integer_n_choose_k(n, k)?).ok()
+                }
+            }
+        )+
+    };
+}
+
+impl_runtime_integer_n_choose_k!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+
+impl RuntimeNChooseK for f32 {
+    fn runtime_n_choose_k(self, k: Self) -> Option<Self> {
+        Some(crate::kernels::n_choose_k::scalar(self, k))
+    }
+}
+
+impl RuntimeNChooseK for f64 {
+    fn runtime_n_choose_k(self, k: Self) -> Option<Self> {
+        Some(crate::kernels::n_choose_k::scalar(self, k))
+    }
+}
+
+#[cfg(feature = "rational")]
+impl RuntimeNChooseK for R64 {
+    fn runtime_n_choose_k(self, k: Self) -> Option<Self> {
+        let n = u128::try_from(*self.numer()).ok()?;
+        let k = u128::try_from(*k.numer()).ok()?;
+        let result = i64::try_from(checked_integer_n_choose_k(n, k)?).ok()?;
+        Some(R64::new(result, 1))
+    }
+}
+
+#[cfg(feature = "complex")]
+impl RuntimeNChooseK for C64 {
+    fn runtime_n_choose_k(self, k: Self) -> Option<Self> {
+        Some(crate::kernels::n_choose_k::scalar(self, k))
+    }
+}
+
+fn scalar_integer_result_max(value: &Value) -> Option<u128> {
+    match value {
+        #[cfg(feature = "u8")]
+        Value::U8(_) => Some(u8::MAX.into()),
+        #[cfg(feature = "u16")]
+        Value::U16(_) => Some(u16::MAX.into()),
+        #[cfg(feature = "u32")]
+        Value::U32(_) => Some(u32::MAX.into()),
+        #[cfg(feature = "u64")]
+        Value::U64(_) => Some(u64::MAX.into()),
+        #[cfg(feature = "u128")]
+        Value::U128(_) => Some(u128::MAX),
+        #[cfg(feature = "i8")]
+        Value::I8(_) => Some(i8::MAX as u128),
+        #[cfg(feature = "i16")]
+        Value::I16(_) => Some(i16::MAX as u128),
+        #[cfg(feature = "i32")]
+        Value::I32(_) => Some(i32::MAX as u128),
+        #[cfg(feature = "i64")]
+        Value::I64(_) => Some(i64::MAX as u128),
+        #[cfg(feature = "i128")]
+        Value::I128(_) => Some(i128::MAX as u128),
+        #[cfg(feature = "rational")]
+        Value::R64(_) => Some(i64::MAX as u128),
+        _ => None,
+    }
+}
+
 fn scalar_selection_count(value: &Value) -> Option<u128> {
     match value {
         #[cfg(feature = "u8")]
@@ -74,6 +205,7 @@ fn scalar_selection_count(value: &Value) -> Option<u128> {
 
 fn validate_n_choose_k_scalar_values(n: &Value, k: &Value) -> MResult<()> {
     let contract = "n_choose_k_scalar";
+    let result_maximum = scalar_integer_result_max(n);
     let n = scalar_selection_count(n).ok_or_else(|| {
         function_shape_contract_violation(
             contract,
@@ -94,6 +226,14 @@ fn validate_n_choose_k_scalar_values(n: &Value, k: &Value) -> MResult<()> {
                 "selection requires {steps} kernel steps, exceeding the bytecode v1 limit of {}",
                 crate::kernels::n_choose_k::MAX_SCALAR_STEPS,
             ),
+        ));
+    }
+    if let Some(maximum) = result_maximum
+        && checked_integer_n_choose_k(n, k).is_none_or(|result| result > maximum)
+    {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("selection result exceeds the operand representation maximum {maximum}"),
         ));
     }
     Ok(())
@@ -300,6 +440,7 @@ where
         + Zero
         + One
         + AsValueKind
+        + RuntimeNChooseK
         + PartialEq
         + PartialOrd,
     #[cfg(feature = "compiler")]
@@ -344,6 +485,7 @@ where
         + Mul<Output = T>
         + Zero
         + One
+        + RuntimeNChooseK
         + PartialEq
         + PartialOrd,
     Ref<T>: ToValue,
@@ -352,14 +494,18 @@ where
         // Validate every reactive solve, not only bytecode installation: host
         // or live-resource producers may replace a previously safe operand.
         validate_n_choose_k_scalar_values(&self.n.to_value(), &self.k.to_value())?;
-        let n_ptr = self.n.as_ptr();
-        let k_ptr = self.k.as_ptr();
-        let out_ptr = self.out.as_mut_ptr();
-        unsafe {
-            let n = *n_ptr;
-            let k = *k_ptr;
-            *out_ptr = crate::kernels::n_choose_k::scalar(n, k);
-        };
+        let next = (*self.n.borrow())
+            .runtime_n_choose_k(*self.k.borrow())
+            .ok_or_else(|| {
+                MechError::new(
+                    NChooseKResultUnrepresentable {
+                        operand_type: std::any::type_name::<T>(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        *self.out.borrow_mut() = next;
         Ok(())
     }
     fn out(&self) -> Value {
@@ -417,10 +563,36 @@ mod scalar_contract_tests {
         assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
     }
 }
+
+#[cfg(all(test, feature = "u8"))]
+mod integer_scalar_tests {
+    use super::*;
+
+    #[test]
+    fn integer_n_choose_k_avoids_intermediate_overflow_and_retains_output_on_error() {
+        let n = Ref::new(20_u8);
+        let k = Ref::new(2_u8);
+        let out = Ref::new(17_u8);
+        let function = NChooseK {
+            n: n.clone(),
+            k,
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), 190);
+
+        *n.borrow_mut() = 30;
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        assert_eq!(*out.borrow(), 190);
+    }
+}
+
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for NChooseK<T>
 where
-    T: ConstElem + CompileConst + AsValueKind,
+    T: ConstElem + CompileConst + AsValueKind + RuntimeNChooseK,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NChooseK<{}>", T::as_value_kind());

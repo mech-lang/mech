@@ -347,19 +347,19 @@ fn validate_range_contract(args: &FunctionArgs, inclusive: bool, incremented: bo
     Ok(())
 }
 
-fn validate_range_exclusive(args: &FunctionArgs) -> MResult<()> {
+pub(crate) fn validate_range_exclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, false, false)
 }
 
-fn validate_range_inclusive(args: &FunctionArgs) -> MResult<()> {
+pub(crate) fn validate_range_inclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, true, false)
 }
 
-fn validate_range_increment_exclusive(args: &FunctionArgs) -> MResult<()> {
+pub(crate) fn validate_range_increment_exclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, false, true)
 }
 
-fn validate_range_increment_inclusive(args: &FunctionArgs) -> MResult<()> {
+pub(crate) fn validate_range_increment_inclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, true, true)
 }
 
