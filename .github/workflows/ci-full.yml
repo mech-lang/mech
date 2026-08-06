@@ -1262,6 +1262,7 @@ jobs:
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_RELEASE_DEBUG: "0"
+      CARGO_TARGET_DIR: ${{ runner.temp }}/mech-release-target
     steps:
       - uses: actions/checkout@v7.0.1
       - name: Install Rust nightly-2026-03-03
@@ -1278,6 +1279,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: distribution-${{ matrix.distribution }}-${{ runner.os }}
-          path: ${{ steps.package.outputs.archive }}
+          path: |
+            ${{ steps.package.outputs.archive }}
+            ${{ steps.package.outputs.report }}
           if-no-files-found: error
           retention-days: 14

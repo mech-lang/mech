@@ -45,7 +45,13 @@ def host_target() -> str:
     raise RuntimeError("rustc did not report its host target")
 
 
-def build(distribution: str) -> tuple[Path, float]:
+def run_build(command: list[str]) -> float:
+    started = time.monotonic()
+    subprocess.run(command, cwd=ROOT, check=True)
+    return time.monotonic() - started
+
+
+def build(distribution: str) -> tuple[Path, float, float]:
     command = [
         "cargo",
         f"+{TOOLCHAIN}",
@@ -57,16 +63,15 @@ def build(distribution: str) -> tuple[Path, float]:
     ]
     if distribution == "full":
         command.extend(["--no-default-features", "--features", "distribution-full"])
-    started = time.monotonic()
-    subprocess.run(command, cwd=ROOT, check=True)
-    elapsed = time.monotonic() - started
+    clean_elapsed = run_build(command)
+    incremental_elapsed = run_build(command)
     target_dir = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target"))
     if not target_dir.is_absolute():
         target_dir = ROOT / target_dir
     executable = target_dir / "release" / ("mech.exe" if os.name == "nt" else "mech")
     if not executable.is_file():
         raise RuntimeError(f"release executable was not produced: {executable}")
-    return executable, elapsed
+    return executable, clean_elapsed, incremental_elapsed
 
 
 def package(args: argparse.Namespace, executable: Path, target: str) -> Path:
@@ -117,27 +122,55 @@ def package(args: argparse.Namespace, executable: Path, target: str) -> Path:
 def main() -> int:
     args = parse_args()
     try:
-        executable, elapsed = build(args.distribution)
+        executable, clean_elapsed, incremental_elapsed = build(args.distribution)
         target = host_target()
         archive = package(args, executable, target)
+        contract = json.loads(
+            (
+                ROOT
+                / "tests"
+                / "architecture"
+                / "distributions"
+                / f"{args.distribution}.json"
+            ).read_text(encoding="utf-8")
+        )
     except (OSError, RuntimeError, subprocess.CalledProcessError, KeyError) as error:
         print(f"distribution artifact build failed: {error}", file=sys.stderr)
         return 1
-    print(
-        json.dumps(
-            {
-                "archive": str(archive),
-                "build_seconds": round(elapsed, 3),
-                "distribution": args.distribution,
-                "executable_bytes": executable.stat().st_size,
-                "target": target,
-            },
-            sort_keys=True,
-        )
-    )
+    report = {
+        "archive": str(archive),
+        "archive_bytes": archive.stat().st_size,
+        "clean_build_seconds": round(clean_elapsed, 3),
+        "distribution": args.distribution,
+        "executable_bytes": executable.stat().st_size,
+        "incremental_build_seconds": round(incremental_elapsed, 3),
+        "resolved_package_count": contract["dependency_count"],
+        "runtime_factory_count": contract["runtime_factory_count"],
+        "source_specializer_count": contract["source_specializer_count"],
+        "target": target,
+    }
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    report_path = args.output_dir / f"distribution-build-report-{args.distribution}-{target}.json"
+    report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(json.dumps(report, sort_keys=True))
     if output_path := os.environ.get("GITHUB_OUTPUT"):
         with Path(output_path).open("a", encoding="utf-8") as output:
             output.write(f"archive={archive}\n")
+            output.write(f"report={report_path}\n")
+    if summary_path := os.environ.get("GITHUB_STEP_SUMMARY"):
+        with Path(summary_path).open("a", encoding="utf-8") as summary:
+            summary.write(
+                "| Distribution | Target | Clean build | Incremental build | "
+                "Executable | Archive | Packages | Factories | Specializers |\n"
+            )
+            summary.write("|---|---|---:|---:|---:|---:|---:|---:|---:|\n")
+            summary.write(
+                f"| {args.distribution} | {target} | {clean_elapsed:.3f}s | "
+                f"{incremental_elapsed:.3f}s | {report['executable_bytes']} B | "
+                f"{report['archive_bytes']} B | {report['resolved_package_count']} | "
+                f"{report['runtime_factory_count']} | "
+                f"{report['source_specializer_count']} |\n"
+            )
     return 0
 
 
