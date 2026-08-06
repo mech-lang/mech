@@ -803,11 +803,21 @@ mod tests {
 
     #[cfg(all(feature = "matrix2", feature = "matrixd"))]
     fn f64_matrix_constant(storage: crate::MatrixStorage, rows: u32, cols: u32) -> EncodedConstant {
+        f64_matrix_constant_with_offset(storage, rows, cols, 0)
+    }
+
+    #[cfg(all(feature = "matrix2", feature = "matrixd"))]
+    fn f64_matrix_constant_with_offset(
+        storage: crate::MatrixStorage,
+        rows: u32,
+        cols: u32,
+        offset: u32,
+    ) -> EncodedConstant {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&rows.to_le_bytes());
         bytes.extend_from_slice(&cols.to_le_bytes());
         for index in 0..rows.saturating_mul(cols) {
-            let value = f64::from(index + 1);
+            let value = f64::from(index + 1 + offset);
             bytes.extend_from_slice(&value.to_bits().to_le_bytes());
         }
         EncodedConstant {
@@ -876,48 +886,50 @@ mod tests {
         }
         let catalog = catalog.build().unwrap();
 
-        let dynamic = |rows, cols| f64_matrix_constant(MatrixStorage::MatrixD, rows, cols);
-        let fixed2 = || f64_matrix_constant(MatrixStorage::Matrix2, 2, 2);
+        let dynamic = |rows, cols, offset| {
+            f64_matrix_constant_with_offset(MatrixStorage::MatrixD, rows, cols, offset)
+        };
+        let fixed2 = |offset| f64_matrix_constant_with_offset(MatrixStorage::Matrix2, 2, 2, offset);
         let cases = [
             (
                 "AddMDMD<f64>",
-                vec![dynamic(2, 2), dynamic(2, 2), dynamic(3, 3)],
+                vec![dynamic(2, 2, 0), dynamic(2, 2, 10), dynamic(3, 3, 0)],
                 (0, 1, 2),
             ),
             (
                 "AddMDMD<f64>",
-                vec![dynamic(3, 3), dynamic(2, 2), dynamic(2, 2)],
+                vec![dynamic(3, 3, 0), dynamic(2, 2, 0), dynamic(2, 2, 10)],
                 (0, 1, 2),
             ),
             (
                 "AddMDMD<f64>",
-                vec![dynamic(2, 2), dynamic(2, 2)],
+                vec![dynamic(2, 2, 0), dynamic(2, 2, 10)],
                 (0, 0, 1),
             ),
             (
                 "AddMDMD<f64>",
-                vec![dynamic(2, 2), dynamic(2, 2)],
+                vec![dynamic(2, 2, 0), dynamic(2, 2, 10)],
                 (1, 0, 1),
             ),
-            ("AddM2M2<f64>", vec![fixed2(), fixed2()], (0, 0, 1)),
+            ("AddM2M2<f64>", vec![fixed2(0), fixed2(10)], (0, 0, 1)),
             (
                 "MatMulMDMD<f64>",
-                vec![dynamic(2, 4), dynamic(2, 3), dynamic(2, 4)],
+                vec![dynamic(2, 4, 0), dynamic(2, 3, 0), dynamic(2, 4, 10)],
                 (0, 1, 2),
             ),
             (
                 "MatMulMDMD<f64>",
-                vec![dynamic(3, 4), dynamic(2, 3), dynamic(3, 4)],
+                vec![dynamic(3, 4, 0), dynamic(2, 3, 0), dynamic(3, 4, 10)],
                 (0, 1, 2),
             ),
             (
                 "MatrixSolveMDVD<f64>",
-                vec![dynamic(3, 1), dynamic(2, 3), dynamic(3, 1)],
+                vec![dynamic(3, 1, 0), dynamic(2, 3, 0), dynamic(3, 1, 10)],
                 (0, 1, 2),
             ),
             (
                 "MatrixSolveMDVD<f64>",
-                vec![dynamic(2, 1), dynamic(2, 2), dynamic(3, 1)],
+                vec![dynamic(2, 1, 0), dynamic(2, 2, 0), dynamic(3, 1, 0)],
                 (0, 1, 2),
             ),
         ];
@@ -1343,9 +1355,9 @@ mod tests {
         let function = RuntimeFunctionId::from_name(NAME).raw();
         let program = parsed_runtime_program(
             vec![
-                f64_matrix_constant(crate::MatrixStorage::Matrix2, 2, 2),
+                f64_matrix_constant_with_offset(crate::MatrixStorage::Matrix2, 2, 2, 0),
                 f64_matrix_constant(crate::MatrixStorage::MatrixD, 2, 2),
-                f64_matrix_constant(crate::MatrixStorage::Matrix2, 2, 2),
+                f64_matrix_constant_with_offset(crate::MatrixStorage::Matrix2, 2, 2, 10),
             ],
             BytecodeInstruction::RuntimeBinary {
                 function,
