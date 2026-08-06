@@ -21,6 +21,7 @@ where
         + Send
         + Neg<Output = O>
         + ClosedNeg
+        + RuntimeCheckedNeg
         + PartialEq
         + 'static
         + AsValueKind,
@@ -56,14 +57,25 @@ where
 }
 impl<O> MechFunctionImpl for NegateV<O>
 where
-    O: Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static,
+    O: Debug
+        + Clone
+        + Sync
+        + Send
+        + Neg<Output = O>
+        + ClosedNeg
+        + RuntimeCheckedNeg
+        + PartialEq
+        + 'static,
     Ref<O>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
-            *out_ptr = (*arg_ptr).clone().neg();
+            let next = (*arg_ptr)
+                .runtime_checked_neg()
+                .ok_or_else(|| arithmetic_overflow::<O>("negation"))?;
+            *out_ptr = next;
         };
         Ok(())
     }
@@ -81,7 +93,7 @@ where
 #[cfg(feature = "compiler")]
 impl<O> MechFunctionCompiler for NegateV<O>
 where
-    O: CompileConst + ConstElem + AsValueKind,
+    O: CompileConst + ConstElem + AsValueKind + RuntimeCheckedNeg,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NegateV<{}>", O::as_value_kind());
@@ -104,6 +116,7 @@ where
         + Send
         + Neg<Output = O>
         + ClosedNeg
+        + RuntimeCheckedNeg
         + PartialEq
         + 'static
         + AsValueKind,
@@ -139,14 +152,26 @@ where
 }
 impl<O> MechFunctionImpl for NegateS<O>
 where
-    O: Copy + Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static,
+    O: Copy
+        + Debug
+        + Clone
+        + Sync
+        + Send
+        + Neg<Output = O>
+        + ClosedNeg
+        + RuntimeCheckedNeg
+        + PartialEq
+        + 'static,
     Ref<O>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
-            *out_ptr = -*arg_ptr;
+            let next = (*arg_ptr)
+                .runtime_checked_neg()
+                .ok_or_else(|| arithmetic_overflow::<O>("negation"))?;
+            *out_ptr = next;
         };
         Ok(())
     }
@@ -164,11 +189,34 @@ where
 #[cfg(feature = "compiler")]
 impl<O> MechFunctionCompiler for NegateS<O>
 where
-    O: CompileConst + ConstElem + AsValueKind,
+    O: CompileConst + ConstElem + AsValueKind + RuntimeCheckedNeg,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NegateS<{}>", O::as_value_kind());
         compile_unop!(name, self.out, self.arg, ctx);
+    }
+}
+
+#[cfg(all(test, feature = "i8"))]
+mod checked_arithmetic_tests {
+    use super::*;
+
+    #[test]
+    fn integer_negation_rejects_reactive_overflow_and_retains_output() {
+        let arg = Ref::new(7_i8);
+        let out = Ref::new(17_i8);
+        let function = NegateS {
+            arg: arg.clone(),
+            out: out.clone(),
+            _marker: PhantomData,
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), -7);
+        *arg.borrow_mut() = i8::MIN;
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+        assert_eq!(*out.borrow(), -7);
     }
 }
 

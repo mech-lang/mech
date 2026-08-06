@@ -8,6 +8,7 @@ const HEADER_INSTRUCTION_COUNT: usize = 20;
 const HEADER_SECTION_COUNT: usize = 24;
 const HEADER_FILE_LEN: usize = 36;
 const HEADER_CHECKSUM_OFFSET: usize = 44;
+const HEADER_REGISTER_COUNT: usize = 16;
 
 fn empty_constant() -> EncodedConstant {
     EncodedConstant {
@@ -353,6 +354,18 @@ fn structural_program(
         dictionary: BTreeMap::new(),
         requirements: Vec::new(),
     }
+}
+
+#[test]
+fn rejects_crc_valid_trailing_unused_registers() {
+    let mut bytes = write_bytecode(&program(vec![empty_constant()])).unwrap();
+    write_u32(&mut bytes, HEADER_REGISTER_COUNT, 2);
+    refresh_crc(&mut bytes);
+
+    assert_validation_reason(
+        &bytes,
+        "register count 2 does not match highest referenced register count 1",
+    );
 }
 
 #[test]
