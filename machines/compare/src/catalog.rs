@@ -164,6 +164,44 @@ declare_compare_binop_native_factories!(Max, "max");
 declare_compare_binop_native_factories!(Min, "min");
 declare_compare_binop_native_factories!(NEQ, "neq");
 
+fn validate_strict_comparison(_args: &mech_core::FunctionArgs) -> MResult<()> {
+    Ok(())
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "seq",
+    registration: register_strict_eq,
+    installer: install_strict_eq,
+    name: "compare/seq",
+    factory_type: crate::StrictEqValue,
+    contract: RuntimeFunctionContract::custom(
+        "strict_comparison",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_strict_comparison,
+    ),
+    package: "mech-compare",
+    crate_name: "mech_compare",
+    installer_path: "mech_compare::__mech_native::install_strict_eq",
+    extra_cargo_features: ["seq"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "sneq",
+    registration: register_strict_not_eq,
+    installer: install_strict_not_eq,
+    name: "compare/sneq",
+    factory_type: crate::StrictNotEqValue,
+    contract: RuntimeFunctionContract::custom(
+        "strict_comparison",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_strict_comparison,
+    ),
+    package: "mech-compare",
+    crate_name: "mech_compare",
+    installer_path: "mech_compare::__mech_native::install_strict_not_eq",
+    extra_cargo_features: ["sneq"],
+}
+
 mech_core::declare_native_runtime_factory! {
     cfg: all(feature = "eq", feature = "atom"),
     registration: register_atom_eq,
@@ -244,6 +282,10 @@ pub mod __mech_native {
     export_compare_binop_native_factories!(Max, "max");
     export_compare_binop_native_factories!(Min, "min");
     export_compare_binop_native_factories!(NEQ, "neq");
+    #[cfg(feature = "seq")]
+    pub use super::install_strict_eq;
+    #[cfg(feature = "sneq")]
+    pub use super::install_strict_not_eq;
     #[cfg(all(feature = "eq", feature = "atom"))]
     pub use super::install_atom_eq;
     #[cfg(all(feature = "neq", feature = "atom"))]
@@ -320,6 +362,10 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_min_runtime(builder)?;
     #[cfg(feature = "neq")]
     install_neq_runtime(builder)?;
+    #[cfg(feature = "seq")]
+    register_strict_eq(builder)?;
+    #[cfg(feature = "sneq")]
+    register_strict_not_eq(builder)?;
 
     #[cfg(all(feature = "eq", feature = "atom"))]
     register_atom_eq(builder)?;

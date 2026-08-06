@@ -1,9 +1,10 @@
 use mech_core::{
-    FunctionCatalogBuilder, MResult, ParsedProgram, Plan, ReactiveCellId, ReactiveDependencyKind,
-    ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState, RuntimeType, Value, hash_str,
+    BytecodeInstruction, FunctionCatalogBuilder, MResult, ParsedProgram, Plan, ReactiveCellId,
+    ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState, RuntimeType,
+    Value, hash_str,
 };
 use mech_engine::Interpreter;
-use mech_engine::{MechProgram, MechProgramConfig};
+use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
 use std::sync::Arc;
 
 fn source_program() -> MechProgram {
@@ -459,6 +460,20 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
     let mut source = source_program();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    let matrix_comprehensions = parsed
+        .instructions
+        .iter()
+        .filter_map(|instruction| match instruction {
+            BytecodeInstruction::RuntimeVariadic { arguments, .. } => Some(arguments.len()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        matrix_comprehensions,
+        vec![2, 2],
+        "each row comprehension must encode both child registers",
+    );
     let mut decoded = runtime_program();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
@@ -473,6 +488,29 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
     }
     assert_matrix_literal_chain(&source.interpreter().plan());
     assert_matrix_literal_chain(&decoded.interpreter().plan());
+    Ok(())
+}
+
+#[test]
+fn decoded_matrix_comprehension_publishes_reactive_results() -> MResult<()> {
+    let mut source = source_program();
+    source.run_string("x := 1.0\npayload := [x 2.0]\npayload")?;
+    let bytecode = source.compile_bytecode()?;
+    let mut decoded = runtime_program();
+    decoded.run_bytecode(&bytecode)?;
+
+    decoded.update_inputs_and_advance_turn(&[ProgramInputUpdate {
+        input: ProgramInputId {
+            interpreter_id: decoded.interpreter().id,
+            symbol_id: hash_str("x"),
+        },
+        value: Value::from(3.0f64),
+    }])?;
+
+    let Value::MatrixF64(payload) = decoded.root_symbol_value("payload")? else {
+        panic!("expected decoded matrix payload")
+    };
+    assert_eq!(payload.as_vec(), vec![3.0, 2.0]);
     Ok(())
 }
 

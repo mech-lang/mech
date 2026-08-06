@@ -1,6 +1,85 @@
 #[macro_use]
 use crate::intrinsics::*;
 
+/// Bytecode-visible marker that keeps integrity-constraint support in the
+/// exact native dependency closure. Constraint identity and its live result
+/// cell remain encoded by the immutable `!` symbol bound to the input
+/// register; this no-op factory gives contract analysis an explicit linkage
+/// requirement without adding a bytecode-v1 opcode or section.
+#[cfg(feature = "invariant_define")]
+#[derive(Debug)]
+pub struct BytecodeIntegrityConstraintMarker {
+    out: Value,
+    arguments: Vec<Value>,
+}
+
+#[cfg(feature = "invariant_define")]
+impl MechFunctionFactory for BytecodeIntegrityConstraintMarker {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        FunctionValueRepresentation::Bool,
+        FunctionValueRepresentation::AnyValue,
+    );
+
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Variadic(out, arguments) if arguments.len() == 6 => {
+                Ok(Box::new(Self { out, arguments }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 6,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+
+#[cfg(feature = "invariant_define")]
+impl MechFunctionImpl for BytecodeIntegrityConstraintMarker {
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
+
+    fn out(&self) -> Value {
+        self.out.clone()
+    }
+
+    fn reactive_dependency_scopes(
+        &self,
+        argument_count: usize,
+    ) -> Option<Vec<ReactiveDependencyScope>> {
+        Some(vec![ReactiveDependencyScope::None; argument_count])
+    }
+
+    fn to_string(&self) -> String {
+        "integrity/constraint".to_string()
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(Vec::new())
+    }
+}
+
+#[cfg(all(feature = "invariant_define", feature = "compiler"))]
+impl MechFunctionCompiler for BytecodeIntegrityConstraintMarker {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let destination =
+            compile_value_register(&self.out, core::ptr::from_ref(&self.out).addr(), ctx)?;
+        let arguments = self
+            .arguments
+            .iter()
+            .map(|argument| {
+                compile_value_register(argument, core::ptr::from_ref(argument).addr(), ctx)
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        ctx.emit_varop(hash_str("integrity/constraint"), destination, arguments);
+        Ok(destination)
+    }
+}
+
 #[derive(Debug)]
 pub struct VariableDefineMatrix<T, MatA> {
     pub id: u64,

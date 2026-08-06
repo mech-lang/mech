@@ -35,11 +35,7 @@ machines/math/src/logarithm/log.rs|typed-machine-kernel|mech-math|macro-selected
 machines/math/src/logarithm/log10.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/logarithm/log1p.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/logarithm/log2.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/op_assign/add_assign.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/op_assign/div_assign.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/op_assign/mod.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/op_assign/mul_assign.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/op_assign/sub_assign.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/ops/add.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/ops/div.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/ops/modulus.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
@@ -104,8 +100,6 @@ machines/set/src/relations/proper_superset.rs|typed-machine-kernel|mech-set|macr
 machines/set/src/relations/subset.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/set/src/relations/superset.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/set/src/setdata/size.rs|typed-machine-kernel|mech-set|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/stats/src/sum_column.rs|typed-machine-kernel|mech-stats|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/stats/src/sum_row.rs|typed-machine-kernel|mech-stats|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/string/src/concat.rs|typed-machine-kernel|mech-string|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 src/abi/src/lib.rs|ffi|mech-abi|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 src/core/src/structures/matrix.rs|value-representation|mech-core|Value variants and matrix element types match every erased reference operation|existing zero-copy value representation

@@ -50,9 +50,9 @@ macro_rules! impl_mul_assign_range_fxn_v {
 
 // x = 1 ----------------------------------------------------------------------
 
-impl_assign_scalar_scalar!(Mul, *=);
-impl_assign_vector_vector!(Mul, *=);
-impl_assign_vector_scalar!(Mul, *=);
+impl_assign_scalar_scalar!(Mul, checked_mul_assign);
+impl_assign_vector_vector!(Mul, checked_mul_assign);
+impl_assign_vector_scalar!(Mul, checked_mul_assign);
 
 #[cfg(feature = "source")]
 fn mul_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
@@ -122,44 +122,54 @@ impl FunctionSpecializer for MulAssignValue {
 
 macro_rules! mul_assign_1d_range {
     ($source:expr, $ix:expr, $sink:expr) => {
-        unsafe {
-            for i in 0..($ix).len() {
-                ($sink)[($ix)[i] - 1] *= ($source).clone();
+        {
+            for &index in ($ix).iter() {
+                let offset = checked_one_based_index(index, ($sink).len())?;
+                ($sink)[offset] = checked_mul_assign(($sink)[offset], *($source))?;
             }
+            Ok::<(), MechError>(())
         }
     };
 }
 
 macro_rules! mul_assign_1d_range_b {
     ($source:expr, $ix:expr, $sink:expr) => {
-        unsafe {
-            for i in 0..($ix).len() {
-                if $ix[i] == true {
-                    ($sink)[i] *= ($source).clone();
+        {
+            validate_mask_len(($ix).len(), ($sink).len())?;
+            for (i, selected) in ($ix).iter().copied().enumerate() {
+                if selected {
+                    ($sink)[i] = checked_mul_assign(($sink)[i], *($source))?;
                 }
             }
+            Ok::<(), MechError>(())
         }
     };
 }
 
 macro_rules! mul_assign_1d_range_vec {
     ($source:expr, $ix:expr, $sink:expr) => {
-        unsafe {
-            for i in 0..($ix).len() {
-                ($sink)[($ix)[i] - 1] *= ($source)[i].clone();
+        {
+            validate_source_len(($source).len(), ($ix).len())?;
+            for (i, &index) in ($ix).iter().enumerate() {
+                let offset = checked_one_based_index(index, ($sink).len())?;
+                ($sink)[offset] = checked_mul_assign(($sink)[offset], ($source)[i])?;
             }
+            Ok::<(), MechError>(())
         }
     };
 }
 
 macro_rules! mul_assign_1d_range_vec_b {
     ($source:expr, $ix:expr, $sink:expr) => {
-        unsafe {
-            for i in 0..($ix).len() {
-                if $ix[i] == true {
-                    ($sink)[i] *= ($source)[i].clone();
+        {
+            validate_mask_len(($ix).len(), ($sink).len())?;
+            validate_source_len(($source).len(), ($ix).len())?;
+            for (i, selected) in ($ix).iter().copied().enumerate() {
+                if selected {
+                    ($sink)[i] = checked_mul_assign(($sink)[i], ($source)[i])?;
                 }
             }
+            Ok::<(), MechError>(())
         }
     };
 }
@@ -231,22 +241,35 @@ impl FunctionSpecializer for MulAssignRange {
 
 macro_rules! mul_assign_2d_vector_all {
     ($source:expr, $ix:expr, $sink:expr) => {
-        for cix in 0..($sink).ncols() {
-            for rix in $ix.iter() {
-                ($sink).column_mut(cix)[rix - 1] *= ($source).clone();
+        {
+            for &index in ($ix).iter() {
+                checked_one_based_index(index, ($sink).nrows())?;
             }
+            for cix in 0..($sink).ncols() {
+                for &index in ($ix).iter() {
+                    let row = index - 1;
+                    let value = ($sink).column(cix)[row];
+                    ($sink).column_mut(cix)[row] = checked_mul_assign(value, *($source))?;
+                }
+            }
+            Ok::<(), MechError>(())
         }
     };
 }
 
 macro_rules! mul_assign_2d_vector_all_b {
     ($source:expr, $ix:expr, $sink:expr) => {
-        for cix in 0..($sink).ncols() {
-            for rix in 0..$ix.len() {
-                if $ix[rix] == true {
-                    ($sink).column_mut(cix)[rix] *= ($source).clone();
+        {
+            validate_mask_len(($ix).len(), ($sink).nrows())?;
+            for cix in 0..($sink).ncols() {
+                for (row, selected) in ($ix).iter().copied().enumerate() {
+                    if selected {
+                        let value = ($sink).column(cix)[row];
+                        ($sink).column_mut(cix)[row] = checked_mul_assign(value, *($source))?;
+                    }
                 }
             }
+            Ok::<(), MechError>(())
         }
     };
 }
@@ -254,30 +277,35 @@ macro_rules! mul_assign_2d_vector_all_b {
 macro_rules! mul_assign_2d_vector_all_mat {
     ($source:expr, $ix:expr, $sink:expr) => {{
         let nsrc = $source.nrows();
+        validate_source_len(nsrc, if ($ix).is_empty() { 0 } else { 1 })?;
         for (i, &rix) in $ix.iter().enumerate() {
-            let row_index = rix - 1;
+            let row_index = checked_one_based_index(rix, ($sink).nrows())?;
             let mut sink_row = $sink.row_mut(row_index);
             let src_row = $source.row(i % nsrc); // wrap around!
             for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
-                *dst *= *src;
+                *dst = checked_mul_assign(*dst, *src)?;
             }
         }
+        Ok::<(), MechError>(())
     }};
 }
 
 macro_rules! mul_assign_2d_vector_all_mat_b {
     ($source:expr, $ix:expr, $sink:expr) => {{
+        validate_mask_len(($ix).len(), ($sink).nrows())?;
+        validate_source_len(($source).nrows(), ($ix).iter().filter(|selected| **selected).count())?;
         let mut src_i = 0;
         for (i, rix) in (&$ix).iter().enumerate() {
             if *rix == true {
                 let mut sink_row = ($sink).row_mut(i);
                 let src_row = ($source).row(src_i);
                 for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
-                    *dst *= *src;
+                    *dst = checked_mul_assign(*dst, *src)?;
                 }
                 src_i += 1;
             }
         }
+        Ok::<(), MechError>(())
     }};
 }
 

@@ -1275,6 +1275,58 @@ impl MechProgram {
             step.compile(&mut context)?;
         }
 
+        #[cfg(feature = "invariant_define")]
+        if !state.integrity_constraints.is_empty() {
+            let marker_output = Value::Bool(Ref::new(false));
+            let marker_register = context.resolve_value_register(&marker_output)?;
+            for constraint in state.integrity_constraints.values() {
+                let result = Value::MutableReference(constraint.result.clone());
+                let name = Value::String(Ref::new(constraint.name.clone()));
+                let expression = Value::String(Ref::new(constraint.expression.clone()));
+                let operator = match &constraint.operator {
+                    Some(FormulaOperator::Comparison(ComparisonOp::Equal)) => "eq",
+                    Some(FormulaOperator::Comparison(ComparisonOp::NotEqual)) => "neq",
+                    Some(FormulaOperator::Comparison(ComparisonOp::LessThan)) => "lt",
+                    Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual)) => "lte",
+                    Some(FormulaOperator::Comparison(ComparisonOp::GreaterThan)) => "gt",
+                    Some(FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual)) => "gte",
+                    Some(other) => {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint {:?} has unsupported operator {other:?}",
+                                    constraint.name
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                    None => "",
+                };
+                let operator = if operator.is_empty() {
+                    Value::Empty
+                } else {
+                    Value::String(Ref::new(operator.to_owned()))
+                };
+                let lhs = constraint
+                    .lhs
+                    .as_ref()
+                    .map(|value| Value::MutableReference(value.clone()))
+                    .unwrap_or(Value::Empty);
+                let rhs = constraint
+                    .rhs
+                    .as_ref()
+                    .map(|value| Value::MutableReference(value.clone()))
+                    .unwrap_or(Value::Empty);
+                let metadata = [result, name, expression, operator, lhs, rhs]
+                    .iter()
+                    .map(|value| context.resolve_value_register(value))
+                    .collect::<MResult<Vec<_>>>()?;
+                context.emit_varop(hash_str("integrity/constraint"), marker_register, metadata);
+            }
+        }
+
         let return_register = context.resolve_value_register(&self.interpreter.out)?;
         context.finish(return_register)
     }

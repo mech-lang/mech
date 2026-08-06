@@ -131,16 +131,17 @@ impl MechFunctionImpl for ValueSetComprehension {
 
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueSetComprehension {
-    const SIGNATURE: RuntimeFunctionSignature =
-        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Set);
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::AnyValue,
+    );
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Nullary(Value::Set(out)) => Ok(Box::new(ValueSetComprehension {
-                arguments: Vec::new(),
-                out,
-            })),
-            FunctionArgs::Nullary(out) => Err(MechError::new(
+            FunctionArgs::Variadic(Value::Set(out), arguments) => {
+                Ok(Box::new(ValueSetComprehension { arguments, out }))
+            }
+            FunctionArgs::Variadic(out, _) => Err(MechError::new(
                 SetComprehensionOutputKindMismatchError { found: out.kind() },
                 None,
             )
@@ -160,7 +161,17 @@ impl MechFunctionFactory for ValueSetComprehension {
 #[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
 impl MechFunctionCompiler for ValueSetComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!("set/comprehension", self.out, ctx);
+        let output = Value::Set(self.out.clone());
+        let destination = compile_value_register(&output, self.out.addr(), ctx)?;
+        let arguments = self
+            .arguments
+            .iter()
+            .map(|argument| {
+                compile_value_register(argument, core::ptr::from_ref(argument).addr(), ctx)
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        ctx.emit_varop(hash_str("set/comprehension"), destination, arguments);
+        Ok(destination)
     }
 }
 
@@ -185,8 +196,7 @@ impl MechFunctionImpl for ValueMatrixComprehension {
         let out = if args.is_empty() {
             Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
         } else {
-            let fxn = crate::intrinsics::horzcat::impl_horzcat_fxn(&args)
-                .expect("matrix/comprehension input kinds changed to incompatible values");
+            let fxn = crate::intrinsics::horzcat::impl_horzcat_fxn(&args)?;
             fxn.solve_result()?;
             fxn.out()
         };
@@ -209,13 +219,15 @@ impl MechFunctionImpl for ValueMatrixComprehension {
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueMatrixComprehension {
-    const SIGNATURE: RuntimeFunctionSignature =
-        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::AnyValue);
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+    );
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Nullary(out) => Ok(Box::new(ValueMatrixComprehension {
-                arguments: Vec::new(),
+            FunctionArgs::Variadic(out, arguments) => Ok(Box::new(ValueMatrixComprehension {
+                arguments,
                 out: Ref::new(out),
             })),
             _ => Err(MechError::new(
@@ -233,6 +245,16 @@ impl MechFunctionFactory for ValueMatrixComprehension {
 #[cfg(all(feature = "matrix_comprehensions", feature = "compiler"))]
 impl MechFunctionCompiler for ValueMatrixComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!("matrix/comprehension", self.out, ctx);
+        let output = self.out.borrow().clone();
+        let destination = compile_value_register(&output, self.out.addr(), ctx)?;
+        let arguments = self
+            .arguments
+            .iter()
+            .map(|argument| {
+                compile_value_register(argument, core::ptr::from_ref(argument).addr(), ctx)
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        ctx.emit_varop(hash_str("matrix/comprehension"), destination, arguments);
+        Ok(destination)
     }
 }

@@ -10,6 +10,7 @@ use mech_build::{
 };
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, ParsedProgram, Ref, ResourceIntent, Value,
+    hash_str,
 };
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, PlannedPureHostFunction, RunResourceGrantConfig,
@@ -179,6 +180,72 @@ fn every_standard_provider_plans_source_to_bytecode() {
             case.provider
         );
     }
+}
+
+#[test]
+fn integrity_constraints_are_explicit_native_linkage_requirements() {
+    let mut runtime = RuntimeBuilder::new()
+        .planning()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build()
+        .unwrap();
+    runtime.run_string("x := 1.0\nsafe! := x <= 2.0").unwrap();
+    let bytecode = runtime.compile_program_bytecode().unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
+    assert!(parsed.instructions.iter().any(|instruction| matches!(
+        instruction,
+        BytecodeInstruction::RuntimeVariadic { function, arguments, .. }
+            if *function == hash_str("integrity/constraint")
+                && arguments.first() == parsed.symbols.get(&hash_str("safe!"))
+    )));
+
+    let request = NativeBuildRequest {
+        bytecode,
+        runtime_config: Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+            actor_bootstrap: None,
+        }),
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "compiled-integrity".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
+    let marker = plan
+        .runtime_functions
+        .iter()
+        .find(|function| function.runtime_name == "integrity/constraint")
+        .expect("integrity marker must remain in the exact native closure");
+    assert_eq!(marker.package, "mech-engine");
+    assert_eq!(
+        marker.installer_path,
+        "mech_engine::__mech_native::install_integrity_constraint_marker"
+    );
+    assert!(
+        marker
+            .cargo_features
+            .iter()
+            .any(|feature| feature == "invariant_define")
+    );
+    assert!(
+        plan.runtime_features
+            .iter()
+            .any(|feature| feature == "invariant_define"),
+        "hosted execution must enforce compiled integrity constraints",
+    );
 }
 
 #[test]

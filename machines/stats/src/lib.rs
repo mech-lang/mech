@@ -51,6 +51,73 @@ use paste::paste;
 use std::fmt::Debug;
 use std::ops::*;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StatsArithmeticOverflow {
+    pub operation: &'static str,
+    pub operand_type: &'static str,
+}
+
+impl MechErrorKind for StatsArithmeticOverflow {
+    fn name(&self) -> &str {
+        "StatsArithmeticOverflow"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "{} overflows operand type {}",
+            self.operation, self.operand_type,
+        )
+    }
+}
+
+pub trait StatsCheckedAdd: Copy {
+    fn stats_checked_add(self, rhs: Self) -> Option<Self>;
+}
+
+macro_rules! impl_checked_integer_sum {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl StatsCheckedAdd for $type {
+                fn stats_checked_add(self, rhs: Self) -> Option<Self> { self.checked_add(rhs) }
+            }
+        )+
+    };
+}
+
+impl_checked_integer_sum!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+
+macro_rules! impl_unbounded_sum {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl StatsCheckedAdd for $type {
+                fn stats_checked_add(self, rhs: Self) -> Option<Self> { Some(self + rhs) }
+            }
+        )+
+    };
+}
+
+impl_unbounded_sum!(f32, f64);
+#[cfg(feature = "complex")]
+impl_unbounded_sum!(C64);
+
+#[cfg(feature = "rational")]
+impl StatsCheckedAdd for R64 {
+    fn stats_checked_add(self, rhs: Self) -> Option<Self> { self.checked_add(rhs) }
+}
+
+fn checked_sum_add<T: StatsCheckedAdd>(lhs: T, rhs: T) -> MResult<T> {
+    lhs.stats_checked_add(rhs).ok_or_else(|| {
+        MechError::new(
+            StatsArithmeticOverflow {
+                operation: "statistics sum",
+                operand_type: std::any::type_name::<T>(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })
+}
+
 #[cfg(feature = "runtime")]
 pub mod catalog;
 #[cfg(feature = "runtime")]
@@ -89,6 +156,7 @@ macro_rules! impl_stats_unop {
                 + One
                 + PartialEq
                 + PartialOrd,
+            T: StatsCheckedAdd,
             #[cfg(feature = "compiler")]
             T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
@@ -132,12 +200,16 @@ macro_rules! impl_stats_unop {
                 + One
                 + PartialEq
                 + PartialOrd,
+            T: StatsCheckedAdd,
             Ref<$out_type>: ToValue,
         {
             fn solve_result(&self) -> MResult<()> {
-                let arg_ptr = self.arg.as_ptr();
-                let out_ptr = self.out.as_mut_ptr();
-                $op!(arg_ptr, out_ptr);
+                let mut next = self.out.borrow().clone();
+                {
+                    let arg = self.arg.borrow();
+                    $op!(&*arg, &mut next)?;
+                }
+                *self.out.borrow_mut() = next;
                 Ok(())
             }
             fn out(&self) -> Value {

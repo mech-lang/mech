@@ -58,6 +58,19 @@ EXPECTED_FEATURES = {
             "vectord",
         },
     },
+    "generated_native_integrity": {
+        "mech-core": {"bool", "f64", "program", "string"},
+        "mech-compare": {"bool", "f64", "lte", "native-link", "runtime"},
+        "mech-engine": {
+            "bool",
+            "f64",
+            "invariant_define",
+            "native-link",
+            "runtime",
+            "string",
+            "variable_define",
+        },
+    },
     "generated_native_fixed_matrix": {
         "mech-core": {"f64", "matrix2", "program", "row_vector2"},
         "mech-engine": {

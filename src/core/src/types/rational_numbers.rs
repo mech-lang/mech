@@ -1,6 +1,8 @@
 use super::*;
 use crate::*;
-use num_traits::{FromPrimitive, Signed, ToPrimitive};
+use num_traits::{
+    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Signed, ToPrimitive,
+};
 
 // Rational Numbers
 // ----------------------------------------------------------------------------
@@ -60,6 +62,31 @@ impl R64 {
 
     pub fn denom(&self) -> &i64 {
         self.0.denom()
+    }
+
+    /// Checked arithmetic is required anywhere a rational is evaluated by the
+    /// retained runtime. `Ratio<i64>` is bounded even though its public value
+    /// model looks like an exact-number type.
+    pub fn checked_add(self, rhs: Self) -> Option<Self> {
+        CheckedAdd::checked_add(&self.0, &rhs.0).map(R64)
+    }
+
+    pub fn checked_sub(self, rhs: Self) -> Option<Self> {
+        CheckedSub::checked_sub(&self.0, &rhs.0).map(R64)
+    }
+
+    pub fn checked_mul(self, rhs: Self) -> Option<Self> {
+        CheckedMul::checked_mul(&self.0, &rhs.0).map(R64)
+    }
+
+    pub fn checked_div(self, rhs: Self) -> Option<Self> {
+        CheckedDiv::checked_div(&self.0, &rhs.0).map(R64)
+    }
+
+    pub fn checked_neg(self) -> Option<Self> {
+        self.numer()
+            .checked_neg()
+            .map(|numer| R64::new(numer, *self.denom()))
     }
 }
 

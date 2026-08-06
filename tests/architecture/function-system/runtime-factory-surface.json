@@ -45084,6 +45084,21 @@
       "owner": "mech-logic"
     },
     {
+      "name": "compare/seq",
+      "id_hex": "00750538d1702500",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "compare/sneq",
+      "id_hex": "0055a262353d2a60",
+      "owner": "mech-compare"
+    },
+    {
+      "name": "integrity/constraint",
+      "id_hex": "009f842d1e3a4a92",
+      "owner": "mech-engine::stdlib"
+    },
+    {
       "name": "matrix/comprehension",
       "id_hex": "006902325d2d3226",
       "owner": "mech-engine::stdlib"

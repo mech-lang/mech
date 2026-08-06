@@ -79,7 +79,7 @@ pub mod activation;
 pub mod expressions;
 #[cfg(feature = "functions")]
 pub mod function;
-#[cfg(all(feature = "source", feature = "invariant_define"))]
+#[cfg(all(feature = "program", feature = "invariant_define"))]
 pub mod integrity;
 pub mod interpreter;
 pub mod intrinsics;
@@ -114,6 +114,8 @@ pub mod __mech_native {
     };
     #[cfg(feature = "assign")]
     pub use crate::intrinsics::assign::catalog::__mech_native::*;
+    #[cfg(feature = "invariant_define")]
+    pub use crate::intrinsics::catalog::install_integrity_constraint_marker;
     #[cfg(feature = "matrix_comprehensions")]
     pub use crate::intrinsics::catalog::install_matrix_comprehension;
     #[cfg(feature = "set_comprehensions")]
@@ -140,7 +142,7 @@ pub use mech_core::*;
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::function::*;
-#[cfg(all(feature = "source", feature = "invariant_define"))]
+#[cfg(all(feature = "program", feature = "invariant_define"))]
 pub use crate::integrity::*;
 pub use crate::interpreter::*;
 #[cfg(feature = "source")]

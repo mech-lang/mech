@@ -28,6 +28,97 @@ pub use self::mul_assign::*;
 #[cfg(feature = "sub_assign")]
 pub use self::sub_assign::*;
 
+pub trait RuntimeCheckedOpAssign: Copy {
+    fn runtime_checked_add(self, rhs: Self) -> Option<Self>;
+    fn runtime_checked_sub(self, rhs: Self) -> Option<Self>;
+    fn runtime_checked_mul(self, rhs: Self) -> Option<Self>;
+    fn runtime_checked_div(self, rhs: Self) -> Option<Self>;
+}
+
+macro_rules! impl_checked_integer_op_assign {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl RuntimeCheckedOpAssign for $type {
+                fn runtime_checked_add(self, rhs: Self) -> Option<Self> { self.checked_add(rhs) }
+                fn runtime_checked_sub(self, rhs: Self) -> Option<Self> { self.checked_sub(rhs) }
+                fn runtime_checked_mul(self, rhs: Self) -> Option<Self> { self.checked_mul(rhs) }
+                fn runtime_checked_div(self, rhs: Self) -> Option<Self> { self.checked_div(rhs) }
+            }
+        )+
+    };
+}
+
+impl_checked_integer_op_assign!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+
+macro_rules! impl_ieee_op_assign {
+    ($($type:ty),+ $(,)?) => {
+        $(
+            impl RuntimeCheckedOpAssign for $type {
+                fn runtime_checked_add(self, rhs: Self) -> Option<Self> { Some(self + rhs) }
+                fn runtime_checked_sub(self, rhs: Self) -> Option<Self> { Some(self - rhs) }
+                fn runtime_checked_mul(self, rhs: Self) -> Option<Self> { Some(self * rhs) }
+                fn runtime_checked_div(self, rhs: Self) -> Option<Self> { Some(self / rhs) }
+            }
+        )+
+    };
+}
+
+impl_ieee_op_assign!(f32, f64);
+#[cfg(feature = "complex")]
+impl_ieee_op_assign!(C64);
+
+#[cfg(feature = "rational")]
+impl RuntimeCheckedOpAssign for R64 {
+    fn runtime_checked_add(self, rhs: Self) -> Option<Self> { self.checked_add(rhs) }
+    fn runtime_checked_sub(self, rhs: Self) -> Option<Self> { self.checked_sub(rhs) }
+    fn runtime_checked_mul(self, rhs: Self) -> Option<Self> { self.checked_mul(rhs) }
+    fn runtime_checked_div(self, rhs: Self) -> Option<Self> { self.checked_div(rhs) }
+}
+
+macro_rules! checked_op_assign {
+    ($name:ident, $method:ident, $operation:literal) => {
+        fn $name<T: RuntimeCheckedOpAssign>(lhs: T, rhs: T) -> MResult<T> {
+            lhs.$method(rhs)
+                .ok_or_else(|| arithmetic_overflow::<T>($operation))
+        }
+    };
+}
+
+checked_op_assign!(checked_add_assign, runtime_checked_add, "addition assignment");
+checked_op_assign!(checked_sub_assign, runtime_checked_sub, "subtraction assignment");
+checked_op_assign!(checked_mul_assign, runtime_checked_mul, "multiplication assignment");
+checked_op_assign!(checked_div_assign, runtime_checked_div, "division assignment");
+
+fn checked_one_based_index(index: usize, len: usize) -> MResult<usize> {
+    if index == 0 || index > len {
+        return Err(function_shape_contract_violation(
+            "op_assign_slice",
+            format!("index {index} is outside the valid 1..={len} range"),
+        ));
+    }
+    Ok(index - 1)
+}
+
+fn validate_mask_len(mask_len: usize, sink_len: usize) -> MResult<()> {
+    if mask_len > sink_len {
+        return Err(function_shape_contract_violation(
+            "op_assign_slice",
+            format!("boolean index has {mask_len} elements, output has {sink_len}"),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_source_len(source_len: usize, selected_len: usize) -> MResult<()> {
+    if source_len < selected_len {
+        return Err(function_shape_contract_violation(
+            "op_assign_slice",
+            format!("source has {source_len} elements, selection requires {selected_len}"),
+        ));
+    }
+    Ok(())
+}
+
 #[macro_export]
 macro_rules! impl_op_assign_range_fxn_s {
     ($struct_name:ident, $op:ident, $ix:ty) => {
@@ -61,6 +152,7 @@ macro_rules! impl_op_assign_range_fxn_s {
                 + PartialEq
                 + PartialOrd
                 + AsValueKind,
+            T: RuntimeCheckedOpAssign,
             #[cfg(feature = "compiler")]
             T: CompileConst + ConstElem,
             IxVec: Debug + AsRef<[$ix]> + AsNaKind,
@@ -131,6 +223,7 @@ macro_rules! impl_op_assign_range_fxn_s {
                 + One
                 + PartialEq
                 + PartialOrd,
+            T: RuntimeCheckedOpAssign,
             IxVec: AsRef<[$ix]> + Debug,
             R1: Dim,
             C1: Dim,
@@ -141,7 +234,9 @@ macro_rules! impl_op_assign_range_fxn_s {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
                     let source_ptr = &*self.source.as_ptr();
                     let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
-                    $op!(source_ptr, ix_ptr, sink_ptr);
+                    let mut next = sink_ptr.clone();
+                    $op!(source_ptr, ix_ptr, &mut next)?;
+                    *sink_ptr = next;
                 };
                 Ok(())
             }
@@ -222,6 +317,7 @@ macro_rules! impl_op_assign_range_fxn_v {
                 + PartialEq
                 + PartialOrd
                 + AsValueKind,
+            T: RuntimeCheckedOpAssign,
             #[cfg(feature = "compiler")]
             T: CompileConst + ConstElem,
             IxVec: AsNaKind + Debug + AsRef<[$ix]>,
@@ -298,6 +394,7 @@ macro_rules! impl_op_assign_range_fxn_v {
                 + One
                 + PartialEq
                 + PartialOrd,
+            T: RuntimeCheckedOpAssign,
             IxVec: AsRef<[$ix]> + Debug,
             R1: Dim,
             C1: Dim,
@@ -311,7 +408,9 @@ macro_rules! impl_op_assign_range_fxn_v {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
                     let source_ptr = &*self.source.as_ptr();
                     let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
-                    $op!(source_ptr, ix_ptr, sink_ptr);
+                    let mut next = sink_ptr.clone();
+                    $op!(source_ptr, ix_ptr, &mut next)?;
+                    *sink_ptr = next;
                 };
                 Ok(())
             }
@@ -413,7 +512,7 @@ macro_rules! op_assign_range_all_fxn {
 
 #[macro_export]
 macro_rules! impl_assign_scalar_scalar {
-  ($op_name:tt, $op_fn:tt) => {
+  ($op_name:tt, $checked_op:ident) => {
     paste::paste! {
       #[derive(Debug)]
       pub(crate) struct [<$op_name AssignSS>]<T> {
@@ -425,6 +524,7 @@ macro_rules! impl_assign_scalar_scalar {
         T: Debug + Clone + Sync + Send + 'static +
            $op_name<Output = T> + [<$op_name Assign>] +
            PartialEq + PartialOrd + AsValueKind,
+        T: RuntimeCheckedOpAssign,
         #[cfg(feature = "compiler")]
         T: CompileConst + ConstElem,
         Ref<T>: ToValue
@@ -451,21 +551,16 @@ macro_rules! impl_assign_scalar_scalar {
         T: Debug + Clone + Sync + Send + 'static +
            $op_name<Output = T> + [<$op_name Assign>] +
            PartialEq + PartialOrd,
+        T: RuntimeCheckedOpAssign,
         Ref<T>: ToValue
       {
         fn solve_result(&self) -> MResult<()> {
-          let sink_ptr = self.sink.as_mut_ptr();
-          let source_ptr = self.source.as_ptr();
-          unsafe {
-            *sink_ptr $op_fn (*source_ptr).clone();
-          }
-        ;
-            Ok(())
+          let next = $checked_op(*self.sink.borrow(), *self.source.borrow())?;
+          *self.sink.borrow_mut() = next;
+          Ok(())
         }
         fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
-          let mut next = self.sink.borrow().clone();
-          let source = self.source.borrow().clone();
-          next $op_fn source;
+          let next = $checked_op(*self.sink.borrow(), *self.source.borrow())?;
           Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
         }
         fn out(&self) -> Value { self.sink.to_value() }
@@ -492,7 +587,7 @@ macro_rules! impl_assign_scalar_scalar {
 
 #[macro_export]
 macro_rules! impl_assign_vector_vector {
-  ($op_name:tt, $op_fn:tt) => {
+  ($op_name:tt, $checked_op:ident) => {
     paste::paste! {
       #[derive(Debug)]
       pub struct [<$op_name AssignVV>]<T, MatA, MatB> {
@@ -505,6 +600,7 @@ macro_rules! impl_assign_vector_vector {
         Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
         AsValueKind,
+        T: RuntimeCheckedOpAssign,
         #[cfg(feature = "compiler")]
         T: CompileConst + ConstElem,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
@@ -539,6 +635,7 @@ macro_rules! impl_assign_vector_vector {
       where
         Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>],
+        T: RuntimeCheckedOpAssign,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         for<'a> &'a MatB: IntoIterator<Item = &'a T>,
@@ -546,24 +643,22 @@ macro_rules! impl_assign_vector_vector {
         MatB: Debug,
       {
         fn solve_result(&self) -> MResult<()> {
-          unsafe {
-            let sink_ptr = self.sink.as_mut_ptr();
-            let source_ptr = self.source.as_ptr();
-            let sink_ref: &mut MatA = &mut *sink_ptr;
-            let source_ref: &MatB = &*source_ptr;
-            for (dst, src) in (&mut *sink_ref).into_iter().zip((&*source_ref).into_iter()) {
-              *dst $op_fn src.clone();
+          let mut next = self.sink.borrow().clone();
+          {
+            let source = self.source.borrow();
+            for (dst, src) in (&mut next).into_iter().zip((&*source).into_iter()) {
+              *dst = $checked_op(*dst, *src)?;
             }
           }
-        ;
-            Ok(())
+          *self.sink.borrow_mut() = next;
+          Ok(())
         }
         fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
           let mut next = self.sink.borrow().clone();
           {
             let source = self.source.borrow();
             for (dst, src) in (&mut next).into_iter().zip((&*source).into_iter()) {
-              *dst $op_fn src.clone();
+              *dst = $checked_op(*dst, *src)?;
             }
           }
           Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
@@ -594,7 +689,7 @@ macro_rules! impl_assign_vector_vector {
 
 #[macro_export]
 macro_rules! impl_assign_vector_scalar {
-  ($op_name:tt, $op_fn:tt) => {
+  ($op_name:tt, $checked_op:ident) => {
     paste::paste! {
       #[derive(Debug)]
       pub struct [<$op_name AssignVS>]<T, MatA> {
@@ -607,6 +702,7 @@ macro_rules! impl_assign_vector_scalar {
         Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
         AsValueKind,
+        T: RuntimeCheckedOpAssign,
         #[cfg(feature = "compiler")]
         T: CompileConst + ConstElem,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
@@ -642,28 +738,25 @@ macro_rules! impl_assign_vector_scalar {
       where
         Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>],
+        T: RuntimeCheckedOpAssign,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         MatA: Debug + Clone + 'static,
       {
         fn solve_result(&self) -> MResult<()> {
-          unsafe {
-            let sink_ptr = self.sink.as_mut_ptr();
-            let source_ptr = self.source.as_ptr();
-            let sink_ref: &mut MatA = &mut *sink_ptr;
-            let source_ref: &T = &*source_ptr;
-            for dst in (&mut *sink_ref).into_iter() {
-              *dst $op_fn source_ref.clone();
-            }
+          let mut next = self.sink.borrow().clone();
+          let source = *self.source.borrow();
+          for dst in (&mut next).into_iter() {
+            *dst = $checked_op(*dst, source)?;
           }
-        ;
-            Ok(())
+          *self.sink.borrow_mut() = next;
+          Ok(())
         }
         fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
           let mut next = self.sink.borrow().clone();
           let source = self.source.borrow().clone();
           for dst in (&mut next).into_iter() {
-            *dst $op_fn source.clone();
+            *dst = $checked_op(*dst, source)?;
           }
           Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
         }
@@ -768,4 +861,93 @@ macro_rules! impl_op_assign_value_match_arms {
       }
     }
   };
+}
+
+#[cfg(test)]
+mod checked_assignment_tests {
+    use super::*;
+
+    #[test]
+    fn integer_scalar_assignments_reject_overflow_and_invalid_division() {
+        let cases: Vec<(Box<dyn MechFunction>, Box<dyn Fn() -> i128>)> = vec![
+            {
+                let sink = Ref::new(u8::MAX);
+                let function = AddAssignSS::<u8>::new(FunctionArgs::Unary(
+                    Value::U8(sink.clone()),
+                    Value::U8(Ref::new(1)),
+                ))
+                .unwrap();
+                (function, Box::new(move || i128::from(*sink.borrow())))
+            },
+            {
+                let sink = Ref::new(i8::MIN);
+                let function = SubAssignSS::<i8>::new(FunctionArgs::Unary(
+                    Value::I8(sink.clone()),
+                    Value::I8(Ref::new(1)),
+                ))
+                .unwrap();
+                (function, Box::new(move || i128::from(*sink.borrow())))
+            },
+            {
+                let sink = Ref::new(u8::MAX);
+                let function = MulAssignSS::<u8>::new(FunctionArgs::Unary(
+                    Value::U8(sink.clone()),
+                    Value::U8(Ref::new(2)),
+                ))
+                .unwrap();
+                (function, Box::new(move || i128::from(*sink.borrow())))
+            },
+            {
+                let sink = Ref::new(7u8);
+                let function = DivAssignSS::<u8>::new(FunctionArgs::Unary(
+                    Value::U8(sink.clone()),
+                    Value::U8(Ref::new(0)),
+                ))
+                .unwrap();
+                (function, Box::new(move || i128::from(*sink.borrow())))
+            },
+        ];
+
+        for (function, value) in cases {
+            let before = value();
+            let error = function.solve_result().unwrap_err();
+            assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+            assert_eq!(value(), before);
+            let error = match function.stage_register() {
+                Ok(_) => panic!("overflowing reactive assignment should fail while staging"),
+                Err(error) => error,
+            };
+            assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+            assert_eq!(value(), before);
+        }
+    }
+
+    #[test]
+    fn range_assignment_revalidates_indices_and_is_transactional() {
+        let sink = Ref::new(DVector::from_vec(vec![1u8, u8::MAX]));
+        let source = Ref::new(DVector::from_vec(vec![1u8, 1]));
+        let indices = Ref::new(DVector::from_vec(vec![1usize, 2]));
+        let function = AddAssign1DRV::<u8, DVector<u8>, DVector<u8>, DVector<usize>>::new(
+            FunctionArgs::Binary(
+                Value::MatrixU8(mech_core::matrix::Matrix::DVector(sink.clone())),
+                Value::MatrixU8(mech_core::matrix::Matrix::DVector(source)),
+                Value::MatrixIndex(mech_core::matrix::Matrix::DVector(indices.clone())),
+            ),
+        )
+        .unwrap();
+
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+        assert_eq!(sink.borrow().as_slice(), &[1, u8::MAX]);
+
+        *indices.borrow_mut() = DVector::from_vec(vec![0, 1]);
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        assert_eq!(sink.borrow().as_slice(), &[1, u8::MAX]);
+
+        *indices.borrow_mut() = DVector::from_vec(vec![3, 1]);
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        assert_eq!(sink.borrow().as_slice(), &[1, u8::MAX]);
+    }
 }

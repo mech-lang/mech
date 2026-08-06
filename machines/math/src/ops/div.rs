@@ -57,7 +57,7 @@ impl RuntimeCheckedDiv for f64 {
 #[cfg(feature = "rational")]
 impl RuntimeCheckedDiv for R64 {
     fn runtime_checked_div(self, rhs: Self) -> Option<Self> {
-        (!rhs.is_zero()).then(|| self / rhs)
+        self.checked_div(rhs)
     }
 }
 

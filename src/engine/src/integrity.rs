@@ -546,7 +546,7 @@ fn stable_value_kind(value: &Value) -> Result<ValueKind, ()> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
     use crate::{MechProgramConfig, ProgramInputUpdate};

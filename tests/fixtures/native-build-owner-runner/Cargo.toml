@@ -8,6 +8,7 @@ publish = false
 default = []
 standard = [
   "dep:mech-stdlib",
+  "mech-runtime/invariant_define",
   "mech-stdlib/native-plan",
   "mech-stdlib/standard_runtime",
 ]

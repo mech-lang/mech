@@ -8,20 +8,28 @@ use num_traits::*;
 
 macro_rules! sum_row_op {
     ($arg:expr, $out:expr) => {
-        unsafe {
-            *$out = (*$arg).row_sum();
+        {
+            for column in 0..($arg).ncols() {
+                let mut sum = T::zero();
+                for row in 0..($arg).nrows() {
+                    sum = checked_sum_add(sum, ($arg)[(row, column)])?;
+                }
+                ($out)[column] = sum;
+            }
+            Ok::<(), MechError>(())
         }
     };
 }
 
 macro_rules! sum_row_op2 {
     ($arg:expr, $out:expr) => {
-        unsafe {
+        {
             let mut sum = T::zero();
-            for i in 0..(*$arg).len() {
-                sum += (&(*$arg))[i];
+            for value in ($arg).iter().copied() {
+                sum = checked_sum_add(sum, value)?;
             }
-            (&mut (*$out))[(0, 0)] = sum;
+            ($out)[(0, 0)] = sum;
+            Ok::<(), MechError>(())
         }
     };
 }
@@ -133,3 +141,25 @@ fn impl_stats_sum_row_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 #[cfg(feature = "source")]
 impl_mech_urnop_fxn!(StatsSumRow, impl_stats_sum_row_fxn, "stats/sum/row");
+
+#[cfg(test)]
+mod checked_sum_tests {
+    use super::*;
+
+    #[test]
+    fn integer_row_sum_rejects_reactive_overflow_and_retains_output() {
+        let arg = Ref::new(DMatrix::from_row_slice(2, 1, &[1u8, 2]));
+        let out = Ref::new(RowDVector::from_vec(vec![99u8]));
+        let function = StatsSumRowMD::<u8> {
+            arg: arg.clone(),
+            out: out.clone(),
+        };
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[3]);
+
+        *arg.borrow_mut() = DMatrix::from_row_slice(2, 1, &[u8::MAX, 1]);
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "StatsArithmeticOverflow");
+        assert_eq!(out.borrow().as_slice(), &[3]);
+    }
+}

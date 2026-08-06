@@ -94,7 +94,7 @@ standard_values = [
 ]
 
 standard_operations = [
-  "access", "assign", "convert", "variable_define", "variables",
+  "access", "assign", "convert", "variable_define", "invariant_define", "variables",
   "subscript_default",
   "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",
   "set_define", "set_comprehensions", "table_ops",
@@ -108,6 +108,7 @@ access = ["mech-engine/access"]
 assign = ["mech-engine/assign"]
 convert = ["mech-engine/convert"]
 variable_define = ["mech-engine/variable_define"]
+invariant_define = ["mech-engine/invariant_define"]
 variables = ["mech-engine/variables"]
 logical_indexing = ["mech-engine/logical_indexing"]
 subscript_default = ["mech-engine/subscript_default"]

@@ -6,9 +6,9 @@ mod dynamic_matrix_factory;
 use mech_core::matrix::Matrix;
 use mech_core::{
     BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult,
-    MechExecutionServices, ParsedProgram, Ref, RuntimeType, ValRef, Value,
+    MechExecutionServices, ParsedProgram, Ref, RuntimeType, ValRef, Value, hash_str,
 };
-use mech_engine::{MechProgram, MechProgramConfig};
+use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
 use nalgebra::DMatrix;
 
 #[derive(Default)]
@@ -117,6 +117,138 @@ fn scalar_add_returns_the_final_function_register() -> MResult<()> {
         parsed.instructions.last(),
         Some(BytecodeInstruction::Return { .. })
     ));
+    Ok(())
+}
+
+#[test]
+fn dynamic_strict_equality_round_trips_through_bytecode() -> MResult<()> {
+    let (parsed, value) = run_compiled_source("x := 1 + [4 5 6]\nx === [5 6 7]")?;
+    assert_eq!(value, Value::Bool(Ref::new(true)));
+    assert!(parsed.instructions.iter().any(|instruction| matches!(
+        instruction,
+        BytecodeInstruction::RuntimeBinary { function, .. }
+            if *function == hash_str("compare/seq")
+    )));
+    Ok(())
+}
+
+#[test]
+fn dynamic_strict_inequality_round_trips_through_bytecode() -> MResult<()> {
+    let (parsed, value) = run_compiled_source("x := 1 + [4 5 6]\nx !== [5 6 8]")?;
+    assert_eq!(value, Value::Bool(Ref::new(true)));
+    assert!(parsed.instructions.iter().any(|instruction| matches!(
+        instruction,
+        BytecodeInstruction::RuntimeBinary { function, .. }
+            if *function == hash_str("compare/sneq")
+    )));
+    Ok(())
+}
+
+#[test]
+fn compiled_integrity_constraints_are_reconstructed_and_enforced() -> MResult<()> {
+    let mut source_program = standard_program();
+    source_program.run_string("x := 1.0\nsafe! := x <= 2.0")?;
+    let source_report = source_program.integrity_constraint_report()?;
+    let bytecode = source_program.compile_bytecode()?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    assert_eq!(
+        parsed
+            .dictionary
+            .get(&hash_str("safe!"))
+            .map(String::as_str),
+        Some("safe!"),
+    );
+    assert!(parsed.instructions.iter().any(|instruction| matches!(
+        instruction,
+        BytecodeInstruction::RuntimeVariadic { function, arguments, .. }
+            if *function == hash_str("integrity/constraint")
+                && arguments.first() == parsed.symbols.get(&hash_str("safe!"))
+    )));
+
+    let mut compiled = standard_program();
+    compiled.run_bytecode_program(&parsed)?;
+    let report = compiled.integrity_constraint_report()?;
+    assert_eq!(report.evaluations.len(), 1);
+    assert_eq!(report.evaluations[0].name, "safe!");
+    assert_eq!(
+        report.evaluations[0].expression,
+        source_report.evaluations[0].expression,
+    );
+    assert_eq!(
+        report.evaluations[0].actual,
+        source_report.evaluations[0].actual,
+    );
+    assert_eq!(
+        report.evaluations[0].expected,
+        source_report.evaluations[0].expected,
+    );
+    assert!(report.evaluations[0].passed);
+
+    let error = compiled
+        .update_inputs_and_advance_turn(&[ProgramInputUpdate {
+            input: ProgramInputId {
+                interpreter_id: compiled.interpreter().id,
+                symbol_id: hash_str("x"),
+            },
+            value: Value::F64(Ref::new(3.0)),
+        }])
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
+    assert_eq!(compiled.root_symbol_value("x")?, Value::F64(Ref::new(1.0)));
+    assert_eq!(
+        compiled.root_symbol_value("safe!")?,
+        Value::Bool(Ref::new(true)),
+    );
+    Ok(())
+}
+
+#[test]
+fn malformed_compiled_integrity_constraint_metadata_is_rejected() -> MResult<()> {
+    let bytecode = compile_source("x := 1.0\nsafe! := x <= 2.0")?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+
+    let mut missing_marker = parsed.clone();
+    missing_marker.instructions.retain(|instruction| {
+        !matches!(
+            instruction,
+            BytecodeInstruction::RuntimeVariadic { function, .. }
+                if *function == hash_str("integrity/constraint")
+        )
+    });
+    let error = standard_program()
+        .run_bytecode_program(&missing_marker)
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeValidation");
+    assert!(
+        error
+            .display_message()
+            .contains("missing its runtime marker")
+    );
+
+    let mut mutable_constraint = parsed;
+    mutable_constraint.mutable_symbols.insert(hash_str("safe!"));
+    let error = standard_program()
+        .run_bytecode_program(&mutable_constraint)
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeValidation");
+    assert!(error.display_message().contains("must be immutable"));
+    Ok(())
+}
+
+#[test]
+fn compiled_integrity_constraints_preserve_absent_operands() -> MResult<()> {
+    let bytecode = compile_source("always! := true")?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    let mut compiled = standard_program();
+    compiled.run_bytecode_program(&parsed)?;
+    let state = compiled.interpreter().state.borrow();
+    let constraint = state
+        .integrity_constraints
+        .get(&hash_str("always!"))
+        .expect("compiled integrity constraint");
+    assert!(constraint.operator.is_none());
+    assert!(constraint.lhs.is_none());
+    assert!(constraint.rhs.is_none());
     Ok(())
 }
 
