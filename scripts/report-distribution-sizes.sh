@@ -147,7 +147,7 @@ then
   runtime_packages=$(package_count \
     --manifest-path "$runtime_manifest" \
     --target "$host_target")
-  runtime_counts=$(catalog_counts standard-runtime standard_runtime)
+  runtime_counts=$(catalog_counts standard-runtime full_runtime)
 fi
 if include_profile standard-source-runtime
 then
@@ -155,7 +155,7 @@ then
   source_packages=$(package_count \
     --manifest-path "$source_manifest" \
     --target "$host_target")
-  source_counts=$(catalog_counts standard-source standard_source)
+  source_counts=$(catalog_counts standard-source full_source)
 fi
 if include_profile standard-compiler-tooling
 then
@@ -163,7 +163,7 @@ then
   compiler_packages=$(package_count \
     --manifest-path "$compiler_manifest" \
     --target "$host_target")
-  compiler_counts=$(catalog_counts standard-compiler standard_compiler)
+  compiler_counts=$(catalog_counts standard-compiler full_compiler)
 fi
 if include_profile wasm-browser-project
 then

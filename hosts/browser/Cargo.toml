@@ -1,5 +1,5 @@
 [package]
-name = "mech-host-browser"
+name = "mech-browser"
 version = "0.3.5"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Browser host integration for Mech runtimes."

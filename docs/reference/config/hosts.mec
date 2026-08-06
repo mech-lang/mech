@@ -30,7 +30,7 @@ config := {
 Provider-specific settings are documented with each host crate.
 
 - [Browser Host](/hosts/browser/docs/index.html)
-- [CLI Host](/hosts/cli/docs/index.html)
+- [CLI Host](/hosts/terminal/docs/index.html)
 - [Robot Arm Host](/hosts/robot-arm/docs/index.html)
 
 3. Context targets

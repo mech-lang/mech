@@ -1,13 +1,13 @@
 use std::io::{Error, ErrorKind};
 
+use mech_browser::{BrowserRuntimeInjectionConfig, BrowserRuntimeProviderProfile};
 use mech_core::*;
-use mech_host_browser::{BrowserRuntimeInjectionConfig, BrowserRuntimeProviderProfile};
 use mech_runtime::{MechConfigDocument, RuntimeConfig};
 
 #[cfg(feature = "host_delegation_signing")]
 use base64::Engine;
 #[cfg(feature = "host_delegation_signing")]
-use mech_host_browser::{BrowserHostDelegationEnvelope, sign_browser_host_delegation};
+use mech_browser::{BrowserHostDelegationEnvelope, sign_browser_host_delegation};
 #[cfg(feature = "host_delegation_signing")]
 use mech_runtime::{
     HOST_DELEGATION_ALGORITHM_ED25519, HostDelegationHeader, HostDelegationPublicKey,
@@ -30,21 +30,21 @@ pub fn web_runtime_injection_config_from_document(
 
 fn standard_browser_runtime_provider_profile() -> MResult<BrowserRuntimeProviderProfile> {
     let mut profile = BrowserRuntimeProviderProfile::new();
-    profile.register(mech_host_browser::browser_host_manifest()?, |settings| {
-        mech_host_browser::browser_config_from_settings(settings).map(|_| ())
+    profile.register(mech_browser::browser_host_manifest()?, |settings| {
+        mech_browser::browser_config_from_settings(settings).map(|_| ())
     })?;
-    profile.register(mech_host_time::time_host_manifest()?, |settings| {
-        mech_host_time::time_settings_from_config(settings).map(|_| ())
+    profile.register(mech_time::time_host_manifest()?, |settings| {
+        mech_time::time_settings_from_config(settings).map(|_| ())
     })?;
-    profile.register(mech_host_timer::timer_host_manifest()?, |settings| {
-        mech_host_timer::timer_settings_from_config(settings).map(|_| ())
+    profile.register(mech_timer::timer_host_manifest()?, |settings| {
+        mech_timer::timer_settings_from_config(settings).map(|_| ())
     })?;
     profile.register(
-        mech_host_console::console_host_manifest()?,
-        mech_host_console::validate_console_settings,
+        mech_console::console_host_manifest()?,
+        mech_console::validate_console_settings,
     )?;
-    profile.register(mech_host_scene::scene_host_manifest()?, |settings| {
-        mech_host_scene::scene_settings_from_config(settings).map(|_| ())
+    profile.register(mech_scene::scene_host_manifest()?, |settings| {
+        mech_scene::scene_settings_from_config(settings).map(|_| ())
     })?;
     Ok(profile)
 }
@@ -284,7 +284,7 @@ mod tests {
 
     fn empty_runtime_injection_config() -> BrowserRuntimeInjectionConfig {
         BrowserRuntimeInjectionConfig {
-            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
+            runtime: mech_browser::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
             hosts: vec![HostInstanceConfig {
                 name: "browser".to_string(),
                 provider: "browser".to_string(),
@@ -299,7 +299,7 @@ mod tests {
     }
 
     #[test]
-    fn browser_runtime_injection_config_script_uses_mech_host_config_global() {
+    fn browser_runtime_injection_config_script_uses_host_config_global() {
         let script =
             browser_runtime_injection_config_script(&empty_runtime_injection_config()).unwrap();
         assert!(script.contains("window.__MECH_HOST_CONFIG ="));

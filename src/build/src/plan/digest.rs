@@ -219,10 +219,10 @@ mod tests {
         with_host.hosts.push(PlannedHostInstance {
             name: "cli".to_owned(),
             provider: "cli".to_owned(),
-            package: "mech-host-cli".to_owned(),
-            crate_name: "mech_host_cli".to_owned(),
+            package: "mech-terminal".to_owned(),
+            crate_name: "mech_terminal".to_owned(),
             cargo_features: vec!["provider".to_owned()],
-            factory_path: "mech_host_cli::CliHostFactory::new".to_owned(),
+            factory_path: "mech_terminal::CliHostFactory::new".to_owned(),
             settings: ConfigValue::Null,
         });
         assert_digest_changes(&with_host, |changed| {

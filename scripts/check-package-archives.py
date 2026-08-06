@@ -26,20 +26,20 @@ PACKAGES = {
     "mech-string": ROOT / "machines/string/Cargo.toml",
     "mech-stats": ROOT / "machines/stats/Cargo.toml",
     "mech-combinatorics": ROOT / "machines/combinatorics/Cargo.toml",
-    "mech-host-cli": ROOT / "hosts/cli/Cargo.toml",
-    "mech-host-console": ROOT / "hosts/console/Cargo.toml",
-    "mech-host-time": ROOT / "hosts/time/Cargo.toml",
-    "mech-host-timer": ROOT / "hosts/timer/Cargo.toml",
-    "mech-host-scene": ROOT / "hosts/scene/Cargo.toml",
-    "mech-host-robot-arm": ROOT / "hosts/robot-arm/Cargo.toml",
+    "mech-terminal": ROOT / "hosts/terminal/Cargo.toml",
+    "mech-console": ROOT / "hosts/console/Cargo.toml",
+    "mech-time": ROOT / "hosts/time/Cargo.toml",
+    "mech-timer": ROOT / "hosts/timer/Cargo.toml",
+    "mech-scene": ROOT / "hosts/scene/Cargo.toml",
+    "mech-robot-arm": ROOT / "hosts/robot-arm/Cargo.toml",
 }
 REQUIRED_RESOURCES = {
-    "mech-host-cli": ("host.mcfg",),
-    "mech-host-console": ("host.mcfg",),
-    "mech-host-time": ("host.mcfg",),
-    "mech-host-timer": ("host.mcfg",),
-    "mech-host-scene": ("host.mcfg",),
-    "mech-host-robot-arm": ("host.mcfg",),
+    "mech-terminal": ("host.mcfg",),
+    "mech-console": ("host.mcfg",),
+    "mech-time": ("host.mcfg",),
+    "mech-timer": ("host.mcfg",),
+    "mech-scene": ("host.mcfg",),
+    "mech-robot-arm": ("host.mcfg",),
 }
 
 

@@ -214,7 +214,7 @@ mod tests {
         }
     }
 
-    #[cfg(all(feature = "native-plan", feature = "standard_runtime"))]
+    #[cfg(all(feature = "native-plan", feature = "full_runtime"))]
     #[test]
     fn native_plan_catalog_adds_only_compiler_emitted_application_factories() {
         use mech_core::RuntimeFunctionId;

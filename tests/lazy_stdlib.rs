@@ -1,4 +1,4 @@
-#![cfg(feature = "standard_source")]
+#![cfg(feature = "full_source")]
 
 use mech::{MechProgram, MechProgramConfig};
 

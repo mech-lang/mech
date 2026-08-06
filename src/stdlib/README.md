@@ -31,8 +31,8 @@ The layer features are:
 - `source` for runtime plus source specializers and export metadata;
 - `compiler` for source, runtime, and bytecode lowering.
 
-The complete profiles are `standard_runtime`, `standard_source`, and
-`standard_compiler`.
+The complete profiles are `full_runtime`, `full_source`, and
+`full_compiler`.
 
 The frozen PR2 runtime artifact is the `standard-linked-dynamic-shape`
 distribution. Standard profiles therefore include the dynamic shapes
@@ -53,7 +53,7 @@ mech-stdlib = {
 }
 ```
 
-The crate default is `standard_source`. Distribution manifests should use
+The crate default is `full_source`. Distribution manifests should use
 `default-features = false` and select a profile explicitly when dependency-graph
 size or execution capability is part of their contract.
 

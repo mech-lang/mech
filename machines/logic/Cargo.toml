@@ -21,20 +21,20 @@ crate-type = ["rlib"]
 [features]
 no_std = ["mech-core/no_std"]
 
-default = ["compiler_default"]
+default = ["full_compiler"]
 runtime = ["mech-core/functions"]
 source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
-standard_values = [
+full_values = [
   "bool", "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
   "row_vector2", "row_vector3", "row_vector4",
   "vector2", "vector3", "vector4", "row_vectord", "vectord", "matrixd",
 ]
-runtime_default = ["runtime", "standard_values", "logic_default"]
-source_default = ["runtime_default", "source"]
-compiler_default = ["source_default", "compiler"]
+full_runtime = ["runtime", "full_values", "logic_default"]
+full_source = ["full_runtime", "source"]
+full_compiler = ["full_source", "compiler"]
 
 logic_default = ["and", "or", "not", "xor"]
 logic = ["runtime", "bool"]

@@ -28,7 +28,7 @@ mod tests {
     #[test]
     fn direct_manifest_matches_the_documented_fixture() {
         let parsed = mech_runtime::parse_config_document(
-            "hosts/cli/host.mcfg",
+            "hosts/terminal/host.mcfg",
             CLI_HOST_MCFG,
             mech_runtime::ConfigProfileOptions::default(),
         )

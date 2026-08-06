@@ -1,60 +1,60 @@
-#[cfg(feature = "standard_runtime")]
+#[cfg(feature = "full_runtime")]
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
 use mech_core::{FunctionCatalog, FunctionExposure};
-#[cfg(feature = "standard_runtime")]
+#[cfg(feature = "full_runtime")]
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
-#[cfg(feature = "standard_runtime")]
+#[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_FACTORIES: usize = 9_022;
-#[cfg(feature = "standard_runtime")]
+#[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_017;
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 const EXPECTED_NAMED_SPECIALIZERS: usize = 119;
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 const EXPECTED_INTRINSIC_SPECIALIZERS: usize = 10;
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 const EXPECTED_PRELUDE_EXPORTS: usize = 52;
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 const EXPECTED_MODULE_EXPORTS: usize = 50;
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 const EXPECTED_ALL_EXPORTS: usize = 120;
-#[cfg(feature = "standard_runtime")]
+#[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_SURFACE_DIGEST: &str =
     "b7385da248524bcfbd1a20768fc13648b01054625459985251e5f53cae872322";
-#[cfg(feature = "standard_runtime")]
+#[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
     "4bf16c1523cdc584d4e0479c3210903f0000679ba180601804388e94938b9c07";
 
 static CATALOG_TEST_LOCK: Mutex<()> = Mutex::new(());
 
-#[cfg(feature = "standard_runtime")]
+#[cfg(feature = "full_runtime")]
 const RUNTIME_SURFACE: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../tests/architecture/function-system/runtime-factory-surface.json"
 ));
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 const SOURCE_SURFACE: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../tests/architecture/function-system/function-surface.json"
 ));
 
-#[cfg(feature = "standard_runtime")]
+#[cfg(feature = "full_runtime")]
 #[derive(Debug, Deserialize)]
 struct FrozenRuntimeSurface {
     runtime_factories: Vec<FrozenRuntimeFactory>,
 }
 
-#[cfg(feature = "standard_runtime")]
+#[cfg(feature = "full_runtime")]
 #[derive(Debug, Deserialize)]
 struct FrozenRuntimeFactory {
     name: String,
     id_hex: String,
 }
 
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 #[derive(Debug, Deserialize)]
 struct FrozenSourceSurface {
     full_source_specializers: Vec<FrozenSpecializer>,
@@ -62,14 +62,14 @@ struct FrozenSourceSurface {
     module_exports: Vec<FrozenModuleExport>,
 }
 
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 #[derive(Debug, Deserialize, Eq, PartialEq)]
 struct FrozenSpecializer {
     name: String,
     id_hex: String,
 }
 
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 #[derive(Debug, Deserialize, Eq, PartialEq)]
 struct FrozenModuleExport {
     module: String,
@@ -177,7 +177,7 @@ fn distribution_size_report_catalog_counts() {
     });
 }
 
-#[cfg(feature = "standard_runtime")]
+#[cfg(feature = "full_runtime")]
 fn assert_runtime_surface(catalog: &FunctionCatalog) {
     let count = catalog.runtime_factory_count();
     if count == EXPECTED_EXTENDED_RUNTIME_FACTORIES {
@@ -216,7 +216,7 @@ fn assert_runtime_surface(catalog: &FunctionCatalog) {
     assert_eq!(digest, EXPECTED_RUNTIME_SURFACE_DIGEST);
 }
 
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 fn assert_source_surface(catalog: &FunctionCatalog) {
     assert_eq!(catalog.specializer_count(), EXPECTED_NAMED_SPECIALIZERS);
     assert_eq!(
@@ -288,7 +288,7 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
     assert_eq!(actual_modules, frozen.module_exports);
 }
 
-#[cfg(feature = "standard_runtime")]
+#[cfg(feature = "full_runtime")]
 #[test]
 fn selected_runtime_matches_a_frozen_runtime_surface() {
     with_catalog_test_stack(|| {
@@ -300,7 +300,7 @@ fn selected_runtime_matches_a_frozen_runtime_surface() {
     });
 }
 
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 #[test]
 fn selected_source_matches_the_frozen_source_surface() {
     with_catalog_test_stack(|| {
@@ -310,7 +310,7 @@ fn selected_source_matches_the_frozen_source_surface() {
     });
 }
 
-#[cfg(feature = "standard_compiler")]
+#[cfg(feature = "full_compiler")]
 #[test]
 fn selected_compiler_preserves_the_frozen_source_catalog() {
     with_catalog_test_stack(|| {

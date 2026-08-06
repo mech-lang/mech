@@ -8,7 +8,7 @@ license = "Apache-2.0"
 publish = false
 
 [features]
-default = ["standard_source"]
+default = ["full_source"]
 
 std = ["mech-core/std", "mech-engine/std"]
 no_std = [
@@ -77,11 +77,11 @@ mech-string = ["dep:mech-string"]
 mech-stats = ["dep:mech-stats"]
 mech-combinatorics = ["dep:mech-combinatorics"]
 
-standard_runtime = ["runtime", "standard_values", "standard_operations"]
-standard_source = ["standard_runtime", "source"]
-standard_compiler = ["standard_source", "compiler"]
+full_runtime = ["runtime", "full_values", "full_operations"]
+full_source = ["full_runtime", "source"]
+full_compiler = ["full_source", "compiler"]
 
-standard_values = [
+full_values = [
   "bool", "string",
   "u8", "u16", "u32", "u64", "u128",
   "i8", "i16", "i32", "i64", "i128",
@@ -93,7 +93,7 @@ standard_values = [
   "row_vectord", "vectord", "matrixd",
 ]
 
-standard_operations = [
+full_operations = [
   "access", "assign", "convert", "variable_define", "invariant_define", "variables",
   "subscript_default",
   "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",

@@ -8,7 +8,7 @@ publish = false
 mech-build = {
   path = "../../../src/build",
   default-features = false,
-  features = ["standard-hosts"],
+  features = ["full-hosts"],
 }
 mech-core = {
   path = "../../../src/core",
@@ -29,7 +29,7 @@ mech-runtime = {
 mech-stdlib = {
   path = "../../../src/stdlib",
   default-features = false,
-  features = ["native-plan", "standard_compiler"],
+  features = ["native-plan", "full_compiler"],
 }
 serde_json = "1"
 
@@ -41,12 +41,12 @@ mech-syntax = { path = "../../../src/syntax" }
 mech-engine = { path = "../../../src/engine" }
 mech-runtime = { path = "../../../src/runtime" }
 mech-stdlib = { path = "../../../src/stdlib" }
-mech-host-cli = { path = "../../../hosts/cli" }
-mech-host-console = { path = "../../../hosts/console" }
-mech-host-time = { path = "../../../hosts/time" }
-mech-host-timer = { path = "../../../hosts/timer" }
-mech-host-scene = { path = "../../../hosts/scene" }
-mech-host-robot-arm = { path = "../../../hosts/robot-arm" }
+mech-terminal = { path = "../../../hosts/terminal" }
+mech-console = { path = "../../../hosts/console" }
+mech-time = { path = "../../../hosts/time" }
+mech-timer = { path = "../../../hosts/timer" }
+mech-scene = { path = "../../../hosts/scene" }
+mech-robot-arm = { path = "../../../hosts/robot-arm" }
 mech-native-live-host-fixture = { path = "../native-live-host" }
 mech-combinatorics = { path = "../../../machines/combinatorics" }
 mech-compare = { path = "../../../machines/compare" }

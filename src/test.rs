@@ -805,7 +805,7 @@ mod tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
-    #[cfg(feature = "standard_source")]
+    #[cfg(feature = "full_source")]
     #[test]
     fn mech_tests_execute_linked_module_imports() {
         let root = temp_test_root("linked-module-import");

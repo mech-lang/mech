@@ -1,13 +1,13 @@
 use std::collections::BTreeMap;
 
 use mech_core::{MechError, MechErrorKind, MechRecord, MechTable, MechTuple, Ref, Value};
-use mech_host_scene::*;
 #[cfg(feature = "native")]
 use mech_runtime::RuntimeHostFactory;
 use mech_runtime::{
     ConfigValue, PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
 };
+use mech_scene::*;
 
 fn deliver_write(
     provider: &mut dyn RuntimeResourceProvider,

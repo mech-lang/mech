@@ -50,7 +50,7 @@ def main() -> int:
             failures.append(f"{relative(source_file)}: file/directory module collision")
 
     forbidden_paths = {
-        "src/core/src/browser.rs": "browser authority belongs to mech-host-browser",
+        "src/core/src/browser.rs": "browser authority belongs to mech-browser",
         "src/engine/src/functions.rs": "use engine/function/mod.rs",
         "src/engine/src/function_catalog.rs": "use engine/function/catalog.rs",
         "src/engine/src/function_environment.rs": "use engine/function/environment.rs",

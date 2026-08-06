@@ -1,4 +1,4 @@
-#![cfg(feature = "standard-hosts")]
+#![cfg(feature = "full-hosts")]
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;

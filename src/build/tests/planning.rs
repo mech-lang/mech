@@ -11,7 +11,7 @@ use mech_build::{
     NativeHostFunctionContext, NativeHostFunctionLinkage, NativeRuntimeConfig, WorkspacePackage,
     fingerprint_workspace,
 };
-#[cfg(not(feature = "standard-hosts"))]
+#[cfg(not(feature = "full-hosts"))]
 use mech_build::{NativeHostLinkage, NativeTargetFamily};
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
@@ -28,7 +28,7 @@ use sha2::{Digest, Sha256};
 #[path = "support/isolated.rs"]
 mod isolated;
 use isolated::{OwnerProfile, RunnerAction, fixture_path, run_owner, workspace_root};
-#[cfg(not(feature = "standard-hosts"))]
+#[cfg(not(feature = "full-hosts"))]
 use mech_runtime::{
     HostContextManifest, HostManifestConfig, RuntimeHostFactory, RuntimeHostInstallation,
     RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
@@ -39,7 +39,7 @@ const LITERAL_F64: &[u8] =
     include_bytes!("../../../tests/architecture/bytecode-v1/literal-f64.mecb");
 const CLI_STDOUT: &[u8] = include_bytes!("../../../tests/architecture/bytecode-v1/cli-stdout.mecb");
 
-#[cfg(not(feature = "standard-hosts"))]
+#[cfg(not(feature = "full-hosts"))]
 fn cli_manifest() -> MResult<HostManifestConfig> {
     Ok(HostManifestConfig {
         provider: "cli".to_owned(),
@@ -63,18 +63,18 @@ fn cli_manifest() -> MResult<HostManifestConfig> {
     })
 }
 
-#[cfg(not(feature = "standard-hosts"))]
+#[cfg(not(feature = "full-hosts"))]
 fn validate_cli_settings(_instance: &str, _settings: &ConfigValue) -> MResult<()> {
     Ok(())
 }
 
-#[cfg(not(feature = "standard-hosts"))]
+#[cfg(not(feature = "full-hosts"))]
 #[derive(Debug)]
 struct PlanningCliResourceProvider {
     instance: String,
 }
 
-#[cfg(not(feature = "standard-hosts"))]
+#[cfg(not(feature = "full-hosts"))]
 impl RuntimeResourceProvider for PlanningCliResourceProvider {
     fn scheme(&self) -> &str {
         "cli"
@@ -110,13 +110,13 @@ impl RuntimeResourceProvider for PlanningCliResourceProvider {
     }
 }
 
-#[cfg(not(feature = "standard-hosts"))]
+#[cfg(not(feature = "full-hosts"))]
 #[derive(Debug)]
 struct PlanningCliHostFactory {
     manifest: HostManifestConfig,
 }
 
-#[cfg(not(feature = "standard-hosts"))]
+#[cfg(not(feature = "full-hosts"))]
 impl RuntimeHostFactory for PlanningCliHostFactory {
     fn provider_name(&self) -> &str {
         "cli"
@@ -146,28 +146,28 @@ impl RuntimeHostFactory for PlanningCliHostFactory {
     }
 }
 
-#[cfg(not(feature = "standard-hosts"))]
+#[cfg(not(feature = "full-hosts"))]
 fn cli_planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
     Ok(Box::new(PlanningCliHostFactory {
         manifest: cli_manifest()?,
     }))
 }
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 fn cli_host_catalog() -> Arc<NativeHostCatalog> {
     mech_build::standard_native_host_catalog().unwrap()
 }
 
-#[cfg(not(feature = "standard-hosts"))]
+#[cfg(not(feature = "full-hosts"))]
 fn cli_host_catalog() -> Arc<NativeHostCatalog> {
     let mut catalog = NativeHostCatalog::new();
     catalog
         .insert_provider(NativeHostLinkage {
             provider: "cli",
-            package: "mech-host-cli",
-            crate_name: "mech_host_cli",
+            package: "mech-terminal",
+            crate_name: "mech_terminal",
             cargo_features: &["provider"],
-            factory_path: "mech_host_cli::CliHostFactory::new",
+            factory_path: "mech_terminal::CliHostFactory::new",
             supported_targets: &[NativeTargetFamily::Unix, NativeTargetFamily::Windows],
             manifest: cli_manifest,
             validate_settings: validate_cli_settings,
@@ -350,10 +350,10 @@ fn host_function_only_plan_rejects_unaddressed_runtime_config() {
         .insert_function(NativeHostFunctionLinkage {
             name: HOST_FUNCTION,
             context: NativeHostFunctionContext::Standalone,
-            package: "mech-host-test",
-            crate_name: "mech_host_test",
+            package: "mech-test-host",
+            crate_name: "mech_test_host",
             cargo_features: &["provider"],
-            installer_path: "mech_host_test::install_native_host_function",
+            installer_path: "mech_test_host::install_native_host_function",
         })
         .unwrap();
     let mut build_environment = environment(empty_catalog());
@@ -369,7 +369,7 @@ fn host_function_only_plan_rejects_unaddressed_runtime_config() {
     }
 }
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 #[test]
 fn standard_catalog_rejects_untrusted_host_functions() {
     let error = NativeApplicationBuilder::new(environment(empty_catalog()))
@@ -444,10 +444,10 @@ fn cli_stdout_yields_a_hosted_plan() {
     assert_eq!(plan.hosts.len(), 1);
     assert_eq!(plan.hosts[0].name, "cli");
     assert_eq!(plan.hosts[0].provider, "cli");
-    assert_eq!(plan.hosts[0].package, "mech-host-cli");
+    assert_eq!(plan.hosts[0].package, "mech-terminal");
     assert_eq!(
         plan.hosts[0].factory_path,
-        "mech_host_cli::CliHostFactory::new"
+        "mech_terminal::CliHostFactory::new"
     );
     assert_eq!(plan.run_grants.len(), 1);
     assert_eq!(plan.runtime_config.name, "native-generated-runtime");

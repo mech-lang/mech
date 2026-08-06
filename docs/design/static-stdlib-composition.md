@@ -142,9 +142,9 @@ runtime factory IDs.
 
 | Profile | Catalog and tooling surface |
 | --- | --- |
-| `standard_runtime` | The frozen standard runtime factories; no source specializers or bytecode lowering. |
-| `standard_source` | The same factories plus the frozen source specializers and exports; no bytecode lowering. |
-| `standard_compiler` | The `standard_source` catalog plus bytecode lowering. |
+| `full_runtime` | The frozen standard runtime factories; no source specializers or bytecode lowering. |
+| `full_source` | The same factories plus the frozen source specializers and exports; no bytecode lowering. |
+| `full_compiler` | The `full_source` catalog plus bytecode lowering. |
 
 The frozen PR2 runtime artifact is the `standard-linked-dynamic-shape`
 distribution. Standard profiles therefore include the dynamic shapes

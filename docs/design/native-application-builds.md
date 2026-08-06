@@ -57,12 +57,12 @@ records as source-planning factories. Its exact provider surface is:
 
 | Provider | Package | Feature | Generated factory |
 | --- | --- | --- | --- |
-| `cli` | `mech-host-cli` | `provider` | `mech_host_cli::CliHostFactory::new` |
-| `console` | `mech-host-console` | `native` | `mech_host_console::NativeConsoleHostFactory::new` |
-| `time` | `mech-host-time` | `native` | `mech_host_time::NativeTimeHostFactory::new` |
-| `timer` | `mech-host-timer` | `native` | `mech_host_timer::NativeTimerHostFactory::new` |
-| `scene` | `mech-host-scene` | `native` | `mech_host_scene::NativeSceneHostFactory::new` |
-| `robot-arm` | `mech-host-robot-arm` | `provider` | `mech_host_robot_arm::RobotArmHostFactory::new` |
+| `cli` | `mech-terminal` | `provider` | `mech_terminal::CliHostFactory::new` |
+| `console` | `mech-console` | `native` | `mech_console::NativeConsoleHostFactory::new` |
+| `time` | `mech-time` | `native` | `mech_time::NativeTimeHostFactory::new` |
+| `timer` | `mech-timer` | `native` | `mech_timer::NativeTimerHostFactory::new` |
+| `scene` | `mech-scene` | `native` | `mech_scene::NativeSceneHostFactory::new` |
+| `robot-arm` | `mech-robot-arm` | `provider` | `mech_robot_arm::RobotArmHostFactory::new` |
 
 These providers support Unix and Windows native targets. Browser, Wasm,
 unknown, and unsupported native providers are rejected.

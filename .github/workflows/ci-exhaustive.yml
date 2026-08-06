@@ -762,16 +762,16 @@ jobs:
       - name: Run CLI host and context-send regression coverage
         run: |
           cargo test -p mech-syntax --test context_parser
-          cargo test -p mech-host-cli --features provider --test provider
-          cargo test -p mech-host-console
-          cargo test -p mech-host-browser
-          cargo test -p mech-host-browser --features provider
-          cargo test -p mech-host-browser --features delegation
-          cargo test -p mech-host-browser --features delegation_signing
+          cargo test -p mech-terminal --features provider --test provider
+          cargo test -p mech-console
+          cargo test -p mech-browser
+          cargo test -p mech-browser --features provider
+          cargo test -p mech-browser --features delegation
+          cargo test -p mech-browser --features delegation_signing
           cargo test --features "run repl pretty_print" --test mech_cli_host
           cargo test --features "run repl pretty_print" cli::run::tests
-          cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
-          cargo check -p mech-host-cli --no-default-features
+          cargo check -p mech-runtime -p mech-browser -p mech-terminal
+          cargo check -p mech-terminal --no-default-features
 
       - name: Run REPL Ctrl-C regression
         run: |
@@ -854,15 +854,15 @@ jobs:
       - name: Run native project tests
         run: |
           cargo test \
-            -p mech-host-time \
+            -p mech-time \
             --no-default-features \
             --features native
           cargo test \
-            -p mech-host-timer \
+            -p mech-timer \
             --no-default-features \
             --features native
           cargo test \
-            -p mech-host-scene \
+            -p mech-scene \
             --no-default-features \
             --features native
           cargo test \

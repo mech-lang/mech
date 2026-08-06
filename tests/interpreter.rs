@@ -19,11 +19,11 @@ struct MechProgram;
 
 impl MechProgram {
     fn new(config: MechProgramConfig) -> EngineMechProgram {
-        #[cfg(feature = "standard_source")]
+        #[cfg(feature = "full_source")]
         {
             EngineMechProgram::with_function_catalog(config, mech::stdlib::source_catalog())
         }
-        #[cfg(not(feature = "standard_source"))]
+        #[cfg(not(feature = "full_source"))]
         {
             EngineMechProgram::new(config)
         }
@@ -44,12 +44,12 @@ fn standard_matrix<T: na::Scalar>(values: Vec<T>, rows: usize, cols: usize) -> M
 
 /// Constructs the feature-invariant 1x1 result used by operations such as
 /// dynamic row-vector × dynamic vector multiplication.
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 fn standard_matrix1<T: na::Scalar>(value: T) -> Matrix<T> {
     Matrix::Matrix1(Ref::new(na::Matrix1::from_element(value)))
 }
 
-#[cfg(not(feature = "standard_source"))]
+#[cfg(not(feature = "full_source"))]
 fn standard_matrix1<T: na::Scalar>(value: T) -> Matrix<T> {
     Matrix::DMatrix(Ref::new(na::DMatrix::from_element(1, 1, value)))
 }
@@ -993,25 +993,25 @@ test_interpreter!(
     "[1+2i 3+4i] == [1+2i 3+4i]",
     Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_interpreter!(
     interpret_matrix_strict_eq,
     "x := 1 + [4 5 6]\nx === [5 6 7]",
     Value::Bool(Ref::new(true))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_interpreter!(
     interpret_matrix_strict_neq,
     "x := 1 + [4 5 6]\nx !== [5 6 8]",
     Value::Bool(Ref::new(true))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_interpreter!(
     interpret_matrix_strict_eq_symbol,
     "x := 1 + [4 5 6]\nx ≡ [5 6 7]",
     Value::Bool(Ref::new(true))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_interpreter!(
     interpret_matrix_strict_neq_symbol,
     "x := 1 + [4 5 6]\nx !≡ [5 6 8]",
@@ -2733,27 +2733,27 @@ test_interpreter!(
 power(2<u64>, 10<u64>)"#,
     Value::U64(Ref::new(1024))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_interpreter!(
     interpret_function_call_native_vector,
     "+> math\nmath/sin([1.570796327 1.570796327])",
     Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0], 1, 2))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_interpreter!(
     interpret_function_call_native,
     r#"+> math
 math/sin(1.5707963267948966)"#,
     Value::F64(Ref::new(1.0))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_interpreter!(
     interpret_function_call_native_cos,
     r#"+> math
 math/cos(0.0)"#,
     Value::F64(Ref::new(1.0))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_interpreter!(
     interpret_function_call_native_vector2,
     "+> math\nmath/cos([0.0 0.0])",
@@ -3415,7 +3415,7 @@ test_interpreter!(
     ))
 );
 
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_interpreter!(
     interpret_stats_sum_rowm2,
     "+> stats\nx := [1 2; 4 5]; y := stats/sum/row(x);",
@@ -3802,7 +3802,7 @@ test_interpreter!(
     Value::U64(Ref::new(200))
 );
 
-#[cfg(all(feature = "table", feature = "u64", feature = "standard_source"))]
+#[cfg(all(feature = "table", feature = "u64", feature = "full_source"))]
 fn internal_table_join_cell(operation_name: &str, column: &str, row: usize) -> Value {
     let mut program = MechProgram::new(MechProgramConfig {
         name: "internal-table-join".to_string(),
@@ -3852,7 +3852,7 @@ B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |"#,
 }
 
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 #[test]
 fn interpret_table_inner_join_catalog_operation() {
     assert_eq!(
@@ -3868,7 +3868,7 @@ test_interpreter!(
     Value::U64(Ref::new(1))
 );
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 #[test]
 fn interpret_table_left_outer_join_catalog_operation() {
     assert_eq!(
@@ -3884,7 +3884,7 @@ test_interpreter!(
     Value::U64(Ref::new(4))
 );
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 #[test]
 fn interpret_table_right_outer_join_catalog_operation() {
     assert_eq!(
@@ -3900,7 +3900,7 @@ test_interpreter!(
     Value::U64(Ref::new(4))
 );
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 #[test]
 fn interpret_table_full_outer_join_catalog_operation() {
     assert_eq!(
@@ -4006,7 +4006,7 @@ test_interpreter!(
     Value::U64(Ref::new(30))
 );
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 #[test]
 fn interpret_table_left_semi_join_catalog_operation() {
     assert_eq!(
@@ -4022,7 +4022,7 @@ test_interpreter!(
     Value::U64(Ref::new(1))
 );
 #[cfg(all(feature = "table", feature = "u64"))]
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 #[test]
 fn interpret_table_left_anti_join_catalog_operation() {
     assert_eq!(
@@ -4248,14 +4248,14 @@ test_interpreter!(
     Value::Bool(Ref::new(true))
 );
 
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_catalog_internal_operation!(
     interpret_compare_max_scalar,
     "compare/max",
     [Value::F64(Ref::new(5.0)), Value::F64(Ref::new(3.0))],
     Value::F64(Ref::new(5.0))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_catalog_internal_operation!(
     interpret_compare_max_vector,
     "compare/max",
@@ -4265,7 +4265,7 @@ test_catalog_internal_operation!(
     ],
     Value::MatrixF64(Matrix::from_vec(vec![4.0, 4.0, 5.0, 6.0], 1, 4))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_catalog_internal_operation!(
     interpret_compare_max_vector_vector,
     "compare/max",
@@ -4275,14 +4275,14 @@ test_catalog_internal_operation!(
     ],
     Value::MatrixF64(Matrix::from_vec(vec![6.0, 5.0, 5.0, 6.0], 1, 4))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_catalog_internal_operation!(
     interpret_compare_min_scalar,
     "compare/min",
     [Value::F64(Ref::new(5.0)), Value::F64(Ref::new(3.0))],
     Value::F64(Ref::new(3.0))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_catalog_internal_operation!(
     interpret_compare_min_vector,
     "compare/min",
@@ -4292,7 +4292,7 @@ test_catalog_internal_operation!(
     ],
     Value::MatrixF64(Matrix::from_vec(vec![3.0, 4.0, 4.0, 4.0], 1, 4))
 );
-#[cfg(feature = "standard_source")]
+#[cfg(feature = "full_source")]
 test_catalog_internal_operation!(
     interpret_compare_min_vector_vector,
     "compare/min",

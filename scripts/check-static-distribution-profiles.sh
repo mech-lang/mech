@@ -499,7 +499,7 @@ check_selected_runtime() {
     -- "$repository_root/tests/architecture/bytecode-v1/scalar-add-f64.mecb"
 }
 
-check_standard_runtime() {
+check_full_runtime() {
   manifest="$repository_root/tests/fixtures/standard-bytecode-runtime/Cargo.toml"
   capture_fixture_profile "$manifest" "$scratch/standard-runtime.tree"
   for package in mech-core mech-engine mech-stdlib mech-math mech-compare mech-logic mech-range mech-matrix mech-set mech-string mech-stats mech-combinatorics
@@ -519,7 +519,7 @@ check_standard_runtime() {
     --manifest-path "$repository_root/Cargo.toml" \
     -p mech-stdlib \
     --no-default-features \
-    --features standard_runtime \
+    --features full_runtime \
     --test profile_contracts \
     --target-dir "$scratch/standard-runtime-target"
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
@@ -528,7 +528,7 @@ check_standard_runtime() {
     -- "$repository_root/tests/architecture/bytecode-v1/scalar-add-f64.mecb"
 }
 
-check_standard_source() {
+check_full_source() {
   manifest="$repository_root/tests/fixtures/standard-source-runtime/Cargo.toml"
   capture_fixture_profile "$manifest" "$scratch/standard-source.tree"
   check_graph "$scratch/standard-source.tree" "standard source" \
@@ -544,7 +544,7 @@ check_standard_source() {
     --manifest-path "$repository_root/Cargo.toml" \
     -p mech-stdlib \
     --no-default-features \
-    --features standard_source \
+    --features full_source \
     --test profile_contracts \
     --target-dir "$scratch/standard-source-target"
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
@@ -552,7 +552,7 @@ check_standard_source() {
     --target-dir "$scratch/standard-source-target"
 }
 
-check_standard_compiler() {
+check_full_compiler() {
   producer_manifest="$repository_root/tests/fixtures/bytecode-compiler-producer/Cargo.toml"
   consumer_manifest="$repository_root/tests/fixtures/bytecode-runtime-consumer/Cargo.toml"
   capture_fixture_profile "$producer_manifest" "$scratch/standard-compiler.tree"
@@ -567,7 +567,7 @@ check_standard_compiler() {
     --manifest-path "$repository_root/Cargo.toml" \
     -p mech-stdlib \
     --no-default-features \
-    --features standard_compiler \
+    --features full_compiler \
     --test profile_contracts \
     --target-dir "$scratch/standard-compiler-target"
 
@@ -618,11 +618,11 @@ check_wasm_source() {
     'forbid=mech-wasm feature "compiler"' \
     'forbid=mech-engine feature "compiler"' \
     'forbid=mech-stdlib feature "compiler"' \
-    'forbid=mech-stdlib feature "standard_compiler"' \
-    'forbid=mech-stdlib feature "standard_operations"' \
-    'forbid=mech-stdlib feature "standard_runtime"' \
-    'forbid=mech-stdlib feature "standard_source"' \
-    'forbid=mech-stdlib feature "standard_values"' \
+    'forbid=mech-stdlib feature "full_compiler"' \
+    'forbid=mech-stdlib feature "full_operations"' \
+    'forbid=mech-stdlib feature "full_runtime"' \
+    'forbid=mech-stdlib feature "full_source"' \
+    'forbid=mech-stdlib feature "full_values"' \
     'forbid=mech-core feature "compiler"'
   for package in mech-compare mech-logic mech-math mech-matrix mech-range mech-string
   do
@@ -646,16 +646,16 @@ case "$mode" in
     check_static_boundary
     check_engine
     check_selected_runtime
-    check_standard_runtime
-    check_standard_source
-    check_standard_compiler
+    check_full_runtime
+    check_full_source
+    check_full_compiler
     check_wasm_source
     ;;
   engine) check_engine ;;
   selected-runtime) check_selected_runtime ;;
-  standard-runtime) check_standard_runtime ;;
-  standard-source) check_standard_source ;;
-  standard-compiler) check_standard_compiler ;;
+  standard-runtime) check_full_runtime ;;
+  standard-source) check_full_source ;;
+  standard-compiler) check_full_compiler ;;
   wasm-source) check_wasm_source ;;
   static) check_static_boundary ;;
 esac

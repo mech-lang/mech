@@ -707,12 +707,12 @@ version = "0.3.5"
 dependencies = [
  "cargo_metadata",
  "mech-core",
- "mech-host-cli",
- "mech-host-console",
- "mech-host-robot-arm",
- "mech-host-scene",
- "mech-host-time",
- "mech-host-timer",
+ "mech-terminal",
+ "mech-console",
+ "mech-robot-arm",
+ "mech-scene",
+ "mech-time",
+ "mech-timer",
  "mech-runtime",
  "serde",
  "serde_json",
@@ -777,7 +777,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mech-host-cli"
+name = "mech-terminal"
 version = "0.3.5"
 dependencies = [
  "mech-core",
@@ -785,7 +785,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mech-host-console"
+name = "mech-console"
 version = "0.3.5"
 dependencies = [
  "mech-core",
@@ -793,7 +793,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mech-host-robot-arm"
+name = "mech-robot-arm"
 version = "0.3.5"
 dependencies = [
  "mech-core",
@@ -801,7 +801,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mech-host-scene"
+name = "mech-scene"
 version = "0.3.5"
 dependencies = [
  "mech-core",
@@ -809,7 +809,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mech-host-time"
+name = "mech-time"
 version = "0.3.5"
 dependencies = [
  "chrono",
@@ -818,7 +818,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mech-host-timer"
+name = "mech-timer"
 version = "0.3.5"
 dependencies = [
  "mech-core",

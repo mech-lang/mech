@@ -1,4 +1,4 @@
-#![cfg(feature = "standard-hosts")]
+#![cfg(feature = "full-hosts")]
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -114,23 +114,18 @@ fn configured_standard_hosts_are_pruned_to_exact_bytecode_owners() {
             .iter()
             .map(|package| package.package.as_str())
             .collect::<Vec<_>>(),
-        [
-            "mech-core",
-            "mech-engine",
-            "mech-host-console",
-            "mech-runtime"
-        ]
+        ["mech-core", "mech-engine", "mech-console", "mech-runtime"]
     );
 
     let project =
         render_generated_native_project("ignored-project", &request, &plan, None).unwrap();
-    assert!(project.cargo_manifest.contains("mech-host-console"));
+    assert!(project.cargo_manifest.contains("mech-console"));
     for unused in [
-        "mech-host-cli",
-        "mech-host-robot-arm",
-        "mech-host-scene",
-        "mech-host-time",
-        "mech-host-timer",
+        "mech-terminal",
+        "mech-robot-arm",
+        "mech-scene",
+        "mech-time",
+        "mech-timer",
     ] {
         assert!(!project.cargo_manifest.contains(unused), "linked {unused}");
     }

@@ -1,5 +1,5 @@
 [package]
-name = "mech-host-robot-arm"
+name = "mech-robot-arm"
 version = "0.3.5"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mock robot arm host integration for Mech runtimes."

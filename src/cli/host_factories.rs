@@ -1,16 +1,16 @@
 use std::collections::BTreeSet;
 
-use mech_core::MResult;
-use mech_host_cli::CliHostFactory;
 #[cfg(feature = "console_host_native")]
-use mech_host_console::NativeConsoleHostFactory;
-#[cfg(feature = "scene_host_native")]
-use mech_host_scene::NativeSceneHostFactory;
-#[cfg(feature = "time_host_native")]
-use mech_host_time::NativeTimeHostFactory;
-#[cfg(feature = "timer_host_native")]
-use mech_host_timer::NativeTimerHostFactory;
+use mech_console::NativeConsoleHostFactory;
+use mech_core::MResult;
 use mech_runtime::{RuntimeBuilder, RuntimeHostFactory};
+#[cfg(feature = "scene_host_native")]
+use mech_scene::NativeSceneHostFactory;
+use mech_terminal::CliHostFactory;
+#[cfg(feature = "time_host_native")]
+use mech_time::NativeTimeHostFactory;
+#[cfg(feature = "timer_host_native")]
+use mech_timer::NativeTimerHostFactory;
 
 pub fn register_cli_host_factories(
     mut builder: RuntimeBuilder,

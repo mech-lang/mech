@@ -52,12 +52,12 @@ def main() -> int:
     try:
         source = STANDARD.read_text(encoding="utf-8")
         expected_providers = {
-            "cli": ("mech-host-cli", "mech_host_cli", "provider", "mech_host_cli::CliHostFactory::new"),
-            "console": ("mech-host-console", "mech_host_console", "native", "mech_host_console::NativeConsoleHostFactory::new"),
-            "robot-arm": ("mech-host-robot-arm", "mech_host_robot_arm", "provider", "mech_host_robot_arm::RobotArmHostFactory::new"),
-            "scene": ("mech-host-scene", "mech_host_scene", "native", "mech_host_scene::NativeSceneHostFactory::new"),
-            "time": ("mech-host-time", "mech_host_time", "native", "mech_host_time::NativeTimeHostFactory::new"),
-            "timer": ("mech-host-timer", "mech_host_timer", "native", "mech_host_timer::NativeTimerHostFactory::new"),
+            "cli": ("mech-terminal", "mech_terminal", "provider", "mech_terminal::CliHostFactory::new"),
+            "console": ("mech-console", "mech_console", "native", "mech_console::NativeConsoleHostFactory::new"),
+            "robot-arm": ("mech-robot-arm", "mech_robot_arm", "provider", "mech_robot_arm::RobotArmHostFactory::new"),
+            "scene": ("mech-scene", "mech_scene", "native", "mech_scene::NativeSceneHostFactory::new"),
+            "time": ("mech-time", "mech_time", "native", "mech_time::NativeTimeHostFactory::new"),
+            "timer": ("mech-timer", "mech_timer", "native", "mech_timer::NativeTimerHostFactory::new"),
         }
         providers = set(re.findall(r'provider:\s*"([a-z-]+)"', source))
         require(providers == set(expected_providers), f"provider set drifted: {sorted(providers)}")
@@ -89,12 +89,12 @@ def main() -> int:
         require(not re.search(r'provider:\s*"browser"', source), "browser provider entered native catalog")
 
         expected_runtime_features = {
-            "mech-host-cli": ["runtime", "string"],
-            "mech-host-console": ["runtime", "string"],
-            "mech-host-time": ["f64", "runtime"],
-            "mech-host-timer": ["f64", "runtime"],
-            "mech-host-scene": ["f64", "runtime", "string"],
-            "mech-host-robot-arm": ["bool", "runtime", "string"],
+            "mech-terminal": ["runtime", "string"],
+            "mech-console": ["runtime", "string"],
+            "mech-time": ["f64", "runtime"],
+            "mech-timer": ["f64", "runtime"],
+            "mech-scene": ["f64", "runtime", "string"],
+            "mech-robot-arm": ["bool", "runtime", "string"],
         }
         metadata = json.loads(capture("cargo", "metadata", "--format-version", "1"))
         packages = {package["name"]: package for package in metadata["packages"]}
@@ -137,7 +137,7 @@ def main() -> int:
             "-p",
             "mech-build",
             "--features",
-            "standard-hosts",
+            "full-hosts",
             "--lib",
             "host::",
             "--quiet",
@@ -149,7 +149,7 @@ def main() -> int:
             "-p",
             "mech-build",
             "--features",
-            "standard-hosts",
+            "full-hosts",
             "--test",
             "planning",
             "unknown_and_browser_providers_fail_before_generation",

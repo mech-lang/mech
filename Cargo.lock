@@ -2017,19 +2017,19 @@ dependencies = [
  "indexmap",
  "indicatif",
  "libc",
+ "mech-browser",
  "mech-build",
+ "mech-console",
  "mech-core",
  "mech-engine",
- "mech-host-browser",
- "mech-host-cli",
- "mech-host-console",
- "mech-host-robot-arm",
- "mech-host-scene",
- "mech-host-time",
- "mech-host-timer",
+ "mech-robot-arm",
  "mech-runtime",
+ "mech-scene",
  "mech-stdlib",
  "mech-syntax",
+ "mech-terminal",
+ "mech-time",
+ "mech-timer",
  "nalgebra",
  "nom 7.1.3",
  "notify",
@@ -2052,20 +2052,32 @@ name = "mech-abi"
 version = "0.3.5"
 
 [[package]]
+name = "mech-browser"
+version = "0.3.5"
+dependencies = [
+ "base64 0.22.1",
+ "mech-core",
+ "mech-runtime",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
 name = "mech-build"
 version = "0.3.5"
 dependencies = [
  "cargo_metadata",
+ "mech-console",
  "mech-core",
- "mech-host-cli",
- "mech-host-console",
- "mech-host-robot-arm",
- "mech-host-scene",
- "mech-host-time",
- "mech-host-timer",
  "mech-native-live-host-fixture",
+ "mech-robot-arm",
  "mech-runtime",
+ "mech-scene",
  "mech-stdlib",
+ "mech-terminal",
+ "mech-time",
+ "mech-timer",
  "serde",
  "serde_json",
  "sha2",
@@ -2099,6 +2111,17 @@ dependencies = [
  "mech-core",
  "nalgebra",
  "paste",
+]
+
+[[package]]
+name = "mech-console"
+version = "0.3.5"
+dependencies = [
+ "mech-core",
+ "mech-engine",
+ "mech-runtime",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -2151,78 +2174,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mech-host-browser"
-version = "0.3.5"
-dependencies = [
- "base64 0.22.1",
- "mech-core",
- "mech-runtime",
- "serde",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
-name = "mech-host-cli"
-version = "0.3.5"
-dependencies = [
- "mech-core",
- "mech-runtime",
-]
-
-[[package]]
-name = "mech-host-console"
-version = "0.3.5"
-dependencies = [
- "mech-core",
- "mech-engine",
- "mech-runtime",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
-name = "mech-host-robot-arm"
-version = "0.3.5"
-dependencies = [
- "mech-core",
- "mech-runtime",
-]
-
-[[package]]
-name = "mech-host-scene"
-version = "0.3.5"
-dependencies = [
- "js-sys",
- "mech-core",
- "mech-runtime",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
-name = "mech-host-time"
-version = "0.3.5"
-dependencies = [
- "chrono",
- "js-sys",
- "mech-core",
- "mech-runtime",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
-name = "mech-host-timer"
-version = "0.3.5"
-dependencies = [
- "mech-core",
- "mech-runtime",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "mech-logic"
 version = "0.3.5"
 dependencies = [
@@ -2272,6 +2223,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "mech-robot-arm"
+version = "0.3.5"
+dependencies = [
+ "mech-core",
+ "mech-runtime",
+]
+
+[[package]]
 name = "mech-runtime"
 version = "0.3.5"
 dependencies = [
@@ -2281,9 +2240,9 @@ dependencies = [
  "ignore",
  "mech-core",
  "mech-engine",
- "mech-host-cli",
  "mech-native-live-host-fixture",
  "mech-syntax",
+ "mech-terminal",
  "notify",
  "rand_core 0.6.4",
  "serde",
@@ -2293,6 +2252,17 @@ dependencies = [
  "trybuild",
  "uuid",
  "web-time",
+]
+
+[[package]]
+name = "mech-scene"
+version = "0.3.5"
+dependencies = [
+ "js-sys",
+ "mech-core",
+ "mech-runtime",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -2362,6 +2332,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "mech-terminal"
+version = "0.3.5"
+dependencies = [
+ "mech-core",
+ "mech-runtime",
+]
+
+[[package]]
+name = "mech-time"
+version = "0.3.5"
+dependencies = [
+ "chrono",
+ "js-sys",
+ "mech-core",
+ "mech-runtime",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "mech-timer"
+version = "0.3.5"
+dependencies = [
+ "mech-core",
+ "mech-runtime",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "mech-wasm"
 version = "0.3.5"
 dependencies = [
@@ -2370,16 +2370,16 @@ dependencies = [
  "brotli",
  "gloo-net",
  "js-sys",
+ "mech-browser",
+ "mech-console",
  "mech-core",
  "mech-engine",
- "mech-host-browser",
- "mech-host-console",
- "mech-host-scene",
- "mech-host-time",
- "mech-host-timer",
  "mech-runtime",
+ "mech-scene",
  "mech-stdlib",
  "mech-syntax",
+ "mech-time",
+ "mech-timer",
  "miniz_oxide",
  "serde",
  "serde-wasm-bindgen",

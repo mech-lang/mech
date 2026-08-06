@@ -1,9 +1,9 @@
 mod catalog;
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 mod standard;
 
 pub use catalog::*;
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 pub use standard::*;

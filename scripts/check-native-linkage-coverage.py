@@ -270,8 +270,8 @@ def validate_catalog(
         required = {"runtime", "native-link"}
         forbidden = {
             "default", "runtime_default", "source", "source_default", "compiler",
-            "compiler_default", "standard_runtime", "standard_source",
-            "standard_compiler", "native-plan", "stdlib", "baselib",
+            "compiler_default", "full_runtime", "full_source",
+            "full_compiler", "native-plan", "stdlib", "baselib",
         }
         if not required.issubset(features):
             raise ContractError(f"{label} factory {name!r} omits required native features")

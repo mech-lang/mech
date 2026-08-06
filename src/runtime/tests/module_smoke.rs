@@ -11,8 +11,8 @@ use mech_core::{
 };
 #[cfg(feature = "compiler")]
 use mech_engine::{MechProgram, MechProgramConfig};
-use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::*;
+use mech_terminal::{CliBackend, CliResourceProvider};
 
 static NEXT_TEMP_ROOT: AtomicU64 = AtomicU64::new(0);
 
@@ -654,7 +654,7 @@ fn runtime_with_recording_cli_and_inputs(
     let state = Arc::new(Mutex::new(RecordingCliState::default()));
     let builder = runtime_with_module_test_catalog()
         .host_factory(Box::new(RecordingCliHostFactory {
-            manifest: mech_host_cli::cli_host_manifest().unwrap(),
+            manifest: mech_terminal::cli_host_manifest().unwrap(),
             state: state.clone(),
         }))
         .unwrap()
@@ -5200,7 +5200,7 @@ impl<B: CliBackend + Clone + 'static> TestCliFactory<B> {
     fn new(backend: B) -> Self {
         Self {
             backend,
-            manifest: mech_host_cli::cli_host_manifest().unwrap(),
+            manifest: mech_terminal::cli_host_manifest().unwrap(),
         }
     }
 }
@@ -7896,7 +7896,7 @@ fn module_function_unknown_address_target_is_preflighted_before_send() {
     let state = Arc::new(Mutex::new(RecordingCliState::default()));
     let mut runtime = RuntimeBuilder::new()
         .host_factory(Box::new(RecordingCliHostFactory {
-            manifest: mech_host_cli::cli_host_manifest().unwrap(),
+            manifest: mech_terminal::cli_host_manifest().unwrap(),
             state: state.clone(),
         }))
         .unwrap()

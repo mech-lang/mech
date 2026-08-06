@@ -1,5 +1,5 @@
 [package]
-name = "mech-host-cli"
+name = "mech-terminal"
 version = "0.3.5"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "CLI host integration for Mech runtimes."

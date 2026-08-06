@@ -78,5 +78,5 @@ Concrete host provider behavior is documented in each host crate under `hosts/*/
 --------------------------------------------------------------------------------
 
 - [Browser Host](/hosts/browser/docs/index.html)
-- [CLI Host](/hosts/cli/docs/index.html)
+- [CLI Host](/hosts/terminal/docs/index.html)
 - [Robot Arm Host](/hosts/robot-arm/docs/index.html)

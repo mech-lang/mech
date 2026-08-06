@@ -3513,10 +3513,10 @@
           "cargo_features": [
             "provider"
           ],
-          "crate_name": "mech_host_cli",
-          "package": "mech-host-cli",
+          "crate_name": "mech_terminal",
+          "package": "mech-terminal",
           "source": {
-            "path": "hosts/cli",
+            "path": "hosts/terminal",
             "source": "workspace"
           }
         },
@@ -3709,8 +3709,8 @@
           "cargo_features": [
             "native"
           ],
-          "crate_name": "mech_host_console",
-          "package": "mech-host-console",
+          "crate_name": "mech_console",
+          "package": "mech-console",
           "source": {
             "path": "hosts/console",
             "source": "workspace"
@@ -3919,8 +3919,8 @@
           "cargo_features": [
             "native"
           ],
-          "crate_name": "mech_host_time",
-          "package": "mech-host-time",
+          "crate_name": "mech_time",
+          "package": "mech-time",
           "source": {
             "path": "hosts/time",
             "source": "workspace"
@@ -4143,8 +4143,8 @@
           "cargo_features": [
             "native"
           ],
-          "crate_name": "mech_host_timer",
-          "package": "mech-host-timer",
+          "crate_name": "mech_timer",
+          "package": "mech-timer",
           "source": {
             "path": "hosts/timer",
             "source": "workspace"
@@ -4372,8 +4372,8 @@
           "cargo_features": [
             "native"
           ],
-          "crate_name": "mech_host_scene",
-          "package": "mech-host-scene",
+          "crate_name": "mech_scene",
+          "package": "mech-scene",
           "source": {
             "path": "hosts/scene",
             "source": "workspace"
@@ -4620,8 +4620,8 @@
           "cargo_features": [
             "provider"
           ],
-          "crate_name": "mech_host_robot_arm",
-          "package": "mech-host-robot-arm",
+          "crate_name": "mech_robot_arm",
+          "package": "mech-robot-arm",
           "source": {
             "path": "hosts/robot-arm",
             "source": "workspace"

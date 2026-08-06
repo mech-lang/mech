@@ -1,4 +1,4 @@
-#![cfg(feature = "standard-hosts")]
+#![cfg(feature = "full-hosts")]
 
 use std::fs;
 use std::fs::File;
@@ -424,12 +424,12 @@ fn append_test_only_workspace_patch(manifest: &Path, workspace: &Path) {
         ("mech-string", "machines/string"),
         ("mech-stats", "machines/stats"),
         ("mech-combinatorics", "machines/combinatorics"),
-        ("mech-host-cli", "hosts/cli"),
-        ("mech-host-console", "hosts/console"),
-        ("mech-host-time", "hosts/time"),
-        ("mech-host-timer", "hosts/timer"),
-        ("mech-host-scene", "hosts/scene"),
-        ("mech-host-robot-arm", "hosts/robot-arm"),
+        ("mech-terminal", "hosts/terminal"),
+        ("mech-console", "hosts/console"),
+        ("mech-time", "hosts/time"),
+        ("mech-timer", "hosts/timer"),
+        ("mech-scene", "hosts/scene"),
+        ("mech-robot-arm", "hosts/robot-arm"),
         (
             "mech-native-live-host-fixture",
             "tests/fixtures/native-live-host",

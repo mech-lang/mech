@@ -1412,10 +1412,10 @@ mod tests {
         plan.hosts = vec![PlannedHostInstance {
             name: "cli".into(),
             provider: "cli".into(),
-            package: "mech-host-cli".into(),
-            crate_name: "mech_host_cli".into(),
+            package: "mech-terminal".into(),
+            crate_name: "mech_terminal".into(),
             cargo_features: vec!["provider".into()],
-            factory_path: "mech_host_cli::CliHostFactory::new".into(),
+            factory_path: "mech_terminal::CliHostFactory::new".into(),
             settings: settings.clone(),
         }];
         plan.run_grants = vec![planned_grant("cli", "stdout")];
@@ -1438,7 +1438,7 @@ mod tests {
         assert!(source.contains("log_level: LogLevel::Debug"));
         assert!(source.contains("ConfigValue::Map(BTreeMap::from"));
         assert!(source.contains("f64::from_bits(4607182418800017408u64)"));
-        assert!(source.contains("mech_host_cli::CliHostFactory::new()?"));
+        assert!(source.contains("mech_terminal::CliHostFactory::new()?"));
         assert!(source.contains("HostInstanceConfig {"));
         assert!(source.contains("RunResourceGrantConfig {"));
         assert!(!source.contains("quote\"newline\n"));
@@ -1457,10 +1457,10 @@ mod tests {
         plan.hosts = vec![PlannedHostInstance {
             name: "cli".into(),
             provider: "cli".into(),
-            package: "mech-host-cli".into(),
-            crate_name: "mech_host_cli".into(),
+            package: "mech-terminal".into(),
+            crate_name: "mech_terminal".into(),
             cargo_features: vec!["provider".into()],
-            factory_path: "mech_host_cli::CliHostFactory::new".into(),
+            factory_path: "mech_terminal::CliHostFactory::new".into(),
             settings: ConfigValue::Map(BTreeMap::new()),
         }];
         plan.run_grants = vec![planned_grant("cli", "stderr")];

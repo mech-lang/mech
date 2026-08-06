@@ -12,7 +12,7 @@ standard = [
   "dep:serde",
   "dep:serde_json",
   "mech-stdlib/native-plan",
-  "mech-stdlib/standard_runtime",
+  "mech-stdlib/full_runtime",
 ]
 representatives = [
   "dep:mech-core",
@@ -88,39 +88,39 @@ extended-engine-shard-convert = [
 ]
 extended-math = [
   "dep:mech-core", "dep:mech-math", "dep:serde", "dep:serde_json",
-  "mech-core/native-plan", "mech-math/native-plan", "mech-math/runtime_default",
+  "mech-core/native-plan", "mech-math/native-plan", "mech-math/full_runtime",
 ]
 extended-compare = [
   "dep:mech-core", "dep:mech-compare", "dep:serde", "dep:serde_json",
-  "mech-core/native-plan", "mech-compare/native-plan", "mech-compare/runtime_default",
+  "mech-core/native-plan", "mech-compare/native-plan", "mech-compare/full_runtime",
 ]
 extended-logic = [
   "dep:mech-core", "dep:mech-logic", "dep:serde", "dep:serde_json",
-  "mech-core/native-plan", "mech-logic/native-plan", "mech-logic/runtime_default",
+  "mech-core/native-plan", "mech-logic/native-plan", "mech-logic/full_runtime",
 ]
 extended-range = [
   "dep:mech-core", "dep:mech-range", "dep:serde", "dep:serde_json",
-  "mech-core/native-plan", "mech-range/native-plan", "mech-range/runtime_default",
+  "mech-core/native-plan", "mech-range/native-plan", "mech-range/full_runtime",
 ]
 extended-matrix = [
   "dep:mech-core", "dep:mech-matrix", "dep:serde", "dep:serde_json",
-  "mech-core/native-plan", "mech-matrix/native-plan", "mech-matrix/runtime_default",
+  "mech-core/native-plan", "mech-matrix/native-plan", "mech-matrix/full_runtime",
 ]
 extended-set = [
   "dep:mech-core", "dep:mech-set", "dep:serde", "dep:serde_json",
-  "mech-core/native-plan", "mech-set/native-plan", "mech-set/runtime_default",
+  "mech-core/native-plan", "mech-set/native-plan", "mech-set/full_runtime",
 ]
 extended-string = [
   "dep:mech-core", "dep:mech-string", "dep:serde", "dep:serde_json",
-  "mech-core/native-plan", "mech-string/native-plan", "mech-string/runtime_default",
+  "mech-core/native-plan", "mech-string/native-plan", "mech-string/full_runtime",
 ]
 extended-stats = [
   "dep:mech-core", "dep:mech-stats", "dep:serde", "dep:serde_json",
-  "mech-core/native-plan", "mech-stats/native-plan", "mech-stats/runtime_default",
+  "mech-core/native-plan", "mech-stats/native-plan", "mech-stats/full_runtime",
 ]
 extended-combinatorics = [
   "dep:mech-core", "dep:mech-combinatorics", "dep:serde", "dep:serde_json",
-  "mech-core/native-plan", "mech-combinatorics/native-plan", "mech-combinatorics/runtime_default",
+  "mech-core/native-plan", "mech-combinatorics/native-plan", "mech-combinatorics/full_runtime",
 ]
 # The runtime and native-plan profiles intentionally compile independently so
 # the coverage checker can compare their exact ID/name surfaces.  The
@@ -133,47 +133,47 @@ extended-engine-runtime = [
 extended-engine-native-link = ["extended-engine-runtime", "mech-engine/native-link"]
 extended-math-runtime = [
   "dep:mech-core", "dep:mech-math", "dep:serde", "dep:serde_json",
-  "mech-math/runtime_default",
+  "mech-math/full_runtime",
 ]
 extended-math-native-link = ["extended-math-runtime", "mech-math/native-link"]
 extended-compare-runtime = [
   "dep:mech-core", "dep:mech-compare", "dep:serde", "dep:serde_json",
-  "mech-compare/runtime_default",
+  "mech-compare/full_runtime",
 ]
 extended-compare-native-link = ["extended-compare-runtime", "mech-compare/native-link"]
 extended-logic-runtime = [
   "dep:mech-core", "dep:mech-logic", "dep:serde", "dep:serde_json",
-  "mech-logic/runtime_default",
+  "mech-logic/full_runtime",
 ]
 extended-logic-native-link = ["extended-logic-runtime", "mech-logic/native-link"]
 extended-range-runtime = [
   "dep:mech-core", "dep:mech-range", "dep:serde", "dep:serde_json",
-  "mech-range/runtime_default",
+  "mech-range/full_runtime",
 ]
 extended-range-native-link = ["extended-range-runtime", "mech-range/native-link"]
 extended-matrix-runtime = [
   "dep:mech-core", "dep:mech-matrix", "dep:serde", "dep:serde_json",
-  "mech-matrix/runtime_default",
+  "mech-matrix/full_runtime",
 ]
 extended-matrix-native-link = ["extended-matrix-runtime", "mech-matrix/native-link"]
 extended-set-runtime = [
   "dep:mech-core", "dep:mech-set", "dep:serde", "dep:serde_json",
-  "mech-set/runtime_default",
+  "mech-set/full_runtime",
 ]
 extended-set-native-link = ["extended-set-runtime", "mech-set/native-link"]
 extended-string-runtime = [
   "dep:mech-core", "dep:mech-string", "dep:serde", "dep:serde_json",
-  "mech-string/runtime_default",
+  "mech-string/full_runtime",
 ]
 extended-string-native-link = ["extended-string-runtime", "mech-string/native-link"]
 extended-stats-runtime = [
   "dep:mech-core", "dep:mech-stats", "dep:serde", "dep:serde_json",
-  "mech-stats/runtime_default",
+  "mech-stats/full_runtime",
 ]
 extended-stats-native-link = ["extended-stats-runtime", "mech-stats/native-link"]
 extended-combinatorics-runtime = [
   "dep:mech-core", "dep:mech-combinatorics", "dep:serde", "dep:serde_json",
-  "mech-combinatorics/runtime_default",
+  "mech-combinatorics/full_runtime",
 ]
 extended-combinatorics-native-link = ["extended-combinatorics-runtime", "mech-combinatorics/native-link"]
 installer-profile = []
