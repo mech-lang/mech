@@ -1,6 +1,13 @@
 +> @clock := test-live/clock
 
++> @out := test-live/output
+
 value := @clock/value
 doubled := value + value
 
-doubled
+payload := (value, doubled)
+frame := {rotation: value}
+@out/tuple <- payload
+@out/frame <- frame
+
+payload

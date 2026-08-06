@@ -147,7 +147,8 @@ macro_rules! impl_variable_define_fxn {
       #[cfg(feature = "compiler")]
       impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
       fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-          let variable_register = compile_register_brrw!(self.var, ctx);
+          let value = self.var.to_value();
+          let variable_register = compile_value_register(&value, self.var.addr(), ctx)?;
           let variable_name = self.name.borrow().clone();
           let variable_mutable = *self.mutable.borrow();
           ctx.define_symbol(self.var.addr(), variable_register, &variable_name, variable_mutable);
@@ -521,7 +522,8 @@ impl MechFunctionImpl for VariableDefineEmpty {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for VariableDefineEmpty {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let variable_register = compile_register_brrw!(self.var, ctx);
+        let value = self.var.to_value();
+        let variable_register = compile_value_register(&value, self.var.addr(), ctx)?;
         let variable_name = self.name.borrow().clone();
         let variable_mutable = *self.mutable.borrow();
         ctx.define_symbol(

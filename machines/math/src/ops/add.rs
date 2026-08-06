@@ -686,6 +686,15 @@ mod tests {
             unreachable!("runtime selection does not initialize constants")
         }
 
+        fn emit_composite_pack(
+            &mut self,
+            _destination: Register,
+            _template: u32,
+            _children: Vec<Register>,
+        ) {
+            unreachable!("runtime selection does not construct composites")
+        }
+
         fn define_symbol(
             &mut self,
             _pointer: usize,

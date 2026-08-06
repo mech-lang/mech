@@ -457,6 +457,15 @@ impl BytecodeCompilerContext for CapturingConstantContext {
         Ok(0)
     }
 
+    fn emit_composite_pack(
+        &mut self,
+        _destination: Register,
+        _template: u32,
+        _children: Vec<Register>,
+    ) {
+        unreachable!("constant capture does not emit bytecode instructions")
+    }
+
     fn define_symbol(
         &mut self,
         _pointer: usize,

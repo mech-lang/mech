@@ -65,6 +65,19 @@ impl BytecodeCompilerContext for RecordingBytecodeCompilerContext {
         });
     }
 
+    fn emit_composite_pack(
+        &mut self,
+        destination: Register,
+        template: u32,
+        children: Vec<Register>,
+    ) {
+        self.instructions.push(BytecodeInstruction::CompositePack {
+            dst: destination,
+            template,
+            children,
+        });
+    }
+
     fn emit_nullop(&mut self, function: u64, destination: Register) {
         self.instructions.push(BytecodeInstruction::RuntimeNullary {
             function,

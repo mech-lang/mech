@@ -124,6 +124,7 @@ pub mod value;
 mod value_snapshot;
 pub use self::value_snapshot::{
     ValueSnapshotBorrowConflict, ValueSnapshotCollectionCollision, ValueSnapshotCycleUnsupported,
+    ValueSnapshotRecreator,
 };
 #[cfg(feature = "mika")]
 pub mod mika;

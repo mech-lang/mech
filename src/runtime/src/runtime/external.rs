@@ -1,10 +1,9 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::collections::BTreeMap;
 
-#[cfg(feature = "matrix")]
-use mech_core::matrix::Matrix;
 use mech_core::{
     ApplicationRequirement, ExecutionResourceRequest, FunctionSpecializer, GuardFunctionSafety,
-    InitialSolvePolicy, MResult, MechError, MechErrorKind, Ref, ResourceIntent, Value, ValueKind,
+    InitialSolvePolicy, MResult, MechError, MechErrorKind, Ref, ResourceIntent, Value,
+    ValueSnapshotRecreator,
 };
 use mech_engine::{ExternalResourceReadFunction, ExternalResourceWriteFunction};
 
@@ -13,227 +12,37 @@ pub struct ExternalRequirementCatalog {
     requirements: BTreeMap<String, ApplicationRequirement>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub(crate) enum PlannedResourceValue {
-    Empty,
-    #[cfg(feature = "bool")]
-    Bool(bool),
-    #[cfg(feature = "f64")]
-    F64(f64),
-    #[cfg(feature = "string")]
-    String(String),
-}
-
-impl PlannedResourceValue {
-    pub(crate) fn capture(value: &Value) -> MResult<Self> {
-        match value {
-            Value::Empty => Ok(Self::Empty),
-            #[cfg(feature = "bool")]
-            Value::Bool(value) => Ok(Self::Bool(*value.borrow())),
-            #[cfg(feature = "f64")]
-            Value::F64(value) => Ok(Self::F64(*value.borrow())),
-            #[cfg(feature = "string")]
-            Value::String(value) => Ok(Self::String(value.borrow().clone())),
-            other => Err(MechError::new(
-                RuntimeResourcePlannedValueUnsupported { kind: other.kind() },
-                None,
-            )),
-        }
-    }
-
-    fn to_value(&self) -> Value {
-        match self {
-            Self::Empty => Value::Empty,
-            #[cfg(feature = "bool")]
-            Self::Bool(value) => Value::Bool(Ref::new(*value)),
-            #[cfg(feature = "f64")]
-            Self::F64(value) => Value::F64(Ref::new(*value)),
-            #[cfg(feature = "string")]
-            Self::String(value) => Value::String(Ref::new(value.clone())),
-        }
-    }
-}
-
 #[derive(Clone)]
 pub(crate) struct ExecutedResourceValue {
-    recreate: Arc<dyn Fn() -> Value + Send + Sync>,
+    recreate: ValueSnapshotRecreator,
 }
 
 impl ExecutedResourceValue {
-    fn new(recreate: impl Fn() -> Value + Send + Sync + 'static) -> Self {
-        Self {
-            recreate: Arc::new(recreate),
-        }
-    }
-
     pub(crate) fn capture(value: &Value) -> MResult<Self> {
-        Self::capture_detached(value.try_deep_snapshot()?)
-    }
-
-    fn capture_detached(value: Value) -> MResult<Self> {
-        macro_rules! scalar {
-            ($value:expr, $variant:ident) => {{
-                let value = $value.borrow().clone();
-                Ok(Self::new(move || Value::$variant(Ref::new(value.clone()))))
-            }};
-        }
-
-        match value {
-            #[cfg(feature = "u8")]
-            Value::U8(value) => scalar!(value, U8),
-            #[cfg(feature = "u16")]
-            Value::U16(value) => scalar!(value, U16),
-            #[cfg(feature = "u32")]
-            Value::U32(value) => scalar!(value, U32),
-            #[cfg(feature = "u64")]
-            Value::U64(value) => scalar!(value, U64),
-            #[cfg(feature = "u128")]
-            Value::U128(value) => scalar!(value, U128),
-            #[cfg(feature = "i8")]
-            Value::I8(value) => scalar!(value, I8),
-            #[cfg(feature = "i16")]
-            Value::I16(value) => scalar!(value, I16),
-            #[cfg(feature = "i32")]
-            Value::I32(value) => scalar!(value, I32),
-            #[cfg(feature = "i64")]
-            Value::I64(value) => scalar!(value, I64),
-            #[cfg(feature = "i128")]
-            Value::I128(value) => scalar!(value, I128),
-            #[cfg(feature = "f32")]
-            Value::F32(value) => scalar!(value, F32),
-            #[cfg(feature = "f64")]
-            Value::F64(value) => scalar!(value, F64),
-            #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(value) => scalar!(value, String),
-            #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(value) => scalar!(value, Bool),
-            #[cfg(feature = "complex")]
-            Value::C64(value) => scalar!(value, C64),
-            #[cfg(feature = "rational")]
-            Value::R64(value) => scalar!(value, R64),
-            Value::Index(value) => scalar!(value, Index),
-            #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(value) => Ok(capture_executed_matrix(value, Value::MatrixBool)),
-            #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(value) => Ok(capture_executed_matrix(value, Value::MatrixU8)),
-            #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(value) => Ok(capture_executed_matrix(value, Value::MatrixU16)),
-            #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(value) => Ok(capture_executed_matrix(value, Value::MatrixU32)),
-            #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(value) => Ok(capture_executed_matrix(value, Value::MatrixU64)),
-            #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(value) => Ok(capture_executed_matrix(value, Value::MatrixU128)),
-            #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(value) => Ok(capture_executed_matrix(value, Value::MatrixI8)),
-            #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(value) => Ok(capture_executed_matrix(value, Value::MatrixI16)),
-            #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(value) => Ok(capture_executed_matrix(value, Value::MatrixI32)),
-            #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(value) => Ok(capture_executed_matrix(value, Value::MatrixI64)),
-            #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(value) => Ok(capture_executed_matrix(value, Value::MatrixI128)),
-            #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(value) => Ok(capture_executed_matrix(value, Value::MatrixF32)),
-            #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(value) => Ok(capture_executed_matrix(value, Value::MatrixF64)),
-            #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(value) => Ok(capture_executed_matrix(value, Value::MatrixString)),
-            #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(value) => Ok(capture_executed_matrix(value, Value::MatrixR64)),
-            #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(value) => Ok(capture_executed_matrix(value, Value::MatrixC64)),
-            Value::Typed(value, kind) => {
-                let inner = Self::capture_detached(*value)?;
-                Ok(Self::new(move || {
-                    Value::Typed(Box::new(inner.to_value()), kind.clone())
-                }))
-            }
-            Value::Empty => Ok(Self::new(|| Value::Empty)),
-            other => Err(MechError::new(
-                RuntimeResourceExecutedValueUnsupported { kind: other.kind() },
-                None,
-            )),
-        }
+        Ok(Self {
+            recreate: ValueSnapshotRecreator::capture(value)?,
+        })
     }
 
     fn to_value(&self) -> Value {
-        (self.recreate)()
-    }
-}
-
-#[cfg(feature = "matrix")]
-fn capture_executed_matrix<T>(
-    matrix: Matrix<T>,
-    wrap: fn(Matrix<T>) -> Value,
-) -> ExecutedResourceValue
-where
-    T: Clone + Send + Sync + 'static,
-{
-    macro_rules! matrix {
-        ($value:expr, $variant:ident) => {{
-            let value = $value.borrow().clone();
-            ExecutedResourceValue::new(move || wrap(Matrix::$variant(Ref::new(value.clone()))))
-        }};
-    }
-
-    match matrix {
-        #[cfg(feature = "matrix1")]
-        Matrix::Matrix1(value) => matrix!(value, Matrix1),
-        #[cfg(feature = "matrix2")]
-        Matrix::Matrix2(value) => matrix!(value, Matrix2),
-        #[cfg(feature = "matrix3")]
-        Matrix::Matrix3(value) => matrix!(value, Matrix3),
-        #[cfg(feature = "matrix4")]
-        Matrix::Matrix4(value) => matrix!(value, Matrix4),
-        #[cfg(feature = "matrix2x3")]
-        Matrix::Matrix2x3(value) => matrix!(value, Matrix2x3),
-        #[cfg(feature = "matrix3x2")]
-        Matrix::Matrix3x2(value) => matrix!(value, Matrix3x2),
-        #[cfg(feature = "row_vector2")]
-        Matrix::RowVector2(value) => matrix!(value, RowVector2),
-        #[cfg(feature = "row_vector3")]
-        Matrix::RowVector3(value) => matrix!(value, RowVector3),
-        #[cfg(feature = "row_vector4")]
-        Matrix::RowVector4(value) => matrix!(value, RowVector4),
-        #[cfg(feature = "vector2")]
-        Matrix::Vector2(value) => matrix!(value, Vector2),
-        #[cfg(feature = "vector3")]
-        Matrix::Vector3(value) => matrix!(value, Vector3),
-        #[cfg(feature = "vector4")]
-        Matrix::Vector4(value) => matrix!(value, Vector4),
-        #[cfg(feature = "row_vectord")]
-        Matrix::RowDVector(value) => matrix!(value, RowDVector),
-        #[cfg(feature = "vectord")]
-        Matrix::DVector(value) => matrix!(value, DVector),
-        #[cfg(feature = "matrixd")]
-        Matrix::DMatrix(value) => matrix!(value, DMatrix),
-        #[allow(unreachable_patterns)]
-        _ => unreachable!("matrix storage is not enabled in this runtime profile"),
+        self.recreate.to_value()
     }
 }
 
 #[derive(Clone)]
-pub(crate) enum RuntimeResourceInitialValue {
-    Executed(ExecutedResourceValue),
-    Planned(PlannedResourceValue),
-}
+pub(crate) struct RuntimeResourceInitialValue(ExecutedResourceValue);
 
 impl RuntimeResourceInitialValue {
     pub(crate) fn executed(value: &Value) -> MResult<Self> {
-        Ok(Self::Executed(ExecutedResourceValue::capture(value)?))
+        Ok(Self(ExecutedResourceValue::capture(value)?))
     }
 
     pub(crate) fn planned(value: &Value) -> MResult<Self> {
-        Ok(Self::Planned(PlannedResourceValue::capture(value)?))
+        Ok(Self(ExecutedResourceValue::capture(value)?))
     }
 
     fn to_value(&self) -> Value {
-        match self {
-            Self::Executed(value) => value.to_value(),
-            Self::Planned(value) => value.to_value(),
-        }
+        self.0.to_value()
     }
 }
 
@@ -422,42 +231,6 @@ pub struct ExternalRequirementCanonicalizationOverflow {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeResourcePlannedValueUnsupported {
-    pub kind: ValueKind,
-}
-
-impl MechErrorKind for RuntimeResourcePlannedValueUnsupported {
-    fn name(&self) -> &str {
-        "RuntimeResourcePlannedValueUnsupported"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "planned resource value kind {:?} cannot be retained by a source specializer",
-            self.kind,
-        )
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeResourceExecutedValueUnsupported {
-    pub kind: ValueKind,
-}
-
-impl MechErrorKind for RuntimeResourceExecutedValueUnsupported {
-    fn name(&self) -> &str {
-        "RuntimeResourceExecutedValueUnsupported"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "executed resource value kind {:?} cannot be retained as a stable source value",
-            self.kind,
-        )
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExternalOperationArityMismatch {
     pub expected: usize,
     pub found: usize,
@@ -493,12 +266,124 @@ impl MechErrorKind for ExternalRequirementCanonicalizationOverflow {
 mod tests {
     use mech_core::{
         ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest,
-        FunctionSpecializer, InitialSolvePolicy, ResourceDelivery, ResourceIntent, Value,
+        FunctionSpecializer, InitialSolvePolicy, Ref, ResourceDelivery, ResourceIntent, Value,
     };
 
     use super::{
-        ExternalRequirementCatalog, RuntimeResourceWriteSpecializer, hidden_external_operation_name,
+        ExternalRequirementCatalog, RuntimeResourceInitialValue, RuntimeResourceWriteSpecializer,
+        hidden_external_operation_name,
     };
+
+    fn assert_resource_snapshot_round_trip(value: Value) {
+        let expected = value.try_deep_snapshot().unwrap();
+        for captured in [
+            RuntimeResourceInitialValue::executed(&value).unwrap(),
+            RuntimeResourceInitialValue::planned(&value).unwrap(),
+        ] {
+            let actual = captured.to_value();
+            assert_eq!(actual, expected);
+            assert_ne!(actual.reactive_cell_ids(), value.reactive_cell_ids());
+        }
+    }
+
+    #[cfg(all(feature = "u64", feature = "matrix", feature = "f64"))]
+    #[test]
+    fn planned_resource_snapshots_cover_numeric_and_matrix_values() {
+        assert_resource_snapshot_round_trip(Value::U64(Ref::new(42)));
+        assert_resource_snapshot_round_trip(Value::Index(Ref::new(7)));
+        assert_resource_snapshot_round_trip(Value::MatrixF64(mech_core::matrix::Matrix::from_vec(
+            vec![1.0, 2.0, 3.0, 4.0],
+            2,
+            2,
+        )));
+    }
+
+    #[cfg(all(
+        feature = "u8",
+        feature = "u64",
+        feature = "f64",
+        feature = "string",
+        feature = "matrix",
+        feature = "map",
+        feature = "set",
+        feature = "record",
+        feature = "table",
+        feature = "tuple",
+        feature = "atom",
+        feature = "enum"
+    ))]
+    #[test]
+    fn resource_snapshots_cover_nested_composite_values() {
+        let names = Ref::new(mech_core::Dictionary::from([
+            (mech_core::hash_str("status"), "status".to_owned()),
+            (mech_core::hash_str("ready"), "ready".to_owned()),
+        ]));
+        let enumeration = Value::Enum(Ref::new(mech_core::MechEnum {
+            id: mech_core::hash_str("status"),
+            variants: vec![(mech_core::hash_str("ready"), Some(Value::U64(Ref::new(9))))],
+            names,
+        }));
+        let table_column = mech_core::hash_str("samples");
+        let table = Value::Table(Ref::new(mech_core::MechTable::from_parts(
+            2,
+            1,
+            vec![(
+                table_column,
+                mech_core::ValueKind::U8,
+                mech_core::matrix::Matrix::from_vec(
+                    vec![Value::U8(Ref::new(1)), Value::U8(Ref::new(2))],
+                    2,
+                    1,
+                ),
+            )],
+            vec![(table_column, "samples".to_owned())],
+        )));
+        let value = Value::Record(Ref::new(mech_core::MechRecord::new(vec![
+            (
+                "tuple",
+                Value::Tuple(Ref::new(mech_core::MechTuple::from_vec(vec![
+                    Value::String(Ref::new("value".to_owned())),
+                    Value::MutableReference(Ref::new(Value::F64(Ref::new(3.5)))),
+                ]))),
+            ),
+            (
+                "map",
+                Value::Map(Ref::new(mech_core::MechMap::from_vec(vec![(
+                    Value::String(Ref::new("key".to_owned())),
+                    Value::U64(Ref::new(5)),
+                )]))),
+            ),
+            (
+                "set",
+                Value::Set(Ref::new(mech_core::MechSet::from_vec(vec![
+                    Value::U8(Ref::new(6)),
+                    Value::U8(Ref::new(7)),
+                ]))),
+            ),
+            ("table", table),
+            ("enum", enumeration),
+            (
+                "atom",
+                Value::Atom(Ref::new(mech_core::MechAtom::from_name("ready"))),
+            ),
+            (
+                "matrix-value",
+                Value::MatrixValue(mech_core::matrix::Matrix::from_vec(
+                    vec![Value::U8(Ref::new(8)), Value::U8(Ref::new(9))],
+                    2,
+                    1,
+                )),
+            ),
+            (
+                "typed",
+                Value::Typed(
+                    Box::new(Value::U64(Ref::new(10))),
+                    mech_core::ValueKind::Option(Box::new(mech_core::ValueKind::U64)),
+                ),
+            ),
+        ])));
+        assert_resource_snapshot_round_trip(value);
+    }
 
     fn request(intent: ResourceIntent) -> ApplicationRequirement {
         ApplicationRequirement::Resource(ExecutionResourceRequest {

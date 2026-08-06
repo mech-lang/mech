@@ -10,9 +10,11 @@ use std::sync::{
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
 use mech_runtime::{
     ConfigValue, HostContextManifest, HostManifestConfig, MaterializedHostInterface,
+    PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
     RuntimeHostFactory, RuntimeHostInput, RuntimeHostInputDriver, RuntimeHostInputSource,
     RuntimeHostInputValue, RuntimeHostInstallation, RuntimeIngress, RuntimeResourceProvider,
-    RuntimeResourceReadRequest, materialize_host_manifest,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeResourceWriteRequest, materialize_host_manifest,
 };
 
 pub const TEST_LIVE_PROVIDER: &str = "test-live";
@@ -20,6 +22,10 @@ pub const TEST_LIVE_INSTANCE: &str = "clock";
 pub const TEST_LIVE_CONTEXT: &str = "clock";
 pub const TEST_LIVE_BASE_URI: &str = "test-live://clock/clock";
 pub const TEST_LIVE_PATH: &str = "value";
+pub const TEST_LIVE_OUTPUT_CONTEXT: &str = "output";
+pub const TEST_LIVE_OUTPUT_BASE_URI: &str = "test-live://clock/output";
+pub const TEST_LIVE_TUPLE_PATH: &str = "tuple";
+pub const TEST_LIVE_RECORD_PATH: &str = "frame";
 pub const TEST_LIVE_START_MARKER_ENV: &str = "MECH_TEST_LIVE_START_MARKER";
 pub const TEST_LIVE_STOP_MARKER_ENV: &str = "MECH_TEST_LIVE_STOP_MARKER";
 pub const TEST_LIVE_FAIL_AFTER_START_ENV: &str = "MECH_TEST_LIVE_FAIL_AFTER_START";
@@ -39,11 +45,18 @@ fn write_process_marker(variable: &str) -> MResult<()> {
 pub fn test_live_manifest() -> MResult<HostManifestConfig> {
     Ok(HostManifestConfig {
         provider: TEST_LIVE_PROVIDER.to_owned(),
-        contexts: vec![HostContextManifest {
-            name: TEST_LIVE_CONTEXT.to_owned(),
-            base_uri_template: "test-live://{instance}/clock".to_owned(),
-            operations: vec!["read".to_owned()],
-        }],
+        contexts: vec![
+            HostContextManifest {
+                name: TEST_LIVE_CONTEXT.to_owned(),
+                base_uri_template: "test-live://{instance}/clock".to_owned(),
+                operations: vec!["read".to_owned()],
+            },
+            HostContextManifest {
+                name: TEST_LIVE_OUTPUT_CONTEXT.to_owned(),
+                base_uri_template: "test-live://{instance}/output".to_owned(),
+                operations: vec!["write".to_owned()],
+            },
+        ],
     })
 }
 
@@ -60,6 +73,21 @@ struct DriverState {
     start_count: AtomicUsize,
     stop_count: AtomicUsize,
     submit_count: AtomicUsize,
+    writes: Mutex<Vec<ObservedResourceWrite>>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ObservedResourceValue {
+    F64(f64),
+    Tuple(Vec<ObservedResourceValue>),
+    Record(BTreeMap<String, ObservedResourceValue>),
+    Other(String),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ObservedResourceWrite {
+    pub path: String,
+    pub value: ObservedResourceValue,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -90,6 +118,22 @@ impl TestLiveDriverHandle {
 
     pub fn submit_count(&self) -> usize {
         self.state.submit_count.load(Ordering::SeqCst)
+    }
+
+    pub fn writes(&self) -> Vec<ObservedResourceWrite> {
+        self.state
+            .writes
+            .lock()
+            .expect("test-live write observation lock poisoned")
+            .clone()
+    }
+
+    pub fn clear_writes(&self) {
+        self.state
+            .writes
+            .lock()
+            .expect("test-live write observation lock poisoned")
+            .clear();
     }
 
     pub fn submit(&self, value: f64) -> MResult<()> {
@@ -219,7 +263,9 @@ impl RuntimeHostInputDriver for TestLiveInputDriver {
 }
 
 #[derive(Debug)]
-struct TestLiveResourceProvider;
+struct TestLiveResourceProvider {
+    handle: TestLiveDriverHandle,
+}
 
 impl TestLiveResourceProvider {
     fn planned_value(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
@@ -245,7 +291,10 @@ impl RuntimeResourceProvider for TestLiveResourceProvider {
     }
 
     fn base_uris(&self) -> Vec<String> {
-        vec![TEST_LIVE_BASE_URI.to_owned()]
+        vec![
+            TEST_LIVE_BASE_URI.to_owned(),
+            TEST_LIVE_OUTPUT_BASE_URI.to_owned(),
+        ]
     }
 
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
@@ -254,6 +303,111 @@ impl RuntimeResourceProvider for TestLiveResourceProvider {
 
     fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         self.planned_value(request)
+    }
+
+    fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+        if request.base_uri != TEST_LIVE_OUTPUT_BASE_URI
+            || request.context_name != TEST_LIVE_OUTPUT_CONTEXT
+            || request.operation.name() != "write"
+            || request.intent != RuntimeResourceWriteIntent::Send
+            || !matches!(
+                request.path.as_str(),
+                TEST_LIVE_TUPLE_PATH | TEST_LIVE_RECORD_PATH
+            )
+        {
+            return Err(error(
+                "TestLiveResourceWriteUnknown",
+                format!(
+                    "unsupported test-live write {} / {} ({})",
+                    request.base_uri, request.path, request.context_name,
+                ),
+            ));
+        }
+        Ok(())
+    }
+
+    fn prepare_write(
+        &self,
+        request: RuntimeResourceWriteRequest,
+    ) -> MResult<PreparedRuntimeEffect> {
+        self.preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri.clone(),
+            path: request.path.clone(),
+            context_name: request.context_name.clone(),
+            operation: request.operation.clone(),
+            intent: request.intent,
+        })?;
+        Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
+            RecordObservedWrite {
+                writes: Arc::clone(&self.handle.state),
+                observation: ObservedResourceWrite {
+                    path: request.path,
+                    value: observe_value(&request.value),
+                },
+            },
+        )))
+    }
+}
+
+fn observe_value(value: &Value) -> ObservedResourceValue {
+    match value {
+        Value::MutableReference(value) => observe_value(&value.borrow()),
+        Value::Typed(value, _) => observe_value(value),
+        Value::F64(value) => ObservedResourceValue::F64(*value.borrow()),
+        Value::Tuple(value) => ObservedResourceValue::Tuple(
+            value
+                .borrow()
+                .elements
+                .iter()
+                .map(|value| observe_value(value))
+                .collect(),
+        ),
+        Value::Record(value) => {
+            let value = value.borrow();
+            ObservedResourceValue::Record(
+                value
+                    .data
+                    .iter()
+                    .map(|(id, field)| {
+                        (
+                            value
+                                .field_names
+                                .get(id)
+                                .cloned()
+                                .unwrap_or_else(|| format!("{id}")),
+                            observe_value(field),
+                        )
+                    })
+                    .collect(),
+            )
+        }
+        other => ObservedResourceValue::Other(format!("{other}")),
+    }
+}
+
+#[derive(Debug)]
+struct RecordObservedWrite {
+    writes: Arc<DriverState>,
+    observation: ObservedResourceWrite,
+}
+
+impl RuntimeAfterCommitEffect for RecordObservedWrite {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+        RuntimeEffectMetadata::new(
+            RuntimeEffectSource::ResourceProvider {
+                scheme: TEST_LIVE_PROVIDER.to_owned(),
+            },
+            "record-write",
+        )
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+        self.writes
+            .writes
+            .lock()
+            .map_err(|_| error("TestLiveWriteUnavailable", "test-live write lock poisoned"))?
+            .push(self.observation.clone());
+        Ok(())
     }
 }
 
@@ -307,7 +461,9 @@ impl RuntimeHostFactory for TestLiveHostFactory {
         self.validate_settings(instance_name, settings)?;
         Ok(RuntimeHostInstallation {
             interface: self.interface(instance_name)?,
-            resource_providers: vec![Box::new(TestLiveResourceProvider)],
+            resource_providers: vec![Box::new(TestLiveResourceProvider {
+                handle: self.driver.clone(),
+            })],
             input_drivers: vec![Box::new(TestLiveInputDriver::new(self.driver.clone()))],
         })
     }

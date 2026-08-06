@@ -297,6 +297,25 @@ fn encode_instructions(instructions: &[BytecodeInstruction]) -> MResult<Vec<u8>>
                 write_u32(&mut out, *dst);
                 write_u32(&mut out, *constant);
             }
+            BytecodeInstruction::CompositePack {
+                dst,
+                template,
+                children,
+            } => {
+                out.push(Opcode::CompositePack as u8);
+                write_u32(&mut out, *dst);
+                write_u32(&mut out, *template);
+                write_u32(
+                    &mut out,
+                    children
+                        .len()
+                        .try_into()
+                        .map_err(|_| invalid::<()>("too many composite children").unwrap_err())?,
+                );
+                for child in children {
+                    write_u32(&mut out, *child);
+                }
+            }
             BytecodeInstruction::RuntimeNullary { function, dst } => {
                 out.push(Opcode::RuntimeNullary as u8);
                 write_u64(&mut out, *function);

@@ -14,6 +14,12 @@ use super::{
     ByteReader, MAX_TYPE_RECURSION, checked_usize, invalid, write_string, write_u32, write_u64,
 };
 
+/// Maximum number of tree nodes materialized while resolving the compact
+/// bytecode type DAG. `RuntimeType` is intentionally a tree, so shared raw
+/// children must be charged once for every expanded occurrence before any
+/// cloning or allocation takes place.
+const MAX_EXPANDED_RUNTIME_TYPE_NODES: usize = 1_000_000;
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum RuntimeType {
@@ -1242,6 +1248,91 @@ pub(crate) fn decode_raw_type(tag: RuntimeTypeTag, payload: &[u8]) -> MResult<Ra
 }
 
 pub(crate) fn resolve_raw_types(raw: &[RawRuntimeType]) -> MResult<Vec<RuntimeType>> {
+    fn expanded_nodes(
+        index: usize,
+        raw: &[RawRuntimeType],
+        states: &mut [u8],
+        counts: &mut [Option<usize>],
+        depth: usize,
+    ) -> MResult<usize> {
+        if depth > MAX_TYPE_RECURSION {
+            return invalid("runtime type graph exceeds recursion limit");
+        }
+        if index >= raw.len() {
+            return invalid("runtime type references an out-of-range child");
+        }
+        if states[index] == 1 {
+            return invalid("cyclic runtime type graph");
+        }
+        if let Some(count) = counts[index] {
+            return Ok(count);
+        }
+        states[index] = 1;
+        let mut count = 1usize;
+        let mut add_child = |id: u32| -> MResult<()> {
+            let child = checked_usize(u64::from(id), "runtime child type ID")?;
+            count = count
+                .checked_add(expanded_nodes(child, raw, states, counts, depth + 1)?)
+                .ok_or_else(|| {
+                    invalid::<()>("expanded runtime type node count overflow").unwrap_err()
+                })?;
+            if count > MAX_EXPANDED_RUNTIME_TYPE_NODES {
+                return invalid("expanded runtime type graph exceeds bytecode v1 node limit");
+            }
+            Ok(())
+        };
+        match &raw[index] {
+            RawRuntimeType::Complete(_) => {}
+            RawRuntimeType::Matrix { element, .. }
+            | RawRuntimeType::Reference(element)
+            | RawRuntimeType::Set { element, .. }
+            | RawRuntimeType::Option(element) => add_child(*element)?,
+            RawRuntimeType::Record(fields)
+            | RawRuntimeType::Table {
+                columns: fields, ..
+            } => {
+                for (_, child) in fields {
+                    add_child(*child)?;
+                }
+            }
+            RawRuntimeType::Map { key, value } => {
+                add_child(*key)?;
+                add_child(*value)?;
+            }
+            RawRuntimeType::Tuple(children) => {
+                for child in children {
+                    add_child(*child)?;
+                }
+            }
+        }
+        states[index] = 2;
+        counts[index] = Some(count);
+        Ok(count)
+    }
+
+    // Charge the complete materialized output, not merely each individual
+    // root. A bytecode file can otherwise repeat many individually acceptable
+    // expanded roots and still exhaust memory while filling `out`.
+    let mut count_states = vec![0; raw.len()];
+    let mut counts = vec![None; raw.len()];
+    let mut total = 0usize;
+    for index in 0..raw.len() {
+        total = total
+            .checked_add(expanded_nodes(
+                index,
+                raw,
+                &mut count_states,
+                &mut counts,
+                0,
+            )?)
+            .ok_or_else(|| {
+                invalid::<()>("total expanded runtime type node count overflow").unwrap_err()
+            })?;
+        if total > MAX_EXPANDED_RUNTIME_TYPE_NODES {
+            return invalid("expanded runtime type graph exceeds bytecode v1 node limit");
+        }
+    }
+
     fn resolve(
         index: usize,
         raw: &[RawRuntimeType],

@@ -7,7 +7,9 @@ pub use resource_read::*;
 pub use resource_write::*;
 
 #[cfg(feature = "compiler")]
-use mech_core::{BytecodeCompilerContext, CompileConst, MResult, Register, ValRef, Value};
+use mech_core::{
+    BytecodeCompilerContext, MResult, Register, ValRef, Value, compile_value_register,
+};
 
 #[cfg(feature = "compiler")]
 pub(super) fn compile_external_output(
@@ -15,18 +17,7 @@ pub(super) fn compile_external_output(
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
     let value = output.borrow();
-    let (pointer, annotation) = external_value_identity(&value, output.addr());
-    let (register, initialize) = match annotation {
-        Some(annotation) => {
-            context.register_for_typed_ptr_with_initialization_status(pointer, &annotation)
-        }
-        None => context.register_for_ptr_with_initialization_status(pointer),
-    };
-    if initialize {
-        let constant = compile_external_constant(&value, context)?;
-        context.emit_const_load(register, constant);
-    }
-    Ok(register)
+    compile_external_value_with_fallback(&value, output.addr(), context)
 }
 
 #[cfg(feature = "compiler")]
@@ -34,66 +25,16 @@ pub(super) fn compile_external_value(
     value: &Value,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
-    let (pointer, annotation) = external_value_identity(value, std::ptr::from_ref(value).addr());
-    let (register, initialize) = match annotation {
-        Some(annotation) => {
-            context.register_for_typed_ptr_with_initialization_status(pointer, &annotation)
-        }
-        None => context.register_for_ptr_with_initialization_status(pointer),
-    };
-    if initialize {
-        let constant = compile_external_constant(value, context)?;
-        context.emit_const_load(register, constant);
-    }
-    Ok(register)
+    compile_external_value_with_fallback(value, std::ptr::from_ref(value).addr(), context)
 }
 
 #[cfg(feature = "compiler")]
-fn external_value_identity(
+fn compile_external_value_with_fallback(
     value: &Value,
     fallback: usize,
-) -> (usize, Option<mech_core::ValueKind>) {
-    match value {
-        Value::MutableReference(reference) => {
-            external_value_identity(&reference.borrow(), reference.addr())
-        }
-        Value::Typed(value, annotation) => (
-            external_value_pointer(value, fallback),
-            Some(annotation.clone()),
-        ),
-        _ => (external_value_pointer(value, fallback), None),
-    }
-}
-
-#[cfg(feature = "compiler")]
-fn external_value_pointer(value: &Value, fallback: usize) -> usize {
-    match value {
-        // Mutable references are transparent to the bytecode value model. Use
-        // the referenced value's stable pointer so a symbol that wraps another
-        // node's output reuses that producer's register instead of compiling a
-        // detached constant with the same current value.
-        Value::MutableReference(reference) => {
-            external_value_pointer(&reference.borrow(), reference.addr())
-        }
-        Value::Typed(value, _) => external_value_pointer(value, fallback),
-        Value::Id(_) | Value::Kind(_) | Value::IndexAll | Value::EmptyKind(_) | Value::Empty => {
-            fallback
-        }
-        _ => value.addr(),
-    }
-}
-
-#[cfg(feature = "compiler")]
-fn compile_external_constant(
-    value: &Value,
     context: &mut dyn BytecodeCompilerContext,
-) -> MResult<u32> {
-    match value {
-        Value::MutableReference(reference) => {
-            compile_external_constant(&reference.borrow(), context)
-        }
-        _ => value.compile_const(context),
-    }
+) -> MResult<Register> {
+    compile_value_register(value, fallback, context)
 }
 
 #[cfg(all(test, feature = "f64"))]
@@ -213,6 +154,31 @@ mod tests {
                     == mech_core::RuntimeType::Option(Box::new(mech_core::RuntimeType::F64))
             }));
         }
+    }
+
+    #[test]
+    fn typed_external_outputs_do_not_share_argument_registers() {
+        let scalar = Ref::new(7.0);
+        let bare_argument = Value::F64(scalar.clone());
+        let typed_output = Ref::new(Value::Typed(
+            Box::new(Value::F64(scalar)),
+            mech_core::ValueKind::Option(Box::new(mech_core::ValueKind::F64)),
+        ));
+        let mut context = CompileCtx::new();
+
+        let argument = compile_external_value(&bare_argument, &mut context).unwrap();
+        let output = compile_external_output(&typed_output, &mut context).unwrap();
+
+        assert_ne!(argument, output);
+        let parsed =
+            mech_core::ParsedProgram::from_bytes(&context.finish(output).unwrap()).unwrap();
+        assert!(parsed.constants.iter().any(|constant| {
+            parsed.types[constant.type_id as usize] == mech_core::RuntimeType::F64
+        }));
+        assert!(parsed.constants.iter().any(|constant| {
+            parsed.types[constant.type_id as usize]
+                == mech_core::RuntimeType::Option(Box::new(mech_core::RuntimeType::F64))
+        }));
     }
 
     #[test]

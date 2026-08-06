@@ -2,8 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{ExecutionResourceRequest, MResult, MechError};
 use mech_runtime::{
-    HostInstanceConfig, MaterializedHostContext, MaterializedHostInterface, RuntimeResourceKey,
-    RuntimeResourceProvider, materialize_host_manifest,
+    HostInstanceConfig, MaterializedHostContext, MaterializedHostInterface, RuntimeHostInputDriver,
+    RuntimeHostInputSource, RuntimeResourceKey, RuntimeResourceProvider, materialize_host_manifest,
 };
 
 use crate::{
@@ -18,6 +18,7 @@ pub(crate) struct MaterializedConfiguredHost<'catalog> {
     interface: MaterializedHostInterface,
     addressable_contexts: BTreeMap<String, String>,
     resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
+    input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
     linkage: &'catalog NativeHostLinkage,
 }
 
@@ -114,6 +115,7 @@ pub(crate) fn materialize_configured_hosts<'catalog>(
                 interface,
                 addressable_contexts,
                 resource_providers: installation.resource_providers,
+                input_drivers: installation.input_drivers,
                 linkage,
             })
         })
@@ -292,6 +294,15 @@ impl ResolvedResourceOwner<'_, '_> {
             host_context: self.context.name.clone(),
             canonical_base_uri: self.context.base_uri.clone(),
         }
+    }
+
+    pub(super) fn has_input_driver_for(&self, request: &ExecutionResourceRequest) -> MResult<bool> {
+        let source = RuntimeHostInputSource::new(&request.base_uri, &request.path)?;
+        Ok(self
+            .host
+            .input_drivers
+            .iter()
+            .any(|driver| driver.drives(&source)))
     }
 }
 

@@ -16,4 +16,4 @@ rust-version = "1.92"
 mech-core = { version = "0.3.5", default-features = false, features = ["compiler"] }
 
 [dev-dependencies]
-mech-core = { version = "0.3.5", default-features = false, features = ["program", "f64"] }
+mech-core = { version = "0.3.5", default-features = false, features = ["program", "f64", "tuple"] }

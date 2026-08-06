@@ -50,9 +50,7 @@ pub use self::builder::RuntimeBuilder;
 pub use self::errors::*;
 pub use self::external::{
     ExternalOperationArityMismatch, ExternalRequirementCanonicalizationOverflow,
-    ExternalRequirementCatalog, ExternalRequirementDigestCollision,
-    RuntimeResourceExecutedValueUnsupported, RuntimeResourcePlannedValueUnsupported,
-    hidden_external_operation_name,
+    ExternalRequirementCatalog, ExternalRequirementDigestCollision, hidden_external_operation_name,
 };
 pub use self::resources::{RuntimeResourceBinding, RuntimeResourceBindingError};
 pub use self::state::{MechRuntime, RuntimeExecutionMode};

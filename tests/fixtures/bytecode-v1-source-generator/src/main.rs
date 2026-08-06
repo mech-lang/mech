@@ -10,7 +10,8 @@ use mech_core::{
 use mech_engine::{MechProgram, MechProgramConfig};
 use mech_native_live_host_fixture::{
     TEST_LIVE_BASE_URI, TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_PATH, TEST_LIVE_PROVIDER,
-    TestLiveHostFactory, empty_settings,
+    TEST_LIVE_OUTPUT_BASE_URI, TEST_LIVE_OUTPUT_CONTEXT, TEST_LIVE_RECORD_PATH,
+    TEST_LIVE_TUPLE_PATH, TestLiveHostFactory, empty_settings,
 };
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, PlannedPureHostFunction, RunResourceGrantConfig,
@@ -188,12 +189,20 @@ fn live_builder() -> RuntimeBuilder {
         .function_catalog(mech_stdlib::source_catalog())
         .module_manifest(ModuleManifestConfig {
             name: TEST_LIVE_PROVIDER.to_owned(),
-            exports: vec![ModuleManifestExportConfig {
-                name: TEST_LIVE_CONTEXT.to_owned(),
-                kind: ModuleManifestExportKind::Context,
-                base_uri: TEST_LIVE_BASE_URI.to_owned(),
-                operations: vec!["read".to_owned()],
-            }],
+            exports: vec![
+                ModuleManifestExportConfig {
+                    name: TEST_LIVE_CONTEXT.to_owned(),
+                    kind: ModuleManifestExportKind::Context,
+                    base_uri: TEST_LIVE_BASE_URI.to_owned(),
+                    operations: vec!["read".to_owned()],
+                },
+                ModuleManifestExportConfig {
+                    name: TEST_LIVE_OUTPUT_CONTEXT.to_owned(),
+                    kind: ModuleManifestExportKind::Context,
+                    base_uri: TEST_LIVE_OUTPUT_BASE_URI.to_owned(),
+                    operations: vec!["write".to_owned()],
+                },
+            ],
         })
         .unwrap()
         .host_factory(Box::new(factory))
@@ -207,6 +216,14 @@ fn live_builder() -> RuntimeBuilder {
             target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_CONTEXT}"),
             operations: vec!["read".to_owned()],
             paths: vec![TEST_LIVE_PATH.to_owned()],
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_OUTPUT_CONTEXT}"),
+            operations: vec!["write".to_owned()],
+            paths: vec![
+                TEST_LIVE_TUPLE_PATH.to_owned(),
+                TEST_LIVE_RECORD_PATH.to_owned(),
+            ],
         })
 }
 

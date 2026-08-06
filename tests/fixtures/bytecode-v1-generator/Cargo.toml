@@ -26,7 +26,7 @@ mech-native-live-host-fixture = {
 mech-runtime = {
   path = "../../../src/runtime",
   default-features = false,
-  features = ["f64", "runtime", "serde", "string"],
+  features = ["runtime_default", "serde"],
 }
 mech-math = {
   path = "../../../machines/math",

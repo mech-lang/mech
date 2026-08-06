@@ -10,11 +10,12 @@ use super::ownership::ResolvedResourceOwner;
 
 pub(crate) fn planned_resource_request(
     request: &ExecutionResourceRequest,
+    trusted_context_name: &str,
 ) -> PlannedResourceRequest {
     PlannedResourceRequest {
         base_uri: request.base_uri.clone(),
         path: request.path.clone(),
-        context_name: request.context_name.clone(),
+        context_name: trusted_context_name.to_owned(),
         operation: request.operation.clone(),
         intent: request.intent,
         delivery: request.delivery,
@@ -37,7 +38,10 @@ fn execution_resource_grant(
     request: &ExecutionResourceRequest,
     owner: &ResolvedResourceOwner<'_, '_>,
 ) -> PlannedResourceGrantKey {
-    planned_resource_grant(&planned_resource_request(request), &owner.planned_owner())
+    planned_resource_grant(
+        &planned_resource_request(request, &owner.context.name),
+        &owner.planned_owner(),
+    )
 }
 
 pub(crate) fn runtime_resource_grant_target(grant: &PlannedResourceGrantKey) -> String {

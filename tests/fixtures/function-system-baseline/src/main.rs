@@ -184,6 +184,15 @@ impl BytecodeCompilerContext for RuntimeLinkageRecorder {
         self.unexpected_emissions.push("constant load");
     }
 
+    fn emit_composite_pack(
+        &mut self,
+        _destination: Register,
+        _template: u32,
+        _children: Vec<Register>,
+    ) {
+        self.unexpected_emissions.push("composite pack");
+    }
+
     fn emit_nullop(&mut self, function: u64, _destination: Register) {
         self.record_runtime(function);
     }
