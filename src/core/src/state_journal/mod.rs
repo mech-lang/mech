@@ -730,13 +730,24 @@ impl ValueStateJournal {
         T: Clone + 'static,
         F: FnOnce(&Self, &T, &mut HashSet<ValueStateKey>) -> MResult<()>,
     {
-        self.preflight_ref_with_snapshot(
-            target,
-            side,
-            seen,
-            |value, _phase| Ok(value.clone()),
-            descend,
-        )
+        let key = ValueStateKey::of(target);
+        if !seen.insert(key) {
+            return Ok(());
+        }
+        let payload = target.try_borrow().map_err(|_| {
+            MechError::new(
+                ValueStateBorrowConflict {
+                    phase: side.phase(),
+                    type_name: type_name::<T>(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+
+        // An ordinary Clone has no recoverable failure to preflight. Snapshot
+        // construction happens once in visit_ref after all borrows are checked.
+        descend(self, &payload, seen)
     }
 
     fn preflight_ref_with_snapshot<T, F, S>(

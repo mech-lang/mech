@@ -373,6 +373,20 @@ macro_rules! export_matrix_transpose_fixed_family {
     };
 }
 
+#[cfg(feature = "solve_accelerate")]
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "solve", feature = "matrixd", feature = "vectord", feature = "f64"),
+    registration: register_matrix_solve_mdvd_f64,
+    installer: install_matrix_solve_mdvd_f64,
+    name: "MatrixSolveMDVD<f64>",
+    factory_type: crate::solve::MatrixSolveMDVD<f64>,
+    contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    package: "mech-matrix", crate_name: "mech_matrix",
+    installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdvd_f64",
+    extra_cargo_features: ["solve", "solve_accelerate"],
+}
+
+#[cfg(not(feature = "solve_accelerate"))]
 mech_core::declare_native_runtime_factory! {
     cfg: all(feature = "solve", feature = "matrixd", feature = "vectord", feature = "f64"),
     registration: register_matrix_solve_mdvd_f64,
@@ -671,6 +685,33 @@ mod tests {
 mod runtime_signature_tests {
     use super::*;
     use mech_core::{FunctionRuntimeType, RuntimeFunctionSignature};
+
+    #[cfg(all(
+        feature = "native-plan",
+        feature = "solve",
+        feature = "f64",
+        feature = "matrixd",
+        feature = "vectord"
+    ))]
+    #[test]
+    fn native_solve_linkage_preserves_accelerate_backend_selection() {
+        let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        let linkage = catalog
+            .runtime_entry(mech_core::RuntimeFunctionId::from_name(
+                "MatrixSolveMDVD<f64>",
+            ))
+            .unwrap()
+            .native_linkage
+            .as_ref()
+            .unwrap();
+
+        assert_eq!(
+            linkage.cargo_features.contains(&"solve_accelerate"),
+            cfg!(feature = "solve_accelerate"),
+        );
+    }
 
     #[cfg(all(feature = "dot", feature = "f64", feature = "matrix1"))]
     #[test]

@@ -82,6 +82,28 @@ def pure_matmul(size):
     return result, output[0]
 
 
+def pure_transpose(size):
+    input_matrix, _ = flat_multiply_inputs(size)
+    scaled = [0.0] * (size * size)
+    output = [0.0] * (size * size)
+    pulse = 1.0
+
+    def operation():
+        nonlocal pulse
+        pulse = 1.000_001 if pulse == 1.0 else 1.0
+        for index in range(size * size):
+            scaled[index] = input_matrix[index] * pulse
+        for row in range(size):
+            row_offset = row * size
+            for column in range(size):
+                output[column * size + row] = scaled[row_offset + column]
+
+    result = measure(operation)
+    check_index = min(1, size - 1)
+    assert abs(output[check_index] - input_matrix[check_index * size] * pulse) < 1e-12
+    return result, output[check_index]
+
+
 def pure_solve(size):
     matrix, rhs = flat_solve_inputs(size)
     work = [0.0] * (size * size)
@@ -146,6 +168,20 @@ def numpy_cases(size):
     matmul_result = measure(lambda: np.matmul(lhs, rhs_matrix, out=output_matrix))
     assert abs(output_matrix[0, 0] - lhs[0, :].dot(rhs_matrix[:, 0])) < 1e-8
 
+    transpose_output = np.empty((size, size), dtype=np.float64, order="F")
+    transpose_scaled = np.empty((size, size), dtype=np.float64, order="F")
+    pulse = 1.0
+
+    def transpose_operation():
+        nonlocal pulse
+        pulse = 1.000_001 if pulse == 1.0 else 1.0
+        np.multiply(lhs, pulse, out=transpose_scaled)
+        np.copyto(transpose_output, transpose_scaled.T)
+
+    transpose_result = measure(transpose_operation)
+    check_index = min(1, size - 1)
+    assert abs(transpose_output[0, check_index] - lhs[check_index, 0] * pulse) < 1e-12
+
     row, column = np.indices((size, size))
     solve_matrix = np.asfortranarray(
         np.where(row == column, size + 4.0, ((row * 7 + column * 11) % 19) * 0.01 - 0.09)
@@ -159,7 +195,11 @@ def numpy_cases(size):
     solve_result = measure(solve_operation)
     residual = np.max(np.abs(solve_matrix @ solve_output - solve_rhs))
     assert residual < 1e-8, residual
-    return (matmul_result, float(output_matrix[0, 0])), (solve_result, float(solve_output[0]))
+    return (
+        (matmul_result, float(output_matrix[0, 0])),
+        (transpose_result, float(transpose_output[0, check_index])),
+        (solve_result, float(solve_output[0])),
+    )
 
 
 def emit(runtime, operation, size, result, check):
@@ -176,10 +216,12 @@ def main():
     for size in args.sizes:
         if args.runtime == "python":
             matmul, matmul_check = pure_matmul(size)
+            transpose, transpose_check = pure_transpose(size)
             solve, solve_check = pure_solve(size)
         else:
-            (matmul, matmul_check), (solve, solve_check) = numpy_cases(size)
+            (matmul, matmul_check), (transpose, transpose_check), (solve, solve_check) = numpy_cases(size)
         emit(args.runtime, "matmul", size, matmul, matmul_check)
+        emit(args.runtime, "transpose", size, transpose, transpose_check)
         emit(args.runtime, "solve", size, solve, solve_check)
 
 

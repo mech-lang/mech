@@ -4,7 +4,7 @@ use super::extension;
 use super::live_state::LiveRegistrationMode;
 use super::resources::{runtime_resource_binding_error, validate_resource_binding_name};
 use super::transaction::RuntimeHealth;
-use super::{MechRuntime, RuntimeExecutionMode};
+use super::{MechRuntime, RuntimeExecutionMode, RuntimeHostInputTurnMode};
 use crate::{
     ActorBehaviorDriver, BasicCapabilityKernel, CapabilityKernel, DEFAULT_HOST_INPUT_CAPACITY,
     DefaultHostCallPolicy, DefaultIdGenerator, HostCallPolicy, HostInstanceConfig,
@@ -31,6 +31,7 @@ use std::sync::Arc;
 pub struct RuntimeBuilder {
     config: RuntimeConfig,
     execution_mode: RuntimeExecutionMode,
+    host_input_turn_mode: RuntimeHostInputTurnMode,
     function_catalog: Arc<FunctionCatalog>,
     id_generator: Box<dyn IdGenerator>,
     store: Box<dyn MechStore>,
@@ -61,6 +62,7 @@ impl std::fmt::Debug for RuntimeBuilder {
         f.debug_struct("RuntimeBuilder")
             .field("config", &self.config)
             .field("execution_mode", &self.execution_mode)
+            .field("host_input_turn_mode", &self.host_input_turn_mode)
             .field("function_catalog", &function_catalog)
             .field("id_generator", &"<dyn IdGenerator>")
             .field("store", &"<dyn MechStore>")
@@ -89,6 +91,7 @@ impl Default for RuntimeBuilder {
         Self {
             config: RuntimeConfig::default(),
             execution_mode: RuntimeExecutionMode::Execute,
+            host_input_turn_mode: RuntimeHostInputTurnMode::Atomic,
             function_catalog: mech_engine::empty_function_catalog(),
             id_generator: Box::new(DefaultIdGenerator::new()),
             store: Box::new(extension::RuntimeStoreBoundary::new(Box::new(
@@ -140,6 +143,20 @@ impl RuntimeBuilder {
 
     pub fn planning(mut self) -> Self {
         self.execution_mode = RuntimeExecutionMode::Plan;
+        self
+    }
+
+    pub fn host_input_turn_mode(mut self, mode: RuntimeHostInputTurnMode) -> Self {
+        self.host_input_turn_mode = mode;
+        self
+    }
+
+    /// Disables retained-program rollback snapshots for host-input turns.
+    ///
+    /// A failed turn can leave program cells partially updated, so the runtime
+    /// is poisoned immediately and cannot execute subsequent operations.
+    pub fn fail_stop_host_input_turns(mut self) -> Self {
+        self.host_input_turn_mode = RuntimeHostInputTurnMode::FailStop;
         self
     }
 
@@ -332,6 +349,7 @@ impl RuntimeBuilder {
             event_sequence: 0,
             config: self.config,
             execution_mode: self.execution_mode,
+            host_input_turn_mode: self.host_input_turn_mode,
             function_catalog,
             program,
             id_generator: self.id_generator,
@@ -443,7 +461,9 @@ impl RuntimeBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::{MechProgramConfig, RuntimeBuilder, RuntimeExecutionMode};
+    use super::{
+        MechProgramConfig, RuntimeBuilder, RuntimeExecutionMode, RuntimeHostInputTurnMode,
+    };
     use mech_core::FunctionCatalogBuilder;
     use std::sync::Arc;
 
@@ -454,6 +474,24 @@ mod tests {
 
         assert_eq!(execute.execution_mode(), RuntimeExecutionMode::Execute);
         assert_eq!(plan.execution_mode(), RuntimeExecutionMode::Plan);
+    }
+
+    #[test]
+    fn host_input_turns_default_to_atomic_and_fail_stop_is_explicit() {
+        let atomic = RuntimeBuilder::new().build().unwrap();
+        let fail_stop = RuntimeBuilder::new()
+            .fail_stop_host_input_turns()
+            .build()
+            .unwrap();
+
+        assert_eq!(
+            atomic.host_input_turn_mode(),
+            RuntimeHostInputTurnMode::Atomic
+        );
+        assert_eq!(
+            fail_stop.host_input_turn_mode(),
+            RuntimeHostInputTurnMode::FailStop
+        );
     }
 
     #[test]

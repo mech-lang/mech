@@ -25,6 +25,16 @@ pub enum RuntimeExecutionMode {
     Plan,
 }
 
+/// Failure behavior for retained host-input reactive turns.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeHostInputTurnMode {
+    /// Restore admitted inputs, function state, and scheduler state on failure.
+    #[default]
+    Atomic,
+    /// Skip program rollback snapshots and poison the runtime on any failure.
+    FailStop,
+}
+
 pub(in crate::runtime) struct ScopedRuntimeState<T: Copy> {
     state: Rc<Cell<Option<T>>>,
     previous: Option<T>,
@@ -49,6 +59,7 @@ pub struct MechRuntime {
     pub(super) event_sequence: u64,
     pub(super) config: RuntimeConfig,
     pub(super) execution_mode: RuntimeExecutionMode,
+    pub(super) host_input_turn_mode: RuntimeHostInputTurnMode,
     pub(super) function_catalog: Arc<FunctionCatalog>,
     pub(super) program: MechProgram,
     pub(super) id_generator: Box<dyn IdGenerator>,
@@ -88,6 +99,7 @@ impl std::fmt::Debug for MechRuntime {
             .field("event_sequence", &self.event_sequence)
             .field("config", &self.config)
             .field("execution_mode", &self.execution_mode)
+            .field("host_input_turn_mode", &self.host_input_turn_mode)
             .field("function_catalog", &"<FunctionCatalog>")
             .field("program", &"<MechProgram>")
             .field("id_generator", &"<dyn IdGenerator>")
@@ -132,6 +144,10 @@ impl MechRuntime {
 
     pub fn execution_mode(&self) -> RuntimeExecutionMode {
         self.execution_mode
+    }
+
+    pub fn host_input_turn_mode(&self) -> RuntimeHostInputTurnMode {
+        self.host_input_turn_mode
     }
 
     pub fn external_requirements(&self) -> &ExternalRequirementCatalog {

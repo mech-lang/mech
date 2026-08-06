@@ -1,5 +1,8 @@
 use crate::RuntimeContext;
-use crate::runtime::{MechRuntime, transaction::PreparedRuntimeHostInput};
+use crate::runtime::{
+    MechRuntime, RuntimeHostInputTurnMode,
+    transaction::{PreparedRuntimeHostInput, RuntimeReactiveTurnRecovery},
+};
 use mech_core::MResult;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
@@ -58,15 +61,28 @@ impl MechRuntime {
         prepared: PreparedRuntimeHostInput,
     ) -> MResult<crate::RuntimeHostInputOutcome> {
         let turn_started = Instant::now();
-        let turn = self.with_atomic_reactive_turn(
+        let mode = self.host_input_turn_mode;
+        let recovery = match mode {
+            RuntimeHostInputTurnMode::Atomic => RuntimeReactiveTurnRecovery::Rollback,
+            RuntimeHostInputTurnMode::FailStop => RuntimeReactiveTurnRecovery::FailStop,
+        };
+        let turn = self.with_coordinated_reactive_turn(
             context,
             "apply_host_input_with_context",
-            |program, services, finalize| {
-                program.update_cells_and_advance_turn_coordinated(
-                    &prepared.updates,
-                    services,
-                    |turn| finalize(turn),
-                )
+            recovery,
+            |program, services, finalize| match mode {
+                RuntimeHostInputTurnMode::Atomic => program
+                    .update_cells_and_advance_turn_coordinated(
+                        &prepared.updates,
+                        services,
+                        |turn| finalize(turn),
+                    ),
+                RuntimeHostInputTurnMode::FailStop => program
+                    .update_cells_and_advance_turn_fail_stop_coordinated(
+                        &prepared.updates,
+                        services,
+                        |turn| finalize(turn),
+                    ),
             },
             move |runtime, _context, _turn| runtime.enforce_turn_duration(turn_started),
         )?;

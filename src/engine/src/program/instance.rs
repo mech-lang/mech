@@ -1111,6 +1111,55 @@ impl MechProgram {
         })
     }
 
+    /// Applies one retained input turn without capturing program rollback state.
+    ///
+    /// An error after preparation may leave inputs, function outputs, registers,
+    /// and scheduler state partially updated. Runtime callers must poison and
+    /// stop the owning runtime instead of continuing to use this program.
+    #[cfg(feature = "functions")]
+    pub fn update_cells_and_advance_turn_fail_stop_coordinated(
+        &mut self,
+        updates: &[ProgramCellUpdate],
+        services: &mut dyn MechExecutionServices,
+        finalize: impl FnOnce(&ProgramInputTurnOutcome) -> ProgramTurnFinalization,
+    ) -> MResult<ProgramInputTurnOutcome> {
+        let prepared = self.prepare_cell_updates(updates)?;
+        Self::apply_prepared_cell_updates(&prepared)?;
+        let updated_count = prepared.assignments.len();
+        let mut interpreter_turns = Vec::with_capacity(prepared.dirty_cells_by_interpreter.len());
+        for (interpreter_id, dirty_cells) in prepared.dirty_cells_by_interpreter {
+            let Some(turn) =
+                with_interpreter_mut(&mut self.interpreter, interpreter_id, &mut |interpreter| {
+                    interpreter
+                        .advance_reactive_turn_fail_stop_with_services(&dirty_cells, services)
+                })
+            else {
+                return Err(MechError::new(
+                    ProgramInputError {
+                        reason: format!("missing interpreter {interpreter_id}"),
+                    },
+                    None,
+                ));
+            };
+            interpreter_turns.push(ProgramInterpreterTurnOutcome {
+                interpreter_id,
+                dirty_cells,
+                turn: turn?,
+            });
+        }
+        let outcome = ProgramInputTurnOutcome {
+            updated_count,
+            interpreter_turns,
+        };
+        #[cfg(feature = "invariant_define")]
+        self.validate_integrity_constraints()?;
+        match finalize(&outcome) {
+            ProgramTurnFinalization::Commit => Ok(outcome),
+            ProgramTurnFinalization::Rollback(error)
+            | ProgramTurnFinalization::CommitWithError(error) => Err(error),
+        }
+    }
+
     #[cfg(feature = "functions")]
     fn update_cells_and_advance_turn_with_journal(
         &mut self,
@@ -3511,6 +3560,40 @@ mod compact_program_reactive_turn_tests {
             (target.addr(), inner.addr()),
             (target_address, inner_address)
         );
+    }
+
+    #[test]
+    fn fail_stop_cell_update_retains_partial_state_after_downstream_failure() {
+        let mut program = test_mech_program(MechProgramConfig::default());
+        let id = program.interpreter().id;
+        let (_, target, inner) = index_input(&mut program, id, "input", 1);
+        let output = Ref::new(10usize);
+        let order = Rc::new(RefCell::new(Vec::new()));
+        let (mut function, captures, solves) =
+            test_function("fail-stop", output.clone(), id, order);
+        function.fail = true;
+        add_reactive(&program, id, function, &inner);
+
+        let mut services = NoMechExecutionServices;
+        let error = program
+            .update_cells_and_advance_turn_fail_stop_coordinated(
+                &[ProgramCellUpdate {
+                    interpreter_id: id,
+                    target,
+                    value: Value::Index(Ref::new(9)),
+                }],
+                &mut services,
+                |_| ProgramTurnFinalization::Commit,
+            )
+            .unwrap_err();
+
+        assert!(
+            error
+                .kind_message()
+                .contains("deliberate fail-stop failure")
+        );
+        assert_eq!((*inner.borrow(), *output.borrow()), (9, 11));
+        assert_eq!((*captures.borrow(), *solves.borrow()), (0, 1));
     }
 
     #[test]

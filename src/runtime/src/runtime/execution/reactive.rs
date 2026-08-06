@@ -1,5 +1,5 @@
 use crate::RuntimeContext;
-use crate::runtime::MechRuntime;
+use crate::runtime::{MechRuntime, transaction::RuntimeReactiveTurnRecovery};
 use mech_core::MResult;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
@@ -14,9 +14,10 @@ impl MechRuntime {
 
     pub fn step_with_context(&mut self, context: &mut RuntimeContext, step_id: u64) -> MResult<()> {
         let turn_started = Instant::now();
-        self.with_atomic_reactive_turn(
+        self.with_coordinated_reactive_turn(
             context,
             "step_with_context",
+            RuntimeReactiveTurnRecovery::Rollback,
             |program, services, finalize| {
                 program.step_coordinated(step_id, services, || finalize(&()))
             },
