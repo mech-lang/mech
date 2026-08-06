@@ -51,7 +51,23 @@ def run_build(command: list[str]) -> float:
     return time.monotonic() - started
 
 
+def clean_target_directory() -> Path:
+    configured = os.environ.get("CARGO_TARGET_DIR")
+    if configured is None:
+        raise RuntimeError(
+            "CARGO_TARGET_DIR must identify an empty directory so the clean build "
+            "measurement is unambiguous"
+        )
+    target_dir = Path(configured)
+    if not target_dir.is_absolute():
+        target_dir = ROOT / target_dir
+    if target_dir.exists() and any(target_dir.iterdir()):
+        raise RuntimeError(f"clean build target directory is not empty: {target_dir}")
+    return target_dir
+
+
 def build(distribution: str) -> tuple[Path, float, float]:
+    target_dir = clean_target_directory()
     command = [
         "cargo",
         f"+{TOOLCHAIN}",
@@ -65,9 +81,6 @@ def build(distribution: str) -> tuple[Path, float, float]:
         command.extend(["--no-default-features", "--features", "distribution-full"])
     clean_elapsed = run_build(command)
     incremental_elapsed = run_build(command)
-    target_dir = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target"))
-    if not target_dir.is_absolute():
-        target_dir = ROOT / target_dir
     executable = target_dir / "release" / ("mech.exe" if os.name == "nt" else "mech")
     if not executable.is_file():
         raise RuntimeError(f"release executable was not produced: {executable}")
