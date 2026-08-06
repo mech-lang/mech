@@ -183,7 +183,11 @@ fn composite_schema_matches(current: &Value, incoming: &Value) -> bool {
         (Value::Map(current), Value::Map(incoming)) => {
             let current = current.borrow();
             let incoming = incoming.borrow();
-            current.key_kind == incoming.key_kind && current.value_kind == incoming.value_kind
+            current.key_kind == incoming.key_kind
+                && current.value_kind == incoming.value_kind
+                && current.num_elements == incoming.num_elements
+                && current.map.len() == incoming.map.len()
+                && current.map.keys().all(|key| incoming.map.contains_key(key))
         }
         #[cfg(feature = "set")]
         (Value::Set(current), Value::Set(incoming)) => {
@@ -1180,6 +1184,26 @@ mod tests {
         let error = validate_stable_value_update(&current, &incoming).unwrap_err();
         assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
         assert!(error.kind_message().contains("matrix dimensions differ"));
+    }
+
+    #[cfg(all(feature = "map", any(feature = "string", feature = "variable_define")))]
+    #[test]
+    fn stable_updates_reject_map_key_topology_changes() {
+        let map = |key: &str| {
+            Value::Map(Ref::new(crate::MechMap::from_typed_vec(
+                crate::ValueKind::String,
+                crate::ValueKind::F64,
+                1,
+                vec![(
+                    Value::String(Ref::new(key.to_owned())),
+                    Value::F64(Ref::new(1.0)),
+                )],
+            )))
+        };
+
+        let error = validate_stable_value_update(&map("before"), &map("after")).unwrap_err();
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
+        assert!(error.kind_message().contains("composite semantic schema"));
     }
 
     #[test]

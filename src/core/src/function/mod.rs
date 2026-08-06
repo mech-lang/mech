@@ -477,6 +477,40 @@ impl<T: 'static> ReactiveRegisterCommit for ReactiveRegisterWrite<T> {
     }
 }
 
+/// A pre-staged collection of register writes that commits as one infallible
+/// unit. Composite register nodes use this to preserve every nested reactive
+/// cell while still reporting the outer register cell as their owned output.
+pub struct ReactiveRegisterCommitBatch {
+    commits: Vec<Box<dyn ReactiveRegisterCommit>>,
+    output_cells: Vec<ReactiveCellId>,
+}
+
+impl ReactiveRegisterCommitBatch {
+    pub fn new(
+        commits: Vec<Box<dyn ReactiveRegisterCommit>>,
+        output_cells: Vec<ReactiveCellId>,
+    ) -> Self {
+        Self {
+            commits,
+            output_cells,
+        }
+    }
+}
+
+impl reactive_register_sealed::Sealed for ReactiveRegisterCommitBatch {}
+
+impl ReactiveRegisterCommit for ReactiveRegisterCommitBatch {
+    fn output_cells(&self) -> &[ReactiveCellId] {
+        self.output_cells.as_slice()
+    }
+
+    fn commit(self: Box<Self>) {
+        for commit in self.commits {
+            commit.commit();
+        }
+    }
+}
+
 pub struct ReactiveRegisterNoopCommit {
     output_cells: Vec<ReactiveCellId>,
 }
