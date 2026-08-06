@@ -27,12 +27,22 @@ source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
+standard_values = ["f64", "row_vectord", "matrixd"]
+standard_operations = [
+  "inclusive", "exclusive", "inclusive_increment", "exclusive_increment",
+]
+standard_runtime = ["runtime", "standard_values", "standard_operations"]
+standard_source = ["standard_runtime", "source"]
+standard_compiler = ["standard_source", "compiler"]
 full_values = [
   "u8", "u16", "u32", "u64", "u128",
   "i8", "i16", "i32", "i64", "i128", "f32", "f64",
   "matrix1", "row_vector2", "row_vector3", "row_vector4", "row_vectord", "matrixd",
 ]
-full_runtime = ["runtime", "full_values", "range_default"]
+full_operations = [
+  "inclusive", "exclusive", "inclusive_increment", "exclusive_increment",
+]
+full_runtime = ["runtime", "full_values", "full_operations"]
 full_source = ["full_runtime", "source"]
 full_compiler = ["full_source", "compiler"]
 

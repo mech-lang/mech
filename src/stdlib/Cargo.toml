@@ -77,9 +77,19 @@ mech-string = ["dep:mech-string"]
 mech-stats = ["dep:mech-stats"]
 mech-combinatorics = ["dep:mech-combinatorics"]
 
+standard_runtime = ["runtime", "standard_values", "standard_operations"]
+standard_source = ["standard_runtime", "source"]
+standard_compiler = ["standard_source", "compiler"]
+
 full_runtime = ["runtime", "full_values", "full_operations"]
 full_source = ["full_runtime", "source"]
 full_compiler = ["full_source", "compiler"]
+
+standard_values = [
+  "bool", "string", "f64",
+  "set", "map", "table", "tuple", "record", "atom", "enum",
+  "row_vectord", "vectord", "matrixd",
+]
 
 full_values = [
   "bool", "string",
@@ -93,14 +103,41 @@ full_values = [
   "row_vectord", "vectord", "matrixd",
 ]
 
+standard_operations = [
+  "access", "assign", "convert", "variable_define", "invariant_define", "variables",
+  "subscript_default",
+  "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",
+  "set_define", "set_comprehensions", "table_ops",
+  "mech-engine/math_standard", "mech-engine/compare_default", "mech-engine/logic_default",
+  "mech-engine/range_default", "mech-engine/matrix_default", "mech-engine/set_standard",
+  "mech-engine/string_default", "mech-engine/stats_default",
+  "mech-math", "mech-math/standard_runtime",
+  "mech-compare", "mech-compare/standard_runtime",
+  "mech-logic", "mech-logic/standard_runtime",
+  "mech-range", "mech-range/standard_runtime",
+  "mech-matrix", "mech-matrix/standard_runtime",
+  "mech-set", "mech-set/standard_runtime",
+  "mech-string", "mech-string/standard_runtime",
+  "mech-stats", "mech-stats/standard_runtime",
+]
+
 full_operations = [
   "access", "assign", "convert", "variable_define", "invariant_define", "variables",
   "subscript_default",
   "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",
   "set_define", "set_comprehensions", "table_ops",
-  "math_default", "compare_default", "logic_default", "range_default",
-  "matrix_default", "set_default", "string_default", "stats_default",
-  "combinatorics_default",
+  "mech-engine/math_default", "mech-engine/compare_default", "mech-engine/logic_default",
+  "mech-engine/range_default", "mech-engine/matrix_default", "mech-engine/set_default",
+  "mech-engine/string_default", "mech-engine/stats_default", "mech-engine/combinatorics_default",
+  "mech-math", "mech-math/full_runtime",
+  "mech-compare", "mech-compare/full_runtime",
+  "mech-logic", "mech-logic/full_runtime",
+  "mech-range", "mech-range/full_runtime",
+  "mech-matrix", "mech-matrix/full_runtime",
+  "mech-set", "mech-set/full_runtime",
+  "mech-string", "mech-string/full_runtime",
+  "mech-stats", "mech-stats/full_runtime",
+  "mech-combinatorics", "mech-combinatorics/full_runtime",
 ]
 
 # Engine-owned intrinsic operations.

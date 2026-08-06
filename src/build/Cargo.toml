@@ -9,14 +9,15 @@ publish = true
 
 [features]
 default = []
-full-hosts = [
+standard-hosts = [
   "dep:mech-terminal",
   "dep:mech-console",
-  "dep:mech-robot-arm",
   "dep:mech-scene",
   "dep:mech-time",
   "dep:mech-timer",
 ]
+full-hosts = ["standard-hosts", "dep:mech-robot-arm"]
+experimental-actors = []
 
 [dependencies]
 mech-core = { version = "0.3.5", default-features = false, features = ["native-plan", "program", "serde"] }

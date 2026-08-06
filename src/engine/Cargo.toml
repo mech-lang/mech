@@ -360,6 +360,10 @@ math_default = [
   "math_ops_default", "math_root_default",
   "math_ops_assign_default", "math_trig_default",
 ]
+math_standard = [
+  "math_ops_default", "math_root_default",
+  "math_atan2", "math_cos", "math_sin",
+]
 math = []
 math_ops_default = ["math_add", "math_sub", "math_mul", "math_div", "math_pow", "math_mod", "math_neg"]
 math_root_default = ["math_sqrt"]
@@ -408,6 +412,11 @@ math_sqrt = []
 
 set_default = [
   "set_membership_default", "set_modify_default", "set_operations_default",
+  "set_relations_default", "set_comprehensions", "set_setdata_default",
+]
+set_standard = [
+  "set_membership_default", "set_modify_default",
+  "set_difference", "set_intersection", "set_symmetric_difference", "set_union",
   "set_relations_default", "set_comprehensions", "set_setdata_default",
 ]
 set_comprehensions = ["functions", "set"]

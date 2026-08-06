@@ -166,7 +166,7 @@ pub(crate) fn execute_planning_source_module_roots(
     let mut builder = builder.planning();
     let providers = crate::cli::host_configuration::configured_provider_names(configured_hosts);
     for provider in &providers {
-        builder = builder.host_factory(mech_build::standard_planning_host_factory(provider)?)?;
+        builder = builder.host_factory(mech_build::selected_planning_host_factory(provider)?)?;
     }
     (builder, _) = crate::cli::host_configuration::materialize_host_configuration(
         builder,

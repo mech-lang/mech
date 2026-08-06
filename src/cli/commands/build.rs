@@ -303,7 +303,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
     };
     let environment = NativeBuildEnvironment {
         function_catalog: mech_stdlib::native_plan_catalog(),
-        host_catalog: mech_build::standard_native_host_catalog()?,
+        host_catalog: mech_build::selected_native_host_catalog()?,
         dependency_source,
     };
     let request = NativeBuildRequest {
