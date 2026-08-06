@@ -494,12 +494,10 @@ struct MatrixKernel {
 impl MatrixKernel {
     #[inline(always)]
     fn solve_core(&self) {
-        let lhs = self.lhs.as_ptr();
-        let rhs = self.rhs.as_ptr();
-        let output = self.output.as_mut_ptr();
-        unsafe {
-            (&*lhs).mul_to(&*rhs, &mut *output);
-        }
+        let lhs = self.lhs.borrow();
+        let rhs = self.rhs.borrow();
+        let mut output = self.output.borrow_mut();
+        lhs.mul_to(&rhs, &mut output);
     }
 }
 
