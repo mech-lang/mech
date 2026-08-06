@@ -112,6 +112,28 @@ fn parsed_external_program(
     .unwrap()
 }
 
+fn push_constant_load(
+    constants: &mut Vec<EncodedConstant>,
+    instructions: &mut Vec<BytecodeInstruction>,
+    next_register: &mut u32,
+    constant: EncodedConstant,
+) -> u32 {
+    let constant_id = constants
+        .iter()
+        .position(|existing| existing == &constant)
+        .unwrap_or_else(|| {
+            constants.push(constant);
+            constants.len() - 1
+        }) as u32;
+    let register = *next_register;
+    *next_register += 1;
+    instructions.push(BytecodeInstruction::ConstLoad {
+        dst: register,
+        constant: constant_id,
+    });
+    register
+}
+
 fn validate_external_program(
     program: &ParsedProgram,
     runtime_config: Option<&NativeRuntimeConfig>,
@@ -140,12 +162,16 @@ fn analyze_requirements_with_production_resolver(
 
     let mut constants = Vec::new();
     let mut instructions = Vec::new();
+    let mut next_register = 0;
     for (requirement_index, requirement) in requirements.iter().enumerate() {
         match requirement {
             ApplicationRequirement::HostFunction(_) => {
-                let dst = constants.len() as u32;
-                constants.push(string_constant(""));
-                instructions.push(BytecodeInstruction::ConstLoad { dst, constant: dst });
+                let dst = push_constant_load(
+                    &mut constants,
+                    &mut instructions,
+                    &mut next_register,
+                    string_constant(""),
+                );
                 instructions.push(BytecodeInstruction::HostCall {
                     requirement: requirement_index as u32,
                     dst,
@@ -153,30 +179,37 @@ fn analyze_requirements_with_production_resolver(
                 });
             }
             ApplicationRequirement::Resource(request) if request.intent == ResourceIntent::Read => {
-                let dst = constants.len() as u32;
-                constants.push(if request.base_uri.starts_with("time://") {
+                let constant = if request.base_uri.starts_with("time://") {
                     f64_constant(0.0)
                 } else if request.base_uri.starts_with("test://") {
                     empty_constant()
                 } else {
                     string_constant("")
-                });
-                instructions.push(BytecodeInstruction::ConstLoad { dst, constant: dst });
+                };
+                let dst = push_constant_load(
+                    &mut constants,
+                    &mut instructions,
+                    &mut next_register,
+                    constant,
+                );
                 instructions.push(BytecodeInstruction::ResourceRead {
                     requirement: requirement_index as u32,
                     dst,
                 });
             }
             ApplicationRequirement::Resource(request) => {
-                let dst = constants.len() as u32;
-                constants.push(empty_constant());
-                instructions.push(BytecodeInstruction::ConstLoad { dst, constant: dst });
-                let src = constants.len() as u32;
-                constants.push(string_constant("value"));
-                instructions.push(BytecodeInstruction::ConstLoad {
-                    dst: src,
-                    constant: src,
-                });
+                let dst = push_constant_load(
+                    &mut constants,
+                    &mut instructions,
+                    &mut next_register,
+                    empty_constant(),
+                );
+                let src = push_constant_load(
+                    &mut constants,
+                    &mut instructions,
+                    &mut next_register,
+                    string_constant("value"),
+                );
                 instructions.push(match request.intent {
                     ResourceIntent::Assign => BytecodeInstruction::ResourceWrite {
                         requirement: requirement_index as u32,
@@ -194,15 +227,16 @@ fn analyze_requirements_with_production_resolver(
         }
     }
     if constants.is_empty() {
-        constants.push(empty_constant());
-        instructions.push(BytecodeInstruction::ConstLoad {
-            dst: 0,
-            constant: 0,
-        });
+        push_constant_load(
+            &mut constants,
+            &mut instructions,
+            &mut next_register,
+            empty_constant(),
+        );
     }
     instructions.push(BytecodeInstruction::Return { src: 0 });
     let program = ParsedProgram::from_bytes(&write_bytecode(&BytecodeProgram {
-        register_count: constants.len() as u32,
+        register_count: next_register,
         constants,
         symbols: BTreeMap::new(),
         mutable_symbols: BTreeSet::new(),
@@ -1390,11 +1424,7 @@ fn actor_put_before_get_updates_the_shared_abstract_register_sequence() {
     let program = ParsedProgram::from_bytes(
         &write_bytecode(&BytecodeProgram {
             register_count: 3,
-            constants: vec![
-                string_constant(""),
-                string_constant("created"),
-                string_constant(""),
-            ],
+            constants: vec![string_constant(""), string_constant("created")],
             symbols: BTreeMap::new(),
             mutable_symbols: BTreeSet::new(),
             instructions: vec![
@@ -1408,7 +1438,7 @@ fn actor_put_before_get_updates_the_shared_abstract_register_sequence() {
                 },
                 BytecodeInstruction::ConstLoad {
                     dst: 2,
-                    constant: 2,
+                    constant: 0,
                 },
                 BytecodeInstruction::HostCall {
                     requirement: put_requirement,
