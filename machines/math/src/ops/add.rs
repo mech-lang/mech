@@ -6,19 +6,31 @@ use std::sync::Arc;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 
+fn checked_runtime_add<T: RuntimeCheckedArithmetic>(lhs: T, rhs: T) -> MResult<T> {
+    lhs.runtime_checked_add(rhs)
+        .ok_or_else(|| arithmetic_overflow::<T>("addition"))
+}
+
 // Add ------------------------------------------------------------------------
 
 macro_rules! add_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            *$out = *$lhs + *$rhs;
+            let next = checked_runtime_add(*$lhs, *$rhs)?;
+            *$out = next;
         }
     };
 }
 
 macro_rules! add_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
-        unsafe { (*$lhs).add_to(&*$rhs, &mut *$out) }
+        unsafe {
+            let mut next = (*$out).clone();
+            for (output, (lhs, rhs)) in next.iter_mut().zip((*$lhs).iter().zip((*$rhs).iter())) {
+                *output = checked_runtime_add(*lhs, *rhs)?;
+            }
+            *$out = next;
+        }
     };
 }
 
@@ -33,7 +45,8 @@ macro_rules! add_vec_op {
 macro_rules! add_m1_md_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            (&mut *$out)[(0, 0)] = (&*$lhs)[(0, 0)] + (&*$rhs)[(0, 0)];
+            let next = checked_runtime_add((&*$lhs)[(0, 0)], (&*$rhs)[(0, 0)])?;
+            (&mut *$out)[(0, 0)] = next;
         }
     };
 }
@@ -45,7 +58,8 @@ macro_rules! add_m1_md_op {
 macro_rules! add_md_m1_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            (&mut *$out)[(0, 0)] = (&*$lhs)[(0, 0)] + (&*$rhs)[(0, 0)];
+            let next = checked_runtime_add((&*$lhs)[(0, 0)], (&*$rhs)[(0, 0)])?;
+            (&mut *$out)[(0, 0)] = next;
         }
     };
 }
@@ -53,12 +67,15 @@ macro_rules! add_md_m1_op {
 macro_rules! add_mat_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut col, lhs_col) in out_deref.column_iter_mut().zip(lhs_deref.column_iter()) {
-                lhs_col.add_to(&rhs_deref, &mut col);
+            for (mut col, lhs_col) in next.column_iter_mut().zip(lhs_deref.column_iter()) {
+                for i in 0..col.len() {
+                    col[i] = checked_runtime_add(lhs_col[i], rhs_deref[i])?;
+                }
             }
+            *$out = next;
         }
     };
 }
@@ -66,12 +83,15 @@ macro_rules! add_mat_vec_op {
 macro_rules! add_vec_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut col, rhs_col) in out_deref.column_iter_mut().zip(rhs_deref.column_iter()) {
-                lhs_deref.add_to(&rhs_col, &mut col);
+            for (mut col, rhs_col) in next.column_iter_mut().zip(rhs_deref.column_iter()) {
+                for i in 0..col.len() {
+                    col[i] = checked_runtime_add(lhs_deref[i], rhs_col[i])?;
+                }
             }
+            *$out = next;
         }
     };
 }
@@ -79,12 +99,15 @@ macro_rules! add_vec_mat_op {
 macro_rules! add_mat_row_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut row, lhs_row) in out_deref.row_iter_mut().zip(lhs_deref.row_iter()) {
-                lhs_row.add_to(&rhs_deref, &mut row);
+            for (mut row, lhs_row) in next.row_iter_mut().zip(lhs_deref.row_iter()) {
+                for i in 0..row.len() {
+                    row[i] = checked_runtime_add(lhs_row[i], rhs_deref[i])?;
+                }
             }
+            *$out = next;
         }
     };
 }
@@ -92,12 +115,15 @@ macro_rules! add_mat_row_op {
 macro_rules! add_row_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut row, rhs_row) in out_deref.row_iter_mut().zip(rhs_deref.row_iter()) {
-                lhs_deref.add_to(&rhs_row, &mut row);
+            for (mut row, rhs_row) in next.row_iter_mut().zip(rhs_deref.row_iter()) {
+                for i in 0..row.len() {
+                    row[i] = checked_runtime_add(lhs_deref[i], rhs_row[i])?;
+                }
             }
+            *$out = next;
         }
     };
 }
@@ -105,7 +131,11 @@ macro_rules! add_row_mat_op {
 macro_rules! add_scalar_lhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            *$out = (*$lhs).add_scalar(*$rhs);
+            let mut next = (*$out).clone();
+            for (output, lhs) in next.iter_mut().zip((*$lhs).iter()) {
+                *output = checked_runtime_add(*lhs, *$rhs)?;
+            }
+            *$out = next;
         }
     };
 }
@@ -113,23 +143,50 @@ macro_rules! add_scalar_lhs_op {
 macro_rules! add_scalar_rhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            *$out = (*$rhs).add_scalar(*$lhs);
+            let mut next = (*$out).clone();
+            for (output, rhs) in next.iter_mut().zip((*$rhs).iter()) {
+                *output = checked_runtime_add(*$lhs, *rhs)?;
+            }
+            *$out = next;
         }
     };
 }
 
-impl_math_fxns!(Add);
+impl_fxns!(Add, T, T, impl_checked_arithmetic_binop);
 
 #[cfg(all(
     feature = "matrixd",
     any(feature = "matrix1", feature = "matrix1_interop")
 ))]
-impl_binop!(AddM1MD, Matrix1<T>, DMatrix<T>, DMatrix<T>, add_m1_md_op);
+impl_checked_arithmetic_binop!(AddM1MD, Matrix1<T>, DMatrix<T>, DMatrix<T>, add_m1_md_op);
 #[cfg(all(
     feature = "matrixd",
     any(feature = "matrix1", feature = "matrix1_interop")
 ))]
-impl_binop!(AddMDM1, DMatrix<T>, Matrix1<T>, DMatrix<T>, add_md_m1_op);
+impl_checked_arithmetic_binop!(AddMDM1, DMatrix<T>, Matrix1<T>, DMatrix<T>, add_md_m1_op);
+
+#[cfg(all(test, feature = "u8"))]
+mod checked_arithmetic_tests {
+    use super::*;
+
+    #[test]
+    fn integer_addition_rejects_reactive_overflow_and_retains_output() {
+        let rhs = Ref::new(1_u8);
+        let out = Ref::new(17_u8);
+        let function = AddSS {
+            lhs: Ref::new(40_u8),
+            rhs: rhs.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), 41);
+        *rhs.borrow_mut() = u8::MAX;
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+        assert_eq!(*out.borrow(), 41);
+    }
+}
 
 macro_rules! declare_add_matrix1_dynamic_native_factories {
     ($scalar_feature:literal, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {

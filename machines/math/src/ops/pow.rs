@@ -4,12 +4,18 @@ use crate::*;
 use mech_core::matrix::Matrix;
 use num_traits::*;
 
+fn checked_runtime_pow<T: RuntimeCheckedPow>(lhs: T, rhs: T) -> MResult<T> {
+    lhs.runtime_checked_pow(rhs)
+        .ok_or_else(|| arithmetic_overflow::<T>("exponentiation"))
+}
+
 // Pow ------------------------------------------------------------------------
 
 macro_rules! pow_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            *$out = (&*$lhs).pow(*$rhs);
+            let next = checked_runtime_pow(*$lhs, *$rhs)?;
+            *$out = next;
         }
     };
 }
@@ -17,9 +23,11 @@ macro_rules! pow_op {
 macro_rules! pow_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
+            let mut next = (*$out).clone();
             for i in 0..(&*$lhs).len() {
-                (&mut *$out)[i] = (&*$lhs)[i].pow((&*$rhs)[i]);
+                next[i] = checked_runtime_pow((&*$lhs)[i], (&*$rhs)[i])?;
             }
+            *$out = next;
         }
     };
 }
@@ -27,9 +35,11 @@ macro_rules! pow_vec_op {
 macro_rules! pow_scalar_lhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
+            let mut next = (*$out).clone();
             for i in 0..(&*$lhs).len() {
-                (&mut *$out)[i] = (&*$lhs)[i].pow(*$rhs);
+                next[i] = checked_runtime_pow((&*$lhs)[i], *$rhs)?;
             }
+            *$out = next;
         }
     };
 }
@@ -37,9 +47,11 @@ macro_rules! pow_scalar_lhs_op {
 macro_rules! pow_scalar_rhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
+            let mut next = (*$out).clone();
             for i in 0..(&*$rhs).len() {
-                (&mut *$out)[i] = (*$lhs).pow((&*$rhs)[i]);
+                next[i] = checked_runtime_pow(*$lhs, (&*$rhs)[i])?;
             }
+            *$out = next;
         }
     };
 }
@@ -47,14 +59,15 @@ macro_rules! pow_scalar_rhs_op {
 macro_rules! pow_mat_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut col, lhs_col) in out_deref.column_iter_mut().zip(lhs_deref.column_iter()) {
+            for (mut col, lhs_col) in next.column_iter_mut().zip(lhs_deref.column_iter()) {
                 for i in 0..col.len() {
-                    col[i] = lhs_col[i].pow(rhs_deref[i]);
+                    col[i] = checked_runtime_pow(lhs_col[i], rhs_deref[i])?;
                 }
             }
+            *$out = next;
         }
     };
 }
@@ -62,14 +75,15 @@ macro_rules! pow_mat_vec_op {
 macro_rules! pow_vec_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut col, rhs_col) in out_deref.column_iter_mut().zip(rhs_deref.column_iter()) {
+            for (mut col, rhs_col) in next.column_iter_mut().zip(rhs_deref.column_iter()) {
                 for i in 0..col.len() {
-                    col[i] = lhs_deref[i].pow(rhs_col[i]);
+                    col[i] = checked_runtime_pow(lhs_deref[i], rhs_col[i])?;
                 }
             }
+            *$out = next;
         }
     };
 }
@@ -77,14 +91,15 @@ macro_rules! pow_vec_mat_op {
 macro_rules! pow_mat_row_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut row, lhs_row) in out_deref.row_iter_mut().zip(lhs_deref.row_iter()) {
+            for (mut row, lhs_row) in next.row_iter_mut().zip(lhs_deref.row_iter()) {
                 for i in 0..row.len() {
-                    row[i] = lhs_row[i].pow(rhs_deref[i]);
+                    row[i] = checked_runtime_pow(lhs_row[i], rhs_deref[i])?;
                 }
             }
+            *$out = next;
         }
     };
 }
@@ -92,14 +107,15 @@ macro_rules! pow_mat_row_op {
 macro_rules! pow_row_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut row, rhs_row) in out_deref.row_iter_mut().zip(rhs_deref.row_iter()) {
+            for (mut row, rhs_row) in next.row_iter_mut().zip(rhs_deref.row_iter()) {
                 for i in 0..row.len() {
-                    row[i] = lhs_deref[i].pow(rhs_row[i]);
+                    row[i] = checked_runtime_pow(lhs_deref[i], rhs_row[i])?;
                 }
             }
+            *$out = next;
         }
     };
 }
@@ -132,6 +148,7 @@ macro_rules! impl_powop {
                 + Div<Output = T>
                 + DivAssign
                 + Pow<T, Output = T>
+                + RuntimeCheckedPow
                 + AsValueKind
                 + Zero
                 + One,
@@ -189,6 +206,7 @@ macro_rules! impl_powop {
                 + Div<Output = T>
                 + DivAssign
                 + Pow<T, Output = T>
+                + RuntimeCheckedPow
                 + Zero
                 + One,
             Ref<$out_type>: ToValue,
@@ -214,7 +232,7 @@ macro_rules! impl_powop {
         #[cfg(feature = "compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
-            T: CompileConst + ConstElem + AsValueKind,
+            T: CompileConst + ConstElem + AsValueKind + RuntimeCheckedPow,
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
@@ -232,6 +250,29 @@ macro_rules! impl_math_fxns_pow {
 }
 
 impl_math_fxns_pow!(Pow);
+
+#[cfg(all(test, feature = "u8"))]
+mod checked_arithmetic_tests {
+    use super::*;
+
+    #[test]
+    fn integer_exponentiation_rejects_reactive_overflow_and_retains_output() {
+        let rhs = Ref::new(1_u8);
+        let out = Ref::new(17_u8);
+        let function = PowSS {
+            lhs: Ref::new(20_u8),
+            rhs: rhs.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), 20);
+        *rhs.borrow_mut() = 2;
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+        assert_eq!(*out.borrow(), 20);
+    }
+}
 
 #[cfg(all(feature = "rational", feature = "i32"))]
 #[derive(Debug)]

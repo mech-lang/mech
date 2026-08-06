@@ -190,6 +190,17 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
             ));
         }
     }
+    let canonical_register_count = initialized
+        .iter()
+        .rposition(|initialized| *initialized)
+        .map(|register| register + 1)
+        .unwrap_or(0);
+    if header.register_count as usize != canonical_register_count {
+        return invalid(format!(
+            "register count {} does not match highest referenced register count {canonical_register_count}",
+            header.register_count,
+        ));
+    }
 
     Ok(ParsedProgram {
         header,

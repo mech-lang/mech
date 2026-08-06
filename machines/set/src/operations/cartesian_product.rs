@@ -57,8 +57,11 @@ fn cartesian_product_output_len(lhs: usize, rhs: usize) -> MResult<usize> {
 
 pub(crate) fn validate_set_cartesian_product_contract(args: &FunctionArgs) -> MResult<()> {
     let contract = "set_cartesian_product";
-    let lhs = match args.input_value(0) {
-        Some(Value::Set(value)) => value.borrow().set.len(),
+    let (lhs_len, lhs_kind) = match args.input_value(0) {
+        Some(Value::Set(value)) => {
+            let value = value.borrow();
+            (value.set.len(), value.kind.clone())
+        }
         _ => {
             return Err(function_shape_contract_violation(
                 contract,
@@ -66,8 +69,11 @@ pub(crate) fn validate_set_cartesian_product_contract(args: &FunctionArgs) -> MR
             ));
         }
     };
-    let rhs = match args.input_value(1) {
-        Some(Value::Set(value)) => value.borrow().set.len(),
+    let (rhs_len, rhs_kind) = match args.input_value(1) {
+        Some(Value::Set(value)) => {
+            let value = value.borrow();
+            (value.set.len(), value.kind.clone())
+        }
         _ => {
             return Err(function_shape_contract_violation(
                 contract,
@@ -75,7 +81,23 @@ pub(crate) fn validate_set_cartesian_product_contract(args: &FunctionArgs) -> MR
             ));
         }
     };
-    cartesian_product_output_len(lhs, rhs)?;
+    cartesian_product_output_len(lhs_len, rhs_len)?;
+    let output_kind = match args.output_value() {
+        Value::Set(value) => value.borrow().kind.clone(),
+        _ => {
+            return Err(function_shape_contract_violation(
+                contract,
+                "output must be a set",
+            ));
+        }
+    };
+    let expected = ValueKind::Tuple(vec![lhs_kind, rhs_kind]);
+    if output_kind != expected {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("output element schema is {output_kind}, expected {expected}"),
+        ));
+    }
     Ok(())
 }
 

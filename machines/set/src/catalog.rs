@@ -1,6 +1,6 @@
 use mech_core::{
-    FunctionCatalogBuilder, MResult, MechFunctionFactory, RuntimeFunctionContract,
-    RuntimeOutputAliasPolicy,
+    function_shape_contract_violation, FunctionArgs, FunctionCatalogBuilder, MResult,
+    MechFunctionFactory, RuntimeFunctionContract, RuntimeOutputAliasPolicy, ValueKind,
 };
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
@@ -230,12 +230,216 @@ macro_rules! declare_set_runtime_factory {
     };
 }
 
+fn set_element_kind(value: &mech_core::Value) -> Option<ValueKind> {
+    match value.deref_kind() {
+        ValueKind::Set(element, _) => Some(*element),
+        _ => None,
+    }
+}
+
+fn required_set_element_kind(
+    args: &FunctionArgs,
+    index: usize,
+    contract: &'static str,
+) -> MResult<ValueKind> {
+    args.input_value(index)
+        .and_then(set_element_kind)
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, format!("input {index} must be a set"))
+        })
+}
+
+fn required_output_set_element_kind(
+    args: &FunctionArgs,
+    contract: &'static str,
+) -> MResult<ValueKind> {
+    set_element_kind(args.output_value()).ok_or_else(|| {
+        function_shape_contract_violation(contract, "output must be a set")
+    })
+}
+
+fn require_same_kind(
+    contract: &'static str,
+    role: &'static str,
+    expected: &ValueKind,
+    found: &ValueKind,
+) -> MResult<()> {
+    if expected == found {
+        Ok(())
+    } else {
+        Err(function_shape_contract_violation(
+            contract,
+            format!("{role} element schema is {found}, expected {expected}"),
+        ))
+    }
+}
+
+fn validate_binary_set_inputs(args: &FunctionArgs, contract: &'static str) -> MResult<ValueKind> {
+    let lhs = required_set_element_kind(args, 0, contract)?;
+    let rhs = required_set_element_kind(args, 1, contract)?;
+    require_same_kind(contract, "input 1", &lhs, &rhs)?;
+    Ok(lhs)
+}
+
+fn validate_set_binary_output_contract(args: &FunctionArgs) -> MResult<()> {
+    let contract = "set_binary_same_schema";
+    let input = validate_binary_set_inputs(args, contract)?;
+    let output = required_output_set_element_kind(args, contract)?;
+    require_same_kind(contract, "output", &input, &output)
+}
+
+fn validate_set_binary_relation_contract(args: &FunctionArgs) -> MResult<()> {
+    validate_binary_set_inputs(args, "set_binary_relation_same_schema").map(|_| ())
+}
+
+fn validate_set_element_contract(args: &FunctionArgs) -> MResult<()> {
+    let contract = "set_element_same_schema";
+    let element = args
+        .input_value(0)
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing input 0"))?
+        .deref_kind();
+    let set = required_set_element_kind(args, 1, contract)?;
+    require_same_kind(contract, "input 0", &set, &element)
+}
+
+fn validate_set_mutation_contract(args: &FunctionArgs) -> MResult<()> {
+    let contract = "set_mutation_same_schema";
+    let set = required_set_element_kind(args, 0, contract)?;
+    let element = args
+        .input_value(1)
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?
+        .deref_kind();
+    require_same_kind(contract, "input 1", &set, &element)?;
+    let output = required_output_set_element_kind(args, contract)?;
+    require_same_kind(contract, "output", &set, &output)
+}
+
+fn validate_set_powerset_contract(args: &FunctionArgs) -> MResult<()> {
+    let contract = "set_powerset_schema";
+    let input = required_set_element_kind(args, 0, contract)?;
+    let expected = ValueKind::Set(Box::new(input), None);
+    let output = required_output_set_element_kind(args, contract)?;
+    require_same_kind(contract, "output", &expected, &output)
+}
+
 macro_rules! set_runtime_contract {
     ("SetCartesianProductFxn") => {
         RuntimeFunctionContract::custom(
             "set_cartesian_product",
             RuntimeOutputAliasPolicy::DisallowInputAlias,
             crate::operations::cartesian_product::validate_set_cartesian_product_contract,
+        )
+    };
+    ("SetDifferenceFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_binary_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_binary_output_contract,
+        )
+    };
+    ("SetIntersectionFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_binary_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_binary_output_contract,
+        )
+    };
+    ("SetSymDifferenceFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_binary_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_binary_output_contract,
+        )
+    };
+    ("SetUnionFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_binary_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_binary_output_contract,
+        )
+    };
+    ("SetDisjointFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_binary_relation_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_binary_relation_contract,
+        )
+    };
+    ("SetEqualsFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_binary_relation_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_binary_relation_contract,
+        )
+    };
+    ("SetNotEqualsFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_binary_relation_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_binary_relation_contract,
+        )
+    };
+    ("SetProperSubsetFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_binary_relation_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_binary_relation_contract,
+        )
+    };
+    ("SetProperSupersetFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_binary_relation_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_binary_relation_contract,
+        )
+    };
+    ("SetSubsetFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_binary_relation_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_binary_relation_contract,
+        )
+    };
+    ("SetSupersetFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_binary_relation_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_binary_relation_contract,
+        )
+    };
+    ("SetElementOfFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_element_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_element_contract,
+        )
+    };
+    ("SetNotElementOfFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_element_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_element_contract,
+        )
+    };
+    ("SetInsertFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_mutation_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_mutation_contract,
+        )
+    };
+    ("SetRemoveFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_mutation_same_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_mutation_contract,
+        )
+    };
+    ("SetPowersetFxn") => {
+        RuntimeFunctionContract::custom(
+            "set_powerset_schema",
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_set_powerset_contract,
         )
     };
     ($_name:literal) => {
@@ -354,5 +558,105 @@ mod tests {
                 "{canonical_name}",
             );
         }
+    }
+}
+
+#[cfg(all(
+    test,
+    feature = "u8",
+    feature = "bool",
+    feature = "cartesian_product"
+))]
+mod runtime_schema_contract_tests {
+    use super::*;
+    use mech_core::{set::MechSet, Ref, Value};
+
+    fn set(kind: ValueKind) -> Value {
+        Value::Set(Ref::new(MechSet::new(kind, 0)))
+    }
+
+    #[test]
+    fn typed_set_contracts_reject_erased_element_schema_mismatches() {
+        let same_set_args = FunctionArgs::Binary(
+            set(ValueKind::U8),
+            set(ValueKind::U8),
+            set(ValueKind::U8),
+        );
+        validate_set_binary_output_contract(&same_set_args).unwrap();
+        validate_set_binary_relation_contract(&same_set_args).unwrap();
+
+        let mismatched_sets = FunctionArgs::Binary(
+            set(ValueKind::U8),
+            set(ValueKind::U8),
+            set(ValueKind::Bool),
+        );
+        assert_eq!(
+            validate_set_binary_output_contract(&mismatched_sets)
+                .unwrap_err()
+                .kind_name(),
+            "FunctionShapeContractViolation",
+        );
+        assert_eq!(
+            validate_set_binary_relation_contract(&mismatched_sets)
+                .unwrap_err()
+                .kind_name(),
+            "FunctionShapeContractViolation",
+        );
+
+        let matching_element = FunctionArgs::Binary(
+            Value::Bool(Ref::new(false)),
+            Value::U8(Ref::new(1)),
+            set(ValueKind::U8),
+        );
+        validate_set_element_contract(&matching_element).unwrap();
+        let mismatched_element = FunctionArgs::Binary(
+            Value::Bool(Ref::new(false)),
+            Value::Bool(Ref::new(true)),
+            set(ValueKind::U8),
+        );
+        assert!(validate_set_element_contract(&mismatched_element).is_err());
+
+        let matching_mutation = FunctionArgs::Binary(
+            set(ValueKind::U8),
+            set(ValueKind::U8),
+            Value::U8(Ref::new(1)),
+        );
+        validate_set_mutation_contract(&matching_mutation).unwrap();
+        let mismatched_mutation = FunctionArgs::Binary(
+            set(ValueKind::U8),
+            set(ValueKind::U8),
+            Value::Bool(Ref::new(true)),
+        );
+        assert!(validate_set_mutation_contract(&mismatched_mutation).is_err());
+    }
+
+    #[test]
+    fn derived_set_output_schemas_are_exact() {
+        let powerset = FunctionArgs::Unary(
+            set(ValueKind::Set(Box::new(ValueKind::U8), None)),
+            set(ValueKind::U8),
+        );
+        validate_set_powerset_contract(&powerset).unwrap();
+        let wrong_powerset = FunctionArgs::Unary(set(ValueKind::U8), set(ValueKind::U8));
+        assert!(validate_set_powerset_contract(&wrong_powerset).is_err());
+
+        let cartesian = FunctionArgs::Binary(
+            set(ValueKind::Tuple(vec![ValueKind::U8, ValueKind::Bool])),
+            set(ValueKind::U8),
+            set(ValueKind::Bool),
+        );
+        crate::operations::cartesian_product::validate_set_cartesian_product_contract(&cartesian)
+            .unwrap();
+        let wrong_cartesian = FunctionArgs::Binary(
+            set(ValueKind::Tuple(vec![ValueKind::Bool, ValueKind::U8])),
+            set(ValueKind::U8),
+            set(ValueKind::Bool),
+        );
+        assert!(
+            crate::operations::cartesian_product::validate_set_cartesian_product_contract(
+                &wrong_cartesian,
+            )
+            .is_err()
+        );
     }
 }
