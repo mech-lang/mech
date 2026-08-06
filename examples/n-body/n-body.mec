@@ -1,0 +1,73 @@
+@simulation := timer://simulation/tick{:read(tick), :read(delta-seconds)}
+@out := console://console/output{:write(line)}
+@view := scene://view/frame{:write(replace)}
+
+simulation-tick := @simulation/tick
+simulation-years := simulation-tick * 0.01
+solar-mass := 39.478417604357432
+
+body := |id<string> mass<f64> radius<f64> fill<string> stroke<string>|
+  | "sun"      39.478417604357432          8.0 "#ffd166" "#fff2b2" |
+  | "mercury"   0.000006553891063334586     2.3 "#b9a99a" "#eee4dc" |
+  | "venus"     0.00009663677079181509      3.2 "#e8b86d" "#ffe0a6" |
+  | "earth"     0.0001185729930120939       3.5 "#55a9ff" "#b8ddff" |
+  | "mars"      0.000012740281485031969     2.8 "#e76f51" "#ffc1ae" |
+  | "jupiter"   0.037693674870389493        5.8 "#d7b28c" "#f2d5b8" |
+  | "saturn"    0.011286326131968767        5.0 "#e7cf8d" "#fff0bd" |
+  | "uranus"    0.0017237240570597112       4.2 "#72d6d1" "#c4fffb" |
+  | "neptune"   0.0020336868699246304       4.2 "#5677e8" "#bdcaff" |
+  | "pluto"     0.00000025846520005572811   2.0 "#c9c2b8" "#ffffff" |
+
+orbit := |radius<f64> period<f64> phase<f64>|
+  |  0.3871   0.2408467 -2.774 |
+  |  0.7233   0.6151970  3.083 |
+  |  1.0000   1.0000000  1.752 |
+  |  1.5237   1.8808000 -0.010 |
+  |  5.2029  11.8620000 -0.235 |
+  |  9.5370  29.4570000  0.459 |
+  | 19.1910  84.0170000 -0.864 |
+  | 30.0690 164.7900000 -1.035 |
+  | 39.4820 247.9400000 -1.911 |
+
+angular-rate := 6.283185307179586 / orbit.period
+display-radius := orbit.radius ^ 0.5 * 44.0
+planet-screen-x := 300.0 + display-radius
+
+angular-momentum-components := body.mass[2..=10] * orbit.radius ^ 2.0 * angular-rate
+total-angular-momentum := angular-momentum-components[1] + angular-momentum-components[2] + angular-momentum-components[3] + angular-momentum-components[4] + angular-momentum-components[5] + angular-momentum-components[6] + angular-momentum-components[7] + angular-momentum-components[8] + angular-momentum-components[9]
+energy-components := body.mass[2..=10] * solar-mass / orbit.radius * -0.5
+total-energy := energy-components[1] + energy-components[2] + energy-components[3] + energy-components[4] + energy-components[5] + energy-components[6] + energy-components[7] + energy-components[8] + energy-components[9]
+
+body-circles := |id<string> x<f64> y<f64> radius<f64> fill<string> stroke<string> stroke-width<f64> opacity<f64>|
+  | "sun" 300.0 300.0 8.0 "#ffd166" "#fff2b2" 1.2 1.0 |
+
+planet-lines := |id<string> x1<f64> y1<f64> x2<f64> y2<f64> stroke<string> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64>|
+  | body.id[2]  planet-screen-x[1] 300.0 planet-screen-x[1] + 0.01 300.0 body.fill[2]  body.radius[2] * 2.0  "round" 1.0 -158.938 + simulation-tick * 0.01 * 360.0 / 0.2408467 300.0 300.0 |
+  | body.id[3]  planet-screen-x[2] 300.0 planet-screen-x[2] + 0.01 300.0 body.fill[3]  body.radius[3] * 2.0  "round" 1.0  176.643 + simulation-tick * 0.01 * 360.0 / 0.6151970 300.0 300.0 |
+  | body.id[4]  planet-screen-x[3] 300.0 planet-screen-x[3] + 0.01 300.0 body.fill[4]  body.radius[4] * 2.0  "round" 1.0  100.382 + simulation-tick * 0.01 * 360.0 / 1.0000000 300.0 300.0 |
+  | body.id[5]  planet-screen-x[4] 300.0 planet-screen-x[4] + 0.01 300.0 body.fill[5]  body.radius[5] * 2.0  "round" 1.0   -0.573 + simulation-tick * 0.01 * 360.0 / 1.8808000 300.0 300.0 |
+  | body.id[6]  planet-screen-x[5] 300.0 planet-screen-x[5] + 0.01 300.0 body.fill[6]  body.radius[6] * 2.0  "round" 1.0  -13.465 + simulation-tick * 0.01 * 360.0 / 11.8620000 300.0 300.0 |
+  | body.id[7]  planet-screen-x[6] 300.0 planet-screen-x[6] + 0.01 300.0 body.fill[7]  body.radius[7] * 2.0  "round" 1.0   26.299 + simulation-tick * 0.01 * 360.0 / 29.4570000 300.0 300.0 |
+  | body.id[8]  planet-screen-x[7] 300.0 planet-screen-x[7] + 0.01 300.0 body.fill[8]  body.radius[8] * 2.0  "round" 1.0  -49.504 + simulation-tick * 0.01 * 360.0 / 84.0170000 300.0 300.0 |
+  | body.id[9]  planet-screen-x[8] 300.0 planet-screen-x[8] + 0.01 300.0 body.fill[9]  body.radius[9] * 2.0  "round" 1.0  -59.301 + simulation-tick * 0.01 * 360.0 / 164.7900000 300.0 300.0 |
+  | body.id[10] planet-screen-x[9] 300.0 planet-screen-x[9] + 0.01 300.0 body.fill[10] body.radius[10] * 2.0 "round" 1.0 -109.492 + simulation-tick * 0.01 * 360.0 / 247.9400000 300.0 300.0 |
+
+scene := {
+  width: 600.0
+  height: 600.0
+  background: "#080b12"
+  circles: body-circles
+  lines: planet-lines
+}
+
+diagnostics := {
+  tick: simulation-tick
+  years: simulation-years
+  earth-phase-degrees: 100.382 + simulation-tick * 3.6
+  jupiter-phase-degrees: -13.465 + simulation-tick * 0.3034901365705615
+  total-angular-momentum: total-angular-momentum
+  total-energy: total-energy
+}
+
+@out/line <- diagnostics
+@view/replace <- scene

@@ -1,0 +1,62 @@
+config := {
+  runtime: {
+    name: "n-body"
+    limits: {
+      max-turn-duration-ms: 2000
+      max-in-memory-events: 2048
+    }
+  }
+
+  serve: {
+    address: "127.0.0.1"
+    port: 8081
+    paths: ["n-body.mec"]
+    shim: "index.html"
+  }
+
+  hosts: [
+    {
+      name: "simulation"
+      provider: "timer"
+      settings: {
+        frequency-hz: 15
+        max-catch-up-steps: 4
+      }
+    }
+    {
+      name: "console"
+      provider: "console"
+      settings: {}
+    }
+    {
+      name: "view"
+      provider: "scene"
+      settings: {
+        selector: "#solar-system"
+        renderer: "svg"
+      }
+    }
+  ]
+
+  run: {
+    paths: ["n-body.mec"]
+
+    grants: [
+      {
+        target: "simulation/tick"
+        operations: ["read"]
+        paths: ["tick", "delta-seconds"]
+      }
+      {
+        target: "console/output"
+        operations: ["write"]
+        paths: ["line"]
+      }
+      {
+        target: "view/frame"
+        operations: ["write"]
+        paths: ["replace"]
+      }
+    ]
+  }
+}
