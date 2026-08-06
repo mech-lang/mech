@@ -8,6 +8,12 @@ use mech_core::MResult;
 
 use crate::error::{NativeBuildErrorKind, native_build_error};
 
+pub const GENERATED_RUST_TOOLCHAIN_TOML: &str = concat!(
+    "[toolchain]\n",
+    "channel = \"nightly-2026-03-03\"\n",
+    "profile = \"minimal\"\n",
+);
+
 /// Deterministically ordered Rust sources for a generated native project.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GeneratedSourceSet {
@@ -90,6 +96,10 @@ impl GeneratedNativeProject {
         self.root.join("build-plan.json")
     }
 
+    pub fn rust_toolchain_path(&self) -> PathBuf {
+        self.root.join("rust-toolchain.toml")
+    }
+
     pub fn bytecode_path(&self) -> PathBuf {
         self.root.join("program.mecb")
     }
@@ -123,6 +133,7 @@ impl GeneratedNativeProject {
                 "Cargo.toml",
                 "build-plan.json",
                 "program.mecb",
+                "rust-toolchain.toml",
                 "src",
             ],
         )?;
@@ -136,6 +147,10 @@ impl GeneratedNativeProject {
         write_generated_file(&self.manifest_path(), self.cargo_manifest.as_bytes())?;
         write_generated_file(&self.build_plan_path(), self.build_plan_json.as_bytes())?;
         write_generated_file(&self.bytecode_path(), &self.bytecode)?;
+        write_generated_file(
+            &self.rust_toolchain_path(),
+            GENERATED_RUST_TOOLCHAIN_TOML.as_bytes(),
+        )?;
         for (relative_path, source) in &self.sources {
             let relative_path = validate_source_path(Path::new(relative_path))?;
             write_generated_file(&self.root.join(relative_path), source.as_bytes())?;
@@ -545,6 +560,10 @@ mod tests {
             project.build_plan_json
         );
         assert_eq!(fs::read(project.bytecode_path()).unwrap(), project.bytecode);
+        assert_eq!(
+            fs::read_to_string(project.rust_toolchain_path()).unwrap(),
+            GENERATED_RUST_TOOLCHAIN_TOML,
+        );
         for (relative_path, source) in &project.sources {
             assert_eq!(
                 fs::read_to_string(project.root.join(relative_path)).unwrap(),
@@ -562,6 +581,7 @@ mod tests {
                 "Cargo.toml".to_owned(),
                 "build-plan.json".to_owned(),
                 "program.mecb".to_owned(),
+                "rust-toolchain.toml".to_owned(),
                 "src".to_owned(),
             ])
         );
