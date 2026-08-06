@@ -171,7 +171,13 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
     }
     let initialized =
         validate_instructions(&instructions, &header, constants.len(), requirements.len())?;
-    validate_composite_packs(&instructions, &types, &constants, &constant_blob)?;
+    validate_composite_packs(
+        &instructions,
+        header.register_count as usize,
+        &types,
+        &constants,
+        &constant_blob,
+    )?;
     validate_constant_and_requirement_reachability(
         &instructions,
         constants.len(),
@@ -201,6 +207,7 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
 
 fn validate_composite_packs(
     instructions: &[BytecodeInstruction],
+    register_count: usize,
     types: &[RuntimeType],
     constants: &[ConstantEntry],
     blob: &[u8],
@@ -212,27 +219,26 @@ fn validate_composite_packs(
         return Ok(());
     }
     let values = decode_constants(types, constants, blob)?;
+    let mut registers = vec![None::<Value>; register_count];
     for instruction in instructions {
-        let BytecodeInstruction::CompositePack {
-            template, children, ..
-        } = instruction
-        else {
-            continue;
-        };
-        let value = &values[*template as usize];
-        let expected = crate::bytecode_composite_children(value).ok_or_else(|| {
-            invalid::<()>(format!(
-                "CompositePack template kind {:?} is not structurally lowerable",
-                value.kind(),
-            ))
-            .unwrap_err()
-        })?;
-        if expected.len() != children.len() {
-            return invalid(format!(
-                "CompositePack template expects {} children, found {}",
-                expected.len(),
-                children.len(),
-            ));
+        match instruction {
+            BytecodeInstruction::ConstLoad { dst, constant } => {
+                registers[*dst as usize] = Some(values[*constant as usize].clone());
+            }
+            BytecodeInstruction::CompositePack {
+                dst,
+                template,
+                children,
+            } => {
+                let template = &values[*template as usize];
+                let children = children
+                    .iter()
+                    .map(|child| registers[*child as usize].clone().unwrap())
+                    .collect::<Vec<_>>();
+                let rebuilt = crate::rebuild_bytecode_composite(template, children)?;
+                registers[*dst as usize] = Some(rebuilt);
+            }
+            _ => {}
         }
     }
     Ok(())

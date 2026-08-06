@@ -238,6 +238,7 @@ little-endian. Argument arrays are a `u32` count followed by `u32` registers.
 | Opcode | Instruction | Fields after opcode |
 | ---: | --- | --- |
 | `01` | `ConstLoad` | Destination `u32`, constant index `u32` |
+| `02` | `CompositePack` | Destination `u32`, template constant index `u32`, child count `u32`, child registers (`u32` each) |
 | `10` | `RuntimeNullary` | Function ID `u64`, destination `u32` |
 | `11` | `RuntimeUnary` | Function ID, destination, source |
 | `12` | `RuntimeBinary` | Function ID, destination, left, right |
@@ -249,6 +250,13 @@ little-endian. Argument arrays are a `u32` count followed by `u32` registers.
 | `22` | `ResourceWrite` | Requirement index, destination, source |
 | `23` | `ResourceSend` | Requirement index, destination, source |
 | `FF` | `Return` | Source `u32` |
+
+`CompositePack` templates are canonical composite constants. Child registers
+are ordered by the template schema, and their runtime kinds must match the
+schema's effective child kinds exactly. A `Reference` template child prescribes
+its recursively dereferenced kind because bytecode registers carry the stable
+referenced cell. The destination receives a reconstructed composite that
+retains the child registers as its reactive dependencies.
 
 All registers and indices are in range, and runtime-function IDs are nonzero.
 There is exactly one `Return`; it is the final instruction.

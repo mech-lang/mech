@@ -25,6 +25,14 @@ fn u8_constant(value: u8) -> EncodedConstant {
     }
 }
 
+fn string_constant(value: &str) -> EncodedConstant {
+    EncodedConstant {
+        runtime_type: RuntimeType::String,
+        alignment: 1,
+        bytes: value.as_bytes().to_vec(),
+    }
+}
+
 fn u8_tuple_constant(values: &[u8]) -> EncodedConstant {
     let mut bytes = (values.len() as u32).to_le_bytes().to_vec();
     for value in values {
@@ -32,6 +40,18 @@ fn u8_tuple_constant(values: &[u8]) -> EncodedConstant {
     }
     EncodedConstant {
         runtime_type: RuntimeType::Tuple(vec![RuntimeType::U8; values.len()]),
+        alignment: 4,
+        bytes,
+    }
+}
+
+fn u8_reference_tuple_constant(value: u8) -> EncodedConstant {
+    let mut reference = Vec::new();
+    append_child_payload(&mut reference, &[value]);
+    let mut bytes = 1u32.to_le_bytes().to_vec();
+    append_child_payload(&mut bytes, &reference);
+    EncodedConstant {
+        runtime_type: RuntimeType::Tuple(vec![RuntimeType::Reference(Box::new(RuntimeType::U8))]),
         alignment: 4,
         bytes,
     }
@@ -1628,6 +1648,78 @@ fn rejects_unknown_out_of_range_cyclic_and_invalid_matrix_types() {
 }
 
 #[test]
+fn rejects_matrix_dimensions_that_exceed_the_feasible_payload_before_allocation() {
+    let rows = 1_000_000_000_u32;
+    let bytes = [rows.to_le_bytes(), 1_u32.to_le_bytes()].concat();
+    let error = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::Matrix {
+            element: Box::new(RuntimeType::U8),
+            storage: MatrixStorage::MatrixD,
+            rows,
+            cols: 1,
+        },
+        alignment: 8,
+        bytes,
+    }]))
+    .unwrap_err();
+
+    assert_eq!(error.kind_name(), "BytecodeValidation");
+    assert!(
+        error
+            .kind_message()
+            .contains("matrix element count exceeds the feasible remaining payload")
+    );
+}
+
+#[test]
+fn rejects_inline_composite_type_counts_before_allocation() {
+    for (tag, label) in [
+        (RuntimeTypeTag::Record, "record"),
+        (RuntimeTypeTag::Table, "table"),
+        (RuntimeTypeTag::Tuple, "tuple"),
+    ] {
+        let mut canonical = (tag as u16).to_le_bytes().to_vec();
+        canonical.extend_from_slice(&u32::MAX.to_le_bytes());
+        let error = types::decode_canonical_runtime_type_key(&canonical).unwrap_err();
+        assert_eq!(error.kind_name(), "BytecodeValidation");
+        assert!(
+            error
+                .kind_message()
+                .contains("exceeds the remaining payload"),
+            "expected bounded {label} count error, found {}",
+            error.kind_message(),
+        );
+    }
+
+    let enum_name = "bounded-inline-type";
+    let variant_name = "payload";
+    let mut malicious_type = (RuntimeTypeTag::Record as u16).to_le_bytes().to_vec();
+    malicious_type.extend_from_slice(&u32::MAX.to_le_bytes());
+    let mut enumeration = 1_u32.to_le_bytes().to_vec();
+    enumeration.extend_from_slice(&hash_str(variant_name).to_le_bytes());
+    enumeration.extend_from_slice(&(variant_name.len() as u32).to_le_bytes());
+    enumeration.extend_from_slice(variant_name.as_bytes());
+    enumeration.push(1);
+    append_child_payload(&mut enumeration, &malicious_type);
+    append_child_payload(&mut enumeration, &[]);
+    let error = write_bytecode(&program(vec![EncodedConstant {
+        runtime_type: RuntimeType::Enum {
+            id: hash_str(enum_name),
+            name: enum_name.to_owned(),
+        },
+        alignment: 4,
+        bytes: enumeration,
+    }]))
+    .unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeValidation");
+    assert!(
+        error
+            .kind_message()
+            .contains("canonical record field count exceeds the remaining payload")
+    );
+}
+
+#[test]
 fn rejects_invalid_constant_table_entries_and_scalar_payloads() {
     let boolean = write_bytecode(&program(vec![EncodedConstant {
         runtime_type: RuntimeType::Bool,
@@ -1914,6 +2006,32 @@ fn composite_pack_round_trips_and_reconstructs_from_child_registers() {
 }
 
 #[test]
+fn composite_pack_schema_accepts_compiler_unwrapped_reference_children() {
+    let input = BytecodeProgram {
+        register_count: 2,
+        constants: vec![u8_constant(7), u8_reference_tuple_constant(0)],
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions: vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
+            BytecodeInstruction::CompositePack {
+                dst: 1,
+                template: 1,
+                children: vec![0],
+            },
+            BytecodeInstruction::Return { src: 1 },
+        ],
+        dictionary: BTreeMap::new(),
+        requirements: Vec::new(),
+    };
+
+    ParsedProgram::from_bytes(&write_bytecode(&input).unwrap()).unwrap();
+}
+
+#[test]
 fn rejects_duplicate_canonical_constants_even_when_each_id_is_reachable() {
     let bytes =
         write_bytecode_without_reader_validation(&program(vec![u8_constant(7), u8_constant(7)]))
@@ -1954,6 +2072,29 @@ fn rejects_constant_ids_outside_canonical_first_reference_order() {
 #[test]
 fn composite_pack_rejects_invalid_templates_arities_and_register_flow() {
     let cases = [
+        (
+            BytecodeProgram {
+                register_count: 2,
+                constants: vec![u8_tuple_constant(&[0]), string_constant("wrong-kind")],
+                symbols: BTreeMap::new(),
+                mutable_symbols: BTreeSet::new(),
+                instructions: vec![
+                    BytecodeInstruction::ConstLoad {
+                        dst: 0,
+                        constant: 1,
+                    },
+                    BytecodeInstruction::CompositePack {
+                        dst: 1,
+                        template: 0,
+                        children: vec![0],
+                    },
+                    BytecodeInstruction::Return { src: 1 },
+                ],
+                dictionary: BTreeMap::new(),
+                requirements: Vec::new(),
+            },
+            "expected U8 from the template schema",
+        ),
         (
             BytecodeProgram {
                 register_count: 2,

@@ -485,6 +485,7 @@ mod hashed_composite_pack_tests {
     use std::sync::Arc;
 
     const PRODUCER: &str = "BytecodeComputedU8";
+    const INCREMENTING_PRODUCER: &str = "BytecodeIncrementingU8";
 
     #[derive(Debug)]
     struct ComputedU8 {
@@ -536,6 +537,56 @@ mod hashed_composite_pack_tests {
         }
     }
 
+    #[derive(Debug)]
+    struct IncrementingU8 {
+        output: Ref<u8>,
+    }
+
+    impl MechFunctionFactory for IncrementingU8 {
+        const SIGNATURE: RuntimeFunctionSignature =
+            RuntimeFunctionSignature::nullary(<u8 as FunctionRuntimeType>::REPRESENTATION);
+
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            match args {
+                FunctionArgs::Nullary(output) => Ok(Box::new(Self {
+                    output: output.try_function_ref(FunctionArgumentRole::Output)?,
+                })),
+                _ => Err(MechError::new(
+                    super::super::super::IncorrectNumberOfArguments {
+                        expected: 0,
+                        found: args.len(),
+                    },
+                    None,
+                )),
+            }
+        }
+    }
+
+    impl MechFunctionImpl for IncrementingU8 {
+        fn solve_result(&self) -> MResult<()> {
+            *self.output.borrow_mut() += 1;
+            Ok(())
+        }
+
+        fn out(&self) -> Value {
+            self.output.to_value()
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            INCREMENTING_PRODUCER.to_string()
+        }
+    }
+
+    impl MechFunctionCompiler for IncrementingU8 {
+        fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
     fn constant(runtime_type: RuntimeType, alignment: u8, bytes: Vec<u8>) -> EncodedConstant {
         EncodedConstant {
             runtime_type,
@@ -549,7 +600,7 @@ mod hashed_composite_pack_tests {
         bytes.extend_from_slice(payload);
     }
 
-    fn run_result(program: BytecodeProgram) -> MResult<Value> {
+    fn run_interpreter(program: BytecodeProgram) -> MResult<(Interpreter, Value)> {
         let mut catalog = FunctionCatalogBuilder::new();
         catalog
             .insert_runtime_factory::<ComputedU8>(
@@ -557,10 +608,21 @@ mod hashed_composite_pack_tests {
                 RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
             )
             .unwrap();
+        catalog
+            .insert_runtime_factory::<IncrementingU8>(
+                INCREMENTING_PRODUCER,
+                RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            )
+            .unwrap();
         let mut interpreter =
             Interpreter::with_function_catalog(1, 100, Arc::new(catalog.build().unwrap()));
         let parsed = ParsedProgram::from_bytes(&write_bytecode(&program).unwrap()).unwrap();
-        interpreter.run_program(&parsed)
+        let output = interpreter.run_program(&parsed)?;
+        Ok((interpreter, output))
+    }
+
+    fn run_result(program: BytecodeProgram) -> MResult<Value> {
+        run_interpreter(program).map(|(_, output)| output)
     }
 
     fn run(program: BytecodeProgram) -> Value {
@@ -618,6 +680,65 @@ mod hashed_composite_pack_tests {
         let key = Value::U8(Ref::new(7));
         assert_eq!(output.borrow().map.get(&key), Some(&Value::U8(Ref::new(9))));
         assert!(!output.borrow().map.contains_key(&Value::U8(Ref::new(1))));
+    }
+
+    #[test]
+    fn captured_map_values_remain_attached_across_reactive_rebuilds() {
+        let mut template = 1_u32.to_le_bytes().to_vec();
+        child(&mut template, &[1]);
+        child(&mut template, &[2]);
+        let (mut interpreter, output) = run_interpreter(BytecodeProgram {
+            register_count: 3,
+            constants: vec![
+                constant(RuntimeType::U8, 1, vec![1]),
+                constant(RuntimeType::U8, 1, vec![2]),
+                constant(
+                    RuntimeType::Map {
+                        key: Box::new(RuntimeType::U8),
+                        value: Box::new(RuntimeType::U8),
+                    },
+                    4,
+                    template,
+                ),
+            ],
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 1,
+                    constant: 1,
+                },
+                BytecodeInstruction::RuntimeNullary {
+                    function: RuntimeFunctionId::from_name(INCREMENTING_PRODUCER).raw(),
+                    dst: 1,
+                },
+                BytecodeInstruction::CompositePack {
+                    dst: 2,
+                    template: 2,
+                    children: vec![0, 1],
+                },
+                BytecodeInstruction::Return { src: 2 },
+            ],
+            dictionary: BTreeMap::new(),
+            requirements: Vec::new(),
+        })
+        .unwrap();
+
+        let Value::Map(output) = output else {
+            panic!("expected map output");
+        };
+        let key = Value::U8(Ref::new(1));
+        let captured = output.borrow().map.get(&key).unwrap().clone();
+        assert_eq!(captured, Value::U8(Ref::new(3)));
+
+        interpreter.solve_plan().unwrap();
+
+        assert_eq!(captured, Value::U8(Ref::new(4)));
+        assert_eq!(output.borrow().map.get(&key), Some(&Value::U8(Ref::new(4))));
     }
 
     #[test]

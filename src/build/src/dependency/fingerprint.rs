@@ -196,7 +196,12 @@ fn collect_rust_files(root: &Path, relative: &Path, files: &mut Vec<PathBuf>) ->
         let file_type = entry
             .file_type()
             .map_err(|error| invalid_input(&child, format!("file type is unavailable: {error}")))?;
-        if file_type.is_dir() {
+        if file_type.is_symlink() {
+            return Err(invalid_input(
+                &child,
+                "symlinked entries are not allowed in selected package source trees",
+            ));
+        } else if file_type.is_dir() {
             collect_rust_files(root, &child, files)?;
         } else if child.extension().is_some_and(|extension| extension == "rs") {
             files.push(child);
@@ -237,39 +242,181 @@ fn discover_compile_time_resources(
     package: &WorkspacePackage,
 ) -> MResult<Vec<PathBuf>> {
     let mut resources = Vec::new();
-    for macro_name in ["include_bytes!", "include_str!"] {
-        let mut remainder = source;
-        while let Some(index) = remainder.find(macro_name) {
-            remainder = &remainder[index + macro_name.len()..];
-            let trimmed = remainder.trim_start();
-            let Some(argument) = macro_argument(trimmed) else {
-                continue;
-            };
-            let expression = parse_include_expression(argument).ok_or_else(|| {
-                invalid_input(
-                    source_relative_path,
-                    format!("unsupported {macro_name} expression `{}`", argument.trim()),
-                )
-            })?;
-            let relative = match expression {
-                IncludeExpression::SourceRelative(path) => {
-                    let base = source_relative_path
-                        .parent()
-                        .unwrap_or_else(|| Path::new(""));
-                    normalize_join(base, Path::new(&path))?
-                }
-                IncludeExpression::ManifestRelative(path) => normalize_join(
-                    &package.relative_path,
-                    Path::new(path.trim_start_matches('/')),
-                )?,
-            };
-            resources.push(relative);
-            remainder = &trimmed[argument.len() + 2..];
-        }
+    for (macro_name, argument) in active_include_macros(source) {
+        let expression = parse_include_expression(argument).ok_or_else(|| {
+            invalid_input(
+                source_relative_path,
+                format!("unsupported {macro_name}! expression `{}`", argument.trim()),
+            )
+        })?;
+        let relative = match expression {
+            IncludeExpression::SourceRelative(path) => {
+                let base = source_relative_path
+                    .parent()
+                    .unwrap_or_else(|| Path::new(""));
+                normalize_join(base, Path::new(&path))?
+            }
+            IncludeExpression::ManifestRelative(path) => normalize_join(
+                &package.relative_path,
+                Path::new(path.trim_start_matches('/')),
+            )?,
+        };
+        resources.push(relative);
     }
     resources.sort();
     resources.dedup();
     Ok(resources)
+}
+
+fn active_include_macros(source: &str) -> Vec<(&'static str, &str)> {
+    let bytes = source.as_bytes();
+    let mut includes = Vec::new();
+    let mut index = 0usize;
+    while index < bytes.len() {
+        if let Some(end) = rust_non_code_end(source, index) {
+            index = end;
+            continue;
+        }
+        if !bytes[index].is_ascii_alphabetic() && bytes[index] != b'_' {
+            index += 1;
+            continue;
+        }
+
+        let identifier_start = index;
+        index += 1;
+        while index < bytes.len() && (bytes[index].is_ascii_alphanumeric() || bytes[index] == b'_')
+        {
+            index += 1;
+        }
+        let macro_name = match &source[identifier_start..index] {
+            "include_bytes" => "include_bytes",
+            "include_str" => "include_str",
+            _ => continue,
+        };
+        let mut cursor = skip_rust_trivia(source, index);
+        if bytes.get(cursor) != Some(&b'!') {
+            continue;
+        }
+        cursor = skip_rust_trivia(source, cursor + 1);
+        let Some(argument) = macro_argument(&source[cursor..]) else {
+            continue;
+        };
+        includes.push((macro_name, argument));
+        index = cursor + argument.len() + 2;
+    }
+    includes
+}
+
+fn skip_rust_trivia(source: &str, mut index: usize) -> usize {
+    let bytes = source.as_bytes();
+    loop {
+        while bytes.get(index).is_some_and(u8::is_ascii_whitespace) {
+            index += 1;
+        }
+        let Some(end) = rust_comment_end(source, index) else {
+            return index;
+        };
+        index = end;
+    }
+}
+
+fn rust_non_code_end(source: &str, index: usize) -> Option<usize> {
+    rust_comment_end(source, index)
+        .or_else(|| rust_raw_string_end(source, index))
+        .or_else(|| rust_quoted_literal_end(source, index))
+}
+
+fn rust_comment_end(source: &str, index: usize) -> Option<usize> {
+    let bytes = source.as_bytes();
+    if bytes.get(index..index + 2) == Some(b"//") {
+        return Some(
+            source[index + 2..]
+                .find('\n')
+                .map_or(bytes.len(), |offset| index + 2 + offset + 1),
+        );
+    }
+    if bytes.get(index..index + 2) != Some(b"/*") {
+        return None;
+    }
+    let mut cursor = index + 2;
+    let mut depth = 1usize;
+    while cursor < bytes.len() {
+        if bytes.get(cursor..cursor + 2) == Some(b"/*") {
+            depth += 1;
+            cursor += 2;
+        } else if bytes.get(cursor..cursor + 2) == Some(b"*/") {
+            depth -= 1;
+            cursor += 2;
+            if depth == 0 {
+                return Some(cursor);
+            }
+        } else {
+            cursor += 1;
+        }
+    }
+    Some(bytes.len())
+}
+
+fn rust_raw_string_end(source: &str, index: usize) -> Option<usize> {
+    let bytes = source.as_bytes();
+    let prefix_length = if bytes.get(index) == Some(&b'r') {
+        1
+    } else if matches!(bytes.get(index..index + 2), Some(b"br" | b"cr")) {
+        2
+    } else {
+        return None;
+    };
+    let mut cursor = index + prefix_length;
+    let hash_start = cursor;
+    while bytes.get(cursor) == Some(&b'#') {
+        cursor += 1;
+    }
+    let hash_count = cursor - hash_start;
+    if bytes.get(cursor) != Some(&b'"') {
+        return None;
+    }
+    cursor += 1;
+    while cursor < bytes.len() {
+        if bytes[cursor] == b'"'
+            && bytes.get(cursor + 1..cursor + 1 + hash_count)
+                == Some(&bytes[hash_start..hash_start + hash_count])
+        {
+            return Some(cursor + 1 + hash_count);
+        }
+        cursor += 1;
+    }
+    Some(bytes.len())
+}
+
+fn rust_quoted_literal_end(source: &str, index: usize) -> Option<usize> {
+    let bytes = source.as_bytes();
+    let (quote_index, quote) = match bytes.get(index..index + 2) {
+        Some([b'b' | b'c', b'"']) => (index + 1, b'"'),
+        Some([b'b', b'\'']) => (index + 1, b'\''),
+        _ => match bytes.get(index).copied()? {
+            b'"' => (index, b'"'),
+            b'\''
+                if bytes.get(index + 2) == Some(&b'\'') || bytes.get(index + 1) == Some(&b'\\') =>
+            {
+                (index, b'\'')
+            }
+            _ => return None,
+        },
+    };
+    let mut cursor = quote_index + 1;
+    let mut escaped = false;
+    while cursor < bytes.len() {
+        let byte = bytes[cursor];
+        cursor += 1;
+        if escaped {
+            escaped = false;
+        } else if byte == b'\\' {
+            escaped = true;
+        } else if byte == quote {
+            return Some(cursor);
+        }
+    }
+    Some(bytes.len())
 }
 
 fn macro_argument(input: &str) -> Option<&str> {
@@ -281,21 +428,15 @@ fn macro_argument(input: &str) -> Option<&str> {
     };
     let bytes = input.as_bytes();
     let mut depth = 0usize;
-    let mut quoted = false;
-    let mut escaped = false;
-    for (index, byte) in bytes.iter().copied().enumerate() {
-        if quoted {
-            if escaped {
-                escaped = false;
-            } else if byte == b'\\' {
-                escaped = true;
-            } else if byte == b'"' {
-                quoted = false;
-            }
+    let mut index = 0usize;
+    while index < bytes.len() {
+        if index > 0
+            && let Some(end) = rust_non_code_end(input, index)
+        {
+            index = end;
             continue;
         }
-        match byte {
-            b'"' => quoted = true,
+        match bytes[index] {
             byte if byte == open => depth += 1,
             byte if byte == close => {
                 depth = depth.checked_sub(1)?;
@@ -305,6 +446,7 @@ fn macro_argument(input: &str) -> Option<&str> {
             }
             _ => {}
         }
+        index += 1;
     }
     None
 }
@@ -690,5 +832,58 @@ mod tests {
                 "{label} resource bytes must be fingerprinted"
             );
         }
+    }
+
+    #[test]
+    fn include_text_inside_comments_and_literals_is_ignored() {
+        let workspace = TestWorkspace::new("inactive-includes");
+        fs::write(
+            workspace.0.join("machines/math/src/lib.rs"),
+            r###"
+// include_bytes!("../assets/missing-line.bin")
+/* include_str!["../assets/missing-block.txt"] */
+const EXAMPLE: &str = "include_bytes!(\"../assets/missing-string.bin\")";
+const RAW: &str = r#"include_str!{"../assets/missing-raw.txt"}"#;
+const DATA: &[u8] = include_bytes!("../assets/data.bin");
+"###,
+        )
+        .unwrap();
+
+        let initial = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+        fs::write(
+            workspace.0.join("machines/math/assets/data.bin"),
+            b"active-resource-v2",
+        )
+        .unwrap();
+        let changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+        assert_ne!(initial, changed);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn symlinked_source_directories_are_rejected_explicitly() {
+        use std::os::unix::fs::symlink;
+
+        let workspace = TestWorkspace::new("source-directory-symlink");
+        fs::create_dir_all(workspace.0.join("machines/math/shared-source")).unwrap();
+        fs::write(
+            workspace.0.join("machines/math/shared-source/linked.rs"),
+            "pub const LINKED: u8 = 1;\n",
+        )
+        .unwrap();
+        symlink(
+            "../shared-source",
+            workspace.0.join("machines/math/src/linked"),
+        )
+        .unwrap();
+
+        let error = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeWorkspaceInputInvalid");
+        assert!(
+            error
+                .kind_message()
+                .contains("symlinked entries are not allowed")
+        );
+        assert!(error.kind_message().contains("machines/math/src/linked"));
     }
 }
