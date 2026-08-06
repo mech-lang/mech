@@ -1086,11 +1086,12 @@ mod external_bytecode_tests {
     }
 
     fn host_program(
+        register_count: u32,
         instructions: Vec<BytecodeInstruction>,
         symbols: &[(&str, u32)],
     ) -> ParsedProgram {
         parse_program(
-            2,
+            register_count,
             vec![string_constant("seed")],
             instructions,
             vec![ApplicationRequirement::HostFunction(
@@ -1103,12 +1104,13 @@ mod external_bytecode_tests {
     }
 
     fn resource_program(
+        register_count: u32,
         delivery: ResourceDelivery,
         instructions: Vec<BytecodeInstruction>,
         symbols: &[(&str, u32)],
     ) -> ParsedProgram {
         parse_program(
-            2,
+            register_count,
             vec![string_constant("seed")],
             instructions,
             vec![ApplicationRequirement::Resource(request(
@@ -1283,6 +1285,7 @@ mod external_bytecode_tests {
     #[test]
     fn host_return_and_symbols_observe_the_actual_external_result() {
         let parsed = host_program(
+            1,
             vec![
                 BytecodeInstruction::ConstLoad {
                     dst: 0,
@@ -1319,6 +1322,7 @@ mod external_bytecode_tests {
     #[test]
     fn resource_return_and_symbol_observe_the_actual_external_result() {
         let parsed = resource_program(
+            1,
             ResourceDelivery::Snapshot,
             vec![
                 BytecodeInstruction::ConstLoad {
@@ -1355,6 +1359,7 @@ mod external_bytecode_tests {
         let cases = [
             (
                 host_program(
+                    2,
                     vec![
                         BytecodeInstruction::ConstLoad {
                             dst: 0,
@@ -1383,6 +1388,7 @@ mod external_bytecode_tests {
             ),
             (
                 resource_program(
+                    2,
                     ResourceDelivery::Snapshot,
                     vec![
                         BytecodeInstruction::ConstLoad {
@@ -1442,6 +1448,7 @@ mod external_bytecode_tests {
     #[test]
     fn live_resource_updates_keep_register_identity_and_rerun_dependents() {
         let parsed = resource_program(
+            2,
             ResourceDelivery::Live,
             vec![
                 BytecodeInstruction::ConstLoad {
@@ -1527,6 +1534,7 @@ mod external_bytecode_tests {
             &[("prior", 0)],
         );
         let failing = host_program(
+            1,
             vec![
                 BytecodeInstruction::ConstLoad {
                     dst: 0,
