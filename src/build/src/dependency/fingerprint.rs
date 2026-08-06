@@ -150,23 +150,32 @@ fn collect_package_inputs(
     rust_inputs.sort();
     rust_inputs.dedup();
 
-    for rust_input in &rust_inputs {
-        inputs.insert(rust_input.clone());
-    }
-
     for resource in &package.embedded_resources {
         inputs.insert(package.resource_relative_path(resource));
     }
 
-    for rust_input in rust_inputs {
+    // `include!` contributes Rust tokens, and those tokens may contain further
+    // compile-time includes. Walk that graph transitively so every input Cargo
+    // can compile is represented in the workspace fingerprint.
+    let mut pending_rust_inputs = rust_inputs;
+    let mut scanned_rust_inputs = BTreeSet::new();
+    while let Some(rust_input) = pending_rust_inputs.pop() {
+        if !scanned_rust_inputs.insert(rust_input.clone()) {
+            continue;
+        }
+        inputs.insert(rust_input.clone());
         let source = fs::read_to_string(root.join(&rust_input)).map_err(|error| {
             invalid_input(
                 &rust_input,
                 format!("Rust input cannot be read as UTF-8: {error}"),
             )
         })?;
-        for include in discover_compile_time_resources(&source, &rust_input, package)? {
-            inputs.insert(include);
+        for (macro_name, include) in discover_compile_time_resources(&source, &rust_input, package)?
+        {
+            inputs.insert(include.clone());
+            if macro_name == "include" {
+                pending_rust_inputs.push(include);
+            }
         }
     }
 
@@ -240,7 +249,7 @@ fn discover_compile_time_resources(
     source: &str,
     source_relative_path: &Path,
     package: &WorkspacePackage,
-) -> MResult<Vec<PathBuf>> {
+) -> MResult<Vec<(&'static str, PathBuf)>> {
     let mut resources = Vec::new();
     for (macro_name, argument) in active_include_macros(source) {
         let expression = parse_include_expression(argument).ok_or_else(|| {
@@ -261,7 +270,7 @@ fn discover_compile_time_resources(
                 Path::new(path.trim_start_matches('/')),
             )?,
         };
-        resources.push(relative);
+        resources.push((macro_name, relative));
     }
     resources.sort();
     resources.dedup();
@@ -289,6 +298,7 @@ fn active_include_macros(source: &str) -> Vec<(&'static str, &str)> {
             index += 1;
         }
         let macro_name = match &source[identifier_start..index] {
+            "include" => "include",
             "include_bytes" => "include_bytes",
             "include_str" => "include_str",
             _ => continue,
@@ -835,6 +845,61 @@ mod tests {
     }
 
     #[test]
+    fn included_rust_sources_change_the_workspace_fingerprint() {
+        let workspace = TestWorkspace::new("rust-source-include");
+        fs::write(
+            workspace.0.join("machines/math/src/lib.rs"),
+            "include!(\"../generated/catalog.rs\");\n",
+        )
+        .unwrap();
+        fs::create_dir_all(workspace.0.join("machines/math/generated")).unwrap();
+        fs::write(
+            workspace.0.join("machines/math/generated/catalog.rs"),
+            "pub const GENERATED: u8 = 1;\n",
+        )
+        .unwrap();
+
+        let initial = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+        fs::write(
+            workspace.0.join("machines/math/generated/catalog.rs"),
+            "pub const GENERATED: u8 = 2;\n",
+        )
+        .unwrap();
+        let changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+        assert_ne!(initial, changed, "included Rust must be fingerprinted");
+    }
+
+    #[test]
+    fn nested_resources_from_included_rust_are_fingerprinted() {
+        let workspace = TestWorkspace::new("nested-rust-source-include");
+        fs::write(
+            workspace.0.join("machines/math/src/lib.rs"),
+            "include!(\"../generated/catalog.rs\");\n",
+        )
+        .unwrap();
+        fs::create_dir_all(workspace.0.join("machines/math/generated")).unwrap();
+        fs::write(
+            workspace.0.join("machines/math/generated/catalog.rs"),
+            "const GENERATED: &str = include_str!(\"generated.txt\");\n",
+        )
+        .unwrap();
+        fs::write(
+            workspace.0.join("machines/math/generated/generated.txt"),
+            "generated-v1\n",
+        )
+        .unwrap();
+
+        let initial = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+        fs::write(
+            workspace.0.join("machines/math/generated/generated.txt"),
+            "generated-v2\n",
+        )
+        .unwrap();
+        let changed = fingerprint_workspace(&workspace.0, &[math_package()]).unwrap();
+        assert_ne!(initial, changed, "nested includes must be fingerprinted");
+    }
+
+    #[test]
     fn include_text_inside_comments_and_literals_is_ignored() {
         let workspace = TestWorkspace::new("inactive-includes");
         fs::write(
@@ -842,6 +907,7 @@ mod tests {
             r###"
 // include_bytes!("../assets/missing-line.bin")
 /* include_str!["../assets/missing-block.txt"] */
+// include!("../generated/missing-line.rs")
 const EXAMPLE: &str = "include_bytes!(\"../assets/missing-string.bin\")";
 const RAW: &str = r#"include_str!{"../assets/missing-raw.txt"}"#;
 const DATA: &[u8] = include_bytes!("../assets/data.bin");

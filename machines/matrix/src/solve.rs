@@ -5,6 +5,19 @@ use mech_core::*;
 use nalgebra::ComplexField;
 use num_traits::{One, Zero};
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MatrixSolveSingular;
+
+impl MechErrorKind for MatrixSolveSingular {
+    fn name(&self) -> &str {
+        "MatrixSolveSingular"
+    }
+
+    fn message(&self) -> String {
+        "Matrix solve requires a nonsingular coefficient matrix".to_string()
+    }
+}
+
 // Solve  ------------------------------------------------------------------
 
 #[macro_export]
@@ -156,7 +169,10 @@ macro_rules! impl_binop_solve {
 macro_rules! solve_op {
     ($a:expr, $b:expr, $out:expr) => {
         unsafe {
-            *$out = (*$a).clone().lu().solve(&*$b).unwrap();
+            let solution = (*$a).clone().lu().solve(&*$b).ok_or_else(|| {
+                MechError::new(MatrixSolveSingular, None).with_compiler_loc()
+            })?;
+            *$out = solution;
         }
     };
 }
@@ -169,6 +185,31 @@ macro_rules! impl_solve {
 
 #[cfg(all(feature = "matrixd", feature = "vectord"))]
 impl_solve!(MatrixSolveMDVD, DMatrix<T>, DVector<T>, DVector<T>);
+
+#[cfg(all(test, feature = "f64", feature = "matrixd", feature = "vectord"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn singular_matrix_is_a_structured_error_on_reactive_resolve() {
+        let lhs = Ref::new(DMatrix::identity(2, 2));
+        let rhs = Ref::new(DVector::from_vec(vec![3.0, 4.0]));
+        let out = Ref::new(DVector::from_element(2, -1.0));
+        let function = MatrixSolveMDVD {
+            lhs: lhs.clone(),
+            rhs,
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        let previous = out.borrow().clone();
+        *lhs.borrow_mut() = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 2.0, 4.0]);
+
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "MatrixSolveSingular");
+        assert_eq!(*out.borrow(), previous);
+    }
+}
 
 #[cfg(feature = "source")]
 macro_rules! impl_solve_match_arms {

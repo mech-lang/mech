@@ -101,9 +101,12 @@ where
             let out_ptr = self.out.as_ptr() as *mut naMatrix<T, R1, C1, S1>;
             let mut current = *self.from.as_ptr();
             let step = *self.step.as_ptr();
-            for i in 0..(*out_ptr).len() {
+            let output_len = (*out_ptr).len();
+            for i in 0..output_len {
                 (&mut (*out_ptr))[i] = current;
-                current = current + step;
+                if i + 1 < output_len {
+                    current = current + step;
+                }
             }
         };
         Ok(())
