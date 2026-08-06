@@ -29,6 +29,77 @@ pub struct RuntimeContextBinding {
 
 pub type InterpreterRef = Ref<Box<Interpreter>>;
 
+/// Reactive bytecode pack for collections whose identity is hash-backed.
+///
+/// Tuple/record/table composites can safely retain live child cells. Maps and
+/// sets cannot: a producer mutation would change a key's hash after insertion.
+/// This node runs after those producers, rebuilds detached hashed children,
+/// and replaces the contents of one stable outer output cell.
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+#[derive(Debug)]
+struct BytecodeHashedCompositePack {
+    template: Value,
+    children: Vec<Value>,
+    output: Value,
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+impl MechFunctionImpl for BytecodeHashedCompositePack {
+    fn solve_result(&self) -> MResult<()> {
+        let rebuilt = mech_core::rebuild_bytecode_composite(&self.template, self.children.clone())?;
+        match (&self.output, rebuilt) {
+            #[cfg(feature = "map")]
+            (Value::Map(output), Value::Map(rebuilt)) => {
+                *output.borrow_mut() = rebuilt.borrow().clone();
+            }
+            #[cfg(feature = "set")]
+            (Value::Set(output), Value::Set(rebuilt)) => {
+                *output.borrow_mut() = rebuilt.borrow().clone();
+            }
+            _ => {
+                return Err(MechError::new(
+                    BytecodeValidationError {
+                        reason: "hashed CompositePack output changed runtime kind".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        }
+        Ok(())
+    }
+
+    fn out(&self) -> Value {
+        self.output.clone()
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+
+    fn to_string(&self) -> String {
+        "BytecodeHashedCompositePack".to_string()
+    }
+}
+
+#[cfg(all(
+    feature = "compiler",
+    feature = "program",
+    feature = "functions",
+    feature = "symbol_table"
+))]
+impl MechFunctionCompiler for BytecodeHashedCompositePack {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Err(MechError::new(
+            BytecodeValidationError {
+                reason: "an installed bytecode CompositePack cannot be recompiled".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
 fn canonical_context_name_from_base_uri(base_uri: &str) -> String {
     base_uri
         .trim_end_matches('/')
@@ -1997,8 +2068,28 @@ impl Interpreter {
                             .iter()
                             .map(|register| self.bytecode_registers.function_argument(*register))
                             .collect::<MResult<Vec<_>>>()?;
-                        let value = mech_core::rebuild_bytecode_composite(&template, children)?;
+                        let value =
+                            mech_core::rebuild_bytecode_composite(&template, children.clone())?;
+                        let hashed = match &value {
+                            #[cfg(feature = "map")]
+                            Value::Map(_) => true,
+                            #[cfg(feature = "set")]
+                            Value::Set(_) => true,
+                            _ => false,
+                        };
                         self.bytecode_registers.load(*dst, value)?;
+                        if hashed {
+                            let output = self.bytecode_registers.function_argument(*dst)?;
+                            register_bytecode_node(
+                                &state_brrw,
+                                Box::new(BytecodeHashedCompositePack {
+                                    template,
+                                    children: children.clone(),
+                                    output,
+                                }),
+                                &children,
+                            )?;
+                        }
                     }
                     BytecodeInstruction::RuntimeNullary { function, dst } => {
                         let runtime_id = RuntimeFunctionId::from_raw(*function);

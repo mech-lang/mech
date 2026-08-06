@@ -35,8 +35,10 @@ macro_rules! declare_n_choose_k_scalar {
                 installer: [<install_n_choose_k_ $scalar_token>],
                 name: concat!("NChooseK<", $scalar_name, ">"),
                 factory_type: crate::n_choose_k::NChooseK<$scalar>,
-                contract: mech_core::RuntimeFunctionContract::no_matrix(
+                contract: mech_core::RuntimeFunctionContract::custom(
+                    "n_choose_k_scalar",
                     mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
+                    crate::n_choose_k::validate_n_choose_k_scalar_contract,
                 ),
                 package: "mech-combinatorics",
                 crate_name: "mech_combinatorics",
@@ -155,5 +157,31 @@ mod tests {
         assert_eq!(export.operation, operation);
         assert_eq!(export.exposure, FunctionExposure::ModuleOnly);
         assert_eq!(catalog.exports_for_operation(operation), [export.clone()]);
+    }
+}
+
+#[cfg(all(test, feature = "n_choose_k", feature = "f64"))]
+mod scalar_runtime_contract_tests {
+    use super::*;
+    use mech_core::{FunctionArgs, Ref, RuntimeFunctionId, Value};
+
+    #[test]
+    fn installed_f64_factory_rejects_non_finite_selection_before_instantiation() {
+        let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_name("NChooseK<f64>"))
+            .unwrap();
+        let error = entry
+            .validate_args(&FunctionArgs::Binary(
+                Value::F64(Ref::new(0.0)),
+                Value::F64(Ref::new(10.0)),
+                Value::F64(Ref::new(f64::INFINITY)),
+            ))
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
+        assert!(error.kind_message().contains("finite"));
     }
 }

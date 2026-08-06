@@ -558,13 +558,23 @@ fn validate_constant_and_requirement_reachability(
 ) -> MResult<()> {
     let mut constants = vec![false; constant_count];
     let mut requirements = vec![false; requirement_count];
+    let mut next_constant_id = 0usize;
     for instruction in instructions {
         match instruction {
             BytecodeInstruction::ConstLoad { constant, .. }
             | BytecodeInstruction::CompositePack {
                 template: constant, ..
             } => {
-                constants[*constant as usize] = true;
+                let constant = *constant as usize;
+                if !constants[constant] {
+                    if constant != next_constant_id {
+                        return invalid(format!(
+                            "constant ID {constant} is noncanonical; expected first-reference ID {next_constant_id}"
+                        ));
+                    }
+                    constants[constant] = true;
+                    next_constant_id += 1;
+                }
             }
             BytecodeInstruction::HostCall { requirement, .. }
             | BytecodeInstruction::ResourceRead { requirement, .. }
@@ -625,6 +635,7 @@ fn validate_constant_entries(
     blob: &[u8],
 ) -> MResult<()> {
     let mut previous_end = 0usize;
+    let mut canonical_entries = BTreeSet::new();
     for entry in entries {
         if entry.encoding != 1
             || entry.flags != 0
@@ -660,6 +671,11 @@ fn validate_constant_entries(
             .get(type_id)
             .ok_or_else(|| invalid::<()>("constant type ID is out of range").unwrap_err())?;
         validate_constant_payload(ty, &blob[start..end])?;
+        if !canonical_entries.insert((entry.type_id, &blob[start..end])) {
+            return invalid(
+                "constant table contains duplicate canonical runtime type and payload entries",
+            );
+        }
         previous_end = end;
     }
     if previous_end != blob.len() {

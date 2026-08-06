@@ -124,10 +124,12 @@ The constant table has one 24-byte entry per constant:
 | 8 | 8 | Blob offset | Aligned and ordered |
 | 16 | 8 | Payload length | Contained in the blob |
 
-Entries do not overlap. Gaps and trailing blob bytes are zero. Recursive
-constant nesting is limited to 256 and uses checked counts and lengths.
-Every constant-table row must be referenced by at least one `ConstLoad`;
-unreferenced constant rows are noncanonical.
+Entries do not overlap. Gaps and trailing blob bytes are zero. Rows are unique
+by canonical runtime type and payload; two IDs must not name the same constant.
+Constant IDs are allocated in first-reference order while scanning instructions
+(`ConstLoad` values and `CompositePack` templates), beginning at zero. Recursive
+constant nesting is limited to 256 and uses checked counts and lengths. Every
+constant-table row must be referenced; unreferenced rows are noncanonical.
 
 ### Scalars
 

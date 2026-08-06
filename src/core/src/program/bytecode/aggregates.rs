@@ -64,6 +64,18 @@ fn wrong_arity(kind: &str, expected: usize, actual: usize) -> MechError {
     .with_compiler_loc()
 }
 
+fn duplicate_hashed_child(kind: &str) -> MechError {
+    MechError::new(
+        BytecodeValidationError {
+            reason: format!(
+                "{kind} CompositePack produced duplicate-equal hashed children after evaluation"
+            ),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
 /// Rebuilds one composite layer from a constant template and live child values.
 pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MResult<Value> {
     match template {
@@ -112,15 +124,29 @@ pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MRe
                 return Err(wrong_arity("Map", expected, children.len()));
             }
             let mut children = children.into_iter();
+            // Map keys must never retain producer-owned cells: mutating a key
+            // after insertion invalidates the hash table's buckets. Snapshot
+            // the complete entry before hashing it, and reject keys that only
+            // become equal after their producers settle.
             let entries = (0..value.map.len())
-                .map(|_| (children.next().unwrap(), children.next().unwrap()))
-                .collect();
-            Ok(Value::Map(Ref::new(crate::MechMap::from_typed_vec(
+                .map(|_| {
+                    Ok((
+                        children.next().unwrap().try_deep_snapshot()?,
+                        children.next().unwrap().try_deep_snapshot()?,
+                    ))
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            let entry_count = entries.len();
+            let rebuilt = crate::MechMap::from_typed_vec(
                 value.key_kind.clone(),
                 value.value_kind.clone(),
                 value.num_elements,
                 entries,
-            ))))
+            );
+            if rebuilt.map.len() != entry_count {
+                return Err(duplicate_hashed_child("Map"));
+            }
+            Ok(Value::Map(Ref::new(rebuilt)))
         }
         #[cfg(feature = "set")]
         Value::Set(value) => {
@@ -128,7 +154,17 @@ pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MRe
             if children.len() != value.set.len() {
                 return Err(wrong_arity("Set", value.set.len(), children.len()));
             }
+            // Set elements are their own hashed identity and therefore need
+            // the same producer-detachment rule as map keys.
+            let expected = children.len();
+            let children = children
+                .iter()
+                .map(Value::try_deep_snapshot)
+                .collect::<MResult<Vec<_>>>()?;
             let mut rebuilt = crate::MechSet::from_vec(children);
+            if rebuilt.set.len() != expected {
+                return Err(duplicate_hashed_child("Set"));
+            }
             rebuilt.kind = value.kind.clone();
             rebuilt.max_elements = value.max_elements;
             rebuilt.num_elements = value.num_elements;
