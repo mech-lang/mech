@@ -307,8 +307,10 @@ jobs:
         include:
           - shard: engine-float
             surfaces: extended-engine-shard-float
-          - shard: signed-standard
-            surfaces: extended-engine-shard-signed standard
+          - shard: signed
+            surfaces: extended-engine-shard-signed
+          - shard: standard
+            surfaces: standard
           - shard: unsigned-logic
             surfaces: extended-engine-shard-unsigned extended-logic extended-set
           - shard: remaining
