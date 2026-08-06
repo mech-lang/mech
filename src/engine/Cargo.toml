@@ -71,7 +71,10 @@ source_default = [
   "combinatorics_default",
 ]
 compiler_default = ["source_default", "compiler"]
-default = ["source_default"]
+full_runtime = ["runtime_default"]
+full_source = ["source_default"]
+full_compiler = ["compiler_default"]
+default = []
 base = ["source_default"]
 
 async = []

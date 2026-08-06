@@ -21,7 +21,7 @@ crate-type = ["rlib", "cdylib"]
 [features]
 no_std = ["dep:mech-core", "mech-core/no_std"]
 
-default = ["full_compiler"]
+default = []
 runtime = ["dep:mech-core", "mech-core/functions"]
 source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]

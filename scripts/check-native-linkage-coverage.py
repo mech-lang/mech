@@ -32,24 +32,24 @@ PREFERRED_OWNER_REPRESENTATIVES = {
     "mech-engine": "VariableDefineF64",
     "mech-math": "AddSS<f64>",
 }
-EXPECTED_STANDARD_COUNT = 9_022
-EXPECTED_STANDARD_SURFACE_SHA256 = (
+EXPECTED_FULL_COUNT = 9_022
+EXPECTED_FULL_SURFACE_SHA256 = (
     "b7385da248524bcfbd1a20768fc13648b01054625459985251e5f53cae872322"
 )
 OWNERS: dict[str, tuple[Path, str, str]] = {
     "mech-engine": (ROOT / "src/engine/Cargo.toml", "extended-engine", "stdlib"),
-    "mech-math": (ROOT / "machines/math/Cargo.toml", "extended-math", "runtime_default"),
-    "mech-compare": (ROOT / "machines/compare/Cargo.toml", "extended-compare", "runtime_default"),
-    "mech-logic": (ROOT / "machines/logic/Cargo.toml", "extended-logic", "runtime_default"),
-    "mech-range": (ROOT / "machines/range/Cargo.toml", "extended-range", "runtime_default"),
-    "mech-matrix": (ROOT / "machines/matrix/Cargo.toml", "extended-matrix", "runtime_default"),
-    "mech-set": (ROOT / "machines/set/Cargo.toml", "extended-set", "runtime_default"),
-    "mech-string": (ROOT / "machines/string/Cargo.toml", "extended-string", "runtime_default"),
-    "mech-stats": (ROOT / "machines/stats/Cargo.toml", "extended-stats", "runtime_default"),
+    "mech-math": (ROOT / "machines/math/Cargo.toml", "extended-math", "full_runtime"),
+    "mech-compare": (ROOT / "machines/compare/Cargo.toml", "extended-compare", "full_runtime"),
+    "mech-logic": (ROOT / "machines/logic/Cargo.toml", "extended-logic", "full_runtime"),
+    "mech-range": (ROOT / "machines/range/Cargo.toml", "extended-range", "full_runtime"),
+    "mech-matrix": (ROOT / "machines/matrix/Cargo.toml", "extended-matrix", "full_runtime"),
+    "mech-set": (ROOT / "machines/set/Cargo.toml", "extended-set", "full_runtime"),
+    "mech-string": (ROOT / "machines/string/Cargo.toml", "extended-string", "full_runtime"),
+    "mech-stats": (ROOT / "machines/stats/Cargo.toml", "extended-stats", "full_runtime"),
     "mech-combinatorics": (
         ROOT / "machines/combinatorics/Cargo.toml",
         "extended-combinatorics",
-        "runtime_default",
+        "full_runtime",
     ),
 }
 ENGINE_SURFACE_SHARDS = (
@@ -61,7 +61,7 @@ ENGINE_SURFACE_SHARDS = (
 CI_EXTENDED_SURFACES = ENGINE_SURFACE_SHARDS + tuple(
     feature for package, (_, feature, _) in OWNERS.items() if package != "mech-engine"
 )
-CI_SURFACES = ("standard",) + CI_EXTENDED_SURFACES
+CI_SURFACES = ("full",) + CI_EXTENDED_SURFACES
 SURFACE_DIRECTORY = ROOT / "target/native-linkage/surfaces"
 FEATURE_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 RUST_PATH = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)+$")
@@ -269,7 +269,7 @@ def validate_catalog(
             )
         required = {"runtime", "native-link"}
         forbidden = {
-            "default", "runtime_default", "source", "source_default", "compiler",
+            "default", "source", "source_default", "compiler",
             "compiler_default", "full_runtime", "full_source",
             "full_compiler", "native-plan", "stdlib", "baselib",
         }
@@ -394,27 +394,27 @@ def surface_summary(entries: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def verify_standard_surface(entries: list[dict[str, Any]]) -> None:
+def verify_full_surface(entries: list[dict[str, Any]]) -> None:
     raw = FROZEN_SURFACE.read_bytes()
-    if sha256(raw).hexdigest() != EXPECTED_STANDARD_SURFACE_SHA256:
-        raise ContractError("frozen standard runtime surface digest changed")
+    if sha256(raw).hexdigest() != EXPECTED_FULL_SURFACE_SHA256:
+        raise ContractError("frozen full runtime surface digest changed")
     frozen = json.loads(raw)["runtime_factories"]
-    if len(frozen) != EXPECTED_STANDARD_COUNT:
-        raise ContractError("frozen standard runtime surface count changed")
+    if len(frozen) != EXPECTED_FULL_COUNT:
+        raise ContractError("frozen full runtime surface count changed")
     expected = {(item["id_hex"], item["name"]) for item in frozen}
     actual = {(item["runtime_factory_id"], item["runtime_factory_name"]) for item in entries}
     if actual != expected:
-        raise ContractError("runtime/native-plan drift in the frozen standard surface")
+        raise ContractError("runtime/native-plan drift in the frozen full surface")
 
 
 def assemble_report(
-    standard: list[dict[str, Any]], extended_surfaces: list[list[dict[str, Any]]]
+    full: list[dict[str, Any]], extended_surfaces: list[list[dict[str, Any]]]
 ) -> dict[str, Any]:
     extended = merge_surfaces("extended linkage universe", extended_surfaces)
-    all_entries = merge_surfaces("complete linkage universe", [standard, extended])
+    all_entries = merge_surfaces("complete linkage universe", [full, extended])
     report = {
         "schema": "mech.native-linkage-coverage.v2",
-        "standard": surface_summary(standard),
+        "full": surface_summary(full),
         "extended": surface_summary(extended),
         "entries": grouped(all_entries),
         "signature_invariants": {
@@ -439,13 +439,13 @@ def assemble_report(
 
 def build_report() -> dict[str, Any]:
     known = manifest_features()
-    standard = validate_catalog(fixture_catalog("standard"), "standard", known)
-    verify_standard_surface(standard)
+    full = validate_catalog(fixture_catalog("full"), "full", known)
+    verify_full_surface(full)
     extended_by_owner = [
         validate_catalog(fixture_catalog(feature), f"{package} extended", known)
         for package, (_, feature, _) in OWNERS.items()
     ]
-    return assemble_report(standard, extended_by_owner)
+    return assemble_report(full, extended_by_owner)
 
 
 def write_ci_surface(feature: str) -> None:
@@ -453,12 +453,12 @@ def write_ci_surface(feature: str) -> None:
         raise ContractError(f"unknown CI linkage surface {feature!r}")
     known = manifest_features()
     entries = validate_catalog(fixture_catalog(feature), feature, known)
-    if feature == "standard":
-        verify_standard_surface(entries)
+    if feature == "full":
+        verify_full_surface(entries)
     surface = {
         "schema": "mech.native-linkage-surface.v1",
         "feature": feature,
-        "kind": "standard" if feature == "standard" else "extended",
+        "kind": "full" if feature == "full" else "extended",
         "entries": entries,
     }
     SURFACE_DIRECTORY.mkdir(parents=True, exist_ok=True)
@@ -471,7 +471,7 @@ def read_ci_surface(path: Path, feature: str, known: dict[str, set[str]]) -> lis
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict) or value.get("schema") != "mech.native-linkage-surface.v1":
         raise ContractError(f"{feature}: invalid CI linkage surface schema")
-    expected_kind = "standard" if feature == "standard" else "extended"
+    expected_kind = "full" if feature == "full" else "extended"
     if value.get("feature") != feature or value.get("kind") != expected_kind:
         raise ContractError(f"{feature}: CI linkage surface identity changed")
     entries = value.get("entries")
@@ -509,9 +509,9 @@ def build_report_from_ci_surfaces() -> dict[str, Any]:
         feature: read_ci_surface(SURFACE_DIRECTORY / f"{feature}.json", feature, known)
         for feature in CI_SURFACES
     }
-    standard = surfaces.pop("standard")
-    verify_standard_surface(standard)
-    return assemble_report(standard, [surfaces[feature] for feature in CI_EXTENDED_SURFACES])
+    full = surfaces.pop("full")
+    verify_full_surface(full)
+    return assemble_report(full, [surfaces[feature] for feature in CI_EXTENDED_SURFACES])
 
 
 def inventory_entries(report: dict[str, Any]) -> list[dict[str, Any]]:
@@ -760,7 +760,7 @@ def report_summary(report: dict[str, Any]) -> dict[str, Any]:
     return {
         "schema": "mech.native-linkage-coverage-summary.v1",
         "detail_schema": report["schema"],
-        "standard": report["standard"],
+        "full": report["full"],
         "extended": report["extended"],
         "signature_invariants": report["signature_invariants"],
         "coverage_digest": report["coverage_digest"],
@@ -864,7 +864,7 @@ def main() -> int:
                 raise ContractError("coverage report is stale; run `check-native-linkage-coverage.py report`")
             action = "validated"
         print(
-            f"native linkage coverage: {report['standard']['entry_count']} standard and "
+            f"native linkage coverage: {report['full']['entry_count']} full and "
             f"{report['extended']['entry_count']} extended entries, zero missing linkage"
         )
         print(f"{action} {REPORT_PATH.relative_to(ROOT)}")

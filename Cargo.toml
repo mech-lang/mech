@@ -67,7 +67,7 @@ distribution-full = ["full_compiler", "full-hosts", "full-cli",
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines",
       "whos", "async", "trace",
-      "mech-core/default", "mech-syntax/default",
+      "mech-core/full", "mech-syntax/full",
       ]
 full-cli = ["cli"]
 full-hosts = [
@@ -98,17 +98,17 @@ build = [
       ]
 repl = ["cli_core", "full_source", "program"]
 run = ["cli_core", "full_source", "cli_host", "time_host_native", "timer_host_native", "console_host_native", "scene_host_native", "project"]
-test = ["cli_core", "full_source", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/default"]
-project = ["full_source", "mech-runtime", "mech-runtime/default"]
-cli_host = ["mech-runtime", "mech-runtime/default", "dep:mech-terminal", "mech-terminal/provider"]
-web_host = ["mech-runtime", "mech-runtime/default", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
-bundle_web_core = ["project", "web_host", "formatter_core", "serde", "mech-runtime", "mech-runtime/default"]
+test = ["cli_core", "full_source", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/full_source"]
+project = ["full_source", "mech-runtime", "mech-runtime/full_source"]
+cli_host = ["mech-runtime", "mech-runtime/full_source", "dep:mech-terminal", "mech-terminal/provider"]
+web_host = ["mech-runtime", "mech-runtime/full_source", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
+bundle_web_core = ["project", "web_host", "formatter_core", "serde", "mech-runtime", "mech-runtime/full_source"]
 bundle_web = ["cli_core", "bundle_web_core"]
-serve = ["cli_core", "project", "web_host", "formatter_core", "mech-runtime", "mech-runtime/default", "ignore"]
+serve = ["cli_core", "project", "web_host", "formatter_core", "mech-runtime", "mech-runtime/full_source", "ignore"]
 host_delegation = ["serde", "mech-runtime", "mech-runtime/host_delegation", "mech-browser", "mech-browser/delegation"]
 host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-browser/delegation_signing"]
 whos = ["pretty_print", "variables", "symbol_table"]
-formatter = ["cli_core", "formatter_core", "mech-runtime", "mech-runtime/default"]
+formatter = ["cli_core", "formatter_core", "mech-runtime", "mech-runtime/full_source"]
 async = []
 trace = ["mech-engine/trace"]
 dynamic-modules = ["mech-engine/dynamic-modules"]

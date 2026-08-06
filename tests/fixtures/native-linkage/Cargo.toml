@@ -6,7 +6,7 @@ publish = false
 
 [features]
 default = []
-standard = [
+full = [
   "dep:mech-core",
   "dep:mech-stdlib",
   "dep:serde",

@@ -1,7 +1,7 @@
 {
   "schema": "mech.native-linkage-coverage-summary.v1",
   "detail_schema": "mech.native-linkage-coverage.v2",
-  "standard": {
+  "full": {
     "entry_count": 9022,
     "linked_entry_count": 9022,
     "missing_linkage_count": 0,
@@ -48,7 +48,7 @@
   },
   "coverage_digest": {
     "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
-    "sha256": "eafaf3da5bed789f5d450f0283eb736323e30bc1a23335c9fd2dc4b6fb181b2c"
+    "sha256": "8a53039ecaf9db4dceb47a769a15219e4fd6901658e2f0d92496d9c655f91ebb"
   },
   "detail_artifact": {
     "path": "target/native-linkage/coverage-full.json",

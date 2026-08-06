@@ -63,7 +63,10 @@ source_default = [
   "watcher",
 ]
 compiler_default = ["source_default", "compiler"]
-default = ["source_default"]
+full_runtime = ["runtime_default"]
+full_source = ["source_default"]
+full_compiler = ["compiler_default"]
+default = []
 base = ["compiler_default", "mech-core/base", "mech-engine/base"]
 
 async = ["mech-engine/async"]

@@ -8,7 +8,7 @@ license = "Apache-2.0"
 publish = false
 
 [features]
-default = ["full_source"]
+default = []
 
 std = ["mech-core/std", "mech-engine/std"]
 no_std = [

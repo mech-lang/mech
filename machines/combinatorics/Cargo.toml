@@ -22,7 +22,7 @@ crate-type = ["rlib", "cdylib"]
 no_std = ["mech-core/no_std"]
 dynamic-module = ["dep:mech-abi", "dep:num-traits"]
 
-default = ["full_compiler"]
+default = []
 runtime = ["dep:mech-core", "mech-core/functions"]
 source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]
