@@ -14,6 +14,20 @@ use mech_engine::{MechProgram, MechProgramConfig};
 use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::*;
 
+static NEXT_TEMP_ROOT: AtomicU64 = AtomicU64::new(0);
+
+fn unique_temp_root(name: &str) -> std::path::PathBuf {
+    let sequence = NEXT_TEMP_ROOT.fetch_add(1, Ordering::Relaxed);
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    std::env::temp_dir().join(format!(
+        "mech-runtime-module-smoke-{name}-{}-{timestamp}-{sequence}",
+        std::process::id(),
+    ))
+}
+
 fn apply_prepared_effect(effect: PreparedRuntimeEffect) -> mech_core::MResult<()> {
     match effect {
         PreparedRuntimeEffect::Transactional(mut effect) => {
@@ -26,25 +40,13 @@ fn apply_prepared_effect(effect: PreparedRuntimeEffect) -> mech_core::MResult<()
 }
 
 fn temp_root(name: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "mech-runtime-module-smoke-{name}-{}",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    ));
+    let root = unique_temp_root(name);
     std::fs::create_dir_all(&root).unwrap();
     root
 }
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "mech-runtime-module-smoke-{}",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    ));
+    let root = unique_temp_root("modules");
     std::fs::create_dir_all(&root).unwrap();
     std::fs::write(
         root.join("math.mec"),
@@ -55,13 +57,7 @@ fn setup_modules(main_source: &str) -> std::path::PathBuf {
     root
 }
 fn setup_main_only_module(name: &str, main_source: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "mech-runtime-module-smoke-{name}-{}",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    ));
+    let root = unique_temp_root(name);
     std::fs::create_dir_all(&root).unwrap();
     std::fs::write(root.join("main.mec"), main_source).unwrap();
     root
