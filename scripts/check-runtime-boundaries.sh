@@ -134,7 +134,7 @@ fail_if_found \
   src/core/src/reactive_transaction.rs \
   src/core/src/functions.rs \
   src/interpreter/src/interpreter.rs \
-  src/program/src/program.rs
+  src/engine/src/program.rs
 
 fail_if_found \
   "runtime imports a lower-level reactive journal participant" \
@@ -166,7 +166,7 @@ fail_if_cloneable \
   ReactiveJournalParticipant
 
 fail_if_cloneable \
-  src/program/src/program.rs \
+  src/engine/src/program.rs \
   ProgramReactiveTurnJournal
 
 "$repository_root/scripts/check-unsafe-boundaries.sh"

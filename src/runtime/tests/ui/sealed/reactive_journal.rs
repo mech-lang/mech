@@ -1,4 +1,4 @@
-use mech_program::ProgramReactiveTurnJournal;
+use mech_engine::ProgramReactiveTurnJournal;
 
 fn main() {
   let _ = ProgramReactiveTurnJournal::default();

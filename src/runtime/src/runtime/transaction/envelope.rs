@@ -6,7 +6,7 @@ use crate::runtime::MechRuntime;
 use crate::runtime::live_state::RuntimeLiveStateSnapshot;
 use crate::{RuntimeTransaction, RuntimeTransactionNotFoundError, TransactionId};
 use mech_core::{MResult, MechError};
-use mech_program::MechProgramCheckpoint;
+use mech_engine::MechProgramCheckpoint;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(in crate::runtime) enum RuntimeExecutionTransactionMode {

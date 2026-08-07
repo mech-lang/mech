@@ -50,6 +50,8 @@ pub struct ProgramState {
     #[cfg(feature = "functions")]
     pub functions: FunctionsRef,
     #[cfg(feature = "functions")]
+    pub function_environment: FunctionEnvironment,
+    #[cfg(feature = "functions")]
     pub plan: Plan,
     pub kinds: KindTable,
     #[cfg(feature = "enum")]
@@ -68,6 +70,8 @@ impl Clone for ProgramState {
             environment: self.environment.clone(),
             #[cfg(feature = "functions")]
             functions: self.functions.clone(),
+            #[cfg(feature = "functions")]
+            function_environment: self.function_environment.clone(),
             #[cfg(feature = "functions")]
             plan: self.plan.clone(),
             kinds: self.kinds.clone(),
@@ -89,6 +93,8 @@ impl ProgramState {
             environment: None,
             #[cfg(feature = "functions")]
             functions: Ref::new(Functions::new()),
+            #[cfg(feature = "functions")]
+            function_environment: FunctionEnvironment::default(),
             #[cfg(feature = "functions")]
             plan: Plan::new(),
             kinds: KindTable::default(),

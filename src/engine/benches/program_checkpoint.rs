@@ -3,8 +3,8 @@ use mech_core::{
     MResult, MechFunctionImpl, MechMap, MechRecord, MechSet, MechTuple, Ref, ToMatrix, Value,
     hash_str,
 };
+use mech_engine::{MechProgram, MechProgramConfig};
 use mech_interpreter::Interpreter;
-use mech_program::{MechProgram, MechProgramConfig};
 use std::hint::black_box;
 
 const NESTED_MATRIX_SIDE: usize = 8;

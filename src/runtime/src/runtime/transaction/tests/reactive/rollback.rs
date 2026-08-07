@@ -11,7 +11,8 @@ use crate::{
     MechRuntime, ObjectId, ObjectRecord, PreparedRuntimeEffect, ResourceBudget, RuntimeEventKind,
     RuntimeHealth, RuntimeHostInput, RuntimeHostInputSource, RuntimeHostInputValue,
 };
-use mech_core::{GenericError, MResult, MechError};
+use mech_core::{FunctionCatalogBuilder, GenericError, MResult, MechError};
+use mech_interpreter::FunctionSystem;
 use std::any::Any;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, Mutex};
@@ -24,6 +25,40 @@ fn panic_message(panic: Box<dyn Any + Send>) -> String {
         return (*message).to_string();
     }
     "non-string reactive panic payload".to_string()
+}
+
+#[test]
+fn function_system_survives_reactive_program_replacement() {
+    let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
+    let function_system = FunctionSystem::from_catalog(Arc::clone(&catalog));
+    let legacy_boundary = Arc::clone(function_system.legacy_boundary());
+    let mut runtime = MechRuntime::builder()
+        .function_system(function_system)
+        .build()
+        .unwrap();
+    let _ = add_test_function(&mut runtime, None);
+    let mut context = runtime.runtime_context().unwrap();
+
+    runtime
+        .with_atomic_reactive_turn_for_test(
+            &mut context,
+            "function_system_identity",
+            |runtime, _| {
+                assert!(Arc::ptr_eq(runtime.program.function_catalog(), &catalog));
+                assert!(Arc::ptr_eq(
+                    runtime.program.function_system().legacy_boundary(),
+                    &legacy_boundary,
+                ));
+                Ok(())
+            },
+        )
+        .unwrap();
+
+    assert!(Arc::ptr_eq(runtime.program.function_catalog(), &catalog));
+    assert!(Arc::ptr_eq(
+        runtime.program.function_system().legacy_boundary(),
+        &legacy_boundary,
+    ));
 }
 
 #[test]

@@ -27,8 +27,8 @@ mech-interpreter = {
   default-features = true,
   features = ["linked_stdlib"],
 }
-mech-program = {
-  path = "../../../src/program",
+mech-engine = {
+  path = "../../../src/engine",
   default-features = true,
   features = ["linked_stdlib"],
 }
@@ -42,7 +42,7 @@ mech-bytecode = { path = "../../../src/bytecode" }
 mech-core = { path = "../../../src/core" }
 mech-syntax = { path = "../../../src/syntax" }
 mech-interpreter = { path = "../../../src/interpreter" }
-mech-program = { path = "../../../src/program" }
+mech-engine = { path = "../../../src/engine" }
 mech-runtime = { path = "../../../src/runtime" }
 mech-abi = { path = "../../../src/abi" }
 mech-math = { path = "../../../machines/math" }

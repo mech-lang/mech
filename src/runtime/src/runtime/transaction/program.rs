@@ -20,9 +20,9 @@ use crate::{
 #[cfg(feature = "invariant_define")]
 use crate::{RuntimeIntegrityConstraintFailureReason, RuntimeIntegrityConstraintViolation};
 use mech_core::{MResult, MechError};
-use mech_program::MechProgramCheckpoint;
+use mech_engine::MechProgramCheckpoint;
 #[cfg(feature = "invariant_define")]
-use mech_program::{IntegrityConstraintFailureReason, IntegrityConstraintViolationSet};
+use mech_engine::{IntegrityConstraintFailureReason, IntegrityConstraintViolationSet};
 use std::collections::HashSet;
 
 #[cfg(feature = "invariant_define")]

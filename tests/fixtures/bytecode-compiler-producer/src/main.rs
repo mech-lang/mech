@@ -1,5 +1,5 @@
 use mech_interpreter as _;
-use mech_program::{MechProgram, MechProgramConfig};
+use mech_engine::{MechProgram, MechProgramConfig};
 use std::env;
 use std::fs;
 

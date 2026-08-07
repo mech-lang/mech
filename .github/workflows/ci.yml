@@ -60,7 +60,7 @@ jobs:
           cargo check -p mech-core --no-default-features --features "mika serde"
           cargo check -p mech-syntax --no-default-features --features mika
           cargo check -p mech-interpreter --no-default-features --features program
-          cargo check -p mech-program --no-default-features --features program
+          cargo check -p mech-engine --no-default-features --features program
 
       - name: Run serve executable HTTP suite
         run: cargo test -p mech --test mech_serve -- --nocapture
@@ -96,19 +96,42 @@ jobs:
       - name: Check ${{ matrix.slice }} compatibility contracts
         run: bash scripts/check-function-system-contracts.sh "${{ matrix.slice }}"
 
+  engine-catalog:
+    name: Engine catalog vertical slice
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup show
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Check catalog vertical-slice contracts
+        run: bash scripts/check-engine-catalog-slice.sh
+
   cargo:
     name: cargo
     if: ${{ always() }}
     needs:
       - cargo-features
+      - engine-catalog
       - function-system-contracts
     runs-on: ubuntu-latest
     steps:
       - name: Require every Cargo contract shard
         env:
+          ENGINE_CATALOG_RESULT: ${{ needs.engine-catalog.result }}
           FEATURE_RESULT: ${{ needs.cargo-features.result }}
           FUNCTION_SYSTEM_RESULT: ${{ needs.function-system-contracts.result }}
         run: |
+          test "$ENGINE_CATALOG_RESULT" = success
           test "$FEATURE_RESULT" = success
           test "$FUNCTION_SYSTEM_RESULT" = success
 
@@ -150,12 +173,13 @@ jobs:
           # Generic root-library coverage runs once on Ubuntu. Platform jobs
           # below retain only behavior that is actually platform-sensitive.
           cargo test --lib
+          cargo test -p mech-bytecode
 
       - name: Run complete core and interpreter suites
         run: cargo test -p mech-core -p mech-interpreter
 
       - name: Run complete program library suite
-        run: cargo test -p mech-program --lib --tests
+        run: cargo test -p mech-engine --lib --tests
 
       - name: Run non-UTF-8 source-root regressions
         run: |

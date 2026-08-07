@@ -6,7 +6,7 @@ use crate::resolver::{
 use crate::runtime::{RuntimeInvalidOperationError, RuntimeModuleImportConflict};
 use crate::store::ModuleVersionRecord;
 use mech_core::{MResult, MechError, MechSourceCode, ValRef, hash_str};
-use mech_program::MechProgram;
+use mech_engine::MechProgram;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Eq)]

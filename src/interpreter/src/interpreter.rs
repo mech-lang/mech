@@ -6,6 +6,8 @@ use std::io::{Cursor, Read, Write};
 use std::ops::Deref;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::rc::Rc;
+#[cfg(feature = "functions")]
+use std::sync::Arc;
 use std::time::Duration;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown",))]
 use web_time::Instant;
@@ -24,9 +26,19 @@ pub struct RuntimeContextBinding {
 
 pub type InterpreterRef = Ref<Box<Interpreter>>;
 
+#[cfg(feature = "functions")]
+fn legacy_runtime_factory_fallback(
+    legacy_functions: &Functions,
+    id: RuntimeFunctionId,
+) -> Option<RuntimeFunctionFactory> {
+    legacy_functions.functions.get(&id.raw()).copied()
+}
+
 pub struct Interpreter {
     pub id: u64,
     checkpoint_owner: Rc<()>,
+    #[cfg(feature = "functions")]
+    function_system: FunctionSystem,
     pub profile: bool,
     pub max_steps: usize,
     #[cfg(feature = "trace")]
@@ -315,6 +327,8 @@ struct ProgramStateCheckpoint {
     #[cfg(feature = "functions")]
     functions_snapshot: FunctionsSnapshot,
     #[cfg(feature = "functions")]
+    function_environment: FunctionEnvironment,
+    #[cfg(feature = "functions")]
     plan: Plan,
     #[cfg(feature = "functions")]
     plan_checkpoint: PlanCheckpoint,
@@ -355,6 +369,8 @@ impl ProgramStateCheckpoint {
         let functions = state.functions.clone();
         #[cfg(feature = "functions")]
         let functions_snapshot = FunctionsSnapshot::capture(&functions)?;
+        #[cfg(feature = "functions")]
+        let function_environment = state.function_environment.clone();
         #[cfg(feature = "functions")]
         for value in functions_snapshot.transaction_state_values()? {
             journal.capture_value(&value)?;
@@ -410,6 +426,8 @@ impl ProgramStateCheckpoint {
             #[cfg(feature = "functions")]
             functions_snapshot,
             #[cfg(feature = "functions")]
+            function_environment,
+            #[cfg(feature = "functions")]
             plan,
             #[cfg(feature = "functions")]
             plan_checkpoint,
@@ -457,6 +475,7 @@ impl ProgramStateCheckpoint {
             #[cfg(feature = "functions")]
             {
                 state.functions = self.functions.clone();
+                state.function_environment = self.function_environment.clone();
                 state.plan = self.plan.clone();
             }
             state.kinds = self.kinds.clone();
@@ -955,6 +974,8 @@ impl Clone for Interpreter {
         Self {
             id: self.id,
             checkpoint_owner: Rc::new(()),
+            #[cfg(feature = "functions")]
+            function_system: self.function_system.clone(),
             ip: self.ip,
             profile: false,
             max_steps: self.max_steps,
@@ -1173,7 +1194,48 @@ impl Interpreter {
     }
 
     pub fn new(id: u64, max_steps: usize) -> Self {
+        #[cfg(feature = "functions")]
+        {
+            Self::with_function_system(id, max_steps, default_function_system())
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            Self::initialize(id, max_steps, ProgramState::new())
+        }
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn with_function_catalog(
+        id: u64,
+        max_steps: usize,
+        function_catalog: Arc<FunctionCatalog>,
+    ) -> Self {
+        Self::with_function_system(
+            id,
+            max_steps,
+            FunctionSystem::from_catalog(function_catalog),
+        )
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn with_function_system(
+        id: u64,
+        max_steps: usize,
+        function_system: FunctionSystem,
+    ) -> Self {
         let mut state = ProgramState::new();
+        state.function_environment =
+            FunctionEnvironment::from_catalog_prelude(function_system.catalog())
+                .expect("validated function catalog prelude must initialize");
+        Self::initialize(id, max_steps, state, function_system)
+    }
+
+    fn initialize(
+        id: u64,
+        max_steps: usize,
+        mut state: ProgramState,
+        #[cfg(feature = "functions")] function_system: FunctionSystem,
+    ) -> Self {
         load_stdkinds(&mut state.kinds);
         #[cfg(feature = "symbol_table")]
         {
@@ -1198,6 +1260,8 @@ impl Interpreter {
         Self {
             id,
             checkpoint_owner: Rc::new(()),
+            #[cfg(feature = "functions")]
+            function_system,
             ip: 0,
             profile: false,
             max_steps, // Default maximum steps
@@ -1233,6 +1297,26 @@ impl Interpreter {
             user_state_machine_specs: Ref::new(HashMap::new()),
             code: Vec::new(),
         }
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn function_system(&self) -> &FunctionSystem {
+        &self.function_system
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn function_catalog(&self) -> &Arc<FunctionCatalog> {
+        self.function_system.catalog()
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn legacy_function_boundary(&self) -> &Arc<LegacyFunctionBoundary> {
+        self.function_system.legacy_boundary()
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn new_child_interpreter(&self, id: u64, max_steps: usize) -> Self {
+        Self::with_function_system(id, max_steps, self.function_system.clone())
     }
 
     pub fn default() -> Self {
@@ -1316,7 +1400,15 @@ impl Interpreter {
     pub fn clear(&mut self) {
         let id = self.id;
         let checkpoint_owner = self.checkpoint_owner.clone();
-        *self = Interpreter::new(id, self.max_steps);
+        #[cfg(feature = "functions")]
+        {
+            let function_system = self.function_system.clone();
+            *self = Interpreter::with_function_system(id, self.max_steps, function_system);
+        }
+        #[cfg(not(feature = "functions"))]
+        {
+            *self = Interpreter::new(id, self.max_steps);
+        }
         self.checkpoint_owner = checkpoint_owner;
     }
 
@@ -1684,6 +1776,21 @@ impl Interpreter {
     }
 
     #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+    fn resolve_runtime_factory(
+        &self,
+        legacy_functions: &Functions,
+        id: RuntimeFunctionId,
+    ) -> MResult<Option<RuntimeFunctionFactory>> {
+        if let Some(factory) = self.function_catalog().runtime_factory(id) {
+            return Ok(Some(factory));
+        }
+        if self.legacy_function_boundary().owns_runtime_function(id) {
+            return Err(MechError::new(RuntimeFunctionUnavailable { id }, None).with_compiler_loc());
+        }
+        Ok(legacy_runtime_factory_fallback(legacy_functions, id))
+    }
+
+    #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
     pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
         // Reset the instruction pointer
         self.ip = 0;
@@ -1715,13 +1822,14 @@ impl Interpreter {
                         self.registers[*dst as usize] = value;
                     }
                     DecodedInstr::NullOp { fxn_id, dst } => {
-                        match functions_table.functions.get(fxn_id) {
+                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                        match self.resolve_runtime_factory(&functions_table, runtime_id)? {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let function_args = FunctionArgs::Nullary(out);
                                 self.out = register_bytecode_function(
                                     &state_brrw,
-                                    *fxn_factory,
+                                    fxn_factory,
                                     function_args,
                                 )?;
                             }
@@ -1735,14 +1843,15 @@ impl Interpreter {
                         }
                     }
                     DecodedInstr::UnOp { fxn_id, dst, src } => {
-                        match functions_table.functions.get(fxn_id) {
+                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                        match self.resolve_runtime_factory(&functions_table, runtime_id)? {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let input = self.registers[*src as usize].clone();
                                 let function_args = FunctionArgs::Unary(out, input);
                                 self.out = register_bytecode_function(
                                     &state_brrw,
-                                    *fxn_factory,
+                                    fxn_factory,
                                     function_args,
                                 )?;
                             }
@@ -1760,7 +1869,10 @@ impl Interpreter {
                         dst,
                         lhs,
                         rhs,
-                    } => match functions_table.functions.get(fxn_id) {
+                    } => match self.resolve_runtime_factory(
+                        &functions_table,
+                        RuntimeFunctionId::from_raw(*fxn_id),
+                    )? {
                         Some(fxn_factory) => {
                             let out = self.registers[*dst as usize].clone();
                             let lhs = self.registers[*lhs as usize].clone();
@@ -1768,7 +1880,7 @@ impl Interpreter {
                             let function_args = FunctionArgs::Binary(out, lhs, rhs);
                             self.out = register_bytecode_function(
                                 &state_brrw,
-                                *fxn_factory,
+                                fxn_factory,
                                 function_args,
                             )?;
                         }
@@ -1786,7 +1898,10 @@ impl Interpreter {
                         a,
                         b,
                         c,
-                    } => match functions_table.functions.get(fxn_id) {
+                    } => match self.resolve_runtime_factory(
+                        &functions_table,
+                        RuntimeFunctionId::from_raw(*fxn_id),
+                    )? {
                         Some(fxn_factory) => {
                             let out = self.registers[*dst as usize].clone();
                             let arg_a = self.registers[*a as usize].clone();
@@ -1795,7 +1910,7 @@ impl Interpreter {
                             let function_args = FunctionArgs::Ternary(out, arg_a, arg_b, arg_c);
                             self.out = register_bytecode_function(
                                 &state_brrw,
-                                *fxn_factory,
+                                fxn_factory,
                                 function_args,
                             )?;
                         }
@@ -1814,7 +1929,10 @@ impl Interpreter {
                         b,
                         c,
                         d,
-                    } => match functions_table.functions.get(fxn_id) {
+                    } => match self.resolve_runtime_factory(
+                        &functions_table,
+                        RuntimeFunctionId::from_raw(*fxn_id),
+                    )? {
                         Some(fxn_factory) => {
                             let out = self.registers[*dst as usize].clone();
                             let arg_a = self.registers[*a as usize].clone();
@@ -1825,7 +1943,7 @@ impl Interpreter {
                                 FunctionArgs::Quaternary(out, arg_a, arg_b, arg_c, arg_d);
                             self.out = register_bytecode_function(
                                 &state_brrw,
-                                *fxn_factory,
+                                fxn_factory,
                                 function_args,
                             )?;
                         }
@@ -1838,7 +1956,8 @@ impl Interpreter {
                         }
                     },
                     DecodedInstr::VarArg { fxn_id, dst, args } => {
-                        match functions_table.functions.get(fxn_id) {
+                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
+                        match self.resolve_runtime_factory(&functions_table, runtime_id)? {
                             Some(fxn_factory) => {
                                 let out = self.registers[*dst as usize].clone();
                                 let argument_values = args
@@ -1848,7 +1967,7 @@ impl Interpreter {
                                 let function_args = FunctionArgs::Variadic(out, argument_values);
                                 self.out = register_bytecode_function(
                                     &state_brrw,
-                                    *fxn_factory,
+                                    fxn_factory,
                                     function_args,
                                 )?;
                             }
@@ -2119,6 +2238,45 @@ impl<'a> InterpreterExecution<'a> {
 
     pub(crate) fn presentation_namespace(&self) -> u64 {
         self.presentation_namespace
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn specialize_visible_operation(
+        &self,
+        operation: OperationId,
+        arguments: &[Value],
+    ) -> MResult<Box<dyn MechFunction>> {
+        self.specialize_visible_operation_named(operation, None, arguments)
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn specialize_visible_operation_named(
+        &self,
+        operation: OperationId,
+        canonical_name: Option<&str>,
+        arguments: &[Value],
+    ) -> MResult<Box<dyn MechFunction>> {
+        let entry = self
+            .function_catalog()
+            .specializer(operation)
+            .ok_or_else(|| {
+                MechError::new(
+                    FunctionOperationUnavailable {
+                        operation,
+                        canonical_name: canonical_name.map(String::from),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+
+        {
+            let state = self.state.borrow();
+            state
+                .function_environment
+                .require_visible_named(operation, Some(&entry.canonical_name))?;
+        }
+        entry.specializer.specialize(arguments)
     }
 
     pub fn with_services<T>(
