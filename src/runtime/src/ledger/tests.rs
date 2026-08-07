@@ -228,3 +228,67 @@ fn prepared_queue_append_survives_health_change_and_poison_recovery() {
     queue.append(prepared);
     assert_eq!(queue.len(), 1);
 }
+
+#[test]
+fn pool_segments_are_exclusive_bounded_and_reused() {
+    let pool = RecordBufferPool::new(1, 8, 8).unwrap();
+    let mut segment = pool.acquire(8).unwrap();
+    segment.try_extend_from_slice(&[1, 2, 3, 4]).unwrap();
+    assert_eq!(segment.as_slice(), &[1, 2, 3, 4]);
+    assert_eq!(
+        pool.acquire(1).unwrap_err().kind_name(),
+        "RecordBufferPoolExhausted"
+    );
+    drop(segment);
+    let recycled = pool.acquire(4).unwrap();
+    assert!(recycled.is_empty());
+    assert_eq!(pool.stats().allocations, 1);
+    assert_eq!(pool.stats().reuses, 1);
+}
+
+#[test]
+fn oversized_pool_segments_are_dropped_instead_of_retained() {
+    let pool = RecordBufferPool::new(1, 16, 4).unwrap();
+    let segment = pool.acquire(8).unwrap();
+    assert_eq!(pool.stats().total_capacity, 8);
+    drop(segment);
+    assert_eq!(pool.stats().available_segments, 0);
+    assert_eq!(pool.stats().total_capacity, 0);
+    assert_eq!(pool.stats().dropped_oversized, 1);
+}
+
+#[test]
+fn pool_replaces_the_largest_undersized_available_segment() {
+    let pool = RecordBufferPool::new(2, 9, 9).unwrap();
+    let small = pool.acquire(2).unwrap();
+    let large = pool.acquire(6).unwrap();
+    drop(small);
+    drop(large);
+
+    let replacement = pool.acquire(7).unwrap();
+    assert_eq!(replacement.capacity(), 7);
+    assert_eq!(pool.stats().total_capacity, 9);
+}
+
+#[test]
+fn pool_replaces_an_available_segment_when_bytes_are_exhausted_first() {
+    let pool = RecordBufferPool::new(3, 9, 9).unwrap();
+    let available = pool.acquire(6).unwrap();
+    drop(available);
+
+    let replacement = pool.acquire(7).unwrap();
+    assert_eq!(replacement.capacity(), 7);
+    assert_eq!(pool.stats().total_capacity, 7);
+}
+
+#[test]
+fn pool_fill_never_grows_a_segment_implicitly() {
+    let pool = RecordBufferPool::new(1, 4, 4).unwrap();
+    let mut segment = pool.acquire(4).unwrap();
+    segment.try_extend_from_slice(&[1, 2, 3, 4]).unwrap();
+    assert_eq!(
+        segment.try_extend_from_slice(&[5]).unwrap_err().kind_name(),
+        "RecordBufferCapacityExceeded"
+    );
+    assert_eq!(segment.capacity(), 4);
+}

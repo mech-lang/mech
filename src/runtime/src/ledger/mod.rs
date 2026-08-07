@@ -1,6 +1,7 @@
 //! Bounded owned turn-record storage primitives.
 
 mod capacity;
+mod pool;
 mod queue;
 mod retained;
 #[cfg(test)]
@@ -13,6 +14,10 @@ use crate::turn_record::{AccountedRecord, LedgerSequence};
 pub(crate) use capacity::{CapacityController, CapacityReservation};
 pub use capacity::{
     LedgerAllocationFailed, LedgerCapacityExceeded, LedgerPermitInvalid, RecordEstimate,
+};
+pub use pool::{
+    PooledRecordBuffer, RecordBufferCapacityExceeded, RecordBufferPool, RecordBufferPoolExhausted,
+    RecordBufferPoolStats,
 };
 pub use queue::OwnedTurnRecordQueue;
 pub use retained::{RetainedLedgerDrain, RetainedTurnLedger};
