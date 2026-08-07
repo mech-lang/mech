@@ -1,6 +1,8 @@
 //! Bounded owned turn-record storage primitives.
 
 mod capacity;
+mod queue;
+mod retained;
 #[cfg(test)]
 mod tests;
 
@@ -12,6 +14,8 @@ pub(crate) use capacity::{CapacityController, CapacityReservation};
 pub use capacity::{
     LedgerAllocationFailed, LedgerCapacityExceeded, LedgerPermitInvalid, RecordEstimate,
 };
+pub use queue::OwnedTurnRecordQueue;
+pub use retained::{RetainedLedgerDrain, RetainedTurnLedger};
 
 /// An unused reservation for one future ledger append.
 #[derive(Debug)]
@@ -98,6 +102,10 @@ impl<R> PreparedLedgerAppend<R> {
             .take()
             .expect("prepared append record consumed once");
         (reservation, record)
+    }
+
+    pub(crate) fn controller(&self) -> &CapacityController {
+        &self.controller
     }
 }
 

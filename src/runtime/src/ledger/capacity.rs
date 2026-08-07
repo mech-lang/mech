@@ -297,6 +297,17 @@ impl CapacityController {
         self.lock().healthy = false;
     }
 
+    pub(crate) fn is_healthy(&self) -> bool {
+        self.lock().healthy
+    }
+
+    pub(crate) fn assert_owner(&self, owner: &Self) {
+        assert!(
+            self.identity == owner.identity && Arc::ptr_eq(&self.state, &owner.state),
+            "prepared append belongs to a different ledger"
+        );
+    }
+
     #[cfg(test)]
     pub(super) fn force_generation_for_test(&self, generation: NonZeroU64) {
         self.lock().generation = generation;
