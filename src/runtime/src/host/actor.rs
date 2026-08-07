@@ -1,4 +1,4 @@
-use mech_core::{MResult, MechError, Ref, Value};
+use mech_core::{MResult, MechError, Ref, Value, hash_str};
 
 use crate::capability::CapabilityRequest;
 use crate::service::RuntimeManagedServices;
@@ -6,6 +6,87 @@ use crate::store::ObjectRecord;
 use crate::{RuntimeCallContext, RuntimeValueSnapshot};
 
 use crate::host::*;
+
+/// Deterministic, effect-free actor state used while specializing source and
+/// validating bytecode host calls for native applications.
+#[derive(Clone, Debug)]
+pub struct ActorHostPlanningState {
+    message_kind: String,
+    message_payload: String,
+    actor_bound: bool,
+    state: Option<String>,
+    state_id: Option<String>,
+    state_id_seed: u64,
+}
+
+impl ActorHostPlanningState {
+    pub fn new(
+        subject: &str,
+        message_kind: impl Into<String>,
+        message_payload: impl Into<String>,
+        initial_state: Option<String>,
+    ) -> Self {
+        let state_id_seed = hash_str(subject);
+        let state_id = initial_state
+            .as_ref()
+            .map(|_| format!("planning-state-{state_id_seed:016x}"));
+        Self {
+            message_kind: message_kind.into(),
+            message_payload: message_payload.into(),
+            actor_bound: true,
+            state: initial_state,
+            state_id,
+            state_id_seed,
+        }
+    }
+
+    /// Plans one trusted actor host call and advances the synthetic state for
+    /// subsequent calls in the same source/bytecode instruction sequence.
+    pub fn plan(&mut self, name: &str, arguments: &[Value]) -> MResult<Value> {
+        match name {
+            "actor/message/kind" => {
+                expect_arity(name, arguments, 0)?;
+                Ok(Value::String(Ref::new(self.message_kind.clone())))
+            }
+            "actor/message/payload" => {
+                expect_arity(name, arguments, 0)?;
+                Ok(Value::String(Ref::new(self.message_payload.clone())))
+            }
+            "actor/state/get" => {
+                expect_arity(name, arguments, 0)?;
+                Ok(match &self.state {
+                    Some(state) => Value::String(Ref::new(state.clone())),
+                    None => Value::Empty,
+                })
+            }
+            "actor/state/id" => {
+                expect_arity(name, arguments, 0)?;
+                Ok(match &self.state_id {
+                    Some(state_id) => Value::String(Ref::new(state_id.clone())),
+                    None => Value::Empty,
+                })
+            }
+            "actor/state/put" => {
+                if !self.actor_bound {
+                    return Err(invalid_context(
+                        name,
+                        "no actor is bound to the runtime context",
+                    ));
+                }
+                expect_arity(name, arguments, 1)?;
+                let state = host_arg_string(name, arguments, 0)?;
+                let state_id = format!("planning-state-put-{:016x}", self.state_id_seed);
+                self.state = Some(state);
+                self.state_id = Some(state_id.clone());
+                Ok(Value::String(Ref::new(state_id)))
+            }
+            _ => Err(invalid_context(
+                name,
+                "host function is not part of the trusted actor planning surface",
+            )),
+        }
+    }
+}
 
 fn snapshot(value: Value) -> MResult<RuntimeValueSnapshot> {
     RuntimeValueSnapshot::try_capture(&value)
@@ -42,8 +123,9 @@ impl HostFunctionPlan for ActorMessageKindHostFunction {
     fn plan(
         &self,
         context: &RuntimeCallContext,
-        _arguments: &[RuntimeValueSnapshot],
+        arguments: &[RuntimeValueSnapshot],
     ) -> MResult<RuntimeValueSnapshot> {
+        expect_arity(self.name(), arguments, 0)?;
         let message = context.actor_message().ok_or_else(|| {
             invalid_context(
                 self.name(),
@@ -89,8 +171,9 @@ impl HostFunctionPlan for ActorMessagePayloadHostFunction {
     fn plan(
         &self,
         context: &RuntimeCallContext,
-        _arguments: &[RuntimeValueSnapshot],
+        arguments: &[RuntimeValueSnapshot],
     ) -> MResult<RuntimeValueSnapshot> {
+        expect_arity(self.name(), arguments, 0)?;
         let message = context.actor_message().ok_or_else(|| {
             invalid_context(
                 self.name(),
@@ -138,8 +221,9 @@ impl HostFunctionPlan for ActorStateIdHostFunction {
     fn plan(
         &self,
         context: &RuntimeCallContext,
-        _arguments: &[RuntimeValueSnapshot],
+        arguments: &[RuntimeValueSnapshot],
     ) -> MResult<RuntimeValueSnapshot> {
+        expect_arity(self.name(), arguments, 0)?;
         match context.actor_state() {
             Some(state) => snapshot(Value::String(Ref::new(state.to_string()))),
             None => snapshot(Value::Empty),
@@ -181,10 +265,14 @@ impl HostFunctionPlan for ActorStateGetHostFunction {
 
     fn plan(
         &self,
-        _context: &RuntimeCallContext,
-        _arguments: &[RuntimeValueSnapshot],
+        context: &RuntimeCallContext,
+        arguments: &[RuntimeValueSnapshot],
     ) -> MResult<RuntimeValueSnapshot> {
-        snapshot(Value::Empty)
+        expect_arity(self.name(), arguments, 0)?;
+        match context.actor_state() {
+            Some(_) => snapshot(Value::String(Ref::new(String::new()))),
+            None => snapshot(Value::Empty),
+        }
     }
 
     fn estimated_cost_items(&self, _arguments: &[RuntimeValueSnapshot]) -> u64 {
@@ -201,17 +289,17 @@ impl RuntimeManagedHostFunction for ActorStateGetHostFunction {
         &self,
         services: &mut dyn RuntimeManagedServices,
         context: &RuntimeCallContext,
-        _arguments: Vec<RuntimeValueSnapshot>,
+        arguments: Vec<RuntimeValueSnapshot>,
     ) -> MResult<RuntimeValueSnapshot> {
+        expect_arity(self.name(), &arguments, 0)?;
         let Some(state) = context.actor_state() else {
             return snapshot(Value::Empty);
         };
-        let Some(object) = services.get_object(state)? else {
-            return snapshot(Value::Empty);
-        };
-        snapshot(Value::String(Ref::new(
-            String::from_utf8_lossy(&object.data).to_string(),
-        )))
+        let value = services
+            .get_object(state)?
+            .map(|object| String::from_utf8_lossy(&object.data).to_string())
+            .unwrap_or_default();
+        snapshot(Value::String(Ref::new(value)))
     }
 }
 
@@ -244,6 +332,7 @@ impl HostFunctionPlan for ActorStatePutHostFunction {
             .iter()
             .map(RuntimeValueSnapshot::to_value)
             .collect::<Vec<_>>();
+        expect_arity(self.name(), &values, 1)?;
         host_arg_string(self.name(), &values, 0)?;
         snapshot(Value::String(Ref::new(String::new())))
     }
@@ -275,6 +364,7 @@ impl RuntimeManagedHostFunction for ActorStatePutHostFunction {
             .iter()
             .map(RuntimeValueSnapshot::to_value)
             .collect::<Vec<_>>();
+        expect_arity(self.name(), &values, 1)?;
         let text = host_arg_string(self.name(), &values, 0)?;
         let object_id = services.allocate_object_id()?;
         services.put_object(ObjectRecord::text(object_id, "actor-state", text))?;
@@ -285,5 +375,55 @@ impl RuntimeManagedHostFunction for ActorStatePutHostFunction {
         services.update_actor(actor)?;
         services.set_current_actor_state(object_id)?;
         snapshot(Value::String(Ref::new(object_id.to_string())))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn planning_state_tracks_put_before_get_and_id() {
+        let mut state = ActorHostPlanningState::new("actor:test", "message", "payload", None);
+
+        assert_eq!(state.plan("actor/state/get", &[]).unwrap(), Value::Empty);
+        assert_eq!(state.plan("actor/state/id", &[]).unwrap(), Value::Empty);
+        assert!(matches!(
+            state
+                .plan(
+                    "actor/state/put",
+                    &[Value::String(Ref::new("created".to_owned()))],
+                )
+                .unwrap(),
+            Value::String(_)
+        ));
+        assert_eq!(
+            state.plan("actor/state/get", &[]).unwrap(),
+            Value::String(Ref::new("created".to_owned())),
+        );
+        assert!(matches!(
+            state.plan("actor/state/id", &[]).unwrap(),
+            Value::String(_)
+        ));
+    }
+
+    #[test]
+    fn planning_state_enforces_exact_actor_arities_and_put_type() {
+        let mut state = ActorHostPlanningState::new("actor:test", "message", "payload", None);
+
+        assert!(state.plan("actor/message/kind", &[Value::Empty]).is_err());
+        assert!(state.plan("actor/state/put", &[]).is_err());
+        assert!(state.plan("actor/state/put", &[Value::Empty]).is_err());
+        assert!(
+            state
+                .plan(
+                    "actor/state/put",
+                    &[
+                        Value::String(Ref::new("one".to_owned())),
+                        Value::String(Ref::new("two".to_owned())),
+                    ],
+                )
+                .is_err()
+        );
     }
 }

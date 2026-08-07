@@ -5,43 +5,46 @@ use mech_core::*;
 
 // MatMul ---------------------------------------------------------------------
 
-macro_rules! mul_op {
+macro_rules! checked_mul_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            *$out = *$lhs * *$rhs;
+            let next = checked_matrix_mul(*$lhs, *$rhs, "scalar product")?;
+            *$out = next;
         }
     };
 }
 
-macro_rules! dot_op {
+macro_rules! checked_dot_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            *$out = (*$lhs).dot(&*$rhs);
+            let lhs = &*$lhs;
+            let rhs = &*$rhs;
+            if lhs.nrows() != rhs.nrows() || lhs.ncols() != rhs.ncols() {
+                return Err(MechError::new(
+                    DimensionMismatch {
+                        dims: vec![lhs.nrows(), lhs.ncols(), rhs.nrows(), rhs.ncols()],
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+            let mut next = Zero::zero();
+            for (lhs, rhs) in lhs.iter().zip(rhs.iter()) {
+                let product = checked_matrix_mul(*lhs, *rhs, "dot-product multiplication")?;
+                next = checked_matrix_add(next, product, "dot-product accumulation")?;
+            }
+            *$out = next;
         }
     };
 }
 
 macro_rules! impl_dot {
     ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
-        impl_binop!(
-            $name,
-            $type1,
-            $type2,
-            $out_type,
-            dot_op,
-            FeatureFlag::Builtin(FeatureKind::Dot)
-        );
+        impl_checked_matrix_binop!($name, $type1, $type2, $out_type, checked_dot_op);
     };
 }
 
-impl_binop!(
-    DotScalar,
-    T,
-    T,
-    T,
-    mul_op,
-    FeatureFlag::Builtin(FeatureKind::Dot)
-);
+impl_checked_matrix_binop!(DotScalar, T, T, T, checked_mul_op);
 #[cfg(all(feature = "row_vector2", feature = "row_vector2"))]
 impl_dot!(DotR2R2, RowVector2<T>, RowVector2<T>, T);
 #[cfg(all(feature = "vector2", feature = "vector2"))]
@@ -58,7 +61,7 @@ impl_dot!(DotR4R4, RowVector4<T>, RowVector4<T>, T);
 impl_dot!(DotV4V4, Vector4<T>, Vector4<T>, T);
 
 #[cfg(all(feature = "matrix1", feature = "matrix1"))]
-impl_dot!(DotM1M1, Matrix2<T>, Matrix2<T>, T);
+impl_dot!(DotM1M1, Matrix1<T>, Matrix1<T>, T);
 #[cfg(all(feature = "matrix2", feature = "matrix2"))]
 impl_dot!(DotM2M2, Matrix2<T>, Matrix2<T>, T);
 #[cfg(all(feature = "matrix3", feature = "matrix3"))]
@@ -98,7 +101,7 @@ macro_rules! impl_dot_match_arms {
           (Value::$matrix_kind(Matrix::RowVector4(lhs)), Value::$matrix_kind(Matrix::RowVector4(rhs))) => Ok(Box::new(DotR4R4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
 
           #[cfg(all(feature = $value_string, feature = "matrix1", feature = "matrix1"))]
-          (Value::$matrix_kind(Matrix::Matrix2(lhs)), Value::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new(DotM1M1 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (Value::$matrix_kind(Matrix::Matrix1(lhs)), Value::$matrix_kind(Matrix::Matrix1(rhs))) => Ok(Box::new(DotM1M1 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
           #[cfg(all(feature = $value_string, feature = "matrix2", feature = "matrix2"))]
           (Value::$matrix_kind(Matrix::Matrix2(lhs)), Value::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new(DotM2M2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
           #[cfg(all(feature = $value_string, feature = "matrix3", feature = "matrix3"))]
@@ -177,3 +180,28 @@ fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
 
 #[cfg(feature = "source")]
 impl_mech_binop_fxn!(MatrixDot, impl_dot_fxn, "matrix/dot");
+
+#[cfg(all(test, feature = "u8", feature = "vector2"))]
+mod checked_dot_tests {
+    use super::*;
+
+    #[test]
+    fn integer_dot_rejects_overflow_and_retains_output() {
+        let lhs = Ref::new(Vector2::new(200_u8, 200));
+        let rhs = Ref::new(Vector2::new(1_u8, 0));
+        let out = Ref::new(17_u8);
+        let function = DotV2V2 {
+            lhs: lhs.clone(),
+            rhs: rhs.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), 200);
+        *rhs.borrow_mut() = Vector2::new(2, 2);
+
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "MatrixArithmeticOverflow");
+        assert_eq!(*out.borrow(), 200);
+    }
+}

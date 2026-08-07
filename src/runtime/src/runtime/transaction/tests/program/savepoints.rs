@@ -5,7 +5,7 @@ use crate::{
     ObjectRecord, ResourceBudget, RuntimeAuthorityScope, RuntimeEventKind, RuntimeId,
     RuntimeInvalidOperationError, TaskId,
 };
-use mech_core::{MResult, MechError, MechSourceCode};
+use mech_core::{MResult, MechError, MechSourceCode, hash_str};
 
 #[test]
 fn program_operation_savepoint_truncates_effects_without_reusing_ids() {
@@ -170,6 +170,86 @@ fn explicit_program_operations_use_savepoints_before_outer_abort() {
     );
     assert!(runtime.get_object(ObjectId(350)).unwrap().is_none());
     assert_eq!(runtime.program_transaction_owner, None);
+}
+
+#[test]
+fn structural_replacement_rollback_restores_the_owned_program_object() {
+    let mut runtime = test_runtime_builder().build().unwrap();
+    runtime
+        .run_string("structural-savepoint-anchor := 1")
+        .unwrap();
+    let anchor = runtime
+        .program
+        .interpreter()
+        .symbols()
+        .borrow()
+        .get(hash_str("structural-savepoint-anchor"))
+        .unwrap();
+    let anchor_address = anchor.as_ptr();
+    let mut replacement = runtime.new_program(runtime.program.config.clone());
+    replacement
+        .run_source(&MechSourceCode::String(
+            "structural-savepoint-replacement := 2".to_string(),
+        ))
+        .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    runtime
+        .run_string_with_context(&mut context, "structural-savepoint-owned := 3")
+        .unwrap();
+
+    let result: MResult<()> = runtime.with_atomic_program_operation(
+        &mut context,
+        "structural_replacement_rollback_test",
+        move |runtime, _context| {
+            runtime.replace_retained_program(transaction_id, replacement)?;
+            Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "structural_replacement_rollback_test",
+                    reason: "deliberate failure after structural replacement".to_string(),
+                },
+                None,
+            ))
+        },
+    );
+
+    assert_eq!(result.unwrap_err().kind_name(), "RuntimeInvalidOperation");
+    let restored = runtime
+        .program
+        .interpreter()
+        .symbols()
+        .borrow()
+        .get(hash_str("structural-savepoint-anchor"))
+        .unwrap();
+    assert_eq!(restored.as_ptr(), anchor_address);
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("structural-savepoint-replacement")
+            .is_err()
+    );
+    assert!(
+        runtime
+            .program
+            .root_symbol_value("structural-savepoint-owned")
+            .is_ok()
+    );
+    assert_eq!(
+        runtime
+            .active_execution_transaction(transaction_id)
+            .unwrap()
+            .program
+            .as_ref()
+            .unwrap()
+            .replacement_predecessors
+            .len(),
+        0,
+    );
+    assert_eq!(runtime.program_transaction_owner, Some(transaction_id));
+
+    runtime
+        .abort_runtime_transaction(&mut context, "discard structural test")
+        .unwrap();
 }
 
 #[test]

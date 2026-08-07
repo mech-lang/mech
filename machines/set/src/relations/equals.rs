@@ -16,12 +16,18 @@ pub(crate) struct SetEqualsFxn {
 }
 
 impl MechFunctionFactory for SetEqualsFxn {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Bool,
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::Set,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechSet> = unsafe { arg1.as_unchecked() }.clone();
-                let rhs: Ref<MechSet> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
+                let lhs: Ref<MechSet> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let rhs: Ref<MechSet> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(SetEqualsFxn { lhs, rhs, out }))
             }
             _ => Err(MechError::new(
@@ -37,7 +43,7 @@ impl MechFunctionFactory for SetEqualsFxn {
 }
 
 impl MechFunctionImpl for SetEqualsFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
             let lhs_ptr: &MechSet = &*(self.lhs.as_ptr());
@@ -45,7 +51,8 @@ impl MechFunctionImpl for SetEqualsFxn {
 
             // Uses the implementation of PartialEq for IndexSet (== operator)
             *out_ptr = lhs_ptr.set == rhs_ptr.set;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Bool(self.out.clone())
@@ -64,14 +71,7 @@ impl MechFunctionCompiler for SetEqualsFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = "SetEqualsFxn".to_string();
         // Custom feature route: set/equals
-        compile_binop!(
-            name,
-            self.out,
-            self.lhs,
-            self.rhs,
-            ctx,
-            FeatureFlag::Custom(hash_str("set/equals"))
-        );
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
 }
 

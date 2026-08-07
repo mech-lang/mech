@@ -10,15 +10,18 @@ struct ConvertSEnum {
 }
 #[cfg(feature = "enum")]
 impl MechFunctionFactory for ConvertSEnum {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Enum);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Unary(out, _) => {
-                let out: Ref<MechEnum> = unsafe { out.as_unchecked() }.clone();
+            FunctionArgs::Nullary(out) => {
+                let out: Ref<MechEnum> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
                 IncorrectNumberOfArguments {
-                    expected: 1,
+                    expected: 0,
                     found: args.len(),
                 },
                 None,
@@ -29,7 +32,9 @@ impl MechFunctionFactory for ConvertSEnum {
 }
 #[cfg(feature = "enum")]
 impl MechFunctionImpl for ConvertSEnum {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         Value::Enum(self.out.clone())
     }
@@ -45,12 +50,7 @@ impl MechFunctionImpl for ConvertSEnum {
 impl MechFunctionCompiler for ConvertSEnum {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertSEnum<enum>");
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 #[derive(Debug)]
@@ -58,25 +58,56 @@ struct ConvertSEmpty {
     out: Ref<Value>,
 }
 
-fn convert_empty_factory(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-    match args {
-        FunctionArgs::Nullary(out) => {
-            let out: Ref<Value> = unsafe { out.as_unchecked() }.clone();
-            Ok(Box::new(ConvertSEmpty { out }))
+impl MechFunctionFactory for ConvertSEmpty {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::MutableValueCell);
+
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Nullary(out) => {
+                let out: Ref<Value> = out.try_function_ref(FunctionArgumentRole::Output)?;
+                Ok(Box::new(Self { out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 0,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
         }
-        _ => Err(MechError::new(
-            IncorrectNumberOfArguments {
-                expected: 0,
-                found: args.len(),
-            },
-            None,
-        )
-        .with_compiler_loc()),
     }
 }
 
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "convert",
+    registration: register_convert_empty,
+    installer: install_convert_empty,
+    name: "ConvertSEmpty<empty>",
+    factory_type: ConvertSEmpty,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_convert_empty",
+    extra_cargo_features: ["convert"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "convert", feature = "enum"),
+    registration: register_convert_enum,
+    installer: install_convert_enum,
+    name: "ConvertSEnum<enum>",
+    factory_type: ConvertSEnum,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_convert_enum",
+    extra_cargo_features: ["convert"],
+}
+
 impl MechFunctionImpl for ConvertSEmpty {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.out.borrow().clone()
     }
@@ -91,19 +122,23 @@ impl MechFunctionImpl for ConvertSEmpty {
 impl MechFunctionCompiler for ConvertSEmpty {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertSEmpty<empty>");
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "enum")]
-    builder.insert_runtime_factory("ConvertSEnum<enum>", ConvertSEnum::new)?;
-    builder.insert_runtime_factory("ConvertSEmpty<empty>", convert_empty_factory)?;
+    register_convert_enum(builder)?;
+    register_convert_empty(builder)?;
     Ok(())
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    #[cfg(feature = "convert")]
+    pub use super::install_convert_empty;
+    #[cfg(all(feature = "convert", feature = "enum"))]
+    pub use super::install_convert_enum;
 }
 
 #[cfg(test)]
@@ -135,7 +170,7 @@ impl<T> MechFunctionImpl for ConvertMat2Table<T>
 where
     T: Debug + Clone + PartialEq + Into<Value> + 'static,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg = &self.arg;
         let mut out_table = self.out.borrow_mut();
         let rows = arg.rows().min(out_table.rows);
@@ -147,6 +182,7 @@ where
                 out_col.set_index1d(row_ix, converted_value);
             }
         }
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Table(self.out.clone())
@@ -169,8 +205,6 @@ where
 
         registers[0] = compile_register_brrw!(self.out, ctx);
         registers[1] = compile_register!(self.arg, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Convert));
 
         ctx.emit_unop(hash_str("ConvertMat2Table"), registers[0], registers[1]);
 
@@ -273,7 +307,7 @@ struct ConvertMatToSet {
 
 #[cfg(all(feature = "matrix", feature = "set"))]
 impl MechFunctionImpl for ConvertMatToSet {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let values = matrix_to_values(&self.arg).unwrap_or_default();
         let converted_values = values
             .into_iter()
@@ -287,6 +321,7 @@ impl MechFunctionImpl for ConvertMatToSet {
             })
             .collect::<Vec<_>>();
         *self.out.borrow_mut() = MechSet::from_vec(converted_values);
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Set(self.out.clone())
@@ -303,12 +338,7 @@ impl MechFunctionImpl for ConvertMatToSet {
 impl MechFunctionCompiler for ConvertMatToSet {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertMatToSet");
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 
@@ -321,12 +351,13 @@ struct ConvertSRationalToF64 {
 
 #[cfg(all(feature = "rational", feature = "f64"))]
 impl MechFunctionImpl for ConvertSRationalToF64 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = (*arg_ptr).into();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::F64(self.out.clone())
@@ -343,13 +374,7 @@ impl MechFunctionImpl for ConvertSRationalToF64 {
 impl MechFunctionCompiler for ConvertSRationalToF64 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertSRationalToF64<f64>");
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 
@@ -472,14 +497,15 @@ where
     F: LosslessInto<T> + Debug + Clone,
     T: Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
             let out_ref: &mut T = &mut *out_ptr;
             let arg_ref: &F = &*arg_ptr;
             *out_ref = arg_ref.clone().lossless_into();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -504,13 +530,7 @@ where
             F::as_value_kind(),
             T::as_value_kind()
         );
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 
@@ -526,14 +546,15 @@ where
     F: Debug + Clone,
     T: Debug + LossyFrom<F>,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
             let out_ref: &mut T = &mut *out_ptr;
             let arg_ref: &F = &*arg_ptr;
             *out_ref = T::lossy_from(arg_ref.clone());
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -558,13 +579,7 @@ where
             F::as_value_kind(),
             T::as_value_kind()
         );
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 

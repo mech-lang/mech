@@ -2,6 +2,13 @@
 #![allow(warnings)]
 #![feature(step_trait)]
 #![feature(where_clause_attrs)]
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    pub use crate::catalog::__mech_native::*;
+}
+
 #[macro_use]
 extern crate mech_core;
 #[cfg(feature = "matrix")]

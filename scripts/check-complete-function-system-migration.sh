@@ -4,6 +4,15 @@ set -eu
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$repository_root"
 
+mode=${1:-all}
+case "$mode" in
+  all | boundaries) ;;
+  *)
+    echo "usage: $0 [all|boundaries]" >&2
+    exit 2
+    ;;
+esac
+
 fail() {
   echo "complete function-system migration boundary failed: $*" >&2
   exit 1
@@ -72,7 +81,7 @@ then
   fail "active Rust or manifest input still names the obsolete program package"
 fi
 
-legacy_pattern='FunctionDescriptor|FunctionCompilerDescriptor|ModuleItemDescriptor|FunctionSystem|default_function_system|\bFunctionTable\b|FunctionCompilerTable|FunctionsSnapshot|FunctionsRef|(struct|type)[[:space:]]+Functions\b|StaticNativeFunctionCompiler|NativeFunctionCompiler|LegacyFunctionBoundary|LegacySourceSpecializer|legacy_source_specializer|RuntimeFunctionUnavailable|register_descriptor|register_fxn_descriptor|register_assign_|register_define|register_horizontal_concatenate_fxn|register_vertical_concatenate_fxn|legacy_.*fallback|is_prelude_name|load_prelude|load_stdlib|LinkedModuleLoader'
+legacy_pattern='FunctionDescriptor|FunctionCompilerDescriptor|ModuleItemDescriptor|FunctionSystem|default_function_system|\bFunctionTable\b|FunctionCompilerTable|FunctionsSnapshot|FunctionsRef|(struct|type)[[:space:]]+Functions\b|StaticNativeFunctionCompiler|NativeFunctionCompiler|LegacyFunctionBoundary|LegacySourceSpecializer|legacy_source_specializer|RuntimeFunctionUnavailable|register_descriptor|register_fxn_descriptor|register_define|register_horizontal_concatenate_fxn|register_vertical_concatenate_fxn|legacy_.*fallback|is_prelude_name|load_prelude|load_stdlib|LinkedModuleLoader'
 if rg -n -H \
   "$legacy_pattern" \
   "$repository_root/src" \
@@ -81,6 +90,20 @@ if rg -n -H \
   --glob '*.rs'
 then
   fail "legacy function subsystem symbol remains"
+fi
+
+# Assignment's owner-local catalog now emits one deterministic
+# `register_assign_*` function per exact native factory. Keep rejecting the
+# removed aggregate assignment registrars everywhere else.
+if rg -n -H \
+  'register_assign_' \
+  "$repository_root/src" \
+  "$repository_root/machines" \
+  "$repository_root/tests" \
+  --glob '*.rs' \
+  --glob '!**/engine/src/intrinsics/assign/catalog.rs'
+then
+  fail "legacy assignment registrar remains outside its owner-local catalog"
 fi
 
 if rg -n -H \
@@ -129,8 +152,11 @@ fi
 # source contracts and the full runtime-factory contract. Other CI jobs own
 # machine-profile, bytecode-consumer, native, WASM, and full package suites, so
 # this boundary does not replay them.
-bash "$repository_root/scripts/check-static-distribution-profiles.sh" static
-bash "$repository_root/scripts/check-static-distribution-profiles.sh" engine
-bash "$repository_root/scripts/check-function-system-contracts.sh" surface
+if test "$mode" = all
+then
+  bash "$repository_root/scripts/check-static-distribution-profiles.sh" static
+  bash "$repository_root/scripts/check-static-distribution-profiles.sh" engine
+  bash "$repository_root/scripts/check-function-system-contracts.sh" surface
+fi
 
-echo "complete function-system migration boundary passed"
+echo "complete function-system migration boundary passed ($mode)"

@@ -79,7 +79,7 @@ pub mod activation;
 pub mod expressions;
 #[cfg(feature = "functions")]
 pub mod function;
-#[cfg(all(feature = "source", feature = "invariant_define"))]
+#[cfg(all(feature = "program", feature = "invariant_define"))]
 pub mod integrity;
 pub mod interpreter;
 pub mod intrinsics;
@@ -101,13 +101,48 @@ pub mod structures;
 pub(crate) mod test_support;
 pub mod tracing;
 
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    #[cfg(all(feature = "access", feature = "matrix"))]
+    pub use crate::intrinsics::access::matrix::__mech_native::*;
+    #[cfg(all(feature = "access", feature = "tuple"))]
+    pub use crate::intrinsics::access::tuple::install_tuple_access_element;
+    #[cfg(feature = "access")]
+    pub use crate::intrinsics::access::{
+        install_record_access_field, install_record_access_swizzle, install_table_access_swizzle,
+    };
+    #[cfg(feature = "assign")]
+    pub use crate::intrinsics::assign::catalog::__mech_native::*;
+    #[cfg(feature = "invariant_define")]
+    pub use crate::intrinsics::catalog::install_integrity_constraint_marker;
+    #[cfg(feature = "matrix_comprehensions")]
+    pub use crate::intrinsics::catalog::install_matrix_comprehension;
+    #[cfg(feature = "set_comprehensions")]
+    pub use crate::intrinsics::catalog::install_set_comprehension;
+    #[cfg(feature = "set")]
+    pub use crate::intrinsics::catalog::install_set_define;
+    #[cfg(feature = "convert")]
+    pub use crate::intrinsics::convert::scalar::__mech_native::*;
+    #[cfg(feature = "variable_define")]
+    pub use crate::intrinsics::define::__mech_native::*;
+    #[cfg(all(feature = "variable_define", feature = "matrix"))]
+    pub use crate::intrinsics::define::__mech_native_matrix::*;
+    #[cfg(all(feature = "f64", feature = "variable_define"))]
+    pub use crate::intrinsics::define::install_variable_define_f64;
+    #[cfg(feature = "matrix_horzcat")]
+    pub use crate::intrinsics::horzcat::__mech_native::*;
+    #[cfg(feature = "matrix_vertcat")]
+    pub use crate::intrinsics::vertcat::__mech_native::*;
+}
+
 pub use mech_core::*;
 
 #[cfg(feature = "source")]
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::function::*;
-#[cfg(all(feature = "source", feature = "invariant_define"))]
+#[cfg(all(feature = "program", feature = "invariant_define"))]
 pub use crate::integrity::*;
 pub use crate::interpreter::*;
 #[cfg(feature = "source")]

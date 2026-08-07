@@ -16,12 +16,13 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<T>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let source_ptr = self.source.as_ptr();
         let sink_ptr = self.sink.as_mut_ptr();
         unsafe {
             *sink_ptr = (*source_ptr).clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.sink.to_value()
@@ -41,13 +42,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("RecordAssign<{}>", T::as_value_kind());
-        compile_unop!(
-            name,
-            self.sink,
-            self.source,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Assign)
-        );
+        compile_unop!(name, self.sink, self.source, ctx);
     }
 }
 

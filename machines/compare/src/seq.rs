@@ -9,7 +9,7 @@ pub struct StrictEqValue {
 }
 
 impl MechFunctionImpl for StrictEqValue {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let lhs = match &self.lhs {
             Value::MutableReference(v) => v.borrow().clone(),
             v => v.clone(),
@@ -19,6 +19,7 @@ impl MechFunctionImpl for StrictEqValue {
             v => v.clone(),
         };
         *self.out.borrow_mut() = lhs == rhs;
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -32,17 +33,41 @@ impl MechFunctionImpl for StrictEqValue {
     }
 }
 
+impl MechFunctionFactory for StrictEqValue {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Bool,
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+    );
+
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Binary(out, lhs, rhs) => Ok(Box::new(Self {
+                lhs,
+                rhs,
+                out: out.try_function_ref(FunctionArgumentRole::Output)?,
+            })),
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 2,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
+}
+
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for StrictEqValue {
-    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        Err(MechError::new(
-            GenericError {
-                msg: "bytecode compilation for dynamic strict equality is not supported yet"
-                    .to_string(),
-            },
-            None,
-        )
-        .with_compiler_loc())
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = self.out.to_value();
+        let destination = compile_value_register(&output, self.out.addr(), ctx)?;
+        let lhs = compile_value_register(&self.lhs, core::ptr::from_ref(&self.lhs).addr(), ctx)?;
+        let rhs = compile_value_register(&self.rhs, core::ptr::from_ref(&self.rhs).addr(), ctx)?;
+        ctx.emit_binop(hash_str("compare/seq"), destination, lhs, rhs);
+        Ok(destination)
     }
 }
 

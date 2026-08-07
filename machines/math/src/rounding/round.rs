@@ -44,19 +44,9 @@ macro_rules! roundf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathRound,
-    f32,
-    roundf,
-    FeatureFlag::Custom(hash_str("math/round"))
-);
+impl_math_unop!(MathRound, f32, roundf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathRound,
-    f64,
-    round,
-    FeatureFlag::Custom(hash_str("math/round"))
-);
+impl_math_unop!(MathRound, f64, round);
 
 #[cfg(feature = "source")]
 fn impl_round_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

@@ -1,6 +1,13 @@
 #![cfg_attr(not(test), no_main)]
 #![allow(warnings)]
 #![feature(where_clause_attrs)]
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    pub use crate::catalog::__mech_native::*;
+}
+
 #[macro_use]
 extern crate mech_core;
 #[cfg(feature = "matrix")]
@@ -75,7 +82,7 @@ pub use self::xor::*;
 
 #[macro_export]
 macro_rules! impl_logic_binop {
-    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name {
             lhs: Ref<$arg1_type>,
@@ -83,12 +90,21 @@ macro_rules! impl_logic_binop {
             out: Ref<$out_type>,
         }
         impl MechFunctionFactory for $struct_name {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg1_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg2_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
-                        let lhs: Ref<$arg1_type> = unsafe { arg1.as_unchecked() }.clone();
-                        let rhs: Ref<$arg2_type> = unsafe { arg2.as_unchecked() }.clone();
-                        let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
+                        let lhs: Ref<$arg1_type> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let rhs: Ref<$arg2_type> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let out: Ref<$out_type> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self { lhs, rhs, out }))
                     }
                     _ => Err(MechError::new(
@@ -103,11 +119,12 @@ macro_rules! impl_logic_binop {
             }
         }
         impl MechFunctionImpl for $struct_name {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
                 let rhs_ptr = self.rhs.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -124,7 +141,7 @@ macro_rules! impl_logic_binop {
         impl MechFunctionCompiler for $struct_name {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<bool>", stringify!($struct_name));
-                compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
+                compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
             }
         }
     };

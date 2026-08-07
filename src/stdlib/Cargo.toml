@@ -10,6 +10,7 @@ publish = false
 [features]
 default = ["standard_source"]
 
+std = ["mech-core/std", "mech-engine/std"]
 no_std = [
   "mech-core/no_std",
   "mech-engine/no_std",
@@ -51,6 +52,20 @@ compiler = [
   "mech-stats?/compiler",
   "mech-combinatorics?/compiler",
 ]
+native-plan = [
+  "runtime",
+  "mech-core/native-plan",
+  "mech-engine/native-plan",
+  "mech-math?/native-plan",
+  "mech-compare?/native-plan",
+  "mech-logic?/native-plan",
+  "mech-range?/native-plan",
+  "mech-matrix?/native-plan",
+  "mech-set?/native-plan",
+  "mech-string?/native-plan",
+  "mech-stats?/native-plan",
+  "mech-combinatorics?/native-plan",
+]
 
 mech-math = ["dep:mech-math"]
 mech-compare = ["dep:mech-compare"]
@@ -79,7 +94,7 @@ standard_values = [
 ]
 
 standard_operations = [
-  "access", "assign", "convert", "variable_define", "variables",
+  "access", "assign", "convert", "variable_define", "invariant_define", "variables",
   "subscript_default",
   "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",
   "set_define", "set_comprehensions", "table_ops",
@@ -93,6 +108,7 @@ access = ["mech-engine/access"]
 assign = ["mech-engine/assign"]
 convert = ["mech-engine/convert"]
 variable_define = ["mech-engine/variable_define"]
+invariant_define = ["mech-engine/invariant_define"]
 variables = ["mech-engine/variables"]
 logical_indexing = ["mech-engine/logical_indexing"]
 subscript_default = ["mech-engine/subscript_default"]
@@ -193,7 +209,11 @@ range_exclusive_increment = ["range_exclusive", "mech-range/exclusive_increment"
 
 matrix_solve = ["mech-matrix", "mech-matrix/solve", "mech-engine/matrix_solve"]
 matrix_dot = ["mech-matrix", "mech-matrix/dot", "mech-engine/matrix_dot"]
-matrix_matmul = ["mech-matrix", "mech-matrix/matmul", "mech-engine/matrix_matmul"]
+matrix_matmul = [
+  "mech-matrix", "mech-matrix/matmul", "mech-engine/matrix_matmul",
+  "mech-engine/variable_define_matrix1",
+  "mech-math?/matrix1_interop",
+]
 matrix_transpose = ["mech-matrix", "mech-matrix/transpose", "mech-engine/matrix_transpose"]
 
 set_element_of = ["bool", "mech-set", "mech-set/element_of", "mech-engine/set_element_of"]

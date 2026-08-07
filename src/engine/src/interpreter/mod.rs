@@ -1,6 +1,8 @@
 use crate::*;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::cell::RefCell as StdRefCell;
+#[cfg(feature = "invariant_define")]
+use std::collections::BTreeMap;
 use std::collections::{HashMap, HashSet};
 use std::io::{Cursor, Read, Write};
 use std::ops::Deref;
@@ -15,16 +17,99 @@ use web_time::Instant;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown",)))]
 use std::time::Instant;
 
+mod bytecode;
+use bytecode::{BytecodeRegisterFile, BytecodeRegisterFileCheckpoint};
+
 // Interpreter
 // ----------------------------------------------------------------------------
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeContextBinding {
-    pub name: String,
+    pub context_name: String,
     pub base_uri: String,
 }
 
 pub type InterpreterRef = Ref<Box<Interpreter>>;
+
+/// Reactive bytecode pack for collections whose identity is hash-backed.
+///
+/// Tuple/record/table composites can safely retain live child cells. Maps and
+/// sets cannot: a producer mutation would change a key's hash after insertion.
+/// This node runs after those producers, rebuilds detached hashed children,
+/// and replaces the contents of one stable outer output cell.
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+#[derive(Debug)]
+struct BytecodeHashedCompositePack {
+    template: Value,
+    children: Vec<Value>,
+    output: Value,
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+impl MechFunctionImpl for BytecodeHashedCompositePack {
+    fn solve_result(&self) -> MResult<()> {
+        let rebuilt = mech_core::rebuild_bytecode_composite(&self.template, self.children.clone())?;
+        match (&self.output, rebuilt) {
+            #[cfg(feature = "map")]
+            (Value::Map(output), Value::Map(rebuilt)) => {
+                *output.borrow_mut() = rebuilt.borrow().clone();
+            }
+            #[cfg(feature = "set")]
+            (Value::Set(output), Value::Set(rebuilt)) => {
+                *output.borrow_mut() = rebuilt.borrow().clone();
+            }
+            _ => {
+                return Err(MechError::new(
+                    BytecodeValidationError {
+                        reason: "hashed CompositePack output changed runtime kind".to_string(),
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        }
+        Ok(())
+    }
+
+    fn out(&self) -> Value {
+        self.output.clone()
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+
+    fn to_string(&self) -> String {
+        "BytecodeHashedCompositePack".to_string()
+    }
+}
+
+#[cfg(all(
+    feature = "compiler",
+    feature = "program",
+    feature = "functions",
+    feature = "symbol_table"
+))]
+impl MechFunctionCompiler for BytecodeHashedCompositePack {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Err(MechError::new(
+            BytecodeValidationError {
+                reason: "an installed bytecode CompositePack cannot be recompiled".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+fn canonical_context_name_from_base_uri(base_uri: &str) -> String {
+    base_uri
+        .trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .unwrap_or(base_uri)
+        .to_owned()
+}
 
 pub struct Interpreter {
     pub id: u64,
@@ -48,7 +133,7 @@ pub struct Interpreter {
     pub(crate) deferred_expression_solve_depth: Ref<usize>,
     #[cfg(feature = "functions")]
     pub stack: Vec<Frame>,
-    registers: Vec<Value>,
+    bytecode_registers: BytecodeRegisterFile,
     constants: Vec<Value>,
     pub code: Vec<MechSourceCode>,
     pub out: Value,
@@ -65,6 +150,26 @@ pub struct Interpreter {
     #[cfg(feature = "state_machines")]
     pub user_state_machine_specs: Ref<HashMap<u64, FsmSpecification>>,
     pub sub_interpreters: Ref<HashMap<u64, InterpreterRef>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InterpreterBytecodeInstallRollbackFailed {
+    pub interpreter_id: u64,
+    pub original_error: String,
+    pub rollback_error: String,
+}
+
+impl MechErrorKind for InterpreterBytecodeInstallRollbackFailed {
+    fn name(&self) -> &str {
+        "InterpreterBytecodeInstallRollbackFailed"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "interpreter {} could not roll back a failed bytecode installation after {}: {}",
+            self.interpreter_id, self.original_error, self.rollback_error,
+        )
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -697,7 +802,7 @@ struct InterpreterStructureCheckpoint {
     stack: Vec<Frame>,
     #[cfg(feature = "functions")]
     frame_checkpoints: Vec<FrameCellCheckpoint>,
-    registers: Vec<Value>,
+    bytecode_registers: BytecodeRegisterFileCheckpoint,
     constants: Vec<Value>,
     code: Vec<MechSourceCode>,
     out: Value,
@@ -730,9 +835,8 @@ impl InterpreterStructureCheckpoint {
             .plan
             .validate_checkpoint_turn_state(&interpreter.reactive_turn_state)?;
 
-        for value in &interpreter.registers {
-            journal.capture_value(value)?;
-        }
+        let bytecode_registers =
+            BytecodeRegisterFileCheckpoint::capture(&interpreter.bytecode_registers, journal)?;
         for value in &interpreter.constants {
             journal.capture_value(value)?;
         }
@@ -818,7 +922,7 @@ impl InterpreterStructureCheckpoint {
             stack: interpreter.stack.clone(),
             #[cfg(feature = "functions")]
             frame_checkpoints,
-            registers: interpreter.registers.clone(),
+            bytecode_registers,
             constants: interpreter.constants.clone(),
             code: interpreter.code.clone(),
             out: interpreter.out.clone(),
@@ -933,7 +1037,7 @@ impl InterpreterStructureCheckpoint {
         }
         interpreter.deferred_expression_solve_depth =
             self.deferred_expression_solve_depth.target.clone();
-        interpreter.registers = self.registers.clone();
+        interpreter.bytecode_registers = self.bytecode_registers.restore();
         interpreter.constants = self.constants.clone();
         interpreter.code = self.code.clone();
         interpreter.out = self.out.clone();
@@ -1140,7 +1244,7 @@ impl Clone for Interpreter {
             deferred_expression_solve_depth: self.deferred_expression_solve_depth.clone(),
             #[cfg(feature = "functions")]
             stack: self.stack.clone(),
-            registers: self.registers.clone(),
+            bytecode_registers: self.bytecode_registers.clone(),
             constants: self.constants.clone(),
             code: self.code.clone(),
             out: self.out.clone(),
@@ -1410,7 +1514,7 @@ impl Interpreter {
             deferred_expression_solve_depth: Ref::new(0),
             #[cfg(feature = "functions")]
             stack: Vec::new(),
-            registers: Vec::new(),
+            bytecode_registers: BytecodeRegisterFile::new(0),
             constants: Vec::new(),
             out: Value::Empty,
             sub_interpreters: Ref::new(HashMap::new()),
@@ -1453,10 +1557,21 @@ impl Interpreter {
     }
 
     pub fn bind_context(&self, name: &Identifier, base_uri: impl Into<String>) {
+        let base_uri = base_uri.into();
+        let context_name = canonical_context_name_from_base_uri(&base_uri);
+        self.bind_context_with_name(name, context_name, base_uri);
+    }
+
+    pub(crate) fn bind_context_with_name(
+        &self,
+        alias: &Identifier,
+        context_name: impl Into<String>,
+        base_uri: impl Into<String>,
+    ) {
         self.context_bindings.borrow_mut().insert(
-            name.hash(),
+            alias.hash(),
             RuntimeContextBinding {
-                name: name.to_string(),
+                context_name: context_name.into(),
                 base_uri: base_uri.into(),
             },
         );
@@ -1467,11 +1582,12 @@ impl Interpreter {
     }
 
     pub fn bind_context_export(&self, alias: &Identifier, module: &str, item: &str) -> MResult<()> {
-        let base_uri = {
+        let (context_name, base_uri) = {
             let manifests = self.module_manifests.borrow();
-            manifests.context_export(module, item)?.base_uri.clone()
+            let export = manifests.context_export(module, item)?;
+            (export.name.clone(), export.base_uri.clone())
         };
-        self.bind_context(alias, base_uri);
+        self.bind_context_with_name(alias, context_name, base_uri);
         Ok(())
     }
 
@@ -1494,8 +1610,12 @@ impl Interpreter {
         output.push_str(&self.state.borrow().pretty_print());
 
         output.push_str("Registers:\n");
-        for (i, reg) in self.registers.iter().enumerate() {
-            output.push_str(&format!("  R{}: {}\n", i, reg));
+        for register in 0..self.bytecode_registers.len() {
+            let value = self
+                .bytecode_registers
+                .value(register as u32)
+                .expect("pretty-print register index is in range");
+            output.push_str(&format!("  R{}: {}\n", register, value));
         }
         output.push_str("Constants:\n");
         for (i, constant) in self.constants.iter().enumerate() {
@@ -1875,223 +1995,359 @@ impl Interpreter {
             )
             .with_compiler_loc(),
         })??;
-        match self.state.borrow().plan.borrow().last() {
-            Some(last_step) => self.out = last_step.out().clone(),
-            None => self.out = Value::Empty,
-        }
+        // The interpreter output is the final source value, which may differ
+        // from the last planned node (for example, `x := 1 + 2; 42`).
+        self.out = result.clone();
         Ok(result)
     }
 
     #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
     pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
+        let mut services = NoMechExecutionServices;
+        self.run_program_with_services(program, &mut services)
+    }
+
+    #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+    pub fn run_program_with_services(
+        &mut self,
+        program: &ParsedProgram,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<Value> {
+        program.validate_runtime_contracts(&self.function_catalog)?;
+        let checkpoint = self.checkpoint()?;
+        match self.run_validated_program_with_services(program, services) {
+            Ok(value) => Ok(value),
+            Err(original_error) => match self.restore(checkpoint) {
+                Ok(()) => Err(original_error),
+                Err(rollback_error) => Err(MechError::new(
+                    InterpreterBytecodeInstallRollbackFailed {
+                        interpreter_id: self.id,
+                        original_error: original_error.display_message(),
+                        rollback_error: rollback_error.display_message(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()),
+            },
+        }
+    }
+
+    #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+    fn run_validated_program_with_services(
+        &mut self,
+        program: &ParsedProgram,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<Value> {
         // Reset the instruction pointer
         self.ip = 0;
-        // Resize the registers and constant table
-        self.registers = vec![Value::Empty; program.header.reg_count as usize];
-        self.constants = vec![Value::Empty; program.const_entries.len()];
+        self.clear_plan();
+        // Rebuild the register file with one stable outer cell per register.
+        self.bytecode_registers = BytecodeRegisterFile::new(program.header.register_count as usize);
         // Load the constants
-        self.constants = program.decode_const_entries()?;
-        // Load the symbol table
-        {
-            let mut state_brrw = self.state.borrow_mut();
-            let mut symbol_table = state_brrw.symbol_table.borrow_mut();
-            for (id, reg) in program.symbols.iter() {
-                let constant = self.constants[*reg as usize].clone();
-                self.out = constant.clone();
-                let mutable = program.mutable_symbols.contains(id);
-                symbol_table.insert(*id, constant, mutable);
-            }
-        }
+        self.constants = program.decode_constants()?;
         // Load the instructions
         {
             let function_catalog = Arc::clone(&self.function_catalog);
             let state_brrw = self.state.borrow();
-            while self.ip < program.instrs.len() {
-                let instr = &program.instrs[self.ip];
+            while self.ip < program.instructions.len() {
+                let instr = &program.instructions[self.ip];
                 match instr {
-                    DecodedInstr::ConstLoad { dst, const_id } => {
-                        let value = self.constants[*const_id as usize].clone();
-                        self.registers[*dst as usize] = value;
+                    BytecodeInstruction::ConstLoad { dst, constant } => {
+                        // Equal constants are deduplicated in the bytecode table, but
+                        // distinct destination registers still represent distinct
+                        // runtime cells. Detach each load so equal initial values do
+                        // not accidentally alias after reconstruction.
+                        let value = self.constants[*constant as usize].try_deep_snapshot()?;
+                        self.bytecode_registers.load(*dst, value)?;
                     }
-                    DecodedInstr::NullOp { fxn_id, dst } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
-                                let out = self.registers[*dst as usize].clone();
+                    BytecodeInstruction::CompositePack {
+                        dst,
+                        template,
+                        children,
+                    } => {
+                        let template = self.constants[*template as usize].clone();
+                        let children = children
+                            .iter()
+                            .map(|register| self.bytecode_registers.function_argument(*register))
+                            .collect::<MResult<Vec<_>>>()?;
+                        let value =
+                            mech_core::rebuild_bytecode_composite(&template, children.clone())?;
+                        let hashed = match &value {
+                            #[cfg(feature = "map")]
+                            Value::Map(_) => true,
+                            #[cfg(feature = "set")]
+                            Value::Set(_) => true,
+                            _ => false,
+                        };
+                        self.bytecode_registers.load(*dst, value)?;
+                        if hashed {
+                            let output = self.bytecode_registers.function_argument(*dst)?;
+                            register_bytecode_node(
+                                &state_brrw,
+                                Box::new(BytecodeHashedCompositePack {
+                                    template,
+                                    children: children.clone(),
+                                    output,
+                                }),
+                                &children,
+                            )?;
+                        }
+                    }
+                    BytecodeInstruction::RuntimeNullary { function, dst } => {
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
+                                let out = self.bytecode_registers.function_argument(*dst)?;
                                 let function_args = FunctionArgs::Nullary(out);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownNullaryFunctionError { fxn_id: *fxn_id },
+                                    UnknownNullaryFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::UnOp { fxn_id, dst, src } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
-                                let out = self.registers[*dst as usize].clone();
-                                let input = self.registers[*src as usize].clone();
+                    BytecodeInstruction::RuntimeUnary { function, dst, src } => {
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
+                                let out = self.bytecode_registers.function_argument(*dst)?;
+                                let input = self.bytecode_registers.function_argument(*src)?;
                                 let function_args = FunctionArgs::Unary(out, input);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownUnaryFunctionError { fxn_id: *fxn_id },
+                                    UnknownUnaryFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::BinOp {
-                        fxn_id,
+                    BytecodeInstruction::RuntimeBinary {
+                        function,
                         dst,
                         lhs,
                         rhs,
                     } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
-                                let out = self.registers[*dst as usize].clone();
-                                let lhs = self.registers[*lhs as usize].clone();
-                                let rhs = self.registers[*rhs as usize].clone();
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
+                                let out = self.bytecode_registers.function_argument(*dst)?;
+                                let lhs = self.bytecode_registers.function_argument(*lhs)?;
+                                let rhs = self.bytecode_registers.function_argument(*rhs)?;
                                 let function_args = FunctionArgs::Binary(out, lhs, rhs);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownBinaryFunctionError { fxn_id: *fxn_id },
+                                    UnknownBinaryFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::TernOp {
-                        fxn_id,
+                    BytecodeInstruction::RuntimeTernary {
+                        function,
                         dst,
                         a,
                         b,
                         c,
                     } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
-                                let out = self.registers[*dst as usize].clone();
-                                let arg_a = self.registers[*a as usize].clone();
-                                let arg_b = self.registers[*b as usize].clone();
-                                let arg_c = self.registers[*c as usize].clone();
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
+                                let out = self.bytecode_registers.function_argument(*dst)?;
+                                let arg_a = self.bytecode_registers.function_argument(*a)?;
+                                let arg_b = self.bytecode_registers.function_argument(*b)?;
+                                let arg_c = self.bytecode_registers.function_argument(*c)?;
                                 let function_args = FunctionArgs::Ternary(out, arg_a, arg_b, arg_c);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownTernaryFunctionError { fxn_id: *fxn_id },
+                                    UnknownTernaryFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::QuadOp {
-                        fxn_id,
+                    BytecodeInstruction::RuntimeQuaternary {
+                        function,
                         dst,
                         a,
                         b,
                         c,
                         d,
                     } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
-                                let out = self.registers[*dst as usize].clone();
-                                let arg_a = self.registers[*a as usize].clone();
-                                let arg_b = self.registers[*b as usize].clone();
-                                let arg_c = self.registers[*c as usize].clone();
-                                let arg_d = self.registers[*d as usize].clone();
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
+                                let out = self.bytecode_registers.function_argument(*dst)?;
+                                let arg_a = self.bytecode_registers.function_argument(*a)?;
+                                let arg_b = self.bytecode_registers.function_argument(*b)?;
+                                let arg_c = self.bytecode_registers.function_argument(*c)?;
+                                let arg_d = self.bytecode_registers.function_argument(*d)?;
                                 let function_args =
                                     FunctionArgs::Quaternary(out, arg_a, arg_b, arg_c, arg_d);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownQuadFunctionError { fxn_id: *fxn_id },
+                                    UnknownQuadFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::VarArg { fxn_id, dst, args } => {
-                        let runtime_id = RuntimeFunctionId::from_raw(*fxn_id);
-                        match function_catalog.runtime_factory(runtime_id) {
-                            Some(fxn_factory) => {
-                                let out = self.registers[*dst as usize].clone();
-                                let argument_values = args
+                    BytecodeInstruction::RuntimeVariadic {
+                        function,
+                        dst,
+                        arguments,
+                    } => {
+                        let runtime_id = RuntimeFunctionId::from_raw(*function);
+                        match function_catalog.runtime_entry(runtime_id) {
+                            Some(entry) => {
+                                let out = self.bytecode_registers.function_argument(*dst)?;
+                                let argument_values = arguments
                                     .iter()
-                                    .map(|register| self.registers[*register as usize].clone())
-                                    .collect::<Vec<Value>>();
+                                    .map(|register| {
+                                        self.bytecode_registers.function_argument(*register)
+                                    })
+                                    .collect::<MResult<Vec<Value>>>()?;
                                 let function_args = FunctionArgs::Variadic(out, argument_values);
-                                self.out = register_bytecode_function(
-                                    &state_brrw,
-                                    fxn_factory,
-                                    function_args,
-                                )?;
+                                self.out =
+                                    register_bytecode_function(&state_brrw, entry, function_args)?;
                             }
                             None => {
                                 return Err(MechError::new(
-                                    UnknownVariadicFunctionError { fxn_id: *fxn_id },
+                                    UnknownVariadicFunctionError { fxn_id: *function },
                                     None,
                                 )
                                 .with_compiler_loc());
                             }
                         }
                     }
-                    DecodedInstr::Ret { src } => {
-                        todo!();
+                    BytecodeInstruction::HostCall {
+                        requirement,
+                        dst,
+                        arguments,
+                    } => {
+                        let request =
+                            bytecode_host_function_request(program, *requirement, "HostCall")?;
+                        let argument_values = arguments
+                            .iter()
+                            .map(|register| self.bytecode_registers.external_input(*register))
+                            .collect::<MResult<Vec<Value>>>()?;
+                        let output = self.bytecode_registers.cell(*dst)?;
+                        self.out = register_bytecode_node(
+                            &state_brrw,
+                            Box::new(ExternalHostCallFunction {
+                                request,
+                                arguments: argument_values.clone(),
+                                output,
+                                initial_solve_policy: InitialSolvePolicy::Solve,
+                            }),
+                            &argument_values,
+                        )?;
                     }
-                    x => {
-                        return Err(MechError::new(
-                            UnknownInstructionError {
-                                instr: format!("{:?}", x),
-                            },
-                            None,
-                        )
-                        .with_compiler_loc());
+                    BytecodeInstruction::ResourceRead { requirement, dst } => {
+                        let request = bytecode_resource_request(
+                            program,
+                            *requirement,
+                            "ResourceRead",
+                            ResourceIntent::Read,
+                        )?;
+                        let output = self.bytecode_registers.cell(*dst)?;
+                        self.out = register_bytecode_node(
+                            &state_brrw,
+                            Box::new(ExternalResourceReadFunction {
+                                interpreter_id: self.id,
+                                request,
+                                output,
+                                initial_solve_policy: InitialSolvePolicy::Solve,
+                            }),
+                            &[],
+                        )?;
+                    }
+                    BytecodeInstruction::ResourceWrite {
+                        requirement,
+                        dst,
+                        src,
+                    } => {
+                        let request = bytecode_resource_request(
+                            program,
+                            *requirement,
+                            "ResourceWrite",
+                            ResourceIntent::Assign,
+                        )?;
+                        let input = self.bytecode_registers.external_input(*src)?;
+                        let output = self.bytecode_registers.cell(*dst)?;
+                        self.out = register_bytecode_node(
+                            &state_brrw,
+                            Box::new(ExternalResourceWriteFunction {
+                                request,
+                                input: input.clone(),
+                                output,
+                                initial_solve_policy: InitialSolvePolicy::Solve,
+                            }),
+                            &[input],
+                        )?;
+                    }
+                    BytecodeInstruction::ResourceSend {
+                        requirement,
+                        dst,
+                        src,
+                    } => {
+                        let request = bytecode_resource_request(
+                            program,
+                            *requirement,
+                            "ResourceSend",
+                            ResourceIntent::Send,
+                        )?;
+                        let input = self.bytecode_registers.external_input(*src)?;
+                        let output = self.bytecode_registers.cell(*dst)?;
+                        self.out = register_bytecode_node(
+                            &state_brrw,
+                            Box::new(ExternalResourceWriteFunction {
+                                request,
+                                input: input.clone(),
+                                output,
+                                initial_solve_policy: InitialSolvePolicy::Solve,
+                            }),
+                            &[input],
+                        )?;
+                    }
+                    BytecodeInstruction::Return { src } => {
+                        self.out = self.bytecode_registers.value(*src)?;
                     }
                 }
                 self.ip += 1;
             }
         }
-        // Load the dictionary
+        // Bind symbols to the decoded register values, then load the exact
+        // checked dictionary. A bytecode install replaces these tables.
         {
             let mut state_brrw = self.state.borrow_mut();
             let mut symbol_table = state_brrw.symbol_table.borrow_mut();
+            *symbol_table = SymbolTable::new();
+            state_brrw.dictionary.borrow_mut().clear();
+            for (id, register) in &program.symbols {
+                let cell = self.bytecode_registers.cell(*register)?;
+                symbol_table.insert_cell(*id, cell, program.mutable_symbols.contains(id));
+            }
             for (id, name) in &program.dictionary {
                 symbol_table
                     .dictionary
@@ -2099,7 +2355,201 @@ impl Interpreter {
                     .insert(*id, name.clone());
                 state_brrw.dictionary.borrow_mut().insert(*id, name.clone());
             }
+            drop(symbol_table);
+            #[cfg(feature = "invariant_define")]
+            {
+                let constraints = &mut state_brrw.integrity_constraints;
+                constraints.clear();
+                let marker_id = hash_str("integrity/constraint");
+                let mut markers = BTreeMap::new();
+                for instruction in &program.instructions {
+                    let BytecodeInstruction::RuntimeVariadic {
+                        function,
+                        arguments,
+                        ..
+                    } = instruction
+                    else {
+                        continue;
+                    };
+                    if *function != marker_id {
+                        continue;
+                    }
+                    if arguments.len() != 6 {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint marker has {} metadata inputs, expected 6",
+                                    arguments.len()
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                    let result = arguments[0];
+                    if markers.insert(result, arguments.clone()).is_some() {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint register {result} has duplicate markers"
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                }
+                for (id, register) in &program.symbols {
+                    let Some(name) = program.dictionary.get(id) else {
+                        continue;
+                    };
+                    if !name.ends_with('!') {
+                        continue;
+                    }
+                    if program.mutable_symbols.contains(id) {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint symbol {name:?} must be immutable"
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                    let Some(metadata) = markers.remove(register) else {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint symbol {name:?} is missing its runtime marker"
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    };
+                    let metadata_string = |index: usize, label: &str| -> MResult<String> {
+                        match self.bytecode_registers.value(metadata[index])? {
+                            Value::String(value) => Ok(value.borrow().clone()),
+                            value => Err(MechError::new(
+                                BytecodeValidationError {
+                                    reason: format!(
+                                        "integrity constraint {label} metadata must be String, found {:?}",
+                                        value.kind()
+                                    ),
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()),
+                        }
+                    };
+                    let encoded_name = metadata_string(1, "name")?;
+                    if encoded_name != *name {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint marker name {encoded_name:?} does not match symbol {name:?}"
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                    let expression = metadata_string(2, "expression")?;
+                    let operator = match self.bytecode_registers.value(metadata[3])? {
+                        Value::Empty => None,
+                        Value::String(value) => Some(match value.borrow().as_str() {
+                            "eq" => FormulaOperator::Comparison(ComparisonOp::Equal),
+                            "neq" => FormulaOperator::Comparison(ComparisonOp::NotEqual),
+                            "lt" => FormulaOperator::Comparison(ComparisonOp::LessThan),
+                            "lte" => FormulaOperator::Comparison(ComparisonOp::LessThanEqual),
+                            "gt" => FormulaOperator::Comparison(ComparisonOp::GreaterThan),
+                            "gte" => FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual),
+                            code => {
+                                return Err(MechError::new(
+                                    BytecodeValidationError {
+                                        reason: format!(
+                                            "integrity constraint marker has unknown operator {code:?}"
+                                        ),
+                                    },
+                                    None,
+                                )
+                                .with_compiler_loc());
+                            }
+                        }),
+                        value => {
+                            return Err(MechError::new(
+                                BytecodeValidationError {
+                                    reason: format!(
+                                        "integrity constraint operator metadata must be Empty or String, found {:?}",
+                                        value.kind()
+                                    ),
+                                },
+                                None,
+                            )
+                            .with_compiler_loc());
+                        }
+                    };
+                    let optional_operand = |index: usize| -> MResult<Option<ValRef>> {
+                        match self.bytecode_registers.value(metadata[index])? {
+                            Value::Empty => Ok(None),
+                            value if operator.is_none() => Err(MechError::new(
+                                BytecodeValidationError {
+                                    reason: format!(
+                                        "integrity constraint without an operator has {:?} operand metadata",
+                                        value.kind()
+                                    ),
+                                },
+                                None,
+                            )
+                            .with_compiler_loc()),
+                            _ => Ok(Some(self.bytecode_registers.cell(metadata[index])?)),
+                        }
+                    };
+                    let lhs = optional_operand(4)?;
+                    let rhs = optional_operand(5)?;
+                    constraints.insert(
+                        *id,
+                        IntegrityConstraint {
+                            id: *id,
+                            name: name.clone(),
+                            expression,
+                            result: self.bytecode_registers.cell(*register)?,
+                            lhs,
+                            operator,
+                            rhs,
+                            tokens: Vec::new(),
+                        },
+                    );
+                }
+                if let Some(register) = markers.keys().next() {
+                    return Err(MechError::new(
+                        BytecodeValidationError {
+                            reason: format!(
+                                "integrity constraint marker for register {register} has no immutable `!` symbol"
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+            }
         }
+
+        if self.plan_len() > 0 {
+            self.solve_plan_with_services(services)?;
+        }
+
+        let Some(BytecodeInstruction::Return { src }) = program.instructions.last() else {
+            return Err(MechError::new(
+                UnknownInstructionError {
+                    instr: "validated bytecode has no final Return".to_string(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        };
+        self.out = self.bytecode_registers.value(*src)?;
         Ok(self.out.clone())
     }
 }
@@ -2107,16 +2557,83 @@ impl Interpreter {
 #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
 fn register_bytecode_function(
     state: &ProgramState,
-    factory: fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>,
+    entry: &RuntimeFunctionEntry,
     function_args: FunctionArgs,
 ) -> MResult<Value> {
     let input_values = function_args.input_values();
-    let function = factory(function_args)?;
+    let function = entry.instantiate(function_args)?;
+    register_bytecode_node(state, function, &input_values)
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn register_bytecode_node(
+    state: &ProgramState,
+    function: Box<dyn MechFunction>,
+    input_values: &[Value],
+) -> MResult<Value> {
     let output = function.out();
-
-    state.plan.register_function(function, &input_values)?;
-
+    state.plan.register_function(function, input_values)?;
     Ok(output)
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn bytecode_host_function_request(
+    program: &ParsedProgram,
+    requirement: u32,
+    instruction: &'static str,
+) -> MResult<ExecutionHostFunctionRequest> {
+    match program.requirements.get(requirement as usize) {
+        Some(ApplicationRequirement::HostFunction(request)) => Ok(request.clone()),
+        actual => Err(bytecode_external_requirement_mismatch(
+            instruction,
+            requirement,
+            "HostFunction",
+            actual,
+        )),
+    }
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn bytecode_resource_request(
+    program: &ParsedProgram,
+    requirement: u32,
+    instruction: &'static str,
+    expected_intent: ResourceIntent,
+) -> MResult<ExecutionResourceRequest> {
+    match program.requirements.get(requirement as usize) {
+        Some(ApplicationRequirement::Resource(request)) if request.intent == expected_intent => {
+            Ok(request.clone())
+        }
+        actual => Err(bytecode_external_requirement_mismatch(
+            instruction,
+            requirement,
+            match expected_intent {
+                ResourceIntent::Read => "Resource(Read)",
+                ResourceIntent::Assign => "Resource(Assign)",
+                ResourceIntent::Send => "Resource(Send)",
+            },
+            actual,
+        )),
+    }
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn bytecode_external_requirement_mismatch(
+    instruction: &'static str,
+    requirement: u32,
+    expected: &'static str,
+    actual: Option<&ApplicationRequirement>,
+) -> MechError {
+    MechError::new(
+        BytecodeExternalRequirementMismatch {
+            instruction,
+            requirement,
+            expected,
+            actual: actual.map(|requirement| format!("{requirement:?}")),
+        },
+        None,
+    )
+    .with_compiler_loc()
 }
 
 #[cfg(test)]
@@ -2129,6 +2646,30 @@ mod tests;
 #[derive(Debug, Clone)]
 pub struct UnknownInstructionError {
     pub instr: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BytecodeExternalRequirementMismatch {
+    pub instruction: &'static str,
+    pub requirement: u32,
+    pub expected: &'static str,
+    pub actual: Option<String>,
+}
+
+impl MechErrorKind for BytecodeExternalRequirementMismatch {
+    fn name(&self) -> &str {
+        "BytecodeExternalRequirementMismatch"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "{} requirement {} must be {}, found {}",
+            self.instruction,
+            self.requirement,
+            self.expected,
+            self.actual.as_deref().unwrap_or("no requirement"),
+        )
+    }
 }
 impl MechErrorKind for UnknownInstructionError {
     fn name(&self) -> &str {

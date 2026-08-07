@@ -44,19 +44,9 @@ macro_rules! asecf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathAsec,
-    f32,
-    asecf,
-    FeatureFlag::Custom(hash_str("math/asec"))
-);
+impl_math_unop!(MathAsec, f32, asecf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathAsec,
-    f64,
-    asec,
-    FeatureFlag::Custom(hash_str("math/asec"))
-);
+impl_math_unop!(MathAsec, f64, asec);
 
 #[cfg(feature = "source")]
 fn impl_asec_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

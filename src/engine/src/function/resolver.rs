@@ -4,8 +4,7 @@ use crate::function::extensions::{
 };
 use mech_core::{
     FunctionCatalog, FunctionDefinition, FunctionOperationUnavailable, FunctionSpecializerEntry,
-    MResult, MechError, MechFunction, OperationId, RuntimeFunctionFactory, RuntimeFunctionId,
-    UserFunctionTable, Value, hash_str,
+    MResult, MechError, MechFunction, OperationId, UserFunctionTable, Value, hash_str,
 };
 
 /// A named source function could not be resolved in the current environment.
@@ -132,10 +131,6 @@ impl<'a> FunctionResolver<'a> {
             .ok_or_else(|| extension_unavailable(extension, None))?;
         entry.specializer.specialize(arguments)
     }
-
-    pub fn runtime_factory(&self, id: RuntimeFunctionId) -> Option<RuntimeFunctionFactory> {
-        self.catalog.runtime_factory(id)
-    }
 }
 
 fn extension_unavailable(id: ExtensionFunctionId, canonical_name: Option<&str>) -> MechError {
@@ -163,7 +158,9 @@ mod tests {
     struct TestFunction(&'static str);
 
     impl MechFunctionImpl for TestFunction {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
 
         fn out(&self) -> Value {
             Value::Empty

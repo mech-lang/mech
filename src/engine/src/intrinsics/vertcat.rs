@@ -13,17 +13,37 @@ macro_rules! vertcat_two_args {
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + AsValueKind
+                + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
+            $e0<T>: FunctionRuntimeType,
+            $e1<T>: FunctionRuntimeType,
+            $out<T>: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e0<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e1<T> as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg0, arg1) => {
-                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
-                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        let e0: Ref<$e0<T>> =
+                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let e1: Ref<$e1<T>> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let out: Ref<$out<T>> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self { e0, e1, out }))
                     }
                     _ => Err(MechError::new(
@@ -42,13 +62,14 @@ macro_rules! vertcat_two_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
                     let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -75,14 +96,7 @@ macro_rules! vertcat_two_args {
                     stringify!($e0),
                     stringify!($e1)
                 );
-                compile_binop!(
-                    name,
-                    self.out,
-                    self.e0,
-                    self.e1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::VertCat)
-                );
+                compile_binop!(name, self.out, self.e0, self.e1, ctx);
             }
         }
     };
@@ -99,18 +113,41 @@ macro_rules! vertcat_three_args {
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + AsValueKind
+                + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
+            $e0<T>: FunctionRuntimeType,
+            $e1<T>: FunctionRuntimeType,
+            $e2<T>: FunctionRuntimeType,
+            $out<T>: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+                <$out<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e0<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e1<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e2<T> as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
-                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                        let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
-                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        let e0: Ref<$e0<T>> =
+                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let e1: Ref<$e1<T>> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let e2: Ref<$e2<T>> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                        let out: Ref<$out<T>> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self { e0, e1, e2, out }))
                     }
                     _ => Err(MechError::new(
@@ -129,14 +166,15 @@ macro_rules! vertcat_three_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
                     let e2_ptr = (*(self.e2.as_ptr())).clone();
                     let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -156,15 +194,7 @@ macro_rules! vertcat_three_args {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
-                compile_ternop!(
-                    name,
-                    self.out,
-                    self.e0,
-                    self.e1,
-                    self.e2,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::VertCat)
-                );
+                compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx);
             }
         }
     };
@@ -182,19 +212,45 @@ macro_rules! vertcat_four_args {
         }
         impl<T> MechFunctionFactory for $fxn<T>
         where
-            T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+            T: Debug
+                + Clone
+                + Sync
+                + Send
+                + PartialEq
+                + 'static
+                + ConstElem
+                + AsValueKind
+                + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
+            $e0<T>: FunctionRuntimeType,
+            $e1<T>: FunctionRuntimeType,
+            $e2<T>: FunctionRuntimeType,
+            $e3<T>: FunctionRuntimeType,
+            $out<T>: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
+                <$out<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e0<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e1<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e2<T> as FunctionRuntimeType>::REPRESENTATION,
+                <$e3<T> as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                        let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
-                        let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                        let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
-                        let e3: Ref<$e3<T>> = unsafe { arg3.as_unchecked() }.clone();
-                        let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+                        let e0: Ref<$e0<T>> =
+                            arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let e1: Ref<$e1<T>> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let e2: Ref<$e2<T>> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                        let e3: Ref<$e3<T>> =
+                            arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                        let out: Ref<$out<T>> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             e0,
                             e1,
@@ -219,7 +275,7 @@ macro_rules! vertcat_four_args {
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
             Ref<$out<T>>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -227,7 +283,8 @@ macro_rules! vertcat_four_args {
                     let e3_ptr = (*(self.e3.as_ptr())).clone();
                     let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -247,16 +304,7 @@ macro_rules! vertcat_four_args {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
-                compile_quadop!(
-                    name,
-                    self.out,
-                    self.e0,
-                    self.e1,
-                    self.e2,
-                    self.e3,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::VertCat)
-                );
+                compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
             }
         }
     };
@@ -273,17 +321,33 @@ struct VerticalConcatenateTwoArgs<T> {
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateTwoArgs<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -303,9 +367,10 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let offset = self.e0.copy_into_row_major(&self.out, 0);
         self.e1.copy_into_row_major(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -330,8 +395,6 @@ where
         registers[0] = compile_register!(self.out, ctx);
         registers[1] = compile_register_mat!(self.e0, ctx);
         registers[2] = compile_register_mat!(self.e1, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
 
         ctx.emit_binop(
             hash_str(&format!(
@@ -359,18 +422,36 @@ struct VerticalConcatenateThreeArgs<T> {
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateThreeArgs<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let e2: Box<dyn CopyMat<T>> =
+                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -390,10 +471,11 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_row_major(&self.out, 0);
         offset += self.e1.copy_into_row_major(&self.out, offset);
         self.e2.copy_into_row_major(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -419,8 +501,6 @@ where
         registers[1] = compile_register_mat!(self.e0, ctx);
         registers[2] = compile_register_mat!(self.e1, ctx);
         registers[3] = compile_register_mat!(self.e2, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
 
         ctx.emit_ternop(
             hash_str(&format!(
@@ -449,19 +529,39 @@ struct VerticalConcatenateFourArgs<T> {
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateFourArgs<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
+        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
-                let e3: Box<dyn CopyMat<T>> = unsafe { arg3.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let e2: Box<dyn CopyMat<T>> =
+                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
+                let e3: Box<dyn CopyMat<T>> =
+                    arg3.try_function_copyable_matrix(FunctionArgumentRole::Input(3))?;
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -487,11 +587,12 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_row_major(&self.out, 0);
         offset += self.e1.copy_into_row_major(&self.out, offset);
         offset += self.e2.copy_into_row_major(&self.out, offset);
         self.e3.copy_into_row_major(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -519,8 +620,6 @@ where
         registers[3] = compile_register_mat!(self.e2, ctx);
         registers[4] = compile_register_mat!(self.e3, ctx);
 
-        ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
-
         ctx.emit_quadop(
             hash_str(&format!(
                 "VerticalConcatenateFourArgs<{}>",
@@ -546,21 +645,34 @@ struct VerticalConcatenateNArgs<T> {
 #[cfg(feature = "matrixd")]
 impl<T> MechFunctionFactory for VerticalConcatenateNArgs<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Variadic(out, arg0) => {
                 let mut e0: Vec<Box<dyn CopyMat<T>>> = Vec::new();
-                for arg in arg0 {
+                for (i, arg) in arg0.into_iter().enumerate() {
                     let mat: Box<dyn CopyMat<T>> =
-                        unsafe { arg.get_copyable_matrix_unchecked::<T>() };
+                        arg.try_function_copyable_matrix(FunctionArgumentRole::Input(i))?;
                     e0.push(mat);
                 }
-                let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+                let out: Ref<DMatrix<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, out }))
             }
             _ => Err(MechError::new(
@@ -580,11 +692,12 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = 0;
         for e in &self.e0 {
             offset += e.copy_into_row_major(&self.out, offset);
         }
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -612,7 +725,6 @@ where
         for e in &self.e0 {
             mat_regs.push(compile_register_mat!(e, ctx));
         }
-        ctx.require(FeatureFlag::Builtin(FeatureKind::VertCat));
         ctx.emit_varop(
             hash_str(&format!("VerticalConcatenateNArgs<{}>", T::as_value_kind())),
             registers[0],
@@ -622,17 +734,38 @@ where
     }
 }
 
-#[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "i64"))]
+mech_core::declare_native_runtime_factory! {
+    cfg: all(
+        feature = "f64",
+        feature = "matrix_vertcat",
+        feature = "matrixd"
+    ),
+
+    registration: register_vertical_concatenate_n_args_f64,
+    installer: install_vertical_concatenate_n_args_f64,
+
+    name: "VerticalConcatenateNArgs<f64>",
+    factory_type: VerticalConcatenateNArgs<f64>,
+    contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+
+    package: "mech-engine",
+    crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_vertical_concatenate_n_args_f64",
+
+    extra_cargo_features: ["matrix_vertcat"],
+}
+
+#[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "f64"))]
 mod compiler_tests {
     use super::*;
     use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;
 
     #[test]
     fn vertical_concatenate_n_args_reuses_repeated_matrix_register() {
-        let matrix = Ref::new(DMatrix::from_vec(1, 1, vec![7i64]));
+        let matrix = Ref::new(DMatrix::from_vec(1, 1, vec![7.0]));
         let function = VerticalConcatenateNArgs {
             e0: vec![Box::new(matrix.clone()), Box::new(matrix.clone())],
-            out: Ref::new(DMatrix::from_element(2, 1, 0i64)),
+            out: Ref::new(DMatrix::from_element(2, 1, 0.0)),
         };
         let mut context = RecordingBytecodeCompilerContext::default();
 
@@ -646,7 +779,7 @@ mod compiler_tests {
                 .filter(|instruction| {
                     matches!(
                       instruction,
-                      EncodedInstr::ConstLoad { dst, .. } if *dst == matrix_register
+                      BytecodeInstruction::ConstLoad { dst, .. } if *dst == matrix_register
                     )
                 })
                 .count(),
@@ -654,19 +787,9 @@ mod compiler_tests {
         );
         assert!(matches!(
           context.instructions.last(),
-          Some(EncodedInstr::VarArg { args, .. })
-            if args == &vec![matrix_register, matrix_register]
+          Some(BytecodeInstruction::RuntimeVariadic { arguments, .. })
+            if arguments == &vec![matrix_register, matrix_register]
         ));
-        assert!(
-            context
-                .requirements
-                .contains(&FeatureFlag::Builtin(FeatureKind::VertCat)),
-        );
-        assert!(
-            !context
-                .requirements
-                .contains(&FeatureFlag::Builtin(FeatureKind::HorzCat)),
-        );
     }
 }
 
@@ -682,15 +805,21 @@ macro_rules! vertical_concatenate {
       impl<T> MechFunctionFactory for $name<T>
       where
         T: Debug + Clone + Sync + Send + PartialEq + 'static +
-        ConstElem + AsValueKind,
+        ConstElem + AsValueKind + FunctionRuntimeType,
         #[cfg(feature = "compiler")]
         T: CompileConst,
-        Ref<[<$vec_size>]<T>>: ToValue
+        Ref<[<$vec_size>]<T>>: ToValue,
+        [<$vec_size>]<T>: FunctionRuntimeType,
       {
+        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+          <[<$vec_size>]<T> as FunctionRuntimeType>::REPRESENTATION,
+          FunctionValueRepresentation::AnyValue,
+        );
+
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
             FunctionArgs::Unary(out, _arg0) => {
-              let out: Ref<[<$vec_size>]<T>> = unsafe { out.as_unchecked() }.clone();
+              let out: Ref<[<$vec_size>]<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
               Ok(Box::new(Self { out }))
             },
             _ => Err(MechError::new(IncorrectNumberOfArguments{expected: 1, found: args.len()}, None).with_compiler_loc())
@@ -702,7 +831,9 @@ macro_rules! vertical_concatenate {
         T: Debug + Clone + Sync + Send + PartialEq + 'static,
         Ref<[<$vec_size>]<T>>: ToValue
       {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
         fn out(&self) -> Value { self.out.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
 
@@ -717,7 +848,7 @@ macro_rules! vertical_concatenate {
       {
         fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
-          compile_unop!(name, self.out, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
+          compile_unop!(name, self.out, self.out, ctx);
         }
       }
     }
@@ -734,17 +865,33 @@ struct VerticalConcatenateVD2<T> {
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD2<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg0, arg1) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, out }))
             }
             _ => Err(MechError::new(
@@ -764,9 +911,10 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DVector<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_v(&self.out, 0);
         self.e1.copy_into_v(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -793,8 +941,6 @@ where
         registers[1] = compile_register_mat!(self.e0, ctx);
         registers[2] = compile_register_mat!(self.e1, ctx);
 
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
-
         ctx.emit_binop(
             hash_str(&format!("VerticalConcatenateVD2<{}>", T::as_value_kind())),
             registers[0],
@@ -818,18 +964,36 @@ struct VerticalConcatenateVD3<T> {
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD3<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+        <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let e2: Box<dyn CopyMat<T>> =
+                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
+                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { e0, e1, e2, out }))
             }
             _ => Err(MechError::new(
@@ -849,10 +1013,11 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DVector<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_v(&self.out, 0);
         offset += self.e1.copy_into_v(&self.out, offset);
         self.e2.copy_into_v(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -879,8 +1044,6 @@ where
         registers[2] = compile_register_mat!(self.e1, ctx);
         registers[3] = compile_register_mat!(self.e2, ctx);
 
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
-
         ctx.emit_ternop(
             hash_str(&format!("VerticalConcatenateVD3<{}>", T::as_value_kind())),
             registers[0],
@@ -905,19 +1068,39 @@ struct VerticalConcatenateVD4<T> {
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVD4<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
+        <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
-                let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
-                let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
-                let e3: Box<dyn CopyMat<T>> = unsafe { arg3.get_copyable_matrix_unchecked::<T>() };
-                let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Box<dyn CopyMat<T>> =
+                    arg0.try_function_copyable_matrix(FunctionArgumentRole::Input(0))?;
+                let e1: Box<dyn CopyMat<T>> =
+                    arg1.try_function_copyable_matrix(FunctionArgumentRole::Input(1))?;
+                let e2: Box<dyn CopyMat<T>> =
+                    arg2.try_function_copyable_matrix(FunctionArgumentRole::Input(2))?;
+                let e3: Box<dyn CopyMat<T>> =
+                    arg3.try_function_copyable_matrix(FunctionArgumentRole::Input(3))?;
+                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -943,11 +1126,12 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DVector<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let mut offset = self.e0.copy_into_v(&self.out, 0);
         offset += self.e1.copy_into_v(&self.out, offset);
         offset += self.e2.copy_into_v(&self.out, offset);
         self.e3.copy_into_v(&self.out, offset);
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -975,8 +1159,6 @@ where
         registers[3] = compile_register_mat!(self.e2, ctx);
         registers[4] = compile_register_mat!(self.e3, ctx);
 
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
-
         ctx.emit_quadop(
             hash_str(&format!("VerticalConcatenateVD4<{}>", T::as_value_kind())),
             registers[0],
@@ -1000,11 +1182,24 @@ struct VerticalConcatenateVDN<T> {
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateVDN<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        <DVector<T> as FunctionRuntimeType>::REPRESENTATION,
+        FunctionValueRepresentation::AnyValue,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Variadic(out, vargs) => {
@@ -1013,15 +1208,15 @@ where
                 for (i, arg) in vargs.into_iter().enumerate() {
                     let kind = arg.kind();
                     if arg.is_scalar() {
-                        let scalar_ref = unsafe { arg.as_unchecked::<T>() };
-                        scalar.push((scalar_ref.clone(), i));
+                        let scalar_ref = arg.try_function_ref(FunctionArgumentRole::Input(i))?;
+                        scalar.push((scalar_ref, i));
                     } else {
-                        let mat_ref: Box<dyn CopyMat<T>> =
-                            unsafe { arg.get_copyable_matrix_unchecked::<T>() };
+                        let mat_ref =
+                            arg.try_function_copyable_matrix(FunctionArgumentRole::Input(i))?;
                         matrix.push((mat_ref, i));
                     }
                 }
-                let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
+                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     scalar,
                     matrix,
@@ -1045,7 +1240,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DVector<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
             for (e, i) in &self.matrix {
@@ -1054,7 +1249,8 @@ where
             for (e, i) in &self.scalar {
                 out_ptr[*i] = e.borrow().clone();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1082,7 +1278,6 @@ where
         for (e, _) in &self.matrix {
             mat_regs.push(compile_register_mat!(e, ctx));
         }
-        ctx.require(FeatureFlag::Builtin(FeatureKind::HorzCat));
         ctx.emit_varop(
             hash_str(&format!("VerticalConcatenateVDN<{}>", T::as_value_kind())),
             registers[0],
@@ -1102,20 +1297,31 @@ struct VerticalConcatenateS1<T> {
 #[cfg(feature = "matrix1")]
 impl<T> MechFunctionFactory for VerticalConcatenateS1<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<Matrix1<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(<Matrix1<T> as FunctionRuntimeType>::REPRESENTATION);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Unary(out, _arg0) => {
-                let out: Ref<Matrix1<T>> = unsafe { out.as_unchecked() }.clone();
+            FunctionArgs::Nullary(out) => {
+                let out: Ref<Matrix1<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
                 IncorrectNumberOfArguments {
-                    expected: 1,
+                    expected: 0,
                     found: args.len(),
                 },
                 None,
@@ -1130,7 +1336,9 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<Matrix1<T>>: ToValue,
 {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.out.to_value()
     }
@@ -1150,12 +1358,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("VerticalConcatenateS1<{}>", T::as_value_kind());
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::VertCat)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 
@@ -1234,20 +1437,31 @@ struct VerticalConcatenateSD<T> {
 #[cfg(feature = "vectord")]
 impl<T> MechFunctionFactory for VerticalConcatenateSD<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<DVector<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(<DVector<T> as FunctionRuntimeType>::REPRESENTATION);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Unary(out, _arg0) => {
-                let out: Ref<DVector<T>> = unsafe { out.as_unchecked() }.clone();
+            FunctionArgs::Nullary(out) => {
+                let out: Ref<DVector<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
                 IncorrectNumberOfArguments {
-                    expected: 1,
+                    expected: 0,
                     found: args.len(),
                 },
                 None,
@@ -1262,7 +1476,9 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<DVector<T>>: ToValue,
 {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.out.to_value()
     }
@@ -1281,12 +1497,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("VerticalConcatenateSD<{}>", T::as_value_kind());
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::VertCat)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 
@@ -1493,19 +1704,35 @@ struct VerticalConcatenateM1M1M1M1<T> {
 #[cfg(all(feature = "matrix1", feature = "vector4"))]
 impl<T> MechFunctionFactory for VerticalConcatenateM1M1M1M1<T>
 where
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     Ref<Vector4<T>>: ToValue,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::quaternary(
+        <Vector4<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
+        <Matrix1<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
-                let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
-                let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
-                let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
-                let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
-                let out: Ref<Vector4<T>> = unsafe { out.as_unchecked() }.clone();
+                let e0: Ref<Matrix1<T>> = arg0.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let e1: Ref<Matrix1<T>> = arg1.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let e2: Ref<Matrix1<T>> = arg2.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let e3: Ref<Matrix1<T>> = arg3.try_function_ref(FunctionArgumentRole::Input(3))?;
+                let out: Ref<Vector4<T>> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     e0,
                     e1,
@@ -1531,7 +1758,7 @@ where
     T: Debug + Clone + Sync + Send + PartialEq + 'static,
     Ref<Vector4<T>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             let e1_ptr = (*(self.e1.as_ptr())).clone();
@@ -1542,7 +1769,8 @@ where
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
             out_ptr[3] = e3_ptr[0].clone();
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -1562,16 +1790,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("VerticalConcatenateM1M1M1M1<{}>", T::as_value_kind());
-        compile_quadop!(
-            name,
-            self.out,
-            self.e0,
-            self.e1,
-            self.e2,
-            self.e3,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::VertCat)
-        );
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx);
     }
 }
 
@@ -1593,6 +1812,28 @@ vertcat_two_args!(
     Matrix2,
     vertcat_r2r2
 );
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(
+        feature = "f64",
+        feature = "matrix2",
+        feature = "matrix_vertcat",
+        feature = "row_vector2"
+    ),
+
+    registration: register_vertical_concatenate_r2_r2_f64,
+    installer: install_vertical_concatenate_r2_r2_f64,
+
+    name: "VerticalConcatenateR2R2<f64Matrix2RowVector2RowVector2>",
+    factory_type: VerticalConcatenateR2R2<f64>,
+    contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+
+    package: "mech-engine",
+    crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_vertical_concatenate_r2_r2_f64",
+
+    extra_cargo_features: ["matrix_vertcat"],
+}
 
 // VerticalConcatenateR3R3 ----------------------------------------------------
 
@@ -2459,229 +2700,346 @@ fn impl_vertcat_fxn(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
 }
 
 macro_rules! install_vertcat_factories {
-    ($builder:expr, $factory:ident) => {{
-        #[inline(never)]
-        fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-            mech_core::install_typed_runtime_factories!(
-                builder,
-                $factory;
-                ("bool", bool, "bool"),
-                ("string", String, "string"),
-                ("u8", u8, "u8"),
-                ("u16", u16, "u16"),
-                ("u32", u32, "u32"),
-                ("u64", u64, "u64"),
-                ("u128", u128, "u128"),
-                ("i8", i8, "i8"),
-                ("i16", i16, "i16"),
-                ("i32", i32, "i32"),
-                ("i64", i64, "i64"),
-                ("i128", i128, "i128"),
-                ("f32", f32, "f32"),
-                ("f64", f64, "f64"),
-                ("c64", C64, "c64"),
-                ("r64", R64, "r64"),
-            )?;
-            Ok(())
-        }
-        install($builder)?;
+    ($builder:ident, $factory:ident) => {
+        install_vertcat_linked_factories!($builder, $factory)?;
+    };
+}
+
+macro_rules! install_vertcat_factories_except_f64 {
+    ($builder:ident, $factory:ident) => {
+        install_vertcat_linked_factories_except_f64!($builder, $factory)?;
+    };
+}
+
+macro_rules! for_each_vertcat_scalar {
+    ($callback:ident, ($($context:tt)*)) => {
+        #[cfg(feature = "bool")] $callback!($($context)*; bool, bool, "bool", "bool");
+        #[cfg(feature = "string")] $callback!($($context)*; string, String, "string", "string");
+        #[cfg(feature = "u8")] $callback!($($context)*; u8, u8, "u8", "u8");
+        #[cfg(feature = "u16")] $callback!($($context)*; u16, u16, "u16", "u16");
+        #[cfg(feature = "u32")] $callback!($($context)*; u32, u32, "u32", "u32");
+        #[cfg(feature = "u64")] $callback!($($context)*; u64, u64, "u64", "u64");
+        #[cfg(feature = "u128")] $callback!($($context)*; u128, u128, "u128", "u128");
+        #[cfg(feature = "i8")] $callback!($($context)*; i8, i8, "i8", "i8");
+        #[cfg(feature = "i16")] $callback!($($context)*; i16, i16, "i16", "i16");
+        #[cfg(feature = "i32")] $callback!($($context)*; i32, i32, "i32", "i32");
+        #[cfg(feature = "i64")] $callback!($($context)*; i64, i64, "i64", "i64");
+        #[cfg(feature = "i128")] $callback!($($context)*; i128, i128, "i128", "i128");
+        #[cfg(feature = "f32")] $callback!($($context)*; f32, f32, "f32", "f32");
+        #[cfg(feature = "f64")] $callback!($($context)*; f64, f64, "f64", "f64");
+        #[cfg(feature = "c64")] $callback!($($context)*; c64, C64, "c64", "c64");
+        #[cfg(feature = "r64")] $callback!($($context)*; r64, R64, "r64", "r64");
+    };
+}
+
+macro_rules! declare_vertcat_scalar {
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        paste! { mech_core::declare_native_runtime_factory! {
+            cfg: all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+),
+            registration: [<register_ $factory:snake _ $token>],
+            installer: [<install_ $factory:snake _ $token>],
+            name: concat!(stringify!($factory), "<", $name, ">"),
+            factory_type: $factory<$scalar>,
+            contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            package: "mech-engine", crate_name: "mech_engine",
+            installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token>])),
+            extra_cargo_features: ["matrix_vertcat"],
+        }}
+    };
+}
+
+macro_rules! declare_vertcat_family {
+    ($factory:ident, [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(declare_vertcat_scalar, ($factory, [$($feature),+]));
+    };
+}
+
+macro_rules! declare_vertcat_scalar_except_f64 {
+    ($factory:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        declare_vertcat_scalar!($factory, [$($feature),+]; $token, $scalar, $name, $cargo);
+    };
+}
+
+macro_rules! declare_vertcat_family_except_f64 {
+    ($factory:ident, [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(declare_vertcat_scalar_except_f64, ($factory, [$($feature),+]));
+    };
+}
+
+macro_rules! register_vertcat_scalar {
+    ($builder:ident, $factory:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
+        paste! { [<register_ $factory:snake _ $token>]($builder)?; }
+    };
+}
+
+macro_rules! install_vertcat_linked_factories {
+    ($builder:ident, $factory:ident) => {{
+        for_each_vertcat_scalar!(register_vertcat_scalar, ($builder, $factory));
+        Ok::<(), MechError>(())
     }};
 }
 
-macro_rules! install_vertcat_binary_factory {
-    ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $e0:ident, $e1:ident, $out:ident) => {
-        $builder.insert_runtime_factory(
-            concat!(
-                stringify!($factory),
-                "<",
-                $scalar_name,
-                stringify!($out),
-                stringify!($e0),
-                stringify!($e1),
-                ">"
-            ),
-            <$factory<$scalar> as MechFunctionFactory>::new,
-        )?;
+macro_rules! register_vertcat_scalar_except_f64 {
+    ($builder:ident, $factory:ident; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($builder:ident, $factory:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
+        paste! { [<register_ $factory:snake _ $token>]($builder)?; }
+    };
+}
+
+macro_rules! install_vertcat_linked_factories_except_f64 {
+    ($builder:ident, $factory:ident) => {{
+        for_each_vertcat_scalar!(register_vertcat_scalar_except_f64, ($builder, $factory));
+        Ok::<(), MechError>(())
+    }};
+}
+
+declare_vertcat_family!(VerticalConcatenateMD, ["matrixd"]);
+declare_vertcat_family!(VerticalConcatenateTwoArgs, ["matrixd"]);
+declare_vertcat_family!(VerticalConcatenateThreeArgs, ["matrixd"]);
+declare_vertcat_family!(VerticalConcatenateFourArgs, ["matrixd"]);
+declare_vertcat_family_except_f64!(VerticalConcatenateNArgs, ["matrixd"]);
+declare_vertcat_family!(VerticalConcatenateVD, ["vectord"]);
+declare_vertcat_family!(VerticalConcatenateVD2, ["vectord"]);
+declare_vertcat_family!(VerticalConcatenateVD3, ["vectord"]);
+declare_vertcat_family!(VerticalConcatenateVD4, ["vectord"]);
+declare_vertcat_family!(VerticalConcatenateVDN, ["vectord"]);
+declare_vertcat_family!(VerticalConcatenateSD, ["vectord"]);
+
+// Fixed-shape families share the same scalar traversal as their runtime
+// registration and generated-application exports. Keep the exact storage
+// requirements beside the family so all three consumers stay in lockstep.
+macro_rules! for_each_vertcat_typed_family {
+    ($callback:ident, ($($context:tt)*)) => {
+        #[cfg(feature = "matrix1")] $callback!($($context)*; VerticalConcatenateS1; ["matrix1"]);
+        #[cfg(all(feature = "matrix1", feature = "vector3"))] $callback!($($context)*; VerticalConcatenateM1M1M1; ["matrix1", "vector3"]);
+        #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))] $callback!($($context)*; VerticalConcatenateM1M1V2; ["matrix1", "vector2", "vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))] $callback!($($context)*; VerticalConcatenateM1V2M1; ["matrix1", "vector2", "vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))] $callback!($($context)*; VerticalConcatenateV2M1M1; ["matrix1", "vector2", "vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "vector4"))] $callback!($($context)*; VerticalConcatenateM1M1M1M1; ["matrix1", "vector4"]);
+        #[cfg(all(feature = "row_vector2", feature = "matrix3x2"))] $callback!($($context)*; VerticalConcatenateR2R2R2; ["row_vector2", "matrix3x2"]);
+        #[cfg(all(feature = "row_vector3", feature = "matrix3"))] $callback!($($context)*; VerticalConcatenateR3R3R3; ["row_vector3", "matrix3"]);
+        #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "matrix4"))] $callback!($($context)*; VerticalConcatenateR4R4MD; ["row_vector4", "matrixd", "matrix4"]);
+        #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "matrix4"))] $callback!($($context)*; VerticalConcatenateR4MDR4; ["row_vector4", "matrixd", "matrix4"]);
+        #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "matrix4"))] $callback!($($context)*; VerticalConcatenateMDR4R4; ["row_vector4", "matrixd", "matrix4"]);
+        #[cfg(all(feature = "matrix4", feature = "row_vector4"))] $callback!($($context)*; VerticalConcatenateR4R4R4R4; ["matrix4", "row_vector4"]);
+    };
+}
+
+macro_rules! declare_vertcat_typed_family {
+    (; $factory:ident; [$($feature:literal),+]) => {
+        declare_vertcat_family!($factory, [$($feature),+]);
+    };
+}
+
+for_each_vertcat_typed_family!(declare_vertcat_typed_family, ());
+
+macro_rules! for_each_vertcat_binary_family {
+    ($callback:ident, ($($context:tt)*)) => {
+        #[cfg(all(feature = "matrix1", feature = "vector2"))] $callback!($($context)*; normal; VerticalConcatenateM1M1, Matrix1, Matrix1, Vector2; ["matrix1", "vector2"]);
+        #[cfg(all(feature = "vector2", feature = "vector4"))] $callback!($($context)*; normal; VerticalConcatenateV2V2, Vector2, Vector2, Vector4; ["vector2", "vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))] $callback!($($context)*; normal; VerticalConcatenateM1V3, Matrix1, Vector3, Vector4; ["matrix1", "vector3", "vector4"]);
+        #[cfg(all(feature = "vector3", feature = "matrix1", feature = "vector4"))] $callback!($($context)*; normal; VerticalConcatenateV3M1, Vector3, Matrix1, Vector4; ["matrix1", "vector3", "vector4"]);
+        #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))] $callback!($($context)*; normal; VerticalConcatenateM1V2, Matrix1, Vector2, Vector3; ["matrix1", "vector2", "vector3"]);
+        #[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector3"))] $callback!($($context)*; normal; VerticalConcatenateV2M1, Vector2, Matrix1, Vector3; ["matrix1", "vector2", "vector3"]);
+        #[cfg(all(feature = "row_vector2", feature = "matrix2"))] $callback!($($context)*; except_f64; VerticalConcatenateR2R2, RowVector2, RowVector2, Matrix2; ["row_vector2", "matrix2"]);
+        #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))] $callback!($($context)*; normal; VerticalConcatenateR3R3, RowVector3, RowVector3, Matrix2x3; ["row_vector3", "matrix2x3"]);
+        #[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))] $callback!($($context)*; normal; VerticalConcatenateR2M2, RowVector2, Matrix2, Matrix3x2; ["row_vector2", "matrix2", "matrix3x2"]);
+        #[cfg(all(feature = "matrix2", feature = "row_vector2", feature = "matrix3x2"))] $callback!($($context)*; normal; VerticalConcatenateM2R2, Matrix2, RowVector2, Matrix3x2; ["matrix2", "row_vector2", "matrix3x2"]);
+        #[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))] $callback!($($context)*; normal; VerticalConcatenateM2x3R3, Matrix2x3, RowVector3, Matrix3; ["matrix2x3", "row_vector3", "matrix3"]);
+        #[cfg(all(feature = "row_vector3", feature = "matrix2x3", feature = "matrix3"))] $callback!($($context)*; normal; VerticalConcatenateR3M2x3, RowVector3, Matrix2x3, Matrix3; ["row_vector3", "matrix2x3", "matrix3"]);
+        #[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "matrix4"))] $callback!($($context)*; normal; VerticalConcatenateMDR4, DMatrix, RowVector4, Matrix4; ["matrixd", "row_vector4", "matrix4"]);
+        #[cfg(all(feature = "matrixd", feature = "matrix4"))] $callback!($($context)*; normal; VerticalConcatenateMDMD, DMatrix, DMatrix, Matrix4; ["matrixd", "matrix4"]);
+        #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "row_vector4"))] $callback!($($context)*; normal; VerticalConcatenateR4MD, RowVector4, DMatrix, Matrix4; ["row_vector4", "matrixd", "matrix4"]);
+    };
+}
+
+macro_rules! declare_vertcat_binary_scalar {
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        paste! { mech_core::declare_native_runtime_factory! {
+            cfg: all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+),
+            registration: [<register_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>],
+            installer: [<install_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>],
+            name: concat!(stringify!($factory), "<", $name, stringify!($out), stringify!($e0), stringify!($e1), ">"),
+            factory_type: $factory<$scalar>,
+            contract: RuntimeFunctionContract::vertical_concatenation(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            package: "mech-engine", crate_name: "mech_engine",
+            installer_path: concat!("mech_engine::__mech_native::install_", stringify!([<$factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>])),
+            extra_cargo_features: ["matrix_vertcat"],
+        }}
+    };
+}
+
+macro_rules! declare_vertcat_binary_scalar_except_f64 {
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        declare_vertcat_binary_scalar!($factory, $e0, $e1, $out, [$($feature),+]; $token, $scalar, $name, $cargo);
+    };
+}
+
+macro_rules! declare_vertcat_binary_family {
+    (; normal; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(declare_vertcat_binary_scalar, ($factory, $e0, $e1, $out, [$($feature),+]));
+    };
+    (; except_f64; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(declare_vertcat_binary_scalar_except_f64, ($factory, $e0, $e1, $out, [$($feature),+]));
+    };
+}
+
+for_each_vertcat_binary_family!(declare_vertcat_binary_family, ());
+
+macro_rules! register_vertcat_binary_scalar {
+    ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
+        paste! { [<register_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>]($builder)?; }
+    };
+}
+
+macro_rules! register_vertcat_binary_scalar_except_f64 {
+    ($builder:ident, $_factory:ident, $_e0:ident, $_e1:ident, $_out:ident; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
+        register_vertcat_binary_scalar!($builder, $factory, $e0, $e1, $out; $token, $_scalar, $_name, $_cargo);
     };
 }
 
 macro_rules! install_vertcat_binary_factories {
-    ($builder:expr, $factory:ident, $e0:ident, $e1:ident, $out:ident) => {{
-        #[inline(never)]
-        fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-            #[cfg(feature = "bool")]
-            install_vertcat_binary_factory!(builder, $factory, bool, "bool", $e0, $e1, $out);
-            #[cfg(feature = "string")]
-            install_vertcat_binary_factory!(builder, $factory, String, "string", $e0, $e1, $out);
-            #[cfg(feature = "u8")]
-            install_vertcat_binary_factory!(builder, $factory, u8, "u8", $e0, $e1, $out);
-            #[cfg(feature = "u16")]
-            install_vertcat_binary_factory!(builder, $factory, u16, "u16", $e0, $e1, $out);
-            #[cfg(feature = "u32")]
-            install_vertcat_binary_factory!(builder, $factory, u32, "u32", $e0, $e1, $out);
-            #[cfg(feature = "u64")]
-            install_vertcat_binary_factory!(builder, $factory, u64, "u64", $e0, $e1, $out);
-            #[cfg(feature = "u128")]
-            install_vertcat_binary_factory!(builder, $factory, u128, "u128", $e0, $e1, $out);
-            #[cfg(feature = "i8")]
-            install_vertcat_binary_factory!(builder, $factory, i8, "i8", $e0, $e1, $out);
-            #[cfg(feature = "i16")]
-            install_vertcat_binary_factory!(builder, $factory, i16, "i16", $e0, $e1, $out);
-            #[cfg(feature = "i32")]
-            install_vertcat_binary_factory!(builder, $factory, i32, "i32", $e0, $e1, $out);
-            #[cfg(feature = "i64")]
-            install_vertcat_binary_factory!(builder, $factory, i64, "i64", $e0, $e1, $out);
-            #[cfg(feature = "i128")]
-            install_vertcat_binary_factory!(builder, $factory, i128, "i128", $e0, $e1, $out);
-            #[cfg(feature = "f32")]
-            install_vertcat_binary_factory!(builder, $factory, f32, "f32", $e0, $e1, $out);
-            #[cfg(feature = "f64")]
-            install_vertcat_binary_factory!(builder, $factory, f64, "f64", $e0, $e1, $out);
-            #[cfg(feature = "c64")]
-            install_vertcat_binary_factory!(builder, $factory, C64, "c64", $e0, $e1, $out);
-            #[cfg(feature = "r64")]
-            install_vertcat_binary_factory!(builder, $factory, R64, "r64", $e0, $e1, $out);
-            Ok(())
-        }
-        install($builder)?;
-    }};
+    ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident) => {
+        for_each_vertcat_scalar!(
+            register_vertcat_binary_scalar,
+            ($builder, $factory, $e0, $e1, $out)
+        );
+    };
+}
+
+macro_rules! install_vertcat_binary_factories_except_f64 {
+    ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident) => {
+        for_each_vertcat_scalar!(
+            register_vertcat_binary_scalar_except_f64,
+            ($builder, $factory, $e0, $e1, $out)
+        );
+    };
+}
+
+macro_rules! install_vertcat_binary_family {
+    ($builder:ident; normal; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($_feature:literal),+]) => {
+        install_vertcat_binary_factories!($builder, $factory, $e0, $e1, $out);
+    };
+    ($builder:ident; except_f64; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($_feature:literal),+]) => {
+        #[cfg(feature = "f64")]
+        paste! { [<register_ $factory:snake _f64>]($builder)?; }
+        install_vertcat_binary_factories_except_f64!($builder, $factory, $e0, $e1, $out);
+    };
+}
+
+macro_rules! install_vertcat_typed_family {
+    ($builder:ident; $factory:ident; [$($_feature:literal),+]) => {
+        install_vertcat_linked_factories!($builder, $factory)?;
+    };
 }
 
 /// Installs every enabled legacy runtime factory emitted by this module.
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrixd")]
     {
-        install_vertcat_factories!(builder, VerticalConcatenateMD);
-        install_vertcat_factories!(builder, VerticalConcatenateTwoArgs);
-        install_vertcat_factories!(builder, VerticalConcatenateThreeArgs);
-        install_vertcat_factories!(builder, VerticalConcatenateFourArgs);
-        install_vertcat_factories!(builder, VerticalConcatenateNArgs);
+        install_vertcat_linked_factories!(builder, VerticalConcatenateMD)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateTwoArgs)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateThreeArgs)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateFourArgs)?;
+        #[cfg(feature = "f64")]
+        register_vertical_concatenate_n_args_f64(builder)?;
+        install_vertcat_linked_factories_except_f64!(builder, VerticalConcatenateNArgs)?;
     }
     #[cfg(feature = "vectord")]
     {
-        install_vertcat_factories!(builder, VerticalConcatenateVD);
-        install_vertcat_factories!(builder, VerticalConcatenateVD2);
-        install_vertcat_factories!(builder, VerticalConcatenateVD3);
-        install_vertcat_factories!(builder, VerticalConcatenateVD4);
-        install_vertcat_factories!(builder, VerticalConcatenateVDN);
-        install_vertcat_factories!(builder, VerticalConcatenateSD);
+        install_vertcat_linked_factories!(builder, VerticalConcatenateVD)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateVD2)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateVD3)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateVD4)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateVDN)?;
+        install_vertcat_linked_factories!(builder, VerticalConcatenateSD)?;
     }
-    #[cfg(feature = "matrix1")]
-    install_vertcat_factories!(builder, VerticalConcatenateS1);
-
-    #[cfg(all(feature = "matrix1", feature = "vector2"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateM1M1, Matrix1, Matrix1, Vector2);
-    #[cfg(all(feature = "vector2", feature = "vector4"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateV2V2, Vector2, Vector2, Vector4);
-    #[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateM1V3, Matrix1, Vector3, Vector4);
-    #[cfg(all(feature = "vector3", feature = "matrix1", feature = "vector4"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateV3M1, Vector3, Matrix1, Vector4);
-    #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateM1V2, Matrix1, Vector2, Vector3);
-    #[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector3"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateV2M1, Vector2, Matrix1, Vector3);
-    #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateR2R2,
-        RowVector2,
-        RowVector2,
-        Matrix2
-    );
-    #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateR3R3,
-        RowVector3,
-        RowVector3,
-        Matrix2x3
-    );
-    #[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateR2M2,
-        RowVector2,
-        Matrix2,
-        Matrix3x2
-    );
-    #[cfg(all(feature = "matrix2", feature = "row_vector2", feature = "matrix3x2"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateM2R2,
-        Matrix2,
-        RowVector2,
-        Matrix3x2
-    );
-    #[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateM2x3R3,
-        Matrix2x3,
-        RowVector3,
-        Matrix3
-    );
-    #[cfg(all(feature = "row_vector3", feature = "matrix2x3", feature = "matrix3"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateR3M2x3,
-        RowVector3,
-        Matrix2x3,
-        Matrix3
-    );
-    #[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "matrix4"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateMDR4,
-        DMatrix,
-        RowVector4,
-        Matrix4
-    );
-    #[cfg(all(feature = "matrixd", feature = "matrix4"))]
-    install_vertcat_binary_factories!(builder, VerticalConcatenateMDMD, DMatrix, DMatrix, Matrix4);
-    #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "row_vector4"))]
-    install_vertcat_binary_factories!(
-        builder,
-        VerticalConcatenateR4MD,
-        RowVector4,
-        DMatrix,
-        Matrix4
-    );
-
-    #[cfg(all(feature = "matrix1", feature = "vector3"))]
-    install_vertcat_factories!(builder, VerticalConcatenateM1M1M1);
-    #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
-    {
-        install_vertcat_factories!(builder, VerticalConcatenateM1M1V2);
-        install_vertcat_factories!(builder, VerticalConcatenateM1V2M1);
-        install_vertcat_factories!(builder, VerticalConcatenateV2M1M1);
-    }
-    #[cfg(all(feature = "matrix1", feature = "vector4"))]
-    install_vertcat_factories!(builder, VerticalConcatenateM1M1M1M1);
-    #[cfg(all(feature = "row_vector2", feature = "matrix3x2"))]
-    install_vertcat_factories!(builder, VerticalConcatenateR2R2R2);
-    #[cfg(all(feature = "row_vector3", feature = "matrix3"))]
-    install_vertcat_factories!(builder, VerticalConcatenateR3R3R3);
-    #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "matrix4"))]
-    install_vertcat_factories!(builder, VerticalConcatenateR4R4MD);
-    #[cfg(all(
-        feature = "row_vector4",
-        feature = "matrixd",
-        feature = "row_vector4",
-        feature = "matrix4"
-    ))]
-    install_vertcat_factories!(builder, VerticalConcatenateR4MDR4);
-    #[cfg(all(
-        feature = "matrixd",
-        feature = "row_vector4",
-        feature = "row_vector4",
-        feature = "matrix4"
-    ))]
-    install_vertcat_factories!(builder, VerticalConcatenateMDR4R4);
-    #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
-    install_vertcat_factories!(builder, VerticalConcatenateR4R4R4R4);
+    for_each_vertcat_binary_family!(install_vertcat_binary_family, (builder));
+    for_each_vertcat_typed_family!(install_vertcat_typed_family, (builder));
 
     Ok(())
+}
+
+macro_rules! export_vertcat_scalar {
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
+        #[cfg(all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+))]
+        mech_core::paste::paste! { pub use super::[<install_ $factory:snake _ $token>]; }
+    };
+}
+
+macro_rules! export_vertcat_family {
+    ($factory:ident, [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(export_vertcat_scalar, ($factory, [$($feature),+]));
+    };
+}
+
+macro_rules! export_vertcat_scalar_except_f64 {
+    ($factory:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($factory:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
+        #[cfg(all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+))]
+        mech_core::paste::paste! { pub use super::[<install_ $factory:snake _ $token>]; }
+    };
+}
+
+macro_rules! export_vertcat_family_except_f64 {
+    ($factory:ident, [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(export_vertcat_scalar_except_f64, ($factory, [$($feature),+]));
+    };
+}
+
+macro_rules! export_vertcat_typed_family {
+    (; $factory:ident; [$($feature:literal),+]) => {
+        export_vertcat_family!($factory, [$($feature),+]);
+    };
+}
+
+macro_rules! export_vertcat_binary_scalar {
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
+        #[cfg(all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+))]
+        mech_core::paste::paste! { pub use super::[<install_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>]; }
+    };
+}
+
+macro_rules! export_vertcat_binary_scalar_except_f64 {
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
+    ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
+        export_vertcat_binary_scalar!($factory, $e0, $e1, $out, [$($feature),+]; $token, $scalar, $name, $cargo);
+    };
+}
+
+macro_rules! export_vertcat_binary_family {
+    (; normal; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(export_vertcat_binary_scalar, ($factory, $e0, $e1, $out, [$($feature),+]));
+    };
+    (; except_f64; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($feature:literal),+]) => {
+        for_each_vertcat_scalar!(export_vertcat_binary_scalar_except_f64, ($factory, $e0, $e1, $out, [$($feature),+]));
+    };
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    export_vertcat_family!(VerticalConcatenateMD, ["matrixd"]);
+    export_vertcat_family!(VerticalConcatenateTwoArgs, ["matrixd"]);
+    export_vertcat_family!(VerticalConcatenateThreeArgs, ["matrixd"]);
+    export_vertcat_family!(VerticalConcatenateFourArgs, ["matrixd"]);
+    export_vertcat_family_except_f64!(VerticalConcatenateNArgs, ["matrixd"]);
+    export_vertcat_family!(VerticalConcatenateVD, ["vectord"]);
+    export_vertcat_family!(VerticalConcatenateVD2, ["vectord"]);
+    export_vertcat_family!(VerticalConcatenateVD3, ["vectord"]);
+    export_vertcat_family!(VerticalConcatenateVD4, ["vectord"]);
+    export_vertcat_family!(VerticalConcatenateVDN, ["vectord"]);
+    export_vertcat_family!(VerticalConcatenateSD, ["vectord"]);
+    for_each_vertcat_typed_family!(export_vertcat_typed_family, ());
+    for_each_vertcat_binary_family!(export_vertcat_binary_family, ());
+
+    #[cfg(all(feature = "f64", feature = "matrixd"))]
+    pub use super::install_vertical_concatenate_n_args_f64;
+    #[cfg(all(feature = "f64", feature = "matrix2", feature = "row_vector2"))]
+    pub use super::install_vertical_concatenate_r2_r2_f64;
 }
 
 pub struct MatrixVertCat {}

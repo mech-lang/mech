@@ -1,0 +1,70 @@
+[package]
+name = "bytecode-v1-generator"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+mech-core = {
+  path = "../../../src/core",
+  default-features = false,
+  features = ["enum", "program", "stdlib"],
+}
+mech-build = {
+  path = "../../../src/build",
+  default-features = false,
+  features = ["standard-hosts"],
+}
+mech-engine = {
+  path = "../../../src/engine",
+  default-features = false,
+  features = ["matrix2", "native-plan", "row_vector2"],
+}
+mech-native-live-host-fixture = {
+  path = "../native-live-host",
+}
+mech-runtime = {
+  path = "../../../src/runtime",
+  default-features = false,
+  features = ["runtime_default", "serde"],
+}
+mech-math = {
+  path = "../../../machines/math",
+  default-features = false,
+  features = ["add", "f64", "matrix2", "native-plan", "row_vector2", "runtime"],
+}
+mech-stdlib = {
+  path = "../../../src/stdlib",
+  default-features = false,
+  features = ["native-plan", "standard_runtime"],
+}
+serde_json = "1.0.149"
+sha2 = "0.10"
+tempfile = "3"
+
+[patch.crates-io]
+mech-bytecode = { path = "../../../src/bytecode" }
+mech-core = { path = "../../../src/core" }
+mech-syntax = { path = "../../../src/syntax" }
+mech-engine = { path = "../../../src/engine" }
+mech-runtime = { path = "../../../src/runtime" }
+mech-stdlib = { path = "../../../src/stdlib" }
+mech-build = { path = "../../../src/build" }
+mech-host-cli = { path = "../../../hosts/cli" }
+mech-host-console = { path = "../../../hosts/console" }
+mech-host-time = { path = "../../../hosts/time" }
+mech-host-timer = { path = "../../../hosts/timer" }
+mech-host-scene = { path = "../../../hosts/scene" }
+mech-host-robot-arm = { path = "../../../hosts/robot-arm" }
+mech-native-live-host-fixture = { path = "../native-live-host" }
+mech-combinatorics = { path = "../../../machines/combinatorics" }
+mech-compare = { path = "../../../machines/compare" }
+mech-logic = { path = "../../../machines/logic" }
+mech-math = { path = "../../../machines/math" }
+mech-matrix = { path = "../../../machines/matrix" }
+mech-range = { path = "../../../machines/range" }
+mech-set = { path = "../../../machines/set" }
+mech-stats = { path = "../../../machines/stats" }
+mech-string = { path = "../../../machines/string" }
+
+[workspace]

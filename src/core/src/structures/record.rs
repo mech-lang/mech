@@ -14,6 +14,26 @@ pub struct MechRecord {
 
 #[cfg(feature = "record")]
 impl MechRecord {
+    /// Reconstructs an exact record snapshot without re-inferring its schema.
+    pub fn from_parts(
+        cols: usize,
+        kinds: Vec<ValueKind>,
+        fields: Vec<(u64, String, Value)>,
+    ) -> MechRecord {
+        let mut data = IndexMap::with_capacity(fields.len());
+        let mut field_names = HashMap::with_capacity(fields.len());
+        for (id, name, value) in fields {
+            data.insert(id, value);
+            field_names.insert(id, name);
+        }
+        MechRecord {
+            cols,
+            kinds,
+            data,
+            field_names,
+        }
+    }
+
     pub fn check_record_schema(&self, record: &MechRecord) -> MResult<()> {
         for (&field_id, _value) in &self.data {
             // Check field existence

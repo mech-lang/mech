@@ -11,7 +11,9 @@ pub(super) struct ScopePulse {
     pub(super) out: Ref<usize>,
 }
 impl MechFunctionImpl for ScopePulse {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
         *self.out.borrow_mut() += 1;
         Ok(ReactiveSolveStatus::Changed)
@@ -39,7 +41,9 @@ pub(super) struct Matcher {
     pub(super) out: Ref<usize>,
 }
 impl MechFunctionImpl for Matcher {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
         let pattern_match = match_compiled_pattern_with_values(
             &self.pattern,
@@ -87,7 +91,9 @@ pub(super) struct Finalize {
     pub(super) out: Ref<usize>,
 }
 impl MechFunctionImpl for Finalize {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
         *self.eligible.borrow_mut() = *self.matched.borrow();
         *self.out.borrow_mut() += 1;
@@ -110,7 +116,9 @@ pub(super) struct MatchGate {
     pub(super) out: Ref<usize>,
 }
 impl MechFunctionImpl for MatchGate {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
         if *self.matched.borrow() {
             *self.out.borrow_mut() += 1;
@@ -136,7 +144,9 @@ pub(super) struct UnmatchedFinalize {
     pub(super) out: Ref<usize>,
 }
 impl MechFunctionImpl for UnmatchedFinalize {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
         if *self.matched.borrow() {
             Ok(ReactiveSolveStatus::Unchanged)
@@ -164,7 +174,9 @@ pub(super) struct Select {
     pub(super) out: Ref<usize>,
 }
 impl MechFunctionImpl for Select {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
         *self.selected.borrow_mut() = self
             .eligible

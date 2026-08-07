@@ -1,7 +1,7 @@
 Build and Run Mech Programs
 ===============================================================================
 
-This page covers the shortest path from a Mech source file to something you can run from the command line, serve in a browser, or package as an executable artifact.
+This page covers the shortest path from a Mech source file to something you can run from the command line or serve in a browser.
 
 Use [Your First Mech Project](first-project.html) after this page when you want a project folder, config file, browser host settings, and static bundle output.
 
@@ -50,7 +50,7 @@ Useful flags:
 mech build hello.mec -o build-output
 ```
 
-This command is useful when you want an intermediate `.mecb` artifact. It is not the same as the `mechc` executable packaging flow.
+This command is useful when you want an intermediate `.mecb` artifact.
 
 4. Serve in a browser
 -------------------------------------------------------------------------------
@@ -75,31 +75,7 @@ mech serve hello.mec --address 127.0.0.1 --port 3000
 
 Projects that use browser DOM resources should normally use a config file. See [Your First Mech Project](first-project.html).
 
-5. Build an executable artifact with `mechc`
--------------------------------------------------------------------------------
-
-`mechc` packages compiled Mech bytecode with a small Rust shim executable.
-
-```sh
-mechc build hello.mec --out hello
-```
-
-For an optimized build:
-
-```sh
-mechc build hello.mec --release --out hello
-```
-
-The current build flow writes the final artifact under:
-
-```text
-build/debug/hello.exe
-build/release/hello.exe
-```
-
-The extension is currently `.exe` in the build output path. This page documents the current build artifact path rather than promising a stable cross-platform packaging contract.
-
-6. Use a project config
+5. Use a project config
 -------------------------------------------------------------------------------
 
 For repeated commands, place source paths and server settings in a config file. The default name is `mech.mcfg`.

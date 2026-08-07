@@ -18,6 +18,7 @@ gitlab = { repository = "mech-lang/core", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [features]
+std = []
 no_std = ["rlibc", "hashbrown", "embedded-io", "fxhash"]
 
 default = ["baselib", "pretty_print", "serde", "compiler", "mika", "program",
@@ -61,8 +62,9 @@ baselib = ["bool", "string",
       "functions", "formulas"
     ]
 
-compiler = ["byteorder"]
+compiler = ["program"]
 program = ["crc32fast", "byteorder"]
+native-plan = ["functions"]
 pretty_print = ["tabled", "serde_json"]
 serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]
 mika = []
@@ -187,5 +189,10 @@ criterion = { version = "0.8.2", default-features = false, features = ["cargo_be
 
 [[bench]]
 name = "value_state_journal"
+harness = false
+required-features = ["baselib"]
+
+[[bench]]
+name = "solve_result_overhead"
 harness = false
 required-features = ["baselib"]

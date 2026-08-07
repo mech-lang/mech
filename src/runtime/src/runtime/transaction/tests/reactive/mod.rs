@@ -83,8 +83,6 @@ impl RuntimeTransactionalEffect for ReactiveTransactionalProbe {
 }
 
 impl MechFunctionImpl for ReactiveTransactionTestFunction {
-    fn solve(&self) {}
-
     fn solve_result(&self) -> MResult<()> {
         self.solve_reactive().map(|_| ())
     }
@@ -121,8 +119,6 @@ impl MechFunctionImpl for ReactiveTransactionTestFunction {
 }
 
 impl MechFunctionImpl for PanickingReactiveFunction {
-    fn solve(&self) {}
-
     fn solve_result(&self) -> MResult<()> {
         self.solve_reactive().map(|_| ())
     }

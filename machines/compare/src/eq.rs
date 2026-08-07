@@ -114,12 +114,18 @@ pub struct AtomEq {
 }
 #[cfg(feature = "atom")]
 impl MechFunctionFactory for AtomEq {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Bool,
+        FunctionValueRepresentation::Atom,
+        FunctionValueRepresentation::Atom,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechAtom> = unsafe { arg1.as_unchecked() }.clone();
-                let rhs: Ref<MechAtom> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
+                let lhs: Ref<MechAtom> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let rhs: Ref<MechAtom> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(AtomEq { lhs, rhs, out }))
             }
             _ => Err(MechError::new(
@@ -135,13 +141,14 @@ impl MechFunctionFactory for AtomEq {
 }
 #[cfg(feature = "atom")]
 impl MechFunctionImpl for AtomEq {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let lhs_ptr = self.lhs.as_ptr();
         let rhs_ptr = self.rhs.as_ptr();
         let mut out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = (*lhs_ptr) == (*rhs_ptr);
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -159,14 +166,7 @@ impl MechFunctionImpl for AtomEq {
 impl MechFunctionCompiler for AtomEq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("AtomEq");
-        compile_binop!(
-            name,
-            self.out,
-            self.lhs,
-            self.rhs,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Atom)
-        );
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
 }
 
@@ -179,12 +179,18 @@ pub struct TableEq {
 }
 #[cfg(feature = "table")]
 impl MechFunctionFactory for TableEq {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Bool,
+        FunctionValueRepresentation::Table,
+        FunctionValueRepresentation::Table,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechTable> = unsafe { arg1.as_unchecked() }.clone();
-                let rhs: Ref<MechTable> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
+                let lhs: Ref<MechTable> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let rhs: Ref<MechTable> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(TableEq { lhs, rhs, out }))
             }
             _ => Err(MechError::new(
@@ -200,13 +206,14 @@ impl MechFunctionFactory for TableEq {
 }
 #[cfg(feature = "table")]
 impl MechFunctionImpl for TableEq {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let lhs_ptr = self.lhs.as_ptr();
         let rhs_ptr = self.rhs.as_ptr();
         let mut out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = (*lhs_ptr) == (*rhs_ptr);
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -224,14 +231,7 @@ impl MechFunctionImpl for TableEq {
 impl MechFunctionCompiler for TableEq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableEq");
-        compile_binop!(
-            name,
-            self.out,
-            self.lhs,
-            self.rhs,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Table)
-        );
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
 }
 

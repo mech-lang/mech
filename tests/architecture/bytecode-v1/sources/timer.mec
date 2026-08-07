@@ -1,0 +1,3 @@
+@timer := timer://timer/tick{:read(tick)}
+tick := @timer/tick
+"timer-done"

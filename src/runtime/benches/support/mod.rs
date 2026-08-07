@@ -35,8 +35,9 @@ struct BenchmarkAddFunction {
 }
 
 impl MechFunctionImpl for BenchmarkAddFunction {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         *self.out.borrow_mut() = *self.lhs.borrow() + *self.rhs.borrow();
+        Ok(())
     }
 
     fn out(&self) -> Value {

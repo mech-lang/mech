@@ -32,20 +32,30 @@ where
         + Add<Output = T>,
     #[cfg(feature = "compiler")]
     T: CompileConst + ConstElem,
+    Ref<T>: ToValue,
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
     naMatrix<T, R1, C1, S1>: AsNaKind,
+    naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
+    T: FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     R1: Dim + 'static,
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug + 'static,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        <naMatrix<T, R1, C1, S1> as FunctionRuntimeType>::REPRESENTATION,
+        T::REPRESENTATION,
+        T::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, from, to) => {
-                let from: Ref<T> = unsafe { from.as_unchecked() }.clone();
-                let to: Ref<T> = unsafe { to.as_unchecked() }.clone();
-                let out: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+                let from: Ref<T> = from.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let to: Ref<T> = to.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<naMatrix<T, R1, C1, S1>> =
+                    out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     from,
                     to,
@@ -67,6 +77,7 @@ where
 impl<T, R1, C1, S1> MechFunctionImpl for RangeInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+    Ref<T>: ToValue,
     T: Copy
         + Scalar
         + Clone
@@ -82,15 +93,24 @@ where
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
+        crate::catalog::validate_range_inclusive(&FunctionArgs::Binary(
+            self.out.to_value(),
+            self.from.to_value(),
+            self.to.to_value(),
+        ))?;
         unsafe {
             let out_ptr = self.out.as_ptr() as *mut naMatrix<T, R1, C1, S1>;
             let mut current = *self.from.as_ptr();
-            for i in 0..(*out_ptr).len() {
+            let output_len = (*out_ptr).len();
+            for i in 0..output_len {
                 (&mut (*out_ptr))[i] = current;
-                current = current + T::one();
+                if i + 1 < output_len {
+                    current = current + T::one();
+                }
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -101,6 +121,49 @@ where
 
     fn transaction_state_values(&self) -> MResult<Vec<Value>> {
         Ok(self.reactive_output_values())
+    }
+}
+
+#[cfg(all(test, feature = "u128", feature = "matrixd"))]
+mod tests {
+    use super::*;
+    use nalgebra::DMatrix;
+
+    #[test]
+    fn inclusive_range_does_not_increment_past_the_final_max_value() {
+        let from = Ref::new(u128::MAX - 1);
+        let to = Ref::new(u128::MAX);
+        let out = Ref::new(DMatrix::from_element(1, 2, 0));
+        let function = RangeInclusiveScalar::<u128, DMatrix<u128>> {
+            from,
+            to,
+            out: out.clone(),
+            phantom: PhantomData::default(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[u128::MAX - 1, u128::MAX]);
+    }
+
+    #[test]
+    fn inclusive_range_revalidates_reactive_cardinality() {
+        let to = Ref::new(2_u128);
+        let out = Ref::new(DMatrix::from_element(1, 2, 0));
+        let function = RangeInclusiveScalar::<u128, DMatrix<u128>> {
+            from: Ref::new(1),
+            to: to.clone(),
+            out: out.clone(),
+            phantom: PhantomData::default(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[1, 2]);
+        let previous = out.borrow().clone();
+
+        *to.borrow_mut() = 3;
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        assert_eq!(*out.borrow(), previous);
     }
 }
 #[cfg(feature = "compiler")]
@@ -115,14 +178,7 @@ where
             T::as_value_kind(),
             naMatrix::<T, R1, C1, S1>::as_na_kind()
         );
-        compile_binop!(
-            name,
-            self.out,
-            self.from,
-            self.to,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::RangeInclusive)
-        );
+        compile_binop!(name, self.out, self.from, self.to, ctx);
     }
 }
 

@@ -32,11 +32,460 @@ pub use self::tuple::*;
 
 // x = 1 ----------------------------------------------------------------------
 
+trait AssignRuntimeName {
+    fn assign_runtime_name() -> String;
+}
+
+macro_rules! impl_scalar_assign_runtime_name {
+    ($type:ty, $name:literal, $feature:literal) => {
+        #[cfg(feature = $feature)]
+        impl AssignRuntimeName for $type {
+            fn assign_runtime_name() -> String {
+                concat!("Assign<", $name, ">").to_string()
+            }
+        }
+    };
+}
+
+impl_scalar_assign_runtime_name!(u8, "u8", "u8");
+impl_scalar_assign_runtime_name!(u16, "u16", "u16");
+impl_scalar_assign_runtime_name!(u32, "u32", "u32");
+impl_scalar_assign_runtime_name!(u64, "u64", "u64");
+impl_scalar_assign_runtime_name!(u128, "u128", "u128");
+impl_scalar_assign_runtime_name!(i8, "i8", "i8");
+impl_scalar_assign_runtime_name!(i16, "i16", "i16");
+impl_scalar_assign_runtime_name!(i32, "i32", "i32");
+impl_scalar_assign_runtime_name!(i64, "i64", "i64");
+impl_scalar_assign_runtime_name!(i128, "i128", "i128");
+impl_scalar_assign_runtime_name!(f32, "f32", "f32");
+impl_scalar_assign_runtime_name!(f64, "f64", "f64");
+impl_scalar_assign_runtime_name!(bool, "bool", "bool");
+impl_scalar_assign_runtime_name!(String, "string", "string");
+impl_scalar_assign_runtime_name!(R64, "r64", "r64");
+impl_scalar_assign_runtime_name!(C64, "c64", "c64");
+
+impl AssignRuntimeName for usize {
+    fn assign_runtime_name() -> String {
+        "Assign<index>".to_string()
+    }
+}
+
+macro_rules! impl_matrix_assign_runtime_name {
+    ($shape:ident, $feature:literal) => {
+        #[cfg(feature = $feature)]
+        impl<T> AssignRuntimeName for $shape<T>
+        where
+            T: AsValueKind,
+        {
+            fn assign_runtime_name() -> String {
+                format!("Assign<{}{}>", T::as_value_kind(), stringify!($shape))
+            }
+        }
+    };
+}
+
+impl_matrix_assign_runtime_name!(Matrix1, "matrix1");
+impl_matrix_assign_runtime_name!(Matrix2, "matrix2");
+impl_matrix_assign_runtime_name!(Matrix2x3, "matrix2x3");
+impl_matrix_assign_runtime_name!(Matrix3x2, "matrix3x2");
+impl_matrix_assign_runtime_name!(Matrix3, "matrix3");
+impl_matrix_assign_runtime_name!(Matrix4, "matrix4");
+impl_matrix_assign_runtime_name!(DMatrix, "matrixd");
+impl_matrix_assign_runtime_name!(Vector2, "vector2");
+impl_matrix_assign_runtime_name!(Vector3, "vector3");
+impl_matrix_assign_runtime_name!(Vector4, "vector4");
+impl_matrix_assign_runtime_name!(DVector, "vectord");
+impl_matrix_assign_runtime_name!(RowVector2, "row_vector2");
+impl_matrix_assign_runtime_name!(RowVector3, "row_vector3");
+impl_matrix_assign_runtime_name!(RowVector4, "row_vector4");
+impl_matrix_assign_runtime_name!(RowDVector, "row_vectord");
+
 #[derive(Debug)]
 struct Assign<T> {
     sink: Ref<T>,
     source: Ref<T>,
 }
+
+/// A whole-value assignment for stable composite cells. The outer [`Ref`]
+/// remains unchanged so reactive dependencies keep pointing at the same cell,
+/// while the validated composite snapshot replaces its contents atomically.
+#[derive(Debug)]
+struct AssignComposite<T> {
+    sink: Ref<T>,
+    source: Ref<T>,
+}
+
+impl<T> MechFunctionImpl for AssignComposite<T>
+where
+    T: Clone + Debug + 'static,
+    Ref<T>: ToValue,
+{
+    fn solve_result(&self) -> MResult<()> {
+        let next = self.source.borrow().clone();
+        *self.sink.borrow_mut() = next;
+        Ok(())
+    }
+
+    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+        let next = self.source.borrow().clone();
+        Ok(Box::new(ReactiveRegisterWrite::new(
+            self.sink.clone(),
+            next,
+            self.reactive_output_cell_ids(),
+        )))
+    }
+
+    fn out(&self) -> Value {
+        self.sink.to_value()
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Register
+    }
+
+    fn to_string(&self) -> String {
+        format!("{self:#?}")
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for AssignComposite<T>
+where
+    T: Clone + Debug + 'static,
+    Ref<T>: ToValue,
+{
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Err(MechError::new(
+            GenericError {
+                msg: "stable composite assignments are runtime external-update nodes and cannot be emitted as bytecode instructions"
+                    .to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+/// A stable composite assignment that updates the already-installed child
+/// cells instead of replacing them. Source specialization aliases record,
+/// map, table, and tuple children directly, so preserving only the outer cell
+/// would leave those downstream aliases attached to stale values.
+#[derive(Debug)]
+struct AssignStructuredComposite {
+    sink: Value,
+    source: Value,
+}
+
+fn collect_structured_assignments(
+    sink: Value,
+    source: Value,
+    assignments: &mut Vec<Box<dyn MechFunction>>,
+) -> MResult<()> {
+    match (&sink, &source) {
+        (Value::Typed(sink, sink_annotation), Value::Typed(source, source_annotation))
+            if sink_annotation == source_annotation =>
+        {
+            return collect_structured_assignments(
+                sink.as_ref().clone(),
+                source.as_ref().clone(),
+                assignments,
+            );
+        }
+        #[cfg(feature = "record")]
+        (Value::Record(sink), Value::Record(source)) => {
+            let pairs = {
+                let sink = sink.borrow();
+                let source = source.borrow();
+                sink.data
+                    .iter()
+                    .map(|(id, sink)| {
+                        source
+                            .data
+                            .get(id)
+                            .cloned()
+                            .map(|source| (sink.clone(), source))
+                            .ok_or_else(|| {
+                                MechError::new(
+                                    GenericError {
+                                        msg: format!(
+                                            "stable record update lost validated field {id}"
+                                        ),
+                                    },
+                                    None,
+                                )
+                                .with_compiler_loc()
+                            })
+                    })
+                    .collect::<MResult<Vec<_>>>()?
+            };
+            for (sink, source) in pairs {
+                collect_structured_assignments(sink, source, assignments)?;
+            }
+            return Ok(());
+        }
+        #[cfg(feature = "map")]
+        (Value::Map(sink), Value::Map(source)) => {
+            let pairs = {
+                let sink = sink.borrow();
+                let source = source.borrow();
+                sink.map
+                    .iter()
+                    .map(|(key, sink)| {
+                        source
+                            .map
+                            .get(key)
+                            .cloned()
+                            .map(|source| (sink.clone(), source))
+                            .ok_or_else(|| {
+                                MechError::new(
+                                    GenericError {
+                                        msg: "stable map update lost a validated key".to_owned(),
+                                    },
+                                    None,
+                                )
+                                .with_compiler_loc()
+                            })
+                    })
+                    .collect::<MResult<Vec<_>>>()?
+            };
+            for (sink, source) in pairs {
+                collect_structured_assignments(sink, source, assignments)?;
+            }
+            return Ok(());
+        }
+        #[cfg(feature = "table")]
+        (Value::Table(sink), Value::Table(source)) => {
+            let pairs = {
+                let sink = sink.borrow();
+                let source = source.borrow();
+                sink.data
+                    .iter()
+                    .map(|(id, (_, sink))| {
+                        source
+                            .data
+                            .get(id)
+                            .map(|(_, source)| (sink.as_vec(), source.as_vec()))
+                            .ok_or_else(|| {
+                                MechError::new(
+                                    GenericError {
+                                        msg: format!(
+                                            "stable table update lost validated column {id}"
+                                        ),
+                                    },
+                                    None,
+                                )
+                                .with_compiler_loc()
+                            })
+                    })
+                    .collect::<MResult<Vec<_>>>()?
+            };
+            for (sink, source) in pairs {
+                for (sink, source) in sink.into_iter().zip(source) {
+                    collect_structured_assignments(sink, source, assignments)?;
+                }
+            }
+            return Ok(());
+        }
+        #[cfg(feature = "tuple")]
+        (Value::Tuple(sink), Value::Tuple(source)) => {
+            let pairs = {
+                let sink = sink.borrow();
+                let source = source.borrow();
+                sink.elements
+                    .iter()
+                    .zip(source.elements.iter())
+                    .map(|(sink, source)| (sink.as_ref().clone(), source.as_ref().clone()))
+                    .collect::<Vec<_>>()
+            };
+            for (sink, source) in pairs {
+                collect_structured_assignments(sink, source, assignments)?;
+            }
+            return Ok(());
+        }
+        _ => {}
+    }
+
+    assignments.push(assign_value_fxn(sink, source)?);
+    Ok(())
+}
+
+impl AssignStructuredComposite {
+    fn assignments(&self) -> MResult<Vec<Box<dyn MechFunction>>> {
+        let mut assignments = Vec::new();
+        collect_structured_assignments(self.sink.clone(), self.source.clone(), &mut assignments)?;
+        let mut output_cells = Vec::new();
+        for assignment in &assignments {
+            for cell in assignment.reactive_output_cell_ids() {
+                if output_cells.contains(&cell) {
+                    return Err(MechError::new(
+                        GenericError {
+                            msg: format!(
+                                "stable structured update cannot preserve aliased child cell {:?}",
+                                cell,
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                output_cells.push(cell);
+            }
+        }
+        Ok(assignments)
+    }
+}
+
+impl MechFunctionImpl for AssignStructuredComposite {
+    fn solve_result(&self) -> MResult<()> {
+        let assignments = self.assignments()?;
+        for assignment in assignments {
+            assignment.solve_result()?;
+        }
+        Ok(())
+    }
+
+    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+        let assignments = self.assignments()?;
+        let commits = assignments
+            .iter()
+            .map(|assignment| assignment.stage_register())
+            .collect::<MResult<Vec<_>>>()?;
+        Ok(Box::new(ReactiveRegisterCommitBatch::new(
+            commits,
+            self.reactive_output_cell_ids(),
+        )))
+    }
+
+    fn out(&self) -> Value {
+        self.sink.clone()
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Register
+    }
+
+    fn to_string(&self) -> String {
+        format!("{self:#?}")
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for AssignStructuredComposite {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Err(MechError::new(
+            GenericError {
+                msg: "stable structured assignments are runtime external-update nodes and cannot be emitted as bytecode instructions"
+                    .to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc())
+    }
+}
+
+#[cfg(feature = "matrix")]
+fn assign_index_matrix_fxn(
+    sink: Matrix<usize>,
+    source: Matrix<usize>,
+) -> MResult<Box<dyn MechFunction>> {
+    match (sink, source) {
+        #[cfg(feature = "matrix1")]
+        (Matrix::Matrix1(sink), Matrix::Matrix1(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrix2")]
+        (Matrix::Matrix2(sink), Matrix::Matrix2(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrix2x3")]
+        (Matrix::Matrix2x3(sink), Matrix::Matrix2x3(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrix3x2")]
+        (Matrix::Matrix3x2(sink), Matrix::Matrix3x2(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrix3")]
+        (Matrix::Matrix3(sink), Matrix::Matrix3(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrix4")]
+        (Matrix::Matrix4(sink), Matrix::Matrix4(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "matrixd")]
+        (Matrix::DMatrix(sink), Matrix::DMatrix(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "vector2")]
+        (Matrix::Vector2(sink), Matrix::Vector2(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "vector3")]
+        (Matrix::Vector3(sink), Matrix::Vector3(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "vector4")]
+        (Matrix::Vector4(sink), Matrix::Vector4(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "vectord")]
+        (Matrix::DVector(sink), Matrix::DVector(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "row_vector2")]
+        (Matrix::RowVector2(sink), Matrix::RowVector2(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "row_vector3")]
+        (Matrix::RowVector3(sink), Matrix::RowVector3(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "row_vector4")]
+        (Matrix::RowVector4(sink), Matrix::RowVector4(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        #[cfg(feature = "row_vectord")]
+        (Matrix::RowDVector(sink), Matrix::RowDVector(source)) => Ok(Box::new(AssignComposite {
+            sink: sink.clone(),
+            source: source.clone(),
+        })),
+        (sink, source) => Err(MechError::new(
+            UnhandledFunctionArgumentKind2 {
+                arg: (
+                    Value::MatrixIndex(sink).kind(),
+                    Value::MatrixIndex(source).kind(),
+                ),
+                fxn_name: "assign".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
+}
+
 impl<T> MechFunctionFactory for Assign<T>
 where
     T: Clone + Debug + Sync + Send + 'static,
@@ -45,12 +494,17 @@ where
     T: ConstElem + AsValueKind,
     #[cfg(feature = "compiler")]
     T: CompileConst,
+    T: FunctionRuntimeType,
+    T: AssignRuntimeName,
 {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::unary(T::REPRESENTATION, T::REPRESENTATION);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, source) => {
-                let sink: Ref<T> = unsafe { out.as_unchecked() }.clone();
-                let source: Ref<T> = unsafe { source.as_unchecked() }.clone();
+                let sink: Ref<T> = out.try_function_ref(FunctionArgumentRole::Output)?;
+                let source: Ref<T> = source.try_function_ref(FunctionArgumentRole::Input(0))?;
 
                 Ok(Box::new(Self { sink, source }))
             }
@@ -70,12 +524,13 @@ where
     T: Clone + Debug + 'static,
     Ref<T>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let source_ptr = self.source.as_ptr();
         let sink_ptr = self.sink.as_mut_ptr();
         unsafe {
             *sink_ptr = (*source_ptr).clone();
-        }
+        };
+        Ok(())
     }
     fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
         let next = self.source.borrow().clone();
@@ -103,17 +558,11 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for Assign<T>
 where
-    T: CompileConst + ConstElem + AsValueKind,
+    T: CompileConst + ConstElem + AsValueKind + AssignRuntimeName,
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("Assign<{}>", T::as_value_kind());
-        compile_unop!(
-            name,
-            self.sink,
-            self.source,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Assign)
-        );
+        let name = T::assign_runtime_name();
+        compile_unop!(name, self.sink, self.source, ctx);
     }
 }
 #[derive(Debug, Clone)]
@@ -131,7 +580,9 @@ impl MechErrorKind for EmptyAssignmentNotBytecodeCompilable {
 #[derive(Debug)]
 struct AssignEmpty;
 impl MechFunctionImpl for AssignEmpty {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
         Ok(Box::new(ReactiveRegisterNoopCommit::new(
             self.reactive_output_cell_ids(),
@@ -220,6 +671,59 @@ fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>
         }
         (Value::Index(sink), Value::Index(source)) => {
             return Ok(Box::new(Assign {
+                sink: sink.clone(),
+                source: source.clone(),
+            }));
+        }
+        #[cfg(feature = "matrix")]
+        (Value::MatrixIndex(sink), Value::MatrixIndex(source)) => {
+            return assign_index_matrix_fxn(sink.clone(), source.clone());
+        }
+        #[cfg(feature = "record")]
+        (Value::Record(sink), Value::Record(source)) => {
+            return Ok(Box::new(AssignStructuredComposite {
+                sink: Value::Record(sink.clone()),
+                source: Value::Record(source.clone()),
+            }));
+        }
+        #[cfg(feature = "map")]
+        (Value::Map(sink), Value::Map(source)) => {
+            return Ok(Box::new(AssignStructuredComposite {
+                sink: Value::Map(sink.clone()),
+                source: Value::Map(source.clone()),
+            }));
+        }
+        #[cfg(feature = "set")]
+        (Value::Set(sink), Value::Set(source)) => {
+            return Ok(Box::new(AssignComposite {
+                sink: sink.clone(),
+                source: source.clone(),
+            }));
+        }
+        #[cfg(feature = "table")]
+        (Value::Table(sink), Value::Table(source)) => {
+            return Ok(Box::new(AssignStructuredComposite {
+                sink: Value::Table(sink.clone()),
+                source: Value::Table(source.clone()),
+            }));
+        }
+        #[cfg(feature = "tuple")]
+        (Value::Tuple(sink), Value::Tuple(source)) => {
+            return Ok(Box::new(AssignStructuredComposite {
+                sink: Value::Tuple(sink.clone()),
+                source: Value::Tuple(source.clone()),
+            }));
+        }
+        #[cfg(feature = "atom")]
+        (Value::Atom(sink), Value::Atom(source)) => {
+            return Ok(Box::new(AssignComposite {
+                sink: sink.clone(),
+                source: source.clone(),
+            }));
+        }
+        #[cfg(feature = "enum")]
+        (Value::Enum(sink), Value::Enum(source)) => {
+            return Ok(Box::new(AssignComposite {
                 sink: sink.clone(),
                 source: source.clone(),
             }));

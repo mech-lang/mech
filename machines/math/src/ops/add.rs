@@ -6,31 +6,76 @@ use std::sync::Arc;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 
+fn checked_runtime_add<T: RuntimeCheckedArithmetic>(lhs: T, rhs: T) -> MResult<T> {
+    lhs.runtime_checked_add(rhs)
+        .ok_or_else(|| arithmetic_overflow::<T>("addition"))
+}
+
 // Add ------------------------------------------------------------------------
 
 macro_rules! add_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            *$out = *$lhs + *$rhs;
+            let next = checked_runtime_add(*$lhs, *$rhs)?;
+            *$out = next;
         }
     };
 }
 
 macro_rules! add_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
-        unsafe { (*$lhs).add_to(&*$rhs, &mut *$out) }
+        unsafe {
+            let mut next = (*$out).clone();
+            for (output, (lhs, rhs)) in next.iter_mut().zip((*$lhs).iter().zip((*$rhs).iter())) {
+                *output = checked_runtime_add(*lhs, *rhs)?;
+            }
+            *$out = next;
+        }
+    };
+}
+
+// A dynamic row-vector x dynamic vector has a feature-invariant Matrix1
+// result. Preserve that representation while still allowing it to compose
+// reactively with a source-level 1x1 dynamic matrix. The output remains
+// dynamic because the other operand owns the broader storage contract.
+#[cfg(all(
+    feature = "matrixd",
+    any(feature = "matrix1", feature = "matrix1_interop")
+))]
+macro_rules! add_m1_md_op {
+    ($lhs:expr, $rhs:expr, $out:expr) => {
+        unsafe {
+            let next = checked_runtime_add((&*$lhs)[(0, 0)], (&*$rhs)[(0, 0)])?;
+            (&mut *$out)[(0, 0)] = next;
+        }
+    };
+}
+
+#[cfg(all(
+    feature = "matrixd",
+    any(feature = "matrix1", feature = "matrix1_interop")
+))]
+macro_rules! add_md_m1_op {
+    ($lhs:expr, $rhs:expr, $out:expr) => {
+        unsafe {
+            let next = checked_runtime_add((&*$lhs)[(0, 0)], (&*$rhs)[(0, 0)])?;
+            (&mut *$out)[(0, 0)] = next;
+        }
     };
 }
 
 macro_rules! add_mat_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut col, lhs_col) in out_deref.column_iter_mut().zip(lhs_deref.column_iter()) {
-                lhs_col.add_to(&rhs_deref, &mut col);
+            for (mut col, lhs_col) in next.column_iter_mut().zip(lhs_deref.column_iter()) {
+                for i in 0..col.len() {
+                    col[i] = checked_runtime_add(lhs_col[i], rhs_deref[i])?;
+                }
             }
+            *$out = next;
         }
     };
 }
@@ -38,12 +83,15 @@ macro_rules! add_mat_vec_op {
 macro_rules! add_vec_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut col, rhs_col) in out_deref.column_iter_mut().zip(rhs_deref.column_iter()) {
-                lhs_deref.add_to(&rhs_col, &mut col);
+            for (mut col, rhs_col) in next.column_iter_mut().zip(rhs_deref.column_iter()) {
+                for i in 0..col.len() {
+                    col[i] = checked_runtime_add(lhs_deref[i], rhs_col[i])?;
+                }
             }
+            *$out = next;
         }
     };
 }
@@ -51,12 +99,15 @@ macro_rules! add_vec_mat_op {
 macro_rules! add_mat_row_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut row, lhs_row) in out_deref.row_iter_mut().zip(lhs_deref.row_iter()) {
-                lhs_row.add_to(&rhs_deref, &mut row);
+            for (mut row, lhs_row) in next.row_iter_mut().zip(lhs_deref.row_iter()) {
+                for i in 0..row.len() {
+                    row[i] = checked_runtime_add(lhs_row[i], rhs_deref[i])?;
+                }
             }
+            *$out = next;
         }
     };
 }
@@ -64,12 +115,15 @@ macro_rules! add_mat_row_op {
 macro_rules! add_row_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let mut next = (*$out).clone();
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
-            for (mut row, rhs_row) in out_deref.row_iter_mut().zip(rhs_deref.row_iter()) {
-                lhs_deref.add_to(&rhs_row, &mut row);
+            for (mut row, rhs_row) in next.row_iter_mut().zip(rhs_deref.row_iter()) {
+                for i in 0..row.len() {
+                    row[i] = checked_runtime_add(lhs_deref[i], rhs_row[i])?;
+                }
             }
+            *$out = next;
         }
     };
 }
@@ -77,7 +131,11 @@ macro_rules! add_row_mat_op {
 macro_rules! add_scalar_lhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            *$out = (*$lhs).add_scalar(*$rhs);
+            let mut next = (*$out).clone();
+            for (output, lhs) in next.iter_mut().zip((*$lhs).iter()) {
+                *output = checked_runtime_add(*lhs, *$rhs)?;
+            }
+            *$out = next;
         }
     };
 }
@@ -85,12 +143,244 @@ macro_rules! add_scalar_lhs_op {
 macro_rules! add_scalar_rhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            *$out = (*$rhs).add_scalar(*$lhs);
+            let mut next = (*$out).clone();
+            for (output, rhs) in next.iter_mut().zip((*$rhs).iter()) {
+                *output = checked_runtime_add(*$lhs, *rhs)?;
+            }
+            *$out = next;
         }
     };
 }
 
-impl_math_fxns!(Add);
+impl_fxns!(Add, T, T, impl_checked_arithmetic_binop);
+
+#[cfg(all(
+    feature = "matrixd",
+    any(feature = "matrix1", feature = "matrix1_interop")
+))]
+impl_checked_arithmetic_binop!(AddM1MD, Matrix1<T>, DMatrix<T>, DMatrix<T>, add_m1_md_op);
+#[cfg(all(
+    feature = "matrixd",
+    any(feature = "matrix1", feature = "matrix1_interop")
+))]
+impl_checked_arithmetic_binop!(AddMDM1, DMatrix<T>, Matrix1<T>, DMatrix<T>, add_md_m1_op);
+
+#[cfg(all(test, feature = "u8"))]
+mod checked_arithmetic_tests {
+    use super::*;
+
+    #[test]
+    fn integer_addition_rejects_reactive_overflow_and_retains_output() {
+        let rhs = Ref::new(1_u8);
+        let out = Ref::new(17_u8);
+        let function = AddSS {
+            lhs: Ref::new(40_u8),
+            rhs: rhs.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), 41);
+        *rhs.borrow_mut() = u8::MAX;
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "MathArithmeticOverflow");
+        assert_eq!(*out.borrow(), 41);
+    }
+}
+
+macro_rules! declare_add_matrix1_dynamic_native_factories {
+    ($scalar_feature:literal, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(
+                    feature = "add",
+                    feature = $scalar_feature,
+                    feature = "matrixd",
+                    any(feature = "matrix1", feature = "matrix1_interop")
+                ),
+                registration: [<register_add_m1_md_ $scalar_token>],
+                installer: [<install_add_m1_md_ $scalar_token>],
+                name: concat!("AddM1MD<", $scalar_name, ">"),
+                factory_type: AddM1MD<$scalar>,
+                contract: RuntimeFunctionContract::same_shape(
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ),
+                package: "mech-math",
+                crate_name: "mech_math",
+                installer_path: concat!(
+                    "mech_math::__mech_native::",
+                    stringify!([<install_add_m1_md_ $scalar_token>])
+                ),
+                extra_cargo_features: ["add"],
+            }
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(
+                    feature = "add",
+                    feature = $scalar_feature,
+                    feature = "matrixd",
+                    any(feature = "matrix1", feature = "matrix1_interop")
+                ),
+                registration: [<register_add_md_m1_ $scalar_token>],
+                installer: [<install_add_md_m1_ $scalar_token>],
+                name: concat!("AddMDM1<", $scalar_name, ">"),
+                factory_type: AddMDM1<$scalar>,
+                contract: RuntimeFunctionContract::same_shape(
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ),
+                package: "mech-math",
+                crate_name: "mech_math",
+                installer_path: concat!(
+                    "mech_math::__mech_native::",
+                    stringify!([<install_add_md_m1_ $scalar_token>])
+                ),
+                extra_cargo_features: ["add"],
+            }
+        }
+    };
+}
+
+declare_add_matrix1_dynamic_native_factories!("i8", i8, "i8", i8);
+declare_add_matrix1_dynamic_native_factories!("i16", i16, "i16", i16);
+declare_add_matrix1_dynamic_native_factories!("i32", i32, "i32", i32);
+declare_add_matrix1_dynamic_native_factories!("i64", i64, "i64", i64);
+declare_add_matrix1_dynamic_native_factories!("i128", i128, "i128", i128);
+declare_add_matrix1_dynamic_native_factories!("u8", u8, "u8", u8);
+declare_add_matrix1_dynamic_native_factories!("u16", u16, "u16", u16);
+declare_add_matrix1_dynamic_native_factories!("u32", u32, "u32", u32);
+declare_add_matrix1_dynamic_native_factories!("u64", u64, "u64", u64);
+declare_add_matrix1_dynamic_native_factories!("u128", u128, "u128", u128);
+declare_add_matrix1_dynamic_native_factories!("f32", f32, "f32", f32);
+declare_add_matrix1_dynamic_native_factories!("f64", f64, "f64", f64);
+declare_add_matrix1_dynamic_native_factories!("rational", R64, "rational", r64);
+declare_add_matrix1_dynamic_native_factories!("complex", C64, "complex", c64);
+
+#[cfg(feature = "f64")]
+macro_rules! declare_add_f64_native_runtime_factory {
+    ($_context:tt, $lib:ident, $suffix:ident, $_shape_feature:tt, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        paste::paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(feature = "add", feature = "f64"),
+
+                registration: [<register_add_ $suffix:lower _f64>],
+                installer: [<install_add_ $suffix:lower _f64>],
+
+                name: concat!("Add", stringify!($suffix), "<", $scalar_name, ">"),
+                factory_type: [<Add $suffix>]<$scalar>,
+                contract: mech_core::__mech_elementwise_binop_contract!($suffix),
+
+                package: "mech-math",
+                crate_name: "mech_math",
+                installer_path: concat!(
+                    "mech_math::__mech_native::",
+                    stringify!([<install_add_ $suffix:lower _f64>])
+                ),
+
+                extra_cargo_features: ["add"],
+            }
+        }
+    };
+}
+
+#[cfg(feature = "f64")]
+macro_rules! register_add_f64_native_runtime_factory {
+    ($builder:ident, $lib:ident, $suffix:ident, $_shape_feature:tt, $scalar:ty, $scalar_name:literal, $scalar_token:ident) => {
+        paste::paste! {
+            [<register_add_ $suffix:lower _f64>]($builder)?;
+        }
+    };
+}
+
+#[cfg(feature = "f64")]
+mech_core::__mech_for_each_binop_runtime_factory_for_type!(
+    declare_add_f64_native_runtime_factory,
+    (),
+    Add,
+    f64,
+    "f64",
+    f64
+);
+
+mech_core::declare_native_binop_runtime_factories! {
+    package: "mech-math",
+    crate_name: "mech_math",
+    operation: Add,
+    operation_feature: "add",
+    additional_features: [],
+    scalars:
+        ("i8", i8, "i8", i8),
+        ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32),
+        ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128),
+        ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64),
+        ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32),
+        ("rational", R64, "r64", r64),
+        ("complex", C64, "c64", c64),
+}
+
+macro_rules! register_add_matrix1_dynamic_native_factories {
+    ($builder:expr; $scalar_feature:literal, $scalar_token:ident) => {
+        #[cfg(all(
+            feature = $scalar_feature,
+            feature = "matrixd",
+            any(feature = "matrix1", feature = "matrix1_interop")
+        ))]
+        paste! {
+            [<register_add_m1_md_ $scalar_token>]($builder)?;
+            [<register_add_md_m1_ $scalar_token>]($builder)?;
+        }
+    };
+}
+
+macro_rules! specialize_add_matrix1_dynamic {
+    ($lhs:expr, $rhs:expr; $(($value_kind:ident, $target_type:ty, $value_feature:literal)),+ $(,)?) => {
+        paste! {
+            $(
+                #[cfg(all(
+                    feature = $value_feature,
+                    feature = "matrixd",
+                    any(feature = "matrix1", feature = "matrix1_interop")
+                ))]
+                if let (
+                    Value::[<Matrix $value_kind>](Matrix::Matrix1(lhs)),
+                    Value::[<Matrix $value_kind>](Matrix::DMatrix(rhs)),
+                ) = (&$lhs, &$rhs)
+                {
+                    if rhs.borrow().shape() == (1, 1) {
+                        return Ok(Box::new(AddM1MD::<$target_type> {
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                            out: Ref::new(DMatrix::from_element(1, 1, <$target_type>::default())),
+                        }));
+                    }
+                }
+
+                #[cfg(all(
+                    feature = $value_feature,
+                    feature = "matrixd",
+                    any(feature = "matrix1", feature = "matrix1_interop")
+                ))]
+                if let (
+                    Value::[<Matrix $value_kind>](Matrix::DMatrix(lhs)),
+                    Value::[<Matrix $value_kind>](Matrix::Matrix1(rhs)),
+                ) = (&$lhs, &$rhs)
+                {
+                    if lhs.borrow().shape() == (1, 1) {
+                        return Ok(Box::new(AddMDM1::<$target_type> {
+                            lhs: lhs.clone(),
+                            rhs: rhs.clone(),
+                            out: Ref::new(DMatrix::from_element(1, 1, <$target_type>::default())),
+                        }));
+                    }
+                }
+            )+
+        }
+    };
+}
 
 #[cfg(feature = "source")]
 fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
@@ -108,6 +398,25 @@ fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
         }
         _ => {}
     }
+
+    specialize_add_matrix1_dynamic!(
+        lhs_value,
+        rhs_value;
+        (I8, i8, "i8"),
+        (I16, i16, "i16"),
+        (I32, i32, "i32"),
+        (I64, i64, "i64"),
+        (I128, i128, "i128"),
+        (U8, u8, "u8"),
+        (U16, u16, "u16"),
+        (U32, u32, "u32"),
+        (U64, u64, "u64"),
+        (U128, u128, "u128"),
+        (F32, f32, "f32"),
+        (F64, f64, "f64"),
+        (R64, R64, "rational"),
+        (C64, C64, "complex"),
+    );
 
     impl_binop_match_arms!(
       Add,
@@ -196,25 +505,111 @@ impl FunctionSpecializer for MathAdd {
     }
 }
 
+#[cfg(feature = "f64")]
+fn install_add_f64_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    mech_core::__mech_for_each_binop_runtime_factory_for_type!(
+        register_add_f64_native_runtime_factory,
+        builder,
+        Add,
+        f64,
+        "f64",
+        f64
+    );
+    Ok(())
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    mech_core::export_native_binop_runtime_factories! {
+        operation_feature: "add",
+        operation: Add;
+        ("i8", i8, "i8", i8),
+        ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32),
+        ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128),
+        ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64),
+        ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32),
+        ("f64", f64, "f64", f64),
+        ("rational", R64, "r64", r64),
+        ("complex", C64, "c64", c64),
+    }
+
+    macro_rules! export_add_matrix1_dynamic_native_factories {
+        ($scalar_feature:literal, $scalar_token:ident) => {
+            #[cfg(all(
+                feature = $scalar_feature,
+                feature = "matrixd",
+                any(feature = "matrix1", feature = "matrix1_interop")
+            ))]
+            mech_core::paste::paste! {
+                pub use super::[<install_add_m1_md_ $scalar_token>];
+                pub use super::[<install_add_md_m1_ $scalar_token>];
+            }
+        };
+    }
+
+    export_add_matrix1_dynamic_native_factories!("i8", i8);
+    export_add_matrix1_dynamic_native_factories!("i16", i16);
+    export_add_matrix1_dynamic_native_factories!("i32", i32);
+    export_add_matrix1_dynamic_native_factories!("i64", i64);
+    export_add_matrix1_dynamic_native_factories!("i128", i128);
+    export_add_matrix1_dynamic_native_factories!("u8", u8);
+    export_add_matrix1_dynamic_native_factories!("u16", u16);
+    export_add_matrix1_dynamic_native_factories!("u32", u32);
+    export_add_matrix1_dynamic_native_factories!("u64", u64);
+    export_add_matrix1_dynamic_native_factories!("u128", u128);
+    export_add_matrix1_dynamic_native_factories!("f32", f32);
+    export_add_matrix1_dynamic_native_factories!("f64", f64);
+    export_add_matrix1_dynamic_native_factories!("rational", r64);
+    export_add_matrix1_dynamic_native_factories!("complex", c64);
+}
+
 pub fn install_math_add_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_binop_runtime_factories!(
+    mech_core::install_native_binop_runtime_factories!(
         builder,
         Add;
-        ("i8", i8, "i8"),
-        ("i16", i16, "i16"),
-        ("i32", i32, "i32"),
-        ("i64", i64, "i64"),
-        ("i128", i128, "i128"),
-        ("u8", u8, "u8"),
-        ("u16", u16, "u16"),
-        ("u32", u32, "u32"),
-        ("u64", u64, "u64"),
-        ("u128", u128, "u128"),
-        ("f32", f32, "f32"),
-        ("f64", f64, "f64"),
-        ("rational", R64, "r64"),
-        ("complex", C64, "c64"),
-    )
+        ("i8", i8, "i8", i8),
+        ("i16", i16, "i16", i16),
+        ("i32", i32, "i32", i32),
+        ("i64", i64, "i64", i64),
+        ("i128", i128, "i128", i128),
+        ("u8", u8, "u8", u8),
+        ("u16", u16, "u16", u16),
+        ("u32", u32, "u32", u32),
+        ("u64", u64, "u64", u64),
+        ("u128", u128, "u128", u128),
+        ("f32", f32, "f32", f32),
+        ("rational", R64, "r64", r64),
+        ("complex", C64, "c64", c64),
+    )?;
+    #[cfg(feature = "f64")]
+    install_add_f64_runtime(builder)?;
+    Ok(())
+}
+
+#[cfg(feature = "native-plan")]
+pub fn install_math_add_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register_add_matrix1_dynamic_native_factories!(builder; "i8", i8);
+    register_add_matrix1_dynamic_native_factories!(builder; "i16", i16);
+    register_add_matrix1_dynamic_native_factories!(builder; "i32", i32);
+    register_add_matrix1_dynamic_native_factories!(builder; "i64", i64);
+    register_add_matrix1_dynamic_native_factories!(builder; "i128", i128);
+    register_add_matrix1_dynamic_native_factories!(builder; "u8", u8);
+    register_add_matrix1_dynamic_native_factories!(builder; "u16", u16);
+    register_add_matrix1_dynamic_native_factories!(builder; "u32", u32);
+    register_add_matrix1_dynamic_native_factories!(builder; "u64", u64);
+    register_add_matrix1_dynamic_native_factories!(builder; "u128", u128);
+    register_add_matrix1_dynamic_native_factories!(builder; "f32", f32);
+    register_add_matrix1_dynamic_native_factories!(builder; "f64", f64);
+    register_add_matrix1_dynamic_native_factories!(builder; "rational", r64);
+    register_add_matrix1_dynamic_native_factories!(builder; "complex", c64);
+    Ok(())
 }
 
 #[cfg(feature = "source")]
@@ -344,8 +739,17 @@ mod tests {
             (register, false)
         }
 
-        fn compile_const(&mut self, _bytes: &[u8], _kind: ValueKind) -> MResult<u32> {
+        fn intern_constant(&mut self, _constant: EncodedConstant) -> MResult<u32> {
             unreachable!("runtime selection does not initialize constants")
+        }
+
+        fn emit_composite_pack(
+            &mut self,
+            _destination: Register,
+            _template: u32,
+            _children: Vec<Register>,
+        ) {
+            unreachable!("runtime selection does not construct composites")
         }
 
         fn define_symbol(
@@ -354,11 +758,13 @@ mod tests {
             _register: Register,
             _name: &str,
             _mutable: bool,
-        ) {
+        ) -> MResult<()> {
             unreachable!("binary function compilation does not define symbols")
         }
 
-        fn require(&mut self, _requirement: FeatureFlag) {}
+        fn intern_requirement(&mut self, _requirement: ApplicationRequirement) -> MResult<u32> {
+            unreachable!("binary function compilation does not require external services")
+        }
 
         fn emit_const_load(&mut self, _destination: Register, _constant: u32) {
             unreachable!("runtime selection does not initialize constants")
@@ -414,8 +820,35 @@ mod tests {
             unreachable!("expected binary function compilation")
         }
 
-        fn emit_ret(&mut self, _source: Register) {
-            unreachable!("binary function compilation does not emit returns")
+        fn emit_host_call(
+            &mut self,
+            _requirement: u32,
+            _destination: Register,
+            _arguments: Vec<Register>,
+        ) {
+            unreachable!("expected binary function compilation")
+        }
+
+        fn emit_resource_read(&mut self, _requirement: u32, _destination: Register) {
+            unreachable!("expected binary function compilation")
+        }
+
+        fn emit_resource_write(
+            &mut self,
+            _requirement: u32,
+            _destination: Register,
+            _source: Register,
+        ) {
+            unreachable!("expected binary function compilation")
+        }
+
+        fn emit_resource_send(
+            &mut self,
+            _requirement: u32,
+            _destination: Register,
+            _source: Register,
+        ) {
+            unreachable!("expected binary function compilation")
         }
     }
 
@@ -469,6 +902,220 @@ mod tests {
         assert_catalog_name_and_id(&catalog, "AddSMD<f64>", 0x0000_6564_dae2_2a47);
         assert_catalog_name_and_id(&catalog, "AddMDS<f64>", 0x003a_baf2_6ed7_4f43);
         assert_catalog_name_and_id(&catalog, "AddMDMD<f64>", 0x008f_a755_537d_c395);
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix2"))]
+    #[test]
+    fn representative_fixed_matrix_add_name_and_id_are_unchanged() {
+        let catalog = explicit_runtime_catalog();
+        assert_catalog_name_and_id(&catalog, "AddM2M2<f64>", 0x00eb_049b_7b90_a0d9);
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "i8",
+        feature = "matrix2",
+        feature = "matrixd"
+    ))]
+    #[test]
+    fn runtime_add_factories_reject_incompatible_exact_representations() {
+        fn entry<'a>(catalog: &'a FunctionCatalog, name: &str) -> &'a RuntimeFunctionEntry {
+            catalog
+                .runtime_entry(RuntimeFunctionId::from_name(name))
+                .unwrap()
+        }
+
+        fn assert_contract_error(result: MResult<Box<dyn MechFunction>>, source_kind: &str) {
+            let error = result.err().expect("incompatible arguments must fail");
+            assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
+            assert_eq!(error.source.as_ref().unwrap().kind_name(), source_kind);
+        }
+
+        let catalog = explicit_runtime_catalog();
+        let output = Ref::new(41.0_f64);
+        let lhs = Ref::new(2.0_f64);
+        let rhs = Ref::new(3.0_f64);
+        let wrong = Value::I8(Ref::new(7));
+        let scalar = entry(&catalog, "AddSS<f64>");
+
+        assert_contract_error(
+            scalar.instantiate(FunctionArgs::Binary(
+                output.to_value(),
+                wrong.clone(),
+                rhs.to_value(),
+            )),
+            "FunctionSignatureViolation",
+        );
+        assert_contract_error(
+            scalar.instantiate(FunctionArgs::Binary(
+                output.to_value(),
+                lhs.to_value(),
+                wrong.clone(),
+            )),
+            "FunctionSignatureViolation",
+        );
+        assert_contract_error(
+            scalar.instantiate(FunctionArgs::Binary(wrong, lhs.to_value(), rhs.to_value())),
+            "FunctionSignatureViolation",
+        );
+        assert_contract_error(
+            scalar.instantiate(FunctionArgs::Unary(output.to_value(), lhs.to_value())),
+            "IncorrectNumberOfArguments",
+        );
+        assert_eq!(
+            *output.borrow(),
+            41.0,
+            "construction must not mutate output"
+        );
+
+        let fixed = Value::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::identity())));
+        let dynamic = Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
+        assert_contract_error(
+            entry(&catalog, "AddM2M2<f64>").instantiate(FunctionArgs::Binary(
+                fixed.clone(),
+                dynamic.clone(),
+                fixed.clone(),
+            )),
+            "FunctionSignatureViolation",
+        );
+        assert_contract_error(
+            entry(&catalog, "AddMDMD<f64>").instantiate(FunctionArgs::Binary(
+                dynamic,
+                fixed.clone(),
+                fixed,
+            )),
+            "FunctionSignatureViolation",
+        );
+    }
+
+    #[cfg(all(
+        feature = "native-link",
+        feature = "f64",
+        feature = "matrix2",
+        feature = "matrixd"
+    ))]
+    #[test]
+    fn exact_native_installers_each_insert_one_factory_and_reject_duplicates() {
+        fn assert_installer(
+            installer: fn(&mut FunctionCatalogBuilder) -> MResult<()>,
+            name: &str,
+            raw_id: u64,
+        ) {
+            let mut builder = FunctionCatalogBuilder::new();
+            installer(&mut builder).unwrap();
+            let duplicate = installer(&mut builder).unwrap_err();
+            assert_eq!(
+                duplicate.kind_name(),
+                "FunctionCatalogDuplicateRuntimeFactory"
+            );
+
+            let catalog = builder.build().unwrap();
+            assert_eq!(catalog.runtime_factory_count(), 1);
+            assert_catalog_name_and_id(&catalog, name, raw_id);
+        }
+
+        assert_installer(
+            crate::__mech_native::install_add_ss_f64,
+            "AddSS<f64>",
+            0x000a_2c77_6884_86f3,
+        );
+        assert_installer(
+            crate::__mech_native::install_add_m2m2_f64,
+            "AddM2M2<f64>",
+            0x00eb_049b_7b90_a0d9,
+        );
+        assert_installer(
+            crate::__mech_native::install_add_mdmd_f64,
+            "AddMDMD<f64>",
+            0x008f_a755_537d_c395,
+        );
+    }
+
+    #[cfg(all(
+        feature = "native-plan",
+        feature = "f64",
+        feature = "matrix2",
+        feature = "matrixd"
+    ))]
+    #[test]
+    fn aggregate_catalog_links_exactly_the_three_math_representatives() {
+        let catalog = explicit_runtime_catalog();
+        let representative_names = ["AddM2M2<f64>", "AddMDMD<f64>", "AddSS<f64>"];
+        let mut linked = catalog
+            .runtime_entries()
+            .filter(|entry| representative_names.contains(&entry.name.as_str()))
+            .filter_map(|entry| {
+                entry
+                    .native_linkage
+                    .as_ref()
+                    .map(|linkage| (entry.name.as_str(), entry.id, linkage))
+            })
+            .collect::<Vec<_>>();
+        linked.sort_by_key(|(name, _, _)| *name);
+
+        let expected = [
+            (
+                "AddM2M2<f64>",
+                0x00eb_049b_7b90_a0d9,
+                "mech_math::__mech_native::install_add_m2m2_f64",
+                &["add", "f64", "matrix2", "native-link", "runtime"][..],
+            ),
+            (
+                "AddMDMD<f64>",
+                0x008f_a755_537d_c395,
+                "mech_math::__mech_native::install_add_mdmd_f64",
+                &["add", "f64", "matrixd", "native-link", "runtime"][..],
+            ),
+            (
+                "AddSS<f64>",
+                0x000a_2c77_6884_86f3,
+                "mech_math::__mech_native::install_add_ss_f64",
+                &["add", "f64", "native-link", "runtime"][..],
+            ),
+        ];
+        assert_eq!(linked.len(), expected.len());
+
+        let mut installer_paths = std::collections::BTreeSet::new();
+        for ((name, id, linkage), (expected_name, raw_id, path, features)) in
+            linked.into_iter().zip(expected)
+        {
+            assert_eq!(name, expected_name);
+            assert_eq!(id.raw(), raw_id);
+            assert_eq!(linkage.package, "mech-math");
+            assert_eq!(linkage.crate_name, "mech_math");
+            assert_eq!(linkage.installer_path, path);
+            assert_eq!(linkage.cargo_features, features);
+            assert!(installer_paths.insert(linkage.installer_path));
+            assert!(
+                linkage
+                    .cargo_features
+                    .windows(2)
+                    .all(|pair| pair[0] < pair[1]),
+                "feature list is not sorted and unique for {name}",
+            );
+            assert!(linkage.cargo_features.iter().all(|feature| {
+                let mut chars = feature.chars();
+                chars
+                    .next()
+                    .is_some_and(|first| first.is_ascii_alphabetic() || first == '_')
+                    && chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '-')
+            }));
+        }
+    }
+
+    #[test]
+    fn native_layers_have_exact_runtime_only_feature_edges() {
+        let manifest = include_str!("../../Cargo.toml");
+        assert!(
+            manifest
+                .lines()
+                .any(|line| line == "native-plan = [\"runtime\", \"mech-core/native-plan\"]")
+        );
+        assert!(
+            manifest
+                .lines()
+                .any(|line| line == "native-link = [\"runtime\"]")
+        );
     }
 
     #[cfg(all(feature = "f64", feature = "vector2"))]
@@ -530,6 +1177,73 @@ mod tests {
         assert_catalog_specializes_to(specializer, [vector, scalar], "AddV2S", "AddV2S<f64>");
     }
 
+    #[cfg(all(
+        feature = "source",
+        feature = "f64",
+        feature = "matrixd",
+        any(feature = "matrix1", feature = "matrix1_interop")
+    ))]
+    #[test]
+    fn source_matrix1_dynamic_bridges_are_reactive_and_compile_exactly() {
+        assert_eq!(
+            [
+                RuntimeFunctionId::from_name("AddM1MD<f64>").raw(),
+                RuntimeFunctionId::from_name("AddMDM1<f64>").raw(),
+            ],
+            [0x00f1_f90b_3463_d8de, 0x002f_c488_ae85_b3ec],
+        );
+        let dynamic_values = |value: Value| match value {
+            Value::MatrixF64(Matrix::DMatrix(value)) => value.borrow().as_slice().to_vec(),
+            other => panic!("expected dynamic f64 matrix output, got {other:?}"),
+        };
+        let fixed = Ref::new(Matrix1::from_element(2.0_f64));
+        let dynamic = Ref::new(DMatrix::from_element(1, 1, 3.0_f64));
+
+        let fixed_dynamic = specialize_math_add(&[
+            Value::MatrixF64(Matrix::Matrix1(fixed.clone())),
+            Value::MatrixF64(Matrix::DMatrix(dynamic.clone())),
+        ])
+        .unwrap();
+        assert!(fixed_dynamic.to_string().starts_with("AddM1MD"));
+        fixed_dynamic.solve_result().unwrap();
+        assert_eq!(dynamic_values(fixed_dynamic.out()), vec![5.0]);
+
+        fixed.borrow_mut()[(0, 0)] = 7.0;
+        dynamic.borrow_mut()[(0, 0)] = 11.0;
+        fixed_dynamic.solve_result().unwrap();
+        assert_eq!(dynamic_values(fixed_dynamic.out()), vec![18.0]);
+
+        let dynamic_fixed = specialize_math_add(&[
+            Value::MatrixF64(Matrix::DMatrix(dynamic)),
+            Value::MatrixF64(Matrix::Matrix1(fixed)),
+        ])
+        .unwrap();
+        assert!(dynamic_fixed.to_string().starts_with("AddMDM1"));
+        dynamic_fixed.solve_result().unwrap();
+        assert_eq!(dynamic_values(dynamic_fixed.out()), vec![18.0]);
+
+        #[cfg(feature = "compiler")]
+        {
+            let mut fixed_dynamic_recorder = RuntimeFactoryRecorder::default();
+            fixed_dynamic
+                .compile(&mut fixed_dynamic_recorder)
+                .unwrap();
+            assert_eq!(
+                fixed_dynamic_recorder.runtime_ids,
+                [RuntimeFunctionId::from_name("AddM1MD<f64>").raw()],
+            );
+
+            let mut dynamic_fixed_recorder = RuntimeFactoryRecorder::default();
+            dynamic_fixed
+                .compile(&mut dynamic_fixed_recorder)
+                .unwrap();
+            assert_eq!(
+                dynamic_fixed_recorder.runtime_ids,
+                [RuntimeFunctionId::from_name("AddMDM1<f64>").raw()],
+            );
+        }
+    }
+
     #[cfg(feature = "source")]
     #[test]
     fn source_installation_exports_only_the_prelude_operation() {
@@ -573,7 +1287,7 @@ mod tests {
 
         assert_eq!(specializer.guard_safety(), GuardFunctionSafety::Unsupported);
         let fxn = specializer.specialize(&arguments).unwrap();
-        fxn.solve();
+        fxn.solve_result().unwrap();
         assert_eq!(fxn.out().as_f64().unwrap().borrow().clone(), 3.5);
     }
 
@@ -585,7 +1299,7 @@ mod tests {
         let arguments = vec![left, right];
 
         let function = FunctionSpecializer::specialize(&MathAdd {}, &arguments).unwrap();
-        function.solve();
+        function.solve_result().unwrap();
         assert_eq!(function.out().as_f64().unwrap().borrow().clone(), 3.0);
     }
 }

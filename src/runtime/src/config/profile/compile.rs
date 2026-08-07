@@ -89,6 +89,13 @@ impl ConfigCompiler {
             Statement::SplitTable | Statement::FlattenTable => Err(ConfigProfileViolation::error(
                 "table mutation transforms are not allowed in Mech config",
             )),
+            // Dependency feature unification can expose a core statement
+            // variant that this runtime profile does not enable locally.
+            // Config remains deny-by-default for every such statement.
+            #[allow(unreachable_patterns)]
+            _ => Err(ConfigProfileViolation::error(
+                "this statement is not allowed in Mech config v1",
+            )),
         }
     }
 
@@ -138,7 +145,12 @@ impl ConfigCompiler {
                         "addressed resources are not allowed in Mech config",
                     ));
                 }
-                Ok(ConfigExpr::Var(var.name.to_string()))
+                let name = var.name.to_string();
+                if name == "null" {
+                    Ok(ConfigExpr::Null)
+                } else {
+                    Ok(ConfigExpr::Var(name))
+                }
             }
             Expression::Structure(structure) => self.compile_structure(structure),
             Expression::FunctionCall(call) => {

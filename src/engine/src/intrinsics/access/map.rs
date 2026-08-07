@@ -8,8 +8,9 @@ pub struct MapAccessField {
 }
 
 impl MechFunctionImpl for MapAccessField {
-    fn solve(&self) {
-        ()
+    fn solve_result(&self) -> MResult<()> {
+        ();
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.clone()
@@ -28,7 +29,6 @@ impl MechFunctionCompiler for MapAccessField {
         let mut registers = [0, 0];
         registers[0] = compile_register!(self.out, ctx);
         registers[1] = compile_register_brrw!(self.source, ctx);
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
         ctx.emit_unop(hash_str("MapAccessField"), registers[0], registers[1]);
         return Ok(registers[0]);
     }

@@ -22,11 +22,6 @@ name = "mech"
 path = "src/bin/mech.rs"
 required-features = ["cli_core"]
 
-[[bin]]
-name = "mechc"
-path = "src/bin/mechc.rs"
-required-features = ["compiler", "standard_compiler"]
-
 [[example]]
 name = "matrix_multiply"
 path = "examples/matrix_multiply.rs"
@@ -34,6 +29,12 @@ required-features = ["standard_source", "project"]
 
 [profile.release]
 debug = false
+
+[profile.test]
+# The exhaustive native-factory matrix otherwise produces multi-gigabyte
+# test executables that macOS cannot map alongside the shared dyld cache.
+debug = false
+strip = "symbols"
 
 [features]
 no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-stdlib/no_std", "mech-syntax/no_std"]
@@ -71,12 +72,23 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
 cli_core = []
 cli = ["cli_core", "build", "formatter", "serve", "bundle_web", "run", "test", "repl"]
 formatter_core = ["serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
-build = ["cli_core", "standard_compiler", "compiler", "mech-runtime", "mech-runtime/default"]
+build = [
+      "cli_core", "standard_compiler", "compiler",
+      "dep:mech-build", "mech-build/standard-hosts",
+      "mech-stdlib/native-plan",
+      "mech-runtime", "mech-runtime/compiler", "mech-runtime/native-link", "mech-runtime/serde",
+      "dep:mech-host-cli", "mech-host-cli/provider",
+      "dep:mech-host-console", "mech-host-console/native",
+      "dep:mech-host-time", "mech-host-time/native",
+      "dep:mech-host-timer", "mech-host-timer/native",
+      "dep:mech-host-scene", "mech-host-scene/native",
+      "dep:mech-host-robot-arm", "mech-host-robot-arm/provider",
+      ]
 repl = ["cli_core", "standard_source", "program"]
 run = ["cli_core", "standard_source", "cli_host", "time_host_native", "timer_host_native", "console_host_native", "scene_host_native", "project"]
 test = ["cli_core", "standard_source", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/default"]
 project = ["standard_source", "mech-runtime", "mech-runtime/default"]
-cli_host = ["mech-runtime", "mech-runtime/default", "mech-host-cli", "mech-host-cli/provider"]
+cli_host = ["mech-runtime", "mech-runtime/default", "dep:mech-host-cli", "mech-host-cli/provider"]
 web_host = ["mech-runtime", "mech-runtime/default", "mech-host-browser", "mech-host-browser/serde", "mech-host-browser/provider", "dep:mech-host-time", "dep:mech-host-timer", "dep:mech-host-console", "dep:mech-host-scene"]
 bundle_web_core = ["project", "web_host", "formatter_core", "serde", "mech-runtime", "mech-runtime/default"]
 bundle_web = ["cli_core", "bundle_web_core"]
@@ -233,7 +245,7 @@ baselib = ["bool", "string",
       "functions", "formulas",
     ]
 
-compiler = ["anyhow", "console", "tempfile", "zip", "mech-core/compiler", "mech-engine/compiler", "mech-syntax/compiler", "mech-runtime?/compiler"]
+compiler = ["mech-core/compiler", "mech-engine/compiler", "mech-syntax/compiler", "mech-runtime?/compiler"]
 program = ["mech-core/program", "mech-engine/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-engine/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-engine/serde", "mech-syntax/serde"]
@@ -324,6 +336,7 @@ matrix_vertcat = ["matrix", "mech-stdlib/matrix_vertcat"]
 [dev-dependencies]
 nalgebra = "0.34.1"
 indicatif = { version = "0.18.4", features = ["in_memory"] }
+tempfile = "3.26.0"
 
 [target.'cfg(unix)'.dev-dependencies]
 libc = "0.2"
@@ -337,12 +350,14 @@ mech-syntax      = { version = "0.3.5", default-features = false }
 mech-engine = { version = "0.3.5", default-features = false }
 mech-stdlib = { version = "0.3.5", default-features = false }
 mech-runtime = { version = "0.3.5", default-features = false, optional = true }
+mech-build = { version = "0.3.5", default-features = false, optional = true }
 mech-host-browser = { version = "0.3.5", default-features = false, optional = true }
 mech-host-cli = { version = "0.3.5", default-features = false, optional = true }
 mech-host-time = { version = "0.3.5", path = "hosts/time", default-features = false, optional = true }
 mech-host-console = { version = "0.3.5", path = "hosts/console", default-features = false, optional = true }
 mech-host-timer = { version = "0.3.5", path = "hosts/timer", default-features = false, optional = true }
 mech-host-scene = { version = "0.3.5", path = "hosts/scene", default-features = false, optional = true }
+mech-host-robot-arm = { version = "0.3.5", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"
@@ -370,15 +385,11 @@ tokio = { version = "1.50.0", features = ["full"]}
 include_dir = {version = "0.7.4", features = ["glob"]}
 indicatif = { version = "0.18.4"}
 
-anyhow = { version = "1.0.102", optional = true }
-console = { version = "0.16.2", optional = true }
-tempfile = { version = "3.26.0", optional = true }
-zip = { version =  "5.1.1", optional = true }
-
 [workspace]
 members = [
   "src/abi",
   "src/bytecode",
+  "src/build",
   "src/core",
   "src/syntax",
   "src/engine",
@@ -392,6 +403,7 @@ members = [
   "hosts/time",
   "hosts/timer",
   "hosts/scene",
+  "tests/fixtures/native-live-host",
 ]
 
 [build-dependencies]
@@ -403,6 +415,7 @@ LegalCopyright = "Copyright © 2026"
 
 [patch.crates-io]
 mech-bytecode = { path = 'src/bytecode' }
+mech-build = { path = 'src/build' }
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-engine = { path = 'src/engine'}

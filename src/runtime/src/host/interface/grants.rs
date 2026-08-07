@@ -1,6 +1,9 @@
 use crate::InvalidConfigField;
 use mech_core::{MResult, MechError};
 
+#[cfg(feature = "runtime")]
+use crate::ResourcePathScope;
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RunResourceGrantConfig {
@@ -35,6 +38,14 @@ pub fn validate_grant_path(path: &str) -> MResult<()> {
         return invalid(format!("invalid wildcard placement in grant path `{path}`"));
     }
     Ok(())
+}
+
+/// Normalize one configured resource-grant path with the exact rules used by
+/// runtime capability authorization.
+#[cfg(feature = "runtime")]
+pub fn normalize_run_resource_grant_path(path: &str) -> MResult<String> {
+    validate_grant_path(path)?;
+    Ok(ResourcePathScope::from_config_path(path)?.config_path())
 }
 
 fn invalid<T>(message: impl Into<String>) -> MResult<T> {

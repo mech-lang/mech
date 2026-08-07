@@ -58,12 +58,21 @@ macro_rules! impl_two_arg_fxn {
             out: Ref<$out_kind>,
         }
         impl MechFunctionFactory for $struct_name {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                <$kind1 as FunctionRuntimeType>::REPRESENTATION,
+                <$kind2 as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
-                        let arg1: Ref<$kind1> = unsafe { arg1.as_unchecked().clone() };
-                        let arg2: Ref<$kind2> = unsafe { arg2.as_unchecked().clone() };
-                        let out: Ref<$out_kind> = unsafe { out.as_unchecked().clone() };
+                        let arg1: Ref<$kind1> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let arg2: Ref<$kind2> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let out: Ref<$out_kind> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new($struct_name { arg1, arg2, out }))
                     }
                     _ => Err(MechError::new(
@@ -78,11 +87,12 @@ macro_rules! impl_two_arg_fxn {
             }
         }
         impl MechFunctionImpl for $struct_name {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 let arg1_ptr = self.arg1.as_ptr();
                 let arg2_ptr = self.arg2.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(arg1_ptr, arg2_ptr, out_ptr);
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -103,8 +113,6 @@ macro_rules! impl_two_arg_fxn {
                 registers[0] = compile_register_brrw!(self.out, ctx);
                 registers[1] = compile_register_brrw!(self.arg1, ctx);
                 registers[2] = compile_register_brrw!(self.arg2, ctx);
-
-                ctx.require(FeatureFlag::Custom(hash_str("math/atan2")));
 
                 ctx.emit_binop(
                     hash_str(stringify!($struct_name)),
@@ -136,7 +144,7 @@ impl_atan2!(
   Atan2M2, Matrix2, "matrix2";
   Atan2M3, Matrix3, "matrix3";
   Atan2M2x3, Matrix2x3, "matrix2x3";
-  Atan2M3x2, Matrix3x2, "matrix3";
+  Atan2M3x2, Matrix3x2, "matrix3x2";
   Atan2M4, Matrix4, "matrix4";
   Atan2V2, Vector2, "vector2";
   Atan2V3, Vector3, "vector3";
@@ -155,7 +163,7 @@ impl_atan2!(
   Atan2M2, Matrix2, "matrix2";
   Atan2M3, Matrix3, "matrix3";
   Atan2M2x3, Matrix2x3, "matrix2x3";
-  Atan2M3x2, Matrix3x2, "matrix3";
+  Atan2M3x2, Matrix3x2, "matrix3x2";
   Atan2M4, Matrix4, "matrix4";
   Atan2V2, Vector2, "vector2";
   Atan2V3, Vector3, "vector3";

@@ -48,6 +48,16 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
         vec![self.base("commands"), self.base("state")]
     }
 
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        Err(MechError::new(
+            NativeResourceReadNotPlannable {
+                base_uri: request.base_uri,
+                path: request.path,
+            },
+            None,
+        ))
+    }
+
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if !self.matches_base(&request.base_uri, "state") {
             return Err(robot_error(request.base_uri, "only state can be read"));
@@ -109,6 +119,25 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
                 applied: false,
             },
         )))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct NativeResourceReadNotPlannable {
+    pub base_uri: String,
+    pub path: String,
+}
+
+impl MechErrorKind for NativeResourceReadNotPlannable {
+    fn name(&self) -> &str {
+        "NativeResourceReadNotPlannable"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "native planning cannot infer one static value type for robot resource `{}/{}`",
+            self.base_uri, self.path
+        )
     }
 }
 
@@ -274,7 +303,7 @@ impl MechErrorKind for RobotArmResourceProviderError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_runtime::RuntimeCapabilityOperation;
+    use mech_runtime::{RuntimeCapabilityOperation, RuntimeResourceProvider};
 
     fn bool_value(value: bool) -> Value {
         Value::Bool(Ref::new(value))
@@ -401,6 +430,24 @@ mod tests {
                 })
                 .is_err()
         );
+    }
+
+    #[test]
+    fn robot_state_reads_are_explicitly_not_plannable() {
+        let provider = RobotArmResourceProvider::new("arm");
+        for path in ["position", "gripper", "last-command"] {
+            let error = provider
+                .plan_read(RuntimeResourceReadRequest {
+                    base_uri: "robot://arm/state".to_owned(),
+                    path: path.to_owned(),
+                    context_name: "state".to_owned(),
+                })
+                .unwrap_err();
+            assert_eq!(error.kind_name(), "NativeResourceReadNotPlannable");
+            let message = error.display_message();
+            assert!(message.contains("robot://arm/state"), "got {message}");
+            assert!(message.contains(path), "got {message}");
+        }
     }
 
     #[test]

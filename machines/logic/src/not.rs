@@ -24,12 +24,16 @@ where
     #[cfg(feature = "compiler")]
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
+    T: FunctionRuntimeType,
 {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::unary(T::REPRESENTATION, T::REPRESENTATION);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg) => {
-                let arg: Ref<T> = unsafe { arg.as_unchecked() }.clone();
-                let out: Ref<T> = unsafe { out.as_unchecked() }.clone();
+                let arg: Ref<T> = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let out: Ref<T> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     arg,
                     out,
@@ -52,12 +56,13 @@ where
     T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + Not<Output = T>,
     Ref<T>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
             *out_ptr = !*arg_ptr;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -77,13 +82,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NotS<{}>", T::as_value_kind());
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Not)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 // NotV -----------------------------------------------------------------------
@@ -105,12 +104,16 @@ where
     #[cfg(feature = "compiler")]
     MatA: CompileConst + ConstElem,
     Ref<MatA>: ToValue,
+    MatA: FunctionRuntimeType,
 {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::unary(MatA::REPRESENTATION, MatA::REPRESENTATION);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg) => {
-                let arg: Ref<MatA> = unsafe { arg.as_unchecked() }.clone();
-                let out: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
+                let arg: Ref<MatA> = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let out: Ref<MatA> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     arg,
                     out,
@@ -136,7 +139,7 @@ where
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
     MatA: Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let sink_ptr = self.out.as_mut_ptr();
             let source_ptr = self.arg.as_ptr();
@@ -145,7 +148,8 @@ where
             for (dst, src) in sink_ref.into_iter().zip(source_ref.into_iter()) {
                 *dst = !src.clone();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -166,13 +170,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("NotV<{}{}>", T::as_value_kind(), MatA::as_value_kind());
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Not)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 

@@ -546,7 +546,7 @@ fn stable_value_kind(value: &Value) -> Result<ValueKind, ()> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
     use crate::{MechProgramConfig, ProgramInputUpdate};
@@ -888,10 +888,11 @@ mod tests {
     }
 
     impl MechFunctionImpl for IntegrityOperationFunction {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             *self.result.borrow_mut() = self.next_result.get();
             *self.output.borrow_mut() += 1;
             *self.hidden.borrow_mut() += 1;
+            Ok(())
         }
 
         fn out(&self) -> Value {

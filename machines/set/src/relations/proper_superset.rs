@@ -16,12 +16,18 @@ pub(crate) struct SetProperSupersetFxn {
 }
 
 impl MechFunctionFactory for SetProperSupersetFxn {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Bool,
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::Set,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechSet> = unsafe { arg1.as_unchecked() }.clone();
-                let rhs: Ref<MechSet> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<bool> = unsafe { out.as_unchecked() }.clone();
+                let lhs: Ref<MechSet> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let rhs: Ref<MechSet> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<bool> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(SetProperSupersetFxn { lhs, rhs, out }))
             }
             _ => Err(MechError::new(
@@ -37,7 +43,7 @@ impl MechFunctionFactory for SetProperSupersetFxn {
 }
 
 impl MechFunctionImpl for SetProperSupersetFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
             let lhs_ptr: &MechSet = &*(self.lhs.as_ptr());
@@ -45,7 +51,8 @@ impl MechFunctionImpl for SetProperSupersetFxn {
             // Proper superset: lhs ⊃ rhs  <=>  lhs ⊇ rhs and |lhs| > |rhs|
             *out_ptr =
                 lhs_ptr.set.is_superset(&rhs_ptr.set) && (lhs_ptr.set.len() > rhs_ptr.set.len());
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Bool(self.out.clone())
@@ -64,14 +71,7 @@ impl MechFunctionCompiler for SetProperSupersetFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = "SetProperSupersetFxn".to_string();
         // Builtin operator ⊋
-        compile_binop!(
-            name,
-            self.out,
-            self.lhs,
-            self.rhs,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::ProperSuperset)
-        );
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
 }
 

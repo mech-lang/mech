@@ -8,7 +8,8 @@ use crate::intrinsics::constructors::ValueSetComprehension;
 use crate::intrinsics::define::VarDefine;
 use crate::*;
 use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
+    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, FunctionExport, FunctionExposure,
+    FunctionSpecializer, MResult, function_shape_contract_violation,
 };
 use std::sync::Arc;
 
@@ -44,6 +45,34 @@ where
     builder
         .insert_intrinsic_specializer(canonical_name, Arc::new(compiler))
         .map(|_| ())
+}
+
+#[cfg(feature = "matrix_comprehensions")]
+fn validate_matrix_comprehension(args: &FunctionArgs) -> MResult<()> {
+    let contract = "matrix_comprehension";
+    args.output_value()
+        .function_matrix_descriptor(FunctionArgumentRole::Output)?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "output must be matrix-backed")
+        })?;
+    Ok(())
+}
+
+#[cfg(feature = "set_comprehensions")]
+fn validate_set_comprehension(_args: &FunctionArgs) -> MResult<()> {
+    Ok(())
+}
+
+#[cfg(feature = "invariant_define")]
+fn validate_integrity_constraint_marker(args: &FunctionArgs) -> MResult<()> {
+    if args.input_count() == 6 {
+        Ok(())
+    } else {
+        Err(function_shape_contract_violation(
+            "integrity_constraint_marker",
+            format!("expected 6 metadata inputs, found {}", args.input_count()),
+        ))
+    }
 }
 
 #[cfg(feature = "source")]
@@ -139,6 +168,66 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 
 /// Installs the concrete bytecode factories owned by the engine fragment.
 /// Machine-owned factories are installed by their respective machine crates.
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "set",
+    registration: register_set_define,
+    installer: install_set_define,
+    name: "set/define",
+    factory_type: ValueSet,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_set_define",
+    extra_cargo_features: [],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "invariant_define",
+    registration: register_integrity_constraint_marker,
+    installer: install_integrity_constraint_marker,
+    name: "integrity/constraint",
+    factory_type: crate::intrinsics::define::BytecodeIntegrityConstraintMarker,
+    contract: RuntimeFunctionContract::custom(
+        "integrity_constraint_marker",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_integrity_constraint_marker,
+    ),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_integrity_constraint_marker",
+    extra_cargo_features: ["invariant_define"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "set_comprehensions",
+    registration: register_set_comprehension,
+    installer: install_set_comprehension,
+    name: "set/comprehension",
+    factory_type: ValueSetComprehension,
+    contract: RuntimeFunctionContract::custom(
+        "set_comprehension",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_set_comprehension,
+    ),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_set_comprehension",
+    extra_cargo_features: ["set_comprehensions"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "matrix_comprehensions",
+    registration: register_matrix_comprehension,
+    installer: install_matrix_comprehension,
+    name: "matrix/comprehension",
+    factory_type: ValueMatrixComprehension,
+    contract: RuntimeFunctionContract::custom(
+        "matrix_comprehension",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_matrix_comprehension,
+    ),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_matrix_comprehension",
+    extra_cargo_features: ["matrix_comprehensions"],
+}
+
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "access")]
     super::access::install_runtime(builder)?;
@@ -150,22 +239,37 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     super::define::install_runtime(builder)?;
 
     #[cfg(feature = "set")]
-    builder.insert_runtime_factory("set/define", <ValueSet as MechFunctionFactory>::new)?;
+    register_set_define(builder)?;
     #[cfg(feature = "set_comprehensions")]
-    builder.insert_runtime_factory(
-        "set/comprehension",
-        <ValueSetComprehension as MechFunctionFactory>::new,
-    )?;
+    register_set_comprehension(builder)?;
     #[cfg(feature = "matrix_comprehensions")]
-    builder.insert_runtime_factory(
-        "matrix/comprehension",
-        <ValueMatrixComprehension as MechFunctionFactory>::new,
-    )?;
+    register_matrix_comprehension(builder)?;
+    #[cfg(feature = "invariant_define")]
+    register_integrity_constraint_marker(builder)?;
 
     #[cfg(feature = "matrix_horzcat")]
     super::horzcat::install_runtime(builder)?;
     #[cfg(feature = "matrix_vertcat")]
     super::vertcat::install_runtime(builder)?;
+
+    Ok(())
+}
+
+/// Installs engine-owned factories that are available only when constructing
+/// native application plans.
+#[cfg(feature = "native-plan")]
+pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "access")]
+    crate::intrinsics::access::install_native_plan(builder)?;
+
+    #[cfg(feature = "assign")]
+    crate::intrinsics::assign::catalog::install_native_plan(builder)?;
+
+    #[cfg(feature = "variable_define_matrix1")]
+    crate::intrinsics::define::install_native_plan_runtime(builder)?;
+
+    #[cfg(feature = "matrix_horzcat")]
+    crate::intrinsics::horzcat::install_native_plan_runtime(builder)?;
 
     Ok(())
 }

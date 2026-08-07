@@ -30,6 +30,30 @@ impl MechProgram {
     }
 }
 
+/// Constructs the concrete matrix storage used by the standard source
+/// distribution without consulting feature-unified `mech-core` fixed-shape
+/// flags from unrelated workspace test dependencies.
+fn standard_matrix<T: na::Scalar>(values: Vec<T>, rows: usize, cols: usize) -> Matrix<T> {
+    match (rows, cols) {
+        (1, 1) => Matrix::DMatrix(Ref::new(na::DMatrix::from_vec(rows, cols, values))),
+        (1, _) => Matrix::RowDVector(Ref::new(na::RowDVector::from_vec(values))),
+        (_, 1) => Matrix::DVector(Ref::new(na::DVector::from_vec(values))),
+        _ => Matrix::DMatrix(Ref::new(na::DMatrix::from_vec(rows, cols, values))),
+    }
+}
+
+/// Constructs the feature-invariant 1x1 result used by operations such as
+/// dynamic row-vector × dynamic vector multiplication.
+#[cfg(feature = "standard_source")]
+fn standard_matrix1<T: na::Scalar>(value: T) -> Matrix<T> {
+    Matrix::Matrix1(Ref::new(na::Matrix1::from_element(value)))
+}
+
+#[cfg(not(feature = "standard_source"))]
+fn standard_matrix1<T: na::Scalar>(value: T) -> Matrix<T> {
+    Matrix::DMatrix(Ref::new(na::DMatrix::from_element(1, 1, value)))
+}
+
 /// Compare interpreter output to expected value
 macro_rules! test_interpreter {
     ($func:ident, $input:tt, $expected:expr) => {
@@ -70,7 +94,7 @@ macro_rules! test_catalog_internal_operation {
                 .specializer
                 .specialize(&arguments)
                 .expect("internal operation must specialize for the test arguments");
-            function.solve();
+            function.solve_result().unwrap();
             assert_eq!(function.out(), $expected);
         }
     };
@@ -1542,7 +1566,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_formula_comparison_gt_vec,
     "[1 8; 10 5] > [7 2; 4 11]",
-    Value::MatrixBool(Matrix::from_vec(vec![false, true, true, false], 2, 2))
+    Value::MatrixBool(standard_matrix(vec![false, true, true, false], 2, 2))
 );
 test_interpreter!(
     interpret_formula_comparison_lt_vec,
@@ -1602,7 +1626,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_formula_logic_not_vec1,
     "![false]",
-    Value::MatrixBool(Matrix::from_vec(vec![true], 1, 1))
+    Value::MatrixBool(standard_matrix(vec![true], 1, 1))
 );
 
 test_interpreter!(
@@ -1673,7 +1697,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_matrix_mat1,
     "[123]",
-    Value::MatrixF64(Matrix::from_vec(vec![123.0], 1, 1))
+    Value::MatrixF64(standard_matrix(vec![123.0], 1, 1))
 );
 test_interpreter!(
     interpret_matrix_row3_float,
@@ -1683,12 +1707,12 @@ test_interpreter!(
 test_interpreter!(
     interpret_matrix_mat2,
     "[1 2; 3 4]",
-    Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![1.0, 3.0, 2.0, 4.0], 2, 2))
 );
 test_interpreter!(
     interpret_matrix_transpose,
     "[1 2; 3 4]'",
-    Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![1.0, 2.0, 3.0, 4.0], 2, 2))
 );
 #[cfg(feature = "u8")]
 test_interpreter!(
@@ -1716,22 +1740,22 @@ test_interpreter!(
 test_interpreter!(
     interpret_matrix_mat2_f64,
     "[1.1 2.2; 3.3 4.4]",
-    Value::MatrixF64(Matrix::from_vec(vec![1.1, 3.3, 2.2, 4.4], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![1.1, 3.3, 2.2, 4.4], 2, 2))
 );
 test_interpreter!(
     interpret_matrix_negate,
     "-[1 2; 3 4]",
-    Value::MatrixF64(Matrix::from_vec(vec![-1.0, -3.0, -2.0, -4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![-1.0, -3.0, -2.0, -4.0], 2, 2))
 );
 test_interpreter!(
     interpret_matrix_negate_float,
     "-[1.0 2.0; 3.0 4.0]",
-    Value::MatrixF64(Matrix::from_vec(vec![-1.0, -3.0, -2.0, -4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![-1.0, -3.0, -2.0, -4.0], 2, 2))
 );
 test_interpreter!(
     interpret_matrix_negate_mat1,
     "-[1]",
-    Value::MatrixF64(Matrix::from_vec(vec![-1.0], 1, 1))
+    Value::MatrixF64(standard_matrix(vec![-1.0], 1, 1))
 );
 
 test_interpreter!(
@@ -1813,22 +1837,22 @@ test_interpreter!(
 test_interpreter!(
     interpret_matrix_add_m2v2,
     "[1 1; 2 2] + [1;2]",
-    Value::MatrixF64(Matrix::from_vec(vec![2.0, 4.0, 2.0, 4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![2.0, 4.0, 2.0, 4.0], 2, 2))
 );
 test_interpreter!(
     interpret_matrix_add_v2m2,
     "[1;2] + [1 1; 2 2]",
-    Value::MatrixF64(Matrix::from_vec(vec![2.0, 4.0, 2.0, 4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![2.0, 4.0, 2.0, 4.0], 2, 2))
 );
 test_interpreter!(
     interpret_matrix_add_r2m2,
     "[1 2] + [1 1; 1 1]",
-    Value::MatrixF64(Matrix::from_vec(vec![2.0, 2.0, 3.0, 3.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![2.0, 2.0, 3.0, 3.0], 2, 2))
 );
 test_interpreter!(
     interpret_matrix_add_m2r2,
     "[1 1; 1 1] + [1 2]",
-    Value::MatrixF64(Matrix::from_vec(vec![2.0, 2.0, 3.0, 3.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![2.0, 2.0, 3.0, 3.0], 2, 2))
 );
 
 test_interpreter!(
@@ -1839,17 +1863,17 @@ test_interpreter!(
 test_interpreter!(
     interpret_matrix_matmul_mat1,
     "[2] ** [10]",
-    Value::MatrixF64(Matrix::from_vec(vec![20.0], 1, 1))
+    Value::MatrixF64(standard_matrix(vec![20.0], 1, 1))
 );
 test_interpreter!(
     interpret_matrix_matmul_mat2_ref,
     "a := [1 2; 3 4]; b := [4 5; 6 7]; c := a ** b",
-    Value::MatrixF64(Matrix::from_vec(vec![16.0, 36.0, 19.0, 43.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![16.0, 36.0, 19.0, 43.0], 2, 2))
 );
 test_interpreter!(
     interpret_matrixmatmul_mat2x3_ref,
     "a := [1.0 2.0 3.0; 4.0 5.0 6.0]; b := [4.0 5.0; 6.0 7.0; 8.0 9.0]; c := a ** b",
-    Value::MatrixF64(Matrix::from_vec(vec![40.0, 94.0, 46.0, 109.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![40.0, 94.0, 46.0, 109.0], 2, 2))
 );
 test_interpreter!(
     interpret_matrixmatmul_r3m3,
@@ -1939,22 +1963,22 @@ test_interpreter!(
 test_interpreter!(
     interpret_matrix_add_2x2,
     "[1 2; 3 4] + [5 6; 7 8]",
-    Value::MatrixF64(Matrix::from_vec(vec![6.0, 10.0, 8.0, 12.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![6.0, 10.0, 8.0, 12.0], 2, 2))
 );
 test_interpreter!(
     interpret_matrix_sub_2x2,
     "[1 2; 3 4] - [5 6; 7 8]",
-    Value::MatrixF64(Matrix::from_vec(vec![-4.0, -4.0, -4.0, -4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![-4.0, -4.0, -4.0, -4.0], 2, 2))
 );
 test_interpreter!(
     interpret_matrix_mul_2x2,
     "[1 2; 3 4] * [5 6; 7 8]",
-    Value::MatrixF64(Matrix::from_vec(vec![5.0, 21.0, 12.0, 32.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![5.0, 21.0, 12.0, 32.0], 2, 2))
 );
 test_interpreter!(
     interpret_matrix_div_2x2,
     "[20 30; 40 50] / [2 3; 4 5]",
-    Value::MatrixF64(Matrix::from_vec(vec![10.0, 10.0, 10.0, 10.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![10.0, 10.0, 10.0, 10.0], 2, 2))
 );
 
 // 3x3 Nominal Operations
@@ -2158,7 +2182,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_slice_range_2d,
     "x := [1 2 3; 4 5 6; 7 8 9]; x[2..=3, 2..=3]",
-    Value::MatrixF64(Matrix::from_vec(vec![5.0, 8.0, 6.0, 9.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![5.0, 8.0, 6.0, 9.0], 2, 2))
 );
 test_interpreter!(
     interpret_slice_sclar_range,
@@ -2218,7 +2242,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_slice_all_range,
     "x := [1 2 3 4; 5 6 7 8]; x[:,1..=2]",
-    Value::MatrixF64(Matrix::from_vec(vec![1.0, 5.0, 2.0, 6.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![1.0, 5.0, 2.0, 6.0], 2, 2))
 );
 test_interpreter!(
     interpret_slice_range_all,
@@ -2283,7 +2307,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_slice_bool_bool,
     "ix := [true, false, true]; x := [1 2 3; 4 5 6;7 8 9]; x[ix,ix]",
-    Value::MatrixF64(Matrix::from_vec(vec![1.0, 7.0, 3.0, 9.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![1.0, 7.0, 3.0, 9.0], 2, 2))
 );
 test_interpreter!(
     interpret_slice_ix_bool_v,
@@ -2897,7 +2921,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_set_logical_vector_vector_bool,
     "~x := [1 2; 4 5]; x[[true false],[false true]] = 42;",
-    Value::MatrixF64(Matrix::from_vec(vec![1.0, 4.0, 42.0, 5.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![1.0, 4.0, 42.0, 5.0], 2, 2))
 );
 
 test_interpreter!(
@@ -2935,7 +2959,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_horzcat_m1,
     "x := [1]; y := [x]",
-    Value::MatrixF64(Matrix::from_vec(vec![1.0], 1, 1))
+    Value::MatrixF64(standard_matrix(vec![1.0], 1, 1))
 );
 test_interpreter!(
     interpret_horzcat_r2,
@@ -3212,7 +3236,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_horzcat_v2v2,
     "x := [1;2]; y := [x x];",
-    Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 1.0, 2.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![1.0, 2.0, 1.0, 2.0], 2, 2))
 );
 test_interpreter!(
     interpret_horzcat_v3v3,
@@ -3313,7 +3337,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_horzcat_m2,
     "x := [1 2; 3 4]; z := [x]",
-    Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![1.0, 3.0, 2.0, 4.0], 2, 2))
 );
 
 test_interpreter!(
@@ -3411,7 +3435,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_add_assign_formula_all_m2m2,
     "~x := [1 2; 3 4]; y := [1 1 1 1];z := [10 10; 20 20]; x[y,:] += z;",
-    Value::MatrixF64(Matrix::from_vec(vec![61.0, 3.0, 62.0, 4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![61.0, 3.0, 62.0, 4.0], 2, 2))
 );
 test_interpreter!(
     interpret_sub_assign_formula,
@@ -3426,7 +3450,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_add_assign_range,
     "~x := [1 2; 3 4]; x[1..3] += 1",
-    Value::MatrixF64(Matrix::from_vec(vec![2.0, 4.0, 2.0, 4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![2.0, 4.0, 2.0, 4.0], 2, 2))
 );
 test_interpreter!(
     interpret_div_assign_range_all,
@@ -3447,7 +3471,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_set_logical_ram2m2_bool,
     "~x := [1 2; 3 4]; y := [true false]; z := [10 20; 30 40]; x[y,:] = z;",
-    Value::MatrixF64(Matrix::from_vec(vec![10.0, 3.0, 20.0, 4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![10.0, 3.0, 20.0, 4.0], 2, 2))
 );
 test_interpreter!(
     interpret_set_logical_ram3m3_bool,
@@ -3474,7 +3498,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_set_logical_ram2m2,
     "~x := [1 2; 3 4]; y := [2 1]; x[y,:] = x;",
-    Value::MatrixF64(Matrix::from_vec(vec![1.0, 1.0, 2.0, 2.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![1.0, 1.0, 2.0, 2.0], 2, 2))
 );
 test_interpreter!(
     interpret_set_logical_ram3m3,
@@ -3520,7 +3544,7 @@ x := ┏       ┓
      ┃ 1   2 ┃
      ┃ 3   4 ┃
      ┗       ┛"#,
-    Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2))
+    Value::MatrixF64(standard_matrix(vec![1.0, 3.0, 2.0, 4.0], 2, 2))
 );
 
 #[cfg(all(feature = "f32", feature = "u64"))]
@@ -3813,7 +3837,7 @@ B := |id<u64> b<u64>| 2 200 | 3 300 | 4 400 |"#,
         .specializer
         .specialize(&arguments)
         .expect("table join must specialize for table arguments");
-    function.solve();
+    function.solve_result().unwrap();
 
     let Value::Table(table) = function.out() else {
         panic!("table join must return a table")
@@ -4017,7 +4041,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_matrix_reshape2,
     r#"x:=[1 2 3 4]; y<[string]:2,2> := x"#,
-    Value::MatrixString(Matrix::from_vec(
+    Value::MatrixString(standard_matrix(
         vec![
             String::from("1"),
             String::from("2"),
@@ -4103,7 +4127,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_formulas_no_whitespace,
     "x:=10*[1,2,3]**[4,5,6]';",
-    Value::MatrixF64(Matrix::from_vec(vec![320.0], 1, 1))
+    Value::MatrixF64(standard_matrix1(320.0))
 );
 
 test_interpreter!(
@@ -4525,7 +4549,7 @@ test_interpreter!(
 test_interpreter!(
     interpret_string_concatenation_matrix2,
     r#"["a" "b"; "c" "d"] + ["1" "2"; "3" "4"]"#,
-    Value::MatrixString(Matrix::from_vec(
+    Value::MatrixString(standard_matrix(
         vec![
             "a1".to_string(),
             "c3".to_string(),

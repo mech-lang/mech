@@ -897,10 +897,13 @@ mod matrix_dependency_tests {
         );
         let output = interpreter.interpret(&tree).unwrap();
 
-        assert_eq!(
-            output,
-            Value::MatrixF64(Matrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2))
-        );
+        match output {
+            Value::MatrixF64(matrix) => {
+                assert_eq!(matrix.shape(), vec![2, 2]);
+                assert_eq!(matrix.as_vec(), vec![1.0, 3.0, 2.0, 4.0]);
+            }
+            other => panic!("expected f64 matrix literal, got {other:?}"),
+        }
         assert_matrix_literal_chain(&interpreter.plan());
     }
 }

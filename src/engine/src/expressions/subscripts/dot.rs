@@ -21,7 +21,7 @@ pub(super) fn access(
             }
             let new_fxn = catalog_access_function(p, "access/column", &fxn_input)?;
             if !expression_solves_deferred(p) {
-                new_fxn.solve();
+                new_fxn.solve_result()?;
             }
             let res = new_fxn.out();
             plan.borrow_mut().push(new_fxn);
@@ -36,7 +36,7 @@ pub(super) fn access(
                 ValueKind::Matrix(..) => {
                     let new_fxn = catalog_access_function(p, "access/scalar", &fxn_input)?;
                     if !expression_solves_deferred(p) {
-                        new_fxn.solve();
+                        new_fxn.solve_result()?;
                     }
                     let res = new_fxn.out();
                     plan.borrow_mut().push(new_fxn);
@@ -49,7 +49,7 @@ pub(super) fn access(
                 }
                 /*ValueKind::Record(_) => {
                   let new_fxn = RecordAccessScalar{}.specialize(&fxn_input)?;
-                  new_fxn.solve();
+                  new_fxn.solve_result()?;
                   let res = new_fxn.out();
                   plan.borrow_mut().push(new_fxn);
                   return Ok(res);
@@ -67,7 +67,7 @@ pub(super) fn access(
             fxn_input.append(&mut keys);
             let new_fxn = catalog_access_function(p, "access/swizzle", &fxn_input)?;
             if !expression_solves_deferred(p) {
-                new_fxn.solve();
+                new_fxn.solve_result()?;
             }
             let res = new_fxn.out();
             plan.borrow_mut().push(new_fxn);

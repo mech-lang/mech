@@ -1,5 +1,11 @@
+pub mod argument;
 pub mod catalog;
+pub mod contract;
+pub mod signature;
+pub use argument::*;
 pub use catalog::*;
+pub use contract::*;
+pub use signature::*;
 
 use crate::nodes::*;
 use crate::types::*;
@@ -168,6 +174,129 @@ pub enum FunctionArgs {
 }
 
 impl FunctionArgs {
+    pub fn output_value(&self) -> &Value {
+        match self {
+            FunctionArgs::Nullary(output)
+            | FunctionArgs::Unary(output, _)
+            | FunctionArgs::Binary(output, _, _)
+            | FunctionArgs::Ternary(output, _, _, _)
+            | FunctionArgs::Quaternary(output, _, _, _, _)
+            | FunctionArgs::Variadic(output, _) => output,
+        }
+    }
+
+    pub fn input_value(&self, index: usize) -> Option<&Value> {
+        match (self, index) {
+            (FunctionArgs::Unary(_, a), 0) => Some(a),
+            (FunctionArgs::Binary(_, a, _), 0) => Some(a),
+            (FunctionArgs::Binary(_, _, b), 1) => Some(b),
+            (FunctionArgs::Ternary(_, a, _, _), 0) => Some(a),
+            (FunctionArgs::Ternary(_, _, b, _), 1) => Some(b),
+            (FunctionArgs::Ternary(_, _, _, c), 2) => Some(c),
+            (FunctionArgs::Quaternary(_, a, _, _, _), 0) => Some(a),
+            (FunctionArgs::Quaternary(_, _, b, _, _), 1) => Some(b),
+            (FunctionArgs::Quaternary(_, _, _, c, _), 2) => Some(c),
+            (FunctionArgs::Quaternary(_, _, _, _, d), 3) => Some(d),
+            (FunctionArgs::Variadic(_, arguments), index) => arguments.get(index),
+            _ => None,
+        }
+    }
+
+    pub fn input_count(&self) -> usize {
+        self.len()
+    }
+
+    pub fn validate_contract(&self, contract: RuntimeFunctionContract) -> MResult<()> {
+        if contract.output_alias == RuntimeOutputAliasPolicy::DisallowInputAlias {
+            let output_roots = self.output_value().reactive_root_cell_ids();
+            for index in 0..self.input_count() {
+                let Some(input) = self.input_value(index) else {
+                    continue;
+                };
+                for cell in input.reactive_root_cell_ids() {
+                    if output_roots.contains(&cell) {
+                        return Err(MechError::new(
+                            FunctionArgumentAliasViolation { input: index, cell },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                }
+            }
+        }
+        (contract.validate_shapes)(self)
+    }
+
+    pub fn validate_signature(&self, signature: RuntimeFunctionSignature) -> MResult<()> {
+        let arity_kind_matches = matches!(
+            (self, signature.inputs),
+            (FunctionArgs::Nullary(_), RuntimeFunctionInputs::Nullary)
+                | (FunctionArgs::Unary(_, _), RuntimeFunctionInputs::Unary(_))
+                | (
+                    FunctionArgs::Binary(_, _, _),
+                    RuntimeFunctionInputs::Binary(_, _)
+                )
+                | (
+                    FunctionArgs::Ternary(_, _, _, _),
+                    RuntimeFunctionInputs::Ternary(_, _, _)
+                )
+                | (
+                    FunctionArgs::Quaternary(_, _, _, _, _),
+                    RuntimeFunctionInputs::Quaternary(_, _, _, _)
+                )
+                | (
+                    FunctionArgs::Variadic(_, _),
+                    RuntimeFunctionInputs::Variadic { .. }
+                )
+        );
+        let expected_inputs: Vec<FunctionValueRepresentation> = match signature.inputs {
+            RuntimeFunctionInputs::Nullary => Vec::new(),
+            RuntimeFunctionInputs::Unary(argument) => vec![argument],
+            RuntimeFunctionInputs::Binary(lhs, rhs) => vec![lhs, rhs],
+            RuntimeFunctionInputs::Ternary(first, second, third) => {
+                vec![first, second, third]
+            }
+            RuntimeFunctionInputs::Quaternary(first, second, third, fourth) => {
+                vec![first, second, third, fourth]
+            }
+            RuntimeFunctionInputs::Variadic { element } => vec![element; self.input_count()],
+        };
+
+        if !arity_kind_matches || expected_inputs.len() != self.input_count() {
+            return Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: expected_inputs.len(),
+                    found: self.input_count(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+
+        let found_output = FunctionValueRepresentation::from_value(self.output_value());
+        if !signature.output.matches(found_output) {
+            return Err(signature_violation(
+                FunctionArgumentRole::Output,
+                signature.output,
+                self.output_value(),
+            ));
+        }
+
+        for (index, expected) in expected_inputs.into_iter().enumerate() {
+            let input = self.input_value(index).expect("validated function arity");
+            let found = FunctionValueRepresentation::from_value(input);
+            if !expected.matches(found) {
+                return Err(signature_violation(
+                    FunctionArgumentRole::Input(index),
+                    expected,
+                    input,
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn len(&self) -> usize {
         match self {
             FunctionArgs::Nullary(_) => 0,
@@ -199,15 +328,24 @@ impl FunctionArgs {
 }
 
 pub trait MechFunctionFactory {
+    const SIGNATURE: RuntimeFunctionSignature;
+
+    /// Constructs a runtime function from its authoritative argument contract.
+    ///
+    /// Implementations must be deterministic and side-effect-free, safely
+    /// reject arbitrary incompatible [`FunctionArgs`], validate every exact
+    /// backing extraction, and must not execute or solve the function.
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InitialSolvePolicy {
+    Solve,
+    PreserveSpecializedOutput,
+}
+
 pub trait MechFunctionImpl {
-    fn solve(&self);
-    fn solve_result(&self) -> MResult<()> {
-        self.solve();
-        Ok(())
-    }
+    fn solve_result(&self) -> MResult<()>;
     fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
         let _ = services;
         self.solve_result()
@@ -222,6 +360,21 @@ pub trait MechFunctionImpl {
     ) -> MResult<ReactiveSolveStatus> {
         let _ = services;
         self.solve_reactive()
+    }
+    fn initial_solve_policy(&self) -> InitialSolvePolicy {
+        InitialSolvePolicy::Solve
+    }
+    /// Performs service-aware initialization that is required even when the
+    /// specialized output itself was produced during deterministic planning.
+    ///
+    /// This hook must not recompute or replace that planned output. Most
+    /// functions need no extra initialization, so the default is a no-op.
+    fn initialize_preserved_output_with(
+        &self,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
+        let _ = services;
+        Ok(())
     }
     fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
         Err(MechError::new(
@@ -321,6 +474,40 @@ impl<T: 'static> ReactiveRegisterCommit for ReactiveRegisterWrite<T> {
             output_cells: _,
         } = *self;
         *sink.borrow_mut() = next;
+    }
+}
+
+/// A pre-staged collection of register writes that commits as one infallible
+/// unit. Composite register nodes use this to preserve every nested reactive
+/// cell while still reporting the outer register cell as their owned output.
+pub struct ReactiveRegisterCommitBatch {
+    commits: Vec<Box<dyn ReactiveRegisterCommit>>,
+    output_cells: Vec<ReactiveCellId>,
+}
+
+impl ReactiveRegisterCommitBatch {
+    pub fn new(
+        commits: Vec<Box<dyn ReactiveRegisterCommit>>,
+        output_cells: Vec<ReactiveCellId>,
+    ) -> Self {
+        Self {
+            commits,
+            output_cells,
+        }
+    }
+}
+
+impl reactive_register_sealed::Sealed for ReactiveRegisterCommitBatch {}
+
+impl ReactiveRegisterCommit for ReactiveRegisterCommitBatch {
+    fn output_cells(&self) -> &[ReactiveCellId] {
+        self.output_cells.as_slice()
+    }
+
+    fn commit(self: Box<Self>) {
+        for commit in self.commits {
+            commit.commit();
+        }
     }
 }
 
@@ -488,11 +675,6 @@ impl FunctionDefinition {
         Ok(self.out.clone())
     }
 
-    pub fn solve(&self) -> ValRef {
-        let _ = self.solve_result();
-        self.out.clone()
-    }
-
     pub fn out(&self) -> ValRef {
         self.out.clone()
     }
@@ -505,9 +687,6 @@ pub struct UserFunction {
 }
 
 impl MechFunctionImpl for UserFunction {
-    fn solve(&self) {
-        let _ = self.solve_result();
-    }
     fn solve_result(&self) -> MResult<()> {
         self.fxn.solve_result()?;
         Ok(())

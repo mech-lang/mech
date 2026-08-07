@@ -1,7 +1,8 @@
 use mech_core::matrix::Matrix as MechMatrix;
 use mech_core::{
-    DecodedInstr, FunctionCatalog, FunctionCatalogBuilder, FunctionExposure, MechSet, OperationId,
-    ParsedProgram, Ref, RuntimeFunctionId, Value, ValueKind, hash_str,
+    ApplicationRequirement, BytecodeCompilerContext, EncodedConstant, FunctionCatalog,
+    FunctionCatalogBuilder, FunctionExposure, MResult, MechSet, OperationId, Ref, Register,
+    RuntimeFunctionId, Value, ValueKind, hash_str,
 };
 use mech_engine as _;
 use mech_engine::{FunctionBinding, FunctionEnvironment, MechProgram, MechProgramConfig};
@@ -16,8 +17,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 const BASE_COMMIT: &str = "f7768e0c6bbde69d27410be6d1ecacbd08c238c5";
-const BYTECODE_VERSION: u8 = 1;
-const USAGE: &str = "usage: function-system-baseline (--write <function-system-dir> | --check <function-system-dir> | --write-runtime <function-system-dir> | --check-runtime <function-system-dir> | --write-bytecode <legacy-bytecode-dir>)";
+const USAGE: &str = "usage: function-system-baseline (--write <function-system-dir> | --check <function-system-dir> | --write-runtime <function-system-dir> | --check-runtime <function-system-dir>)";
 const RUNTIME_SURFACE_FILE: &str = "runtime-factory-surface.json";
 const RUNTIME_SURFACE_PROFILE: &str = "standard-linked-dynamic-shape";
 
@@ -87,51 +87,14 @@ struct SpecializationCase {
 struct SpecializationCases {
     schema: u32,
     base_commit: &'static str,
-    bytecode_version: u8,
     cases: Vec<SpecializationCase>,
-}
-
-#[derive(Clone, Debug, Serialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
-enum LegacyExpected {
-    F64 {
-        value: f64,
-    },
-    Bool {
-        value: bool,
-    },
-    String {
-        value: String,
-    },
-    MatrixF64 {
-        rows: usize,
-        cols: usize,
-        values: Vec<f64>,
-    },
-}
-
-#[derive(Debug, Serialize)]
-struct LegacyCase {
-    name: String,
-    file: String,
-    source: String,
-    expected: LegacyExpected,
-    runtime_factory_ids: Vec<RuntimeFactory>,
-}
-
-#[derive(Debug, Serialize)]
-struct LegacyManifest {
-    schema: u32,
-    base_commit: &'static str,
-    bytecode_version: u8,
-    cases: Vec<LegacyCase>,
 }
 
 fn runtime_factory(catalog: &FunctionCatalog, id: u64) -> AppResult<RuntimeFactory> {
     let runtime_id = RuntimeFunctionId::from_raw(id);
     let entry = catalog.runtime_entry(runtime_id).ok_or_else(|| {
         format!(
-            "bytecode references unknown catalog runtime factory ID {}",
+            "specialization references unknown catalog runtime factory ID {}",
             format_id(id)
         )
     })?;
@@ -147,10 +110,159 @@ struct CaseInput {
     arguments: Vec<Value>,
 }
 
-struct LegacyInput {
-    name: &'static str,
-    source: &'static str,
-    module: Option<&'static str>,
+#[derive(Default)]
+struct RuntimeLinkageRecorder {
+    registers: BTreeMap<usize, Register>,
+    next_register: Register,
+    runtime_ids: Vec<RuntimeFunctionId>,
+    unexpected_emissions: Vec<&'static str>,
+}
+
+impl RuntimeLinkageRecorder {
+    fn record_runtime(&mut self, function: u64) {
+        let runtime_id = RuntimeFunctionId::from_raw(function);
+        self.runtime_ids.push(runtime_id);
+    }
+
+    fn resolve(self, catalog: &FunctionCatalog, case_name: &str) -> AppResult<Vec<RuntimeFactory>> {
+        if !self.unexpected_emissions.is_empty() {
+            return Err(format!(
+                "case {case_name} emitted non-runtime linkage operations: {}",
+                self.unexpected_emissions.join(", "),
+            ));
+        }
+        if self.runtime_ids.len() != 1 {
+            return Err(format!(
+                "specialization case {case_name} selected {} runtime factories; expected exactly one",
+                self.runtime_ids.len(),
+            ));
+        }
+
+        self.runtime_ids
+            .into_iter()
+            .map(|id| {
+                runtime_factory(catalog, id.raw())
+                    .map_err(|error| format!("case {case_name}: {error}"))
+            })
+            .collect()
+    }
+}
+
+impl BytecodeCompilerContext for RuntimeLinkageRecorder {
+    fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool) {
+        if let Some(register) = self.registers.get(&pointer) {
+            return (*register, false);
+        }
+        let register = self.next_register;
+        self.next_register += 1;
+        self.registers.insert(pointer, register);
+        (register, false)
+    }
+
+    fn intern_constant(&mut self, _constant: EncodedConstant) -> MResult<u32> {
+        self.unexpected_emissions.push("constant");
+        Ok(0)
+    }
+
+    fn define_symbol(
+        &mut self,
+        _pointer: usize,
+        _register: Register,
+        _name: &str,
+        _mutable: bool,
+    ) -> MResult<()> {
+        self.unexpected_emissions.push("symbol");
+        Ok(())
+    }
+
+    fn intern_requirement(&mut self, _requirement: ApplicationRequirement) -> MResult<u32> {
+        self.unexpected_emissions.push("application requirement");
+        Ok(0)
+    }
+
+    fn emit_const_load(&mut self, _destination: Register, _constant: u32) {
+        self.unexpected_emissions.push("constant load");
+    }
+
+    fn emit_composite_pack(
+        &mut self,
+        _destination: Register,
+        _template: u32,
+        _children: Vec<Register>,
+    ) {
+        self.unexpected_emissions.push("composite pack");
+    }
+
+    fn emit_nullop(&mut self, function: u64, _destination: Register) {
+        self.record_runtime(function);
+    }
+
+    fn emit_unop(&mut self, function: u64, _destination: Register, _source: Register) {
+        self.record_runtime(function);
+    }
+
+    fn emit_binop(
+        &mut self,
+        function: u64,
+        _destination: Register,
+        _lhs: Register,
+        _rhs: Register,
+    ) {
+        self.record_runtime(function);
+    }
+
+    fn emit_ternop(
+        &mut self,
+        function: u64,
+        _destination: Register,
+        _a: Register,
+        _b: Register,
+        _c: Register,
+    ) {
+        self.record_runtime(function);
+    }
+
+    fn emit_quadop(
+        &mut self,
+        function: u64,
+        _destination: Register,
+        _a: Register,
+        _b: Register,
+        _c: Register,
+        _d: Register,
+    ) {
+        self.record_runtime(function);
+    }
+
+    fn emit_varop(&mut self, function: u64, _destination: Register, _arguments: Vec<Register>) {
+        self.record_runtime(function);
+    }
+
+    fn emit_host_call(
+        &mut self,
+        _requirement: u32,
+        _destination: Register,
+        _arguments: Vec<Register>,
+    ) {
+        self.unexpected_emissions.push("host call");
+    }
+
+    fn emit_resource_read(&mut self, _requirement: u32, _destination: Register) {
+        self.unexpected_emissions.push("resource read");
+    }
+
+    fn emit_resource_write(
+        &mut self,
+        _requirement: u32,
+        _destination: Register,
+        _source: Register,
+    ) {
+        self.unexpected_emissions.push("resource write");
+    }
+
+    fn emit_resource_send(&mut self, _requirement: u32, _destination: Register, _source: Register) {
+        self.unexpected_emissions.push("resource send");
+    }
 }
 
 fn main() {
@@ -215,7 +327,6 @@ fn run() -> AppResult<()> {
             );
             Ok(())
         }
-        "--write-bytecode" => write_legacy_bytecode(&output, &catalog),
         _ => Err(USAGE.to_string()),
     }
 }
@@ -238,7 +349,6 @@ type RuntimeInstaller = fn(&mut FunctionCatalogBuilder) -> mech_core::MResult<()
 struct OwnedRuntimeFactory {
     name: String,
     id: RuntimeFunctionId,
-    pointer: usize,
     owner: &'static str,
 }
 
@@ -266,7 +376,6 @@ fn generate_runtime_factory_surface() -> AppResult<RuntimeFactorySurface> {
             let incoming = OwnedRuntimeFactory {
                 name: entry.name.clone(),
                 id: entry.id,
-                pointer: entry.factory as usize,
                 owner,
             };
             if RuntimeFunctionId::from_name(&incoming.name) != incoming.id {
@@ -344,7 +453,7 @@ fn validate_composed_runtime_catalog(
                 format_id(entry.id.raw()),
             )
         })?;
-        if entry.name != owned.name || entry.factory as usize != owned.pointer {
+        if entry.name != owned.name {
             return Err(format!(
                 "composed standard catalog factory {} ({}) does not match owning fragment {} exactly",
                 entry.name,
@@ -388,9 +497,8 @@ fn generate_json_baselines(
             module_exports,
         },
         SpecializationCases {
-            schema: 1,
+            schema: 2,
             base_commit: BASE_COMMIT,
-            bytecode_version: BYTECODE_VERSION,
             cases,
         },
     ))
@@ -647,7 +755,7 @@ fn collect_specialization_cases(catalog: &FunctionCatalog) -> AppResult<Vec<Spec
     let mut cases = Vec::with_capacity(inputs.len());
     let mut failures = Vec::new();
     for input in inputs {
-        match compile_specialization_case(catalog, input) {
+        match specialize_case(catalog, input) {
             Ok(case) => cases.push(case),
             Err(error) => failures.push(error),
         }
@@ -672,10 +780,7 @@ fn collect_specialization_cases(catalog: &FunctionCatalog) -> AppResult<Vec<Spec
     }
 }
 
-fn compile_specialization_case(
-    catalog: &FunctionCatalog,
-    input: CaseInput,
-) -> AppResult<SpecializationCase> {
+fn specialize_case(catalog: &FunctionCatalog, input: CaseInput) -> AppResult<SpecializationCase> {
     let raw_operation_id = hash_str(input.operation);
     let operation_id = OperationId::from_raw(raw_operation_id);
     let specializer = catalog.specializer(operation_id).ok_or_else(|| {
@@ -704,37 +809,15 @@ fn compile_specialization_case(
         })?;
     let output = value_spec(&function.out())?;
 
-    let mut context = mech_bytecode::CompileCtx::new();
-    function.compile(&mut context).map_err(|error| {
+    let mut linkage = RuntimeLinkageRecorder::default();
+    function.compile(&mut linkage).map_err(|error| {
         format!(
-            "specialization case {} failed to emit bytecode: {}",
+            "specialization case {} failed to report runtime linkage: {}",
             input.name,
             error.full_chain_message(),
         )
     })?;
-    let bytecode = context.compile().map_err(|error| {
-        format!(
-            "specialization case {} failed to assemble bytecode: {}",
-            input.name,
-            error.full_chain_message(),
-        )
-    })?;
-    let parsed = ParsedProgram::from_bytes(&bytecode).map_err(|error| {
-        format!(
-            "specialization case {} emitted invalid bytecode: {}",
-            input.name,
-            error.full_chain_message(),
-        )
-    })?;
-    validate_bytecode_version(&parsed, input.name)?;
-    let mut runtime_factories = runtime_factories_from_program(&parsed, catalog, input.name)?;
-    if runtime_factories.len() != 1 {
-        return Err(format!(
-            "specialization case {} emitted {} operation instructions; expected exactly one",
-            input.name,
-            runtime_factories.len(),
-        ));
-    }
+    let mut runtime_factories = linkage.resolve(catalog, input.name)?;
     runtime_factories.sort();
 
     Ok(SpecializationCase {
@@ -745,49 +828,6 @@ fn compile_specialization_case(
         output,
         runtime_factories,
     })
-}
-
-fn runtime_factories_from_program(
-    parsed: &ParsedProgram,
-    catalog: &FunctionCatalog,
-    case_name: &str,
-) -> AppResult<Vec<RuntimeFactory>> {
-    let mut ids = Vec::new();
-    for instruction in &parsed.instrs {
-        match instruction {
-            DecodedInstr::NullOp { fxn_id, .. }
-            | DecodedInstr::UnOp { fxn_id, .. }
-            | DecodedInstr::BinOp { fxn_id, .. }
-            | DecodedInstr::TernOp { fxn_id, .. }
-            | DecodedInstr::QuadOp { fxn_id, .. }
-            | DecodedInstr::VarArg { fxn_id, .. } => ids.push(*fxn_id),
-            DecodedInstr::ConstLoad { .. } | DecodedInstr::Ret { .. } => {}
-            DecodedInstr::Unknown { opcode, .. } => {
-                return Err(format!(
-                    "case {case_name} contains unknown bytecode opcode {opcode:#04x}",
-                ));
-            }
-        }
-    }
-    if ids.is_empty() {
-        return Err(format!("case {case_name} emitted no operation instruction",));
-    }
-    ids.into_iter()
-        .map(|id| {
-            runtime_factory(catalog, id).map_err(|error| format!("case {case_name}: {error}"))
-        })
-        .collect()
-}
-
-fn validate_bytecode_version(parsed: &ParsedProgram, case_name: &str) -> AppResult<()> {
-    if parsed.header.version == BYTECODE_VERSION {
-        Ok(())
-    } else {
-        Err(format!(
-            "case {case_name} emitted bytecode version {}; expected {}",
-            parsed.header.version, BYTECODE_VERSION,
-        ))
-    }
 }
 
 fn value_spec(value: &Value) -> AppResult<ValueSpec> {
@@ -827,135 +867,6 @@ fn value_spec(value: &Value) -> AppResult<ValueSpec> {
         Value::Typed(value, _) => value_spec(value),
         other => Err(format!(
             "unsupported value kind in baseline case: {}",
-            other.kind(),
-        )),
-    }
-}
-
-fn write_legacy_bytecode(output: &Path, catalog: &Arc<FunctionCatalog>) -> AppResult<()> {
-    let mut inputs = vec![
-        LegacyInput {
-            name: "scalar-add",
-            source: "1.0 + 2.0",
-            module: None,
-        },
-        LegacyInput {
-            name: "matrix-scalar-add",
-            source: "[1.0 2.0] + 1.0",
-            module: None,
-        },
-        LegacyInput {
-            name: "string-concat",
-            source: "\"a\" + \"bc\"",
-            module: None,
-        },
-        LegacyInput {
-            name: "range-inclusive",
-            source: "1.0..=3.0",
-            module: None,
-        },
-        LegacyInput {
-            name: "math-cos",
-            source: "math/cos(0.0)",
-            module: Some("math"),
-        },
-    ];
-    inputs.sort_by_key(|input| input.name);
-
-    let mut generated = Vec::<(LegacyCase, Vec<u8>)>::with_capacity(inputs.len());
-    for input in inputs {
-        let mut program =
-            MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(catalog));
-        if let Some(module) = input.module {
-            program.load_function_module(module).map_err(|error| {
-                format!(
-                    "legacy case {} failed to load module {module:?}: {}",
-                    input.name,
-                    error.full_chain_message(),
-                )
-            })?;
-        }
-        let value = program.run_string(input.source).map_err(|error| {
-            format!(
-                "legacy case {} failed to run source {:?}: {}",
-                input.name,
-                input.source,
-                error.full_chain_message(),
-            )
-        })?;
-        let expected = legacy_expected(&value)?;
-        let bytecode = program.compile_bytecode().map_err(|error| {
-            format!(
-                "legacy case {} failed to compile bytecode: {}",
-                input.name,
-                error.full_chain_message(),
-            )
-        })?;
-        let parsed = ParsedProgram::from_bytes(&bytecode).map_err(|error| {
-            format!(
-                "legacy case {} emitted invalid bytecode: {}",
-                input.name,
-                error.full_chain_message(),
-            )
-        })?;
-        validate_bytecode_version(&parsed, input.name)?;
-        let mut runtime_factory_ids = runtime_factories_from_program(&parsed, catalog, input.name)?;
-        runtime_factory_ids.sort();
-        let file = format!("{}.mecb", input.name);
-        generated.push((
-            LegacyCase {
-                name: input.name.to_string(),
-                file,
-                source: input.source.to_string(),
-                expected,
-                runtime_factory_ids,
-            },
-            bytecode,
-        ));
-    }
-
-    generated.sort_by(|left, right| left.0.name.cmp(&right.0.name));
-    fs::create_dir_all(output).map_err(|error| {
-        format!(
-            "failed to create legacy-bytecode directory {}: {error}",
-            output.display(),
-        )
-    })?;
-    for (case, bytecode) in &generated {
-        fs::write(output.join(&case.file), bytecode).map_err(|error| {
-            format!(
-                "failed to write legacy bytecode file {}: {error}",
-                output.join(&case.file).display(),
-            )
-        })?;
-    }
-    let manifest = LegacyManifest {
-        schema: 1,
-        base_commit: BASE_COMMIT,
-        bytecode_version: BYTECODE_VERSION,
-        cases: generated.into_iter().map(|(case, _)| case).collect(),
-    };
-    write_json(&output.join("manifest.json"), &manifest)
-}
-
-fn legacy_expected(value: &Value) -> AppResult<LegacyExpected> {
-    match value {
-        Value::F64(value) => Ok(LegacyExpected::F64 {
-            value: *value.borrow(),
-        }),
-        Value::Bool(value) => Ok(LegacyExpected::Bool {
-            value: *value.borrow(),
-        }),
-        Value::String(value) => Ok(LegacyExpected::String {
-            value: value.borrow().clone(),
-        }),
-        Value::MatrixF64(matrix) => Ok(LegacyExpected::MatrixF64 {
-            rows: matrix.rows(),
-            cols: matrix.cols(),
-            values: matrix.as_vec(),
-        }),
-        other => Err(format!(
-            "unsupported legacy expected value kind: {}",
             other.kind(),
         )),
     }

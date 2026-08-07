@@ -9,8 +9,9 @@ struct TupleAccessElement {
 }
 
 impl MechFunctionImpl for TupleAccessElement {
-    fn solve(&self) {
-        ()
+    fn solve_result(&self) -> MResult<()> {
+        ();
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.clone()
@@ -24,6 +25,9 @@ impl MechFunctionImpl for TupleAccessElement {
     }
 }
 impl MechFunctionFactory for TupleAccessElement {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::AnyValue);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => Ok(Box::new(Self { out })),
@@ -38,8 +42,21 @@ impl MechFunctionFactory for TupleAccessElement {
         }
     }
 }
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "access", feature = "tuple"),
+    registration: register_tuple_access_element,
+    installer: install_tuple_access_element,
+    name: "TupleAccessElement",
+    factory_type: TupleAccessElement,
+    contract: RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_tuple_access_element",
+    extra_cargo_features: ["access"],
+}
+
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    builder.insert_runtime_factory("TupleAccessElement", TupleAccessElement::new)
+    register_tuple_access_element(builder)
 }
 
 #[cfg(feature = "compiler")]
@@ -47,8 +64,6 @@ impl MechFunctionCompiler for TupleAccessElement {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0];
         registers[0] = compile_register!(self.out, ctx);
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Tuple));
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
         ctx.emit_nullop(hash_str("TupleAccessElement"), registers[0]);
         return Ok(registers[0]);
     }

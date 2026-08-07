@@ -15,12 +15,15 @@ fn main() -> MResult<()> {
         std::process::id()
     ));
     if root.exists() {
-        fs::remove_dir_all(&root)?;
+        support::io(fs::remove_dir_all(&root))?;
     }
-    fs::create_dir_all(&root)?;
+    support::io(fs::create_dir_all(&root))?;
 
-    fs::write(root.join("index.mec"), "+> ./dep.mec\n\nx := 42\nx\n")?;
-    fs::write(root.join("dep.mec"), "y := 1\ny\n")?;
+    support::io(fs::write(
+        root.join("index.mec"),
+        "+> ./dep.mec\n\nx := 42\nx\n",
+    ))?;
+    support::io(fs::write(root.join("dep.mec"), "y := 1\ny\n"))?;
 
     let resolver = FileSourceResolver::new(&root);
     let mut runtime = support::source_runtime_builder()
@@ -42,7 +45,7 @@ fn main() -> MResult<()> {
 
     runtime.run_module(version)?;
 
-    fs::remove_dir_all(&root)?;
+    support::io(fs::remove_dir_all(&root))?;
 
     Ok(())
 }

@@ -44,19 +44,9 @@ macro_rules! ceilf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathCeil,
-    f32,
-    ceilf,
-    FeatureFlag::Custom(hash_str("math/ceil"))
-);
+impl_math_unop!(MathCeil, f32, ceilf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathCeil,
-    f64,
-    ceil,
-    FeatureFlag::Custom(hash_str("math/ceil"))
-);
+impl_math_unop!(MathCeil, f64, ceil);
 
 #[cfg(feature = "source")]
 fn impl_ceil_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

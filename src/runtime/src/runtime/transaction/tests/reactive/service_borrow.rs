@@ -8,7 +8,8 @@ use crate::{
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
-    MResult, MechExecutionServices, MechFunctionImpl, ReactiveSolveStatus, Ref, Value,
+    ExecutionHostFunctionRequest, MResult, MechExecutionServices, MechFunctionImpl,
+    ReactiveSolveStatus, Ref, Value,
 };
 use mech_engine::ExecutionServicesBorrowConflict;
 use std::sync::{Arc, Mutex};
@@ -26,14 +27,26 @@ struct ReentrantRuntimeServiceFunction {
 impl ReentrantRuntimeServiceFunction {
     fn execute(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
         *self.output.borrow_mut() += 1;
-        services.invoke_native(self.staged_host, &[])?;
-        services.invoke_native(self.reentrant_host, &[])?;
+        services.invoke_host_function(
+            &ExecutionHostFunctionRequest {
+                name: self.staged_host.to_string(),
+            },
+            &[],
+        )?;
+        services.invoke_host_function(
+            &ExecutionHostFunctionRequest {
+                name: self.reentrant_host.to_string(),
+            },
+            &[],
+        )?;
         Ok(())
     }
 }
 
 impl MechFunctionImpl for ReentrantRuntimeServiceFunction {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
 
     fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
         self.execute(services)
@@ -141,7 +154,7 @@ fn reentrant_runtime_service_borrow_returns_structured_error_and_recovers() {
             .kind_as::<ExecutionServicesBorrowConflict>()
             .unwrap()
             .operation,
-        "runtime_invoke_native",
+        "runtime_invoke_host_function",
     );
     assert_eq!(*output.borrow(), 0);
     assert_eq!(*log.lock().unwrap(), vec!["abort"]);

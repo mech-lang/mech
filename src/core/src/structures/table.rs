@@ -58,6 +58,25 @@ impl Eq for MechTable {}
 
 #[cfg(feature = "table")]
 impl MechTable {
+    /// Reconstructs an exact detached table snapshot without re-inferring
+    /// column schemas or matrix storage.
+    pub fn from_parts(
+        rows: usize,
+        cols: usize,
+        columns: Vec<(u64, ValueKind, Matrix<Value>)>,
+        column_names: Vec<(u64, String)>,
+    ) -> MechTable {
+        MechTable {
+            rows,
+            cols,
+            data: columns
+                .into_iter()
+                .map(|(id, kind, values)| (id, (kind, values)))
+                .collect(),
+            col_names: column_names.into_iter().collect(),
+        }
+    }
+
     pub fn from_records(records: Vec<MechRecord>) -> MResult<MechTable> {
         if records.is_empty() {
             return Err(

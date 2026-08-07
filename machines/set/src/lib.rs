@@ -1,6 +1,12 @@
 #![cfg_attr(not(test), no_main)]
 #![allow(warnings)]
 
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    pub use crate::catalog::__mech_native::*;
+}
+
 use indexmap::set::IndexSet;
 
 use mech_core::*;
@@ -40,6 +46,13 @@ pub use self::setdata::*;
 // ----------------------------------------------------------------------------
 // Set Library
 // ----------------------------------------------------------------------------
+
+fn normalize_set_element(value: Value) -> Value {
+    match value {
+        Value::MutableReference(reference) => reference.borrow().clone(),
+        value => value,
+    }
+}
 
 #[macro_export]
 macro_rules! impl_set_fxns {

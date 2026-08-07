@@ -25,6 +25,8 @@ default = ["compiler_default"]
 runtime = ["dep:mech-core", "mech-core/functions"]
 source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]
+native-plan = ["runtime", "mech-core/native-plan"]
+native-link = ["runtime"]
 standard_values = [
   "bool", "u8", "u16", "u32", "u64", "u128",
   "i8", "i16", "i32", "i64", "i128", "f32", "f64", "c64", "r64",
@@ -174,6 +176,10 @@ matrix4 = ["matrix", "mech-core/matrix4"]
 matrix3 = ["matrix", "mech-core/matrix3"]
 matrix2 = ["matrix", "mech-core/matrix2", "mech-core/matrix"]
 matrix1 = ["matrix", "mech-core/matrix1"]
+# Source programs can receive a fixed 1x1 result from the feature-invariant
+# dynamic row-vector x vector contract without enabling the full Matrix1 math
+# runtime surface.
+matrix1_interop = ["matrix", "mech-core/matrix1"]
 matrix2x3 = ["matrix", "mech-core/matrix2x3"]
 matrix3x2 = ["matrix", "mech-core/matrix3x2"]
 row_vectord =["matrix",  "mech-core/row_vectord"]
@@ -182,7 +188,7 @@ matrixd = ["matrix",  "mech-core/matrixd"]
 
 [dependencies]
 mech-core = { path = "../../src/core", version = "0.3.5", default-features = false, optional = true }
-mech-abi = { path = "../../src/abi", optional = true }
+mech-abi = { path = "../../src/abi", version = "0.3.5", optional = true }
 
 libm = {version = "0.2.15", optional = true}
 simba = {version = "0.9.0", optional = true}

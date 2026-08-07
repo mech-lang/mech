@@ -17,7 +17,6 @@ struct BenchCombinational {
 }
 
 impl MechFunctionImpl for BenchCombinational {
-    fn solve(&self) {}
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
         *self.output.borrow_mut() += 1.0;
         if self.fail {
@@ -57,7 +56,9 @@ struct BenchRegister {
 }
 
 impl MechFunctionImpl for BenchRegister {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         Value::F64(self.sink.clone())
     }

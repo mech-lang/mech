@@ -92,8 +92,11 @@ impl MechRuntime {
             })?;
 
         if owns_program && restore_program {
-            match &envelope.program {
+            match &mut envelope.program {
                 Some(baseline) => {
+                    while let Some(predecessor) = baseline.replacement_predecessors.pop() {
+                        self.program = predecessor;
+                    }
                     if let Err(error) = self.program.restore(baseline.program.clone()) {
                         rollback_failures.push(format!("program restore failed: {:?}", error,));
                     }

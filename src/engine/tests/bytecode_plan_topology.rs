@@ -1,10 +1,10 @@
-use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{
-    FunctionCatalogBuilder, MResult, ParsedProgram, Plan, ReactiveCellId, ReactiveDependencyKind,
-    ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState, Value, hash_str,
+    BytecodeInstruction, FunctionCatalogBuilder, MResult, ParsedProgram, Plan, ReactiveCellId,
+    ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState, RuntimeType,
+    Value, hash_str,
 };
 use mech_engine::Interpreter;
-use mech_engine::{MechProgram, MechProgramConfig};
+use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
 use std::sync::Arc;
 
 fn source_program() -> MechProgram {
@@ -275,25 +275,26 @@ fn decoded_variable_definition_symbol_metadata_round_trips() -> MResult<()> {
 }
 
 #[test]
-fn decoded_structural_alias_access_matches_source() -> MResult<()> {
+fn tuple_constant_round_trips_through_bytecode() -> MResult<()> {
     let code = "tuple := (1, 2); tuple.2";
     let mut source = source_program();
     let source_output = source.run_string(code)?;
-    let bytecode = source.compile_bytecode()?;
-    let mut decoded = runtime_program();
-    let decoded_output = decoded.run_bytecode(&bytecode)?;
-
-    assert_eq!(decoded_output, source_output);
     assert_alias_node(
         &source.interpreter().plan(),
         "TupleAccessElement",
         &source_output,
     );
-    assert_alias_node(
-        &decoded.interpreter().plan(),
-        "TupleAccessElement",
-        &decoded_output,
+    let bytecode = source.compile_bytecode()?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    assert!(
+        parsed
+            .types
+            .iter()
+            .any(|ty| matches!(ty, RuntimeType::Tuple(_)))
     );
+    let mut decoded = runtime_program();
+    let decoded_output = decoded.run_bytecode(&bytecode)?;
+    assert_eq!(decoded_output, source_output);
     Ok(())
 }
 
@@ -459,28 +460,76 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
     let mut source = source_program();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    let matrix_comprehensions = parsed
+        .instructions
+        .iter()
+        .filter_map(|instruction| match instruction {
+            BytecodeInstruction::RuntimeVariadic { arguments, .. } => Some(arguments.len()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        matrix_comprehensions,
+        vec![2, 2],
+        "each row comprehension must encode both child registers",
+    );
     let mut decoded = runtime_program();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
-    let expected = Value::MatrixF64(ValueMatrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2));
-    assert_eq!(source_output, expected);
-    assert_eq!(decoded_output, expected);
+    for output in [&source_output, &decoded_output] {
+        match output {
+            Value::MatrixF64(matrix) => {
+                assert_eq!(matrix.shape(), vec![2, 2]);
+                assert_eq!(matrix.as_vec(), vec![1.0, 3.0, 2.0, 4.0]);
+            }
+            other => panic!("expected f64 matrix literal, got {other:?}"),
+        }
+    }
     assert_matrix_literal_chain(&source.interpreter().plan());
     assert_matrix_literal_chain(&decoded.interpreter().plan());
     Ok(())
 }
 
 #[test]
-fn decoded_set_literal_registers_structural_node() -> MResult<()> {
+fn decoded_matrix_comprehension_publishes_reactive_results() -> MResult<()> {
+    let mut source = source_program();
+    source.run_string("x := 1.0\npayload := [x 2.0]\npayload")?;
+    let bytecode = source.compile_bytecode()?;
+    let mut decoded = runtime_program();
+    decoded.run_bytecode(&bytecode)?;
+
+    decoded.update_inputs_and_advance_turn(&[ProgramInputUpdate {
+        input: ProgramInputId {
+            interpreter_id: decoded.interpreter().id,
+            symbol_id: hash_str("x"),
+        },
+        value: Value::from(3.0f64),
+    }])?;
+
+    let Value::MatrixF64(payload) = decoded.root_symbol_value("payload")? else {
+        panic!("expected decoded matrix payload")
+    };
+    assert_eq!(payload.as_vec(), vec![3.0, 2.0]);
+    Ok(())
+}
+
+#[test]
+fn set_constant_round_trips_through_bytecode() -> MResult<()> {
     let code = "{1.0, 2.0}";
     let mut source = source_program();
     let source_output = source.run_string(code)?;
+    assert_structural_set_node(&source.interpreter().plan(), &source_output);
     let bytecode = source.compile_bytecode()?;
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    assert!(
+        parsed
+            .types
+            .iter()
+            .any(|ty| matches!(ty, RuntimeType::Set { .. }))
+    );
     let mut decoded = runtime_program();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
-
     assert_eq!(decoded_output, source_output);
-    assert_structural_set_node(&source.interpreter().plan(), &source_output);
-    assert_structural_set_node(&decoded.interpreter().plan(), &decoded_output);
     Ok(())
 }

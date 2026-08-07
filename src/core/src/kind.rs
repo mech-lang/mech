@@ -2,7 +2,8 @@ use crate::*;
 
 // Kind -----------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Kind {
     Any,
     None,

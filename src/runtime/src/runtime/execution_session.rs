@@ -1,21 +1,31 @@
 use super::extension::{catch_extension, invoke_extension};
+use super::live_state::LiveRegistrationMode;
 use super::transaction::{
     RuntimeExecutionTransaction, RuntimeExecutionTransactionState, check_transactional_capability,
 };
-use super::{MechRuntime, RuntimeInvalidOperationError};
+use super::{MechRuntime, RuntimeExecutionMode, RuntimeInvalidOperationError};
 use crate::{
     ActorId, ActorRecord, CapabilityId, CapabilityKernel, CapabilityRequest, EventId,
     HostCallPolicy, HostFunctionNotFoundError, HostRegistry, IdGenerator, InvalidHostFunctionError,
     MechStore, ObjectId, ObjectRecord, PreparedRuntimeEffect, RegisteredHostFunction,
-    RuntimeCallContext, RuntimeContext, RuntimeEffectId, RuntimeEvent, RuntimeEventKind, RuntimeId,
-    RuntimeManagedServices, RuntimePreparedHostCall, RuntimeResourceRegistry,
+    RuntimeCallContext, RuntimeCapabilityOperation, RuntimeContext, RuntimeEffectId, RuntimeEvent,
+    RuntimeEventKind, RuntimeHostInputSource, RuntimeId, RuntimeLiveResourceBinding,
+    RuntimeManagedServices, RuntimePreparedHostCall, RuntimeResourceKey,
+    RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
     RuntimeTransactionNotFoundError, RuntimeValueSnapshot, default_host_capability_request,
 };
-use mech_core::{MResult, MechError, MechExecutionServices, Value};
+use mech_core::{
+    ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult, MechError,
+    MechExecutionServices, ResourceIntent, ValRef, Value,
+};
 use mech_engine::MechProgram;
+use std::collections::BTreeMap;
 
 pub(crate) struct RuntimeExecutionSession<'a> {
     pub(crate) runtime_id: RuntimeId,
+    pub(crate) execution_mode: RuntimeExecutionMode,
+    pub(crate) live_registration_mode: LiveRegistrationMode,
     pub(crate) max_events: Option<usize>,
     pub(crate) context: &'a mut RuntimeContext,
     pub(crate) transaction: &'a mut RuntimeExecutionTransaction,
@@ -23,6 +33,8 @@ pub(crate) struct RuntimeExecutionSession<'a> {
     pub(crate) store: &'a mut dyn MechStore,
     pub(crate) capability_kernel: &'a mut dyn CapabilityKernel,
     pub(crate) resources: &'a mut RuntimeResourceRegistry,
+    pub(crate) live_input_bindings:
+        &'a mut BTreeMap<RuntimeHostInputSource, Vec<RuntimeLiveResourceBinding>>,
     pub(crate) host_registry: &'a dyn HostRegistry,
     pub(crate) host_policy: &'a dyn HostCallPolicy,
     pub(crate) event_sequence: &'a mut u64,
@@ -30,6 +42,7 @@ pub(crate) struct RuntimeExecutionSession<'a> {
 
 struct RuntimeSessionServices<'a> {
     runtime_id: RuntimeId,
+    execution_mode: RuntimeExecutionMode,
     max_events: Option<usize>,
     transaction: &'a mut RuntimeExecutionTransaction,
     id_generator: &'a mut dyn IdGenerator,
@@ -120,6 +133,123 @@ impl RuntimeSessionServices<'_> {
         )
     }
 
+    fn check_resource_capability(
+        &mut self,
+        operation: &RuntimeCapabilityOperation,
+        key: &RuntimeResourceKey,
+    ) -> MResult<CapabilityId> {
+        let request = CapabilityRequest::from_keys(
+            &self.context.subject,
+            operation.name(),
+            key.capability_resource(),
+        );
+        self.check_capability(&request)
+    }
+
+    fn read_external_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+        self.validate_context()?;
+        if request.intent != ResourceIntent::Read {
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "execution_read_resource",
+                    reason: format!("resource read received {:?} intent", request.intent),
+                },
+                None,
+            ));
+        }
+        let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
+        let operation = RuntimeCapabilityOperation::from_name(request.operation.clone())?;
+        self.check_resource_capability(&operation, &key)?;
+
+        if self.execution_mode == RuntimeExecutionMode::Execute {
+            let resource_identity = self.resources.staged_resource_identity_for(&key.base_uri)?;
+            if let Some(value) = self
+                .transaction
+                .effects
+                .staged_resource_value(&resource_identity, &key.path)
+            {
+                return value.try_deep_snapshot();
+            }
+        }
+
+        let runtime_request = RuntimeResourceReadRequest {
+            base_uri: key.base_uri,
+            path: key.path,
+            context_name: request.context_name.clone(),
+        };
+        let value = match self.execution_mode {
+            RuntimeExecutionMode::Execute => self.resources.read(runtime_request)?,
+            RuntimeExecutionMode::Plan => self.resources.plan_read(runtime_request)?,
+        };
+        value.try_deep_snapshot()
+    }
+
+    fn write_external_resource(
+        &mut self,
+        request: &ExecutionResourceRequest,
+        value: &Value,
+    ) -> MResult<()> {
+        self.validate_context()?;
+        let intent = match request.intent {
+            ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
+            ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
+            ResourceIntent::Read => {
+                return Err(MechError::new(
+                    RuntimeInvalidOperationError {
+                        operation: "execution_write_resource",
+                        reason: "resource write received Read intent".to_string(),
+                    },
+                    None,
+                ));
+            }
+        };
+        let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
+        let operation = RuntimeCapabilityOperation::from_name(request.operation.clone())?;
+        self.check_resource_capability(&operation, &key)?;
+
+        if self.execution_mode == RuntimeExecutionMode::Plan {
+            return self
+                .resources
+                .preflight_write(RuntimeResourceWritePreflightRequest {
+                    base_uri: key.base_uri,
+                    path: key.path,
+                    context_name: request.context_name.clone(),
+                    operation,
+                    intent,
+                });
+        }
+
+        let value = value.try_deep_snapshot()?;
+        let runtime_request = RuntimeResourceWriteRequest {
+            base_uri: key.base_uri,
+            path: key.path,
+            context_name: request.context_name.clone(),
+            operation,
+            value: value.clone(),
+            intent,
+        };
+        let staged_resource = if intent == RuntimeResourceWriteIntent::Assign {
+            Some((
+                self.resources
+                    .staged_resource_identity_for(&runtime_request.base_uri)?,
+                runtime_request.path.clone(),
+                value,
+            ))
+        } else {
+            None
+        };
+        let effect = self.resources.prepare_write(runtime_request)?;
+        match staged_resource {
+            Some((base_uri, path, value)) => {
+                self.stage_resource_effect(effect, base_uri, path, value)?;
+            }
+            None => {
+                self.stage_effect(effect)?;
+            }
+        }
+        Ok(())
+    }
+
     fn stage_effect(&mut self, effect: PreparedRuntimeEffect) -> MResult<RuntimeEffectId> {
         self.validate_context()?;
         let (metadata, protocol) = catch_extension("prepared runtime effect", "metadata", || {
@@ -152,6 +282,58 @@ impl RuntimeSessionServices<'_> {
                     operation: "runtime_execution_session",
                     reason: format!(
                         "effect staging failed and cleanup was incomplete: original={error:?}; cleanup={cleanup:?}",
+                    ),
+                },
+                None,
+            ));
+        }
+        Ok(effect_id)
+    }
+
+    fn stage_resource_effect(
+        &mut self,
+        effect: PreparedRuntimeEffect,
+        resource_identity: String,
+        path: String,
+        value: Value,
+    ) -> MResult<RuntimeEffectId> {
+        self.validate_context()?;
+        let (metadata, protocol) = catch_extension("prepared runtime effect", "metadata", || {
+            (effect.metadata(), effect.protocol())
+        })
+        .map_err(|panic| panic.into_error())?;
+        let cost = metadata.cost;
+        self.context.charge_bytes(cost.bytes)?;
+        self.context.charge_items(cost.items)?;
+        let store_before = self.transaction.store.clone();
+        let effect_mark = self.transaction.effects.mark();
+        let context_events_before = self.context.events.clone();
+        let transaction_id = self.transaction.store.id;
+        let effect_id = self.transaction.effects.stage_resource_write(
+            transaction_id,
+            effect,
+            resource_identity,
+            path,
+            value,
+        );
+        if let Err(error) = self.emit_event(RuntimeEventKind::EffectStaged {
+            effect_id,
+            source: metadata.source,
+            operation: metadata.operation,
+            resource: metadata.resource,
+            protocol,
+        }) {
+            self.transaction.store = store_before;
+            let cleanup = self.transaction.effects.rollback_to(effect_mark);
+            self.context.events = context_events_before;
+            if cleanup.is_empty() {
+                return Err(error);
+            }
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "runtime_execution_session",
+                    reason: format!(
+                        "resource effect staging failed and cleanup was incomplete: original={error:?}; cleanup={cleanup:?}",
                     ),
                 },
                 None,
@@ -220,9 +402,14 @@ impl RuntimeManagedServices for RuntimeSessionServices<'_> {
 }
 
 impl MechExecutionServices for RuntimeExecutionSession<'_> {
-    fn invoke_native(&mut self, name: &str, arguments: &[Value]) -> MResult<Value> {
+    fn invoke_host_function(
+        &mut self,
+        request: &ExecutionHostFunctionRequest,
+        arguments: &[Value],
+    ) -> MResult<Value> {
         let Self {
             runtime_id,
+            execution_mode,
             max_events,
             context,
             transaction,
@@ -233,9 +420,12 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
             host_registry,
             host_policy,
             event_sequence,
+            ..
         } = self;
+        let name = request.name.as_str();
         let mut services = RuntimeSessionServices {
             runtime_id: *runtime_id,
+            execution_mode: *execution_mode,
             max_events: *max_events,
             transaction,
             id_generator: &mut **id_generator,
@@ -301,6 +491,12 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
                 .map_err(|panic| panic.into_error())?
                 .unwrap_or_else(|| default_host_capability_request(&call_context, name));
             services.check_capability(&capability_request)?;
+            if *execution_mode == RuntimeExecutionMode::Plan {
+                let snapshot = invoke_extension(component, "plan", || {
+                    function.plan(&call_context, &arguments)
+                })?;
+                return snapshot.into_value().try_deep_snapshot();
+            }
             match function {
                 RegisteredHostFunction::Pure(function) => {
                     let snapshot = invoke_extension(component, "invoke", || {
@@ -341,6 +537,80 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         }
         result
     }
+
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+        let Self {
+            runtime_id,
+            execution_mode,
+            max_events,
+            context,
+            transaction,
+            id_generator,
+            store,
+            capability_kernel,
+            resources,
+            event_sequence,
+            ..
+        } = self;
+        RuntimeSessionServices {
+            runtime_id: *runtime_id,
+            execution_mode: *execution_mode,
+            max_events: *max_events,
+            transaction,
+            id_generator: &mut **id_generator,
+            store: &mut **store,
+            capability_kernel: &mut **capability_kernel,
+            resources,
+            event_sequence,
+            context,
+        }
+        .read_external_resource(request)
+    }
+
+    fn write_resource(&mut self, request: &ExecutionResourceRequest, value: &Value) -> MResult<()> {
+        let Self {
+            runtime_id,
+            execution_mode,
+            max_events,
+            context,
+            transaction,
+            id_generator,
+            store,
+            capability_kernel,
+            resources,
+            event_sequence,
+            ..
+        } = self;
+        RuntimeSessionServices {
+            runtime_id: *runtime_id,
+            execution_mode: *execution_mode,
+            max_events: *max_events,
+            transaction,
+            id_generator: &mut **id_generator,
+            store: &mut **store,
+            capability_kernel: &mut **capability_kernel,
+            resources,
+            event_sequence,
+            context,
+        }
+        .write_external_resource(request, value)
+    }
+
+    fn bind_live_resource(
+        &mut self,
+        interpreter_id: u64,
+        request: &ExecutionResourceRequest,
+        target: ValRef,
+    ) -> MResult<()> {
+        MechRuntime::bind_live_resource_target_in(
+            self.execution_mode,
+            self.live_registration_mode,
+            self.live_input_bindings,
+            interpreter_id,
+            request,
+            target,
+        )
+    }
 }
 
 impl MechRuntime {
@@ -360,6 +630,7 @@ impl MechRuntime {
         let max_events = self.execution_session_max_events();
         let MechRuntime {
             id,
+            execution_mode,
             event_sequence,
             program,
             id_generator,
@@ -369,6 +640,8 @@ impl MechRuntime {
             host_policy,
             active_transactions,
             resources,
+            live_registration_mode,
+            live_input_bindings,
             ..
         } = self;
         let transaction = active_transactions
@@ -378,6 +651,8 @@ impl MechRuntime {
             })?;
         let mut session = RuntimeExecutionSession {
             runtime_id: *id,
+            execution_mode: *execution_mode,
+            live_registration_mode: *live_registration_mode,
             max_events,
             context,
             transaction,
@@ -385,6 +660,7 @@ impl MechRuntime {
             store: store.as_mut(),
             capability_kernel: capability_kernel.as_mut(),
             resources,
+            live_input_bindings,
             host_registry: host_registry.as_ref(),
             host_policy: host_policy.as_ref(),
             event_sequence,
@@ -401,6 +677,7 @@ impl MechRuntime {
         let max_events = self.execution_session_max_events();
         let MechRuntime {
             id,
+            execution_mode,
             event_sequence,
             id_generator,
             store,
@@ -409,6 +686,8 @@ impl MechRuntime {
             host_policy,
             active_transactions,
             resources,
+            live_registration_mode,
+            live_input_bindings,
             ..
         } = self;
         let transaction = active_transactions
@@ -418,6 +697,8 @@ impl MechRuntime {
             })?;
         let mut session = RuntimeExecutionSession {
             runtime_id: *id,
+            execution_mode: *execution_mode,
+            live_registration_mode: *live_registration_mode,
             max_events,
             context,
             transaction,
@@ -425,6 +706,7 @@ impl MechRuntime {
             store: store.as_mut(),
             capability_kernel: capability_kernel.as_mut(),
             resources,
+            live_input_bindings,
             host_registry: host_registry.as_ref(),
             host_policy: host_policy.as_ref(),
             event_sequence,
@@ -442,6 +724,7 @@ impl MechRuntime {
         let max_events = self.execution_session_max_events();
         let MechRuntime {
             id,
+            execution_mode,
             event_sequence,
             id_generator,
             store,
@@ -450,6 +733,8 @@ impl MechRuntime {
             host_policy,
             active_transactions,
             resources,
+            live_registration_mode,
+            live_input_bindings,
             ..
         } = self;
         let transaction = active_transactions
@@ -459,6 +744,8 @@ impl MechRuntime {
             })?;
         let mut session = RuntimeExecutionSession {
             runtime_id: *id,
+            execution_mode: *execution_mode,
+            live_registration_mode: *live_registration_mode,
             max_events,
             context,
             transaction,
@@ -466,6 +753,7 @@ impl MechRuntime {
             store: store.as_mut(),
             capability_kernel: capability_kernel.as_mut(),
             resources,
+            live_input_bindings,
             host_registry: host_registry.as_ref(),
             host_policy: host_policy.as_ref(),
             event_sequence,

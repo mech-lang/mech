@@ -12,12 +12,18 @@ pub(crate) struct SetDifferenceFxn {
     out: Ref<MechSet>,
 }
 impl MechFunctionFactory for SetDifferenceFxn {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::Set,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechSet> = unsafe { arg1.as_unchecked() }.clone();
-                let rhs: Ref<MechSet> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<MechSet> = unsafe { out.as_unchecked() }.clone();
+                let lhs: Ref<MechSet> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let rhs: Ref<MechSet> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<MechSet> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(SetDifferenceFxn { lhs, rhs, out }))
             }
             _ => Err(MechError::new(
@@ -32,7 +38,7 @@ impl MechFunctionFactory for SetDifferenceFxn {
     }
 }
 impl MechFunctionImpl for SetDifferenceFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             // Get mutable reference to the output set
             let out_ptr: &mut MechSet = &mut *(self.out.as_mut_ptr());
@@ -48,13 +54,14 @@ impl MechFunctionImpl for SetDifferenceFxn {
             out_ptr.set = lhs_ptr.set.difference(&(rhs_ptr.set)).cloned().collect();
 
             // Update metadata
-            out_ptr.num_elements = out_ptr.set.len();
+            out_ptr.sync_cardinality_from_contents();
             out_ptr.kind = if out_ptr.set.len() > 0 {
                 out_ptr.set.iter().next().unwrap().kind()
             } else {
                 ValueKind::Empty
             };
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Set(self.out.clone())
@@ -71,14 +78,7 @@ impl MechFunctionImpl for SetDifferenceFxn {
 impl MechFunctionCompiler for SetDifferenceFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("SetDifferenceFxn");
-        compile_binop!(
-            name,
-            self.out,
-            self.lhs,
-            self.rhs,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Difference)
-        );
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
 }
 

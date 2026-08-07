@@ -10,6 +10,14 @@ pub fn install_intrinsic_runtime(builder: &mut FunctionCatalogBuilder) -> MResul
     crate::intrinsics::catalog::install_runtime(builder)
 }
 
+/// Installs the engine runtime fragment plus compiler-emitted factories needed
+/// only while planning native applications.
+#[cfg(feature = "native-plan")]
+pub fn install_intrinsic_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    install_intrinsic_runtime(builder)?;
+    crate::intrinsics::catalog::install_native_plan(builder)
+}
+
 /// Installs the source specializers owned by the engine's intrinsic fragment.
 #[cfg(feature = "source")]
 pub fn install_intrinsic_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {

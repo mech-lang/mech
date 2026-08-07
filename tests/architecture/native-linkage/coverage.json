@@ -1,0 +1,57 @@
+{
+  "schema": "mech.native-linkage-coverage-summary.v1",
+  "detail_schema": "mech.native-linkage-coverage.v2",
+  "standard": {
+    "entry_count": 9022,
+    "linked_entry_count": 9022,
+    "missing_linkage_count": 0,
+    "runtime_surface_digest": "908c9bdcbee9b307e042bc8c240a631aa5cd04cb004795fd2c48422361e9e9b8",
+    "installer_surface_digest": "c9dd8a3663f26bc01bf1c6c56893ef4405f4209ffb856289f6e08efd4a1145d0",
+    "feature_surface_digest": "9fce8940c169055fcb57533c5d7e665edb1e5251c21c9b9ca75db59958402216",
+    "runtime_contract_count": 9022,
+    "missing_contract_count": 0,
+    "runtime_contract_surface_digest": "21ef2bbc588150f22def229f8cb744a584c61e73c55956aa4163ac1a00a1af65",
+    "runtime_signature_count": 9022,
+    "missing_signature_count": 0,
+    "runtime_signature_surface_digest": "08af065e0c2d56ed8b99acecdfd0a14c811c7a6a84a4627ca5c1ee56f16aed54"
+  },
+  "extended": {
+    "entry_count": 120017,
+    "linked_entry_count": 120017,
+    "missing_linkage_count": 0,
+    "runtime_surface_digest": "8062a516449b94995b3a859bbbd51bf267d04b0534393106d5569a213f1146dc",
+    "installer_surface_digest": "6a4e9a83be5cd71abca6496872a9885c8f0555a2588b341f25bfefe3ea1313f1",
+    "feature_surface_digest": "4b5c65e4c0082fb20d05785f71a47e182c9a55f6d03ab5933e89ec15c40a249e",
+    "runtime_contract_count": 120017,
+    "missing_contract_count": 0,
+    "runtime_contract_surface_digest": "4da34fa51c293e61a55d96aeb53a892bd50744bce0d5f1293f9dac8a7e6adf47",
+    "runtime_signature_count": 120017,
+    "missing_signature_count": 0,
+    "runtime_signature_surface_digest": "871513f12a83645631c1e041ce99f4dc74948f1dd46487546e9587ec92a1985c"
+  },
+  "signature_invariants": {
+    "same_runtime_id_different_signature_count": 0,
+    "representation_feature_missing_count": 0,
+    "representation_feature_manually_listed_extra_count": 0,
+    "feature_dependent_output_representation_count": 0,
+    "exact_closure_count": 34021,
+    "exact_closure_shard_counts": [
+      4320,
+      4214,
+      4253,
+      4121,
+      4235,
+      4257,
+      4242,
+      4379
+    ]
+  },
+  "coverage_digest": {
+    "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
+    "sha256": "eafaf3da5bed789f5d450f0283eb736323e30bc1a23335c9fd2dc4b6fb181b2c"
+  },
+  "detail_artifact": {
+    "path": "target/native-linkage/coverage-full.json",
+    "generated_by": "python3 scripts/check-native-linkage-coverage.py strict"
+  }
+}

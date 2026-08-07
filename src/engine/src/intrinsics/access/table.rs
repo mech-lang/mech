@@ -12,7 +12,7 @@ macro_rules! impl_col_access_fxn {
       out: Ref<$vector_size<$out_type>>,
     }
     impl MechFunctionImpl for $fxn_name {
-      fn solve(&self) {
+      fn solve_result(&self) -> MResult<()> {
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
           for i in 1..=self.source.shape()[0] {
@@ -21,6 +21,8 @@ macro_rules! impl_col_access_fxn {
             }
           }
         }
+      ;
+          Ok(())
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
@@ -35,7 +37,6 @@ macro_rules! impl_col_access_fxn {
         let mut registers = [0, 0];
         registers[0] = compile_register_brrw!(self.out, ctx);
         registers[1] = compile_register!(self.source, ctx);
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
         ctx.emit_unop(
           hash_str(stringify!($fxn_name)),
           registers[0],
@@ -200,8 +201,9 @@ pub struct TableAccessSwizzle {
 }
 
 impl MechFunctionImpl for TableAccessSwizzle {
-    fn solve(&self) {
-        ()
+    fn solve_result(&self) -> MResult<()> {
+        ();
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.clone()
@@ -219,7 +221,6 @@ impl MechFunctionCompiler for TableAccessSwizzle {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0];
         registers[0] = compile_register!(self.out, ctx);
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Swizzle));
         ctx.emit_nullop(hash_str("TableAccessSwizzle"), registers[0]);
         Ok(registers[0])
     }
@@ -235,7 +236,7 @@ pub struct TableAccessScalarF {
 }
 
 impl MechFunctionImpl for TableAccessScalarF {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let table = self.source.borrow();
         let mut record = self.out.borrow_mut();
         let row_ix = *self.ix.borrow();
@@ -243,6 +244,7 @@ impl MechFunctionImpl for TableAccessScalarF {
             let value = matrix.index1d(row_ix);
             record.data.insert(*key, value.clone());
         }
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Record(self.out.clone())
@@ -263,9 +265,6 @@ impl MechFunctionCompiler for TableAccessScalarF {
         registers[0] = compile_register_brrw!(self.out, ctx);
         registers[1] = compile_register_brrw!(self.source, ctx);
         registers[2] = compile_register_brrw!(self.ix, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Table));
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
 
         ctx.emit_binop(
             hash_str(stringify!("TableAccessScalarF")),
@@ -372,7 +371,7 @@ pub struct TableAccessRangeIndex {
 }
 
 impl MechFunctionImpl for TableAccessRangeIndex {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let table = self.source.borrow();
         let mut out_table = self.out.borrow_mut();
         let ix_brrw = self.ix.borrow();
@@ -384,6 +383,7 @@ impl MechFunctionImpl for TableAccessRangeIndex {
                 out_matrix.set_index1d(out_i, value.clone());
             }
         }
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Table(self.out.clone())
@@ -405,9 +405,6 @@ impl MechFunctionCompiler for TableAccessRangeIndex {
         registers[1] = compile_register_brrw!(self.source, ctx);
         registers[2] = compile_register_brrw!(self.ix, ctx);
 
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Table));
-        ctx.require(FeatureFlag::Builtin(FeatureKind::SubscriptRange));
-
         ctx.emit_binop(
             hash_str(stringify!("TableAccessRangeIndex")),
             registers[0],
@@ -427,7 +424,7 @@ pub struct TableAccessRangeBool {
 }
 
 impl MechFunctionImpl for TableAccessRangeBool {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let table = self.source.borrow();
         let ix_brrw = self.ix.borrow();
         let true_count = ix_brrw.iter().filter(|&&b| b).count();
@@ -451,6 +448,7 @@ impl MechFunctionImpl for TableAccessRangeBool {
             }
         }
         out_table.rows = true_count;
+        Ok(())
     }
     fn out(&self) -> Value {
         Value::Table(self.out.clone())
@@ -471,9 +469,6 @@ impl MechFunctionCompiler for TableAccessRangeBool {
         registers[0] = compile_register_brrw!(self.out, ctx);
         registers[1] = compile_register_brrw!(self.source, ctx);
         registers[2] = compile_register_brrw!(self.ix, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Table));
-        ctx.require(FeatureFlag::Builtin(FeatureKind::LogicalIndexing));
 
         ctx.emit_binop(
             hash_str(stringify!("TableAccessRangeBool")),

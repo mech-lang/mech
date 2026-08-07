@@ -7,6 +7,418 @@ use nalgebra::{
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MatrixAccessSelection {
+    Scalar,
+    All,
+    Explicit(usize),
+    Logical(usize),
+}
+
+impl MatrixAccessSelection {
+    fn count(self, upper: usize) -> usize {
+        match self {
+            Self::Scalar => 1,
+            Self::All => upper,
+            Self::Explicit(count) | Self::Logical(count) => count,
+        }
+    }
+}
+
+fn matrix_access_selection(
+    value: &Value,
+    upper: usize,
+    input_index: usize,
+) -> MResult<MatrixAccessSelection> {
+    let contract = "matrix_access";
+    match value {
+        Value::Index(value) => {
+            let found = *value.borrow();
+            if found == 0 || found > upper {
+                return Err(function_shape_contract_violation(
+                    contract,
+                    format!("input {input_index} index {found} is outside 1..={upper}"),
+                ));
+            }
+            Ok(MatrixAccessSelection::Scalar)
+        }
+        Value::IndexAll => Ok(MatrixAccessSelection::All),
+        Value::MatrixIndex(value) => {
+            let indices = value.as_vec();
+            if let Some(found) = indices
+                .iter()
+                .copied()
+                .find(|value| *value == 0 || *value > upper)
+            {
+                return Err(function_shape_contract_violation(
+                    contract,
+                    format!("input {input_index} index {found} is outside 1..={upper}"),
+                ));
+            }
+            Ok(MatrixAccessSelection::Explicit(indices.len()))
+        }
+        #[cfg(feature = "bool")]
+        Value::MatrixBool(value) => {
+            let mask = value.as_vec();
+            if mask.len() != upper {
+                return Err(function_shape_contract_violation(
+                    contract,
+                    format!(
+                        "input {input_index} logical mask has {} elements, expected {upper}",
+                        mask.len(),
+                    ),
+                ));
+            }
+            Ok(MatrixAccessSelection::Logical(
+                mask.into_iter().filter(|selected| *selected).count(),
+            ))
+        }
+        _ => Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "input {input_index} must be a scalar index, index vector, logical mask, or all-index selector"
+            ),
+        )),
+    }
+}
+
+fn matrix_access_binary_output_shape(
+    source: FunctionMatrixDescriptor,
+    selection: MatrixAccessSelection,
+    output: Option<FunctionMatrixDescriptor>,
+) -> MResult<(usize, usize)> {
+    let contract = "matrix_access";
+    use FunctionMatrixRepresentation::*;
+
+    match (
+        selection,
+        output.map(|descriptor| descriptor.representation),
+    ) {
+        (MatrixAccessSelection::Scalar, None) => Ok((1, 1)),
+        (MatrixAccessSelection::Scalar, Some(VectorD)) => Ok((source.rows, 1)),
+        (
+            MatrixAccessSelection::Scalar,
+            Some(RowVector2 | RowVector3 | RowVector4 | RowVectorD | Matrix1),
+        ) => Ok((1, source.cols)),
+        (MatrixAccessSelection::All, Some(VectorD)) => Ok((
+            source.rows.checked_mul(source.cols).ok_or_else(|| {
+                function_shape_contract_violation(contract, "source element count overflowed")
+            })?,
+            1,
+        )),
+        (
+            MatrixAccessSelection::Explicit(count) | MatrixAccessSelection::Logical(count),
+            Some(VectorD),
+        ) => Ok((count, 1)),
+        (
+            MatrixAccessSelection::Explicit(count) | MatrixAccessSelection::Logical(count),
+            Some(MatrixD),
+        ) => Ok((count, source.cols)),
+        (selection, output) => Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "selector {selection:?} is incompatible with binary output representation {output:?}"
+            ),
+        )),
+    }
+}
+
+fn matrix_access_binary_upper_bound(
+    source: FunctionMatrixDescriptor,
+    selector: &Value,
+    output: Option<FunctionMatrixDescriptor>,
+) -> MResult<usize> {
+    use FunctionMatrixRepresentation::*;
+
+    match (selector, output.map(|descriptor| descriptor.representation)) {
+        (Value::Index(_), Some(VectorD)) => Ok(source.cols),
+        (Value::Index(_), Some(RowVector2 | RowVector3 | RowVector4 | RowVectorD | Matrix1))
+        | (Value::MatrixIndex(_), Some(MatrixD)) => Ok(source.rows),
+        #[cfg(feature = "bool")]
+        (Value::MatrixBool(_), Some(MatrixD)) => Ok(source.rows),
+        _ => source.rows.checked_mul(source.cols).ok_or_else(|| {
+            function_shape_contract_violation("matrix_access", "source element count overflowed")
+        }),
+    }
+}
+
+fn validate_matrix_access_contract_impl(
+    args: &FunctionArgs,
+    require_exact_output_shape: bool,
+) -> MResult<()> {
+    let contract = "matrix_access";
+    let source_value = args
+        .input_value(0)
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing matrix input"))?;
+    let source = source_value
+        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "input 0 must be matrix-backed")
+        })?;
+    let output_value = args.output_value();
+    let output = output_value.function_matrix_descriptor(FunctionArgumentRole::Output)?;
+    let output_shape = output_value.shape();
+    let output_shape = output_shape.as_slice();
+    let (expected_rows, expected_cols) = match args.input_count() {
+        2 => {
+            let selector = args
+                .input_value(1)
+                .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?;
+            let upper = matrix_access_binary_upper_bound(source, selector, output)?;
+            let selection = matrix_access_selection(selector, upper, 1)?;
+            matrix_access_binary_output_shape(source, selection, output)?
+        }
+        3 => {
+            let rows = matrix_access_selection(
+                args.input_value(1).ok_or_else(|| {
+                    function_shape_contract_violation(contract, "missing input 1")
+                })?,
+                source.rows,
+                1,
+            )?
+            .count(source.rows);
+            let cols = matrix_access_selection(
+                args.input_value(2).ok_or_else(|| {
+                    function_shape_contract_violation(contract, "missing input 2")
+                })?,
+                source.cols,
+                2,
+            )?
+            .count(source.cols);
+            (rows, cols)
+        }
+        found => {
+            return Err(function_shape_contract_violation(
+                contract,
+                format!("expected 2 or 3 inputs including the source, found {found}"),
+            ));
+        }
+    };
+    if output_shape.len() != 2 {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("output has invalid shape {output_shape:?}"),
+        ));
+    }
+    if require_exact_output_shape
+        && (output_shape[0] != expected_rows || output_shape[1] != expected_cols)
+    {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "output is {}x{}, selected indices require {expected_rows}x{expected_cols}",
+                output_shape[0], output_shape[1],
+            ),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_matrix_access_contract(args: &FunctionArgs) -> MResult<()> {
+    validate_matrix_access_contract_impl(args, true)
+}
+
+fn validate_matrix_access_all_range_contract(args: &FunctionArgs) -> MResult<()> {
+    let contract = "matrix_access_all_range";
+    if args.input_count() != 2 {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "expected 2 inputs including the source, found {}",
+                args.input_count(),
+            ),
+        ));
+    }
+    let source = args
+        .input_value(0)
+        .ok_or_else(|| function_shape_contract_violation(contract, "missing matrix input"))?
+        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "input 0 must be matrix-backed")
+        })?;
+    let columns = matrix_access_selection(
+        args.input_value(1)
+            .ok_or_else(|| function_shape_contract_violation(contract, "missing input 1"))?,
+        source.cols,
+        1,
+    )?
+    .count(source.cols);
+    let output_shape = args.output_value().shape();
+    if output_shape.as_slice() != [source.rows, columns] {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!(
+                "output is {}x{}, selected columns require {}x{}",
+                output_shape.first().copied().unwrap_or(0),
+                output_shape.get(1).copied().unwrap_or(0),
+                source.rows,
+                columns,
+            ),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_matrix_access_runtime_contract(args: &FunctionArgs) -> MResult<()> {
+    // Logical-index kernels intentionally resize dynamic outputs as the number
+    // of selected entries changes. Numeric selectors cannot resize their fixed
+    // output representation and must continue matching exactly on every solve.
+    #[cfg(feature = "bool")]
+    let has_logical_selector = (1..args.input_count())
+        .any(|index| matches!(args.input_value(index), Some(Value::MatrixBool(_))));
+    #[cfg(not(feature = "bool"))]
+    let has_logical_selector = false;
+    validate_matrix_access_contract_impl(args, !has_logical_selector)
+}
+
+#[cfg(all(test, feature = "u8", feature = "matrixd", feature = "vectord"))]
+mod matrix_access_contract_tests {
+    use super::*;
+
+    fn matrix(rows: usize, cols: usize) -> Value {
+        Value::MatrixU8(Matrix::DMatrix(Ref::new(DMatrix::from_element(
+            rows, cols, 0,
+        ))))
+    }
+
+    fn indices(values: Vec<usize>) -> Value {
+        Value::MatrixIndex(Matrix::DVector(Ref::new(DVector::from_vec(values))))
+    }
+
+    fn vector(len: usize) -> Value {
+        Value::MatrixU8(Matrix::DVector(Ref::new(DVector::from_element(len, 0))))
+    }
+
+    #[test]
+    fn exact_contract_rejects_linear_output_with_wrong_selected_length() {
+        let result = validate_matrix_access_contract(&FunctionArgs::Binary(
+            vector(1),
+            matrix(2, 2),
+            indices(vec![1, 2, 3]),
+        ));
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn exact_contract_checks_scalar_column_against_column_count() {
+        let result = validate_matrix_access_contract(&FunctionArgs::Binary(
+            vector(2),
+            matrix(2, 2),
+            Value::Index(Ref::new(3)),
+        ));
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn exact_contract_rejects_two_dimensional_output_with_wrong_orientation() {
+        let result = validate_matrix_access_contract(&FunctionArgs::Ternary(
+            matrix(1, 6),
+            matrix(3, 3),
+            indices(vec![1, 2]),
+            indices(vec![1, 2, 3]),
+        ));
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn all_range_contract_rejects_selected_row_orientation() {
+        let result = validate_matrix_access_all_range_contract(&FunctionArgs::Binary(
+            matrix(2, 4),
+            matrix(3, 4),
+            indices(vec![1, 2]),
+        ));
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn reactive_numeric_selector_cannot_outgrow_fixed_output() {
+        let source = Ref::new(DMatrix::from_row_slice(2, 2, &[10, 20, 30, 40]));
+        let ixes = Ref::new(DVector::from_vec(vec![1, 2]));
+        let out = Ref::new(DVector::from_element(2, 0));
+        let function = Access1DVDMD::<u8> {
+            source,
+            ixes: ixes.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[10, 30]);
+
+        *ixes.borrow_mut() = DVector::from_vec(vec![1, 2, 3]);
+        assert!(function.solve_result().is_err());
+        assert_eq!(out.borrow().as_slice(), &[10, 30]);
+    }
+
+    #[cfg(feature = "bool")]
+    #[test]
+    fn exact_contract_rejects_logical_mask_with_wrong_axis_length() {
+        let mask = Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(vec![true]))));
+        let result = validate_matrix_access_contract(&FunctionArgs::Ternary(
+            matrix(1, 2),
+            matrix(2, 2),
+            mask,
+            Value::IndexAll,
+        ));
+
+        assert!(result.is_err());
+    }
+
+    #[cfg(feature = "bool")]
+    #[test]
+    fn reactive_logical_linear_selection_regrows_from_empty() {
+        let source = Ref::new(DVector::from_vec(vec![10, 20, 30]));
+        let ixes = Ref::new(DVector::from_vec(vec![true, false, true]));
+        let out = Ref::new(DVector::from_element(2, 0));
+        let function = Access1DVDbVD::<u8> {
+            source,
+            ixes: ixes.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[10, 30]);
+
+        *ixes.borrow_mut() = DVector::from_vec(vec![false, false, false]);
+        function.solve_result().unwrap();
+        assert!(out.borrow().is_empty());
+
+        *ixes.borrow_mut() = DVector::from_vec(vec![false, true, false]);
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[20]);
+    }
+
+    #[cfg(feature = "bool")]
+    #[test]
+    fn reactive_logical_matrix_selection_regrows_from_empty() {
+        let source = Ref::new(DMatrix::from_row_slice(3, 2, &[10, 11, 20, 21, 30, 31]));
+        let ixes = Ref::new(DVector::from_vec(vec![true, false, true]));
+        let out = Ref::new(DMatrix::from_element(2, 2, 0));
+        let function = Access2DVDbAMD::<u8> {
+            source,
+            ixes: ixes.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(
+            *out.borrow(),
+            DMatrix::from_row_slice(2, 2, &[10, 11, 30, 31])
+        );
+
+        *ixes.borrow_mut() = DVector::from_vec(vec![false, false, false]);
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().shape(), (0, 2));
+
+        *ixes.borrow_mut() = DVector::from_vec(vec![false, true, false]);
+        function.solve_result().unwrap();
+        assert_eq!(*out.borrow(), DMatrix::from_row_slice(1, 2, &[20, 21]));
+    }
+}
+
 // Access ---------------------------------------------------------------------
 
 #[macro_export]
@@ -132,23 +544,13 @@ macro_rules! access_1d_slice {
 macro_rules! access_1d_slice_bool {
     ($source:expr, $ix:expr, $out:expr) => {
         unsafe {
-            let mut j = 0;
-            let out_len = (*$out).len();
+            let mut selected = Vec::new();
             for i in 0..(*$ix).len() {
-                if (*$ix)[i] == true {
-                    j += 1;
+                if (*$ix)[i] {
+                    selected.push((*$source).index(i).clone());
                 }
             }
-            if j != out_len {
-                (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
-            for i in 0..(*$source).len() {
-                if (*$ix)[i] == true {
-                    (&mut (*$out))[j] = (*$source).index(i).clone();
-                    j += 1;
-                }
-            }
+            *$out = DVector::from_vec(selected);
         }
     };
 }
@@ -156,23 +558,13 @@ macro_rules! access_1d_slice_bool {
 macro_rules! access_1d_slice_bool_v {
     ($source:expr, $ix:expr, $out:expr) => {
         unsafe {
-            let mut j = 0;
-            let out_len = (*$out).len();
+            let mut selected = Vec::new();
             for i in 0..(*$ix).len() {
-                if (&(*$ix))[i] == true {
-                    j += 1;
+                if (&(*$ix))[i] {
+                    selected.push((*$source).index(i).clone());
                 }
             }
-            if j != out_len {
-                (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
-            for i in 0..(*$source).len() {
-                if (&(*$ix))[i] == true {
-                    (&mut (*$out))[j] = (*$source).index(i).clone();
-                    j += 1;
-                }
-            }
+            *$out = DVector::from_vec(selected);
         }
     };
 }
@@ -182,23 +574,13 @@ macro_rules! access_2d_row_slice_bool {
         unsafe {
             let scalar_ix = &(*$ix1);
             let vec_ix = &(*$ix2);
-            let mut j = 0;
-            let out_len = (*$out).len();
+            let mut selected = Vec::new();
             for i in 0..vec_ix.len() {
-                if vec_ix[i] == true {
-                    j += 1;
+                if vec_ix[i] {
+                    selected.push((*$source).index((scalar_ix - 1, i)).clone());
                 }
             }
-            if j != out_len {
-                (*$out).resize_horizontally_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
-            for i in 0..vec_ix.len() {
-                if vec_ix[i] == true {
-                    (&mut (*$out))[j] = (*$source).index((scalar_ix - 1, i)).clone();
-                    j += 1;
-                }
-            }
+            *$out = RowDVector::from_row_slice(&selected);
         }
     };
 }
@@ -208,23 +590,13 @@ macro_rules! access_2d_col_slice_bool {
         unsafe {
             let vec_ix = &(*$ix1);
             let scalar_ix = &(*$ix2);
-            let mut j = 0;
-            let out_len = (*$out).len();
+            let mut selected = Vec::new();
             for i in 0..vec_ix.len() {
-                if vec_ix[i] == true {
-                    j += 1;
+                if vec_ix[i] {
+                    selected.push((*$source).index((i, scalar_ix - 1)).clone());
                 }
             }
-            if j != out_len {
-                (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
-            for i in 0..vec_ix.len() {
-                if vec_ix[i] == true {
-                    (&mut (*$out))[j] = (*$source).index((i, scalar_ix - 1)).clone();
-                    j += 1;
-                }
-            }
+            *$out = DVector::from_vec(selected);
         }
     };
 }
@@ -252,25 +624,16 @@ macro_rules! access_2d_slice_bool {
         unsafe {
             let ix1 = &(*$ix1);
             let ix2 = &(*$ix2);
-            let mut j = 0;
-            let out_len = (*$out).len();
-            for i in 0..ix1.len() {
-                if ix1[i] == true {
-                    j += 1;
-                }
-            }
-            if j != (*$out).nrows() {
-                (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
+            let rows = ix1.iter().filter(|selected| **selected).count();
+            let mut selected = Vec::with_capacity(rows.saturating_mul(ix2.len()));
             for k in 0..ix2.len() {
                 for i in 0..ix1.len() {
-                    if ix1[i] == true {
-                        (&mut (*$out))[j] = (*$source).index((i, ix2[k] - 1)).clone();
-                        j += 1;
+                    if ix1[i] {
+                        selected.push((*$source).index((i, ix2[k] - 1)).clone());
                     }
                 }
             }
+            *$out = DMatrix::from_column_slice(rows, ix2.len(), &selected);
         }
     };
 }
@@ -280,25 +643,16 @@ macro_rules! access_2d_slice_bool2 {
         unsafe {
             let ix1 = &(*$ix1);
             let ix2 = &(*$ix2);
-            let mut j = 0;
-            let out_len = (*$out).len();
-            for i in 0..ix2.len() {
-                if ix2[i] == true {
-                    j += 1;
-                }
-            }
-            if j != (*$out).ncols() {
-                (*$out).resize_horizontally_mut(j, (&(*$out))[0].clone());
-            }
-            j = 0;
+            let cols = ix2.iter().filter(|selected| **selected).count();
+            let mut selected = Vec::with_capacity(ix1.len().saturating_mul(cols));
             for k in 0..ix2.len() {
                 for i in 0..ix1.len() {
-                    if ix2[k] == true {
-                        (&mut (*$out))[j] = (*$source).index((ix1[i] - 1, k)).clone();
-                        j += 1;
+                    if ix2[k] {
+                        selected.push((*$source).index((ix1[i] - 1, k)).clone());
                     }
                 }
             }
+            *$out = DMatrix::from_column_slice(ix1.len(), cols, &selected);
         }
     };
 }
@@ -308,31 +662,17 @@ macro_rules! access_2d_slice_bool_bool {
         unsafe {
             let ix1 = &(*$ix1);
             let ix2 = &(*$ix2);
-            let mut k = 0;
-            let mut j = 0;
-            let out_len = (*$out).len();
-            for i in 0..ix1.len() {
-                if ix1[i] == true {
-                    j += 1;
-                }
-            }
-            for i in 0..ix2.len() {
-                if ix2[i] == true {
-                    k += 1;
-                }
-            }
-            if j != (*$out).nrows() || k != (*$out).ncols() {
-                (*$out).resize_mut(j, k, (&(*$out))[0].clone());
-            }
-            let mut out_ix = 0;
+            let rows = ix1.iter().filter(|selected| **selected).count();
+            let cols = ix2.iter().filter(|selected| **selected).count();
+            let mut selected = Vec::with_capacity(rows.saturating_mul(cols));
             for k in 0..ix2.len() {
                 for j in 0..ix1.len() {
-                    if ix1[j] == true && ix2[k] == true {
-                        (&mut (*$out))[out_ix] = (*$source).index((j, k)).clone();
-                        out_ix += 1;
+                    if ix1[j] && ix2[k] {
+                        selected.push((*$source).index((j, k)).clone());
                     }
                 }
             }
+            *$out = DMatrix::from_column_slice(rows, cols, &selected);
         }
     };
 }
@@ -357,25 +697,17 @@ macro_rules! access_2d_slice_all_bool {
     ($source:expr, $ix:expr, $out:expr) => {
         unsafe {
             let vec_ix = &(*$ix);
-            let mut j = 0;
-            let out_len = (*$out).len();
-            for i in 0..vec_ix.len() {
-                if vec_ix[i] == true {
-                    j += 1;
-                }
-            }
-            if j != out_len {
-                (*$out).resize_vertically_mut(j, (&mut (*$out))[0].clone());
-            }
-            j = 0;
-            for i in 0..vec_ix.len() {
-                for k in 0..(*$source).ncols() {
-                    if vec_ix[i] == true {
-                        (&mut (*$out))[j] = (*$source).index((i, k)).clone();
-                        j += 1;
+            let rows = vec_ix.iter().filter(|selected| **selected).count();
+            let cols = (*$source).ncols();
+            let mut selected = Vec::with_capacity(rows.saturating_mul(cols));
+            for k in 0..cols {
+                for i in 0..vec_ix.len() {
+                    if vec_ix[i] {
+                        selected.push((*$source).index((i, k)).clone());
                     }
                 }
             }
+            *$out = DMatrix::from_column_slice(rows, cols, &selected);
         }
     };
 }
@@ -474,9 +806,9 @@ macro_rules! impl_access_all_fxn_v {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
           FunctionArgs::Binary(out, arg1, arg2) => {
-            let source: Ref<naMatrix<T, R2, C2, S2>> = unsafe { arg1.as_unchecked() }.clone();
-            let ixes: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
-            let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+            let source: Ref<naMatrix<T, R2, C2, S2>> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+            let ixes: Ref<IxVec> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+            let sink: Ref<naMatrix<T, R1, C1, S1>> = out.try_function_ref(FunctionArgumentRole::Output)?;
             Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
           },
           _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
@@ -493,13 +825,15 @@ macro_rules! impl_access_all_fxn_v {
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
     {
-      fn solve(&self) {
+      fn solve_result(&self) -> MResult<()> {
         unsafe {
           let sink_ptr = &mut *self.sink.as_mut_ptr();
           let source_ptr = &*self.source.as_ptr();
           let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
           $op!(source_ptr,ix_ptr,sink_ptr);
         }
+      ;
+          Ok(())
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
@@ -518,7 +852,7 @@ macro_rules! impl_access_all_fxn_v {
     {
       fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
-        compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
+        compile_binop!(name, self.sink, self.source, self.ixes, ctx);
       }
     }
   };}*/
@@ -536,14 +870,28 @@ macro_rules! impl_access_fxn {
             T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
             #[cfg(feature = "compiler")]
             T: CompileConst,
+            Ref<$arg_type>: ToValue,
+            Ref<$ix_type>: ToValue,
             Ref<$out_type>: ToValue,
+            $arg_type: FunctionRuntimeType,
+            $ix_type: FunctionRuntimeType,
+            $out_type: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg_type as FunctionRuntimeType>::REPRESENTATION,
+                <$ix_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
-                        let n: Ref<$arg_type> = unsafe { arg1.as_unchecked().clone() };
-                        let k: Ref<$ix_type> = unsafe { arg2.as_unchecked().clone() };
-                        let out: Ref<$out_type> = unsafe { out.as_unchecked().clone() };
+                        let n: Ref<$arg_type> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let k: Ref<$ix_type> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let out: Ref<$out_type> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new($struct_name {
                             source: n,
                             ixes: k,
@@ -564,13 +912,21 @@ macro_rules! impl_access_fxn {
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            Ref<$arg_type>: ToValue,
+            Ref<$ix_type>: ToValue,
             Ref<$out_type>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
+                validate_matrix_access_runtime_contract(&FunctionArgs::Binary(
+                    self.out.to_value(),
+                    self.source.to_value(),
+                    self.ixes.to_value(),
+                ))?;
                 let source_ptr = self.source.as_ptr();
                 let ixes_ptr = self.ixes.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(source_ptr, ixes_ptr, out_ptr);
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -590,14 +946,7 @@ macro_rules! impl_access_fxn {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-                compile_binop!(
-                    name,
-                    self.out,
-                    self.source,
-                    self.ixes,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Access)
-                );
+                compile_binop!(name, self.out, self.source, self.ixes, ctx);
             }
         }
     };
@@ -617,15 +966,33 @@ macro_rules! impl_access_fxn2 {
             T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
             #[cfg(feature = "compiler")]
             T: CompileConst,
+            Ref<$arg_type>: ToValue,
+            Ref<$ix1_type>: ToValue,
+            Ref<$ix2_type>: ToValue,
             Ref<$out_type>: ToValue,
+            $arg_type: FunctionRuntimeType,
+            $ix1_type: FunctionRuntimeType,
+            $ix2_type: FunctionRuntimeType,
+            $out_type: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg_type as FunctionRuntimeType>::REPRESENTATION,
+                <$ix1_type as FunctionRuntimeType>::REPRESENTATION,
+                <$ix2_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<$arg_type> = unsafe { arg1.as_unchecked().clone() };
-                        let ix1: Ref<$ix1_type> = unsafe { arg2.as_unchecked().clone() };
-                        let ix2: Ref<$ix2_type> = unsafe { arg3.as_unchecked().clone() };
-                        let out: Ref<$out_type> = unsafe { out.as_unchecked().clone() };
+                        let source: Ref<$arg_type> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ix1: Ref<$ix1_type> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let ix2: Ref<$ix2_type> =
+                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
+                        let out: Ref<$out_type> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new($struct_name {
                             source,
                             ix1,
@@ -647,14 +1014,24 @@ macro_rules! impl_access_fxn2 {
         impl<T> MechFunctionImpl for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static,
+            Ref<$arg_type>: ToValue,
+            Ref<$ix1_type>: ToValue,
+            Ref<$ix2_type>: ToValue,
             Ref<$out_type>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
+                validate_matrix_access_runtime_contract(&FunctionArgs::Ternary(
+                    self.out.to_value(),
+                    self.source.to_value(),
+                    self.ix1.to_value(),
+                    self.ix2.to_value(),
+                ))?;
                 let source_ptr = self.source.as_ptr();
                 let ix1_ptr = self.ix1.as_ptr();
                 let ix2_ptr = self.ix2.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(source_ptr, ix1_ptr, ix2_ptr, out_ptr);
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -674,15 +1051,7 @@ macro_rules! impl_access_fxn2 {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-                compile_ternop!(
-                    name,
-                    self.out,
-                    self.source,
-                    self.ix1,
-                    self.ix2,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Access)
-                );
+                compile_ternop!(name, self.out, self.source, self.ix1, self.ix2, ctx);
             }
         }
     };
@@ -968,13 +1337,14 @@ struct MatrixAccessScalarValueF {
 }
 
 impl MechFunctionImpl for MatrixAccessScalarValueF {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let ix = *self.ix.borrow();
         let value = self.source.index1d(ix);
         *self.out.borrow_mut() = match &self.element_kind {
             ValueKind::Option(_) => Value::Typed(Box::new(value), self.element_kind.clone()),
             _ => value,
         };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.borrow().clone()
@@ -1017,7 +1387,6 @@ impl MechFunctionCompiler for MatrixAccessScalarValueF {
         registers[0] = compile_register_brrw!(self.out, ctx);
         registers[1] = compile_register!(self.source, ctx);
         registers[2] = compile_register_brrw!(self.ix, ctx);
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
         ctx.emit_binop(
             hash_str("MatrixAccessScalarValueF"),
             registers[0],
@@ -2468,12 +2837,59 @@ macro_rules! for_each_access_scalar {
     };
 }
 
+// The access catalog deliberately derives its native declaration and runtime
+// registration from the same scalar traversal.  Keeping the shape and scalar
+// features beside the concrete implementation prevents a native build from
+// silently selecting a broader profile than the factory it installs.
+macro_rules! declare_access_typed_scalar {
+    (
+        $factory:ident,
+        [$($feature:literal),+ $(,)?];
+        $scalar:ident,
+        $runtime_name:literal,
+        $cargo_scalar:literal
+    ) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(
+                    feature = "access",
+                    feature = $cargo_scalar,
+                    $(feature = $feature),+
+                ),
+                registration: [<register_ $factory:snake _ $scalar:lower>],
+                installer: [<install_ $factory:snake _ $scalar:lower>],
+                name: concat!(stringify!($factory), "<", $runtime_name, ">"),
+                factory_type: $factory<$scalar>,
+                contract: RuntimeFunctionContract::custom(
+                    "matrix_access",
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                    validate_matrix_access_contract,
+                ),
+                package: "mech-engine",
+                crate_name: "mech_engine",
+                installer_path: concat!(
+                    "mech_engine::__mech_native::install_",
+                    stringify!([<$factory:snake>]),
+                    "_",
+                    stringify!([<$scalar:lower>]),
+                ),
+                extra_cargo_features: ["access"],
+            }
+        }
+    };
+}
+
+macro_rules! declare_access_typed_family {
+    ($factory:ident, [$($feature:literal),+ $(,)?]) => {
+        for_each_access_scalar!(declare_access_typed_scalar, ($factory, [$($feature),+]));
+    };
+}
+
 macro_rules! install_access_typed_scalar {
-    ($builder:expr, $factory:ident; $scalar:ty, $runtime_name:literal, $assign_name:literal) => {
-        $builder.insert_runtime_factory(
-            concat!(stringify!($factory), "<", $runtime_name, ">"),
-            <$factory<$scalar> as MechFunctionFactory>::new,
-        )?;
+    ($builder:expr, $factory:ident; $scalar:ident, $runtime_name:literal, $cargo_scalar:literal) => {
+        paste! {
+            crate::intrinsics::access::matrix::native_declarations::[<register_ $factory:snake _ $scalar:lower>]($builder)?;
+        }
     };
 }
 
@@ -2495,6 +2911,72 @@ macro_rules! install_access_shape {
         paste! {
             install_access_typed_scalars!($builder, [<$family $shape>]);
         }
+    };
+}
+
+macro_rules! declare_access_shape {
+    ($family:ident, $shape:ident, $feature:literal) => {
+        paste! {
+            declare_access_typed_family!([<$family $shape>], [$feature]);
+        }
+    };
+}
+
+macro_rules! declare_access_logical_shape {
+    ($family:ident, $shape:ident, $feature:literal) => {
+        paste! {
+            declare_access_typed_family!([<$family $shape>], ["logical_indexing", $feature]);
+        }
+    };
+}
+
+macro_rules! for_each_access_shape {
+    ($callback:ident, ($family:ident)) => {
+        $callback!($family, M1, "matrix1");
+        $callback!($family, M2, "matrix2");
+        $callback!($family, M3, "matrix3");
+        $callback!($family, M4, "matrix4");
+        $callback!($family, M2x3, "matrix2x3");
+        $callback!($family, M3x2, "matrix3x2");
+        $callback!($family, MD, "matrixd");
+        $callback!($family, V2, "vector2");
+        $callback!($family, V3, "vector3");
+        $callback!($family, V4, "vector4");
+        $callback!($family, VD, "vectord");
+        $callback!($family, R2, "row_vector2");
+        $callback!($family, R3, "row_vector3");
+        $callback!($family, R4, "row_vector4");
+        $callback!($family, RD, "row_vectord");
+    };
+}
+
+macro_rules! for_each_access_shape_without_matrix1 {
+    ($callback:ident, ($family:ident)) => {
+        $callback!($family, M2, "matrix2");
+        $callback!($family, M3, "matrix3");
+        $callback!($family, M4, "matrix4");
+        $callback!($family, M2x3, "matrix2x3");
+        $callback!($family, M3x2, "matrix3x2");
+        $callback!($family, MD, "matrixd");
+        $callback!($family, V2, "vector2");
+        $callback!($family, V3, "vector3");
+        $callback!($family, V4, "vector4");
+        $callback!($family, VD, "vectord");
+        $callback!($family, R2, "row_vector2");
+        $callback!($family, R3, "row_vector3");
+        $callback!($family, R4, "row_vector4");
+        $callback!($family, RD, "row_vectord");
+    };
+}
+
+macro_rules! for_each_access_matrix_shape {
+    ($callback:ident, ($family:ident)) => {
+        $callback!($family, M2, "matrix2");
+        $callback!($family, M3, "matrix3");
+        $callback!($family, M4, "matrix4");
+        $callback!($family, M2x3, "matrix2x3");
+        $callback!($family, M3x2, "matrix3x2");
+        $callback!($family, MD, "matrixd");
     };
 }
 
@@ -2548,6 +3030,159 @@ macro_rules! install_access_matrix_shapes {
     };
 }
 
+macro_rules! declare_access_range_range_scalar {
+    (
+        $factory:ident,
+        $output:ident,
+        $input:ident,
+        $ix1:ident,
+        $ix1_scalar:ident,
+        $ix2:ident,
+        $ix2_scalar:ident,
+        [$($feature:literal),+ $(,)?];
+        $scalar:ident,
+        $runtime_name:literal,
+        $cargo_scalar:literal
+    ) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(
+                    feature = "access",
+                    feature = $cargo_scalar,
+                    $(feature = $feature),+
+                ),
+                registration: [<register_ $factory:snake _ $output:snake _ $input:snake _ $ix1:snake _ $ix2:snake _ $scalar:lower>],
+                installer: [<install_ $factory:snake _ $output:snake _ $input:snake _ $ix1:snake _ $ix2:snake _ $scalar:lower>],
+                name: concat!(
+                    stringify!($factory),
+                    "<",
+                    $cargo_scalar,
+                    stringify!($output),
+                    stringify!($input),
+                    stringify!($ix1),
+                    stringify!($ix2),
+                    ">"
+                ),
+                factory_type: $factory<
+                    $scalar,
+                    $output<$scalar>,
+                    $input<$scalar>,
+                    $ix1<$ix1_scalar>,
+                    $ix2<$ix2_scalar>,
+                >,
+                contract: RuntimeFunctionContract::custom(
+                    "matrix_access",
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                    validate_matrix_access_contract,
+                ),
+                package: "mech-engine",
+                crate_name: "mech_engine",
+                installer_path: concat!(
+                    "mech_engine::__mech_native::install_",
+                    stringify!([<$factory:snake _ $output:snake _ $input:snake _ $ix1:snake _ $ix2:snake _ $scalar:lower>]),
+                ),
+                extra_cargo_features: ["access"],
+            }
+        }
+    };
+}
+
+macro_rules! declare_access_range_range_family {
+    (
+        $factory:ident,
+        $output:ident,
+        $input:ident,
+        $ix1:ident,
+        $ix1_scalar:ident,
+        $ix2:ident,
+        $ix2_scalar:ident,
+        [$($feature:literal),+ $(,)?]
+    ) => {
+        for_each_access_scalar!(
+            declare_access_range_range_scalar,
+            (
+                $factory,
+                $output,
+                $input,
+                $ix1,
+                $ix1_scalar,
+                $ix2,
+                $ix2_scalar,
+                [$($feature),+]
+            )
+        );
+    };
+}
+
+macro_rules! declare_access_all_range_scalar {
+    (
+        $factory:ident,
+        $output:ident,
+        $input:ident,
+        $ix:ident,
+        $ix_scalar:ident,
+        [$($feature:literal),+ $(,)?];
+        $scalar:ident,
+        $runtime_name:literal,
+        $cargo_scalar:literal
+    ) => {
+        paste! {
+            mech_core::declare_native_runtime_factory! {
+                cfg: all(
+                    feature = "access",
+                    feature = $cargo_scalar,
+                    $(feature = $feature),+
+                ),
+                registration: [<register_ $factory:snake _ $output:snake _ $input:snake _ $ix:snake _ $scalar:lower>],
+                installer: [<install_ $factory:snake _ $output:snake _ $input:snake _ $ix:snake _ $scalar:lower>],
+                name: concat!(
+                    stringify!($factory),
+                    "<",
+                    $cargo_scalar,
+                    stringify!($output),
+                    stringify!($input),
+                    stringify!($ix),
+                    ">"
+                ),
+                factory_type: $factory<
+                    $scalar,
+                    $output<$scalar>,
+                    $input<$scalar>,
+                    $ix<$ix_scalar>,
+                >,
+                contract: RuntimeFunctionContract::custom(
+                    "matrix_access_all_range",
+                    RuntimeOutputAliasPolicy::DisallowInputAlias,
+                    validate_matrix_access_all_range_contract,
+                ),
+                package: "mech-engine",
+                crate_name: "mech_engine",
+                installer_path: concat!(
+                    "mech_engine::__mech_native::install_",
+                    stringify!([<$factory:snake _ $output:snake _ $input:snake _ $ix:snake _ $scalar:lower>]),
+                ),
+                extra_cargo_features: ["access"],
+            }
+        }
+    };
+}
+
+macro_rules! declare_access_all_range_family {
+    (
+        $factory:ident,
+        $output:ident,
+        $input:ident,
+        $ix:ident,
+        $ix_scalar:ident,
+        [$($feature:literal),+ $(,)?]
+    ) => {
+        for_each_access_scalar!(
+            declare_access_all_range_scalar,
+            ($factory, $output, $input, $ix, $ix_scalar, [$($feature),+])
+        );
+    };
+}
+
 macro_rules! install_access_range_range_scalar {
     (
         $builder:expr,
@@ -2555,32 +3190,16 @@ macro_rules! install_access_range_range_scalar {
         $output:ident,
         $input:ident,
         $ix1:ident,
-        $ix1_scalar:ty,
+        $ix1_scalar:ident,
         $ix2:ident,
-        $ix2_scalar:ty;
-        $scalar:ty,
+        $ix2_scalar:ident;
+        $scalar:ident,
         $runtime_name:literal,
         $assign_name:literal
     ) => {
-        $builder.insert_runtime_factory(
-            concat!(
-                stringify!($factory),
-                "<",
-                $assign_name,
-                stringify!($output),
-                stringify!($input),
-                stringify!($ix1),
-                stringify!($ix2),
-                ">"
-            ),
-            <$factory<
-                $scalar,
-                $output<$scalar>,
-                $input<$scalar>,
-                $ix1<$ix1_scalar>,
-                $ix2<$ix2_scalar>,
-            > as MechFunctionFactory>::new,
-        )?;
+        paste! {
+            crate::intrinsics::access::matrix::native_declarations::[<register_ $factory:snake _ $output:snake _ $input:snake _ $ix1:snake _ $ix2:snake _ $scalar:lower>]($builder)?;
+        }
     };
 }
 
@@ -2591,23 +3210,14 @@ macro_rules! install_access_all_range_scalar {
         $output:ident,
         $input:ident,
         $ix:ident,
-        $ix_scalar:ty;
-        $scalar:ty,
+        $ix_scalar:ident;
+        $scalar:ident,
         $runtime_name:literal,
         $assign_name:literal
     ) => {
-        $builder.insert_runtime_factory(
-            concat!(
-                stringify!($factory),
-                "<",
-                $assign_name,
-                stringify!($output),
-                stringify!($input),
-                stringify!($ix),
-                ">"
-            ),
-            <$factory<$scalar, $output<$scalar>, $input<$scalar>, $ix<$ix_scalar>> as MechFunctionFactory>::new,
-        )?;
+        paste! {
+            crate::intrinsics::access::matrix::native_declarations::[<register_ $factory:snake _ $output:snake _ $input:snake _ $ix:snake _ $scalar:lower>]($builder)?;
+        }
     };
 }
 
@@ -2817,6 +3427,267 @@ macro_rules! install_access_dynamic_shape {
             install($builder)?;
         }
     }};
+}
+
+macro_rules! declare_access_dynamic_for_shape {
+    ($shape:ident, $shape_feature:literal) => {
+        declare_access_range_range_family!(
+            Access2DRRVUU,
+            DMatrix,
+            $shape,
+            DVector,
+            usize,
+            DVector,
+            usize,
+            ["matrixd", "vectord", $shape_feature]
+        );
+
+        declare_access_range_range_family!(
+            Access2DRRVBB,
+            DMatrix,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "row_vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVBB,
+            DVector,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "row_vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVBB,
+            RowDVector,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "row_vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+
+        declare_access_range_range_family!(
+            Access2DRRVUB,
+            DMatrix,
+            $shape,
+            DVector,
+            usize,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVUB,
+            DVector,
+            $shape,
+            DVector,
+            usize,
+            DVector,
+            bool,
+            ["bool", "vectord", "logical_indexing", $shape_feature]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVUB,
+            RowDVector,
+            $shape,
+            DVector,
+            usize,
+            DVector,
+            bool,
+            [
+                "bool",
+                "vectord",
+                "row_vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+
+        declare_access_range_range_family!(
+            Access2DRRVBU,
+            DMatrix,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            usize,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVBU,
+            DVector,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            usize,
+            ["bool", "vectord", "logical_indexing", $shape_feature]
+        );
+        declare_access_range_range_family!(
+            Access2DRRVBU,
+            RowDVector,
+            $shape,
+            DVector,
+            bool,
+            DVector,
+            usize,
+            [
+                "bool",
+                "vectord",
+                "row_vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+
+        declare_access_all_range_family!(
+            Access2DARV,
+            RowDVector,
+            $shape,
+            DVector,
+            usize,
+            ["row_vectord", "vectord", $shape_feature]
+        );
+        declare_access_all_range_family!(
+            Access2DARV,
+            DMatrix,
+            $shape,
+            DVector,
+            usize,
+            ["matrixd", "vectord", $shape_feature]
+        );
+
+        declare_access_all_range_family!(
+            Access2DARVB,
+            RowDVector,
+            $shape,
+            DVector,
+            bool,
+            ["bool", "row_vectord", "vectord", $shape_feature]
+        );
+        declare_access_all_range_family!(
+            Access2DARVB,
+            DVector,
+            $shape,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+        declare_access_all_range_family!(
+            Access2DARVB,
+            DMatrix,
+            $shape,
+            DVector,
+            bool,
+            [
+                "bool",
+                "matrixd",
+                "vectord",
+                "logical_indexing",
+                $shape_feature
+            ]
+        );
+    };
+}
+
+pub(crate) mod native_declarations {
+    use super::*;
+
+    for_each_access_shape!(declare_access_shape, (Access1DS));
+    for_each_access_shape_without_matrix1!(declare_access_shape, (Access2DSS));
+    for_each_access_shape!(declare_access_shape, (Access1DVD));
+    for_each_access_shape_without_matrix1!(declare_access_shape, (Access1DA));
+
+    #[cfg(feature = "logical_indexing")]
+    for_each_access_shape!(declare_access_shape, (Access1DVDb));
+
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DAS));
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DVDA));
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DVDS));
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DSVD));
+
+    #[cfg(feature = "logical_indexing")]
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DVDbA));
+    #[cfg(feature = "logical_indexing")]
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DVDbS));
+    #[cfg(feature = "logical_indexing")]
+    for_each_access_matrix_shape!(declare_access_shape, (Access2DSVDb));
+
+    declare_access_typed_family!(Access2DSAM1, ["matrix1"]);
+    declare_access_typed_family!(Access2DSAM2, ["matrix2", "row_vector2"]);
+    declare_access_typed_family!(Access2DSAM3, ["matrix3", "row_vector3"]);
+    declare_access_typed_family!(Access2DSAM4, ["matrix4", "row_vector4"]);
+    declare_access_typed_family!(Access2DSAM2x3, ["matrix2x3", "row_vector3"]);
+    declare_access_typed_family!(Access2DSAM3x2, ["matrix3x2", "row_vector2"]);
+    declare_access_typed_family!(Access2DSAMD, ["matrixd", "row_vectord"]);
+
+    declare_access_dynamic_for_shape!(Matrix1, "matrix1");
+    declare_access_dynamic_for_shape!(Matrix2, "matrix2");
+    declare_access_dynamic_for_shape!(Matrix3, "matrix3");
+    declare_access_dynamic_for_shape!(Matrix4, "matrix4");
+    declare_access_dynamic_for_shape!(Matrix2x3, "matrix2x3");
+    declare_access_dynamic_for_shape!(Matrix3x2, "matrix3x2");
+    declare_access_dynamic_for_shape!(DMatrix, "matrixd");
+    declare_access_dynamic_for_shape!(Vector2, "vector2");
+    declare_access_dynamic_for_shape!(Vector3, "vector3");
+    declare_access_dynamic_for_shape!(Vector4, "vector4");
+    declare_access_dynamic_for_shape!(DVector, "vectord");
+    declare_access_dynamic_for_shape!(RowVector2, "row_vector2");
+    declare_access_dynamic_for_shape!(RowVector3, "row_vector3");
+    declare_access_dynamic_for_shape!(RowVector4, "row_vector4");
+    declare_access_dynamic_for_shape!(RowDVector, "row_vectord");
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    pub use super::native_declarations::*;
 }
 
 pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {

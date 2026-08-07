@@ -25,6 +25,8 @@ default = ["compiler_default"]
 runtime = ["mech-core/functions"]
 source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]
+native-plan = ["runtime", "mech-core/native-plan"]
+native-link = ["runtime"]
 standard_values = [
   "bool", "string",
   "u8", "u16", "u32", "u64", "u128",
@@ -38,7 +40,7 @@ source_default = ["runtime_default", "source"]
 compiler_default = ["source_default", "compiler"]
 
 matrix_default = ["matmul", "transpose", "dot", "solve"]
-matmul = ["runtime", "dep:num-traits", "matrix"]
+matmul = ["runtime", "dep:num-traits", "matrix", "mech-core/matrix1"]
 transpose = ["runtime", "dep:num-traits", "matrix"]
 dot = ["runtime", "dep:num-traits", "matrix"]
 solve = ["runtime", "dep:num-traits", "matrix"]
@@ -98,5 +100,23 @@ version = "0.2.19"
 default-features = false
 features = ["libm"]
 optional = true
+
+[dev-dependencies]
+mech-engine = { path = "../../src/engine", default-features = false, features = [
+  "compiler", "f64", "matrixd", "vectord", "variable_define", "formulas",
+  "math_mul", "matrix_matmul", "matrix_solve",
+] }
+mech-math = { path = "../math", default-features = false, features = [
+  "compiler", "source", "f64", "matrixd", "vectord", "mul",
+] }
+mech-runtime = { path = "../../src/runtime", default-features = false, features = [
+  "compiler", "f64", "matrixd", "vectord", "variables", "formulas",
+] }
+
+[patch.crates-io]
+mech-bytecode = { path = "../../src/bytecode" }
+mech-core = { path = "../../src/core" }
+mech-engine = { path = "../../src/engine" }
+mech-syntax = { path = "../../src/syntax" }
 
 [workspace]

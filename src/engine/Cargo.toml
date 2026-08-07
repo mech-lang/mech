@@ -18,9 +18,12 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [features]
+std = ["mech-core/std"]
 no_std = ["mech-core/no_std", "mech-syntax?/no_std"]
 
 runtime = ["program", "functions"]
+native-plan = ["runtime", "mech-core/native-plan"]
+native-link = ["runtime"]
 source = ["runtime", "dep:mech-syntax"]
 compiler = [
   "source",
@@ -131,7 +134,7 @@ stdlib = [
   "row_vectord", "vectord", "matrixd",
   "subscript_range", "logical_indexing", "swizzle",
   "subscript_formula", "dot_indexing",
-  "variable_define", "variable_assign", "kind_define",
+  "variable_define", "variable_assign", "invariant_define", "kind_define",
   "kind_annotation", "variables", "functions", "formulas",
   "access", "assign", "convert",
   "mech-core/stdlib", "mech-syntax?/stdlib",
@@ -258,9 +261,19 @@ matrix2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix2", "m
 matrix1 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix1", "mech-syntax?/matrix1"]
 matrix2x3 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix2x3", "mech-syntax?/matrix2x3"]
 matrix3x2 = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrix3x2", "mech-syntax?/matrix3x2"]
-row_vectord = ["matrix", "matrix_horzcat", "mech-core/row_vectord", "mech-syntax?/row_vectord"]
+# Retained dynamic row-vector assignment uses dynamic bool and usize index
+# vectors even when source/compiler support is absent.
+row_vectord = [
+  "bool", "matrix", "matrix_horzcat", "vectord",
+  "mech-core/row_vectord", "mech-syntax?/row_vectord",
+]
 vectord = ["matrix", "matrix_vertcat", "mech-core/vectord", "mech-syntax?/vectord"]
-matrixd = ["matrix", "matrix_horzcat", "matrix_vertcat", "mech-core/matrixd", "mech-syntax?/matrixd"]
+# Retained DMatrix assignment uses dynamic bool and usize index vectors even
+# when source/compiler support is absent.
+matrixd = [
+  "bool", "matrix", "matrix_horzcat", "matrix_vertcat", "vectord",
+  "mech-core/matrixd", "mech-syntax?/matrixd",
+]
 
 subscript = ["mech-core/subscript", "mech-syntax?/subscript"]
 subscript_slice = [
@@ -299,6 +312,11 @@ matrix_solve = []
 matrix_matmul = []
 matrix_transpose = []
 matrix_dot = []
+
+# The dynamic row-vector × vector runtime contract has a feature-invariant
+# Matrix1 output. Standard source builds need to bind that result without
+# enabling the rest of the fixed-Matrix1 intrinsic surface.
+variable_define_matrix1 = ["variable_define", "matrix", "mech-core/matrix1"]
 
 logic_default = ["logic_and", "logic_or", "logic_not", "logic_xor"]
 logic = []
@@ -427,7 +445,7 @@ string_concat = []
 mech-bytecode = { version = "0.3.5", default-features = false, optional = true }
 mech-core = { version = "0.3.5", default-features = false }
 mech-syntax = { version = "0.3.5", default-features = false, optional = true }
-mech-abi = { path = "../abi", optional = true }
+mech-abi = { path = "../abi", version = "0.3.5", optional = true }
 libloading = { version = "0.8.9", optional = true }
 
 paste = "1.0.15"

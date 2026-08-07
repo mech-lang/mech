@@ -34,21 +34,32 @@ where
         + Add<Output = T>,
     #[cfg(feature = "compiler")]
     T: CompileConst + ConstElem,
+    Ref<T>: ToValue,
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
     naMatrix<T, R1, C1, S1>: AsNaKind,
+    naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
+    T: FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     R1: Dim + 'static,
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug + 'static,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+        <naMatrix<T, R1, C1, S1> as FunctionRuntimeType>::REPRESENTATION,
+        T::REPRESENTATION,
+        T::REPRESENTATION,
+        T::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, from, step, to) => {
-                let from: Ref<T> = unsafe { from.as_unchecked() }.clone();
-                let step: Ref<T> = unsafe { step.as_unchecked() }.clone();
-                let to: Ref<T> = unsafe { to.as_unchecked() }.clone();
-                let out: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+                let from: Ref<T> = from.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let step: Ref<T> = step.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let to: Ref<T> = to.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let out: Ref<naMatrix<T, R1, C1, S1>> =
+                    out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     from,
                     step,
@@ -71,6 +82,7 @@ where
 impl<T, R1, C1, S1> MechFunctionImpl for RangeIncrementExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+    Ref<T>: ToValue,
     T: Copy
         + Scalar
         + Clone
@@ -86,16 +98,26 @@ where
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
+        crate::catalog::validate_range_increment_exclusive(&FunctionArgs::Ternary(
+            self.out.to_value(),
+            self.from.to_value(),
+            self.step.to_value(),
+            self.to.to_value(),
+        ))?;
         unsafe {
             let out_ptr = self.out.as_ptr() as *mut naMatrix<T, R1, C1, S1>;
             let mut current = *self.from.as_ptr();
             let step = *self.step.as_ptr();
-            for i in 0..(*out_ptr).len() {
+            let output_len = (*out_ptr).len();
+            for i in 0..output_len {
                 (&mut (*out_ptr))[i] = current;
-                current = current + step;
+                if i + 1 < output_len {
+                    current = current + step;
+                }
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -108,6 +130,35 @@ where
         Ok(self.reactive_output_values())
     }
 }
+
+#[cfg(all(test, feature = "u128", feature = "matrixd"))]
+mod tests {
+    use super::*;
+    use nalgebra::DMatrix;
+
+    #[test]
+    fn exclusive_increment_range_revalidates_reactive_cardinality() {
+        let to = Ref::new(5_u128);
+        let out = Ref::new(DMatrix::from_element(1, 2, 0));
+        let function = RangeIncrementExclusiveScalar::<u128, DMatrix<u128>> {
+            from: Ref::new(1),
+            step: Ref::new(2),
+            to: to.clone(),
+            out: out.clone(),
+            phantom: PhantomData::default(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[1, 3]);
+        let previous = out.borrow().clone();
+
+        *to.borrow_mut() = 7;
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
+        assert_eq!(*out.borrow(), previous);
+    }
+}
+
 #[cfg(feature = "compiler")]
 impl<T, R1, C1, S1> MechFunctionCompiler
     for RangeIncrementExclusiveScalar<T, naMatrix<T, R1, C1, S1>>
@@ -121,15 +172,7 @@ where
             T::as_value_kind(),
             naMatrix::<T, R1, C1, S1>::as_na_kind()
         );
-        compile_ternop!(
-            name,
-            self.out,
-            self.from,
-            self.step,
-            self.to,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::RangeExclusive)
-        );
+        compile_ternop!(name, self.out, self.from, self.step, self.to, ctx);
     }
 }
 

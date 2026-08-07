@@ -37,6 +37,9 @@ impl MechRuntime {
         if let Some(module_version) = actor.behavior {
             builder = builder.module_version(module_version);
         }
+        if let Some(state) = actor.state {
+            builder = builder.actor_state(state);
+        }
 
         builder.build()
     }

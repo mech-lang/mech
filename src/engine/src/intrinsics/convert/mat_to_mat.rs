@@ -12,7 +12,9 @@ pub struct ConvertMatPassthrough {
 }
 
 impl MechFunctionImpl for ConvertMatPassthrough {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         self.out.borrow().clone()
     }
@@ -44,12 +46,7 @@ mod passthrough_transaction_state_tests {
 impl MechFunctionCompiler for ConvertMatPassthrough {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertMatPassthrough");
-        compile_nullop!(
-            name,
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_nullop!(name, self.out, ctx);
     }
 }
 
@@ -70,7 +67,7 @@ where
     FromMat: Debug,
     ToMat: Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
@@ -79,7 +76,8 @@ where
             for (dst, src) in (&mut *out_ref).into_iter().zip((&*arg_ref).into_iter()) {
                 *dst = src.clone().lossless_into();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -107,13 +105,7 @@ where
             FromMat::as_value_kind(),
             ToMat::as_value_kind()
         );
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 

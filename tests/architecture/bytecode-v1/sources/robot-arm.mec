@@ -1,0 +1,3 @@
+@arm := robot://arm/commands{:move(move)}
+@arm/move <- true
+"robot-done"

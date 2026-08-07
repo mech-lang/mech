@@ -16,8 +16,9 @@ use self::extract::{ConfigExtractor, ExtractedConfigProgram};
 use self::ir::{ConfigExpr, ConfigFunction, ConfigItem, ConfigLet, ConfigProgram};
 use self::lower::ConfigLowerer;
 pub use self::lower::{
-    ConfigCapabilityGrant, ConfigCapabilityKind, DiagnosticsConfigPatch, MechConfigDocument,
-    RunHostConfig, RuntimeConfigPatch, RuntimeLimitsPatch, ServeHostConfig,
+    ActorBootstrapConfig, BuildHostConfig, ConfigCapabilityGrant, ConfigCapabilityKind,
+    DiagnosticsConfigPatch, MechConfigDocument, RunHostConfig, RuntimeConfigPatch,
+    RuntimeLimitsPatch, ServeHostConfig,
 };
 
 use mech_core::MResult;

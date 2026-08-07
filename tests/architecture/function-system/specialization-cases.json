@@ -1,7 +1,6 @@
 {
-  "schema": 1,
+  "schema": 2,
   "base_commit": "f7768e0c6bbde69d27410be6d1ecacbd08c238c5",
-  "bytecode_version": 1,
   "cases": [
     {
       "name": "combinatorics_n_choose_k_f64",

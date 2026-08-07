@@ -242,12 +242,18 @@ fn make_optional_kind(kind: &ValueKind) -> ValueKind {
 }
 
 impl MechFunctionFactory for TableJoinFxn {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        FunctionValueRepresentation::Table,
+        FunctionValueRepresentation::Table,
+        FunctionValueRepresentation::Table,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechTable> = unsafe { arg1.as_unchecked() }.clone();
-                let rhs: Ref<MechTable> = unsafe { arg2.as_unchecked() }.clone();
-                let out: Ref<MechTable> = unsafe { out.as_unchecked() }.clone();
+                let lhs: Ref<MechTable> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let rhs: Ref<MechTable> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let out: Ref<MechTable> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(TableJoinFxn {
                     lhs,
                     rhs,
@@ -268,14 +274,15 @@ impl MechFunctionFactory for TableJoinFxn {
 }
 
 impl MechFunctionImpl for TableJoinFxn {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let lhs = &*self.lhs.as_ptr();
             let rhs = &*self.rhs.as_ptr();
             if let Ok(joined) = Self::build_joined_table(lhs, rhs, self.mode) {
                 *self.out.as_mut_ptr() = joined;
             }
-        }
+        };
+        Ok(())
     }
 
     fn out(&self) -> Value {
@@ -294,14 +301,7 @@ impl MechFunctionImpl for TableJoinFxn {
 impl MechFunctionCompiler for TableJoinFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableJoinFxn::{:?}", self.mode);
-        compile_binop!(
-            name,
-            self.out,
-            self.lhs,
-            self.rhs,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Functions)
-        );
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
 }
 

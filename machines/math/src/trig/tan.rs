@@ -44,14 +44,9 @@ macro_rules! tanf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathTan,
-    f32,
-    tanf,
-    FeatureFlag::Custom(hash_str("math/tan"))
-);
+impl_math_unop!(MathTan, f32, tanf);
 #[cfg(feature = "f64")]
-impl_math_unop!(MathTan, f64, tan, FeatureFlag::Custom(hash_str("math/tan")));
+impl_math_unop!(MathTan, f64, tan);
 
 #[cfg(feature = "source")]
 fn impl_tan_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

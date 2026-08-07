@@ -7,7 +7,9 @@ use crate::{MResult, MechError, Ref, ValRef, Value};
 
 struct UnsupportedStateFunction;
 impl MechFunctionImpl for UnsupportedStateFunction {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         Value::Empty
     }
@@ -35,12 +37,14 @@ struct MisleadingRuntimeHostNameFunction {
     output: ValRef,
 }
 impl MechFunctionImpl for MisleadingRuntimeHostNameFunction {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         Value::MutableReference(self.output.clone())
     }
     fn to_string(&self) -> String {
-        "RuntimeHostNativeFunction::misleading-name".to_string()
+        "ExternalHostCallFunction::misleading-name".to_string()
     }
 
     fn transaction_state_values(&self) -> MResult<Vec<Value>> {
@@ -58,7 +62,9 @@ struct UnschedulableOutputFunction {
     state: ValRef,
 }
 impl MechFunctionImpl for UnschedulableOutputFunction {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
     fn out(&self) -> Value {
         Value::MutableReference(self.state.clone())
     }

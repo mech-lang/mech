@@ -1,12 +1,15 @@
-use mech_core::{BytecodeCompilerContext, EncodedInstr, FeatureFlag, MResult, Register, ValueKind};
+use mech_core::{
+    ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, EncodedConstant, MResult,
+    Register,
+};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
 pub(crate) struct RecordingBytecodeCompilerContext {
     pub reg_map: HashMap<usize, Register>,
     pub initialized_ptrs: HashSet<usize>,
-    pub requirements: HashSet<FeatureFlag>,
-    pub instructions: Vec<EncodedInstr>,
+    pub instructions: Vec<BytecodeInstruction>,
+    pub requirements: Vec<ApplicationRequirement>,
     pub const_count: u32,
     next_register: Register,
 }
@@ -26,44 +29,73 @@ impl BytecodeCompilerContext for RecordingBytecodeCompilerContext {
         (register, needs_initialization)
     }
 
-    fn compile_const(&mut self, _bytes: &[u8], _kind: ValueKind) -> MResult<u32> {
+    fn intern_constant(&mut self, _constant: EncodedConstant) -> MResult<u32> {
         let constant = self.const_count;
         self.const_count += 1;
         Ok(constant)
     }
 
-    fn define_symbol(&mut self, _pointer: usize, _register: Register, _name: &str, _mutable: bool) {
+    fn define_symbol(
+        &mut self,
+        _pointer: usize,
+        _register: Register,
+        _name: &str,
+        _mutable: bool,
+    ) -> MResult<()> {
+        Ok(())
     }
 
-    fn require(&mut self, requirement: FeatureFlag) {
-        self.requirements.insert(requirement);
+    fn intern_requirement(&mut self, requirement: ApplicationRequirement) -> MResult<u32> {
+        if let Some(index) = self
+            .requirements
+            .iter()
+            .position(|candidate| candidate == &requirement)
+        {
+            return Ok(index as u32);
+        }
+        let index = self.requirements.len() as u32;
+        self.requirements.push(requirement);
+        Ok(index)
     }
 
     fn emit_const_load(&mut self, destination: Register, constant: u32) {
-        self.instructions.push(EncodedInstr::ConstLoad {
+        self.instructions.push(BytecodeInstruction::ConstLoad {
             dst: destination,
-            const_id: constant,
+            constant,
+        });
+    }
+
+    fn emit_composite_pack(
+        &mut self,
+        destination: Register,
+        template: u32,
+        children: Vec<Register>,
+    ) {
+        self.instructions.push(BytecodeInstruction::CompositePack {
+            dst: destination,
+            template,
+            children,
         });
     }
 
     fn emit_nullop(&mut self, function: u64, destination: Register) {
-        self.instructions.push(EncodedInstr::NullOp {
-            fxn_id: function,
+        self.instructions.push(BytecodeInstruction::RuntimeNullary {
+            function,
             dst: destination,
         });
     }
 
     fn emit_unop(&mut self, function: u64, destination: Register, source: Register) {
-        self.instructions.push(EncodedInstr::UnOp {
-            fxn_id: function,
+        self.instructions.push(BytecodeInstruction::RuntimeUnary {
+            function,
             dst: destination,
             src: source,
         });
     }
 
     fn emit_binop(&mut self, function: u64, destination: Register, lhs: Register, rhs: Register) {
-        self.instructions.push(EncodedInstr::BinOp {
-            fxn_id: function,
+        self.instructions.push(BytecodeInstruction::RuntimeBinary {
+            function,
             dst: destination,
             lhs,
             rhs,
@@ -78,8 +110,8 @@ impl BytecodeCompilerContext for RecordingBytecodeCompilerContext {
         b: Register,
         c: Register,
     ) {
-        self.instructions.push(EncodedInstr::TernOp {
-            fxn_id: function,
+        self.instructions.push(BytecodeInstruction::RuntimeTernary {
+            function,
             dst: destination,
             a,
             b,
@@ -96,25 +128,59 @@ impl BytecodeCompilerContext for RecordingBytecodeCompilerContext {
         c: Register,
         d: Register,
     ) {
-        self.instructions.push(EncodedInstr::QuadOp {
-            fxn_id: function,
-            dst: destination,
-            a,
-            b,
-            c,
-            d,
-        });
+        self.instructions
+            .push(BytecodeInstruction::RuntimeQuaternary {
+                function,
+                dst: destination,
+                a,
+                b,
+                c,
+                d,
+            });
     }
 
     fn emit_varop(&mut self, function: u64, destination: Register, arguments: Vec<Register>) {
-        self.instructions.push(EncodedInstr::VarArg {
-            fxn_id: function,
+        self.instructions
+            .push(BytecodeInstruction::RuntimeVariadic {
+                function,
+                dst: destination,
+                arguments,
+            });
+    }
+
+    fn emit_host_call(
+        &mut self,
+        requirement: u32,
+        destination: Register,
+        arguments: Vec<Register>,
+    ) {
+        self.instructions.push(BytecodeInstruction::HostCall {
+            requirement,
             dst: destination,
-            args: arguments,
+            arguments,
         });
     }
 
-    fn emit_ret(&mut self, source: Register) {
-        self.instructions.push(EncodedInstr::Ret { src: source });
+    fn emit_resource_read(&mut self, requirement: u32, destination: Register) {
+        self.instructions.push(BytecodeInstruction::ResourceRead {
+            requirement,
+            dst: destination,
+        });
+    }
+
+    fn emit_resource_write(&mut self, requirement: u32, destination: Register, source: Register) {
+        self.instructions.push(BytecodeInstruction::ResourceWrite {
+            requirement,
+            dst: destination,
+            src: source,
+        });
+    }
+
+    fn emit_resource_send(&mut self, requirement: u32, destination: Register, source: Register) {
+        self.instructions.push(BytecodeInstruction::ResourceSend {
+            requirement,
+            dst: destination,
+            src: source,
+        });
     }
 }

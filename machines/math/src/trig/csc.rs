@@ -44,14 +44,9 @@ macro_rules! cscf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathCsc,
-    f32,
-    cscf,
-    FeatureFlag::Custom(hash_str("math/csc"))
-);
+impl_math_unop!(MathCsc, f32, cscf);
 #[cfg(feature = "f64")]
-impl_math_unop!(MathCsc, f64, csc, FeatureFlag::Custom(hash_str("math/csc")));
+impl_math_unop!(MathCsc, f64, csc);
 
 #[cfg(feature = "source")]
 fn impl_csc_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

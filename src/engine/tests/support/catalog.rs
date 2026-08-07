@@ -63,7 +63,7 @@ mod test_operations {
     }
 
     impl MechFunctionImpl for BinaryArithmeticFunction {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             let lhs = *self.lhs.borrow();
             let rhs = *self.rhs.borrow();
             *self.out.borrow_mut() = match self.operation {
@@ -72,6 +72,7 @@ mod test_operations {
                 BinaryArithmetic::Multiply => lhs * rhs,
                 BinaryArithmetic::Divide => lhs / rhs,
             };
+            Ok(())
         }
 
         fn out(&self) -> Value {
@@ -119,8 +120,9 @@ mod test_operations {
     }
 
     impl MechFunctionImpl for NegateFunction {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             *self.out.borrow_mut() = -*self.input.borrow();
+            Ok(())
         }
 
         fn out(&self) -> Value {
@@ -176,7 +178,7 @@ mod test_operations {
     }
 
     impl MechFunctionImpl for ComparisonFunction {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             *self.out.borrow_mut() = match self.operation {
                 Comparison::Equal => values_equal(&self.lhs, &self.rhs),
                 Comparison::NotEqual => !values_equal(&self.lhs, &self.rhs),
@@ -185,6 +187,7 @@ mod test_operations {
                 Comparison::LessEqual => numeric_pair(&self.lhs, &self.rhs, |a, b| a <= b),
                 Comparison::GreaterEqual => numeric_pair(&self.lhs, &self.rhs, |a, b| a >= b),
             };
+            Ok(())
         }
 
         fn out(&self) -> Value {
@@ -243,7 +246,7 @@ mod test_operations {
     }
 
     impl MechFunctionImpl for BooleanFunction {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             let lhs = *self.lhs.borrow();
             let rhs = *self.rhs.borrow();
             *self.out.borrow_mut() = match self.operation {
@@ -251,6 +254,7 @@ mod test_operations {
                 BooleanOperation::Or => lhs || rhs,
                 BooleanOperation::Xor => lhs ^ rhs,
             };
+            Ok(())
         }
 
         fn out(&self) -> Value {
@@ -302,8 +306,9 @@ mod test_operations {
     }
 
     impl MechFunctionImpl for NotFunction {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             *self.out.borrow_mut() = !*self.input.borrow();
+            Ok(())
         }
 
         fn out(&self) -> Value {
@@ -351,9 +356,10 @@ mod test_operations {
     }
 
     impl MechFunctionImpl for AddAssignFunction {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             let source = *self.source.borrow();
             *self.sink.borrow_mut() += source;
+            Ok(())
         }
 
         fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
@@ -517,8 +523,9 @@ mod tests {
         feature = "f64"
     ))]
     impl MechFunctionImpl for TestAddFunction {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             *self.out.borrow_mut() = *self.lhs.borrow() + *self.rhs.borrow();
+            Ok(())
         }
 
         fn out(&self) -> Value {

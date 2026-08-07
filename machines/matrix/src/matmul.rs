@@ -5,43 +5,68 @@ use mech_core::*;
 
 // MatMul ---------------------------------------------------------------------
 
-macro_rules! mul_op {
+macro_rules! checked_mul_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            *$out = *$lhs * *$rhs;
+            let next = checked_matrix_mul(*$lhs, *$rhs, "scalar matrix product")?;
+            *$out = next;
         }
     };
 }
 
-macro_rules! matmul_op {
+macro_rules! checked_matmul_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            (*$lhs).mul_to(&*$rhs, &mut *$out);
+            let lhs = &*$lhs;
+            let rhs = &*$rhs;
+            let current = &*$out;
+            if lhs.ncols() != rhs.nrows()
+                || current.nrows() != lhs.nrows()
+                || current.ncols() != rhs.ncols()
+            {
+                return Err(MechError::new(
+                    DimensionMismatch {
+                        dims: vec![
+                            lhs.nrows(),
+                            lhs.ncols(),
+                            rhs.nrows(),
+                            rhs.ncols(),
+                            current.nrows(),
+                            current.ncols(),
+                        ],
+                    },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+
+            let mut next = current.clone();
+            for row in 0..lhs.nrows() {
+                for column in 0..rhs.ncols() {
+                    let mut sum = Zero::zero();
+                    for inner in 0..lhs.ncols() {
+                        let product = checked_matrix_mul(
+                            lhs[(row, inner)],
+                            rhs[(inner, column)],
+                            "matrix-product multiplication",
+                        )?;
+                        sum = checked_matrix_add(sum, product, "matrix-product accumulation")?;
+                    }
+                    next[(row, column)] = sum;
+                }
+            }
+            *$out = next;
         }
     };
 }
 
 macro_rules! impl_matmul {
     ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
-        impl_binop!(
-            $name,
-            $type1,
-            $type2,
-            $out_type,
-            matmul_op,
-            FeatureFlag::Builtin(FeatureKind::MatMul)
-        );
+        impl_checked_matrix_binop!($name, $type1, $type2, $out_type, checked_matmul_op);
     };
 }
 
-impl_binop!(
-    MatMulScalar,
-    T,
-    T,
-    T,
-    mul_op,
-    FeatureFlag::Builtin(FeatureKind::MatMul)
-);
+impl_checked_matrix_binop!(MatMulScalar, T, T, T, checked_mul_op);
 #[cfg(all(feature = "row_vector4", feature = "vector4", feature = "matrix1"))]
 impl_matmul!(MatMulR4V4, RowVector4<T>, Vector4<T>, Matrix1<T>);
 #[cfg(all(feature = "row_vector4", feature = "matrix4"))]
@@ -53,7 +78,11 @@ impl_matmul!(MatMulR4MD, RowVector4<T>, DMatrix<T>, RowDVector<T>);
 impl_matmul!(MatMulR3V3, RowVector3<T>, Vector3<T>, Matrix1<T>);
 #[cfg(all(feature = "row_vector3", feature = "matrix3"))]
 impl_matmul!(MatMulR3M3, RowVector3<T>, Matrix3<T>, RowVector3<T>);
-#[cfg(all(feature = "row_vector3", feature = "matrix3x2"))]
+#[cfg(all(
+    feature = "row_vector3",
+    feature = "matrix3x2",
+    feature = "row_vector2"
+))]
 impl_matmul!(MatMulR3M3x2, RowVector3<T>, Matrix3x2<T>, RowVector2<T>);
 #[cfg(all(feature = "row_vector3", feature = "matrixd", feature = "row_vectord"))]
 impl_matmul!(MatMulR3MD, RowVector3<T>, DMatrix<T>, RowDVector<T>);
@@ -71,15 +100,8 @@ impl_matmul!(MatMulR2M2x3, RowVector2<T>, Matrix2x3<T>, RowVector3<T>);
 #[cfg(all(feature = "row_vector2", feature = "matrixd", feature = "row_vectord"))]
 impl_matmul!(MatMulR2MD, RowVector2<T>, DMatrix<T>, RowDVector<T>);
 
-#[cfg(all(feature = "row_vectord", feature = "vectord", feature = "matrix1"))]
+#[cfg(all(feature = "row_vectord", feature = "vectord"))]
 impl_matmul!(MatMulRDVD, RowDVector<T>, DVector<T>, Matrix1<T>);
-#[cfg(all(
-    feature = "row_vectord",
-    feature = "vectord",
-    feature = "matrixd",
-    not(feature = "matrix1")
-))]
-impl_matmul!(MatMulRDVD, RowDVector<T>, DVector<T>, DMatrix<T>);
 #[cfg(all(feature = "row_vectord", feature = "matrixd"))]
 impl_matmul!(MatMulRDMD, RowDVector<T>, DMatrix<T>, RowDVector<T>);
 
@@ -187,10 +209,8 @@ macro_rules! impl_matmul_match_arms {
           (Value::$matrix_kind(Matrix::RowVector2(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => Ok(Box::new(MatMulR2MD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(RowDVector::from_element(rhs.borrow().ncols(), $target_type::zero())) })),
 
           // Row Vector D
-          #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vectord", feature = "matrix1"))]
+          #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vectord"))]
           (Value::$matrix_kind(Matrix::RowDVector(lhs)), Value::$matrix_kind(Matrix::DVector(rhs))) => Ok(Box::new(MatMulRDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Matrix1::from_element($target_type::zero())) })),
-          #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vectord", feature = "matrixd", not(feature = "matrix1")))]
-          (Value::$matrix_kind(Matrix::RowDVector(lhs)), Value::$matrix_kind(Matrix::DVector(rhs))) => Ok(Box::new(MatMulRDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(1,1,$target_type::zero())) })),
           #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrixd"))]
           (Value::$matrix_kind(Matrix::RowDVector(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => Ok(Box::new(MatMulRDMD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(RowDVector::from_element(rhs.borrow().ncols(), $target_type::zero())) })),
 
@@ -351,3 +371,28 @@ fn impl_matmul_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFu
 
 #[cfg(feature = "source")]
 impl_mech_binop_fxn!(MatrixMatMul, impl_matmul_fxn, "matrix/matmul");
+
+#[cfg(all(test, feature = "u8", feature = "matrixd"))]
+mod checked_matmul_tests {
+    use super::*;
+
+    #[test]
+    fn integer_matrix_product_rejects_overflow_and_retains_output() {
+        let lhs = Ref::new(DMatrix::from_row_slice(1, 2, &[200_u8, 200]));
+        let rhs = Ref::new(DMatrix::from_column_slice(2, 1, &[1_u8, 0]));
+        let out = Ref::new(DMatrix::from_element(1, 1, 17_u8));
+        let function = MatMulMDMD {
+            lhs: lhs.clone(),
+            rhs: rhs.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow()[(0, 0)], 200);
+        *rhs.borrow_mut() = DMatrix::from_column_slice(2, 1, &[2, 2]);
+
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "MatrixArithmeticOverflow");
+        assert_eq!(out.borrow()[(0, 0)], 200);
+    }
+}

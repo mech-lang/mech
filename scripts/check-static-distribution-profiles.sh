@@ -294,7 +294,7 @@ if set(profiles) != expected_profiles:
     raise SystemExit(
         "static distribution profile contract failed: deterministic profile set mismatch"
     )
-expected_digest = "b9db9003bb9da704d5b61a5a6a3d5fcc6438ef7e433f49fc1918c466fc2fcc62"
+expected_digest = "b7385da248524bcfbd1a20768fc13648b01054625459985251e5f53cae872322"
 selected_digest = "a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d"
 actual_digest = sha256(runtime_surface_path.read_bytes()).hexdigest()
 if actual_digest != expected_digest:
@@ -303,9 +303,9 @@ if actual_digest != expected_digest:
     )
 expected_surface = {
     "selected-runtime": (3, 0, 0, 0, 0, selected_digest, "sha256-canonical-id-tab-name-lf-v1"),
-    "standard-runtime": (9019, 0, 0, 0, 0, expected_digest, "sha256-raw-frozen-runtime-surface-json"),
-    "standard-source": (9019, 119, 10, 52, 50, expected_digest, "sha256-raw-frozen-runtime-surface-json"),
-    "standard-compiler": (9019, 119, 10, 52, 50, expected_digest, "sha256-raw-frozen-runtime-surface-json"),
+    "standard-runtime": (9022, 0, 0, 0, 0, expected_digest, "sha256-raw-frozen-runtime-surface-json"),
+    "standard-source": (9022, 119, 10, 52, 50, expected_digest, "sha256-raw-frozen-runtime-surface-json"),
+    "standard-compiler": (9022, 119, 10, 52, 50, expected_digest, "sha256-raw-frozen-runtime-surface-json"),
 }
 surface_keys = (
     "catalog_factory_count", "source_specializer_count", "intrinsic_count",
@@ -496,11 +496,11 @@ check_selected_runtime() {
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$manifest" \
     --target-dir "$scratch/selected-runtime-target" \
-    -- "$repository_root/tests/architecture/legacy-bytecode/scalar-add.mecb"
+    -- "$repository_root/tests/architecture/bytecode-v1/scalar-add-f64.mecb"
 }
 
 check_standard_runtime() {
-  manifest="$repository_root/tests/fixtures/function-system-bytecode-consumer/Cargo.toml"
+  manifest="$repository_root/tests/fixtures/standard-bytecode-runtime/Cargo.toml"
   capture_fixture_profile "$manifest" "$scratch/standard-runtime.tree"
   for package in mech-core mech-engine mech-stdlib mech-math mech-compare mech-logic mech-range mech-matrix mech-set mech-string mech-stats mech-combinatorics
   do
@@ -524,7 +524,8 @@ check_standard_runtime() {
     --target-dir "$scratch/standard-runtime-target"
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$manifest" \
-    --target-dir "$scratch/standard-runtime-target"
+    --target-dir "$scratch/standard-runtime-target" \
+    -- "$repository_root/tests/architecture/bytecode-v1/scalar-add-f64.mecb"
 }
 
 check_standard_source() {

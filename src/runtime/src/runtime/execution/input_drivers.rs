@@ -1,4 +1,4 @@
-use crate::runtime::{MechRuntime, extension};
+use crate::runtime::{MechRuntime, RuntimeExecutionMode, extension};
 use mech_core::MResult;
 
 impl MechRuntime {
@@ -86,6 +86,9 @@ impl MechRuntime {
     }
 
     pub fn start_input_drivers(&mut self) -> MResult<()> {
+        if self.execution_mode == RuntimeExecutionMode::Plan {
+            return Ok(());
+        }
         if self.ingress().is_closed()? {
             return Err(crate::input::input_error(
                 "RuntimeIngressClosed",

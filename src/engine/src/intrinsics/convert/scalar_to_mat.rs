@@ -16,7 +16,7 @@ where
     for<'a> &'a mut T: IntoIterator<Item = &'a mut F>,
     T: Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
@@ -25,7 +25,8 @@ where
             for dst in (&mut *out_ref).into_iter() {
                 *dst = arg_ref.clone();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -50,13 +51,7 @@ where
             F::as_value_kind(),
             T::as_value_kind()
         );
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Convert)
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 

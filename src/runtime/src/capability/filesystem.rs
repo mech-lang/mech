@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use mech_core::{MResult, MechError};
+use mech_core::{MResult, MechError, MechErrorKind};
 
 use crate::*;
 
@@ -16,14 +16,46 @@ pub const FS_RESOLVE: &str = ":resolve";
 pub const FS_IMPORT: &str = ":import";
 pub const FS_SERVE: &str = ":serve";
 
+#[derive(Clone, Debug)]
+pub struct FilesystemPathNormalizationFailed {
+    pub path: String,
+    pub source: String,
+}
+
+impl MechErrorKind for FilesystemPathNormalizationFailed {
+    fn name(&self) -> &str {
+        "FilesystemPathNormalizationFailed"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "Could not normalize filesystem path `{}`: {}",
+            self.path, self.source,
+        )
+    }
+}
+
+fn path_normalization_error(path: &Path, error: std::io::Error) -> MechError {
+    MechError::new(
+        FilesystemPathNormalizationFailed {
+            path: path.display().to_string(),
+            source: error.to_string(),
+        },
+        None,
+    )
+}
+
 pub fn normalized_fs_path(path: &Path) -> MResult<String> {
     let absolute = if path.exists() {
-        path.canonicalize()?
+        path.canonicalize()
+            .map_err(|error| path_normalization_error(path, error))?
     } else {
         let path = if path.is_absolute() {
             path.to_path_buf()
         } else {
-            std::env::current_dir()?.join(path)
+            std::env::current_dir()
+                .map_err(|error| path_normalization_error(path, error))?
+                .join(path)
         };
         lexical_normalize(path)
     };

@@ -6,7 +6,7 @@ use crate::runtime::MechRuntime;
 use crate::runtime::live_state::RuntimeLiveStateSnapshot;
 use crate::{RuntimeTransaction, RuntimeTransactionNotFoundError, TransactionId};
 use mech_core::{MResult, MechError};
-use mech_engine::MechProgramCheckpoint;
+use mech_engine::{MechProgram, MechProgramCheckpoint};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(in crate::runtime) enum RuntimeExecutionTransactionMode {
@@ -23,10 +23,14 @@ pub(in crate::runtime) enum RuntimeExecutionTransactionState {
     Committing,
 }
 
-#[derive(Clone)]
 pub(in crate::runtime) struct RuntimeProgramBaseline {
     pub(in crate::runtime) program: MechProgramCheckpoint,
     pub(in crate::runtime) live: RuntimeLiveStateSnapshot,
+    /// Complete predecessor objects retained across structural root-program
+    /// replacements. Checkpoints can restore append-only elaboration, but a
+    /// replacement changes function identity and must be rolled back by
+    /// restoring the owned predecessor object itself.
+    pub(in crate::runtime) replacement_predecessors: Vec<MechProgram>,
 }
 
 pub(in crate::runtime) struct RuntimeExecutionTransaction {

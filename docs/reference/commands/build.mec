@@ -1,21 +1,87 @@
 `mech build`
 ===============================================================================
 
-`mech build` compiles Mech source into Mech bytecode.
+`mech build` produces a release native executable by default. Use `--emit` to
+request official bytecode v1, a native build plan, or a generated Cargo project.
 
-```sh
-mech build main.mec --out build-output
-```
-
-1. Output
--------------------------------------------------------------------------------
-
-The current `mech build` flow writes bytecode output. Use `mechc build` when you want the executable packaging flow.
-
-2. Examples
+1. Default native build
 -------------------------------------------------------------------------------
 
 ```sh
-mech build main.mec
-mech build src/main.mec src/support.mec --out build-output
+mech build main.mec \
+  --out target/mech/main
 ```
+
+`--out` is the exact artifact path. On Windows, the output may use the platform
+executable suffix. The default build profile is `release`.
+
+2. Bytecode
+-------------------------------------------------------------------------------
+
+```sh
+mech build main.mec \
+  --emit bytecode \
+  --out target/mech/main.mecb
+```
+
+This writes official bytecode v1 and does not invoke Cargo.
+
+3. Build plan
+-------------------------------------------------------------------------------
+
+```sh
+mech build main.mec \
+  --emit plan \
+  --workspace-root . \
+  --out target/mech/main.build-plan.json
+```
+
+4. Cargo project
+-------------------------------------------------------------------------------
+
+```sh
+mech build main.mec \
+  --emit cargo-project \
+  --workspace-root . \
+  --out target/mech/main.cargo
+```
+
+The emitted Cargo project is directly buildable:
+
+```sh
+cargo build \
+  --manifest-path target/mech/main.cargo/Cargo.toml \
+  --locked
+```
+
+5. Direct bytecode input
+-------------------------------------------------------------------------------
+
+```sh
+mech build target/mech/main.mecb \
+  --workspace-root . \
+  --out target/mech/main-from-bytecode
+```
+
+6. Options
+-------------------------------------------------------------------------------
+
+```text
+--emit native|bytecode|plan|cargo-project
+--name
+--out
+--target
+--profile debug|release
+--config
+--no-config
+--workspace-root
+--offline
+--keep-project
+```
+
+Without `--workspace-root`, generated applications use exact registry component
+dependencies. With `--workspace-root`, they use the selected packages from that
+checkout.
+
+`--keep-project` places a destination-adjusted generated Cargo project beside
+the requested artifact.

@@ -15,7 +15,7 @@ use paste::paste;
 use na::DMatrix;
 #[cfg(feature = "vectord")]
 use na::DVector;
-#[cfg(feature = "matrix1")]
+#[cfg(any(feature = "matrix1", feature = "matrix1_interop"))]
 use na::Matrix1;
 #[cfg(feature = "matrix2")]
 use na::Matrix2;
@@ -45,6 +45,39 @@ use na::Vector4;
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 use std::ops::*;
+
+#[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MathArithmeticOverflow {
+    pub operation: &'static str,
+    pub operand_type: &'static str,
+}
+
+#[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
+impl MechErrorKind for MathArithmeticOverflow {
+    fn name(&self) -> &str {
+        "MathArithmeticOverflow"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "{} overflows operand type {}",
+            self.operation, self.operand_type,
+        )
+    }
+}
+
+#[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
+pub(crate) fn arithmetic_overflow<T>(operation: &'static str) -> MechError {
+    MechError::new(
+        MathArithmeticOverflow {
+            operation,
+            operand_type: std::any::type_name::<T>(),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
 
 #[cfg(any(feature = "round", feature = "dynamic-module"))]
 pub mod kernels;
@@ -103,6 +136,14 @@ pub use self::trig::*;
 
 #[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
 pub use self::catalog::*;
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    pub use crate::catalog::__mech_native::*;
+    #[cfg(feature = "add")]
+    pub use crate::ops::add::__mech_native::*;
+}
 
 // ----------------------------------------------------------------------------
 // Math Library
@@ -167,37 +208,37 @@ macro_rules! impl_urnop_match_arms2 {
 
 #[macro_export]
 macro_rules! impl_math_unop {
-  ($fxn_name:ident, $type:ident, $op_fxn:ident, $feature_flag:expr) => {
+  ($fxn_name:ident, $type:ident, $op_fxn:ident) => {
     paste!{
-      impl_unop!([<$fxn_name $type:camel S>], $type, $type, [<$op_fxn _op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel S>], $type, $type, [<$op_fxn _op>]);
       #[cfg(feature = "matrix1")]
-      impl_unop!([<$fxn_name $type:camel M1>], Matrix1<$type>, Matrix1<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel M1>], Matrix1<$type>, Matrix1<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrix2")]
-      impl_unop!([<$fxn_name $type:camel M2>], Matrix2<$type>, Matrix2<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel M2>], Matrix2<$type>, Matrix2<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrix3")]
-      impl_unop!([<$fxn_name $type:camel M3>], Matrix3<$type>, Matrix3<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel M3>], Matrix3<$type>, Matrix3<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrix4")]
-      impl_unop!([<$fxn_name $type:camel M4>], Matrix4<$type>, Matrix4<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel M4>], Matrix4<$type>, Matrix4<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrix2x3")]
-      impl_unop!([<$fxn_name $type:camel M2x3>], Matrix2x3<$type>, Matrix2x3<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel M2x3>], Matrix2x3<$type>, Matrix2x3<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrix3x2")]
-      impl_unop!([<$fxn_name $type:camel M3x2>], Matrix3x2<$type>, Matrix3x2<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel M3x2>], Matrix3x2<$type>, Matrix3x2<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrixd")]
-      impl_unop!([<$fxn_name $type:camel MD>], DMatrix<$type>, DMatrix<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel MD>], DMatrix<$type>, DMatrix<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "row_vector2")]
-      impl_unop!([<$fxn_name $type:camel R2>], RowVector2<$type>, RowVector2<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel R2>], RowVector2<$type>, RowVector2<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "row_vector3")]
-      impl_unop!([<$fxn_name $type:camel R3>], RowVector3<$type>, RowVector3<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel R3>], RowVector3<$type>, RowVector3<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "row_vector4")]
-      impl_unop!([<$fxn_name $type:camel R4>], RowVector4<$type>, RowVector4<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel R4>], RowVector4<$type>, RowVector4<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "row_vectord")]
-      impl_unop!([<$fxn_name $type:camel RD>], RowDVector<$type>, RowDVector<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel RD>], RowDVector<$type>, RowDVector<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "vector2")]
-      impl_unop!([<$fxn_name $type:camel V2>], Vector2<$type>, Vector2<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel V2>], Vector2<$type>, Vector2<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "vector3")]
-      impl_unop!([<$fxn_name $type:camel V3>], Vector3<$type>, Vector3<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel V3>], Vector3<$type>, Vector3<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "vector4")]
-      impl_unop!([<$fxn_name $type:camel V4>], Vector4<$type>, Vector4<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel V4>], Vector4<$type>, Vector4<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "vectord")]
-      impl_unop!([<$fxn_name $type:camel VD>], DVector<$type>, DVector<$type>, [<$op_fxn _vec_op>], $feature_flag);
+      impl_unop!([<$fxn_name $type:camel VD>], DVector<$type>, DVector<$type>, [<$op_fxn _vec_op>]);
     }}}

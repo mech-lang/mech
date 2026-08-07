@@ -8,7 +8,11 @@ const REGISTER: &str = "tick := 0.0\n~x := 10.0\n\n~> tick {\n  next-x := x + 1.
 const TWO_REGISTERS: &str = "tick := 0.0\n\n~x := 0.0\n~y := 0.0\n\n~> tick {\n  next-x := x + 1.0\n  next-y := y + 2.0\n\n  x = next-x\n  y = next-y\n}";
 fn interpret(source: &str) -> Interpreter {
     let t = mech_syntax::parser::parse(source).unwrap();
-    let mut i = Interpreter::new(0, 10_000);
+    let mut i = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     i.interpret(&t).unwrap();
     i
 }
@@ -397,7 +401,11 @@ fn activation_scope_failed_elaboration_clears_registration_state() {
 }
 #[test]
 fn activation_scope_rejects_whole_assignment_to_trigger() {
-    let mut i = Interpreter::new(0, 10_000);
+    let mut i = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     let setup = mech_syntax::parser::parse("~tick := 0.0").unwrap();
     i.interpret(&setup).unwrap();
     let before = snapshot(&i);
@@ -411,7 +419,11 @@ fn activation_scope_rejects_whole_assignment_to_trigger() {
 }
 #[test]
 fn activation_scope_rejects_operator_assignment_to_trigger() {
-    let mut i = Interpreter::new(0, 10_000);
+    let mut i = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     let setup = mech_syntax::parser::parse("~tick := 0.0").unwrap();
     i.interpret(&setup).unwrap();
     let before = snapshot(&i);

@@ -1,10 +1,10 @@
 //! Runtime construction and dependency assembly.
 
-use super::MechRuntime;
 use super::extension;
 use super::live_state::LiveRegistrationMode;
 use super::resources::{runtime_resource_binding_error, validate_resource_binding_name};
 use super::transaction::RuntimeHealth;
+use super::{MechRuntime, RuntimeExecutionMode};
 use crate::{
     ActorBehaviorDriver, BasicCapabilityKernel, CapabilityKernel, DEFAULT_HOST_INPUT_CAPACITY,
     DefaultHostCallPolicy, DefaultIdGenerator, HostCallPolicy, HostInstanceConfig,
@@ -20,7 +20,7 @@ use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog, ModuleManifestConfig};
 use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use std::cell::Cell;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -30,6 +30,7 @@ use std::sync::Arc;
 
 pub struct RuntimeBuilder {
     config: RuntimeConfig,
+    execution_mode: RuntimeExecutionMode,
     function_catalog: Arc<FunctionCatalog>,
     id_generator: Box<dyn IdGenerator>,
     store: Box<dyn MechStore>,
@@ -59,6 +60,7 @@ impl std::fmt::Debug for RuntimeBuilder {
 
         f.debug_struct("RuntimeBuilder")
             .field("config", &self.config)
+            .field("execution_mode", &self.execution_mode)
             .field("function_catalog", &function_catalog)
             .field("id_generator", &"<dyn IdGenerator>")
             .field("store", &"<dyn MechStore>")
@@ -86,6 +88,7 @@ impl Default for RuntimeBuilder {
     fn default() -> Self {
         Self {
             config: RuntimeConfig::default(),
+            execution_mode: RuntimeExecutionMode::Execute,
             function_catalog: mech_engine::empty_function_catalog(),
             id_generator: Box::new(DefaultIdGenerator::new()),
             store: Box::new(extension::RuntimeStoreBoundary::new(Box::new(
@@ -120,8 +123,23 @@ impl RuntimeBuilder {
         Self::default()
     }
 
+    pub fn input_driver(mut self, driver: impl RuntimeHostInputDriver + 'static) -> Self {
+        self.input_drivers.push(Box::new(driver));
+        self
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_input_driver(self, driver: impl RuntimeHostInputDriver + 'static) -> Self {
+        self.input_driver(driver)
+    }
+
     pub fn config(mut self, config: RuntimeConfig) -> Self {
         self.config = config;
+        self
+    }
+
+    pub fn planning(mut self) -> Self {
+        self.execution_mode = RuntimeExecutionMode::Plan;
         self
     }
 
@@ -313,6 +331,7 @@ impl RuntimeBuilder {
             id: runtime_id,
             event_sequence: 0,
             config: self.config,
+            execution_mode: self.execution_mode,
             function_catalog,
             program,
             id_generator: self.id_generator,
@@ -332,14 +351,14 @@ impl RuntimeBuilder {
             module_builder: self.module_builder,
             resources: RuntimeResourceRegistry::new(),
             resource_bindings: HashMap::new(),
+            external_requirements: Default::default(),
             live_registration_mode: LiveRegistrationMode::RetainedRoot,
-            live_input_bindings: HashMap::new(),
+            live_input_bindings: BTreeMap::new(),
             host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(
                 RuntimeHostInputQueueState::new(self.host_input_capacity),
             )),
             input_drivers: self.input_drivers,
             attached_input_driver_count: 0,
-            persistent_sends: Vec::new(),
             live_context_template: None,
             input_driver_cleanup_armed: false,
             host_interfaces,
@@ -370,40 +389,44 @@ impl RuntimeBuilder {
             runtime.bind_context_export(&alias, &module, &item)?;
         }
 
-        let ingress = runtime.ingress();
-        for index in 0..runtime.input_drivers.len() {
-            if let Err(error) = extension::invoke_extension("host input driver", "attach", || {
-                runtime.input_drivers[index].attach(ingress.clone())
-            }) {
-                let _ = runtime.close_ingress();
-                let mut cleanup_failures = Vec::new();
-                for rollback_index in (0..=index).rev() {
-                    if let Err(cleanup_error) =
-                        extension::invoke_extension("host input driver", "stop", || {
-                            runtime.input_drivers[rollback_index].stop()
-                        })
-                    {
-                        cleanup_failures.push(format!(
-                            "input driver {} stop failed: {:?}",
-                            rollback_index, cleanup_error,
+        if runtime.execution_mode == RuntimeExecutionMode::Execute {
+            let ingress = runtime.ingress();
+            for index in 0..runtime.input_drivers.len() {
+                if let Err(error) =
+                    extension::invoke_extension("host input driver", "attach", || {
+                        runtime.input_drivers[index].attach(ingress.clone())
+                    })
+                {
+                    let _ = runtime.close_ingress();
+                    let mut cleanup_failures = Vec::new();
+                    for rollback_index in (0..=index).rev() {
+                        if let Err(cleanup_error) =
+                            extension::invoke_extension("host input driver", "stop", || {
+                                runtime.input_drivers[rollback_index].stop()
+                            })
+                        {
+                            cleanup_failures.push(format!(
+                                "input driver {} stop failed: {:?}",
+                                rollback_index, cleanup_error,
+                            ));
+                        }
+                    }
+                    runtime.attached_input_driver_count = 0;
+                    runtime.input_driver_cleanup_armed = false;
+                    if !cleanup_failures.is_empty() {
+                        return Err(runtime.poison_program_operation(
+                            "build",
+                            None,
+                            format!("{:?}", error),
+                            cleanup_failures,
                         ));
                     }
+                    return Err(error);
                 }
-                runtime.attached_input_driver_count = 0;
-                runtime.input_driver_cleanup_armed = false;
-                if !cleanup_failures.is_empty() {
-                    return Err(runtime.poison_program_operation(
-                        "build",
-                        None,
-                        format!("{:?}", error),
-                        cleanup_failures,
-                    ));
-                }
-                return Err(error);
+                runtime.attached_input_driver_count += 1;
             }
-            runtime.attached_input_driver_count += 1;
+            runtime.input_driver_cleanup_armed = true;
         }
-        runtime.input_driver_cleanup_armed = true;
 
         let mut context = runtime.runtime_context()?;
 
@@ -420,9 +443,18 @@ impl RuntimeBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::{MechProgramConfig, RuntimeBuilder};
+    use super::{MechProgramConfig, RuntimeBuilder, RuntimeExecutionMode};
     use mech_core::FunctionCatalogBuilder;
     use std::sync::Arc;
+
+    #[test]
+    fn execution_mode_defaults_to_execute_and_planning_selects_plan() {
+        let execute = RuntimeBuilder::new().build().unwrap();
+        let plan = RuntimeBuilder::new().planning().build().unwrap();
+
+        assert_eq!(execute.execution_mode(), RuntimeExecutionMode::Execute);
+        assert_eq!(plan.execution_mode(), RuntimeExecutionMode::Plan);
+    }
 
     #[test]
     fn custom_function_catalog_reaches_retained_and_runtime_created_programs() {

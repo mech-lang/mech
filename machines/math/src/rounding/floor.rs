@@ -44,19 +44,9 @@ macro_rules! floorf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathFloor,
-    f32,
-    floorf,
-    FeatureFlag::Custom(hash_str("math/floor"))
-);
+impl_math_unop!(MathFloor, f32, floorf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathFloor,
-    f64,
-    floor,
-    FeatureFlag::Custom(hash_str("math/floor"))
-);
+impl_math_unop!(MathFloor, f64, floor);
 
 #[cfg(feature = "source")]
 fn impl_floor_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

@@ -44,14 +44,9 @@ macro_rules! cotf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathCot,
-    f32,
-    cotf,
-    FeatureFlag::Custom(hash_str("math/cot"))
-);
+impl_math_unop!(MathCot, f32, cotf);
 #[cfg(feature = "f64")]
-impl_math_unop!(MathCot, f64, cot, FeatureFlag::Custom(hash_str("math/cot")));
+impl_math_unop!(MathCot, f64, cot);
 
 #[cfg(feature = "source")]
 fn impl_cot_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

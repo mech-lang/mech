@@ -8,8 +8,15 @@ use num_traits::*;
 
 macro_rules! sum_column_op {
     ($arg:expr, $out:expr) => {
-        unsafe {
-            *$out = (*$arg).column_sum();
+        {
+            for row in 0..($arg).nrows() {
+                let mut sum = T::zero();
+                for column in 0..($arg).ncols() {
+                    sum = checked_sum_add(sum, ($arg)[(row, column)])?;
+                }
+                ($out)[row] = sum;
+            }
+            Ok::<(), MechError>(())
         }
     };
 }
@@ -68,15 +75,23 @@ where
         + One
         + PartialEq
         + PartialOrd,
+    T: StatsCheckedAdd,
     #[cfg(feature = "compiler")]
     T: CompileConst + ConstElem,
     Ref<DMatrix<T>>: ToValue,
+    RowDVector<T>: FunctionRuntimeType,
+    DMatrix<T>: FunctionRuntimeType,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        <DMatrix<T> as FunctionRuntimeType>::REPRESENTATION,
+        <RowDVector<T> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg) => {
-                let arg = unsafe { arg.as_unchecked().clone() };
-                let out = unsafe { out.as_unchecked().clone() };
+                let arg = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let out = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(StatsSumColumnRD2 { arg, out }))
             }
             _ => Err(MechError::new(
@@ -105,14 +120,17 @@ where
         + One
         + PartialEq
         + PartialOrd,
+    T: StatsCheckedAdd,
     Ref<DMatrix<T>>: ToValue,
 {
-    fn solve(&self) {
-        let arg_ptr = self.arg.as_ptr();
-        let mut out_ptr = self.out.as_mut_ptr();
-        unsafe {
-            (&mut (*out_ptr))[(0, 0)] = (*arg_ptr).column_sum()[0];
+    fn solve_result(&self) -> MResult<()> {
+        let mut next = self.out.borrow().clone();
+        {
+            let arg = self.arg.borrow();
+            sum_column_op!(&*arg, &mut next)?;
         }
+        *self.out.borrow_mut() = next;
+        Ok(())
     }
     fn out(&self) -> Value {
         self.out.to_value()
@@ -134,13 +152,7 @@ where
 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!(StatsSumColumnRD2), T::as_value_kind());
-        compile_unop!(
-            name,
-            self.out,
-            self.arg,
-            ctx,
-            FeatureFlag::Custom(hash_str("stats/sum"))
-        );
+        compile_unop!(name, self.out, self.arg, ctx);
     }
 }
 #[cfg(feature = "source")]
@@ -220,3 +232,43 @@ impl_mech_urnop_fxn!(
     impl_stats_sum_column_fxn,
     "stats/sum/column"
 );
+
+#[cfg(test)]
+mod checked_sum_tests {
+    use super::*;
+
+    #[test]
+    fn integer_column_sum_rejects_reactive_overflow_and_retains_output() {
+        let arg = Ref::new(DMatrix::from_row_slice(1, 2, &[1u8, 2]));
+        let out = Ref::new(DVector::from_vec(vec![99u8]));
+        let function = StatsSumColumnMD::<u8> {
+            arg: arg.clone(),
+            out: out.clone(),
+        };
+        function.solve_result().unwrap();
+        assert_eq!(out.borrow().as_slice(), &[3]);
+
+        *arg.borrow_mut() = DMatrix::from_row_slice(1, 2, &[u8::MAX, 1]);
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "StatsArithmeticOverflow");
+        assert_eq!(out.borrow().as_slice(), &[3]);
+    }
+
+    #[cfg(feature = "rational")]
+    #[test]
+    fn bounded_rational_column_sum_is_checked() {
+        let arg = Ref::new(DMatrix::from_row_slice(
+            1,
+            2,
+            &[R64::new(i64::MAX, 1), R64::new(1, 1)],
+        ));
+        let out = Ref::new(DVector::from_vec(vec![R64::new(7, 1)]));
+        let function = StatsSumColumnMD::<R64> {
+            arg,
+            out: out.clone(),
+        };
+        let error = function.solve_result().unwrap_err();
+        assert_eq!(error.kind_name(), "StatsArithmeticOverflow");
+        assert_eq!(out.borrow().as_slice(), &[R64::new(7, 1)]);
+    }
+}

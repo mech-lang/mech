@@ -8,8 +8,9 @@ pub struct RecordAccessField {
     pub source: Value,
 }
 impl MechFunctionImpl for RecordAccessField {
-    fn solve(&self) {
-        ()
+    fn solve_result(&self) -> MResult<()> {
+        ();
+        Ok(())
     }
     fn out(&self) -> Value {
         self.source.clone()
@@ -28,8 +29,6 @@ impl MechFunctionCompiler for RecordAccessField {
         let mut registers = [0];
 
         registers[0] = compile_register!(self.source, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Access));
 
         ctx.emit_nullop(hash_str("RecordAccessField"), registers[0]);
 
@@ -104,8 +103,9 @@ pub struct RecordAccessSwizzle {
 }
 
 impl MechFunctionImpl for RecordAccessSwizzle {
-    fn solve(&self) {
-        ()
+    fn solve_result(&self) -> MResult<()> {
+        ();
+        Ok(())
     }
     fn out(&self) -> Value {
         self.source.clone()
@@ -124,8 +124,6 @@ impl MechFunctionCompiler for RecordAccessSwizzle {
         let mut registers = [0];
 
         registers[0] = compile_register!(self.source, ctx);
-
-        ctx.require(FeatureFlag::Builtin(FeatureKind::Swizzle));
 
         ctx.emit_nullop(hash_str("RecordAccessSwizzle"), registers[0]);
 

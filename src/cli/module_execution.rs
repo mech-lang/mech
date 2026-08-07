@@ -1,9 +1,16 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
+#[cfg(feature = "build")]
+use std::sync::{Arc, Mutex};
 
 use mech_core::*;
 #[cfg(feature = "test")]
 use mech_engine::IntegrityConstraintReport;
+#[cfg(feature = "build")]
+use mech_runtime::{
+    ActorBootstrapConfig, ActorHostPlanningState, HostInstanceConfig, PlannedPureHostFunction,
+    RunResourceGrantConfig, RuntimeValueSnapshot,
+};
 use mech_runtime::{
     FileSourceResolver, MechRuntime, ModuleBuildOptions, RuntimeBuilder, RuntimeConfig,
     SourceRequest,
@@ -144,6 +151,122 @@ pub(crate) fn execute_source_module_roots(
     execute_source_module_roots_internal(config, roots).map(|execution| execution.runtime)
 }
 
+/// Compile trusted local roots in plan mode for the build command. This shares
+/// the resolver and module execution path with source commands, but installs
+/// only effect-free planning hosts and never starts input drivers.
+#[cfg(feature = "build")]
+pub(crate) fn execute_planning_source_module_roots(
+    config: RuntimeConfig,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    actor_bootstrap: Option<&ActorBootstrapConfig>,
+    roots: &[PathBuf],
+) -> MResult<MechRuntime> {
+    let (builder, canonical_roots) = source_module_runtime_builder(config, roots)?;
+    let mut builder = builder.planning();
+    let providers = crate::cli::host_configuration::configured_provider_names(configured_hosts);
+    for provider in &providers {
+        builder = builder.host_factory(mech_build::standard_planning_host_factory(provider)?)?;
+    }
+    (builder, _) = crate::cli::host_configuration::materialize_host_configuration(
+        builder,
+        configured_hosts,
+        run_grants,
+        &providers,
+    )?;
+    builder = install_actor_planning_functions(builder, actor_bootstrap.cloned())?;
+
+    let mut runtime = builder.build()?;
+    for root in canonical_roots {
+        runtime.resolve_and_run_root_module(
+            SourceRequest::from_filesystem_path(&root)?,
+            module_build_options(),
+        )?;
+    }
+    Ok(runtime)
+}
+
+#[cfg(feature = "build")]
+fn actor_planning_call(
+    state: &Mutex<Option<ActorHostPlanningState>>,
+    name: &str,
+    arguments: &[RuntimeValueSnapshot],
+) -> MResult<RuntimeValueSnapshot> {
+    let mut state = state.lock().map_err(|_| {
+        mech_build::error::native_build_error(
+            mech_build::error::NativeBuildErrorKind::NativeRuntimeConfigUnsupported {
+                reason: "actor planning state lock is poisoned".to_owned(),
+            },
+            None,
+        )
+    })?;
+    let state = state.as_mut().ok_or_else(|| {
+        mech_build::error::native_build_error(
+            mech_build::error::NativeBuildErrorKind::NativeActorBootstrapMissing,
+            None,
+        )
+    })?;
+    let values = arguments
+        .iter()
+        .map(RuntimeValueSnapshot::to_value)
+        .collect::<Vec<_>>();
+    RuntimeValueSnapshot::try_capture(&state.plan(name, &values)?)
+}
+
+#[cfg(feature = "build")]
+fn install_actor_planning_functions(
+    mut builder: RuntimeBuilder,
+    bootstrap: Option<ActorBootstrapConfig>,
+) -> MResult<RuntimeBuilder> {
+    let state = Arc::new(Mutex::new(bootstrap.map(|bootstrap| {
+        ActorHostPlanningState::new(
+            &bootstrap.subject,
+            bootstrap.message_kind,
+            bootstrap.message_payload,
+            bootstrap.initial_state,
+        )
+    })));
+
+    let kind_state = Arc::clone(&state);
+    builder = builder.host_function(PlannedPureHostFunction::new(
+        "actor/message/kind",
+        move |_context, arguments| {
+            actor_planning_call(&kind_state, "actor/message/kind", arguments)
+        },
+        |_context, _arguments| panic!("actor/message/kind executed while source planning"),
+    ))?;
+
+    let payload_state = Arc::clone(&state);
+    builder = builder.host_function(PlannedPureHostFunction::new(
+        "actor/message/payload",
+        move |_context, arguments| {
+            actor_planning_call(&payload_state, "actor/message/payload", arguments)
+        },
+        |_context, _arguments| panic!("actor/message/payload executed while source planning"),
+    ))?;
+
+    let get_state = Arc::clone(&state);
+    builder = builder.host_function(PlannedPureHostFunction::new(
+        "actor/state/get",
+        move |_context, arguments| actor_planning_call(&get_state, "actor/state/get", arguments),
+        |_context, _arguments| panic!("actor/state/get executed while source planning"),
+    ))?;
+
+    let id_state = Arc::clone(&state);
+    builder = builder.host_function(PlannedPureHostFunction::new(
+        "actor/state/id",
+        move |_context, arguments| actor_planning_call(&id_state, "actor/state/id", arguments),
+        |_context, _arguments| panic!("actor/state/id executed while source planning"),
+    ))?;
+
+    let put_state = state;
+    builder.host_function(PlannedPureHostFunction::new(
+        "actor/state/put",
+        move |_context, arguments| actor_planning_call(&put_state, "actor/state/put", arguments),
+        |_context, _arguments| panic!("actor/state/put executed while source planning"),
+    ))
+}
+
 #[cfg(feature = "test")]
 pub(crate) fn execute_source_module_roots_with_report(
     config: RuntimeConfig,
@@ -159,17 +282,8 @@ fn execute_source_module_roots_internal(
     config: RuntimeConfig,
     roots: &[PathBuf],
 ) -> MResult<SourceModuleExecutionInternal> {
-    let canonical_roots = canonical_source_roots(roots)?;
-    let mut resolver = FileSourceResolver::empty();
-    for root in resolver_roots(&canonical_roots)? {
-        resolver.add_root(root);
-    }
-
-    let mut runtime = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_catalog())
-        .config(config)
-        .source_resolver(resolver)
-        .build()?;
+    let (builder, canonical_roots) = source_module_runtime_builder(config, roots)?;
+    let mut runtime = builder.build()?;
     #[cfg(feature = "test")]
     let mut integrity_evaluations = Vec::new();
     for root in canonical_roots {
@@ -188,6 +302,23 @@ fn execute_source_module_roots_internal(
         #[cfg(feature = "test")]
         integrity: IntegrityConstraintReport::from_evaluations(integrity_evaluations),
     })
+}
+
+fn source_module_runtime_builder(
+    config: RuntimeConfig,
+    roots: &[PathBuf],
+) -> MResult<(RuntimeBuilder, Vec<PathBuf>)> {
+    let canonical_roots = canonical_source_roots(roots)?;
+    let mut resolver = FileSourceResolver::empty();
+    for root in resolver_roots(&canonical_roots)? {
+        resolver.add_root(root);
+    }
+
+    let builder = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .config(config)
+        .source_resolver(resolver);
+    Ok((builder, canonical_roots))
 }
 
 #[cfg(test)]
@@ -246,6 +377,57 @@ mod tests {
             },
             other => panic!("expected f64 value, got {other:?}"),
         }
+    }
+
+    #[cfg(feature = "build")]
+    fn assert_string(value: RuntimeValueSnapshot, expected: &str) {
+        match value.into_value() {
+            Value::String(value) => assert_eq!(value.borrow().as_str(), expected),
+            Value::MutableReference(value) => match &*value.borrow() {
+                Value::String(value) => assert_eq!(value.borrow().as_str(), expected),
+                other => panic!("expected string value, got {other:?}"),
+            },
+            other => panic!("expected string value, got {other:?}"),
+        }
+    }
+
+    #[cfg(feature = "build")]
+    #[test]
+    fn actor_source_planning_tracks_state_put_before_later_reads() {
+        let root = temp_root("actor-state-sequence");
+        let source = root.join("main.mec");
+        std::fs::write(
+            &source,
+            "updated := actor/state/put(\"created\")\nstate := actor/state/get()\nidentifier := actor/state/id()\nidentifier\n",
+        )
+        .unwrap();
+        let bootstrap = ActorBootstrapConfig {
+            subject: "actor:planning".to_owned(),
+            message_kind: "test".to_owned(),
+            message_payload: String::new(),
+            initial_state: None,
+        };
+
+        let runtime =
+            execute_planning_source_module_roots(config(), &[], &[], Some(&bootstrap), &[source])
+                .unwrap();
+
+        assert_string(runtime.root_symbol_value("state").unwrap(), "created");
+        match runtime
+            .root_symbol_value("identifier")
+            .unwrap()
+            .into_value()
+        {
+            Value::String(value) => assert!(value.borrow().starts_with("planning-state-put-")),
+            Value::MutableReference(value) => match &*value.borrow() {
+                Value::String(value) => {
+                    assert!(value.borrow().starts_with("planning-state-put-"))
+                }
+                other => panic!("expected string value, got {other:?}"),
+            },
+            other => panic!("expected string value, got {other:?}"),
+        }
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

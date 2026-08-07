@@ -11,372 +11,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  cargo-features:
-    name: Cargo feature and example checks
+  cargo-language:
+    name: Language and safety
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
       CARGO_INCREMENTAL: 0
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7.0.1
 
-      - name: Audit unsafe boundaries
+      - name: Audit safety and compiler boundaries
         run: |
           scripts/check-unsafe-boundaries.sh
           scripts/test-unsafe-boundaries.sh
-
-      - name: Disk report at start
-        run: bash scripts/ci-disk-report.sh
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
-      - name: Check feature boundaries and examples
-        run: |
-          bash scripts/check-bytecode-compiler-boundaries.sh
-
-          # The default CLI is the concrete standard compiler distribution.
-          cargo build --bin mech
-          ./target/debug/mech test examples/working
-
-          # Prelude-only no-default feature checks.
-          cargo check --no-default-features
-          cargo check --no-default-features --features build
-          cargo check --no-default-features --features test
-          cargo run --bin mech --no-default-features --features test -- test examples/working/fizzbuzz.mec
-
-          # Direct package feature-boundary checks.
-          cargo check -p mech-core --no-default-features --features mika
-          cargo check -p mech-core --no-default-features --features "mika serde"
-          cargo check -p mech-syntax --no-default-features --features mika
-          cargo check -p mech-engine --no-default-features --features program
-
-      - name: Run serve executable HTTP suite
-        run: cargo test -p mech --test mech_serve -- --nocapture
-
-      - name: Disk report at end
-        if: always()
-        run: bash scripts/ci-disk-report.sh
-
-  function-system-contracts:
-    name: Function-system contracts (${{ matrix.slice }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        slice:
-          - machines
-          - consumer
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Install required CI tools
-        if: ${{ matrix.slice == 'consumer' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes ripgrep
+          scripts/check-runtime-factory-safety.py
+          scripts/check-fallible-solve-boundary.py
+          scripts/check-native-build-analysis-layout.py
 
       - name: Install Rust nightly-2026-03-03
         run: |
-          rustup show
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
-      - name: Check ${{ matrix.slice }} compatibility contracts
-        run: bash scripts/check-function-system-contracts.sh "${{ matrix.slice }}"
-
-  distribution-contracts:
-    name: Distribution contract (${{ matrix.profile }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        profile:
-          - static
-          - engine
-          - selected-runtime
-          - standard-runtime
-          - standard-source
-          - standard-compiler
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-      CARGO_PROFILE_DEV_DEBUG: "0"
-      CARGO_PROFILE_TEST_DEBUG: "0"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Install required CI tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes ripgrep
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
-      - name: Check ${{ matrix.profile }} distribution
-        run: bash scripts/check-static-distribution-profiles.sh "${{ matrix.profile }}"
-
-  wasm-source-profile:
-    name: WASM source profile
-    runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-      CARGO_PROFILE_DEV_DEBUG: "0"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Install required CI tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes ripgrep
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-          rustup target add wasm32-unknown-unknown
-
-      - name: Check source-only browser distribution
-        run: bash scripts/check-static-distribution-profiles.sh wasm-source
-
-  distribution-size-shards:
-    name: Distribution size (${{ matrix.profile }})
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    strategy:
-      fail-fast: false
-      matrix:
-        profile:
-          - selected-bytecode-runtime
-          - standard-bytecode-runtime
-          - standard-source-runtime
-          - standard-compiler-tooling
-          - wasm-browser-project
-    env:
-      CARGO_TERM_COLOR: always
-      CARGO_INCREMENTAL: 0
-      CARGO_PROFILE_RELEASE_DEBUG: "0"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
-      - name: Install WASM target
-        if: ${{ matrix.profile == 'wasm-browser-project' }}
-        run: rustup target add wasm32-unknown-unknown
-
-      - name: Build and report release distribution
-        run: |
-          bash scripts/report-distribution-sizes.sh \
-            "target/distribution-sizes-${{ matrix.profile }}.tsv" \
-            "${{ matrix.profile }}"
-
-      - name: Upload distribution size row
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: distribution-size-${{ matrix.profile }}
-          path: target/distribution-sizes-${{ matrix.profile }}.tsv
-
-  distribution-sizes:
-    name: Distribution size report
-    if: ${{ always() }}
-    needs: distribution-size-shards
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - name: Download distribution size rows
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          pattern: distribution-size-*
-          path: target/distribution-size-rows
-          merge-multiple: true
-
-      - name: Combine distribution size report
-        run: |
-          mkdir -p target
-          printf 'profile\tartifact_path\tartifact_size_bytes\tresolved_package_count\truntime_factory_count\tsource_specializer_count\n' \
-            > target/distribution-sizes.tsv
-          for profile in \
-            selected-bytecode-runtime \
-            standard-bytecode-runtime \
-            standard-source-runtime \
-            standard-compiler-tooling \
-            wasm-browser-project
-          do
-            row="target/distribution-size-rows/distribution-sizes-${profile}.tsv"
-            if test -f "$row"
-            then
-              sed -n '2p' "$row" >> target/distribution-sizes.tsv
-            else
-              echo "distribution size row missing: $profile" >&2
-            fi
-          done
-          cat target/distribution-sizes.tsv
-
-      - name: Upload distribution size report
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: distribution-sizes
-          path: target/distribution-sizes.tsv
-
-  engine-catalog:
-    name: Complete function-system migration
-    runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Install required CI tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes ripgrep
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
-      - name: Check complete function-system migration contracts
-        run: bash scripts/check-complete-function-system-migration.sh
-
-  runtime-source-targets:
-    name: Runtime source targets (${{ matrix.slice }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        slice:
-          - basic
-          - hosts
-          - actors
-          - modules
-          - diagnostics
-          - standard
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
-      - name: Run ${{ matrix.slice }} source targets
-        run: bash scripts/run-runtime-source-targets.sh "${{ matrix.slice }}"
-
-  cargo:
-    name: cargo
-    if: ${{ always() }}
-    needs:
-      - cargo-features
-      - distribution-contracts
-      - engine-catalog
-      - function-system-contracts
-      - runtime-source-targets
-      - wasm-source-profile
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require every Cargo contract shard
-        env:
-          ENGINE_CATALOG_RESULT: ${{ needs.engine-catalog.result }}
-          FEATURE_RESULT: ${{ needs.cargo-features.result }}
-          DISTRIBUTION_RESULT: ${{ needs.distribution-contracts.result }}
-          FUNCTION_SYSTEM_RESULT: ${{ needs.function-system-contracts.result }}
-          RUNTIME_SOURCE_TARGETS_RESULT: ${{ needs.runtime-source-targets.result }}
-          WASM_SOURCE_RESULT: ${{ needs.wasm-source-profile.result }}
-        run: |
-          test "$DISTRIBUTION_RESULT" = success
-          test "$ENGINE_CATALOG_RESULT" = success
-          test "$FEATURE_RESULT" = success
-          test "$FUNCTION_SYSTEM_RESULT" = success
-          test "$RUNTIME_SOURCE_TARGETS_RESULT" = success
-          test "$WASM_SOURCE_RESULT" = success
-
-  cargo-language:
-    name: Cargo language tests
-    runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Disk report at start
-        run: bash scripts/ci-disk-report.sh
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
-      - name: Check reduced core feature boundaries
-        run: |
-          cargo check -p mech-core \
-            --no-default-features \
-            --features no_std
-          cargo check -p mech-core \
-            --no-default-features \
-            --features baselib
-          cargo check -p mech-core \
-            --no-default-features \
-            --features "matrix,matrixd,f64"
-
-      - name: Run root interpreter and bytecode tests
+      - name: Run language suites
         run: |
           cargo test --test interpreter --test bytecode
-          # Generic root-library coverage runs once on Ubuntu. Platform jobs
-          # below retain only behavior that is actually platform-sensitive.
+          cargo test --test reactive_combinatorics
           cargo test --lib
           cargo test -p mech-bytecode
+          cargo test -p mech-core
+          cargo test -p mech-engine --lib --tests --features compiler
 
-      - name: Run complete core suite
-        run: cargo test -p mech-core
-
-      - name: Run complete program library suite
-        run: cargo test -p mech-engine --lib --tests --features compiler
-
-      - name: Run non-UTF-8 source-root regressions
+      - name: Run focused source and feature regressions
         run: |
           cargo test -p mech \
             --test mech_test_paths \
@@ -387,73 +54,83 @@ jobs:
             --features test \
             cli::module_execution::tests::test_module_execution_preserves_non_utf8_root_path \
             -- --exact --nocapture
-
-      - name: Run HTML shim formatter contracts
-        run: |
           cargo test \
             --no-default-features \
             --features formatter \
             --test mech_format_shims \
             -- --nocapture
-
-      - name: Check isolated engine feature boundaries
-        run: |
-          cargo check -p mech-engine \
-            --no-default-features \
-            --features "program compiler variables variable_define variable_assign f64 math_mul_assign"
           cargo test -p mech-engine \
             --test op_assign_feature_gates \
             --no-default-features \
             --features "program compiler variables variable_define variable_assign f64 math_mul_assign" \
             whole_mul_assignment_selects_mul_operation_only \
             -- --exact --nocapture
-          cargo check -p mech-engine \
-            --no-default-features \
-            --features "program compiler variables variable_define variable_assign f64 math_div_assign"
           cargo test -p mech-engine \
             --test op_assign_feature_gates \
             --no-default-features \
             --features "program compiler variables variable_define variable_assign f64 math_div_assign" \
             whole_div_assignment_selects_div_operation_only \
             -- --exact --nocapture
-          cargo check -p mech-engine \
-            --no-default-features \
-            --features "compiler functions formulas string_concat"
 
-      - name: Disk report at end
-        if: always()
-        run: bash scripts/ci-disk-report.sh
-
-  cargo-runtime:
-    name: Cargo runtime and host tests
+  cargo-features:
+    name: Feature and CLI boundaries
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
       CARGO_INCREMENTAL: 0
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7.0.1
+
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+
+      - name: Check compiler and feature boundaries
+        run: |
+          bash scripts/check-bytecode-compiler-boundaries.sh
+          cargo check --no-default-features
+          cargo check --no-default-features --features build
+          cargo check --no-default-features --features test
+          cargo check -p mech-core --no-default-features --features mika
+          cargo check -p mech-core --no-default-features --features "mika serde"
+          cargo check -p mech-core --no-default-features --features no_std
+          cargo check -p mech-core --no-default-features --features baselib
+          cargo check -p mech-core --no-default-features --features "matrix,matrixd,f64"
+          cargo check -p mech-syntax --no-default-features --features mika
+          cargo check -p mech-engine --no-default-features --features program
+          cargo check -p mech-engine --no-default-features --features "compiler functions formulas string_concat"
+
+      - name: Exercise the default and reduced CLIs
+        run: |
+          cargo build --bin mech
+          ./target/debug/mech test examples/working
+          cargo run --bin mech --no-default-features --features test -- test examples/working/fizzbuzz.mec
+
+  cargo-runtime:
+    name: Runtime and host tests
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v7.0.1
 
       - name: Audit sealed runtime boundaries
         run: |
           scripts/check-runtime-boundaries.sh
           bash scripts/test-runtime-boundaries.sh
 
-      - name: Disk report at start
-        run: bash scripts/ci-disk-report.sh
-
       - name: Install Rust nightly-2026-03-03
         run: |
-          rustup show
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
-      - name: Run complete runtime suite
-        run: cargo test -p mech-runtime --lib --tests
-
-      - name: Run CLI host and context-send regression coverage
+      - name: Run runtime and host suites
         run: |
+          cargo test -p mech-runtime --lib --tests
           cargo test -p mech-syntax --test context_parser
           cargo test -p mech-host-cli --features provider --test provider
           cargo test -p mech-host-console
@@ -463,242 +140,93 @@ jobs:
           cargo test -p mech-host-browser --features delegation_signing
           cargo test --features "run repl pretty_print" --test mech_cli_host
           cargo test --features "run repl pretty_print" cli::run::tests
-          cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
           cargo check -p mech-host-cli --no-default-features
 
-      - name: Run REPL Ctrl-C regression
+      - name: Run REPL interruption regressions
         run: |
-          cargo test \
-            --no-default-features \
-            --features repl \
-            --test mech_repl_ctrlc
-
-          cargo test \
-            --no-default-features \
-            --features "repl mika" \
-            --test mech_repl_ctrlc
-
-      - name: Run REPL Mika finalization regression
-        run: |
+          cargo test --no-default-features --features repl --test mech_repl_ctrlc
+          cargo test --no-default-features --features "repl mika" --test mech_repl_ctrlc
           cargo test \
             --lib \
             --no-default-features \
             --features "repl mika" \
             mika_farewell_remains_visible_after_drop
 
-      - name: Disk report at end
-        if: always()
-        run: bash scripts/ci-disk-report.sh
-
-  macos-runtime:
-    name: macOS runtime tests
-    runs-on: macos-latest
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
-      - name: Run workspace watch regressions
-        run: |
-          cargo test -p mech-runtime \
-            workspace::watch::tests \
-            -- --nocapture
-
-      - name: Run complete runtime library suite
-        run: cargo test -p mech-runtime --lib
-
-  project-native:
-    name: Project native
+  function-system:
+    name: Representative function-system contracts
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
       CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7.0.1
 
-      - name: Install required CI tools
+      - name: Install required tools
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes ripgrep
-
-      - name: Disk report at start
-        run: bash scripts/ci-disk-report.sh
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
+          if ! command -v rg >/dev/null 2>&1
+          then
+            sudo apt-get update
+            sudo apt-get install --yes ripgrep
+          fi
           rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
 
-      - name: Check generic project package paths
-        run: bash scripts/check-analog-clock-web.sh
-
-      - name: Run native project tests
+      - name: Check migration, frozen surfaces, and representative profiles
         run: |
-          cargo test \
-            -p mech-host-time \
-            --no-default-features \
-            --features native
-          cargo test \
-            -p mech-host-timer \
-            --no-default-features \
-            --features native
-          cargo test \
-            -p mech-host-scene \
-            --no-default-features \
-            --features native
-          cargo test \
-            -p mech-wasm \
-            --no-default-features \
-            --features browser_project
+          bash scripts/check-complete-function-system-migration.sh boundaries
+          bash scripts/check-function-system-contracts.sh surface
+          bash scripts/check-standard-machine-baseline.sh representative
 
-      - name: Check CLI clock
-        run: |
-          cargo test \
-            --features "run cli_host time_host_native timer_host_native console_host_native scene_host_native" \
-            --test mech_cli_host
-
-      - name: Smoke test native analog clock project
-        run: |
-          cargo build --bin mech
-          set +e
-          timeout --preserve-status --signal=INT 5s target/debug/mech run examples/analog-clock > /tmp/analog-clock.out
-          status=$?
-          set -e
-          test "$status" -eq 0
-          grep '^│' /tmp/analog-clock.out > /tmp/clock-values.out
-          test "$(wc -l < /tmp/clock-values.out)" -ge 2
-          test "$(sort -u /tmp/clock-values.out | wc -l)" -ge 2
-
-      - name: Confirm obsolete browser mechanisms are absent
-        run: |
-          test ! -e examples/common
-          test ! -e examples/pkg
-          test ! -e examples/analog-clock/clock.js
-          test ! -e mech-app
-          ! rg -n \
-            "WasmMech|CURRENT_MECH|attach_repl|legacy_browser_api|analog_clock_demo|WasmAnalogClock|clock\.js" \
-            src include examples
-
-      - name: Disk report at end
-        if: always()
-        run: bash scripts/ci-disk-report.sh
-
-      - name: Disk report on failure
-        if: failure()
-        run: bash scripts/ci-disk-report.sh
-
-  project-browser:
-    name: Project browser
+  distribution:
+    name: Distributions, packages, and WASM
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
-      CARGO_TARGET_DIR: ${{ github.workspace }}/target/project-browser
       CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7.0.1
 
-      - name: Disk report at start
-        run: bash scripts/ci-disk-report.sh
-
-      - name: Install Rust nightly-2026-03-03
+      - name: Install Rust, WASM, and required tools
         run: |
-          rustup show
+          if ! command -v rg >/dev/null 2>&1
+          then
+            sudo apt-get update
+            sudo apt-get install --yes ripgrep
+          fi
           rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
-      - name: Install WASM target
-        run: rustup target add wasm32-unknown-unknown
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2026-03-03
 
       - name: Install wasm-pack
         env:
           WASM_PACK_VERSION: v0.15.0
         run: |
           curl -fsSL \
-            "https://github.com/wasm-bindgen/wasm-pack/releases/download/${WASM_PACK_VERSION}/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+            "https://github.com/wasm-bindgen/wasm-pack/releases/download/$WASM_PACK_VERSION/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl.tar.gz" \
             -o /tmp/wasm-pack.tar.gz
           tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
-          sudo install "/tmp/wasm-pack-${WASM_PACK_VERSION}-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
-          wasm-pack --version
+          sudo install "/tmp/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
 
-      - name: Show Chrome version
-        run: google-chrome --version
-
-      - name: Check shipped rich document shell contracts
-        run: bash scripts/check-shipped-document-shims.sh
-
-      - name: Remove old browser package
-        run: rm -rf src/wasm/pkg
-
-      - name: Check browser project feature boundaries
+      - name: Check representative distribution graphs
         run: |
-          cargo check \
-            -p mech-wasm \
-            --target wasm32-unknown-unknown \
-            --no-default-features \
-            --features browser_project_runner
-          cargo check \
-            -p mech-wasm \
-            --target wasm32-unknown-unknown \
-            --no-default-features \
-            --features "browser_project_runner,browser_host_dom,browser_host_time,browser_host_console,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,math_default,matrix_default,f64,bool,string_default,record,tuple,table,atom,enum,variables"
+          bash scripts/check-static-distribution-profiles.sh static
+          bash scripts/check-static-distribution-profiles.sh selected-runtime
+          bash scripts/check-static-distribution-profiles.sh standard-compiler
+          bash scripts/check-static-distribution-profiles.sh wasm-source
 
-      - name: Build browser project package
-        run: bash scripts/build-mech-browser.sh
-
-      - name: Build embedded browser server in dedicated target
+      - name: Check run-only CLIs
         run: |
-          cargo build \
-            --bin mech \
-            --no-default-features \
-            --features "serve,bundle_web,formatter"
-          cp "$CARGO_TARGET_DIR/debug/mech" \
-            "$CARGO_TARGET_DIR/embedded-browser-mech"
-          cargo test \
-            -p mech \
-            --no-default-features \
-            --features "serve,bundle_web,formatter" \
-            --test mech_format_shims \
-            -- --nocapture
-          cargo test \
-            -p mech \
-            --no-default-features \
-            --features "serve,bundle_web,formatter" \
-            --test mech_serve \
-            formatted_blog_page_executes_when_served \
-            -- --exact --nocapture
-          cargo test \
-            -p mech \
-            --no-default-features \
-            --features "serve,bundle_web,formatter" \
-            --test mech_serve \
-            formatted_docs_page_executes_when_served \
-            -- --exact --nocapture
+          cargo +nightly-2026-03-03 build --bin mech --no-default-features --features run
+          cargo +nightly-2026-03-03 build --bin mech --no-default-features --features "run pretty_print"
 
-      # Run this while the package produced above is still present. Later
-      # served-document checks deliberately remove it from the source tree.
-      - name: Smoke test documented static browser bundle
-        run: |
-          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
-            bash scripts/smoke-bundle-web.sh
+      - name: Validate Cargo package archive contents
+        run: python3 scripts/check-package-archives.py
 
-      - name: Remove browser release intermediates
-        run: rm -rf "$CARGO_TARGET_DIR/wasm32-unknown-unknown/release"
-
-      - name: Run headless Chrome WASM tests
+      - name: Execute official bytecode fixtures in Chrome
         run: |
           wasm-pack test \
             --headless \
@@ -709,28 +237,299 @@ jobs:
             -- \
             --nocapture
 
-      - name: Smoke test formatted static document in Chrome
-        run: |
-          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
-            bash scripts/smoke-formatted-document-browser.sh
+      - name: Upload package archive manifests
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-archive-manifests
+          path: target/package-archive-manifests
+          retention-days: 14
 
-      - name: Smoke test standalone and inline-shim FizzBuzz in Chrome
+  bytecode:
+    name: Bytecode v1
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: 0
+      MECH_BYTECODE_DETERMINISM_RUNS: 2
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Validate format and canonical value codecs
         run: |
-          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
-            bash scripts/smoke-served-fizzbuzz-browser.sh
+          python3 scripts/check-bytecode-v1-format.py
+          cargo +nightly-2026-03-03 test -p mech-core --all-features program::bytecode::tests
+      - name: Compare two fresh compiler processes
+        run: cargo +nightly-2026-03-03 run --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml -- --check
 
-      - name: Smoke test rich standalone documents in Chrome
+  runtime-source:
+    name: Runtime source examples and dynamic modules
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly and stable
         run: |
-          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
-            bash scripts/smoke-served-rich-document-browser.sh
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup toolchain install stable --profile minimal
+      - name: Run all source-mode runtime examples with one shared target
+        run: bash scripts/run-runtime-source-targets.sh all
+      - name: Run dynamic module smoke path
+        env:
+          RUSTUP_TOOLCHAIN: stable
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target/dynamic-modules
+        run: bash scripts/test-dynamic-modules.sh
 
-      - name: Smoke test served analog clock in Chrome
+  native-linkage-owners:
+    name: Representative native-link owners
+    runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Check engine and representative machine owners
         run: |
-          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
-            bash scripts/smoke-served-analog-clock-browser.sh
+          python3 scripts/check-native-linkage-coverage.py owners \
+            mech-engine mech-math mech-matrix
 
-      - name: Smoke test bounded server shutdown
+  native-linkage-surfaces:
+    name: Native linkage surfaces (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: engine-float
+            surfaces: extended-engine-shard-float
+          - shard: signed
+            surfaces: extended-engine-shard-signed
+          - shard: standard
+            surfaces: standard
+          - shard: unsigned-logic
+            surfaces: extended-engine-shard-unsigned extended-logic extended-set
+          - shard: remaining
+            surfaces: extended-engine-shard-convert extended-math extended-compare extended-range extended-matrix extended-string extended-stats extended-combinatorics
+    env:
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Generate and validate linkage surfaces
+        env:
+          LINKAGE_SURFACES: ${{ matrix.surfaces }}
         run: |
+          for surface in $LINKAGE_SURFACES
+          do
+            python3 scripts/check-native-linkage-coverage.py surface "$surface"
+          done
+      - name: Upload linkage surfaces
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-linkage-surfaces-${{ matrix.shard }}
+          path: target/native-linkage/surfaces/*.json
+          retention-days: 1
+
+  native-linkage:
+    name: Native linkage coverage
+    needs: native-linkage-surfaces
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Download validated linkage surfaces
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-linkage-surfaces-*
+          path: target/native-linkage/surfaces
+          merge-multiple: true
+      - name: Merge exact native linkage coverage
+        run: python3 scripts/check-native-linkage-coverage.py merge
+      - name: Upload full native linkage inventory
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-linkage-coverage
+          path: target/native-linkage/coverage-full.json
+          retention-days: 14
+
+  native-linkage-closures:
+    name: Exact native closures (${{ matrix.shard }}/8)
+    needs: native-linkage
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target/native-linkage/exact-closures/shard-${{ matrix.shard }}/cargo-target
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked workspace dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
+      - name: Download full native linkage inventory
+        uses: actions/download-artifact@v4
+        with:
+          name: native-linkage-coverage
+          path: target/native-linkage
+      - name: Compile exact minimal feature closures
+        run: python3 scripts/check-native-linkage-coverage.py closure ${{ matrix.shard }}
+
+  native-linux:
+    name: Representative native applications (Linux)
+    runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked generated-project dependencies
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      - name: Check native planning and host pruning
+        run: |
+          cargo +nightly-2026-03-03 test -p mech-build --all-features \
+            --lib \
+            --test planning \
+            --test native_host_pruning \
+            --test standard_host_source_planning
+          cargo +nightly-2026-03-03 test -p mech --features build --test mech_build
+          python3 scripts/check-native-host-catalog.py
+      - name: Build representative hosted and actor applications
+        run: |
+          cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_cli_hosted
+          MECH_NATIVE_GENERATED_CASE=scalar,actor-alpha,actor-beta \
+            cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_generated_end_to_end -- --nocapture
+      - name: Exercise generated live-process cleanup
+        run: |
+          cargo +nightly-2026-03-03 test -p mech-build \
+            --features standard-hosts \
+            --test registry_generated_project \
+            live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure \
+            -- --exact --nocapture
+
+  native-windows:
+    name: Representative native applications (Windows)
+    runs-on: windows-latest
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked generated-project dependencies
+        shell: pwsh
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      - name: Build scalar, hosted, and actor applications
+        shell: pwsh
+        run: |
+          cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --lib project::manifest::tests::windows_cargo_paths_require_the_same_volume -- --exact
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:MECH_NATIVE_GENERATED_CASE = "scalar,console,actor-alpha"
+          cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_generated_end_to_end -- --nocapture
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Exercise Windows console-control cleanup
+        shell: pwsh
+        run: |
+          cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test registry_generated_project live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure -- --exact --nocapture
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  native-macos:
+    name: Representative native applications (macOS)
+    runs-on: macos-latest
+    env:
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked generated-project dependencies
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      - name: Build scalar and hosted applications
+        run: |
+          MECH_NATIVE_GENERATED_CASE=scalar,console \
+            cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test native_generated_end_to_end -- --nocapture
+      - name: Run platform-sensitive watch regressions
+        run: cargo +nightly-2026-03-03 test -p mech-runtime workspace::watch::tests -- --nocapture
+
+  project-browser:
+    name: Browser project and document smokes
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target/project-browser
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust and WASM
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+          rustup target add wasm32-unknown-unknown
+      - name: Install wasm-pack
+        env:
+          WASM_PACK_VERSION: v0.15.0
+        run: |
+          curl -fsSL \
+            "https://github.com/wasm-bindgen/wasm-pack/releases/download/$WASM_PACK_VERSION/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/wasm-pack.tar.gz
+          tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
+          sudo install "/tmp/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
+      - name: Check browser feature and document boundaries
+        run: |
+          bash scripts/check-shipped-document-shims.sh
+          cargo check \
+            -p mech-wasm \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features browser_project_runner
+          cargo check \
+            -p mech-wasm \
+            --target wasm32-unknown-unknown \
+            --no-default-features \
+            --features "browser_project_runner,browser_host_dom,browser_host_time,browser_host_console,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,math_default,matrix_default,f64,bool,string_default,record,tuple,table,atom,enum,variables"
+      - name: Build browser project and embedded server
+        run: |
+          bash scripts/build-mech-browser.sh
+          cargo build --bin mech --no-default-features --features "serve,bundle_web,formatter"
+          cp "$CARGO_TARGET_DIR/debug/mech" "$CARGO_TARGET_DIR/embedded-browser-mech"
+          cargo test \
+            -p mech \
+            --no-default-features \
+            --features "serve,bundle_web,formatter" \
+            --test mech_format_shims \
+            -- --nocapture
+          cargo test \
+            -p mech \
+            --no-default-features \
+            --features "serve,bundle_web,formatter" \
+            --test mech_serve \
+            formatted_ \
+            -- --nocapture
+      - name: Smoke browser bundles and served documents
+        run: |
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" bash scripts/smoke-bundle-web.sh
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" bash scripts/smoke-formatted-document-browser.sh
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" bash scripts/smoke-served-fizzbuzz-browser.sh
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" bash scripts/smoke-served-rich-document-browser.sh
+          MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" bash scripts/smoke-served-analog-clock-browser.sh
           cargo test \
             -p mech \
             --no-default-features \
@@ -738,43 +537,12 @@ jobs:
             --test mech_serve \
             mech_serve_interrupt_closes_keep_alive_server_once \
             -- --exact --nocapture
-
       - name: Remove generated browser package
-        if: always()
+        if: ${{ always() }}
         run: rm -rf src/wasm/pkg
 
-      - name: Disk report at end
-        if: always()
-        run: bash scripts/ci-disk-report.sh
-
-      - name: Disk report on failure
-        if: failure()
-        run: bash scripts/ci-disk-report.sh
-  run-only:
-    name: Run-only CLI
-    runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
-      - name: Build run-only CLI
-        run: cargo build --bin mech --no-default-features --features run
-
-      - name: Build run-only CLI with pretty print
-        run: cargo build --bin mech --no-default-features --features "run pretty_print"
-
-  windows-runtime-paths:
-    name: Windows runtime path contracts
+  windows-build-path:
+    name: Windows build and root contract
     runs-on: windows-latest
     env:
       CARGO_TERM_COLOR: always
@@ -783,59 +551,59 @@ jobs:
       CARGO_PROFILE_DEV_DEBUG: "0"
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
+      - uses: actions/checkout@v7.0.1
       - name: Install Rust nightly-2026-03-03
         run: |
-          rustup show
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
-
-      - name: Run resolver and workspace portability contracts
-        run: cargo test -p mech-runtime --lib --no-default-features --features "base,u64" windows_ -- --nocapture
-
-  windows-cli-contracts:
-    name: Windows CLI platform contracts
-    runs-on: windows-latest
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-      # CI consumes diagnostics and assertions, not debug symbol artifacts.
-      # Keep debug assertions enabled while avoiding Windows' costly debug
-      # information generation and linking.
-      CARGO_PROFILE_DEV_DEBUG: "0"
-      CARGO_PROFILE_TEST_DEBUG: "0"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
       - name: Build default Windows CLI
         run: cargo build --bin mech
-
-      - name: Check REPL-only Windows CLI
-        run: cargo check --bin mech --no-default-features --features repl
-
-      - name: Check REPL-plus-Mika Windows CLI
-        run: cargo check --bin mech --no-default-features --features "repl mika"
-
       - name: Run Windows-sensitive root contract
         run: cargo test -p mech --lib --no-default-features --features "run repl" repl::runtime_load_tests::runtime_repl_load_request_preserves_explicit_source_schemes -- --exact --nocapture
 
-      - name: Run Windows serve executable HTTP suites
-        run: cargo test -p mech --no-default-features --features serve --test mech_serve -- --nocapture
-
-      - name: Run reduced-feature Windows source-tooling tests
+  windows-paths:
+    name: Windows runtime and source paths
+    runs-on: windows-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+      - name: Run runtime path contracts
+        run: cargo test -p mech-runtime --lib --no-default-features --features "base,u64" windows_ -- --nocapture
+      - name: Run source-tooling path contracts
         run: cargo test -p mech --no-default-features --features "run build test" --test windows_source_paths -- --nocapture
 
-      - name: Run Windows formatter and serve HTML shim contracts
+  windows-format-serve:
+    name: Windows REPL, formatter, and serve contracts
+    runs-on: windows-latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: full
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
+      - name: Check Windows REPL contracts
+        run: |
+          cargo check --bin mech --no-default-features --features repl
+          cargo check --bin mech --no-default-features --features "repl mika"
+      - name: Run Windows serve suite
+        run: cargo test -p mech --no-default-features --features serve --test mech_serve -- --nocapture
+      - name: Run Windows formatter and serve shim contracts
+        shell: pwsh
         run: |
           try {
             New-Item -ItemType Directory -Force src/wasm/pkg | Out-Null
@@ -858,35 +626,63 @@ jobs:
             Remove-Item -Recurse -Force src/wasm/pkg -ErrorAction SilentlyContinue
           }
 
-  windows-cli:
-    name: Windows CLI
+  cargo:
+    name: cargo
     if: ${{ always() }}
     needs:
-      - windows-cli-contracts
-      - windows-runtime-paths
+      - cargo-language
+      - cargo-features
+      - cargo-runtime
+      - runtime-source
+      - function-system
+      - distribution
+      - bytecode
+      - native-linkage-owners
+      - native-linkage
+      - native-linkage-closures
+      - native-linux
+      - native-windows
+      - native-macos
+      - project-browser
+      - windows-build-path
+      - windows-paths
+      - windows-format-serve
     runs-on: ubuntu-latest
     steps:
-      - name: Require every Windows contract shard
+      - name: Require every pull-request contract
         env:
-          CLI_RESULT: ${{ needs.windows-cli-contracts.result }}
-          RUNTIME_RESULT: ${{ needs.windows-runtime-paths.result }}
+          LANGUAGE_RESULT: ${{ needs.cargo-language.result }}
+          FEATURES_RESULT: ${{ needs.cargo-features.result }}
+          RUNTIME_RESULT: ${{ needs.cargo-runtime.result }}
+          RUNTIME_SOURCE_RESULT: ${{ needs.runtime-source.result }}
+          FUNCTION_RESULT: ${{ needs.function-system.result }}
+          DISTRIBUTION_RESULT: ${{ needs.distribution.result }}
+          BYTECODE_RESULT: ${{ needs.bytecode.result }}
+          LINKAGE_OWNERS_RESULT: ${{ needs.native-linkage-owners.result }}
+          LINKAGE_RESULT: ${{ needs.native-linkage.result }}
+          LINKAGE_CLOSURES_RESULT: ${{ needs.native-linkage-closures.result }}
+          NATIVE_LINUX_RESULT: ${{ needs.native-linux.result }}
+          NATIVE_WINDOWS_RESULT: ${{ needs.native-windows.result }}
+          NATIVE_MACOS_RESULT: ${{ needs.native-macos.result }}
+          BROWSER_RESULT: ${{ needs.project-browser.result }}
+          WINDOWS_BUILD_RESULT: ${{ needs.windows-build-path.result }}
+          WINDOWS_PATHS_RESULT: ${{ needs.windows-paths.result }}
+          WINDOWS_FORMAT_RESULT: ${{ needs.windows-format-serve.result }}
         run: |
-          test "$CLI_RESULT" = success
+          test "$LANGUAGE_RESULT" = success
+          test "$FEATURES_RESULT" = success
           test "$RUNTIME_RESULT" = success
-
-  dynamic-modules:
-    name: Dynamic modules
-    runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-    steps:
-      - uses: actions/checkout@v7.0.1
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Run dynamic module smoke path
-        run: bash scripts/test-dynamic-modules.sh
+          test "$RUNTIME_SOURCE_RESULT" = success
+          test "$FUNCTION_RESULT" = success
+          test "$DISTRIBUTION_RESULT" = success
+          test "$BYTECODE_RESULT" = success
+          test "$LINKAGE_OWNERS_RESULT" = success
+          test "$LINKAGE_RESULT" = success
+          test "$LINKAGE_CLOSURES_RESULT" = success
+          test "$NATIVE_LINUX_RESULT" = success
+          test "$NATIVE_WINDOWS_RESULT" = success
+          test "$NATIVE_MACOS_RESULT" = success
+          test "$BROWSER_RESULT" = success
+          test "$WINDOWS_BUILD_RESULT" = success
+          test "$WINDOWS_PATHS_RESULT" = success
+          test "$WINDOWS_FORMAT_RESULT" = success

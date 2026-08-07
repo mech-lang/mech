@@ -25,6 +25,8 @@ default = ["compiler_default"]
 runtime = ["mech-core/functions"]
 source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]
+native-plan = ["runtime", "mech-core/native-plan"]
+native-link = ["runtime"]
 standard_values = [
   "string", "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
   "row_vector2", "row_vector3", "row_vector4",

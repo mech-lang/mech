@@ -1,0 +1,11 @@
+[package]
+name = "mech-native-live-host-fixture"
+version = "0.3.5"
+edition = "2024"
+rust-version = "1.92"
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+mech-core = { version = "0.3.5", default-features = false, features = ["f64"] }
+mech-runtime = { version = "0.3.5", default-features = false, features = ["f64", "runtime"] }

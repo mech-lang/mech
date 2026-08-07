@@ -9,10 +9,6 @@ default = ["fixed-specialization-cases"]
 fixed-specialization-cases = ["mech-stdlib/matrix2", "mech-stdlib/vector2"]
 
 [dependencies]
-mech-bytecode = {
-  path = "../../../src/bytecode",
-  default-features = false,
-}
 mech-core = {
   path = "../../../src/core",
   default-features = false,

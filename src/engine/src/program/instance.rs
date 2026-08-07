@@ -13,7 +13,8 @@ use mech_core::FunctionCatalog;
 use mech_core::{
     FunctionSpecializer, MResult, MechError, MechErrorKind, MechFunction, MechSourceCode,
     ParsedProgram, ReactiveCellId, ReactiveJournalParticipant, ReactiveTurnOutcome, ValRef, Value,
-    ValueKind, hash_str, val_ref_reactive_cell_ids, with_reactive_journal_participant,
+    ValueKind, hash_str, val_ref_reactive_cell_ids, validate_stable_value_update,
+    with_reactive_journal_participant,
 };
 
 #[cfg(feature = "compiler")]
@@ -26,181 +27,6 @@ use mech_syntax::parser;
 #[cfg(all(feature = "source", feature = "native"))]
 use crate::ClosureFunctionSpecializer;
 
-#[cfg(feature = "compiler")]
-pub struct BytecodeCompilation {
-    pub bytecode: Vec<u8>,
-    pub requirements: Vec<FeatureFlag>,
-}
-
-#[derive(Debug, Clone)]
-pub struct StableValueUpdateKindMismatch {
-    pub expected: ValueKind,
-    pub actual: ValueKind,
-}
-impl MechErrorKind for StableValueUpdateKindMismatch {
-    fn name(&self) -> &str {
-        "StableValueUpdateKindMismatch"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "stable value update requires the same value kind and shape; expected {:?}, found {:?}",
-            self.expected, self.actual,
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct StableValueUpdateUnsupported {
-    pub kind: ValueKind,
-}
-impl MechErrorKind for StableValueUpdateUnsupported {
-    fn name(&self) -> &str {
-        "StableValueUpdateUnsupported"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "stable value update does not support preserving values of kind {:?}",
-            self.kind,
-        )
-    }
-}
-
-fn stable_value_update_kind_mismatch(expected: ValueKind, actual: ValueKind) -> MechError {
-    MechError::new(StableValueUpdateKindMismatch { expected, actual }, None)
-}
-
-fn is_stable_value_update_supported_value(value: &Value) -> bool {
-    match value {
-        #[cfg(feature = "u8")]
-        Value::U8(_) => true,
-        #[cfg(feature = "u16")]
-        Value::U16(_) => true,
-        #[cfg(feature = "u32")]
-        Value::U32(_) => true,
-        #[cfg(feature = "u64")]
-        Value::U64(_) => true,
-        #[cfg(feature = "u128")]
-        Value::U128(_) => true,
-        #[cfg(feature = "i8")]
-        Value::I8(_) => true,
-        #[cfg(feature = "i16")]
-        Value::I16(_) => true,
-        #[cfg(feature = "i32")]
-        Value::I32(_) => true,
-        #[cfg(feature = "i64")]
-        Value::I64(_) => true,
-        #[cfg(feature = "i128")]
-        Value::I128(_) => true,
-        #[cfg(feature = "f32")]
-        Value::F32(_) => true,
-        #[cfg(feature = "f64")]
-        Value::F64(_) => true,
-        #[cfg(feature = "complex")]
-        Value::C64(_) => true,
-        #[cfg(feature = "rational")]
-        Value::R64(_) => true,
-        #[cfg(any(feature = "string", feature = "variable_define"))]
-        Value::String(_) => true,
-        #[cfg(any(feature = "bool", feature = "variable_define"))]
-        Value::Bool(_) => true,
-        Value::Index(_) => true,
-
-        #[cfg(feature = "matrix")]
-        Value::MatrixIndex(_) => false,
-        #[cfg(feature = "matrix")]
-        Value::MatrixValue(_) => false,
-        #[cfg(all(feature = "matrix", feature = "bool"))]
-        Value::MatrixBool(_) => true,
-        #[cfg(all(feature = "matrix", feature = "u8"))]
-        Value::MatrixU8(_) => true,
-        #[cfg(all(feature = "matrix", feature = "u16"))]
-        Value::MatrixU16(_) => true,
-        #[cfg(all(feature = "matrix", feature = "u32"))]
-        Value::MatrixU32(_) => true,
-        #[cfg(all(feature = "matrix", feature = "u64"))]
-        Value::MatrixU64(_) => true,
-        #[cfg(all(feature = "matrix", feature = "u128"))]
-        Value::MatrixU128(_) => true,
-        #[cfg(all(feature = "matrix", feature = "i8"))]
-        Value::MatrixI8(_) => true,
-        #[cfg(all(feature = "matrix", feature = "i16"))]
-        Value::MatrixI16(_) => true,
-        #[cfg(all(feature = "matrix", feature = "i32"))]
-        Value::MatrixI32(_) => true,
-        #[cfg(all(feature = "matrix", feature = "i64"))]
-        Value::MatrixI64(_) => true,
-        #[cfg(all(feature = "matrix", feature = "i128"))]
-        Value::MatrixI128(_) => true,
-        #[cfg(all(feature = "matrix", feature = "f32"))]
-        Value::MatrixF32(_) => true,
-        #[cfg(all(feature = "matrix", feature = "f64"))]
-        Value::MatrixF64(_) => true,
-        #[cfg(all(feature = "matrix", feature = "string"))]
-        Value::MatrixString(_) => true,
-        #[cfg(all(feature = "matrix", feature = "rational"))]
-        Value::MatrixR64(_) => true,
-        #[cfg(all(feature = "matrix", feature = "complex"))]
-        Value::MatrixC64(_) => true,
-
-        _ => false,
-    }
-}
-
-fn validate_stable_value_update(current: &Value, next: &Value) -> MResult<()> {
-    match (current, next) {
-        (
-            Value::Typed(current_inner, current_annotation),
-            Value::Typed(next_inner, next_annotation),
-        ) => {
-            if current_annotation != next_annotation {
-                return Err(stable_value_update_kind_mismatch(
-                    current_annotation.clone(),
-                    next_annotation.clone(),
-                ));
-            }
-            validate_stable_value_update(current_inner.as_ref(), next_inner.as_ref())
-        }
-        (Value::Typed(_, _), _) | (_, Value::Typed(_, _)) => Err(
-            stable_value_update_kind_mismatch(current.kind(), next.kind()),
-        ),
-        (Value::Empty, Value::Empty) => Ok(()),
-        #[cfg(feature = "matrix")]
-        (Value::MatrixValue(_), _) => Err(MechError::new(
-            StableValueUpdateUnsupported {
-                kind: current.kind(),
-            },
-            None,
-        )),
-        #[cfg(feature = "matrix")]
-        (_, Value::MatrixValue(_)) => Err(MechError::new(
-            StableValueUpdateUnsupported { kind: next.kind() },
-            None,
-        )),
-        _ => {
-            let expected = current.kind();
-            let actual = next.kind();
-            if expected != actual {
-                return Err(stable_value_update_kind_mismatch(expected, actual));
-            }
-            if !is_stable_value_update_supported_value(current) {
-                return Err(MechError::new(
-                    StableValueUpdateUnsupported { kind: expected },
-                    None,
-                ));
-            }
-            if !is_stable_value_update_supported_value(next) {
-                return Err(MechError::new(
-                    StableValueUpdateUnsupported { kind: actual },
-                    None,
-                ));
-            }
-            Ok(())
-        }
-    }
-}
-
 pub fn compile_stable_value_update(sink: ValRef, source: Value) -> MResult<Box<dyn MechFunction>> {
     {
         let current = sink.borrow();
@@ -211,7 +37,12 @@ pub fn compile_stable_value_update(sink: ValRef, source: Value) -> MResult<Box<d
 }
 
 pub fn apply_stable_value_update(sink: ValRef, source: Value) -> MResult<Value> {
-    let update = compile_stable_value_update(sink.clone(), source)?;
+    {
+        let current = sink.borrow();
+        validate_stable_value_update(&current, &source)?;
+    }
+    let update =
+        crate::AssignValue {}.specialize(&[Value::MutableReference(sink.clone()), source])?;
     update.solve_result()?;
     Ok(sink.borrow().clone())
 }
@@ -262,6 +93,13 @@ pub struct ProgramInputUpdate {
     pub value: Value,
 }
 
+#[derive(Clone)]
+pub struct ProgramCellUpdate {
+    pub interpreter_id: u64,
+    pub target: ValRef,
+    pub value: Value,
+}
+
 #[derive(Clone, Debug)]
 pub struct ProgramInputUpdateOutcome {
     pub updated_count: usize,
@@ -281,7 +119,7 @@ pub struct ProgramInputTurnOutcome {
     pub interpreter_turns: Vec<ProgramInterpreterTurnOutcome>,
 }
 
-struct PreparedProgramInputBatch {
+struct PreparedProgramCellBatch {
     assignments: Vec<Box<dyn MechFunction>>,
     targets: Vec<ValRef>,
     dirty_cells: Vec<ReactiveCellId>,
@@ -702,12 +540,31 @@ impl MechProgram {
     }
 
     pub fn run_bytecode(&mut self, bytecode: &[u8]) -> MResult<Value> {
-        let parsed = ParsedProgram::from_bytes(&bytecode.to_vec())?;
-        self.run_bytecode_program(&parsed)
+        let mut services = NoMechExecutionServices;
+        self.run_bytecode_with_services(bytecode, &mut services)
+    }
+
+    pub fn run_bytecode_with_services(
+        &mut self,
+        bytecode: &[u8],
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<Value> {
+        let parsed = ParsedProgram::from_bytes(bytecode)?;
+        self.run_bytecode_program_with_services(&parsed, services)
     }
 
     pub fn run_bytecode_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
-        self.interpreter.run_program(program)
+        let mut services = NoMechExecutionServices;
+        self.run_bytecode_program_with_services(program, &mut services)
+    }
+
+    pub fn run_bytecode_program_with_services(
+        &mut self,
+        program: &ParsedProgram,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<Value> {
+        self.interpreter
+            .run_program_with_services(program, services)
     }
 
     #[cfg(feature = "source")]
@@ -932,23 +789,21 @@ impl MechProgram {
         &mut self,
         updates: &[ProgramInputUpdate],
     ) -> MResult<ProgramInputUpdateOutcome> {
-        let prepared = self.prepare_input_updates(updates)?;
-        Self::apply_prepared_input_updates(&prepared)?;
+        let updates = self.resolve_input_updates(updates)?;
+        let prepared = self.prepare_cell_updates(&updates)?;
+        Self::apply_prepared_cell_updates(&prepared)?;
         Ok(ProgramInputUpdateOutcome {
             updated_count: prepared.assignments.len(),
             dirty_cells: prepared.dirty_cells,
         })
     }
 
-    fn prepare_input_updates(
+    fn resolve_input_updates(
         &self,
         updates: &[ProgramInputUpdate],
-    ) -> MResult<PreparedProgramInputBatch> {
-        let mut seen_targets = BTreeSet::new();
-        let mut assignments = Vec::with_capacity(updates.len());
-        let mut targets = Vec::with_capacity(updates.len());
-        let mut dirty_cells = Vec::new();
-        let mut dirty_cells_by_interpreter = BTreeMap::new();
+    ) -> MResult<Vec<ProgramCellUpdate>> {
+        let mut seen_inputs = BTreeSet::new();
+        let mut resolved = Vec::with_capacity(updates.len());
         for update in updates {
             let Some((actual_interpreter_id, sink)) = with_interpreter(
                 &self.interpreter,
@@ -977,7 +832,7 @@ impl MechProgram {
                 interpreter_id: actual_interpreter_id,
                 symbol_id: update.input.symbol_id,
             };
-            if !seen_targets.insert(canonical_input) {
+            if !seen_inputs.insert(canonical_input) {
                 return Err(MechError::new(
                     ProgramInputDuplicateTarget {
                         input: canonical_input,
@@ -985,12 +840,53 @@ impl MechProgram {
                     None,
                 ));
             }
-            targets.push(sink.clone());
+            resolved.push(ProgramCellUpdate {
+                interpreter_id: actual_interpreter_id,
+                target: sink,
+                value: update.value.clone(),
+            });
+        }
+        Ok(resolved)
+    }
+
+    fn prepare_cell_updates(
+        &self,
+        updates: &[ProgramCellUpdate],
+    ) -> MResult<PreparedProgramCellBatch> {
+        let mut seen_targets = BTreeSet::new();
+        let mut assignments = Vec::with_capacity(updates.len());
+        let mut targets = Vec::with_capacity(updates.len());
+        let mut dirty_cells = Vec::new();
+        let mut dirty_cells_by_interpreter = BTreeMap::new();
+        for update in updates {
+            let Some(actual_interpreter_id) = with_interpreter(
+                &self.interpreter,
+                update.interpreter_id,
+                &mut |interpreter| interpreter.id,
+            ) else {
+                return Err(MechError::new(
+                    ProgramInputError {
+                        reason: format!("missing interpreter {}", update.interpreter_id),
+                    },
+                    None,
+                ));
+            };
+            let target_address = update.target.as_ptr() as usize;
+            if !seen_targets.insert((actual_interpreter_id, target_address)) {
+                return Err(MechError::new(
+                    ProgramCellDuplicateTarget {
+                        interpreter_id: actual_interpreter_id,
+                        target_address,
+                    },
+                    None,
+                ));
+            }
+            targets.push(update.target.clone());
             assignments.push(compile_stable_value_update(
-                sink.clone(),
+                update.target.clone(),
                 update.value.clone(),
             )?);
-            for cell in val_ref_reactive_cell_ids(&sink) {
+            for cell in val_ref_reactive_cell_ids(&update.target) {
                 if !dirty_cells.contains(&cell) {
                     dirty_cells.push(cell);
                 }
@@ -1002,7 +898,7 @@ impl MechProgram {
                 }
             }
         }
-        Ok(PreparedProgramInputBatch {
+        Ok(PreparedProgramCellBatch {
             assignments,
             targets,
             dirty_cells,
@@ -1010,7 +906,7 @@ impl MechProgram {
         })
     }
 
-    fn apply_prepared_input_updates(prepared: &PreparedProgramInputBatch) -> MResult<()> {
+    fn apply_prepared_cell_updates(prepared: &PreparedProgramCellBatch) -> MResult<()> {
         let mut staged = Vec::with_capacity(prepared.assignments.len());
         for assignment in &prepared.assignments {
             staged.push(assignment.stage_register()?);
@@ -1153,16 +1049,38 @@ impl MechProgram {
         services: &mut dyn MechExecutionServices,
         finalize: impl FnOnce(&ProgramInputTurnOutcome) -> ProgramTurnFinalization,
     ) -> MResult<ProgramInputTurnOutcome> {
+        let updates = self.resolve_input_updates(updates)?;
+        self.update_cells_and_advance_turn_coordinated(&updates, services, finalize)
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn update_cells_and_advance_turn_with_services(
+        &mut self,
+        updates: &[ProgramCellUpdate],
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<ProgramInputTurnOutcome> {
+        self.update_cells_and_advance_turn_coordinated(updates, services, |_| {
+            ProgramTurnFinalization::Commit
+        })
+    }
+
+    #[cfg(feature = "functions")]
+    pub fn update_cells_and_advance_turn_coordinated(
+        &mut self,
+        updates: &[ProgramCellUpdate],
+        services: &mut dyn MechExecutionServices,
+        finalize: impl FnOnce(&ProgramInputTurnOutcome) -> ProgramTurnFinalization,
+    ) -> MResult<ProgramInputTurnOutcome> {
         with_reactive_journal_participant(|participant| {
             let mut journal = ProgramReactiveTurnJournal::new(participant);
             let execution =
-                self.update_inputs_and_advance_turn_with_journal(updates, &mut journal, services);
+                self.update_cells_and_advance_turn_with_journal(updates, &mut journal, services);
             match execution {
                 Ok(outcome) => {
                     #[cfg(feature = "invariant_define")]
                     if let Err(error) = self.validate_integrity_constraints() {
                         return self.finish_failed_reactive_operation(
-                            "update_inputs_and_advance_turn",
+                            "update_cells_and_advance_turn",
                             journal,
                             error,
                         );
@@ -1174,7 +1092,7 @@ impl MechProgram {
                         }
                         ProgramTurnFinalization::Rollback(error) => self
                             .finish_failed_reactive_operation(
-                                "update_inputs_and_advance_turn",
+                                "update_cells_and_advance_turn",
                                 journal,
                                 error,
                             ),
@@ -1185,7 +1103,7 @@ impl MechProgram {
                     }
                 }
                 Err(error) => self.finish_failed_reactive_operation(
-                    "update_inputs_and_advance_turn",
+                    "update_cells_and_advance_turn",
                     journal,
                     error,
                 ),
@@ -1194,21 +1112,21 @@ impl MechProgram {
     }
 
     #[cfg(feature = "functions")]
-    fn update_inputs_and_advance_turn_with_journal(
+    fn update_cells_and_advance_turn_with_journal(
         &mut self,
-        updates: &[ProgramInputUpdate],
+        updates: &[ProgramCellUpdate],
         journal: &mut ProgramReactiveTurnJournal<'_>,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<ProgramInputTurnOutcome> {
-        journal.begin_operation("update_inputs_and_advance_turn")?;
-        let prepared = self.prepare_input_updates(updates)?;
+        journal.begin_operation("update_cells_and_advance_turn")?;
+        let prepared = self.prepare_cell_updates(updates)?;
         for target in &prepared.targets {
             journal.participant.capture_val_ref(target)?;
         }
         for interpreter_id in prepared.dirty_cells_by_interpreter.keys().copied() {
             self.capture_reactive_interpreter(interpreter_id, journal)?;
         }
-        Self::apply_prepared_input_updates(&prepared)?;
+        Self::apply_prepared_cell_updates(&prepared)?;
         let updated_count = prepared.assignments.len();
         let mut interpreter_turns = Vec::with_capacity(prepared.dirty_cells_by_interpreter.len());
         for (interpreter_id, dirty_cells) in prepared.dirty_cells_by_interpreter {
@@ -1248,7 +1166,8 @@ impl MechProgram {
         journal: &mut ProgramReactiveTurnJournal<'_>,
     ) -> MResult<ProgramInputTurnOutcome> {
         let mut services = NoMechExecutionServices;
-        self.update_inputs_and_advance_turn_with_journal(updates, journal, &mut services)
+        let updates = self.resolve_input_updates(updates)?;
+        self.update_cells_and_advance_turn_with_journal(&updates, journal, &mut services)
     }
 
     #[cfg(all(test, feature = "functions"))]
@@ -1314,7 +1233,9 @@ impl MechProgram {
             MechSourceCode::String(source) => self.run_string_with_services(source, services),
             #[cfg(feature = "source")]
             MechSourceCode::Tree(tree) => self.run_tree_with_services(tree, services),
-            MechSourceCode::ByteCode(bytecode) => self.run_bytecode(bytecode),
+            MechSourceCode::ByteCode(bytecode) => {
+                self.run_bytecode_with_services(bytecode, services)
+            }
             MechSourceCode::Program(sources) => self.run_sources_with_services(sources, services),
             unsupported => Err(MechError::new(
                 UnsupportedProgramSourceError {
@@ -1345,7 +1266,7 @@ impl MechProgram {
     }
 
     #[cfg(feature = "compiler")]
-    pub fn compile_bytecode_artifact(&mut self) -> MResult<BytecodeCompilation> {
+    pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
         let state = self.interpreter.state.borrow();
         let plan = state.plan.borrow();
         let mut context = CompileCtx::new();
@@ -1354,19 +1275,60 @@ impl MechProgram {
             step.compile(&mut context)?;
         }
 
-        let requirements = context.requirements().iter().cloned().collect::<Vec<_>>();
-        let bytecode = context.compile()?;
+        #[cfg(feature = "invariant_define")]
+        if !state.integrity_constraints.is_empty() {
+            let marker_output = Value::Bool(Ref::new(false));
+            let marker_register = context.resolve_value_register(&marker_output)?;
+            for constraint in state.integrity_constraints.values() {
+                let result = Value::MutableReference(constraint.result.clone());
+                let name = Value::String(Ref::new(constraint.name.clone()));
+                let expression = Value::String(Ref::new(constraint.expression.clone()));
+                let operator = match &constraint.operator {
+                    Some(FormulaOperator::Comparison(ComparisonOp::Equal)) => "eq",
+                    Some(FormulaOperator::Comparison(ComparisonOp::NotEqual)) => "neq",
+                    Some(FormulaOperator::Comparison(ComparisonOp::LessThan)) => "lt",
+                    Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual)) => "lte",
+                    Some(FormulaOperator::Comparison(ComparisonOp::GreaterThan)) => "gt",
+                    Some(FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual)) => "gte",
+                    Some(other) => {
+                        return Err(MechError::new(
+                            BytecodeValidationError {
+                                reason: format!(
+                                    "integrity constraint {:?} has unsupported operator {other:?}",
+                                    constraint.name
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                    None => "",
+                };
+                let operator = if operator.is_empty() {
+                    Value::Empty
+                } else {
+                    Value::String(Ref::new(operator.to_owned()))
+                };
+                let lhs = constraint
+                    .lhs
+                    .as_ref()
+                    .map(|value| Value::MutableReference(value.clone()))
+                    .unwrap_or(Value::Empty);
+                let rhs = constraint
+                    .rhs
+                    .as_ref()
+                    .map(|value| Value::MutableReference(value.clone()))
+                    .unwrap_or(Value::Empty);
+                let metadata = [result, name, expression, operator, lhs, rhs]
+                    .iter()
+                    .map(|value| context.resolve_value_register(value))
+                    .collect::<MResult<Vec<_>>>()?;
+                context.emit_varop(hash_str("integrity/constraint"), marker_register, metadata);
+            }
+        }
 
-        Ok(BytecodeCompilation {
-            bytecode,
-            requirements,
-        })
-    }
-
-    #[cfg(feature = "compiler")]
-    pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
-        self.compile_bytecode_artifact()
-            .map(|artifact| artifact.bytecode)
+        let return_register = context.resolve_value_register(&self.interpreter.out)?;
+        context.finish(return_register)
     }
 }
 
@@ -1430,6 +1392,23 @@ impl MechErrorKind for ProgramInputError {
 #[derive(Debug, Clone)]
 pub struct ProgramInputDuplicateTarget {
     pub input: ProgramInputId,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProgramCellDuplicateTarget {
+    pub interpreter_id: u64,
+    pub target_address: usize,
+}
+impl MechErrorKind for ProgramCellDuplicateTarget {
+    fn name(&self) -> &str {
+        "ProgramCellDuplicateTarget"
+    }
+    fn message(&self) -> String {
+        format!(
+            "duplicate program cell target at address {:#x} for interpreter {}",
+            self.target_address, self.interpreter_id,
+        )
+    }
 }
 impl MechErrorKind for ProgramInputDuplicateTarget {
     fn name(&self) -> &str {
@@ -2093,11 +2072,19 @@ mod live_input_tests {
         }
     }
 
-    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[cfg(all(feature = "matrixd", feature = "f64"))]
     #[test]
-    fn stable_value_update_preserves_matrix_storage() {
-        let sink_matrix = MechMatrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
-        let source_matrix = MechMatrix::from_vec(vec![5.0, 6.0, 7.0, 8.0], 2, 2);
+    fn stable_value_update_preserves_dynamic_matrix_storage() {
+        let sink_matrix = MechMatrix::DMatrix(Ref::new(crate::na::DMatrix::from_vec(
+            2,
+            2,
+            vec![1.0, 2.0, 3.0, 4.0],
+        )));
+        let source_matrix = MechMatrix::DMatrix(Ref::new(crate::na::DMatrix::from_vec(
+            2,
+            2,
+            vec![5.0, 6.0, 7.0, 8.0],
+        )));
         let sink = Ref::new(Value::MatrixF64(sink_matrix));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
@@ -2176,7 +2163,9 @@ mod live_input_tests {
             sink.clone(),
             Value::Typed(Box::new(Value::F64(Ref::new(9.0))), ValueKind::String),
         );
-        assert!(format!("{:?}", result.unwrap_err()).contains("StableValueUpdateKindMismatch"));
+        assert!(
+            format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
+        );
 
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
@@ -2210,7 +2199,9 @@ mod live_input_tests {
         };
 
         let result = apply_stable_value_update(sink.clone(), Value::F64(Ref::new(9.0)));
-        assert!(format!("{:?}", result.unwrap_err()).contains("StableValueUpdateKindMismatch"));
+        assert!(
+            format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
+        );
 
         match &*sink.borrow() {
             Value::Typed(inner, annotation) => {
@@ -2253,7 +2244,9 @@ mod live_input_tests {
     fn stable_value_update_rejects_empty_to_value() {
         let sink = Ref::new(Value::Empty);
         let result = apply_stable_value_update(sink.clone(), Value::F64(Ref::new(1.0)));
-        assert!(format!("{:?}", result.unwrap_err()).contains("StableValueUpdateKindMismatch"));
+        assert!(
+            format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
+        );
         assert_eq!(&*sink.borrow(), &Value::Empty);
     }
 
@@ -2261,8 +2254,8 @@ mod live_input_tests {
     #[test]
     fn stable_value_update_rejects_dynamic_matrix_shape_change() {
         let sink_matrix = MechMatrix::from_vec((1..=25).map(|x| x as f64).collect(), 5, 5);
-        let original = sink_matrix.clone();
         let source_matrix = MechMatrix::from_vec((1..=36).map(|x| x as f64).collect(), 6, 6);
+        let expected = sink_matrix.clone();
         let sink = Ref::new(Value::MatrixF64(sink_matrix));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
@@ -2270,40 +2263,50 @@ mod live_input_tests {
             other => panic!("expected f64 matrix, got {other:?}"),
         };
 
-        let result = apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix));
-        assert!(format!("{:?}", result.unwrap_err()).contains("StableValueUpdateKindMismatch"));
+        let error =
+            apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix)).unwrap_err();
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
 
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
             Value::MatrixF64(value) => {
                 assert_eq!(inner_pointer, value.addr());
                 assert_eq!(value.shape(), vec![5, 5]);
-                assert_eq!(value, &original);
+                assert_eq!(value, &expected);
             }
             other => panic!("expected f64 matrix, got {other:?}"),
         }
     }
 
-    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[cfg(all(feature = "matrixd", feature = "f64"))]
     #[test]
-    fn stable_value_update_rejects_equal_length_different_shape() {
-        let sink_matrix = MechMatrix::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0], 2, 3);
-        let original = sink_matrix.clone();
-        let source_matrix = MechMatrix::from_vec(vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0], 3, 2);
+    fn stable_value_update_rejects_equal_length_dynamic_shape_change() {
+        let sink_matrix = MechMatrix::DMatrix(Ref::new(crate::na::DMatrix::from_vec(
+            2,
+            3,
+            vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+        )));
+        let source_matrix = MechMatrix::DMatrix(Ref::new(crate::na::DMatrix::from_vec(
+            3,
+            2,
+            vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0],
+        )));
+        let expected = sink_matrix.clone();
         let sink = Ref::new(Value::MatrixF64(sink_matrix));
         let inner_pointer = match &*sink.borrow() {
             Value::MatrixF64(value) => value.addr(),
             other => panic!("expected f64 matrix, got {other:?}"),
         };
 
-        let result = apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix));
-        assert!(format!("{:?}", result.unwrap_err()).contains("StableValueUpdateKindMismatch"));
+        let error =
+            apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix)).unwrap_err();
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
 
         match &*sink.borrow() {
             Value::MatrixF64(value) => {
                 assert_eq!(inner_pointer, value.addr());
                 assert_eq!(value.shape(), vec![2, 3]);
-                assert_eq!(value, &original);
+                assert_eq!(value, &expected);
             }
             other => panic!("expected f64 matrix, got {other:?}"),
         }
@@ -2317,10 +2320,9 @@ mod live_input_tests {
         let result = apply_stable_value_update(sink.clone(), Value::F64(Ref::new(9.0)));
         let rendered = format!("{:?}", result.unwrap_err());
         assert!(
-            rendered.contains("StableValueUpdateUnsupported"),
+            rendered.contains("StableValueUpdateContractViolation"),
             "{rendered}"
         );
-        assert!(rendered.contains("Matrix(F64"), "{rendered}");
     }
 
     #[cfg(all(feature = "matrix", feature = "f64"))]
@@ -2331,41 +2333,168 @@ mod live_input_tests {
         let result = apply_stable_value_update(sink.clone(), Value::MatrixValue(matrix_value));
         let rendered = format!("{:?}", result.unwrap_err());
         assert!(
-            rendered.contains("StableValueUpdateUnsupported"),
+            rendered.contains("StableValueUpdateContractViolation"),
             "{rendered}"
         );
-        assert!(rendered.contains("Matrix(F64"), "{rendered}");
     }
 
     #[cfg(feature = "matrix")]
     #[test]
-    fn stable_value_update_rejects_matrix_index() {
+    fn stable_value_update_preserves_matrix_index_reference() {
         let matrix = MechMatrix::from_vec(vec![1usize, 2, 3, 4], 2, 2);
-        let original = matrix.clone();
         let sink = Ref::new(Value::MatrixIndex(matrix));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
             Value::MatrixIndex(value) => value.addr(),
             other => panic!("expected index matrix, got {other:?}"),
         };
-        let result = apply_stable_value_update(
+        apply_stable_value_update(
             sink.clone(),
             Value::MatrixIndex(MechMatrix::from_vec(vec![5usize, 6, 7, 8], 2, 2)),
-        );
-        let rendered = format!("{:?}", result.unwrap_err());
-        assert!(
-            rendered.contains("StableValueUpdateUnsupported"),
-            "{rendered}"
-        );
+        )
+        .unwrap();
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
             Value::MatrixIndex(value) => {
                 assert_eq!(inner_pointer, value.addr());
                 assert_eq!(value.shape(), vec![2, 2]);
-                assert_eq!(value, &original);
+                assert_eq!(value, &MechMatrix::from_vec(vec![5usize, 6, 7, 8], 2, 2));
             }
             other => panic!("expected index matrix, got {other:?}"),
         }
+    }
+
+    #[cfg(all(
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table",
+        feature = "tuple",
+        feature = "f64",
+        any(feature = "string", feature = "variable_define")
+    ))]
+    #[test]
+    fn stable_value_update_publishes_every_composite_without_replacing_its_cell() {
+        let record = |value| {
+            Value::Record(Ref::new(mech_core::MechRecord::new(vec![(
+                "value",
+                Value::F64(Ref::new(value)),
+            )])))
+        };
+        let map = |value| {
+            Value::Map(Ref::new(mech_core::MechMap::from_typed_vec(
+                ValueKind::String,
+                ValueKind::F64,
+                1,
+                vec![(
+                    Value::String(Ref::new("key".to_owned())),
+                    Value::F64(Ref::new(value)),
+                )],
+            )))
+        };
+        let set = |value| {
+            Value::Set(Ref::new(mech_core::MechSet::from_vec(vec![Value::F64(
+                Ref::new(value),
+            )])))
+        };
+        let table = |value| {
+            Value::Table(Ref::new(
+                mech_core::MechTable::from_records(vec![mech_core::MechRecord::new(vec![(
+                    "value",
+                    Value::F64(Ref::new(value)),
+                )])])
+                .unwrap(),
+            ))
+        };
+        let tuple = |value| {
+            Value::Tuple(Ref::new(mech_core::MechTuple::from_vec(vec![Value::F64(
+                Ref::new(value),
+            )])))
+        };
+        let composite_addr = |value: &Value| match value {
+            Value::Record(value) => value.addr(),
+            Value::Map(value) => value.addr(),
+            Value::Set(value) => value.addr(),
+            Value::Table(value) => value.addr(),
+            Value::Tuple(value) => value.addr(),
+            other => panic!("expected composite, got {other:?}"),
+        };
+        let nested_f64 = |value: &Value| -> Option<Ref<f64>> {
+            let nested = match value {
+                Value::Record(value) => value.borrow().data.values().next().cloned(),
+                Value::Map(value) => value.borrow().map.values().next().cloned(),
+                Value::Table(value) => value
+                    .borrow()
+                    .data
+                    .values()
+                    .next()
+                    .and_then(|(_, values)| values.as_vec().into_iter().next()),
+                Value::Tuple(value) => value
+                    .borrow()
+                    .elements
+                    .first()
+                    .map(|value| value.as_ref().clone()),
+                Value::Set(_) => None,
+                other => panic!("expected composite, got {other:?}"),
+            };
+            nested.map(|value| match value {
+                Value::F64(value) => value,
+                other => panic!("expected nested F64, got {other:?}"),
+            })
+        };
+
+        for (current, incoming) in [
+            (record(1.0), record(2.0)),
+            (map(1.0), map(2.0)),
+            (set(1.0), set(2.0)),
+            (table(1.0), table(2.0)),
+            (tuple(1.0), tuple(2.0)),
+        ] {
+            let expected = incoming.clone();
+            let inner_pointer = composite_addr(&current);
+            let nested = nested_f64(&current);
+            let nested_pointer = nested.as_ref().map(Ref::addr);
+            let sink = Ref::new(current);
+
+            compile_stable_value_update(sink.clone(), incoming)
+                .unwrap()
+                .stage_register()
+                .unwrap()
+                .commit();
+
+            assert_eq!(composite_addr(&sink.borrow()), inner_pointer);
+            assert_eq!(*sink.borrow(), expected);
+            if let Some(nested) = nested {
+                let updated = nested_f64(&sink.borrow()).expect("nested cell must remain present");
+                assert_eq!(Some(updated.addr()), nested_pointer);
+                assert_eq!(updated.addr(), nested.addr());
+                assert_eq!(*nested.borrow(), 2.0);
+            }
+        }
+
+        let shared = Ref::new(1.0);
+        let aliased = Value::Record(Ref::new(mech_core::MechRecord::new(vec![
+            ("left", Value::F64(shared.clone())),
+            ("right", Value::F64(shared.clone())),
+        ])));
+        let distinct = Value::Record(Ref::new(mech_core::MechRecord::new(vec![
+            ("left", Value::F64(Ref::new(2.0))),
+            ("right", Value::F64(Ref::new(3.0))),
+        ])));
+        let aliased = Ref::new(aliased);
+        let error = match compile_stable_value_update(aliased, distinct)
+            .unwrap()
+            .stage_register()
+        {
+            Ok(_) => panic!("aliased structured update unexpectedly staged"),
+            Err(error) => error,
+        };
+        assert!(
+            error
+                .kind_message()
+                .contains("cannot preserve aliased child cell")
+        );
+        assert_eq!(*shared.borrow(), 1.0);
     }
 
     #[test]
@@ -2954,7 +3083,7 @@ mod program_reactive_turn_tests {
                 },
             ])
             .unwrap_err();
-        assert!(format!("{q:?}").contains("StableValueUpdateKindMismatch"));
+        assert!(format!("{q:?}").contains("StableValueUpdateContractViolation"));
         assert_eq!(
             (
                 value(&p, id, "a"),
@@ -3149,8 +3278,6 @@ mod compact_program_reactive_turn_tests {
     }
 
     impl MechFunctionImpl for ProgramTestFunction {
-        fn solve(&self) {}
-
         fn solve_result(&self) -> MResult<()> {
             self.solve_reactive().map(|_| ())
         }
@@ -3318,6 +3445,75 @@ mod compact_program_reactive_turn_tests {
     }
 
     #[test]
+    fn direct_cell_update_preserves_target_and_triggers_reactive_node() {
+        let mut program = test_mech_program(MechProgramConfig::default());
+        let id = program.interpreter().id;
+        let (_, target, inner) = index_input(&mut program, id, "input", 1);
+        let target_address = target.addr();
+        let inner_address = inner.addr();
+        let output = Ref::new(10usize);
+        let order = Rc::new(RefCell::new(Vec::new()));
+        let (function, _, solves) = test_function("direct", output.clone(), id, order);
+        add_reactive(&program, id, function, &inner);
+
+        let mut services = NoMechExecutionServices;
+        let outcome = program
+            .update_cells_and_advance_turn_with_services(
+                &[ProgramCellUpdate {
+                    interpreter_id: id,
+                    target: target.clone(),
+                    value: Value::Index(Ref::new(9)),
+                }],
+                &mut services,
+            )
+            .unwrap();
+
+        assert_eq!(outcome.updated_count, 1);
+        assert_eq!(outcome.interpreter_turns.len(), 1);
+        assert_eq!(
+            (*inner.borrow(), *output.borrow(), *solves.borrow()),
+            (9, 11, 1)
+        );
+        assert_eq!(
+            (target.addr(), inner.addr()),
+            (target_address, inner_address)
+        );
+    }
+
+    #[test]
+    fn direct_cell_update_rolls_back_target_and_output_after_downstream_failure() {
+        let mut program = test_mech_program(MechProgramConfig::default());
+        let id = program.interpreter().id;
+        let (_, target, inner) = index_input(&mut program, id, "input", 1);
+        let target_address = target.addr();
+        let inner_address = inner.addr();
+        let output = Ref::new(10usize);
+        let order = Rc::new(RefCell::new(Vec::new()));
+        let (mut function, _, _) = test_function("direct", output.clone(), id, order);
+        function.fail = true;
+        add_reactive(&program, id, function, &inner);
+
+        let mut services = NoMechExecutionServices;
+        let error = program
+            .update_cells_and_advance_turn_with_services(
+                &[ProgramCellUpdate {
+                    interpreter_id: id,
+                    target: target.clone(),
+                    value: Value::Index(Ref::new(9)),
+                }],
+                &mut services,
+            )
+            .unwrap_err();
+
+        assert!(error.kind_message().contains("deliberate direct failure"));
+        assert_eq!((*inner.borrow(), *output.borrow()), (1, 10));
+        assert_eq!(
+            (target.addr(), inner.addr()),
+            (target_address, inner_address)
+        );
+    }
+
+    #[test]
     fn later_combinational_failure_restores_input_and_earlier_output() {
         let mut program = test_mech_program(MechProgramConfig::default());
         let id = program.interpreter().id;
@@ -3355,7 +3551,9 @@ mod compact_program_reactive_turn_tests {
     }
 
     impl MechFunctionImpl for ProgramRegister {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
         fn out(&self) -> Value {
             Value::Index(self.sink.clone())
         }
@@ -4080,8 +4278,9 @@ mod retained_checkpoint_tests {
     }
 
     impl MechFunctionImpl for RestoreProbe {
-        fn solve(&self) {
+        fn solve_result(&self) -> MResult<()> {
             *self.solve_count.borrow_mut() += 1;
+            Ok(())
         }
         fn out(&self) -> Value {
             Value::F64(self.output.clone())
@@ -4108,7 +4307,9 @@ mod retained_checkpoint_tests {
     struct UnsupportedCheckpointFunction;
 
     impl MechFunctionImpl for UnsupportedCheckpointFunction {
-        fn solve(&self) {}
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
         fn out(&self) -> Value {
             Value::Empty
         }

@@ -6,13 +6,27 @@ use std::sync::{Arc, Mutex};
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
     FunctionCatalog, FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer,
-    MechFunction, MechFunctionImpl, MechSourceCode, ModuleManifestConfig,
+    MResult, MechFunction, MechFunctionImpl, MechSourceCode, ModuleManifestConfig,
     ModuleManifestExportConfig, ModuleManifestExportKind, Ref, Value, hash_str,
 };
 #[cfg(feature = "compiler")]
 use mech_engine::{MechProgram, MechProgramConfig};
 use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::*;
+
+static NEXT_TEMP_ROOT: AtomicU64 = AtomicU64::new(0);
+
+fn unique_temp_root(name: &str) -> std::path::PathBuf {
+    let sequence = NEXT_TEMP_ROOT.fetch_add(1, Ordering::Relaxed);
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    std::env::temp_dir().join(format!(
+        "mech-runtime-module-smoke-{name}-{}-{timestamp}-{sequence}",
+        std::process::id(),
+    ))
+}
 
 fn apply_prepared_effect(effect: PreparedRuntimeEffect) -> mech_core::MResult<()> {
     match effect {
@@ -26,25 +40,13 @@ fn apply_prepared_effect(effect: PreparedRuntimeEffect) -> mech_core::MResult<()
 }
 
 fn temp_root(name: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "mech-runtime-module-smoke-{name}-{}",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    ));
+    let root = unique_temp_root(name);
     std::fs::create_dir_all(&root).unwrap();
     root
 }
 
 fn setup_modules(main_source: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "mech-runtime-module-smoke-{}",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    ));
+    let root = unique_temp_root("modules");
     std::fs::create_dir_all(&root).unwrap();
     std::fs::write(
         root.join("math.mec"),
@@ -55,13 +57,7 @@ fn setup_modules(main_source: &str) -> std::path::PathBuf {
     root
 }
 fn setup_main_only_module(name: &str, main_source: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "mech-runtime-module-smoke-{name}-{}",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    ));
+    let root = unique_temp_root(name);
     std::fs::create_dir_all(&root).unwrap();
     std::fs::write(root.join("main.mec"), main_source).unwrap();
     root
@@ -93,7 +89,9 @@ struct ConstantF64Function {
 }
 
 impl MechFunctionImpl for ConstantF64Function {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
 
     fn out(&self) -> Value {
         Value::F64(self.output.clone())
@@ -178,7 +176,7 @@ enum ModuleTestBinaryFunction {
 }
 
 impl MechFunctionImpl for ModuleTestBinaryFunction {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         match self {
             Self::F64Add { lhs, rhs, out } => {
                 *out.borrow_mut() = *lhs.borrow() + *rhs.borrow();
@@ -201,7 +199,8 @@ impl MechFunctionImpl for ModuleTestBinaryFunction {
             Self::BoolAnd { lhs, rhs, out } => {
                 *out.borrow_mut() = *lhs.borrow() && *rhs.borrow();
             }
-        }
+        };
+        Ok(())
     }
 
     fn out(&self) -> Value {
@@ -483,6 +482,106 @@ fn runtime_context_write_grant(
     runtime_write_grant_for(&subject, resource, path)
 }
 
+#[derive(Clone, Debug)]
+struct ExactTestInputDriver {
+    sources: Vec<RuntimeHostInputSource>,
+    live: bool,
+}
+
+impl RuntimeHostInputDriver for ExactTestInputDriver {
+    fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+        self.sources.iter().any(|candidate| candidate == source)
+    }
+
+    fn attach(&mut self, _ingress: RuntimeIngress) -> mech_core::MResult<()> {
+        Ok(())
+    }
+
+    fn start(&mut self) -> mech_core::MResult<()> {
+        self.live = true;
+        Ok(())
+    }
+
+    fn stop(&mut self) -> mech_core::MResult<()> {
+        self.live = false;
+        Ok(())
+    }
+
+    fn is_live(&self) -> bool {
+        self.live
+    }
+}
+
+#[derive(Debug)]
+struct ExactTestInputFactory {
+    manifest: HostManifestConfig,
+    sources: Vec<RuntimeHostInputSource>,
+}
+
+impl ExactTestInputFactory {
+    fn new(sources: Vec<RuntimeHostInputSource>) -> Self {
+        Self {
+            manifest: HostManifestConfig {
+                provider: "module-smoke-input".to_string(),
+                contexts: vec![HostContextManifest {
+                    name: "events".to_string(),
+                    base_uri_template: "module-smoke-input://{instance}/events".to_string(),
+                    operations: vec!["read".to_string()],
+                }],
+            },
+            sources,
+        }
+    }
+}
+
+impl RuntimeHostFactory for ExactTestInputFactory {
+    fn provider_name(&self) -> &str {
+        "module-smoke-input"
+    }
+
+    fn manifest(&self) -> &HostManifestConfig {
+        &self.manifest
+    }
+
+    fn validate_settings(
+        &self,
+        _instance_name: &str,
+        _settings: &ConfigValue,
+    ) -> mech_core::MResult<()> {
+        Ok(())
+    }
+
+    fn instantiate(
+        &self,
+        instance_name: &str,
+        _settings: &ConfigValue,
+    ) -> mech_core::MResult<RuntimeHostInstallation> {
+        Ok(RuntimeHostInstallation {
+            interface: materialize_host_manifest(instance_name, &self.manifest)?,
+            input_drivers: vec![Box::new(ExactTestInputDriver {
+                sources: self.sources.clone(),
+                live: false,
+            })],
+            resource_providers: Vec::new(),
+        })
+    }
+}
+
+fn with_exact_test_inputs(builder: RuntimeBuilder, sources: &[(&str, &str)]) -> RuntimeBuilder {
+    let sources = sources
+        .iter()
+        .map(|(base_uri, path)| RuntimeHostInputSource::new(*base_uri, *path).unwrap())
+        .collect();
+    builder
+        .host_factory(Box::new(ExactTestInputFactory::new(sources)))
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: "exact".to_string(),
+            provider: "module-smoke-input".to_string(),
+            settings: ConfigValue::Map(Default::default()),
+        })
+}
+
 #[derive(Clone, Debug, Default)]
 struct RecordingCliState {
     env: HashMap<String, String>,
@@ -549,9 +648,11 @@ impl RuntimeHostFactory for RecordingCliHostFactory {
     }
 }
 
-fn runtime_with_recording_cli() -> (MechRuntime, Arc<Mutex<RecordingCliState>>) {
+fn runtime_with_recording_cli_and_inputs(
+    sources: &[(&str, &str)],
+) -> (MechRuntime, Arc<Mutex<RecordingCliState>>) {
     let state = Arc::new(Mutex::new(RecordingCliState::default()));
-    let runtime = runtime_with_module_test_catalog()
+    let builder = runtime_with_module_test_catalog()
         .host_factory(Box::new(RecordingCliHostFactory {
             manifest: mech_host_cli::cli_host_manifest().unwrap(),
             state: state.clone(),
@@ -561,10 +662,18 @@ fn runtime_with_recording_cli() -> (MechRuntime, Arc<Mutex<RecordingCliState>>) 
             name: "cli".to_string(),
             provider: "cli".to_string(),
             settings: ConfigValue::Map(Default::default()),
-        })
-        .build()
-        .unwrap();
+        });
+    let builder = if sources.is_empty() {
+        builder
+    } else {
+        with_exact_test_inputs(builder, sources)
+    };
+    let runtime = builder.build().unwrap();
     (runtime, state)
+}
+
+fn runtime_with_recording_cli() -> (MechRuntime, Arc<Mutex<RecordingCliState>>) {
+    runtime_with_recording_cli_and_inputs(&[])
 }
 
 fn grant_runtime_stdout_line(runtime: &mut MechRuntime) {
@@ -879,9 +988,10 @@ fn retained_root_context_read_creates_live_binding_and_recomputes() {
         "@numbers := docs://numbers{:read(increment)}\noutput := @numbers/increment + 1\noutput\n",
     );
     let provider = docs_provider_with("docs://numbers", "increment", Value::F64(Ref::new(2.0)));
-    let mut runtime = runtime_with_module_test_catalog()
+    let builder = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
-        .in_memory_docs(provider)
+        .in_memory_docs(provider);
+    let mut runtime = with_exact_test_inputs(builder, &[("docs://numbers", "increment")])
         .build()
         .unwrap();
     runtime
@@ -891,8 +1001,9 @@ fn retained_root_context_read_creates_live_binding_and_recomputes() {
             "increment",
         ))
         .unwrap();
+    let mut context = runtime.runtime_context().unwrap();
     let result = runtime
-        .resolve_and_run_root_module("main.mec", module_options())
+        .resolve_and_run_root_module_with_context(&mut context, "main.mec", module_options())
         .unwrap();
     assert_f64(result, 3.0, "root context read initial result");
     assert!(
@@ -3483,12 +3594,17 @@ fn module_host_call_works_inside_isolated_execution() {
         "+> ./math.mec\nok := math/tau > 40\n",
     )
     .unwrap();
+    let invocations = Arc::new(AtomicU64::new(0));
+    let invocation_count = invocations.clone();
     let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .host_function(DeterministicHostFunction::new(
             "demo/value",
             |_context, _arguments| Ok(Value::F64(Ref::new(0.0))),
-            |_context, _arguments| Ok(Value::F64(Ref::new(42.0))),
+            move |_context, _arguments| {
+                invocation_count.fetch_add(1, Ordering::SeqCst);
+                Ok(Value::F64(Ref::new(42.0)))
+            },
         ))
         .unwrap()
         .build()
@@ -3516,6 +3632,11 @@ fn module_host_call_works_inside_isolated_execution() {
         Value::Bool(v) => assert!(*v.borrow()),
         other => panic!("expected bool got {:?}", other),
     }
+    assert_eq!(
+        invocations.load(Ordering::SeqCst),
+        1,
+        "isolated source execution must invoke the host exactly once",
+    );
 }
 
 #[test]
@@ -5131,6 +5252,7 @@ fn with_test_cli<B: CliBackend + Clone + 'static>(
 #[test]
 fn with_test_cli_registers_cli_provider_for_instance_bases() {
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/test-home");
+    let calls = backend.calls.clone();
 
     let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
@@ -5145,6 +5267,7 @@ fn with_test_cli_registers_cli_provider_for_instance_bases() {
         .unwrap();
 
     assert_string_value(result, "/tmp/test-home");
+    assert_eq!(&*calls.lock().unwrap(), &["env:HOME".to_string()]);
 }
 
 #[test]
@@ -5430,6 +5553,7 @@ fn cli_stdout_missing_write_grant_fails_before_backend() {
 #[test]
 fn cli_host_env_manifest_import_reads_with_runtime_grant() {
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/mech-home");
+    let calls = backend.calls.clone();
     let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
@@ -5444,6 +5568,7 @@ fn cli_host_env_manifest_import_reads_with_runtime_grant() {
         Value::String(value) => assert_eq!(&*value.borrow(), "/tmp/mech-home"),
         other => panic!("expected string home, got {other:?}"),
     }
+    assert_eq!(&*calls.lock().unwrap(), &["env:HOME".to_string()]);
 }
 
 #[test]
@@ -5905,7 +6030,10 @@ event := \"x\"
 
 #[test]
 fn activation_arm_context_read_pattern_is_lowered_when_allowed() {
-    let (mut runtime, state) = runtime_with_recording_cli();
+    let (mut runtime, state) = runtime_with_recording_cli_and_inputs(&[
+        ("cli://env", "MECH_ACTIVATION_PATTERN"),
+        ("cli://env", "MECH_ACTIVATION_EVENT"),
+    ]);
     state.lock().unwrap().env.insert(
         "MECH_ACTIVATION_PATTERN".to_string(),
         "expected".to_string(),
@@ -6073,7 +6201,7 @@ fn match_arm_context_read_pattern_compares_value_when_allowed() {
         ))
         .unwrap();
 
-    let matching = runtime
+    runtime
         .run_string(
             "@env := cli://env{:read(MECH_MATCH_PATTERN)}
 result := \"expected\"?
@@ -6084,16 +6212,7 @@ result
         )
         .unwrap();
 
-    let matching = match matching.into_value() {
-        Value::MutableReference(value) => value.borrow().clone(),
-        other => other,
-    };
-    assert_bool_true(
-        matching,
-        "match arm context read pattern should match equal value",
-    );
-
-    let mismatching = runtime
+    runtime
         .run_string(
             "@env := cli://env{:read(MECH_MATCH_PATTERN)}
 mismatch := \"other\"?
@@ -6104,16 +6223,7 @@ mismatch
         )
         .unwrap();
 
-    let mismatching = match mismatching.into_value() {
-        Value::MutableReference(value) => value.borrow().clone(),
-        other => other,
-    };
-    assert_bool_false(
-        mismatching,
-        "match arm context read pattern should not bind mismatched value",
-    );
-
-    let wrapped_matching = runtime
+    runtime
         .run_string(
             "@env := cli://env{:read(MECH_MATCH_PATTERN)}
 wrapped := \"expected\"?
@@ -6124,16 +6234,7 @@ wrapped
         )
         .unwrap();
 
-    let wrapped_matching = match wrapped_matching.into_value() {
-        Value::MutableReference(value) => value.borrow().clone(),
-        other => other,
-    };
-    assert_bool_true(
-        wrapped_matching,
-        "wrapped match arm context read pattern should match equal value",
-    );
-
-    let wrapped_mismatching = runtime
+    runtime
         .run_string(
             "@env := cli://env{:read(MECH_MATCH_PATTERN)}
 wrappedMismatch := \"other\"?
@@ -6144,17 +6245,28 @@ wrappedMismatch
         )
         .unwrap();
 
-    let wrapped_mismatching = match wrapped_mismatching.into_value() {
-        Value::MutableReference(value) => value.borrow().clone(),
-        other => other,
-    };
+    assert_bool_true(
+        runtime.root_symbol_value("result").unwrap(),
+        "match arm context read pattern should match the equal value",
+    );
     assert_bool_false(
-        wrapped_mismatching,
-        "wrapped match arm context read pattern should not bind mismatched value",
+        runtime.root_symbol_value("mismatch").unwrap(),
+        "match arm context read pattern should not bind a mismatched value",
+    );
+    assert_bool_true(
+        runtime.root_symbol_value("wrapped").unwrap(),
+        "wrapped match arm context read pattern should match the equal value",
+    );
+    assert_bool_false(
+        runtime.root_symbol_value("wrappedMismatch").unwrap(),
+        "wrapped match arm context read pattern should not bind a mismatched value",
     );
 
+    let bool_provider = InMemoryDocsProvider::new()
+        .with_value("docs://manual", "flag", Value::Bool(Ref::new(false)))
+        .unwrap();
     let mut bool_runtime = runtime_with_module_test_catalog()
-        .in_memory_docs(InMemoryDocsProvider::new())
+        .in_memory_docs(bool_provider)
         .build()
         .unwrap();
 
@@ -6295,6 +6407,7 @@ fn module_preflight_denial_emits_program_failed_event() {
 #[test]
 fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/direct-home");
+    let calls = backend.calls.clone();
     let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
@@ -6312,6 +6425,7 @@ fn cli_host_direct_env_declaration_reads_with_runtime_grant() {
         .unwrap();
     let value = runtime.root_symbol_value("home").unwrap();
     assert_string_value(value, "/tmp/direct-home");
+    assert_eq!(&*calls.lock().unwrap(), &["env:HOME".to_string()]);
 }
 
 #[test]
@@ -6398,6 +6512,7 @@ fn cli_host_stdout_read_errors() {
 fn cli_context_module_read_exports_value() {
     let root = setup_modules("+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n");
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/module-home");
+    let calls = backend.calls.clone();
     let mut runtime = with_test_cli(
         runtime_with_module_test_catalog().source_resolver(FileSourceResolver::new(&root)),
         backend,
@@ -6420,6 +6535,7 @@ fn cli_context_module_read_exports_value() {
         Value::String(value) => assert_eq!(&*value.borrow(), "/tmp/module-home"),
         other => panic!("expected string home, got {other:?}"),
     }
+    assert_eq!(&*calls.lock().unwrap(), &["env:HOME".to_string()]);
 }
 
 #[test]
@@ -6446,7 +6562,6 @@ fn cli_context_module_send_is_not_stripped() {
         .unwrap();
     runtime.run_module(version).unwrap().result.into_value();
     assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
-    assert_eq!(runtime.persistent_send_count(), 0);
 }
 
 #[derive(Debug, Clone)]
@@ -6557,20 +6672,11 @@ impl RuntimeResourceProvider for RecordingResourceProvider {
     }
 
     fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
-        self.values
-            .lock()
-            .unwrap()
-            .get(&format!("{}|{}", request.base_uri, request.path))
-            .cloned()
-            .ok_or_else(|| {
-                mech_core::MechError::new(
-                    RuntimeResourcePathNotFound {
-                        base_uri: request.base_uri,
-                        path: request.path,
-                    },
-                    None,
-                )
-            })
+        self.planned_value(request)
+    }
+
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+        self.planned_value(request)
     }
 
     fn prepare_write(
@@ -6592,6 +6698,25 @@ impl RuntimeResourceProvider for RecordingResourceProvider {
     }
 }
 
+impl RecordingResourceProvider {
+    fn planned_value(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+        self.values
+            .lock()
+            .unwrap()
+            .get(&format!("{}|{}", request.base_uri, request.path))
+            .cloned()
+            .ok_or_else(|| {
+                mech_core::MechError::new(
+                    RuntimeResourcePathNotFound {
+                        base_uri: request.base_uri,
+                        path: request.path,
+                    },
+                    None,
+                )
+            })
+    }
+}
+
 fn assert_string_value(value: impl IntoTestValue, expected: &str) {
     let value = match value.into_test_value() {
         Value::MutableReference(value) => value.borrow().clone(),
@@ -6606,6 +6731,7 @@ fn assert_string_value(value: impl IntoTestValue, expected: &str) {
 #[test]
 fn cli_context_direct_read_resolves_inside_formula_expression() {
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+    let calls = backend.calls.clone();
     let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
@@ -6617,11 +6743,13 @@ fn cli_context_direct_read_resolves_inside_formula_expression() {
         .unwrap();
     let value = runtime.root_symbol_value("msg").unwrap();
     assert_string_value(value, "HOME=/tmp/home");
+    assert_eq!(&*calls.lock().unwrap(), &["env:HOME".to_string()]);
 }
 
 #[test]
 fn cli_context_standalone_expression_returns_env_value() {
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/home");
+    let calls = backend.calls.clone();
     let mut runtime = with_test_cli(RuntimeBuilder::new(), backend)
         .build()
         .unwrap();
@@ -6633,6 +6761,7 @@ fn cli_context_standalone_expression_returns_env_value() {
         .unwrap()
         .into_value();
     assert_string_value(value, "/tmp/home");
+    assert_eq!(&*calls.lock().unwrap(), &["env:HOME".to_string()]);
 }
 
 #[test]
@@ -6832,6 +6961,7 @@ fn context_write_does_not_accept_grant_for_default_subject_when_context_subject_
 #[test]
 fn unqualified_fenced_context_import_is_available_to_program_execution() {
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/fenced-home");
+    let calls = backend.calls.clone();
     let mut runtime = with_test_cli(runtime_with_module_test_catalog(), backend)
         .build()
         .unwrap();
@@ -6857,6 +6987,7 @@ home := @env/HOME
 
     let value = runtime.root_symbol_value("home").unwrap();
     assert_string_value(value, "/tmp/fenced-home");
+    assert_eq!(&*calls.lock().unwrap(), &["env:HOME".to_string()]);
 }
 
 #[test]
@@ -6894,7 +7025,6 @@ fn named_fenced_context_import_write_uses_context_registry() {
         .unwrap();
 
     assert_eq!(stdout.lock().unwrap().as_slice(), &["hello\n".to_string()]);
-    assert_eq!(runtime.persistent_send_count(), 0);
 }
 
 #[test]
@@ -6902,6 +7032,7 @@ fn named_fenced_context_import_read_exports_value() {
     let root =
         setup_modules("~~~mech:bar\n+> @env := cli/env\nhome := @env/HOME\n<+ home\nhome\n~~~\n");
     let backend = FakeCliBackend::default().with_env("HOME", "/tmp/named-fence-home");
+    let calls = backend.calls.clone();
     let mut runtime = with_test_cli(
         runtime_with_module_test_catalog().source_resolver(FileSourceResolver::new(&root)),
         backend,
@@ -6928,6 +7059,7 @@ fn named_fenced_context_import_read_exports_value() {
         .unwrap();
 
     assert_string_value(result, "/tmp/named-fence-home");
+    assert_eq!(&*calls.lock().unwrap(), &["env:HOME".to_string()]);
 }
 
 #[test]
@@ -6935,7 +7067,12 @@ fn module_context_read_after_context_write_uses_execution_order() {
     let root = setup_modules(
         "@manual := docs://manual{:read(intro/title), :write(intro/title)}\n@manual/intro/title = \"hello\"\nresult := @manual/intro/title\n<+ result\nresult\n",
     );
-    let provider = RecordingResourceProvider::new("docs", &["docs://manual"]);
+    let provider = RecordingResourceProvider::new("docs", &["docs://manual"]).with_value(
+        "docs://manual",
+        "intro/title",
+        Value::String(Ref::new("planned".to_string())),
+    );
+    let writes = provider.writes.clone();
     let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .resource_provider(Box::new(provider))
@@ -6964,6 +7101,9 @@ fn module_context_read_after_context_write_uses_execution_order() {
     let result = runtime.run_module(version).unwrap().result.into_value();
 
     assert_string_value(result, "hello");
+    let writes = writes.lock().unwrap();
+    assert_eq!(writes.len(), 1);
+    assert_string_value(writes[0].2.clone(), "hello");
 }
 
 #[test]
@@ -6976,6 +7116,7 @@ fn module_context_read_after_context_write_ignores_stale_provider_value() {
         "intro/title",
         Value::String(Ref::new("old".to_string())),
     );
+    let writes = provider.writes.clone();
     let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .resource_provider(Box::new(provider))
@@ -7004,6 +7145,9 @@ fn module_context_read_after_context_write_ignores_stale_provider_value() {
     let result = runtime.run_module(version).unwrap().result.into_value();
 
     assert_string_value(result, "new");
+    let writes = writes.lock().unwrap();
+    assert_eq!(writes.len(), 1);
+    assert_string_value(writes[0].2.clone(), "new");
 }
 
 #[test]
@@ -7111,6 +7255,7 @@ fn context_resource_aliases_share_staged_read_your_writes_identity() {
             path,
             Value::String(Ref::new("stale".to_string())),
         );
+    let writes = provider.writes.clone();
     let mut runtime = runtime_with_module_test_catalog()
         .resource_provider(Box::new(provider))
         .build()
@@ -7135,6 +7280,10 @@ fn context_resource_aliases_share_staged_read_your_writes_identity() {
     .unwrap();
 
     assert_string_value(result, "new");
+    let writes = writes.lock().unwrap();
+    assert_eq!(writes.len(), 1);
+    assert_eq!(writes[0].0, alias);
+    assert_string_value(writes[0].2.clone(), "new");
 }
 
 #[test]
@@ -7552,8 +7701,12 @@ fn context_assignment_inside_function_body_fails_runtime_preflight() {
 }
 #[test]
 fn top_level_context_assignment_still_writes_and_reads() {
+    let provider = InMemoryDocsProvider::new()
+        .with_value("docs://manual", "intro/title", Value::Bool(Ref::new(false)))
+        .unwrap();
+    let inspection = provider.clone();
     let mut runtime = runtime_with_module_test_catalog()
-        .in_memory_docs(InMemoryDocsProvider::new())
+        .in_memory_docs(provider)
         .build()
         .unwrap();
 
@@ -7577,6 +7730,14 @@ fn top_level_context_assignment_still_writes_and_reads() {
   ).unwrap();
 
     assert_bool_true(result, "top-level context assignment");
+    let written = inspection
+        .read(RuntimeResourceReadRequest {
+            base_uri: "docs://manual".to_string(),
+            path: "intro/title".to_string(),
+            context_name: "manual".to_string(),
+        })
+        .unwrap();
+    assert_bool_true(written, "top-level context assignment provider write");
 }
 
 #[test]

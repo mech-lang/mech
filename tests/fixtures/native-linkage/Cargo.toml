@@ -1,0 +1,335 @@
+[package]
+name = "native-linkage-fixture"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[features]
+default = []
+standard = [
+  "dep:mech-core",
+  "dep:mech-stdlib",
+  "dep:serde",
+  "dep:serde_json",
+  "mech-stdlib/native-plan",
+  "mech-stdlib/standard_runtime",
+]
+representatives = [
+  "dep:mech-core",
+  "dep:mech-engine",
+  "dep:mech-math",
+  "dep:serde",
+  "dep:serde_json",
+  "mech-core/native-plan",
+  "mech-engine/bool",
+  "mech-engine/f64",
+  "mech-engine/matrix2",
+  "mech-engine/matrix_horzcat",
+  "mech-engine/matrix_vertcat",
+  "mech-engine/matrixd",
+  "mech-engine/native-plan",
+  "mech-engine/row_vector2",
+  "mech-engine/row_vectord",
+  "mech-engine/string",
+  "mech-engine/variable_define",
+  "mech-engine/vector2",
+  "mech-engine/vectord",
+  "mech-math/add",
+  "mech-math/f64",
+  "mech-math/matrix2",
+  "mech-math/matrixd",
+  "mech-math/native-plan",
+]
+extended-engine = [
+  "dep:mech-core", "dep:mech-engine", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-engine/native-plan", "mech-engine/stdlib",
+]
+# CI partitions the exhaustive engine surface by scalar kind so no single
+# hosted runner must monomorphize every matrix assignment and access factory.
+# Their deterministic union is checked against the same frozen full-surface
+# digest as `extended-engine`.
+extended-engine-shard = [
+  "dep:mech-core", "dep:mech-engine", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-engine/native-plan",
+  "mech-engine/bool", "mech-engine/string",
+  "mech-engine/set", "mech-engine/map", "mech-engine/table",
+  "mech-engine/tuple", "mech-engine/record", "mech-engine/atom", "mech-engine/enum",
+  "mech-engine/matrix1", "mech-engine/matrix2", "mech-engine/matrix3", "mech-engine/matrix4",
+  "mech-engine/matrix2x3", "mech-engine/matrix3x2",
+  "mech-engine/row_vector2", "mech-engine/row_vector3", "mech-engine/row_vector4",
+  "mech-engine/vector2", "mech-engine/vector3", "mech-engine/vector4",
+  "mech-engine/row_vectord", "mech-engine/vectord", "mech-engine/matrixd",
+  "mech-engine/subscript_range", "mech-engine/logical_indexing",
+  "mech-engine/swizzle", "mech-engine/subscript_formula", "mech-engine/dot_indexing",
+  "mech-engine/variable_define", "mech-engine/variable_assign", "mech-engine/kind_define",
+  "mech-engine/kind_annotation", "mech-engine/variables", "mech-engine/functions",
+  "mech-engine/formulas", "mech-engine/access", "mech-engine/assign", "mech-engine/convert",
+]
+extended-engine-shard-unsigned = [
+  "extended-engine-shard",
+  "mech-engine/invariant_define",
+  "mech-engine/u8", "mech-engine/u16", "mech-engine/u32", "mech-engine/u64", "mech-engine/u128",
+]
+extended-engine-shard-signed = [
+  "extended-engine-shard",
+  "mech-engine/i8", "mech-engine/i16", "mech-engine/i32", "mech-engine/i64", "mech-engine/i128",
+]
+extended-engine-shard-float = [
+  "extended-engine-shard",
+  "mech-engine/f32", "mech-engine/f64", "mech-engine/c64", "mech-engine/r64",
+]
+extended-engine-shard-convert = [
+  "dep:mech-core", "dep:mech-engine", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-engine/native-plan", "mech-engine/convert",
+  "mech-engine/bool",
+  "mech-engine/u8", "mech-engine/u16", "mech-engine/u32", "mech-engine/u64", "mech-engine/u128",
+  "mech-engine/i8", "mech-engine/i16", "mech-engine/i32", "mech-engine/i64", "mech-engine/i128",
+  "mech-engine/f32", "mech-engine/f64", "mech-engine/c64", "mech-engine/r64",
+]
+extended-math = [
+  "dep:mech-core", "dep:mech-math", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-math/native-plan", "mech-math/runtime_default",
+]
+extended-compare = [
+  "dep:mech-core", "dep:mech-compare", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-compare/native-plan", "mech-compare/runtime_default",
+]
+extended-logic = [
+  "dep:mech-core", "dep:mech-logic", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-logic/native-plan", "mech-logic/runtime_default",
+]
+extended-range = [
+  "dep:mech-core", "dep:mech-range", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-range/native-plan", "mech-range/runtime_default",
+]
+extended-matrix = [
+  "dep:mech-core", "dep:mech-matrix", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-matrix/native-plan", "mech-matrix/runtime_default",
+]
+extended-set = [
+  "dep:mech-core", "dep:mech-set", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-set/native-plan", "mech-set/runtime_default",
+]
+extended-string = [
+  "dep:mech-core", "dep:mech-string", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-string/native-plan", "mech-string/runtime_default",
+]
+extended-stats = [
+  "dep:mech-core", "dep:mech-stats", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-stats/native-plan", "mech-stats/runtime_default",
+]
+extended-combinatorics = [
+  "dep:mech-core", "dep:mech-combinatorics", "dep:serde", "dep:serde_json",
+  "mech-core/native-plan", "mech-combinatorics/native-plan", "mech-combinatorics/runtime_default",
+]
+# The runtime and native-plan profiles intentionally compile independently so
+# the coverage checker can compare their exact ID/name surfaces.  The
+# native-link profiles additionally prove every owner's hidden installer module
+# is usable without activating `native-plan`.
+extended-engine-runtime = [
+  "dep:mech-core", "dep:mech-engine", "dep:serde", "dep:serde_json",
+  "mech-engine/stdlib",
+]
+extended-engine-native-link = ["extended-engine-runtime", "mech-engine/native-link"]
+extended-math-runtime = [
+  "dep:mech-core", "dep:mech-math", "dep:serde", "dep:serde_json",
+  "mech-math/runtime_default",
+]
+extended-math-native-link = ["extended-math-runtime", "mech-math/native-link"]
+extended-compare-runtime = [
+  "dep:mech-core", "dep:mech-compare", "dep:serde", "dep:serde_json",
+  "mech-compare/runtime_default",
+]
+extended-compare-native-link = ["extended-compare-runtime", "mech-compare/native-link"]
+extended-logic-runtime = [
+  "dep:mech-core", "dep:mech-logic", "dep:serde", "dep:serde_json",
+  "mech-logic/runtime_default",
+]
+extended-logic-native-link = ["extended-logic-runtime", "mech-logic/native-link"]
+extended-range-runtime = [
+  "dep:mech-core", "dep:mech-range", "dep:serde", "dep:serde_json",
+  "mech-range/runtime_default",
+]
+extended-range-native-link = ["extended-range-runtime", "mech-range/native-link"]
+extended-matrix-runtime = [
+  "dep:mech-core", "dep:mech-matrix", "dep:serde", "dep:serde_json",
+  "mech-matrix/runtime_default",
+]
+extended-matrix-native-link = ["extended-matrix-runtime", "mech-matrix/native-link"]
+extended-set-runtime = [
+  "dep:mech-core", "dep:mech-set", "dep:serde", "dep:serde_json",
+  "mech-set/runtime_default",
+]
+extended-set-native-link = ["extended-set-runtime", "mech-set/native-link"]
+extended-string-runtime = [
+  "dep:mech-core", "dep:mech-string", "dep:serde", "dep:serde_json",
+  "mech-string/runtime_default",
+]
+extended-string-native-link = ["extended-string-runtime", "mech-string/native-link"]
+extended-stats-runtime = [
+  "dep:mech-core", "dep:mech-stats", "dep:serde", "dep:serde_json",
+  "mech-stats/runtime_default",
+]
+extended-stats-native-link = ["extended-stats-runtime", "mech-stats/native-link"]
+extended-combinatorics-runtime = [
+  "dep:mech-core", "dep:mech-combinatorics", "dep:serde", "dep:serde_json",
+  "mech-combinatorics/runtime_default",
+]
+extended-combinatorics-native-link = ["extended-combinatorics-runtime", "mech-combinatorics/native-link"]
+installer-profile = []
+installer-variable-define-f64 = [
+  "installer-profile",
+  "dep:mech-core",
+  "dep:mech-engine",
+  "mech-engine/bool",
+  "mech-engine/f64",
+  "mech-engine/native-link",
+  "mech-engine/runtime",
+  "mech-engine/string",
+  "mech-engine/variable_define",
+]
+installer-horizontal-concatenate-rdn-f64 = [
+  "installer-profile",
+  "dep:mech-core",
+  "dep:mech-engine",
+  "mech-engine/bool",
+  "mech-engine/f64",
+  "mech-engine/matrix_horzcat",
+  "mech-engine/matrixd",
+  "mech-engine/native-link",
+  "mech-engine/row_vectord",
+  "mech-engine/runtime",
+  "mech-engine/vectord",
+]
+installer-horizontal-concatenate-s2-f64 = [
+  "installer-profile",
+  "dep:mech-core",
+  "dep:mech-engine",
+  "mech-engine/bool",
+  "mech-engine/f64",
+  "mech-engine/matrix_horzcat",
+  "mech-engine/native-link",
+  "mech-engine/row_vector2",
+  "mech-engine/runtime",
+  "mech-engine/vector2",
+]
+installer-vertical-concatenate-r2-r2-f64 = [
+  "installer-profile",
+  "dep:mech-core",
+  "dep:mech-engine",
+  "mech-engine/bool",
+  "mech-engine/f64",
+  "mech-engine/matrix2",
+  "mech-engine/matrix_vertcat",
+  "mech-engine/native-link",
+  "mech-engine/row_vector2",
+  "mech-engine/runtime",
+  "mech-engine/vector2",
+]
+installer-vertical-concatenate-n-args-f64 = [
+  "installer-profile",
+  "dep:mech-core",
+  "dep:mech-engine",
+  "mech-engine/bool",
+  "mech-engine/f64",
+  "mech-engine/matrix_vertcat",
+  "mech-engine/matrixd",
+  "mech-engine/native-link",
+  "mech-engine/row_vectord",
+  "mech-engine/runtime",
+  "mech-engine/vectord",
+]
+installer-add-ss-f64 = [
+  "installer-profile",
+  "dep:mech-core",
+  "dep:mech-math",
+  "mech-math/add",
+  "mech-math/f64",
+  "mech-math/native-link",
+  "mech-math/runtime",
+]
+installer-add-m2m2-f64 = [
+  "installer-profile",
+  "dep:mech-core",
+  "dep:mech-math",
+  "mech-math/add",
+  "mech-math/f64",
+  "mech-math/matrix2",
+  "mech-math/native-link",
+  "mech-math/runtime",
+]
+installer-add-mdmd-f64 = [
+  "installer-profile",
+  "dep:mech-core",
+  "dep:mech-math",
+  "mech-math/add",
+  "mech-math/f64",
+  "mech-math/matrixd",
+  "mech-math/native-link",
+  "mech-math/runtime",
+]
+installers = [
+  "installer-variable-define-f64",
+  "installer-horizontal-concatenate-rdn-f64",
+  "installer-horizontal-concatenate-s2-f64",
+  "installer-vertical-concatenate-n-args-f64",
+  "installer-vertical-concatenate-r2-r2-f64",
+  "installer-add-ss-f64",
+  "installer-add-m2m2-f64",
+  "installer-add-mdmd-f64",
+]
+owner-native-link = [
+  "dep:mech-combinatorics",
+  "dep:mech-compare",
+  "dep:mech-engine",
+  "dep:mech-logic",
+  "dep:mech-math",
+  "dep:mech-matrix",
+  "dep:mech-range",
+  "dep:mech-set",
+  "dep:mech-stats",
+  "dep:mech-string",
+  "mech-combinatorics/native-link",
+  "mech-compare/native-link",
+  "mech-engine/native-link",
+  "mech-logic/native-link",
+  "mech-math/native-link",
+  "mech-matrix/native-link",
+  "mech-range/native-link",
+  "mech-set/native-link",
+  "mech-stats/native-link",
+  "mech-string/native-link",
+]
+
+[dependencies]
+mech-combinatorics = { path = "../../../machines/combinatorics", default-features = false, optional = true }
+mech-compare = { path = "../../../machines/compare", default-features = false, optional = true }
+mech-core = { path = "../../../src/core", default-features = false, optional = true }
+mech-engine = { path = "../../../src/engine", default-features = false, optional = true }
+mech-logic = { path = "../../../machines/logic", default-features = false, optional = true }
+mech-math = { path = "../../../machines/math", default-features = false, optional = true }
+mech-matrix = { path = "../../../machines/matrix", default-features = false, optional = true }
+mech-range = { path = "../../../machines/range", default-features = false, optional = true }
+mech-set = { path = "../../../machines/set", default-features = false, optional = true }
+mech-stats = { path = "../../../machines/stats", default-features = false, optional = true }
+mech-stdlib = { path = "../../../src/stdlib", default-features = false, optional = true }
+mech-string = { path = "../../../machines/string", default-features = false, optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+
+[patch.crates-io]
+mech-core = { path = "../../../src/core" }
+mech-syntax = { path = "../../../src/syntax" }
+mech-engine = { path = "../../../src/engine" }
+mech-stdlib = { path = "../../../src/stdlib" }
+mech-math = { path = "../../../machines/math" }
+mech-compare = { path = "../../../machines/compare" }
+mech-logic = { path = "../../../machines/logic" }
+mech-range = { path = "../../../machines/range" }
+mech-matrix = { path = "../../../machines/matrix" }
+mech-set = { path = "../../../machines/set" }
+mech-string = { path = "../../../machines/string" }
+mech-stats = { path = "../../../machines/stats" }
+mech-combinatorics = { path = "../../../machines/combinatorics" }
+
+[workspace]

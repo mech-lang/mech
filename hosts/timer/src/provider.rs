@@ -48,6 +48,16 @@ impl RuntimeResourceProvider for TimerResourceProvider {
         vec![self.base_uri()]
     }
 
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        if request.base_uri != self.base_uri() {
+            return Err(timer_error(
+                "TimerResourceProvider",
+                format!("unknown timer resource `{}`", request.base_uri),
+            ));
+        }
+        Self::value_for(TimerSnapshot::default(), &request.path)
+    }
+
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
         if request.base_uri != self.base_uri() {
             return Err(timer_error(
@@ -60,5 +70,78 @@ impl RuntimeResourceProvider for TimerResourceProvider {
             .lock()
             .map_err(|_| timer_error("TimerResourceProvider", "timer snapshot lock is poisoned"))?;
         Self::value_for(snapshot, &request.path)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{TIMER_PATHS, new_shared_snapshot};
+
+    fn request(base_uri: &str, path: &str) -> RuntimeResourceReadRequest {
+        RuntimeResourceReadRequest {
+            base_uri: base_uri.to_owned(),
+            path: path.to_owned(),
+            context_name: "tick".to_owned(),
+        }
+    }
+
+    fn f64_value(value: Value) -> f64 {
+        match value {
+            Value::F64(value) => *value.borrow(),
+            value => panic!("expected F64, got {value:?}"),
+        }
+    }
+
+    #[test]
+    fn planning_returns_zero_for_every_timer_path_without_reading_snapshot() {
+        let snapshot = new_shared_snapshot(TimerSnapshot::new(9, 20, 3));
+        let poison = snapshot.clone();
+        let _ = std::thread::spawn(move || {
+            let _guard = poison.lock().unwrap();
+            panic!("poison planning snapshot");
+        })
+        .join();
+        let provider = TimerResourceProvider::new("timer", snapshot);
+
+        for path in TIMER_PATHS {
+            assert_eq!(
+                f64_value(
+                    provider
+                        .plan_read(request("timer://timer/tick", path))
+                        .unwrap(),
+                ),
+                0.0,
+            );
+        }
+    }
+
+    #[test]
+    fn planning_validates_exact_timer_base_and_path() {
+        let provider = TimerResourceProvider::new("timer", new_shared_snapshot(Default::default()));
+        assert!(
+            provider
+                .plan_read(request("timer://other/tick", "tick"))
+                .is_err()
+        );
+        assert!(
+            provider
+                .plan_read(request("timer://timer/tick", "ticks"))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn execute_reads_the_real_snapshot() {
+        let provider =
+            TimerResourceProvider::new("timer", new_shared_snapshot(TimerSnapshot::new(9, 20, 3)));
+        assert_eq!(
+            f64_value(
+                provider
+                    .read(request("timer://timer/tick", "tick"))
+                    .unwrap(),
+            ),
+            9.0,
+        );
     }
 }

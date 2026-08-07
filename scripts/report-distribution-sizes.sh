@@ -81,7 +81,7 @@ PY
 }
 
 selected_manifest="$repository_root/tests/fixtures/bytecode-runtime-consumer/Cargo.toml"
-runtime_manifest="$repository_root/tests/fixtures/function-system-bytecode-consumer/Cargo.toml"
+runtime_manifest="$repository_root/tests/fixtures/standard-bytecode-runtime/Cargo.toml"
 source_manifest="$repository_root/tests/fixtures/standard-source-runtime/Cargo.toml"
 compiler_manifest="$repository_root/tests/fixtures/bytecode-compiler-producer/Cargo.toml"
 host_target=$(rustc +nightly-2026-03-03 -vV | sed -n 's/^host: //p')
@@ -128,7 +128,7 @@ then
 fi
 
 selected_artifact="$build_target/release/bytecode-runtime-consumer"
-runtime_artifact="$build_target/release/function-system-bytecode-consumer"
+runtime_artifact="$build_target/release/standard-bytecode-runtime"
 source_artifact="$build_target/release/standard-source-runtime"
 compiler_artifact="$build_target/release/bytecode-compiler-producer"
 wasm_artifact="$build_target/wasm32-unknown-unknown/release/mech_wasm.wasm"

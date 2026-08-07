@@ -1,0 +1,4 @@
+@frame := scene://scene/frame{:write(replace)}
+frame := {width: 640.0, height: 480.0, background: "black"}
+@frame/replace <- frame
+"scene-done"

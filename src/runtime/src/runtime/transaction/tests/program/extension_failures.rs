@@ -1,14 +1,16 @@
+use super::support::invoke_host_callback;
 use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
-    CapabilityId, MechRuntime, PlannedRuntimeManagedHostFunction, RuntimeInvalidOperationError,
+    CapabilityId, PlannedRuntimeManagedHostFunction, RuntimeInvalidOperationError,
     RuntimeValueSnapshot,
 };
-use mech_core::MechError;
+use mech_core::{MResult, MechError, MechSourceCode};
 use std::sync::Arc;
 
 #[test]
 fn host_callback_failure_cannot_escape_execution_session() {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = test_runtime_builder()
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "demo/reenter",
             |_context, _args| Ok(RuntimeValueSnapshot::empty()),
@@ -36,9 +38,18 @@ fn host_callback_failure_cannot_escape_execution_session() {
         .unwrap();
     let mut context = runtime.runtime_context().unwrap();
 
-    let outer_error = runtime
-        .run_string_with_context(&mut context, "reentrant-result := demo/reenter()")
-        .unwrap_err();
+    let operation: MResult<()> = runtime.with_atomic_program_operation(
+        &mut context,
+        "host_callback_failure_test",
+        |runtime, context| {
+            runtime.program.run_source(&MechSourceCode::String(
+                "reentrant-result := 0.0".to_string(),
+            ))?;
+            invoke_host_callback(runtime, context, "demo/reenter")?;
+            Ok(())
+        },
+    );
+    let outer_error = operation.unwrap_err();
 
     assert_eq!(outer_error.kind_name(), "RuntimeInvalidOperation");
     assert!(

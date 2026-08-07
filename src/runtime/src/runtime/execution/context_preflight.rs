@@ -1,25 +1,24 @@
-use super::{ACTIVATION_EFFECT_BARRIER_NAME, ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME};
 use crate::capability::CapabilityRequest;
 use crate::context::{
     RuntimeContext, RuntimeContextBase, RuntimeContextBinding, RuntimeContextCapabilityScope,
     RuntimeContextRegistry,
 };
 use crate::resolver::{SourceImportAlias, SourceScope};
-use crate::runtime::live_state::{
-    LiveRegistrationMode, RuntimePersistentSend, RuntimePersistentSendSchedule,
+use crate::runtime::external::{
+    RuntimeResourceInitialValue, RuntimeResourceReadSpecializer, RuntimeResourceWriteSpecializer,
 };
-use crate::runtime::{
-    ActivationScopeEffectWithRegisterUnsupported, MechRuntime,
-    RuntimeActivationEffectBarrierInvariantError, RuntimeInvalidOperationError,
-    RuntimeIsolatedActivationSendUnsupported,
-};
+use crate::runtime::{MechRuntime, RuntimeExecutionMode, RuntimeInvalidOperationError};
 use crate::{
     RuntimeCapabilityOperation, RuntimeResourceCapabilityDenied, RuntimeResourceKey,
     RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
-    RuntimeResourceWriteRequest, SourceDeclaration, SourceIndex,
+    SourceDeclaration, SourceIndex,
 };
-use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode, Value, hash_str};
+use mech_core::{
+    ApplicationRequirement, ExecutionResourceRequest, MResult, MechError, MechErrorKind,
+    MechSourceCode, ResourceDelivery, ResourceIntent, Value, hash_str,
+};
 use mech_engine::MechProgram;
+use std::sync::Arc;
 
 impl MechRuntime {
     fn is_manifest_context_import(import: &mech_core::ModuleImport) -> bool {
@@ -145,12 +144,13 @@ impl MechRuntime {
         })
     }
 
-    fn read_context_resource(
+    fn register_context_resource_read(
         &mut self,
         context: &RuntimeContext,
+        target: &mut RuntimeProgramTarget<'_>,
         binding: &RuntimeContextBinding,
         path: &str,
-    ) -> MResult<Value> {
+    ) -> MResult<mech_core::Expression> {
         let resolved = self.resolve_context_resource_request(binding, path)?;
         if !runtime_context_allows_read(binding, &resolved.context_path) {
             return Err(MechError::new(
@@ -163,39 +163,100 @@ impl MechRuntime {
             ));
         }
         let key = RuntimeResourceKey::new(&resolved.provider_base_uri, &resolved.provider_path)?;
-        let request = CapabilityRequest::from_keys(
+        let capability = CapabilityRequest::from_keys(
             &context.subject,
             RuntimeCapabilityOperation::Read.name(),
             key.capability_resource(),
         );
-        self.check_capability_for_execution(context, &request)?;
-        if let Some(transaction_id) = context.transaction {
-            let resource_identity = self
-                .resources
-                .staged_resource_identity_for(&resolved.provider_base_uri)?;
-            if let Some(value) = self
-                .active_execution_transaction(transaction_id)?
-                .effects
-                .staged_resource_value(&resource_identity, &resolved.provider_path)
-            {
-                return Ok(value);
-            }
-        }
-        self.resources.read(RuntimeResourceReadRequest {
+        self.check_capability_for_execution(context, &capability)?;
+
+        let source = crate::RuntimeHostInputSource::new(
+            resolved.provider_base_uri.clone(),
+            resolved.provider_path.clone(),
+        )?;
+        let driven = self
+            .input_drivers
+            .iter()
+            .try_fold(false, |driven, driver| {
+                if driven {
+                    return Ok(true);
+                }
+                crate::runtime::extension::invoke_extension_value(
+                    "host input driver",
+                    "drives",
+                    || driver.drives(&source),
+                )
+            })?;
+        let request = ExecutionResourceRequest {
             base_uri: resolved.provider_base_uri,
             path: resolved.provider_path,
-            context_name: binding.name.clone(),
-        })
+            context_name: binding.resource_context_name.clone(),
+            operation: RuntimeCapabilityOperation::Read.name().to_string(),
+            intent: ResourceIntent::Read,
+            delivery: if driven {
+                ResourceDelivery::Live
+            } else {
+                ResourceDelivery::Snapshot
+            },
+        };
+        let runtime_request = RuntimeResourceReadRequest {
+            base_uri: request.base_uri.clone(),
+            path: request.path.clone(),
+            context_name: request.context_name.clone(),
+        };
+        let initial = match self.execution_mode {
+            RuntimeExecutionMode::Execute => {
+                let staged = if let Some(transaction_id) = context.transaction {
+                    let resource_identity = self
+                        .resources
+                        .staged_resource_identity_for(&request.base_uri)?;
+                    self.active_execution_transaction(transaction_id)?
+                        .effects
+                        .staged_resource_value(&resource_identity, &request.path)
+                } else {
+                    None
+                };
+                let value = match staged {
+                    Some(value) => value,
+                    None => self.resources.read(runtime_request)?,
+                };
+                RuntimeResourceInitialValue::executed(&value)?
+            }
+            RuntimeExecutionMode::Plan => {
+                let value = self.resources.plan_read(runtime_request)?;
+                RuntimeResourceInitialValue::planned(&value)?
+            }
+        };
+        let name = self
+            .external_requirements
+            .register(ApplicationRequirement::Resource(request.clone()))?;
+        let interpreter_id = self.program_target_ref(target).interpreter().id;
+        self.program_target_mut(target)
+            .register_function_extension(
+                name.clone(),
+                Arc::new(RuntimeResourceReadSpecializer {
+                    interpreter_id,
+                    request,
+                    initial,
+                }),
+            )?;
+
+        Ok(mech_core::Expression::FunctionCall(
+            mech_core::FunctionCall {
+                name: identifier_from_str(&name),
+                args: Vec::new(),
+            },
+        ))
     }
 
-    pub(super) fn write_context_resource(
+    fn register_context_resource_write(
         &mut self,
-        context: &mut RuntimeContext,
+        target: &mut RuntimeProgramTarget<'_>,
         binding: &RuntimeContextBinding,
         path: &str,
-        value: Value,
+        expression: mech_core::Expression,
         intent: RuntimeResourceWriteIntent,
-    ) -> MResult<()> {
+    ) -> MResult<mech_core::Expression> {
         let resolved = self.resolve_context_resource_request(binding, path)?;
         let operation = context_write_operation(binding, intent, &resolved.context_path)?;
         if !runtime_context_allows_operation(binding, operation.name(), &resolved.context_path) {
@@ -208,20 +269,32 @@ impl MechRuntime {
                 None,
             ));
         }
-        self.write_resource_with_context(
-            context,
-            RuntimeResourceWriteRequest {
-                base_uri: resolved.provider_base_uri,
-                path: resolved.provider_path,
-                context_name: binding.name.clone(),
-                operation: operation.clone(),
-                value,
-                intent,
+        let request = ExecutionResourceRequest {
+            base_uri: resolved.provider_base_uri,
+            path: resolved.provider_path,
+            context_name: binding.resource_context_name.clone(),
+            operation: operation.name().to_string(),
+            intent: match intent {
+                RuntimeResourceWriteIntent::Assign => ResourceIntent::Assign,
+                RuntimeResourceWriteIntent::Send => ResourceIntent::Send,
             },
-        )
-        .map(|_| ())
+            delivery: ResourceDelivery::Snapshot,
+        };
+        let name = self
+            .external_requirements
+            .register(ApplicationRequirement::Resource(request.clone()))?;
+        self.program_target_mut(target)
+            .register_function_extension(
+                name.clone(),
+                Arc::new(RuntimeResourceWriteSpecializer { request }),
+            )?;
+        Ok(mech_core::Expression::FunctionCall(
+            mech_core::FunctionCall {
+                name: identifier_from_str(&name),
+                args: vec![(None, expression)],
+            },
+        ))
     }
-
     pub(super) fn program_target_ref<'a>(
         &'a self,
         target: &'a RuntimeProgramTarget<'_>,
@@ -278,45 +351,6 @@ impl MechRuntime {
         }
     }
 
-    fn bind_context_read_temp(
-        &mut self,
-        context: &RuntimeContext,
-        target: &mut RuntimeProgramTarget<'_>,
-        source: crate::RuntimeHostInputSource,
-        value: Value,
-    ) -> MResult<mech_core::Expression> {
-        self.validate_live_context_candidate(context)?;
-        let identifier = mech_core::internal_pattern_value_identifier(&format!(
-            "context-{}-{}",
-            hash_str(source.base_uri()),
-            hash_str(source.path())
-        ));
-        let name = identifier.to_string();
-        let symbol_id = identifier.hash();
-        let input = {
-            let program = self.program_target_mut(target);
-            program.ensure_input(
-                program.interpreter().id,
-                symbol_id,
-                &name,
-                resolve_runtime_value(value),
-            )?
-        };
-        if self.live_registration_mode == LiveRegistrationMode::RetainedRoot {
-            let bindings = self.live_input_bindings.entry(source).or_default();
-            if !bindings.iter().any(|binding| *binding == input) {
-                bindings.push(input);
-            }
-            self.commit_live_context_candidate(context);
-        }
-        let var = mech_core::Var {
-            name: identifier,
-            context: None,
-            kind: None,
-        };
-        Ok(mech_core::Expression::Var(var))
-    }
-
     fn resolve_context_reads_in_expression(
         &mut self,
         context: &RuntimeContext,
@@ -334,13 +368,7 @@ impl MechRuntime {
                     return Ok(expression.clone());
                 };
                 let path = var.name.to_string();
-                let resolved = self.resolve_context_resource_request(binding, &path)?;
-                let source = crate::RuntimeHostInputSource::new(
-                    resolved.provider_base_uri.clone(),
-                    resolved.provider_path.clone(),
-                )?;
-                let value = self.read_context_resource(context, binding, &path)?;
-                self.bind_context_read_temp(context, target, source, value)
+                self.register_context_resource_read(context, target, binding, &path)
             }
             mech_core::Expression::Formula(factor) => Ok(mech_core::Expression::Formula(
                 self.resolve_context_reads_in_factor(context, target, registry, factor)?,
@@ -1355,10 +1383,118 @@ impl MechRuntime {
                             .collect::<MResult<_>>()?,
                     ),
                     mech_core::ActivationBody::PatternArms(arms) => {
-                        mech_core::ActivationBody::PatternArms(arms)
+                        mech_core::ActivationBody::PatternArms(
+                            arms.iter()
+                                .map(|arm| {
+                                    let body = match &arm.body {
+                                        mech_core::ActivationArmBody::Block(body) => {
+                                            mech_core::ActivationArmBody::Block(
+                                                body.iter()
+                                                    .map(|(code, comment)| {
+                                                        Ok((
+                                                            self.resolve_context_reads_in_mech_code(
+                                                                context, target, registry, code,
+                                                            )?,
+                                                            comment.clone(),
+                                                        ))
+                                                    })
+                                                    .collect::<MResult<_>>()?,
+                                            )
+                                        }
+                                        mech_core::ActivationArmBody::Expression(expression) => {
+                                            mech_core::ActivationArmBody::Expression(
+                                                self.resolve_context_reads_in_expression(
+                                                    context, target, registry, expression,
+                                                )?,
+                                            )
+                                        }
+                                    };
+                                    Ok(mech_core::ActivationArm {
+                                        pattern: self.resolve_context_reads_in_match_pattern(
+                                            context,
+                                            target,
+                                            registry,
+                                            &arm.pattern,
+                                        )?,
+                                        guard: arm
+                                            .guard
+                                            .as_ref()
+                                            .map(|guard| {
+                                                self.resolve_context_reads_in_expression(
+                                                    context, target, registry, guard,
+                                                )
+                                            })
+                                            .transpose()?,
+                                        body,
+                                    })
+                                })
+                                .collect::<MResult<_>>()?,
+                        )
                     }
                 };
                 Ok(mech_core::MechCode::ActivationScope(scope))
+            }
+            mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
+                let context_name = send.target.context.as_ref().ok_or_else(|| {
+                    MechError::new(
+                        RuntimeAddressedAssignmentUnsupported {
+                            target: send.target.name.to_string(),
+                        },
+                        None,
+                    )
+                })?;
+                let context_name = context_name.to_string();
+                let binding = registry.get(&context_name).ok_or_else(|| {
+                    MechError::new(
+                        RuntimeAddressedAssignmentUnsupported {
+                            target: context_name.clone(),
+                        },
+                        None,
+                    )
+                })?;
+                let expression = self.resolve_context_reads_in_expression(
+                    context,
+                    target,
+                    registry,
+                    &send.expression,
+                )?;
+                Ok(mech_core::MechCode::Expression(
+                    self.register_context_resource_write(
+                        target,
+                        binding,
+                        &send.target.name.to_string(),
+                        expression,
+                        RuntimeResourceWriteIntent::Send,
+                    )?,
+                ))
+            }
+            mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign))
+                if assign.target.context.is_some() =>
+            {
+                let context_name = assign.target.context.as_ref().unwrap().to_string();
+                let binding = registry.get(&context_name).ok_or_else(|| {
+                    MechError::new(
+                        RuntimeAddressedAssignmentUnsupported {
+                            target: context_name.clone(),
+                        },
+                        None,
+                    )
+                })?;
+                let expression = self.resolve_context_reads_in_expression(
+                    context,
+                    target,
+                    registry,
+                    &assign.expression,
+                )?;
+                Ok(mech_core::MechCode::Expression(
+                    self.register_context_resource_write(
+                        target,
+                        binding,
+                        &assign.target.name.to_string(),
+                        expression,
+                        RuntimeResourceWriteIntent::Assign,
+                    )?,
+                ))
             }
             mech_core::MechCode::Statement(statement) => Ok(mech_core::MechCode::Statement(
                 self.resolve_context_reads_in_statement(context, target, registry, statement)?,
@@ -1517,436 +1653,36 @@ impl MechRuntime {
                     )));
                 }
                 self.flush_direct_execution(context, target, pending, result)?;
-                if let mech_core::ActivationBody::PatternArms(arms) = &scope.body {
-                    let mut lowered = scope.clone();
-                    lowered.trigger = self.resolve_context_reads_in_expression(
-                        context,
-                        target,
-                        registry,
-                        &scope.trigger,
-                    )?;
-                    let mut lowered_arms = Vec::with_capacity(arms.len());
-                    let mut arm_registrations = Vec::with_capacity(arms.len());
-                    let mut registration_count = 0usize;
-                    for arm in arms {
-                        let pattern = self.resolve_context_reads_in_match_pattern(
-                            context,
-                            target,
-                            registry,
-                            &arm.pattern,
-                        )?;
-                        let guard = arm
-                            .guard
-                            .as_ref()
-                            .map(|guard| {
-                                self.resolve_context_reads_in_expression(
-                                    context, target, registry, guard,
-                                )
-                            })
-                            .transpose()?;
-                        let (body, registrations) = match &arm.body {
-                            mech_core::ActivationArmBody::Block(body) => {
-                                let mut lowered_body = Vec::with_capacity(body.len() + 1);
-                                let mut registrations = Vec::new();
-                                for (body_code, body_comment) in body {
-                                    match body_code {
-                                        mech_core::MechCode::Statement(
-                                            mech_core::Statement::ContextSend(send),
-                                        ) => {
-                                            let context_name =
-                                                send.target.context.as_ref().unwrap().to_string();
-                                            let binding = registry
-                                                .get(&context_name)
-                                                .cloned()
-                                                .ok_or_else(|| {
-                                                    MechError::new(
-                                                        RuntimeAddressedAssignmentUnsupported {
-                                                            target: context_name.clone(),
-                                                        },
-                                                        None,
-                                                    )
-                                                })?;
-                                            registration_count += 1;
-                                            let payload = self
-                                                .resolve_context_reads_in_expression(
-                                                    context,
-                                                    target,
-                                                    registry,
-                                                    &send.expression,
-                                                )?;
-                                            lowered_body.push((
-                        mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(
-                          mech_core::FunctionCall {
-                            name: identifier_from_str(ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME),
-                            args: vec![(None, payload)],
-                          },
-                        )),
-                        body_comment.clone(),
-                      ));
-                                            registrations
-                                                .push((binding, send.target.name.to_string()));
-                                        }
-                                        _ => lowered_body.push((
-                                            self.resolve_context_reads_in_mech_code(
-                                                context, target, registry, body_code,
-                                            )?,
-                                            body_comment.clone(),
-                                        )),
-                                    }
-                                }
-                                if !registrations.is_empty() {
-                                    // The payload captures remain at their source positions, but
-                                    // a single final barrier releases the complete arm effect
-                                    // batch only after every body node has succeeded.
-                                    lowered_body.push((
-                                        mech_core::MechCode::Expression(
-                                            mech_core::Expression::FunctionCall(
-                                                mech_core::FunctionCall {
-                                                    name: identifier_from_str(
-                                                        ACTIVATION_EFFECT_BARRIER_NAME,
-                                                    ),
-                                                    args: vec![],
-                                                },
-                                            ),
-                                        ),
-                                        None,
-                                    ));
-                                }
-                                (
-                                    mech_core::ActivationArmBody::Block(lowered_body),
-                                    registrations,
-                                )
-                            }
-                            mech_core::ActivationArmBody::Expression(expression) => (
-                                mech_core::ActivationArmBody::Expression(
-                                    self.resolve_context_reads_in_expression(
-                                        context, target, registry, expression,
-                                    )?,
-                                ),
-                                Vec::new(),
-                            ),
-                        };
-                        arm_registrations.push(registrations);
-                        lowered_arms.push(mech_core::ActivationArm {
-                            pattern,
-                            guard,
-                            body,
-                        });
-                    }
-                    lowered.body = mech_core::ActivationBody::PatternArms(lowered_arms);
-                    if registration_count > 0 {
-                        if self.live_registration_mode == LiveRegistrationMode::IsolatedSnapshot {
-                            return Err(MechError::new(
-                                RuntimeIsolatedActivationSendUnsupported,
-                                None,
-                            ));
-                        }
-                        self.validate_live_context_candidate(context)?;
-                    }
-                    let pattern_registration_start = self
-                        .program_target_ref(target)
-                        .interpreter()
-                        .plan()
-                        .pattern_activation_registrations()
-                        .len();
-                    let tree = single_code_program(
-                        mech_core::MechCode::ActivationScope(lowered),
-                        comment.clone(),
-                    );
-                    self.execute_program_target_tree(context, target, &tree)?;
-                    if registration_count == 0 {
-                        return Ok(());
-                    }
-                    let interpreter_id = self.program_target_ref(target).interpreter().id;
-                    let pattern_registration = {
-                        let program = self.program_target_ref(target);
-                        let plan = program.interpreter().plan();
-                        let registrations = plan.pattern_activation_registrations();
-                        if registrations.len() != pattern_registration_start + 1 {
-                            return Err(MechError::new(
-                                RuntimeActivationEffectBarrierInvariantError {
-                                    reason: format!(
-                                        "expected one patterned activation registration, found {}",
-                                        registrations
-                                            .len()
-                                            .saturating_sub(pattern_registration_start)
-                                    ),
-                                },
-                                None,
-                            ));
-                        }
-                        registrations[pattern_registration_start].clone()
-                    };
-                    if pattern_registration.arms.len() != arm_registrations.len() {
-                        return Err(MechError::new(
-                            RuntimeActivationEffectBarrierInvariantError {
-                                reason: format!(
-                                    "patterned activation arm registration mismatch: expected {}, found {}",
-                                    arm_registrations.len(),
-                                    pattern_registration.arms.len()
-                                ),
-                            },
-                            None,
-                        ));
-                    }
-                    let mut sends = Vec::with_capacity(registration_count);
-                    {
-                        let program = self.program_target_ref(target);
-                        let plan = program.interpreter().plan();
-                        let plan = plan.borrow();
-                        for (arm, registrations) in
-                            pattern_registration.arms.iter().zip(arm_registrations)
-                        {
-                            if registrations.is_empty() {
-                                continue;
-                            }
-                            let captures = plan.nodes[arm.body_node_start..arm.body_node_end]
-                                .iter()
-                                .filter(|node| {
-                                    node.kind == mech_core::ReactiveNodeKind::Combinational
-                                        && node.function.to_string()
-                                            == ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME
-                                        && node.outputs.is_empty()
-                                })
-                                .collect::<Vec<_>>();
-                            let barriers = plan.nodes[arm.body_node_start..arm.body_node_end]
-                                .iter()
-                                .filter(|node| {
-                                    node.kind == mech_core::ReactiveNodeKind::Combinational
-                                        && node.function.to_string()
-                                            == ACTIVATION_EFFECT_BARRIER_NAME
-                                        && node.outputs.is_empty()
-                                })
-                                .collect::<Vec<_>>();
-                            if captures.len() != registrations.len() {
-                                return Err(MechError::new(
-                                    RuntimeActivationEffectBarrierInvariantError {
-                                        reason: format!(
-                                            "expected {} patterned-arm activation effect payload captures, found {}",
-                                            registrations.len(),
-                                            captures.len()
-                                        ),
-                                    },
-                                    None,
-                                ));
-                            }
-                            if barriers.len() != 1 {
-                                return Err(MechError::new(
-                                    RuntimeActivationEffectBarrierInvariantError {
-                                        reason: format!(
-                                            "expected one patterned-arm activation effect barrier, found {}",
-                                            barriers.len()
-                                        ),
-                                    },
-                                    None,
-                                ));
-                            }
-                            let barrier_node_id = barriers[0].id;
-                            for ((binding, path), capture) in
-                                registrations.into_iter().zip(captures)
-                            {
-                                let snapshot = match capture.function.out() {
-                                    Value::MutableReference(snapshot) => snapshot,
-                                    other => {
-                                        return Err(MechError::new(
-                                            RuntimeActivationEffectBarrierInvariantError {
-                                                reason: format!(
-                                                    "patterned-arm activation effect payload capture returned {}, expected a snapshot",
-                                                    other.kind()
-                                                ),
-                                            },
-                                            None,
-                                        ));
-                                    }
-                                };
-                                sends.push(RuntimePersistentSend {
-                                    binding,
-                                    path,
-                                    value: snapshot,
-                                    schedule: RuntimePersistentSendSchedule::Activation {
-                                        interpreter_id,
-                                        barrier_node_id,
-                                    },
-                                });
-                            }
-                        }
-                    }
-                    if sends.len() != registration_count {
-                        return Err(MechError::new(
-                            RuntimeActivationEffectBarrierInvariantError {
-                                reason: format!(
-                                    "patterned activation send registration mismatch: expected {}, found {}",
-                                    registration_count,
-                                    sends.len()
-                                ),
-                            },
-                            None,
-                        ));
-                    }
-                    self.persistent_sends.extend(sends);
-                    self.commit_live_context_candidate(context);
-                    return Ok(());
-                }
-                let mut lowered = scope.clone();
-                lowered.trigger = self.resolve_context_reads_in_expression(
+                let lowered = self.resolve_context_reads_in_mech_code(
                     context,
                     target,
                     registry,
-                    &scope.trigger,
+                    &mech_core::MechCode::ActivationScope(scope.clone()),
                 )?;
-                let mut registrations = Vec::new();
-                let scope_body = match &scope.body {
-                    mech_core::ActivationBody::Block(body) => body,
-                    mech_core::ActivationBody::PatternArms(_) => unreachable!(),
-                };
-                lowered.body = mech_core::ActivationBody::Block(vec![]);
-                let lowered_body = match &mut lowered.body {
-                    mech_core::ActivationBody::Block(body) => body,
-                    _ => unreachable!(),
-                };
-                for (body_code, body_comment) in scope_body {
-                    match body_code {
-                        mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
-                            let context_name = send.target.context.as_ref().unwrap().to_string();
-                            let binding =
-                                registry.get(&context_name).cloned().ok_or_else(|| {
-                                    MechError::new(
-                                        RuntimeAddressedAssignmentUnsupported {
-                                            target: context_name.clone(),
-                                        },
-                                        None,
-                                    )
-                                })?;
-                            let payload = self.resolve_context_reads_in_expression(
-                                context,
-                                target,
-                                registry,
-                                &send.expression,
-                            )?;
-                            lowered_body.push((
-                                mech_core::MechCode::Expression(
-                                    mech_core::Expression::FunctionCall(mech_core::FunctionCall {
-                                        name: identifier_from_str(
-                                            ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
-                                        ),
-                                        args: vec![(None, payload)],
-                                    }),
-                                ),
-                                body_comment.clone(),
-                            ));
-                            registrations.push((binding, send.target.name.to_string()));
-                        }
-                        _ => lowered_body.push((
-                            self.resolve_context_reads_in_mech_code(
-                                context, target, registry, body_code,
-                            )?,
-                            body_comment.clone(),
-                        )),
-                    }
-                }
-                if registrations.is_empty() {
-                    let tree = single_code_program(
-                        mech_core::MechCode::ActivationScope(lowered),
-                        comment.clone(),
-                    );
-                    self.execute_program_target_tree(context, target, &tree)?;
-                    return Ok(());
-                }
-                lowered_body.push((
-                    mech_core::MechCode::Expression(mech_core::Expression::FunctionCall(
-                        mech_core::FunctionCall {
-                            name: identifier_from_str(ACTIVATION_EFFECT_BARRIER_NAME),
-                            args: vec![],
-                        },
-                    )),
-                    None,
-                ));
-                self.validate_live_context_candidate(context)?;
-                let plan_start = self
-                    .program_target_ref(target)
-                    .interpreter()
-                    .plan()
-                    .borrow()
-                    .nodes
-                    .len();
-                let tree = single_code_program(
-                    mech_core::MechCode::ActivationScope(lowered),
-                    comment.clone(),
-                );
+                let tree = single_code_program(lowered, comment.clone());
                 self.execute_program_target_tree(context, target, &tree)?;
-                let program = self.program_target_ref(target);
-                let interpreter_id = program.interpreter().id;
-                let plan = program.interpreter().plan();
-                let plan = plan.borrow();
-                let captures = plan.nodes[plan_start..]
-                    .iter()
-                    .filter(|node| {
-                        node.kind == mech_core::ReactiveNodeKind::Combinational
-                            && node.function.to_string() == ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME
-                            && node.outputs.is_empty()
-                    })
-                    .collect::<Vec<_>>();
-                let barriers = plan.nodes[plan_start..]
-                    .iter()
-                    .filter(|node| {
-                        node.kind == mech_core::ReactiveNodeKind::Combinational
-                            && node.function.to_string() == ACTIVATION_EFFECT_BARRIER_NAME
-                            && node.outputs.is_empty()
-                    })
-                    .collect::<Vec<_>>();
-                if captures.len() != registrations.len() {
-                    return Err(MechError::new(
-                        RuntimeActivationEffectBarrierInvariantError {
-                            reason: format!(
-                                "expected {} activation effect payload captures, found {}",
-                                registrations.len(),
-                                captures.len()
-                            ),
+                Ok(())
+            }
+            mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))
+            | mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(
+                mech_core::VariableAssign {
+                    target:
+                        mech_core::SliceRef {
+                            context: Some(_), ..
                         },
-                        None,
-                    ));
+                    ..
+                },
+            )) => {
+                if !pending_codes.is_empty() {
+                    pending.push(mech_core::SectionElement::MechCode(std::mem::take(
+                        pending_codes,
+                    )));
                 }
-                if barriers.len() != 1 {
-                    return Err(MechError::new(
-                        RuntimeActivationEffectBarrierInvariantError {
-                            reason: format!(
-                                "expected one activation effect barrier, found {}",
-                                barriers.len()
-                            ),
-                        },
-                        None,
-                    ));
-                }
-                let barrier_node_id = barriers[0].id;
-                let mut sends = Vec::with_capacity(registrations.len());
-                for ((binding, path), capture) in registrations.into_iter().zip(captures) {
-                    let snapshot = match capture.function.out() {
-                        Value::MutableReference(snapshot) => snapshot,
-                        other => {
-                            return Err(MechError::new(
-                                RuntimeActivationEffectBarrierInvariantError {
-                                    reason: format!(
-                                        "activation effect payload capture returned {}, expected a snapshot",
-                                        other.kind()
-                                    ),
-                                },
-                                None,
-                            ));
-                        }
-                    };
-                    sends.push(RuntimePersistentSend {
-                        binding,
-                        path,
-                        value: snapshot,
-                        schedule: RuntimePersistentSendSchedule::Activation {
-                            interpreter_id,
-                            barrier_node_id,
-                        },
-                    });
-                }
-                drop(plan);
-                self.persistent_sends.extend(sends);
-                self.commit_live_context_candidate(context);
+                self.flush_direct_execution(context, target, pending, result)?;
+                let lowered =
+                    self.resolve_context_reads_in_mech_code(context, target, registry, code)?;
+                let tree = single_code_program(lowered, comment.clone());
+                *result = self.execute_program_target_tree(context, target, &tree)?;
                 Ok(())
             }
             mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(var_def)) => {
@@ -1978,120 +1714,6 @@ impl MechRuntime {
                     registry,
                     &mech_core::MechCode::Statement(mech_core::Statement::VariableDefine(
                         var_def.clone(),
-                    )),
-                )?;
-                pending_codes.push((code, comment.clone()));
-                Ok(())
-            }
-            mech_core::MechCode::Statement(mech_core::Statement::ContextSend(send)) => {
-                // Context sends are executed only at module top level for now. Parser paths
-                // intentionally reject nested sends until interpreter/effect execution can
-                // support them in functions and state machines.
-                let Some(context_name) = &send.target.context else {
-                    return Err(MechError::new(
-                        RuntimeAddressedAssignmentUnsupported {
-                            target: send.target.name.to_string(),
-                        },
-                        None,
-                    ));
-                };
-                let context_target = context_name.to_string();
-                let Some(binding) = registry.get(&context_target).cloned() else {
-                    return Err(MechError::new(
-                        RuntimeAddressedAssignmentUnsupported {
-                            target: context_target,
-                        },
-                        None,
-                    ));
-                };
-                if !pending_codes.is_empty() {
-                    pending.push(mech_core::SectionElement::MechCode(std::mem::take(
-                        pending_codes,
-                    )));
-                }
-                self.flush_direct_execution(context, target, pending, result)?;
-                let expression = self.resolve_context_reads_in_expression(
-                    context,
-                    target,
-                    registry,
-                    &send.expression,
-                )?;
-                let path = send.target.name.to_string();
-                if self.live_registration_mode == LiveRegistrationMode::IsolatedSnapshot {
-                    let value = resolve_runtime_value(self.evaluate_expression_on_program(
-                        context,
-                        target,
-                        &expression,
-                    )?);
-                    self.write_context_resource(
-                        context,
-                        &binding,
-                        &path,
-                        value.clone(),
-                        RuntimeResourceWriteIntent::Send,
-                    )?;
-                    *result = value;
-                    return Ok(());
-                }
-                self.validate_live_context_candidate(context)?;
-                let value_cell =
-                    self.bind_persistent_send_value_on_program(context, target, expression)?;
-                let value = resolve_runtime_value(value_cell.borrow().clone());
-                self.write_context_resource(
-                    context,
-                    &binding,
-                    &path,
-                    value.clone(),
-                    RuntimeResourceWriteIntent::Send,
-                )?;
-                self.persistent_sends.push(RuntimePersistentSend {
-                    binding,
-                    path,
-                    value: value_cell,
-                    schedule: RuntimePersistentSendSchedule::EveryAcceptedTurn,
-                });
-                self.commit_live_context_candidate(context);
-                *result = value;
-                return Ok(());
-            }
-            mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(assign)) => {
-                if let Some(context_name) = &assign.target.context {
-                    let context_target = context_name.to_string();
-                    if let Some(binding) = registry.get(&context_target).cloned() {
-                        if !pending_codes.is_empty() {
-                            pending.push(mech_core::SectionElement::MechCode(std::mem::take(
-                                pending_codes,
-                            )));
-                        }
-                        self.flush_direct_execution(context, target, pending, result)?;
-                        let expression = self.resolve_context_reads_in_expression(
-                            context,
-                            target,
-                            registry,
-                            &assign.expression,
-                        )?;
-                        let value = resolve_runtime_value(self.evaluate_expression_on_program(
-                            context,
-                            target,
-                            &expression,
-                        )?);
-                        self.write_context_resource(
-                            context,
-                            &binding,
-                            &assign.target.name.to_string(),
-                            value.clone(),
-                            RuntimeResourceWriteIntent::Assign,
-                        )?;
-                        *result = value;
-                        return Ok(());
-                    }
-                }
-                let code = self.resolve_context_reads_in_mech_code(
-                    context,
-                    target,
-                    registry,
-                    &mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(
-                        assign.clone(),
                     )),
                 )?;
                 pending_codes.push((code, comment.clone()));
@@ -2180,109 +1802,57 @@ impl MechRuntime {
                     &scope.trigger,
                     addressed_read_preflight,
                 )?;
-                if let mech_core::ActivationBody::PatternArms(arms) = &scope.body {
-                    let has_send = arms.iter().any(|arm| match &arm.body {
-                        mech_core::ActivationArmBody::Block(body) => {
-                            body.iter().any(|(code, _)| {
-                                matches!(
-                                    code,
-                                    mech_core::MechCode::Statement(
-                                        mech_core::Statement::ContextSend(_)
-                                    )
-                                )
-                            })
-                        }
-                        mech_core::ActivationArmBody::Expression(_) => false,
-                    });
-                    if has_send
-                        && self.live_registration_mode == LiveRegistrationMode::IsolatedSnapshot
-                    {
-                        return Err(MechError::new(
-                            RuntimeIsolatedActivationSendUnsupported,
-                            None,
-                        ));
-                    }
-                    for arm in arms {
-                        self.preflight_pattern_context_reads(
-                            context,
-                            registry,
-                            &arm.pattern,
-                            addressed_read_preflight,
-                        )?;
-                        if let Some(guard) = &arm.guard {
-                            self.preflight_expression_context_reads(
+                match &scope.body {
+                    mech_core::ActivationBody::Block(body) => {
+                        for (body_code, _) in body {
+                            self.preflight_code_context_capabilities(
                                 context,
                                 registry,
-                                guard,
+                                body_code,
+                                DirectContextEffectPlacement::ActivationScope,
                                 addressed_read_preflight,
                             )?;
                         }
-                        match &arm.body {
-                            mech_core::ActivationArmBody::Block(body) => {
-                                for (code, _) in body {
-                                    self.preflight_code_context_capabilities(
+                    }
+                    mech_core::ActivationBody::PatternArms(arms) => {
+                        for arm in arms {
+                            self.preflight_pattern_context_reads(
+                                context,
+                                registry,
+                                &arm.pattern,
+                                addressed_read_preflight,
+                            )?;
+                            if let Some(guard) = &arm.guard {
+                                self.preflight_expression_context_reads(
+                                    context,
+                                    registry,
+                                    guard,
+                                    addressed_read_preflight,
+                                )?;
+                            }
+                            match &arm.body {
+                                mech_core::ActivationArmBody::Block(body) => {
+                                    for (body_code, _) in body {
+                                        self.preflight_code_context_capabilities(
+                                            context,
+                                            registry,
+                                            body_code,
+                                            DirectContextEffectPlacement::ActivationScope,
+                                            addressed_read_preflight,
+                                        )?;
+                                    }
+                                }
+                                mech_core::ActivationArmBody::Expression(expression) => {
+                                    self.preflight_expression_context_reads(
                                         context,
                                         registry,
-                                        code,
-                                        DirectContextEffectPlacement::ActivationScope,
+                                        expression,
                                         addressed_read_preflight,
                                     )?;
                                 }
                             }
-                            mech_core::ActivationArmBody::Expression(expression) => self
-                                .preflight_expression_context_reads(
-                                    context,
-                                    registry,
-                                    expression,
-                                    addressed_read_preflight,
-                                )?,
                         }
                     }
-                    return Ok(());
-                }
-                let scope_body = match &scope.body {
-                    mech_core::ActivationBody::Block(body) => body,
-                    mech_core::ActivationBody::PatternArms(_) => unreachable!(),
-                };
-                let has_send = scope_body.iter().any(|(code, _)| {
-                    matches!(
-                        code,
-                        mech_core::MechCode::Statement(mech_core::Statement::ContextSend(_))
-                    )
-                });
-                // Only writes to local registers conflict with an effectful activation.
-                // Context-addressed assignments have their own, operation-specific
-                // placement error below (they are top-level only).
-                let has_register = scope_body.iter().any(|(code, _)| match code {
-                    mech_core::MechCode::Statement(mech_core::Statement::VariableAssign(
-                        assign,
-                    )) => assign.target.context.is_none(),
-                    mech_core::MechCode::Statement(mech_core::Statement::OpAssign(assign)) => {
-                        assign.target.context.is_none()
-                    }
-                    _ => false,
-                });
-                if has_send && has_register {
-                    return Err(MechError::new(
-                        ActivationScopeEffectWithRegisterUnsupported,
-                        None,
-                    ));
-                }
-                if has_send && self.live_registration_mode == LiveRegistrationMode::IsolatedSnapshot
-                {
-                    return Err(MechError::new(
-                        RuntimeIsolatedActivationSendUnsupported,
-                        None,
-                    ));
-                }
-                for (body_code, _) in scope_body {
-                    self.preflight_code_context_capabilities(
-                        context,
-                        registry,
-                        body_code,
-                        DirectContextEffectPlacement::ActivationScope,
-                        addressed_read_preflight,
-                    )?;
                 }
                 Ok(())
             }
@@ -2542,7 +2112,10 @@ impl MechRuntime {
                         &path,
                         RuntimeCapabilityOperation::Write,
                         true,
-                        Some(RuntimeResourceWriteIntent::Assign),
+                        Some(provider_write_preflight_owner(
+                            placement,
+                            RuntimeResourceWriteIntent::Assign,
+                        )),
                     )?;
                 }
                 self.preflight_expression_context_reads(
@@ -2577,7 +2150,13 @@ impl MechRuntime {
                     placement,
                 )?;
 
-                self.preflight_context_send_access(context, registry, &context_name, &path)?;
+                self.preflight_context_send_access(
+                    context,
+                    registry,
+                    &context_name,
+                    &path,
+                    placement,
+                )?;
 
                 self.preflight_expression_context_reads(
                     context,
@@ -3141,6 +2720,7 @@ impl MechRuntime {
         registry: &RuntimeContextRegistry,
         context_name: &str,
         path: &str,
+        placement: DirectContextEffectPlacement,
     ) -> MResult<()> {
         let Some(binding) = registry.get(context_name) else {
             return Err(undeclared_direct_context_target_error(context_name));
@@ -3154,7 +2734,10 @@ impl MechRuntime {
             path,
             operation,
             true,
-            Some(RuntimeResourceWriteIntent::Send),
+            Some(provider_write_preflight_owner(
+                placement,
+                RuntimeResourceWriteIntent::Send,
+            )),
         )
     }
 
@@ -3166,7 +2749,7 @@ impl MechRuntime {
         path: &str,
         operation: RuntimeCapabilityOperation,
         require_context_binding: bool,
-        write_intent: Option<RuntimeResourceWriteIntent>,
+        write_preflight_owner: Option<ProviderWritePreflightOwner>,
     ) -> MResult<()> {
         let Some(binding) = registry.get(context_name) else {
             if require_context_binding {
@@ -3208,12 +2791,12 @@ impl MechRuntime {
         );
         self.preview_capability_for_execution(context, &request)?;
 
-        if let Some(intent) = write_intent {
+        if let Some(ProviderWritePreflightOwner::ContextPreflight(intent)) = write_preflight_owner {
             self.resources
                 .preflight_write(RuntimeResourceWritePreflightRequest {
                     base_uri: resolved.provider_base_uri,
                     path: resolved.provider_path,
-                    context_name: binding.name.clone(),
+                    context_name: binding.resource_context_name.clone(),
                     operation: operation.clone(),
                     intent,
                 })?;
@@ -3637,6 +3220,38 @@ enum DirectContextEffectPlacement {
     ActivationScope,
     FunctionBody,
     FsmTransition,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ProviderWritePreflightOwner {
+    ExternalFunctionInitialization,
+    ContextPreflight(RuntimeResourceWriteIntent),
+}
+
+fn provider_write_preflight_owner(
+    placement: DirectContextEffectPlacement,
+    intent: RuntimeResourceWriteIntent,
+) -> ProviderWritePreflightOwner {
+    match placement {
+        // Activation registration deliberately skips external-function
+        // initialization. Its provider validation therefore remains owned by
+        // the source preflight pass.
+        DirectContextEffectPlacement::ActivationScope => {
+            ProviderWritePreflightOwner::ContextPreflight(intent)
+        }
+        // Top-level external functions initialize during the source turn. In a
+        // planning runtime that initialization performs the one provider
+        // preflight; in an executing runtime it prepares/stages the effect.
+        DirectContextEffectPlacement::TopLevel => {
+            ProviderWritePreflightOwner::ExternalFunctionInitialization
+        }
+        // These placements are rejected before provider preflight ownership is
+        // consulted.
+        DirectContextEffectPlacement::FunctionBody
+        | DirectContextEffectPlacement::FsmTransition => {
+            ProviderWritePreflightOwner::ExternalFunctionInitialization
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -88,7 +88,10 @@ impl SymbolTable {
     }
 
     pub fn insert(&mut self, key: u64, value: Value, mutable: bool) -> ValRef {
-        let cell = Ref::new(value);
+        self.insert_cell(key, Ref::new(value), mutable)
+    }
+
+    pub fn insert_cell(&mut self, key: u64, cell: ValRef, mutable: bool) -> ValRef {
         self.reverse_lookup.insert(cell.id(), key);
         let old = self.symbols.insert(key, cell.clone());
         if mutable {

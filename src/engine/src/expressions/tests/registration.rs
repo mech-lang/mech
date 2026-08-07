@@ -2,8 +2,8 @@ use super::super::{register_expression_function_batch, register_initialized_expr
 #[cfg(feature = "compiler")]
 use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use crate::{
-    MResult, MechFunction, MechFunctionImpl, Plan, ReactiveCellId, ReactiveDependencyKind, Ref,
-    Value,
+    InitialSolvePolicy, MResult, MechError, MechErrorKind, MechFunction, MechFunctionImpl, Plan,
+    ReactiveCellId, ReactiveDependencyKind, Ref, Value,
 };
 use std::sync::{
     Arc,
@@ -13,15 +13,65 @@ use std::sync::{
 struct IndexedExpressionTestFunction {
     output: Value,
     solve_calls: Arc<AtomicUsize>,
+    initial_solve_policy: InitialSolvePolicy,
 }
 
-impl MechFunctionImpl for IndexedExpressionTestFunction {
-    fn solve(&self) {
-        self.solve_calls.fetch_add(1, Ordering::SeqCst);
+#[derive(Clone, Debug)]
+struct InitialExpressionSolveFailure;
+
+impl MechErrorKind for InitialExpressionSolveFailure {
+    fn name(&self) -> &str {
+        "InitialExpressionSolveFailure"
+    }
+
+    fn message(&self) -> String {
+        "initial expression solve failed".to_owned()
+    }
+}
+
+struct FailingInitialExpressionFunction {
+    output: Value,
+    solve_result_calls: Arc<AtomicUsize>,
+}
+
+impl MechFunctionImpl for FailingInitialExpressionFunction {
+    fn solve_result(&self) -> MResult<()> {
+        self.solve_result_calls.fetch_add(1, Ordering::SeqCst);
+        Err(MechError::new(InitialExpressionSolveFailure, None))
     }
 
     fn out(&self) -> Value {
         self.output.clone()
+    }
+
+    fn to_string(&self) -> String {
+        "failing-initial-expression".to_owned()
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        Ok(self.reactive_output_values())
+    }
+}
+
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for FailingInitialExpressionFunction {
+    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        panic!("failing expression test function must not be compiled")
+    }
+}
+
+impl MechFunctionImpl for IndexedExpressionTestFunction {
+    fn solve_result(&self) -> MResult<()> {
+        self.solve_calls.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
+
+    fn out(&self) -> Value {
+        self.output.clone()
+    }
+
+    fn initial_solve_policy(&self) -> InitialSolvePolicy {
+        self.initial_solve_policy
     }
 
     fn to_string(&self) -> String {
@@ -50,6 +100,15 @@ fn function(output: Value, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
     Box::new(IndexedExpressionTestFunction {
         output,
         solve_calls: calls,
+        initial_solve_policy: InitialSolvePolicy::Solve,
+    })
+}
+
+fn preserving_function(output: Value, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
+    Box::new(IndexedExpressionTestFunction {
+        output,
+        solve_calls: calls,
+        initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
     })
 }
 
@@ -107,6 +166,47 @@ fn indexed_expression_registration_deduplicates_aliases() {
 }
 
 #[test]
+fn indexed_expression_registration_preserves_planned_output_when_requested() {
+    let plan = Plan::new();
+    let (input, _) = scalar(1.0);
+    let (output, output_cell) = scalar(2.0);
+    let calls = Arc::new(AtomicUsize::new(0));
+
+    let result = register_initialized_expression_function(
+        &plan,
+        preserving_function(output, calls.clone()),
+        &[input],
+    )
+    .unwrap();
+
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    assert_eq!(result.reactive_cell_ids(), vec![output_cell]);
+    assert_eq!(plan.len(), 1);
+}
+
+#[test]
+fn indexed_expression_registration_propagates_initial_solve_errors() {
+    let plan = Plan::new();
+    let (input, _) = scalar(1.0);
+    let (output, _) = scalar(2.0);
+    let solve_result_calls = Arc::new(AtomicUsize::new(0));
+
+    let error = register_initialized_expression_function(
+        &plan,
+        Box::new(FailingInitialExpressionFunction {
+            output,
+            solve_result_calls: solve_result_calls.clone(),
+        }),
+        &[input],
+    )
+    .unwrap_err();
+
+    assert_eq!(error.kind_name(), "InitialExpressionSolveFailure");
+    assert_eq!(solve_result_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(plan.len(), 0);
+}
+
+#[test]
 fn binary_term_batch_registration_preserves_order_and_edges() {
     let plan = Plan::new();
     let (a, ac) = scalar(1.0);
@@ -118,8 +218,8 @@ fn binary_term_batch_registration_preserves_order_and_edges() {
     let second = Arc::new(AtomicUsize::new(0));
     let f1 = function(mid.clone(), first.clone());
     let f2 = function(final_out, second.clone());
-    f1.solve();
-    f2.solve();
+    f1.solve_result().unwrap();
+    f2.solve_result().unwrap();
 
     register_expression_function_batch(&plan, vec![(f1, vec![a, b]), (f2, vec![mid, c])]).unwrap();
     let plan = plan.borrow();

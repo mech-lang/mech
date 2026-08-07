@@ -58,6 +58,26 @@ impl MechMap {
             map,
         }
     }
+
+    /// Reconstructs a detached map snapshot, including an empty map whose
+    /// key/value schema cannot be inferred from entries.
+    pub fn from_typed_vec(
+        key_kind: ValueKind,
+        value_kind: ValueKind,
+        num_elements: usize,
+        entries: Vec<(Value, Value)>,
+    ) -> MechMap {
+        let mut map = IndexMap::with_capacity(entries.len());
+        for (key, value) in entries {
+            map.insert(key, value);
+        }
+        MechMap {
+            key_kind,
+            value_kind,
+            num_elements,
+            map,
+        }
+    }
 }
 
 #[cfg(feature = "pretty_print")]

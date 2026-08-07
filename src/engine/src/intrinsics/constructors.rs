@@ -20,7 +20,9 @@ pub struct ValueSet {
 
 #[cfg(all(feature = "set", feature = "functions"))]
 impl MechFunctionImpl for ValueSet {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
 
     fn out(&self) -> Value {
         Value::Set(self.out.clone())
@@ -44,10 +46,13 @@ impl MechFunctionImpl for ValueSet {
 
 #[cfg(all(feature = "set", feature = "functions"))]
 impl MechFunctionFactory for ValueSet {
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Set);
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
-                let out: Ref<MechSet> = unsafe { out.as_unchecked().clone() };
+                let out: Ref<MechSet> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(ValueSet { out }))
             }
             _ => Err(MechError::new(
@@ -65,12 +70,7 @@ impl MechFunctionFactory for ValueSet {
 #[cfg(all(feature = "set", feature = "compiler"))]
 impl MechFunctionCompiler for ValueSet {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!(
-            "set/define",
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Set)
-        );
+        compile_nullop!("set/define", self.out, ctx);
     }
 }
 
@@ -106,13 +106,14 @@ pub struct ValueSetComprehension {
 
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionImpl for ValueSetComprehension {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let args = self
             .arguments
             .iter()
             .map(detach_comprehension_value)
             .collect::<Vec<Value>>();
         *self.out.borrow_mut() = MechSet::from_vec(args);
+        Ok(())
     }
 
     fn out(&self) -> Value {
@@ -130,13 +131,17 @@ impl MechFunctionImpl for ValueSetComprehension {
 
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueSetComprehension {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        FunctionValueRepresentation::Set,
+        FunctionValueRepresentation::AnyValue,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Nullary(Value::Set(out)) => Ok(Box::new(ValueSetComprehension {
-                arguments: Vec::new(),
-                out,
-            })),
-            FunctionArgs::Nullary(out) => Err(MechError::new(
+            FunctionArgs::Variadic(Value::Set(out), arguments) => {
+                Ok(Box::new(ValueSetComprehension { arguments, out }))
+            }
+            FunctionArgs::Variadic(out, _) => Err(MechError::new(
                 SetComprehensionOutputKindMismatchError { found: out.kind() },
                 None,
             )
@@ -156,12 +161,17 @@ impl MechFunctionFactory for ValueSetComprehension {
 #[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
 impl MechFunctionCompiler for ValueSetComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!(
-            "set/comprehension",
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::SetComprehensions)
-        );
+        let output = Value::Set(self.out.clone());
+        let destination = compile_value_register(&output, self.out.addr(), ctx)?;
+        let arguments = self
+            .arguments
+            .iter()
+            .map(|argument| {
+                compile_value_register(argument, core::ptr::from_ref(argument).addr(), ctx)
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        ctx.emit_varop(hash_str("set/comprehension"), destination, arguments);
+        Ok(destination)
     }
 }
 
@@ -177,7 +187,7 @@ pub struct ValueMatrixComprehension {
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl MechFunctionImpl for ValueMatrixComprehension {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         let args = self
             .arguments
             .iter()
@@ -186,12 +196,12 @@ impl MechFunctionImpl for ValueMatrixComprehension {
         let out = if args.is_empty() {
             Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
         } else {
-            let fxn = crate::intrinsics::horzcat::impl_horzcat_fxn(&args)
-                .expect("matrix/comprehension input kinds changed to incompatible values");
-            fxn.solve();
+            let fxn = crate::intrinsics::horzcat::impl_horzcat_fxn(&args)?;
+            fxn.solve_result()?;
             fxn.out()
         };
         *self.out.borrow_mut() = out;
+        Ok(())
     }
 
     fn out(&self) -> Value {
@@ -209,10 +219,15 @@ impl MechFunctionImpl for ValueMatrixComprehension {
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl MechFunctionFactory for ValueMatrixComprehension {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::variadic(
+        FunctionValueRepresentation::AnyValue,
+        FunctionValueRepresentation::AnyValue,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Nullary(out) => Ok(Box::new(ValueMatrixComprehension {
-                arguments: Vec::new(),
+            FunctionArgs::Variadic(out, arguments) => Ok(Box::new(ValueMatrixComprehension {
+                arguments,
                 out: Ref::new(out),
             })),
             _ => Err(MechError::new(
@@ -230,11 +245,16 @@ impl MechFunctionFactory for ValueMatrixComprehension {
 #[cfg(all(feature = "matrix_comprehensions", feature = "compiler"))]
 impl MechFunctionCompiler for ValueMatrixComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        compile_nullop!(
-            "matrix/comprehension",
-            self.out,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::MatrixComprehensions)
-        );
+        let output = self.out.borrow().clone();
+        let destination = compile_value_register(&output, self.out.addr(), ctx)?;
+        let arguments = self
+            .arguments
+            .iter()
+            .map(|argument| {
+                compile_value_register(argument, core::ptr::from_ref(argument).addr(), ctx)
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        ctx.emit_varop(hash_str("matrix/comprehension"), destination, arguments);
+        Ok(destination)
     }
 }

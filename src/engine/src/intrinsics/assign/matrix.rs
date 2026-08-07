@@ -51,26 +51,42 @@ macro_rules! impl_set_all_fxn_s {
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
         where
             Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-            T: Scalar + Clone + Debug + Sync + Send + 'static + ConstElem + AsValueKind,
+            T: Scalar
+                + Clone
+                + Debug
+                + Sync
+                + Send
+                + 'static
+                + ConstElem
+                + AsValueKind
+                + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             T: CompileConst,
-            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             IxVec: CompileConst,
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <naMatrix<T, R1, C1, S1> as FunctionRuntimeType>::REPRESENTATION,
+                T::REPRESENTATION,
+                IxVec::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
-                        let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                        let ixes: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
+                        let source: Ref<T> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ixes: Ref<IxVec> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
                         let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            unsafe { out.as_unchecked() }.clone();
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,
@@ -99,13 +115,14 @@ macro_rules! impl_set_all_fxn_s {
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
                     let source_ptr = &*self.source.as_ptr();
                     let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
                     $op!(source_ptr, ix_ptr, sink_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -134,14 +151,7 @@ macro_rules! impl_set_all_fxn_s {
                     naMatrix::<T, R1, C1, S1>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_binop!(
-                    name,
-                    self.sink,
-                    self.ixes,
-                    self.source,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_binop!(name, self.sink, self.ixes, self.source, ctx);
             }
         }
     };
@@ -192,22 +202,40 @@ macro_rules! impl_assign_fxn_s {
         impl<T, R, C, S: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R, C, S>>
         where
             Ref<naMatrix<T, R, C, S>>: ToValue,
-            T: Scalar + Clone + Debug + Sync + Send + 'static + ConstElem + AsValueKind,
+            T: Scalar
+                + Clone
+                + Debug
+                + Sync
+                + Send
+                + 'static
+                + ConstElem
+                + AsValueKind
+                + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             T: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + AsNaKind,
+            naMatrix<T, R, C, S>: ConstElem + AsNaKind + FunctionRuntimeType,
+            $ix: FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <naMatrix<T, R, C, S> as FunctionRuntimeType>::REPRESENTATION,
+                T::REPRESENTATION,
+                <$ix as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
-                        let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                        let ixes: Ref<$ix> = unsafe { arg2.as_unchecked() }.clone();
-                        let sink: Ref<naMatrix<T, R, C, S>> = unsafe { out.as_unchecked() }.clone();
+                        let source: Ref<T> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ixes: Ref<$ix> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let sink: Ref<naMatrix<T, R, C, S>> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,
@@ -234,13 +262,14 @@ macro_rules! impl_assign_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let mut sink_ptr = &mut *self.sink.as_mut_ptr();
                     let ix_val = (*self.ixes.as_ptr()).clone();
                     let source_val = (*self.source.as_ptr()).clone();
                     $op!(source_val, ix_val, sink_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -266,14 +295,7 @@ macro_rules! impl_assign_fxn_s {
                     T::as_value_kind(),
                     naMatrix::<T, R, C, S>::as_na_kind()
                 );
-                compile_binop!(
-                    name,
-                    self.sink,
-                    self.ixes,
-                    self.source,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_binop!(name, self.sink, self.ixes, self.source, ctx);
             }
         }
     };
@@ -541,21 +563,35 @@ pub struct Set1DAS<T, Sink> {
 impl<T, R, C, S> MechFunctionFactory for Set1DAS<T, naMatrix<T, R, C, S>>
 where
     Ref<naMatrix<T, R, C, S>>: ToValue,
-    T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
+    T: Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     R: Dim,
     C: Dim,
     S: StorageMut<T, R, C> + Debug + IsContiguous + 'static,
-    naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind,
+    naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     naMatrix<T, R, C, S>: CompileConst,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+        <naMatrix<T, R, C, S> as FunctionRuntimeType>::REPRESENTATION,
+        T::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Unary(out, arg1) => {
-                let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let sink: Ref<naMatrix<T, R, C, S>> = unsafe { out.as_unchecked() }.clone();
+                let source: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let sink: Ref<naMatrix<T, R, C, S>> =
+                    out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     sink,
                     source,
@@ -581,7 +617,7 @@ where
     S: StorageMut<T, R, C> + Debug + IsContiguous,
     Ref<naMatrix<T, R, C, S>>: ToValue,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let sink = &mut *self.sink.as_mut_ptr();
             let source_val = (*self.source.as_ptr()).clone();
@@ -589,7 +625,8 @@ where
             for elem in slice.iter_mut() {
                 *elem = source_val.clone();
             }
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.sink.to_value()
@@ -614,13 +651,7 @@ where
             T::as_value_kind(),
             naMatrix::<T, R, C, S>::as_na_kind()
         );
-        compile_unop!(
-            name,
-            self.sink,
-            self.source,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Assign)
-        );
+        compile_unop!(name, self.sink, self.source, ctx);
     }
 }
 
@@ -713,23 +744,39 @@ pub struct Assign2DSSS<T, MatA> {
 impl<T, R1, C1, S1: 'static> MechFunctionFactory for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
 where
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-    T: Scalar + Clone + Debug + Sync + Send + 'static + ConstElem + AsValueKind,
+    T: Scalar
+        + Clone
+        + Debug
+        + Sync
+        + Send
+        + 'static
+        + ConstElem
+        + AsValueKind
+        + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     T: CompileConst,
     R1: Dim,
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
-    naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind,
+    naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind + FunctionRuntimeType,
     #[cfg(feature = "compiler")]
     naMatrix<T, R1, C1, S1>: CompileConst,
 {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+        <naMatrix<T, R1, C1, S1> as FunctionRuntimeType>::REPRESENTATION,
+        T::REPRESENTATION,
+        <usize as FunctionRuntimeType>::REPRESENTATION,
+        <usize as FunctionRuntimeType>::REPRESENTATION,
+    );
+
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                let ix1: Ref<usize> = unsafe { arg2.as_unchecked() }.clone();
-                let ix2: Ref<usize> = unsafe { arg3.as_unchecked() }.clone();
-                let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+                let source: Ref<T> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let ix1: Ref<usize> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                let ix2: Ref<usize> = arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
+                let sink: Ref<naMatrix<T, R1, C1, S1>> =
+                    out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self {
                     sink,
                     source,
@@ -756,14 +803,15 @@ where
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
 {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         unsafe {
             let sink_ptr = &mut *self.sink.as_mut_ptr();
             let source_val = (*self.source.as_ptr()).clone();
             let r = (*self.ixes.0.as_ptr()).clone();
             let c = (*self.ixes.1.as_ptr()).clone();
             sink_ptr[(r - 1, c - 1)] = source_val;
-        }
+        };
+        Ok(())
     }
     fn out(&self) -> Value {
         self.sink.to_value()
@@ -788,15 +836,7 @@ where
             T::as_value_kind(),
             naMatrix::<T, R1, C1, S1>::as_na_kind()
         );
-        compile_ternop!(
-            name,
-            self.sink,
-            self.source,
-            self.ixes.0,
-            self.ixes.1,
-            ctx,
-            FeatureFlag::Builtin(FeatureKind::Assign)
-        );
+        compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
     }
 }
 
@@ -978,21 +1018,29 @@ macro_rules! impl_assign_scalar_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
+            $ix: FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                <naMatrix<T, R1, C1, S1> as FunctionRuntimeType>::REPRESENTATION,
+                <naMatrix<T, R2, C2, S2> as FunctionRuntimeType>::REPRESENTATION,
+                <$ix as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Binary(out, arg1, arg2) => {
                         let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            unsafe { arg1.as_unchecked() }.clone();
-                        let ixes: Ref<$ix> = unsafe { arg2.as_unchecked() }.clone();
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ixes: Ref<$ix> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
                         let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            unsafe { out.as_unchecked() }.clone();
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,
@@ -1023,13 +1071,14 @@ macro_rules! impl_assign_scalar_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink_ptr = &mut *self.sink.as_mut_ptr();
                     let source_ptr = &*self.source.as_ptr();
                     let ix_ptr = &(*self.ixes.as_ptr());
                     $op!(source_ptr, ix_ptr, sink_ptr);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -1058,14 +1107,7 @@ macro_rules! impl_assign_scalar_fxn_v {
                     naMatrix::<T, R1, C1, S1>::as_na_kind(),
                     naMatrix::<T, R2, C2, S2>::as_na_kind()
                 );
-                compile_binop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
         }
     };
@@ -1313,27 +1355,45 @@ macro_rules! impl_assign_range_scalar_fxn_s {
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
             Ref<naMatrix<T, R, C, S>>: ToValue,
-            T: Scalar + Clone + Debug + Sync + Send + 'static + ConstElem + AsValueKind,
+            T: Scalar
+                + Clone
+                + Debug
+                + Sync
+                + Send
+                + 'static
+                + ConstElem
+                + AsValueKind
+                + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             T: CompileConst,
-            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             IxVec: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+                <naMatrix<T, R, C, S> as FunctionRuntimeType>::REPRESENTATION,
+                T::REPRESENTATION,
+                IxVec::REPRESENTATION,
+                <usize as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                        let ix1: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
-                        let ix2: Ref<usize> = unsafe { arg3.as_unchecked() }.clone();
+                        let source: Ref<T> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ix1: Ref<IxVec> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let ix2: Ref<usize> =
+                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
                         let sink: Ref<na::Matrix<T, R, C, S>> =
-                            unsafe { out.as_unchecked() }.clone();
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,
@@ -1361,14 +1421,15 @@ macro_rules! impl_assign_range_scalar_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink = &mut *self.sink.as_mut_ptr();
                     let source = &*self.source.as_ptr();
                     let ix1 = (*self.ixes.0.as_ptr()).as_ref();
                     let ix2 = (*self.ixes.1.as_ptr());
                     $op!(sink, ix1, ix2, source);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -1397,15 +1458,7 @@ macro_rules! impl_assign_range_scalar_fxn_s {
                     naMatrix::<T, R, C, S>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_ternop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes.0,
-                    self.ixes.1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
         }
     };
@@ -1446,7 +1499,7 @@ macro_rules! impl_assign_range_scalar_fxn_v {
                 + AsValueKind,
             #[cfg(feature = "compiler")]
             T: CompileConst,
-            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             IxVec: CompileConst,
             R1: Dim,
@@ -1455,22 +1508,31 @@ macro_rules! impl_assign_range_scalar_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+                <naMatrix<T, R1, C1, S1> as FunctionRuntimeType>::REPRESENTATION,
+                <naMatrix<T, R2, C2, S2> as FunctionRuntimeType>::REPRESENTATION,
+                IxVec::REPRESENTATION,
+                <usize as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
                         let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            unsafe { arg1.as_unchecked() }.clone();
-                        let ix1: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
-                        let ix2: Ref<usize> = unsafe { arg3.as_unchecked() }.clone();
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ix1: Ref<IxVec> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let ix2: Ref<usize> =
+                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
                         let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            unsafe { out.as_unchecked() }.clone();
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,
@@ -1502,14 +1564,15 @@ macro_rules! impl_assign_range_scalar_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink = &mut *self.sink.as_mut_ptr();
                     let source = &*self.source.as_ptr();
                     let ix1 = (*self.ixes.0.as_ptr()).as_ref();
                     let ix2 = (*self.ixes.1.as_ptr());
                     $op!(sink, ix1, ix2, source);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -1540,15 +1603,7 @@ macro_rules! impl_assign_range_scalar_fxn_v {
                     naMatrix::<T, R2, C2, S2>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_ternop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes.0,
-                    self.ixes.1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
         }
     };
@@ -1790,27 +1845,45 @@ macro_rules! impl_assign_scalar_range_fxn_s {
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
             Ref<naMatrix<T, R, C, S>>: ToValue,
-            T: Scalar + Clone + Debug + Sync + Send + 'static + ConstElem + AsValueKind,
+            T: Scalar
+                + Clone
+                + Debug
+                + Sync
+                + Send
+                + 'static
+                + ConstElem
+                + AsValueKind
+                + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             T: CompileConst,
-            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+            IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             IxVec: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+                <naMatrix<T, R, C, S> as FunctionRuntimeType>::REPRESENTATION,
+                T::REPRESENTATION,
+                <usize as FunctionRuntimeType>::REPRESENTATION,
+                IxVec::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                        let ix1: Ref<usize> = unsafe { arg2.as_unchecked() }.clone();
-                        let ix2: Ref<IxVec> = unsafe { arg3.as_unchecked() }.clone();
+                        let source: Ref<T> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ix1: Ref<usize> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let ix2: Ref<IxVec> =
+                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
                         let sink: Ref<na::Matrix<T, R, C, S>> =
-                            unsafe { out.as_unchecked() }.clone();
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,
@@ -1838,14 +1911,15 @@ macro_rules! impl_assign_scalar_range_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink = &mut *self.sink.as_mut_ptr();
                     let source = &*self.source.as_ptr();
                     let ix1 = (*self.ixes.0.as_ptr());
                     let ix2 = (*self.ixes.1.as_ptr()).as_ref();
                     $op!(sink, ix1, ix2, source);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -1874,15 +1948,7 @@ macro_rules! impl_assign_scalar_range_fxn_s {
                     naMatrix::<T, R, C, S>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_ternop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes.0,
-                    self.ixes.1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
         }
     };
@@ -1923,7 +1989,7 @@ macro_rules! impl_assign_scalar_range_fxn_v {
                 + AsValueKind,
             #[cfg(feature = "compiler")]
             T: CompileConst,
-            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+            IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             IxVec: CompileConst,
             R1: Dim,
@@ -1932,22 +1998,31 @@ macro_rules! impl_assign_scalar_range_fxn_v {
             R2: Dim,
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
-            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
-            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+                <naMatrix<T, R1, C1, S1> as FunctionRuntimeType>::REPRESENTATION,
+                <naMatrix<T, R2, C2, S2> as FunctionRuntimeType>::REPRESENTATION,
+                <usize as FunctionRuntimeType>::REPRESENTATION,
+                IxVec::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
                         let source: Ref<naMatrix<T, R2, C2, S2>> =
-                            unsafe { arg1.as_unchecked() }.clone();
-                        let ix1: Ref<usize> = unsafe { arg2.as_unchecked() }.clone();
-                        let ix2: Ref<IxVec> = unsafe { arg3.as_unchecked() }.clone();
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ix1: Ref<usize> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let ix2: Ref<IxVec> =
+                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
                         let sink: Ref<naMatrix<T, R1, C1, S1>> =
-                            unsafe { out.as_unchecked() }.clone();
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,
@@ -1979,14 +2054,15 @@ macro_rules! impl_assign_scalar_range_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink = &mut *self.sink.as_mut_ptr();
                     let source = &*self.source.as_ptr();
                     let ix1 = (*self.ixes.0.as_ptr());
                     let ix2 = (*self.ixes.1.as_ptr()).as_ref();
                     $op!(sink, ix1, ix2, source);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -2017,15 +2093,7 @@ macro_rules! impl_assign_scalar_range_fxn_v {
                     naMatrix::<T, R2, C2, S2>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_ternop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes.0,
-                    self.ixes.1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
         }
     };
@@ -2344,30 +2412,48 @@ macro_rules! impl_assign_range_range_fxn_s {
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2>
         where
             Ref<naMatrix<T, R, C, S>>: ToValue,
-            T: Scalar + Clone + Debug + Sync + Send + 'static + ConstElem + AsValueKind,
+            T: Scalar
+                + Clone
+                + Debug
+                + Sync
+                + Send
+                + 'static
+                + ConstElem
+                + AsValueKind
+                + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             T: CompileConst,
-            IxVec1: ConstElem + Debug + AsRef<[$ix1]> + AsNaKind,
+            IxVec1: ConstElem + Debug + AsRef<[$ix1]> + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             IxVec1: CompileConst,
-            IxVec2: ConstElem + Debug + AsRef<[$ix2]> + AsNaKind,
+            IxVec2: ConstElem + Debug + AsRef<[$ix2]> + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             IxVec2: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
-            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind,
+            naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
             #[cfg(feature = "compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+                <naMatrix<T, R, C, S> as FunctionRuntimeType>::REPRESENTATION,
+                T::REPRESENTATION,
+                IxVec1::REPRESENTATION,
+                IxVec2::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
-                        let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
-                        let ix1: Ref<IxVec1> = unsafe { arg2.as_unchecked() }.clone();
-                        let ix2: Ref<IxVec2> = unsafe { arg3.as_unchecked() }.clone();
+                        let source: Ref<T> =
+                            arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let ix1: Ref<IxVec1> =
+                            arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                        let ix2: Ref<IxVec2> =
+                            arg3.try_function_ref(FunctionArgumentRole::Input(2))?;
                         let sink: Ref<na::Matrix<T, R, C, S>> =
-                            unsafe { out.as_unchecked() }.clone();
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new(Self {
                             sink,
                             source,
@@ -2397,14 +2483,15 @@ macro_rules! impl_assign_range_range_fxn_s {
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 unsafe {
                     let sink = &mut *self.sink.as_mut_ptr();
                     let source = &*self.source.as_ptr();
                     let ix1 = (*self.ixes.0.as_ptr()).as_ref();
                     let ix2 = (*self.ixes.1.as_ptr()).as_ref();
                     $op!(sink, ix1, ix2, source);
-                }
+                };
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.sink.to_value()
@@ -2435,15 +2522,7 @@ macro_rules! impl_assign_range_range_fxn_s {
                     IxVec1::as_na_kind(),
                     IxVec2::as_na_kind()
                 );
-                compile_ternop!(
-                    name,
-                    self.sink,
-                    self.source,
-                    self.ixes.0,
-                    self.ixes.1,
-                    ctx,
-                    FeatureFlag::Builtin(FeatureKind::Assign)
-                );
+                compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx);
             }
         }
     };

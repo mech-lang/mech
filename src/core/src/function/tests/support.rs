@@ -64,7 +64,9 @@ impl TestFunction {
 }
 
 impl MechFunctionImpl for TestFunction {
-    fn solve(&self) {}
+    fn solve_result(&self) -> MResult<()> {
+        Ok(())
+    }
 
     fn out(&self) -> Value {
         self.output.clone()
@@ -113,6 +115,7 @@ pub(super) fn set_output() -> (Value, ReactiveCellId, ReactiveCellId, ReactiveCe
     members.insert(Value::F64(second.clone()));
     let set = Ref::new(MechSet {
         kind: ValueKind::F64,
+        max_elements: Some(2),
         num_elements: 2,
         set: members,
     });
@@ -162,8 +165,9 @@ struct TestRegister {
 }
 #[cfg(feature = "f64")]
 impl MechFunctionImpl for TestRegister {
-    fn solve(&self) {
+    fn solve_result(&self) -> MResult<()> {
         *self.solve.borrow_mut() += 1;
+        Ok(())
     }
     fn out(&self) -> Value {
         self.sink.to_value()

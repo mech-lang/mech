@@ -12,9 +12,7 @@
 // Furthermore, this file defines two structs:
 
 // `RuntimeHostFunctionSpecializer`, which installs host functions as
-// program-local extensions that can be called directly from Mech code. The
-// `RuntimeHostNativeFunction` struct represents a specialized host function
-// that can be executed within the Mech program.
+// program-local extensions that can be called directly from Mech code.
 
 // For example, a function to compute an affine transformation could be registered as a host function, and then called from Mech code like this:
 /*
@@ -37,25 +35,17 @@
   result := demo/math/affine(2.0, 3.0, 4.0);
 */
 
-use super::MechRuntime;
-#[cfg(feature = "compiler")]
-use super::RuntimeHostFunctionNotBytecodeCompilableError;
-use super::execution::{
-    ACTIVATION_EFFECT_BARRIER_NAME, ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
-    ActivationEffectBarrierSpecializer, ActivationEffectPayloadCaptureSpecializer,
-};
 use super::extension::invoke_extension;
+use super::{MechRuntime, RuntimeExecutionMode};
 use crate::{
     HostCall, HostFunctionNotFoundError, RegisteredHostFunction, RuntimeCallContext,
     RuntimeContext, RuntimeEventKind, RuntimeValueSnapshot,
 };
-#[cfg(feature = "compiler")]
-use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
-    FunctionSpecializer, GuardFunctionSafety, MResult, MechError, MechErrorKind,
-    MechExecutionServices, MechFunctionImpl, Ref, Value, ValueKind,
+    ExecutionHostFunctionRequest, FunctionSpecializer, GuardFunctionSafety, InitialSolvePolicy,
+    MResult, MechError, MechExecutionServices, Ref, Value,
 };
-use mech_engine::MechProgram;
+use mech_engine::{ExternalHostCallFunction, MechProgram};
 use std::sync::Arc;
 
 impl MechRuntime {
@@ -63,24 +53,17 @@ impl MechRuntime {
         program: &mut MechProgram,
         context: RuntimeCallContext,
         functions: Vec<RegisteredHostFunction>,
+        execution_mode: RuntimeExecutionMode,
     ) -> MResult<()> {
-        program.register_function_extension(
-            ACTIVATION_EFFECT_BARRIER_NAME,
-            Arc::new(ActivationEffectBarrierSpecializer),
-        )?;
-        program.register_function_extension(
-            ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
-            Arc::new(ActivationEffectPayloadCaptureSpecializer),
-        )?;
         for function in functions {
             let name = function.name().to_string();
             program.register_function_extension(
                 name.clone(),
                 Arc::new(RuntimeHostFunctionSpecializer::new(
-                    name.clone(),
                     name,
                     context.clone(),
                     function,
+                    execution_mode,
                 )),
             )?;
         }
@@ -92,10 +75,12 @@ impl MechRuntime {
         context: &RuntimeContext,
     ) -> MResult<()> {
         let functions = self.registered_host_functions()?;
+        let execution_mode = self.execution_mode;
         Self::install_runtime_program_host_extensions(
             &mut self.program,
             RuntimeCallContext::capture(context),
             functions,
+            execution_mode,
         )
     }
 
@@ -109,6 +94,7 @@ impl MechRuntime {
             program,
             RuntimeCallContext::capture(context),
             functions,
+            self.execution_mode,
         )
     }
 
@@ -164,7 +150,12 @@ impl MechRuntime {
         };
         let result = self
             .with_runtime_execution_session(context, |session| {
-                session.invoke_native(&call.name, &call.args)
+                session.invoke_host_function(
+                    &ExecutionHostFunctionRequest {
+                        name: call.name.clone(),
+                    },
+                    &call.args,
+                )
             })
             .and_then(finish);
         if !implicit {
@@ -223,24 +214,24 @@ impl MechRuntime {
 
 #[derive(Clone, Debug)]
 pub struct RuntimeHostFunctionSpecializer {
-    pub mech_name: String,
     pub host_name: String,
     pub context: RuntimeCallContext,
     pub function: RegisteredHostFunction,
+    pub execution_mode: RuntimeExecutionMode,
 }
 
 impl RuntimeHostFunctionSpecializer {
     pub fn new(
-        mech_name: impl Into<String>,
         host_name: impl Into<String>,
         context: RuntimeCallContext,
         function: RegisteredHostFunction,
+        execution_mode: RuntimeExecutionMode,
     ) -> Self {
         Self {
-            mech_name: mech_name.into(),
             host_name: host_name.into(),
             context,
             function,
+            execution_mode,
         }
     }
 }
@@ -260,125 +251,17 @@ impl FunctionSpecializer for RuntimeHostFunctionSpecializer {
             "plan",
             || self.function.plan(&self.context, &argument_snapshots),
         )?;
-        Ok(Box::new(RuntimeHostNativeFunction {
-            name: self.mech_name.clone(),
-            host_name: self.host_name.clone(),
-            arguments: arguments.to_vec(),
-            value: Ref::new(planned.into_value().try_deep_snapshot()?),
-        }))
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct RuntimeHostNativeFunction {
-    pub name: String,
-    pub host_name: String,
-    pub arguments: Vec<Value>,
-    pub value: Ref<Value>,
-}
-
-#[derive(Debug, Clone)]
-pub struct RuntimeHostOutputUpdateError {
-    pub function: String,
-    pub expected: ValueKind,
-    pub actual: ValueKind,
-    pub reason: String,
-}
-impl MechErrorKind for RuntimeHostOutputUpdateError {
-    fn name(&self) -> &str {
-        "RuntimeHostOutputUpdateError"
-    }
-    fn message(&self) -> String {
-        format!(
-            "host function `{}` returned unsupported or incompatible output kind {:?}; expected {:?}: {}",
-            self.function, self.actual, self.expected, self.reason,
-        )
-    }
-}
-
-impl RuntimeHostNativeFunction {
-    fn update_output(&self, next: Value) -> MResult<()> {
-        let expected = self.value.borrow().kind();
-        if expected == ValueKind::Empty {
-            *self.value.borrow_mut() = next.try_deep_snapshot()?;
-            return Ok(());
-        }
-        let next = next.try_deep_snapshot()?;
-        let actual = next.kind();
-        mech_engine::apply_stable_value_update(self.value.clone(), next)
-            .map(|_| ())
-            .map_err(|error| {
-                MechError::new(
-                    RuntimeHostOutputUpdateError {
-                        function: self.name.clone(),
-                        expected,
-                        actual,
-                        reason: format!("{error:?}"),
-                    },
-                    None,
-                )
-            })
-    }
-
-    fn solve_inner(&self, services: &mut dyn mech_core::MechExecutionServices) -> MResult<()> {
-        let next = services.invoke_native(&self.host_name, &self.arguments)?;
-        self.update_output(next)
-    }
-}
-
-impl MechFunctionImpl for RuntimeHostNativeFunction {
-    fn solve(&self) {
-        let mut services = mech_core::NoMechExecutionServices;
-        if let Err(error) = self.solve_inner(&mut services) {
-            eprintln!(
-                "[Mech Runtime Host Error] function `{}` failed during solve; preserving previous output: {:?}",
-                self.name, error,
-            );
-        }
-    }
-
-    fn solve_result(&self) -> MResult<()> {
-        let mut services = mech_core::NoMechExecutionServices;
-        self.solve_inner(&mut services)
-    }
-
-    fn solve_result_with(
-        &self,
-        services: &mut dyn mech_core::MechExecutionServices,
-    ) -> MResult<()> {
-        self.solve_inner(services)
-    }
-
-    fn solve_reactive_with(
-        &self,
-        services: &mut dyn mech_core::MechExecutionServices,
-    ) -> MResult<mech_core::ReactiveSolveStatus> {
-        self.solve_inner(services)?;
-        Ok(mech_core::ReactiveSolveStatus::Changed)
-    }
-
-    fn out(&self) -> Value {
-        self.value.borrow().clone()
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(vec![Value::MutableReference(self.value.clone())])
-    }
-
-    fn to_string(&self) -> String {
-        format!("RuntimeHostNativeFunction::{}", self.name)
-    }
-}
-
-#[cfg(feature = "compiler")]
-impl MechFunctionCompiler for RuntimeHostNativeFunction {
-    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        Err(MechError::new(
-            RuntimeHostFunctionNotBytecodeCompilableError {
-                function: self.name.clone(),
+        Ok(Box::new(ExternalHostCallFunction {
+            request: ExecutionHostFunctionRequest {
+                name: self.host_name.clone(),
             },
-            None,
-        ))
+            arguments: arguments.to_vec(),
+            output: Ref::new(planned.into_value().try_deep_snapshot()?),
+            initial_solve_policy: match self.execution_mode {
+                RuntimeExecutionMode::Execute => InitialSolvePolicy::Solve,
+                RuntimeExecutionMode::Plan => InitialSolvePolicy::PreserveSpecializedOutput,
+            },
+        }))
     }
 }
 

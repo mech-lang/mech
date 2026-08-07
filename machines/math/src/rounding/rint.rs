@@ -44,19 +44,9 @@ macro_rules! rintf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(
-    MathRint,
-    f32,
-    rintf,
-    FeatureFlag::Custom(hash_str("math/rint"))
-);
+impl_math_unop!(MathRint, f32, rintf);
 #[cfg(feature = "f64")]
-impl_math_unop!(
-    MathRint,
-    f64,
-    rint,
-    FeatureFlag::Custom(hash_str("math/rint"))
-);
+impl_math_unop!(MathRint, f64, rint);
 
 #[cfg(feature = "source")]
 fn impl_rint_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {

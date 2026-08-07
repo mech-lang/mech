@@ -1,0 +1,80 @@
+[package]
+name = "native-build-owner-runner"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[features]
+default = []
+standard = [
+  "dep:mech-stdlib",
+  "mech-runtime/invariant_define",
+  "mech-stdlib/native-plan",
+  "mech-stdlib/standard_runtime",
+]
+fixed = [
+  "dep:mech-engine",
+  "dep:mech-math",
+  "mech-engine/bool",
+  "mech-engine/f64",
+  "mech-engine/matrix2",
+  "mech-engine/matrix_horzcat",
+  "mech-engine/matrix_vertcat",
+  "mech-engine/native-plan",
+  "mech-engine/row_vector2",
+  "mech-engine/runtime",
+  "mech-engine/vector2",
+  "mech-math/add",
+  "mech-math/f64",
+  "mech-math/matrix2",
+  "mech-math/native-plan",
+  "mech-math/runtime",
+]
+
+[dependencies]
+mech-build = {
+  path = "../../../src/build",
+  default-features = false,
+  features = ["standard-hosts"],
+}
+mech-core = {
+  path = "../../../src/core",
+  default-features = false,
+  features = ["native-plan", "program", "serde"],
+}
+mech-engine = { path = "../../../src/engine", default-features = false, optional = true }
+mech-math = { path = "../../../machines/math", default-features = false, optional = true }
+mech-runtime = {
+  path = "../../../src/runtime",
+  default-features = false,
+  features = ["runtime", "serde", "string"],
+}
+mech-stdlib = { path = "../../../src/stdlib", default-features = false, optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[patch.crates-io]
+mech-build = { path = "../../../src/build" }
+mech-bytecode = { path = "../../../src/bytecode" }
+mech-core = { path = "../../../src/core" }
+mech-syntax = { path = "../../../src/syntax" }
+mech-engine = { path = "../../../src/engine" }
+mech-runtime = { path = "../../../src/runtime" }
+mech-stdlib = { path = "../../../src/stdlib" }
+mech-host-cli = { path = "../../../hosts/cli" }
+mech-host-console = { path = "../../../hosts/console" }
+mech-host-robot-arm = { path = "../../../hosts/robot-arm" }
+mech-host-scene = { path = "../../../hosts/scene" }
+mech-host-time = { path = "../../../hosts/time" }
+mech-host-timer = { path = "../../../hosts/timer" }
+mech-combinatorics = { path = "../../../machines/combinatorics" }
+mech-compare = { path = "../../../machines/compare" }
+mech-logic = { path = "../../../machines/logic" }
+mech-math = { path = "../../../machines/math" }
+mech-matrix = { path = "../../../machines/matrix" }
+mech-range = { path = "../../../machines/range" }
+mech-set = { path = "../../../machines/set" }
+mech-stats = { path = "../../../machines/stats" }
+mech-string = { path = "../../../machines/string" }
+
+[workspace]

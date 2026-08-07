@@ -15,7 +15,7 @@ macro_rules! transpose_op {
 
 #[macro_export]
 macro_rules! impl_transpose {
-    ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
+    ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name<T> {
             arg: Ref<$arg_type>,
@@ -27,12 +27,21 @@ macro_rules! impl_transpose {
             #[cfg(feature = "compiler")]
             T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
+            $arg_type: FunctionRuntimeType,
+            $out_type: FunctionRuntimeType,
         {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+                <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                <$arg_type as FunctionRuntimeType>::REPRESENTATION,
+            );
+
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
                 match args {
                     FunctionArgs::Unary(out, arg) => {
-                        let arg: Ref<$arg_type> = unsafe { arg.as_unchecked().clone() };
-                        let out: Ref<$out_type> = unsafe { out.as_unchecked().clone() };
+                        let arg: Ref<$arg_type> =
+                            arg.try_function_ref(FunctionArgumentRole::Input(0))?;
+                        let out: Ref<$out_type> =
+                            out.try_function_ref(FunctionArgumentRole::Output)?;
                         Ok(Box::new($struct_name { arg, out }))
                     }
                     _ => Err(MechError::new(
@@ -51,10 +60,11 @@ macro_rules! impl_transpose {
             T: Debug + Clone + Sync + Send + 'static + PartialEq + PartialOrd,
             Ref<$out_type>: ToValue,
         {
-            fn solve(&self) {
+            fn solve_result(&self) -> MResult<()> {
                 let arg_ptr = self.arg.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
                 $op!(arg_ptr, out_ptr);
+                Ok(())
             }
             fn out(&self) -> Value {
                 self.out.to_value()
@@ -74,132 +84,42 @@ macro_rules! impl_transpose {
         {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-                compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
+                compile_unop!(name, self.out, self.arg, ctx);
             }
         }
     };
 }
 
 #[cfg(feature = "matrix1")]
-impl_transpose!(
-    TransposeM1,
-    Matrix1<T>,
-    Matrix1<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeM1, Matrix1<T>, Matrix1<T>, transpose_op);
 #[cfg(feature = "matrix2")]
-impl_transpose!(
-    TransposeM2,
-    Matrix2<T>,
-    Matrix2<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeM2, Matrix2<T>, Matrix2<T>, transpose_op);
 #[cfg(feature = "matrix3")]
-impl_transpose!(
-    TransposeM3,
-    Matrix3<T>,
-    Matrix3<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeM3, Matrix3<T>, Matrix3<T>, transpose_op);
 #[cfg(feature = "matrix4")]
-impl_transpose!(
-    TransposeM4,
-    Matrix4<T>,
-    Matrix4<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeM4, Matrix4<T>, Matrix4<T>, transpose_op);
 #[cfg(all(feature = "matrix2x3", feature = "matrix3x2"))]
-impl_transpose!(
-    TransposeM2x3,
-    Matrix2x3<T>,
-    Matrix3x2<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeM2x3, Matrix2x3<T>, Matrix3x2<T>, transpose_op);
 #[cfg(all(feature = "matrix3x2", feature = "matrix2x3"))]
-impl_transpose!(
-    TransposeM3x2,
-    Matrix3x2<T>,
-    Matrix2x3<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeM3x2, Matrix3x2<T>, Matrix2x3<T>, transpose_op);
 #[cfg(feature = "matrixd")]
-impl_transpose!(
-    TransposeMD,
-    DMatrix<T>,
-    DMatrix<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeMD, DMatrix<T>, DMatrix<T>, transpose_op);
 #[cfg(all(feature = "vector2", feature = "row_vector2"))]
-impl_transpose!(
-    TransposeV2,
-    Vector2<T>,
-    RowVector2<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeV2, Vector2<T>, RowVector2<T>, transpose_op);
 #[cfg(all(feature = "vector3", feature = "row_vector3"))]
-impl_transpose!(
-    TransposeV3,
-    Vector3<T>,
-    RowVector3<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeV3, Vector3<T>, RowVector3<T>, transpose_op);
 #[cfg(all(feature = "vector4", feature = "row_vector4"))]
-impl_transpose!(
-    TransposeV4,
-    Vector4<T>,
-    RowVector4<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeV4, Vector4<T>, RowVector4<T>, transpose_op);
 #[cfg(all(feature = "vectord", feature = "row_vectord"))]
-impl_transpose!(
-    TransposeVD,
-    DVector<T>,
-    RowDVector<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeVD, DVector<T>, RowDVector<T>, transpose_op);
 #[cfg(all(feature = "row_vector2", feature = "vector2"))]
-impl_transpose!(
-    TransposeR2,
-    RowVector2<T>,
-    Vector2<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeR2, RowVector2<T>, Vector2<T>, transpose_op);
 #[cfg(all(feature = "row_vector3", feature = "vector3"))]
-impl_transpose!(
-    TransposeR3,
-    RowVector3<T>,
-    Vector3<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeR3, RowVector3<T>, Vector3<T>, transpose_op);
 #[cfg(all(feature = "row_vector4", feature = "vector4"))]
-impl_transpose!(
-    TransposeR4,
-    RowVector4<T>,
-    Vector4<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeR4, RowVector4<T>, Vector4<T>, transpose_op);
 #[cfg(all(feature = "row_vectord", feature = "vectord"))]
-impl_transpose!(
-    TransposeRD,
-    RowDVector<T>,
-    DVector<T>,
-    transpose_op,
-    FeatureFlag::Builtin(FeatureKind::Transpose)
-);
+impl_transpose!(TransposeRD, RowDVector<T>, DVector<T>, transpose_op);
 
 #[cfg(feature = "source")]
 macro_rules! impl_transpose_match_arms {

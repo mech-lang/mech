@@ -16,6 +16,9 @@ help: the following other types implement trait `function::reactive_register_sea
   | impl<T> reactive_register_sealed::Sealed for ReactiveRegisterWrite<T> {}
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ReactiveRegisterWrite<T>`
 ...
+  | impl reactive_register_sealed::Sealed for ReactiveRegisterCommitBatch {}
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ReactiveRegisterCommitBatch`
+...
   | impl reactive_register_sealed::Sealed for ReactiveRegisterNoopCommit {}
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `ReactiveRegisterNoopCommit`
 note: required by a bound in `ReactiveRegisterCommit`
@@ -26,4 +29,5 @@ note: required by a bound in `ReactiveRegisterCommit`
   = note: `ReactiveRegisterCommit` is a "sealed trait", because to implement it you also need to implement `mech_core::function::reactive_register_sealed::Sealed`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it
   = help: the following types implement the trait:
             mech_core::ReactiveRegisterWrite<T>
+            mech_core::ReactiveRegisterCommitBatch
             mech_core::ReactiveRegisterNoopCommit
