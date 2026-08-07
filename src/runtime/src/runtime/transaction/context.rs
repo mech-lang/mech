@@ -1,4 +1,4 @@
-use crate::context_events::RuntimeContextEvents;
+use crate::context_events::RuntimeContextEventMark;
 use crate::runtime::MechRuntime;
 use crate::{
     AccessSet, ActorId, ActorTurn, MessageRecord, ModuleVersionId, ObjectId, ResourceBudget,
@@ -89,15 +89,13 @@ pub(in crate::runtime) struct RuntimeContextCheckpoint {
     transaction: Option<TransactionId>,
     authority: RuntimeAuthorityScope,
     budget: ResourceBudget,
-    events: RuntimeContextEvents,
+    event_mark: RuntimeContextEventMark,
     actor_message: Option<MessageRecord>,
     actor_state: Option<ObjectId>,
 }
 
 impl RuntimeContextCheckpoint {
     pub(in crate::runtime) fn capture(context: &RuntimeContext) -> Self {
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
         Self {
             runtime: context.runtime,
             subject: context.subject.clone(),
@@ -108,13 +106,17 @@ impl RuntimeContextCheckpoint {
             transaction: context.transaction,
             authority: context.authority.clone(),
             budget: context.budget.clone(),
-            events: context.events.clone(),
+            event_mark: context.events.mark(),
             actor_message: context.actor_message.clone(),
             actor_state: context.actor_state,
         }
     }
 
-    pub(in crate::runtime) fn restore_preserving_consumption(&self, context: &mut RuntimeContext) {
+    pub(in crate::runtime) fn restore_preserving_consumption(
+        &self,
+        context: &mut RuntimeContext,
+    ) -> MResult<()> {
+        context.events.restore(&self.event_mark)?;
         let used_steps = context.budget.used_steps.max(self.budget.used_steps);
         let used_bytes = context.budget.used_bytes.max(self.budget.used_bytes);
         let used_items = context.budget.used_items.max(self.budget.used_items);
@@ -138,11 +140,13 @@ impl RuntimeContextCheckpoint {
             max_messages: self.budget.max_messages,
             used_messages,
         };
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_snapshot(self.events.len());
-        context.events = self.events.clone();
         context.actor_message = self.actor_message.clone();
         context.actor_state = self.actor_state;
+        Ok(())
+    }
+
+    pub(in crate::runtime) fn accepts_event_storage(&self, context: &RuntimeContext) -> bool {
+        context.events.accepts_mark(&self.event_mark)
     }
 
     pub(in crate::runtime) fn access_delta(&self, context: &RuntimeContext) -> AccessSet {

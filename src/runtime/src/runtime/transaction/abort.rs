@@ -107,9 +107,12 @@ impl MechRuntime {
             }
         }
 
-        envelope
+        if let Err(error) = envelope
             .context_baseline
-            .restore_preserving_consumption(context);
+            .restore_preserving_consumption(context)
+        {
+            rollback_failures.push(format!("context baseline restore failed: {:?}", error));
+        }
         if let Err(error) = self.validate_context_for_runtime(context) {
             rollback_failures.push(format!(
                 "context baseline restore invariant failed: {:?}",

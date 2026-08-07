@@ -259,9 +259,6 @@ impl RuntimeSessionServices<'_> {
         );
         let store_before = self.transaction.store.clone();
         let effect_mark = self.transaction.effects.mark();
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_snapshot(self.context.events.len());
-        let context_events_before = self.context.events.clone();
         let transaction_id = self.transaction.store.id;
         let effect_id = self.transaction.effects.stage(transaction_id, effect);
         if let Err(error) = self.emit_event(RuntimeEventKind::EffectStaged {
@@ -273,7 +270,6 @@ impl RuntimeSessionServices<'_> {
         }) {
             self.transaction.store = store_before;
             let cleanup = self.transaction.effects.rollback_to(effect_mark);
-            self.context.events = context_events_before;
             if cleanup.is_empty() {
                 return Err(error);
             }
@@ -311,9 +307,6 @@ impl RuntimeSessionServices<'_> {
         );
         let store_before = self.transaction.store.clone();
         let effect_mark = self.transaction.effects.mark();
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_snapshot(self.context.events.len());
-        let context_events_before = self.context.events.clone();
         let transaction_id = self.transaction.store.id;
         let effect_id = self.transaction.effects.stage_resource_write(
             transaction_id,
@@ -331,7 +324,6 @@ impl RuntimeSessionServices<'_> {
         }) {
             self.transaction.store = store_before;
             let cleanup = self.transaction.effects.rollback_to(effect_mark);
-            self.context.events = context_events_before;
             if cleanup.is_empty() {
                 return Err(error);
             }

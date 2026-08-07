@@ -625,9 +625,6 @@ impl MechRuntime {
         );
         let store_before = transaction.store.clone();
         let effect_mark = transaction.effects.mark();
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
-        let context_events_before = context.events.clone();
         let effect_id = self
             .active_execution_transaction_mut(transaction_id)?
             .effects
@@ -653,7 +650,6 @@ impl MechRuntime {
                 transaction.effects.rollback_to(effect_mark)
             };
             drop(phase_guard);
-            context.events = context_events_before;
             if cleanup.is_empty() {
                 return Err(error);
             }
@@ -708,9 +704,6 @@ impl MechRuntime {
         );
         let store_before = transaction.store.clone();
         let effect_mark = transaction.effects.mark();
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
-        let context_events_before = context.events.clone();
         let effect_id = self
             .active_execution_transaction_mut(transaction_id)?
             .effects
@@ -736,7 +729,6 @@ impl MechRuntime {
                 transaction.effects.rollback_to(effect_mark)
             };
             drop(phase_guard);
-            context.events = context_events_before;
             if cleanup.is_empty() {
                 return Err(error);
             }

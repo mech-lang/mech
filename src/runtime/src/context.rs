@@ -647,6 +647,9 @@ impl RuntimeContext {
         self.events.finish_transaction_scope()
     }
 
+    pub(crate) fn prepare_event_checkpoint(&mut self) {
+        self.events.prepare_checkpoint();
+    }
     pub(crate) fn add_capability(&mut self, capability: CapabilityId) {
         self.authority.add(capability);
     }

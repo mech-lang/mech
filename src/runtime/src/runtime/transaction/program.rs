@@ -134,7 +134,7 @@ impl MechRuntime {
     #[doc(hidden)]
     pub fn gate_a_capture_runtime_operation_savepoint(
         &self,
-        context: &RuntimeContext,
+        context: &mut RuntimeContext,
     ) -> MResult<()> {
         let transaction_id = Self::context_transaction_id(context)?;
         let _savepoint = self.capture_runtime_operation_savepoint(context, transaction_id)?;
@@ -370,9 +370,10 @@ impl MechRuntime {
 
     pub(in crate::runtime) fn capture_runtime_operation_savepoint(
         &self,
-        context: &RuntimeContext,
+        context: &mut RuntimeContext,
         transaction_id: TransactionId,
     ) -> MResult<RuntimeOperationSavepoint> {
+        context.prepare_event_checkpoint();
         let transaction = self.active_execution_transaction(transaction_id)?;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
         crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
@@ -453,7 +454,9 @@ impl MechRuntime {
             )),
         }
 
-        savepoint.context.restore_preserving_consumption(context);
+        if let Err(error) = savepoint.context.restore_preserving_consumption(context) {
+            failures.push(format!("context event mark restore failed: {:?}", error));
+        }
 
         if let Err(error) = self.validate_context_for_runtime(context) {
             failures.push(format!("context restore invariant failed: {:?}", error));

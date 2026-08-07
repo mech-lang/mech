@@ -132,6 +132,17 @@ impl MechRuntime {
                     None,
                 ));
             }
+
+            if !transaction.context_baseline.accepts_event_storage(context) {
+                return Err(MechError::new(
+                    RuntimeTransactionContextMismatch {
+                        transaction_id,
+                        reason: "context event storage does not match the active transaction checkpoint owner and generation"
+                            .to_string(),
+                    },
+                    None,
+                ));
+            }
         }
 
         Ok(())
