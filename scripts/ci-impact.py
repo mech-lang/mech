@@ -74,7 +74,9 @@ def classify(
         cross_cutting = cross_cutting or any(owner["cross_cutting"] for owner in matches)
         browser = browser or any(owner.get("browser", False) for owner in matches)
 
-    if cross_cutting:
+    if docs_only:
+        runnable: set[str] = set()
+    elif cross_cutting:
         runnable = {
             name
             for name, owner in owners.items()
@@ -99,7 +101,7 @@ def classify(
         "static_contracts_required": code_changed,
         "standard_canaries_required": code_changed,
         "windows_canary_required": code_changed,
-        "browser_canary_required": code_changed and browser,
+        "browser_canary_required": code_changed and (browser or cross_cutting),
         "cross_cutting_standard_suite_required": code_changed and cross_cutting,
         "full_validation_required": "ci:full" in labels,
     }

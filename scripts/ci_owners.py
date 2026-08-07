@@ -54,7 +54,9 @@ def load_owners(path: Path = DEFAULT_OWNER_CONFIG) -> Dict[str, Dict[str, Any]]:
 
 
 def path_matches(pattern: str, changed_path: str) -> bool:
-    normalized = changed_path.replace("\\", "/").lstrip("./")
+    normalized = changed_path.replace("\\", "/")
+    if normalized.startswith("./"):
+        normalized = normalized[2:]
     return fnmatch.fnmatchcase(normalized, pattern)
 
 

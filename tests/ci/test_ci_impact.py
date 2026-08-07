@@ -27,10 +27,20 @@ class ImpactClassifierTests(unittest.TestCase):
         self.assertFalse(result["windows_canary_required"])
         self.assertEqual(result["changed_owners"], [])
 
+    def test_documentation_inside_owned_code_trees_compile_nothing(self):
+        for path in ("src/core/README.md", "hosts/browser/README.md"):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertTrue(result["docs_only"])
+                self.assertEqual(result["changed_owners"], [])
+                self.assertEqual(result["owner_shards"], [])
+                self.assertFalse(result["browser_canary_required"])
+
     def test_machine_change_runs_mech_integration_not_machine_private_tests(self):
         result = self.classify(["machines/math/src/add.rs"])
         self.assertEqual(result["changed_owners"], [])
         self.assertTrue(result["standard_canaries_required"])
+        self.assertTrue(result["browser_canary_required"])
         self.assertFalse(result["cross_cutting_standard_suite_required"])
 
     def test_cross_cutting_change_selects_all_runnable_standard_owners(self):
@@ -42,17 +52,44 @@ class ImpactClassifierTests(unittest.TestCase):
         )
         self.assertEqual(result["changed_owners"], expected)
         self.assertTrue(result["cross_cutting_standard_suite_required"])
+        self.assertTrue(result["browser_canary_required"])
         self.assertEqual(len(result["owner_shards"]), len(expected))
 
     def test_browser_related_change_requests_browser_canary(self):
         result = self.classify(["hosts/scene/src/lib.rs"])
         self.assertTrue(result["browser_canary_required"])
 
+    def test_browser_capable_shared_hosts_request_browser_canary(self):
+        for path in (
+            "hosts/console/src/lib.rs",
+            "hosts/time/src/lib.rs",
+            "hosts/timer/src/lib.rs",
+        ):
+            with self.subTest(path=path):
+                self.assertTrue(self.classify([path])["browser_canary_required"])
+
+    def test_leading_dot_owner_paths_are_not_treated_as_unknown(self):
+        for path in (".github/workflows/ci.yml", "./.github/workflows/ci.yml"):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertEqual(result["matched_owners"], ["ci-tools"])
+                self.assertEqual(result["unmatched_paths"], [])
+                self.assertEqual(result["changed_owners"], [])
+                self.assertFalse(result["cross_cutting_standard_suite_required"])
+
     def test_full_label_is_the_only_pr_full_validation_trigger(self):
         ordinary = self.classify(["machines/math/src/add.rs"])
         requested = self.classify(["machines/math/src/add.rs"], ["ci:full"])
         self.assertFalse(ordinary["full_validation_required"])
         self.assertTrue(requested["full_validation_required"])
+
+    def test_docs_only_change_can_still_request_full_validation(self):
+        result = self.classify(["README.md"], ["ci:full"])
+        self.assertTrue(result["docs_only"])
+        self.assertTrue(result["full_validation_required"])
+        self.assertFalse(result["static_contracts_required"])
+        self.assertFalse(result["standard_canaries_required"])
+        self.assertEqual(result["owner_shards"], [])
 
     def test_unknown_paths_are_handled_conservatively(self):
         result = self.classify(["new-top-level-area/file.rs"])

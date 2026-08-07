@@ -19,22 +19,7 @@ PROFILE_ARGUMENTS = {
     "standard": [],
     "full": ["--no-default-features", "--features", "distribution-full"],
 }
-SURFACE_COUNTS = {
-    "standard": {
-        "runtime_factory_count": 1_300,
-        "source_specializer_count": 63,
-        "native_planning_owner_count": 5,
-        "runtime_surface_digest": "1a0a7748947c8c97aacacc04bcce0a115ce837c1c74981d0be3346550f90b689",
-        "runtime_surface_digest_algorithm": "sha256-canonical-id-tab-name-lf-v1",
-    },
-    "full": {
-        "runtime_factory_count": 9_010,
-        "source_specializer_count": 119,
-        "native_planning_owner_count": 6,
-        "runtime_surface_digest": "8beffad53bcd4d6905a883e23e34441371f4adc6faaf8ceaee030703b3a41d06",
-        "runtime_surface_digest_algorithm": "sha256-canonical-id-tab-name-lf-v1",
-    },
-}
+NATIVE_PLANNING_OWNER_COUNTS = {"standard": 5, "full": 6}
 MACHINE_OPERATION_FEATURES = {
     "mech-combinatorics": {"n_choose_k"},
     "mech-compare": {"eq", "gt", "gte", "lt", "lte", "max", "min", "neq", "seq", "sneq"},
@@ -93,6 +78,11 @@ FULL_FORBIDDEN_MACHINE_FEATURES = {
     "full_runtime", "full_source", "full_compiler", "full_values",
 }
 PACKAGE_LINE = re.compile(r"^(?P<name>\S+) v(?P<version>\S+)(?:\s|$)")
+CATALOG_COUNTS_LINE = re.compile(
+    r"^MECH_CATALOG_COUNTS\s+(?P<factories>\d+)\s+(?P<specializers>\d+)\s+"
+    r"(?P<digest>[0-9a-f]{64})$",
+    re.MULTILINE,
+)
 
 
 class DistributionContractError(RuntimeError):
@@ -119,7 +109,8 @@ def command(arguments: list[str]) -> str:
 def cargo_graph(profile: str) -> tuple[dict[str, set[str]], set[str], int]:
     output = command(
         [
-            "cargo", "tree", "--locked", "--offline", "-p", "mech", "-e", "features",
+            "cargo", "tree", "--locked", "--offline", "-p", "mech", "-e",
+            "features,no-dev",
             # Freeze the product graph rather than the runner's host-specific
             # graph. Cargo otherwise omits target-only dependencies, making a
             # contract recorded on macOS drift on Linux and Windows.
@@ -146,6 +137,33 @@ def cargo_graph(profile: str) -> tuple[dict[str, set[str]], set[str], int]:
         if str(ROOT) in package:
             workspace_packages.add(name)
     return package_features, workspace_packages, len(dependencies)
+
+
+def catalog_surface(profile: str, selected_features: set[str]) -> dict[str, object]:
+    if not selected_features:
+        raise DistributionContractError(
+            f"{profile} graph selected no mech-stdlib catalog features"
+        )
+    output = command(
+        [
+            "cargo", "test", "--locked", "--offline", "-p", "mech-stdlib",
+            "--test", "profile_contracts", "--no-default-features", "--features",
+            ",".join(sorted(selected_features)),
+            "distribution_size_report_catalog_counts",
+            "--", "--exact", "--nocapture",
+        ]
+    )
+    match = CATALOG_COUNTS_LINE.search(output)
+    if match is None:
+        raise DistributionContractError(
+            f"{profile} catalog probe produced no canonical surface result"
+        )
+    return {
+        "runtime_factory_count": int(match.group("factories")),
+        "source_specializer_count": int(match.group("specializers")),
+        "runtime_surface_digest": match.group("digest"),
+        "runtime_surface_digest_algorithm": "sha256-canonical-id-tab-name-lf-v1",
+    }
 
 
 def graph_surface_digest(snapshot: dict[str, object], machine_features: dict[str, list[str]]) -> str:
@@ -205,7 +223,7 @@ def snapshot(profile: str) -> dict[str, object]:
         for package, operation_features in sorted(MACHINE_OPERATION_FEATURES.items())
         if package in workspace_packages
     }
-    counts = SURFACE_COUNTS[profile]
+    counts = catalog_surface(profile, features.get("mech-stdlib", set()))
     result: dict[str, object] = {
         "schema": "mech.distribution-contract.v1",
         "distribution": profile,
@@ -215,7 +233,7 @@ def snapshot(profile: str) -> dict[str, object]:
         "selected_hosts": sorted(workspace_packages.intersection(HOST_PACKAGES)),
         "runtime_factory_count": counts["runtime_factory_count"],
         "source_specializer_count": counts["source_specializer_count"],
-        "native_planning_owner_count": counts["native_planning_owner_count"],
+        "native_planning_owner_count": NATIVE_PLANNING_OWNER_COUNTS[profile],
         "dependency_count": dependency_count,
         "runtime_surface_digest": counts["runtime_surface_digest"],
         "runtime_surface_digest_algorithm": counts["runtime_surface_digest_algorithm"],
@@ -243,6 +261,12 @@ def validate(profile: str) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dump", choices=PROFILES, help="print the selected contract instead of validating")
+    parser.add_argument(
+        "--profile",
+        action="append",
+        choices=PROFILES,
+        help="validate only this profile (repeatable; defaults to both)",
+    )
     return parser.parse_args()
 
 
@@ -252,7 +276,7 @@ def main() -> int:
         if args.dump:
             print(json.dumps(snapshot(args.dump), indent=2, sort_keys=True))
             return 0
-        for profile in PROFILES:
+        for profile in args.profile or PROFILES:
             validate(profile)
             print(f"distribution contract: {profile} passed")
     except (DistributionContractError, OSError, ValueError) as error:

@@ -47,54 +47,63 @@ paths = ["machines/math/**"]
 command = []
 standard = false
 cross_cutting = false
+browser = true
 
 [owners.mech-compare]
 paths = ["machines/compare/**"]
 command = []
 standard = false
 cross_cutting = false
+browser = true
 
 [owners.mech-logic]
 paths = ["machines/logic/**"]
 command = []
 standard = false
 cross_cutting = false
+browser = true
 
 [owners.mech-range]
 paths = ["machines/range/**"]
 command = []
 standard = false
 cross_cutting = false
+browser = true
 
 [owners.mech-matrix]
 paths = ["machines/matrix/**"]
 command = []
 standard = false
 cross_cutting = false
+browser = true
 
 [owners.mech-set]
 paths = ["machines/set/**"]
 command = []
 standard = false
 cross_cutting = false
+browser = true
 
 [owners.mech-string]
 paths = ["machines/string/**"]
 command = []
 standard = false
 cross_cutting = false
+browser = true
 
 [owners.mech-stats]
 paths = ["machines/stats/**"]
 command = []
 standard = false
 cross_cutting = false
+browser = true
 
 [owners.mech-combinatorics]
 paths = ["machines/combinatorics/**"]
 command = []
 standard = false
 cross_cutting = false
+browser = true
 
 [owners.mech-terminal]
 paths = ["hosts/terminal/**"]
@@ -107,18 +116,21 @@ paths = ["hosts/console/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-console", "--all-features"]
 standard = true
 cross_cutting = false
+browser = true
 
 [owners.mech-time]
 paths = ["hosts/time/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-time", "--all-features"]
 standard = true
 cross_cutting = false
+browser = true
 
 [owners.mech-timer]
 paths = ["hosts/timer/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-timer", "--all-features"]
 standard = true
 cross_cutting = false
+browser = true
 
 [owners.mech-scene]
 paths = ["hosts/scene/**"]

@@ -41,6 +41,9 @@ jobs:
     if: needs.impact.outputs.static_contracts_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
       - name: Install formatting and contract tools
@@ -59,7 +62,7 @@ jobs:
           python3 scripts/check-runtime-factory-safety.py
           python3 scripts/check-bytecode-v1-format.py
           cargo +nightly-2026-03-03 fetch --locked
-          python3 -B scripts/check-distribution-contracts.py
+          python3 -B scripts/check-distribution-contracts.py --profile standard
           python3 -B scripts/check-distribution-packaging.py
           python3 scripts/check-native-host-catalog.py
           bash scripts/check-static-distribution-profiles.sh static
@@ -203,9 +206,12 @@ jobs:
       ${{
         always() &&
         needs.impact.outputs.full_validation_required == 'true' &&
-        needs.static-contracts.result == 'success' &&
-        needs.standard-linux.result == 'success' &&
-        needs.standard-windows.result == 'success' &&
+        (needs.static-contracts.result == 'success' ||
+          (needs.impact.outputs.docs_only == 'true' && needs.static-contracts.result == 'skipped')) &&
+        (needs.standard-linux.result == 'success' ||
+          (needs.impact.outputs.docs_only == 'true' && needs.standard-linux.result == 'skipped')) &&
+        (needs.standard-windows.result == 'success' ||
+          (needs.impact.outputs.docs_only == 'true' && needs.standard-windows.result == 'skipped')) &&
         (needs.changed-owner-tests.result == 'success' || needs.changed-owner-tests.result == 'skipped') &&
         (needs.browser-canary.result == 'success' || needs.browser-canary.result == 'skipped')
       }}

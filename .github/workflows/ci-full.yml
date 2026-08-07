@@ -156,6 +156,12 @@ jobs:
       - name: Check ${{ matrix.profile }} distribution
         run: bash scripts/check-static-distribution-profiles.sh "${{ matrix.profile }}"
 
+      - name: Derive the full product catalog contract
+        if: ${{ matrix.profile == 'static' }}
+        run: |
+          cargo fetch --locked
+          python3 -B scripts/check-distribution-contracts.py --profile full
+
   wasm-source-profile:
     name: WASM source profile
     runs-on: ubuntu-latest
