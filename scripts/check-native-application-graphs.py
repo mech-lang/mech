@@ -103,25 +103,25 @@ EXPECTED_FEATURES = {
     "generated_native_cli": {
         "mech-core": {"program", "string"},
         "mech-engine": {"runtime", "string"},
-        "mech-host-cli": {"provider"},
+        "mech-terminal": {"provider"},
         "mech-runtime": {"runtime", "string"},
     },
     "generated_native_console": {
         "mech-core": {"program", "string"},
         "mech-engine": {"runtime", "string"},
-        "mech-host-console": {"native"},
+        "mech-console": {"native"},
         "mech-runtime": {"runtime", "string"},
     },
     "generated_native_time": {
         "mech-core": {"bool", "f64", "program", "string"},
         "mech-engine": {"bool", "f64", "native-link", "runtime", "string", "variable_define"},
-        "mech-host-time": {"native"},
+        "mech-time": {"native"},
         "mech-runtime": {"bool", "f64", "runtime", "string"},
     },
     "generated_native_timer": {
         "mech-core": {"bool", "f64", "program", "string"},
         "mech-engine": {"bool", "f64", "native-link", "runtime", "string", "variable_define"},
-        "mech-host-timer": {"native"},
+        "mech-timer": {"native"},
         "mech-runtime": {"bool", "f64", "runtime", "string"},
     },
     "generated_native_scene": {
@@ -135,13 +135,13 @@ EXPECTED_FEATURES = {
             "string",
             "variable_define",
         },
-        "mech-host-scene": {"native"},
+        "mech-scene": {"native"},
         "mech-runtime": {"bool", "f64", "record", "runtime", "string"},
     },
     "generated_native_robot_arm": {
         "mech-core": {"bool", "program", "string"},
         "mech-engine": {"bool", "runtime", "string"},
-        "mech-host-robot-arm": {"provider"},
+        "mech-robot-arm": {"provider"},
         "mech-runtime": {"bool", "runtime", "string"},
     },
     "generated_native_actor_alpha": {
@@ -376,7 +376,7 @@ EXPECTED_RESOLVED_FEATURES = {
             "string",
             "symbol_table",
         },
-        "mech-host-cli": {"provider"},
+        "mech-terminal": {"provider"},
         "mech-runtime": {"runtime", "string"},
     },
 }
@@ -412,7 +412,7 @@ def materialize_projects() -> list[Path]:
             "-p",
             "mech-build",
             "--features",
-            "standard-hosts",
+            "full-hosts",
             "--test",
             "generate_native_projects",
             "--",

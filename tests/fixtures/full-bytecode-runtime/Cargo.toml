@@ -1,5 +1,5 @@
 [package]
-name = "standard-bytecode-runtime"
+name = "full-bytecode-runtime"
 version = "0.0.0"
 edition = "2024"
 publish = false
@@ -13,7 +13,7 @@ mech-engine = {
 mech-stdlib = {
   path = "../../../src/stdlib",
   default-features = false,
-  features = ["standard_runtime"],
+  features = ["full_runtime"],
 }
 
 [patch.crates-io]

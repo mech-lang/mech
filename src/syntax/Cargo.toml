@@ -21,7 +21,8 @@ maintenance = { status = "actively-developed" }
 [features]
 no_std = ["mech-core/no_std"]
 
-default = ["baselib", "pretty_print", "serde", "compiler", "program",
+default = []
+full = ["baselib", "pretty_print", "serde", "compiler", "program",
             "u8", "u16", "u32", "u64", "u128", 
             "i8", "i16", "i32", "i64", "i128", 
             "f32", "f64", "c64", "r64", 
@@ -29,7 +30,7 @@ default = ["baselib", "pretty_print", "serde", "compiler", "program",
             "formatter",
             "mechdown",
             "mika",
-            "mech-core/default",
+            "mech-core/full",
           ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program",
       "statements_default", "subscript_default",

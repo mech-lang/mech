@@ -21,22 +21,31 @@ crate-type = ["rlib", "cdylib"]
 [features]
 no_std = ["dep:mech-core", "mech-core/no_std"]
 
-default = ["compiler_default"]
+default = []
 runtime = ["dep:mech-core", "mech-core/functions"]
 source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
-standard_values = [
+standard_values = ["f64", "row_vectord", "vectord", "matrixd"]
+standard_operations = [
+  "add", "sub", "mul", "div", "mod", "pow", "neg", "abs", "sqrt",
+  "sin", "cos", "atan2",
+]
+standard_runtime = ["runtime", "standard_values", "standard_operations"]
+standard_source = ["standard_runtime", "source"]
+standard_compiler = ["standard_source", "compiler"]
+full_values = [
   "bool", "u8", "u16", "u32", "u64", "u128",
   "i8", "i16", "i32", "i64", "i128", "f32", "f64", "c64", "r64",
   "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
   "row_vector2", "row_vector3", "row_vector4",
   "vector2", "vector3", "vector4", "row_vectord", "vectord", "matrixd",
 ]
-runtime_default = ["runtime", "standard_values", "math_default"]
-source_default = ["runtime_default", "source"]
-compiler_default = ["source_default", "compiler"]
+full_operations = ["math_default"]
+full_runtime = ["runtime", "full_values", "full_operations"]
+full_source = ["full_runtime", "source"]
+full_compiler = ["full_source", "compiler"]
 
 arithmetic_default = ["copysign", "abs", "fdim", "fmod", "nextafter", "remainder"]
 bessel_default = ["j0", "j1", "jn", "y0", "y1", "yn"]

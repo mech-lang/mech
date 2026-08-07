@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use mech_console::{ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend};
 use mech_core::{FunctionCatalog, FunctionCatalogBuilder, Value};
-use mech_host_console::{ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, PreparedRuntimeEffect, RunResourceGrantConfig,
     RuntimeBuilder, RuntimeCapabilityOperation, RuntimeEventKind, RuntimeHealth,

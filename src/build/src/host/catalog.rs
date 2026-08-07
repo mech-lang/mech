@@ -368,10 +368,10 @@ mod tests {
     fn linkage() -> NativeHostLinkage {
         NativeHostLinkage {
             provider: "test",
-            package: "mech-host-test",
-            crate_name: "mech_host_test",
+            package: "mech-test-host",
+            crate_name: "mech_test_host",
             cargo_features: &["provider"],
-            factory_path: "mech_host_test::TestHostFactory::new",
+            factory_path: "mech_test_host::TestHostFactory::new",
             supported_targets: &[NativeTargetFamily::Unix, NativeTargetFamily::Windows],
             manifest: test_manifest,
             validate_settings,

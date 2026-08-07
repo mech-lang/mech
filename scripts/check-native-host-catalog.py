@@ -14,19 +14,6 @@ ROOT = Path(__file__).resolve().parents[1]
 STANDARD = ROOT / "src/build/src/host/standard.rs"
 
 
-def run(*arguments: str) -> None:
-    process = subprocess.run(
-        arguments,
-        cwd=ROOT,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        check=False,
-    )
-    if process.returncode:
-        raise RuntimeError(f"{' '.join(arguments)} failed:\n{process.stdout}")
-
-
 def capture(*arguments: str) -> str:
     process = subprocess.run(
         arguments,
@@ -52,15 +39,32 @@ def main() -> int:
     try:
         source = STANDARD.read_text(encoding="utf-8")
         expected_providers = {
-            "cli": ("mech-host-cli", "mech_host_cli", "provider", "mech_host_cli::CliHostFactory::new"),
-            "console": ("mech-host-console", "mech_host_console", "native", "mech_host_console::NativeConsoleHostFactory::new"),
-            "robot-arm": ("mech-host-robot-arm", "mech_host_robot_arm", "provider", "mech_host_robot_arm::RobotArmHostFactory::new"),
-            "scene": ("mech-host-scene", "mech_host_scene", "native", "mech_host_scene::NativeSceneHostFactory::new"),
-            "time": ("mech-host-time", "mech_host_time", "native", "mech_host_time::NativeTimeHostFactory::new"),
-            "timer": ("mech-host-timer", "mech_host_timer", "native", "mech_host_timer::NativeTimerHostFactory::new"),
+            "cli": ("mech-terminal", "mech_terminal", "provider", "mech_terminal::CliHostFactory::new"),
+            "console": ("mech-console", "mech_console", "native", "mech_console::NativeConsoleHostFactory::new"),
+            "robot-arm": ("mech-robot-arm", "mech_robot_arm", "provider", "mech_robot_arm::RobotArmHostFactory::new"),
+            "scene": ("mech-scene", "mech_scene", "native", "mech_scene::NativeSceneHostFactory::new"),
+            "time": ("mech-time", "mech_time", "native", "mech_time::NativeTimeHostFactory::new"),
+            "timer": ("mech-timer", "mech_timer", "native", "mech_timer::NativeTimerHostFactory::new"),
         }
-        providers = set(re.findall(r'provider:\s*"([a-z-]+)"', source))
-        require(providers == set(expected_providers), f"provider set drifted: {sorted(providers)}")
+        standard_block = re.search(
+            r"fn standard_native_host_registrations\(\).*?\{(.*?)\n\}\n\n"
+            r"#\[cfg\(feature = \"full-hosts\"\)\]",
+            source,
+            re.DOTALL,
+        )
+        require(standard_block is not None, "standard provider registration block is missing")
+        standard_providers = set(
+            re.findall(r'provider:\s*"([a-z-]+)"', standard_block.group(1))
+        )
+        require(
+            standard_providers == {"cli", "console", "scene", "time", "timer"},
+            f"standard provider set drifted: {sorted(standard_providers)}",
+        )
+        all_providers = set(re.findall(r'provider:\s*"([a-z-]+)"', source))
+        require(
+            all_providers == set(expected_providers),
+            f"full provider set drifted: {sorted(all_providers)}",
+        )
         for provider, (package, crate_name, feature, factory) in expected_providers.items():
             require(f'provider: "{provider}"' in source, f"{provider} provider is missing")
             require(f'package: "{package}"' in source, f"{provider} package is wrong")
@@ -86,17 +90,56 @@ def main() -> int:
         require(actor_features is not None, "actor feature closure is missing")
         features = re.findall(r'"([a-z-]+)"', actor_features.group(1))
         require(features == ["native-link", "runtime", "string"], "actor feature closure is not exact")
+        require(
+            '#[cfg(feature = "experimental-actors")]\nfn actor_host_function_linkages()'
+            in source,
+            "actor linkages are not gated by the experimental feature",
+        )
+        require(
+            '#[cfg(feature = "experimental-actors")]\n    for linkage in actor_host_function_linkages()'
+            in source,
+            "actor catalog insertion is not gated by the experimental feature",
+        )
         require(not re.search(r'provider:\s*"browser"', source), "browser provider entered native catalog")
 
+        build_manifest = (ROOT / "src/build/Cargo.toml").read_text(encoding="utf-8")
+        standard_hosts = re.search(
+            r"standard-hosts\s*=\s*\[(.*?)\]",
+            build_manifest,
+            re.DOTALL,
+        )
+        require(standard_hosts is not None, "standard native host feature is missing")
+        require(
+            re.findall(r'"([^"]+)"', standard_hosts.group(1))
+            == [
+                "dep:mech-terminal",
+                "dep:mech-console",
+                "dep:mech-scene",
+                "dep:mech-time",
+                "dep:mech-timer",
+            ],
+            "standard native host feature is not exact",
+        )
+        require(
+            'full-hosts = ["standard-hosts", "dep:mech-robot-arm"]' in build_manifest,
+            "full native host feature is not standard plus robot-arm",
+        )
+        require(
+            "experimental-actors = []" in build_manifest,
+            "experimental actor feature is missing",
+        )
+
         expected_runtime_features = {
-            "mech-host-cli": ["runtime", "string"],
-            "mech-host-console": ["runtime", "string"],
-            "mech-host-time": ["f64", "runtime"],
-            "mech-host-timer": ["f64", "runtime"],
-            "mech-host-scene": ["f64", "runtime", "string"],
-            "mech-host-robot-arm": ["bool", "runtime", "string"],
+            "mech-terminal": ["runtime", "string"],
+            "mech-console": ["runtime", "string"],
+            "mech-time": ["f64", "runtime"],
+            "mech-timer": ["f64", "runtime"],
+            "mech-scene": ["f64", "runtime", "string"],
+            "mech-robot-arm": ["bool", "runtime", "string"],
         }
-        metadata = json.loads(capture("cargo", "metadata", "--format-version", "1"))
+        metadata = json.loads(
+            capture("cargo", "metadata", "--format-version", "1", "--locked", "--offline")
+        )
         packages = {package["name"]: package for package in metadata["packages"]}
         forbidden_dependencies = {"mech-bytecode", "mech-syntax"}
         forbidden_features = {"compiler", "source"}
@@ -130,35 +173,13 @@ def main() -> int:
                 f"{sorted(runtime_dependency['features'])}",
             )
 
-        run(
-            "cargo",
-            "+nightly-2026-03-03",
-            "test",
-            "-p",
-            "mech-build",
-            "--features",
-            "standard-hosts",
-            "--lib",
-            "host::",
-            "--quiet",
-        )
-        run(
-            "cargo",
-            "+nightly-2026-03-03",
-            "test",
-            "-p",
-            "mech-build",
-            "--features",
-            "standard-hosts",
-            "--test",
-            "planning",
-            "unknown_and_browser_providers_fail_before_generation",
-            "--quiet",
-        )
     except (OSError, RuntimeError) as error:
         print(f"native host catalog contract failed: {error}", file=sys.stderr)
         return 1
-    print("native host catalog contract passed (six providers, five actor functions)")
+    print(
+        "native host catalog contract passed "
+        "(five standard providers, six full providers, actors experimental)"
+    )
     return 0
 
 

@@ -22,22 +22,28 @@ crate-type = ["rlib", "cdylib"]
 no_std = ["mech-core/no_std"]
 dynamic-module = ["dep:mech-abi", "dep:num-traits"]
 
-default = ["compiler_default"]
+default = []
 runtime = ["dep:mech-core", "mech-core/functions"]
 source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
-standard_values = [
+standard_values = []
+standard_operations = []
+standard_runtime = ["runtime"]
+standard_source = ["standard_runtime", "source"]
+standard_compiler = ["standard_source", "compiler"]
+full_values = [
   "u8", "u16", "u32", "u64", "u128",
   "i8", "i16", "i32", "i64", "i128", "f32", "f64", "c64", "r64",
   "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
   "row_vector2", "row_vector3", "row_vector4",
   "vector2", "vector3", "vector4", "row_vectord", "vectord", "matrixd",
 ]
-runtime_default = ["runtime", "standard_values", "combinatorics_default"]
-source_default = ["runtime_default", "source"]
-compiler_default = ["source_default", "compiler"]
+full_operations = ["combinatorics_default"]
+full_runtime = ["runtime", "full_values", "full_operations"]
+full_source = ["full_runtime", "source"]
+full_compiler = ["full_source", "compiler"]
 
 combinatorics_default = ["n_choose_k"]
 combinatorics = ["runtime"]
@@ -96,5 +102,16 @@ version = "0.2.19"
 default-features = false
 features = ["libm"]
 optional = true
+
+[dev-dependencies]
+mech-engine = { path = "../../src/engine", default-features = false, features = [
+  "compiler", "f64", "matrixd", "row_vectord", "variables", "formulas",
+] }
+
+[patch.crates-io]
+mech-bytecode = { path = "../../src/bytecode" }
+mech-core = { path = "../../src/core" }
+mech-engine = { path = "../../src/engine" }
+mech-syntax = { path = "../../src/syntax" }
 
 [workspace]

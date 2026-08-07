@@ -21,14 +21,20 @@ crate-type = ["rlib"]
 [features]
 no_std = ["mech-core/no_std"]
 
-default = ["compiler_default"]
+default = []
 runtime = ["mech-core/functions"]
 source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 
-standard_values = [
+standard_values = ["bool", "string", "f64", "atom", "table", "row_vectord", "vectord", "matrixd"]
+standard_operations = ["compare_default"]
+standard_runtime = ["runtime", "standard_values", "standard_operations"]
+standard_source = ["standard_runtime", "source"]
+standard_compiler = ["standard_source", "compiler"]
+
+full_values = [
   "bool", "string",
   "u8", "u16", "u32", "u64", "u128",
   "i8", "i16", "i32", "i64", "i128",
@@ -37,9 +43,10 @@ standard_values = [
   "row_vector2", "row_vector3", "row_vector4",
   "vector2", "vector3", "vector4", "row_vectord", "vectord", "matrixd",
 ]
-runtime_default = ["runtime", "standard_values", "compare_default"]
-source_default = ["runtime_default", "source"]
-compiler_default = ["source_default", "compiler"]
+full_operations = ["compare_default"]
+full_runtime = ["runtime", "full_values", "full_operations"]
+full_source = ["full_runtime", "source"]
+full_compiler = ["full_source", "compiler"]
 
 compare_default = ["eq", "neq", "seq", "sneq", "lt", "gt", "lte", "gte", "min", "max"]
 compare = ["runtime", "bool"]

@@ -7,21 +7,15 @@ use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "served_project_authority")]
 use base64::Engine as _;
-use mech_core::{MechError, MechErrorKind, MechSourceCode};
 #[cfg(feature = "browser_host_dom")]
-use mech_host_browser::BrowserHostFactory;
+use mech_browser::BrowserHostFactory;
 #[cfg(feature = "served_project_authority")]
-use mech_host_browser::BrowserRuntimeInjectionConfig;
+use mech_browser::BrowserRuntimeInjectionConfig;
 #[cfg(feature = "served_project_authority")]
-use mech_host_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation};
+use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation};
 #[cfg(feature = "browser_host_console")]
-use mech_host_console::BrowserConsoleHostFactory;
-#[cfg(feature = "browser_host_scene")]
-use mech_host_scene::{BrowserSceneHostFactory, BrowserSceneRegistry};
-#[cfg(feature = "browser_host_time")]
-use mech_host_time::BrowserTimeHostFactory;
-#[cfg(feature = "browser_host_timer")]
-use mech_host_timer::BrowserTimerHostFactory;
+use mech_console::BrowserConsoleHostFactory;
+use mech_core::{MechError, MechErrorKind, MechSourceCode};
 use mech_runtime::{
     ConfigProfileOptions, InMemorySourceResolver, MechConfigDocument, MechRuntime,
     ModuleBuildOptions, ResolvedSource, RuntimeBuilder, SourceKind, SourceRequest,
@@ -32,6 +26,12 @@ use mech_runtime::{
     HOST_DELEGATION_ALGORITHM_ED25519, HostDelegationKeyStore, HostDelegationPublicKey,
     HostDelegationVerificationRequest,
 };
+#[cfg(feature = "browser_host_scene")]
+use mech_scene::{BrowserSceneHostFactory, BrowserSceneRegistry};
+#[cfg(feature = "browser_host_time")]
+use mech_time::BrowserTimeHostFactory;
+#[cfg(feature = "browser_host_timer")]
+use mech_timer::BrowserTimerHostFactory;
 #[cfg(feature = "served_project_authority")]
 use serde::Deserialize;
 
@@ -1708,7 +1708,7 @@ mod tests {
         grants: Vec<mech_runtime::RunResourceGrantConfig>,
     ) -> BrowserRuntimeInjectionConfig {
         BrowserRuntimeInjectionConfig {
-            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(
+            runtime: mech_browser::BrowserHostRuntimeConfig::from(
                 &mech_runtime::RuntimeConfig::default(),
             ),
             hosts,
@@ -1874,17 +1874,15 @@ rows := |id<string> x<f64>|
     #[derive(Debug)]
     struct TestManualTimerHostFactory {
         manifest: mech_runtime::HostManifestConfig,
-        snapshot: mech_host_timer::SharedTimerSnapshot,
+        snapshot: mech_timer::SharedTimerSnapshot,
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     impl TestManualTimerHostFactory {
         fn new() -> Self {
             Self {
-                manifest: mech_host_timer::timer_host_manifest().unwrap(),
-                snapshot: mech_host_timer::new_shared_snapshot(
-                    mech_host_timer::TimerSnapshot::new(0, 60, 0),
-                ),
+                manifest: mech_timer::timer_host_manifest().unwrap(),
+                snapshot: mech_timer::new_shared_snapshot(mech_timer::TimerSnapshot::new(0, 60, 0)),
             }
         }
     }
@@ -1902,21 +1900,21 @@ rows := |id<string> x<f64>|
             _instance_name: &str,
             settings: &mech_runtime::ConfigValue,
         ) -> mech_core::MResult<()> {
-            mech_host_timer::timer_settings_from_config(settings).map(|_| ())
+            mech_timer::timer_settings_from_config(settings).map(|_| ())
         }
         fn instantiate(
             &self,
             instance_name: &str,
             settings: &mech_runtime::ConfigValue,
         ) -> mech_core::MResult<mech_runtime::RuntimeHostInstallation> {
-            let settings = mech_host_timer::timer_settings_from_config(settings)?;
+            let settings = mech_timer::timer_settings_from_config(settings)?;
             Ok(mech_runtime::RuntimeHostInstallation {
                 interface: mech_runtime::materialize_host_manifest(instance_name, &self.manifest)?,
-                resource_providers: vec![Box::new(mech_host_timer::TimerResourceProvider::new(
+                resource_providers: vec![Box::new(mech_timer::TimerResourceProvider::new(
                     instance_name,
                     self.snapshot.clone(),
                 ))],
-                input_drivers: vec![Box::new(mech_host_timer::ManualTimerInputDriver::new(
+                input_drivers: vec![Box::new(mech_timer::ManualTimerInputDriver::new(
                     instance_name,
                     settings.frequency_hz,
                     settings.max_catch_up_steps,
@@ -1975,14 +1973,14 @@ rows := |id<string> x<f64>|
         .unwrap();
         assert_eq!(source_paths, vec!["table-scene.mec".to_string()]);
 
-        let scene_backend = mech_host_scene::RecordingSceneBackend::new();
+        let scene_backend = mech_scene::RecordingSceneBackend::new();
         let mut builder = browser_runtime_builder()
             .source_resolver(project_source_resolver(&generic_fixture_sources()).unwrap())
             .host_input_capacity(16)
             .host_factory(Box::new(TestManualTimerHostFactory::new()))
             .unwrap()
             .host_factory(Box::new(
-                mech_host_scene::SceneHostFactory::with_backend(scene_backend.clone()).unwrap(),
+                mech_scene::SceneHostFactory::with_backend(scene_backend.clone()).unwrap(),
             ))
             .unwrap();
         for host in &document.hosts {
@@ -2117,7 +2115,7 @@ mod browser_tests {
     #[cfg(feature = "served_project_authority")]
     fn served_document_authority() -> BrowserRuntimeInjectionConfig {
         BrowserRuntimeInjectionConfig {
-            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(
+            runtime: mech_browser::BrowserHostRuntimeConfig::from(
                 &mech_runtime::RuntimeConfig::default(),
             ),
             hosts: vec![mech_runtime::HostInstanceConfig {
@@ -2407,7 +2405,7 @@ mod browser_tests {
         .unwrap();
 
         let replacement = BrowserRuntimeInjectionConfig {
-            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(
+            runtime: mech_browser::BrowserHostRuntimeConfig::from(
                 &mech_runtime::RuntimeConfig::default(),
             ),
             hosts: Vec::new(),

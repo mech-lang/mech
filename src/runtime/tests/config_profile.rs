@@ -105,8 +105,8 @@ fn browser_host_crate_does_not_depend_on_robot_arm_host() {
     let browser_cargo =
         std::fs::read_to_string(workspace_root.join("hosts/browser/Cargo.toml")).unwrap();
     assert!(
-        !browser_cargo.contains("mech-host-robot-arm"),
-        "hosts/browser/Cargo.toml must not depend on mech-host-robot-arm"
+        !browser_cargo.contains("mech-robot-arm"),
+        "hosts/browser/Cargo.toml must not depend on mech-robot-arm"
     );
     assert!(
         !browser_cargo.contains("host-robot-arm"),
@@ -132,7 +132,7 @@ fn browser_host_crate_does_not_depend_on_robot_arm_host() {
     );
     assert!(
         !browser_source.contains(&["mech", "_host", "_robot", "_arm"].concat()),
-        "hosts/browser source must not reference mech-host-robot-arm"
+        "hosts/browser source must not reference mech-robot-arm"
     );
     assert!(
         !browser_source.contains("\"robot-arm\""),

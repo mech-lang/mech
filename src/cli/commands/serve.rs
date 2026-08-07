@@ -222,7 +222,7 @@ pub(crate) struct ServePlan {
     pub wasm_pkg: String,
     pub loaded_config: Option<crate::LoadedMechConfig>,
     pub runtime_config: mech_runtime::RuntimeConfig,
-    pub host_config: Option<mech_host_browser::BrowserRuntimeInjectionConfig>,
+    pub host_config: Option<mech_browser::BrowserRuntimeInjectionConfig>,
     pub host_config_injection: Option<crate::HostAuthorityInjection>,
     pub config_shim_at_root: bool,
     pub authority: mech_runtime::HostFilesystemAuthority,

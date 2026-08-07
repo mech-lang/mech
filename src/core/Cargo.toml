@@ -21,11 +21,12 @@ maintenance = { status = "actively-developed" }
 std = []
 no_std = ["rlibc", "hashbrown", "embedded-io", "fxhash"]
 
-default = ["baselib", "pretty_print", "serde", "compiler", "mika", "program",
+default = []
+full = ["baselib", "pretty_print", "serde", "compiler", "mika", "program",
           "u8", "u16", "u32", "u64", "u128",
           "i8", "i16", "i32", "i64", "i128", 
           "f32", "f64", "c64", "r64", 
-            "statements_default", "subscript_default",
+          "statements_default", "subscript_default",
           ]
 base = ["baselib", "pretty_print", "serde", "compiler", "mika", "program",
       "statements_default", "subscript_default",

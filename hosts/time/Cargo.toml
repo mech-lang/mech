@@ -1,5 +1,5 @@
 [package]
-name = "mech-host-time"
+name = "mech-time"
 version = "0.3.5"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Time host provider for Mech runtime host inputs."

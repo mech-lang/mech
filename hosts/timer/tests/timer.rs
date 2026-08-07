@@ -3,13 +3,13 @@ use std::collections::BTreeMap;
 use std::time::{Duration, Instant};
 
 use mech_core::Value;
-use mech_host_timer::*;
 #[cfg(feature = "native")]
 use mech_runtime::RuntimeHostFactory;
 use mech_runtime::{
     ConfigValue, RuntimeBuilder, RuntimeHostInputDriver, RuntimeResourceProvider,
     RuntimeResourceReadRequest,
 };
+use mech_timer::*;
 
 fn settings(freq: i64, catch: i64) -> ConfigValue {
     let mut map = BTreeMap::new();
@@ -181,7 +181,7 @@ fn native_wait_uses_next_scheduler_boundary() {
     let mut scheduler = FixedStepScheduler::new(100, 8);
     scheduler.due_steps(0.0);
     assert_eq!(
-        mech_host_timer::native::native_wait_duration(&scheduler, 4.0),
+        mech_timer::native::native_wait_duration(&scheduler, 4.0),
         Duration::from_millis(6)
     );
 }
@@ -190,7 +190,7 @@ fn native_wait_uses_next_scheduler_boundary() {
 #[test]
 fn browser_wake_interval_is_derived_from_frequency() {
     assert_eq!(
-        mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(120, 8)),
+        mech_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(120, 8)),
         4
     );
 }
@@ -199,11 +199,11 @@ fn browser_wake_interval_is_derived_from_frequency() {
 #[test]
 fn browser_wake_interval_is_bounded() {
     assert_eq!(
-        mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(1000, 8)),
+        mech_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(1000, 8)),
         1
     );
     assert_eq!(
-        mech_host_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(1, 8)),
+        mech_timer::browser::browser_wake_interval_ms(&FixedStepScheduler::new(1, 8)),
         16
     );
 }

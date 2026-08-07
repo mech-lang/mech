@@ -3,6 +3,12 @@
 
 #![forbid(unsafe_code)]
 
+#[cfg(all(feature = "distribution-standard", feature = "distribution-full"))]
+compile_error!(
+    "`distribution-standard` and `distribution-full` are mutually exclusive; use \
+     `--no-default-features --features distribution-full` for a full build"
+);
+
 // Prelude
 // ----------------------------------------------------------------------------
 

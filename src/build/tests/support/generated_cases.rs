@@ -18,7 +18,7 @@ pub struct GeneratedCase {
 }
 
 pub fn generated_cases() -> Vec<GeneratedCase> {
-    vec![
+    let mut cases = vec![
         frozen(
             "literal",
             "generated_native_literal",
@@ -113,13 +113,17 @@ pub fn generated_cases() -> Vec<GeneratedCase> {
             "@arm := robot://arm/commands{:move(move)}\n@arm/move <- true\n\"robot-done\"",
             "\"robot-done\"",
         ),
+    ];
+    #[cfg(feature = "experimental-actors")]
+    cases.extend([
         actor_case(
             "actor-alpha",
             "generated_native_actor_alpha",
             "\"payload-a\"",
         ),
         actor_case("actor-beta", "generated_native_actor_beta", "\"payload-b\""),
-    ]
+    ]);
+    cases
 }
 
 pub fn generated_cli_alias_case() -> GeneratedCase {
@@ -203,6 +207,7 @@ fn hosted(
     }
 }
 
+#[cfg(feature = "experimental-actors")]
 fn actor_case(
     case: &'static str,
     binary_name: &'static str,

@@ -63,7 +63,10 @@ source_default = [
   "watcher",
 ]
 compiler_default = ["source_default", "compiler"]
-default = ["source_default"]
+full_runtime = ["runtime_default"]
+full_source = ["source_default"]
+full_compiler = ["compiler_default"]
+default = []
 base = ["compiler_default", "mech-core/base", "mech-engine/base"]
 
 async = ["mech-engine/async"]
@@ -193,7 +196,7 @@ host_delegation_signing = ["host_delegation", "dep:ed25519-dalek", "dep:rand_cor
 
 [dev-dependencies]
 criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
-mech-host-cli = { path = "../../hosts/cli", features = ["provider"] }
+mech-terminal = { path = "../../hosts/terminal", features = ["provider"] }
 mech-native-live-host-fixture = { path = "../../tests/fixtures/native-live-host" }
 serde_json = "1.0.150"
 trybuild = "1.0.118"

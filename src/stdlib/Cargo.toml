@@ -8,7 +8,7 @@ license = "Apache-2.0"
 publish = false
 
 [features]
-default = ["standard_source"]
+default = []
 
 std = ["mech-core/std", "mech-engine/std"]
 no_std = [
@@ -81,7 +81,17 @@ standard_runtime = ["runtime", "standard_values", "standard_operations"]
 standard_source = ["standard_runtime", "source"]
 standard_compiler = ["standard_source", "compiler"]
 
+full_runtime = ["runtime", "full_values", "full_operations"]
+full_source = ["full_runtime", "source"]
+full_compiler = ["full_source", "compiler"]
+
 standard_values = [
+  "bool", "string", "f64",
+  "set", "map", "table", "tuple", "record", "atom", "enum",
+  "row_vectord", "vectord", "matrixd",
+]
+
+full_values = [
   "bool", "string",
   "u8", "u16", "u32", "u64", "u128",
   "i8", "i16", "i32", "i64", "i128",
@@ -98,9 +108,40 @@ standard_operations = [
   "subscript_default",
   "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",
   "set_define", "set_comprehensions", "table_ops",
-  "math_default", "compare_default", "logic_default", "range_default",
-  "matrix_default", "set_default", "string_default", "stats_default",
-  "combinatorics_default",
+  "mech-engine/math_standard", "mech-engine/compare_default", "mech-engine/logic_default",
+  "mech-engine/range_default", "mech-engine/matrix_default", "mech-engine/set_standard",
+  "mech-engine/string_default", "mech-engine/stats_default",
+  "mech-math", "mech-math/standard_runtime",
+  "mech-compare", "mech-compare/standard_runtime",
+  "mech-logic", "mech-logic/standard_runtime",
+  "mech-range", "mech-range/standard_runtime",
+  "mech-matrix", "mech-matrix/standard_runtime",
+  "mech-set", "mech-set/standard_runtime",
+  "mech-string", "mech-string/standard_runtime",
+  "mech-stats", "mech-stats/standard_runtime",
+]
+
+full_operations = [
+  "access", "assign", "convert", "variable_define", "invariant_define", "variables",
+  "subscript_default",
+  "matrix_horzcat", "matrix_vertcat", "matrix_comprehensions",
+  "set_define", "set_comprehensions", "table_ops",
+  "mech-engine/math_default", "mech-engine/compare_default", "mech-engine/logic_default",
+  "mech-engine/range_default", "mech-engine/matrix_default", "mech-engine/set_default",
+  "mech-engine/string_default", "mech-engine/stats_default", "mech-engine/combinatorics_default",
+  # Select the complete operation families, but let this crate's `full_values`
+  # forward the product's dynamic-shape value set. Machine `full_runtime`
+  # profiles intentionally remain owner-level exhaustive profiles and include
+  # fixed storage shapes for their independent validation.
+  "mech-math", "mech-math/runtime", "mech-math/full_operations",
+  "mech-compare", "mech-compare/runtime", "mech-compare/full_operations",
+  "mech-logic", "mech-logic/runtime", "mech-logic/full_operations",
+  "mech-range", "mech-range/runtime", "mech-range/full_operations",
+  "mech-matrix", "mech-matrix/runtime", "mech-matrix/full_operations",
+  "mech-set", "mech-set/runtime", "mech-set/full_operations",
+  "mech-string", "mech-string/runtime", "mech-string/full_operations",
+  "mech-stats", "mech-stats/runtime", "mech-stats/full_operations",
+  "mech-combinatorics", "mech-combinatorics/runtime", "mech-combinatorics/full_operations",
 ]
 
 # Engine-owned intrinsic operations.

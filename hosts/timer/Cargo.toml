@@ -1,5 +1,5 @@
 [package]
-name = "mech-host-timer"
+name = "mech-timer"
 version = "0.3.5"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Fixed-step monotonic timer host provider for Mech runtime host inputs."

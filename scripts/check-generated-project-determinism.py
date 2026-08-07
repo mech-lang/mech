@@ -32,7 +32,7 @@ def generate() -> dict[str, Path]:
             "-p",
             "mech-build",
             "--features",
-            "standard-hosts",
+            "full-hosts",
             "--test",
             "generate_native_projects",
             "--",

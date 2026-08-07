@@ -13,7 +13,7 @@ mech-engine = {
 mech-stdlib = {
   path = "../../../src/stdlib",
   default-features = false,
-  features = ["standard_compiler"],
+  features = ["full_compiler"],
 }
 
 [patch.crates-io]

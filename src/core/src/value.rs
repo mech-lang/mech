@@ -961,6 +961,46 @@ impl Value {
         ids
     }
 
+    /// Returns the cells that carry a value's logical reactive state.
+    ///
+    /// Mutable-reference wrappers provide stable storage identity, but the
+    /// value inside the wrapper remains the dependency observed by source
+    /// execution. External bytecode nodes use this view so stable register
+    /// storage does not become an extra reactive input.
+    pub fn logical_reactive_cell_ids(&self) -> Vec<ReactiveCellId> {
+        fn collect(
+            value: &Value,
+            ids: &mut Vec<ReactiveCellId>,
+            seen_references: &mut HashSet<ReactiveCellId>,
+        ) {
+            match value {
+                Value::MutableReference(reference) => {
+                    let cell = ReactiveCellId::new(reference.id());
+                    if !seen_references.insert(cell) {
+                        if !ids.contains(&cell) {
+                            ids.push(cell);
+                        }
+                        return;
+                    }
+                    collect(&reference.borrow(), ids, seen_references);
+                }
+                Value::Typed(value, _) => collect(value, ids, seen_references),
+                _ => {
+                    for cell in value.reactive_cell_ids() {
+                        if !ids.contains(&cell) {
+                            ids.push(cell);
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut ids = Vec::new();
+        let mut seen_references = HashSet::default();
+        collect(self, &mut ids, &mut seen_references);
+        ids
+    }
+
     fn push_reactive_cell_id(
         ids: &mut Vec<ReactiveCellId>,
         seen: &mut HashSet<ReactiveCellId>,
@@ -3976,6 +4016,19 @@ mod reactive_cell_tests {
         assert_eq!(
             value.reactive_cell_ids(),
             cell_ids(&[outer.id(), scalar.id()])
+        );
+        assert_eq!(value.logical_reactive_cell_ids(), cell_ids(&[scalar.id()]));
+    }
+
+    #[test]
+    fn logical_reactive_cells_terminate_reference_cycles() {
+        let reference = Ref::new(Value::Empty);
+        *reference.borrow_mut() = Value::MutableReference(reference.clone());
+        let value = Value::MutableReference(reference.clone());
+
+        assert_eq!(
+            value.logical_reactive_cell_ids(),
+            cell_ids(&[reference.id()])
         );
     }
 

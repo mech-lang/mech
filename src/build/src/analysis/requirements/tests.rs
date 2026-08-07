@@ -13,7 +13,7 @@ use mech_runtime::{
 };
 
 use super::*;
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 use crate::host::standard_native_host_catalog;
 use crate::host::{NativeHostFunctionLinkage, NativeTargetFamily};
 use crate::{
@@ -598,10 +598,10 @@ fn host_catalog_with(
     catalog
         .insert_provider(NativeHostLinkage {
             provider: "test",
-            package: "mech-host-test",
-            crate_name: "mech_host_test",
+            package: "mech-test-host",
+            crate_name: "mech_test_host",
             cargo_features: &["provider"],
-            factory_path: "mech_host_test::TestHostFactory::new",
+            factory_path: "mech_test_host::TestHostFactory::new",
             supported_targets: &[NativeTargetFamily::Unix, NativeTargetFamily::Windows],
             manifest,
             validate_settings: validate_test_settings,
@@ -944,7 +944,7 @@ fn exact_resource_requirement_prunes_unused_hosts_and_narrows_grants() {
 
     assert_eq!(analysis.hosts.len(), 1);
     assert_eq!(analysis.hosts[0].name, "terminal");
-    assert_eq!(analysis.hosts[0].package, "mech-host-test");
+    assert_eq!(analysis.hosts[0].package, "mech-test-host");
     assert_eq!(
         analysis.run_grants,
         [planned_grant("terminal", "output", "write", "line")]
@@ -1047,7 +1047,7 @@ fn host_free_analysis_rejects_unaddressed_untrusted_config_strings() {
     assert_eq!(error.kind_name(), "NativeRuntimeConfigUnsupported");
 }
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 #[test]
 fn standard_default_instances_accept_canonical_and_alias_resource_uris() {
     let config = NativeRuntimeConfig {
@@ -1148,7 +1148,7 @@ fn standard_default_instances_accept_canonical_and_alias_resource_uris() {
     }
 }
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 #[test]
 fn cli_stdout_and_stderr_keep_distinct_structured_owners() {
     let config = NativeRuntimeConfig {
@@ -1211,7 +1211,7 @@ fn cli_stdout_and_stderr_keep_distinct_structured_owners() {
     );
 }
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 #[test]
 fn standard_provider_rejects_invalid_bytecode_resource_paths() {
     let requirement = request_at(
@@ -1247,7 +1247,7 @@ fn standard_provider_rejects_invalid_bytecode_resource_paths() {
     assert!(error.kind_message().contains("seconds"));
 }
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 #[test]
 fn standard_provider_plans_resource_read_output_seed_types() {
     let requirement = request_at(
@@ -1285,7 +1285,7 @@ fn standard_provider_plans_resource_read_output_seed_types() {
     assert!(error.kind_message().contains("F64"));
 }
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 #[test]
 fn standard_provider_plans_resource_write_payload_types() {
     let requirement = request_at(
@@ -1336,7 +1336,7 @@ fn standard_provider_plans_resource_write_payload_types() {
     assert!(error.kind_message().contains("rejected its payload"));
 }
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 #[test]
 fn trusted_actor_host_calls_plan_arity_and_output_seed_types() {
     let catalog = standard_native_host_catalog().unwrap();
@@ -1406,7 +1406,7 @@ fn trusted_actor_host_calls_plan_arity_and_output_seed_types() {
     assert!(error.kind_message().contains("expected string argument 0"));
 }
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 #[test]
 fn actor_put_before_get_updates_the_shared_abstract_register_sequence() {
     let mut config = actor_runtime_config("actor:planner", "message");
@@ -1468,7 +1468,7 @@ fn actor_put_before_get_updates_the_shared_abstract_register_sequence() {
     .unwrap();
 }
 
-#[cfg(feature = "standard-hosts")]
+#[cfg(feature = "full-hosts")]
 #[test]
 fn standard_aliases_do_not_address_non_default_instances() {
     let catalog = standard_native_host_catalog().unwrap();

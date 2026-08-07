@@ -1,9 +1,29 @@
-use mech::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
+#![cfg(all(
+    feature = "compiler",
+    feature = "source",
+    feature = "n_choose_k",
+    feature = "f64",
+    feature = "matrixd"
+))]
+
+use std::sync::Arc;
+
 use mech_core::{
-    BytecodeCompilerContext, MResult, MechError, MechErrorKind, MechFunctionCompiler,
-    MechFunctionImpl, Ref, Register, Value, hash_str, structures::matrix::Matrix,
+    BytecodeCompilerContext, FunctionCatalog, FunctionCatalogBuilder, MResult, MechError,
+    MechErrorKind, MechFunctionCompiler, MechFunctionImpl, Ref, Register, Value, hash_str,
+    structures::matrix::Matrix,
 };
+use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
 use nalgebra::DMatrix;
+
+fn owner_source_catalog() -> Arc<FunctionCatalog> {
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    mech_combinatorics::install_runtime(&mut builder).unwrap();
+    mech_combinatorics::install_source(&mut builder).unwrap();
+    Arc::new(builder.build().unwrap())
+}
 
 fn unwrap_value(value: Value) -> Value {
     match value {
@@ -60,7 +80,7 @@ fn assert_matrix(matrix: &Ref<DMatrix<f64>>, rows: usize, cols: usize, expected:
 fn reactive_program() -> (MechProgram, ProgramInputId) {
     let mut program = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
-        mech::stdlib::source_catalog(),
+        owner_source_catalog(),
     );
     ensure_input(
         &mut program,
@@ -87,7 +107,7 @@ fn invalid_initial_n_choose_k_selection_is_reported() {
     for invalid in [0.0, 4.0] {
         let mut program = MechProgram::with_function_catalog(
             MechProgramConfig::default(),
-            mech::stdlib::source_catalog(),
+            owner_source_catalog(),
         );
         ensure_input(
             &mut program,
@@ -259,7 +279,7 @@ fn downstream_failure_rolls_back_n_choose_k_and_all_dependents() {
 fn n_choose_k_bytecode_reconstructs_a_dynamic_matrix_output() -> MResult<()> {
     let mut source = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
-        mech::stdlib::source_catalog(),
+        owner_source_catalog(),
     );
     source.run_string(
         "+> combinatorics/n-choose-k\n\
@@ -270,7 +290,7 @@ fn n_choose_k_bytecode_reconstructs_a_dynamic_matrix_output() -> MResult<()> {
 
     let mut decoded = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
-        mech::stdlib::source_catalog(),
+        owner_source_catalog(),
     );
     decoded.run_bytecode(&bytecode)?;
 

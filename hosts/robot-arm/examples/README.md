@@ -1,6 +1,6 @@
 # Robot-arm examples
 
-These examples belong to the `mech-host-robot-arm` package. They are not part of the generic top-level Mech examples because the generic runtime, browser host, and wasm package do not depend on the robot-arm host.
+These examples belong to the `mech-robot-arm` package. They are not part of the generic top-level Mech examples because the generic runtime, browser host, and wasm package do not depend on the robot-arm host.
 
 The examples require a composition build or runner that registers `RobotArmHostFactory` alongside any other required host factories.
 

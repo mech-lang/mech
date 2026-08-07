@@ -12,8 +12,8 @@ use std::time::{Duration, Instant};
 
 use colored::*;
 use ignore::WalkBuilder;
+use mech_browser::BrowserRuntimeInjectionConfig;
 use mech_core::*;
-use mech_host_browser::BrowserRuntimeInjectionConfig;
 use mech_runtime::{
     DefaultIdGenerator, EventId, EventSink, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
     FS_WATCH, HostFilesystemAuthority, ModuleBuildOptions, RuntimeConfig, RuntimeEvent,
@@ -2710,7 +2710,7 @@ mod tests {
 
     fn empty_host_config() -> BrowserRuntimeInjectionConfig {
         BrowserRuntimeInjectionConfig {
-            runtime: mech_host_browser::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
+            runtime: mech_browser::BrowserHostRuntimeConfig::from(&RuntimeConfig::default()),
             hosts: Vec::new(),
             run_grants: Vec::new(),
         }

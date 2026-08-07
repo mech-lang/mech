@@ -36,7 +36,7 @@ home := @env/HOME
 A user-facing CLI host example should be added under:
 
 ```text
-examples/hosts/cli/
+examples/hosts/terminal/
 ```
 
 until the examples tree is reorganized.

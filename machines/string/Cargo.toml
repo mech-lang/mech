@@ -5,7 +5,7 @@ authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Comparison library for the Mech language"
 documentation = "http://docs.mech-lang.org"
 homepage = "https://mech-lang.org"
-repository = "https://github.com/mech-machines/compare"
+repository = "https://github.com/mech-machines/string"
 keywords = ["mech", "language", "programming"]
 license = "Apache-2.0"
 readme = "README.md"
@@ -21,20 +21,26 @@ crate-type = ["rlib"]
 [features]
 no_std = ["mech-core/no_std"]
 
-default = ["compiler_default"]
+default = []
 runtime = ["mech-core/functions"]
 source = ["runtime"]
 compiler = ["runtime", "mech-core/compiler"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
-standard_values = [
+standard_values = ["string", "row_vectord", "vectord", "matrixd"]
+standard_operations = ["string_default"]
+standard_runtime = ["runtime", "standard_values", "standard_operations"]
+standard_source = ["standard_runtime", "source"]
+standard_compiler = ["standard_source", "compiler"]
+full_values = [
   "string", "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
   "row_vector2", "row_vector3", "row_vector4",
   "vector2", "vector3", "vector4", "row_vectord", "vectord", "matrixd",
 ]
-runtime_default = ["runtime", "standard_values", "string_default"]
-source_default = ["runtime_default", "source"]
-compiler_default = ["source_default", "compiler"]
+full_operations = ["string_default"]
+full_runtime = ["runtime", "full_values", "full_operations"]
+full_source = ["full_runtime", "source"]
+full_compiler = ["full_source", "compiler"]
 
 string_default = ["concat"]
 concat = ["runtime", "string"]

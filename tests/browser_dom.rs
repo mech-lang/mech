@@ -3,12 +3,12 @@ use std::collections::BTreeMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use mech_core::Value;
-use mech_host_browser::{
+use mech_browser::{
     BrowserAuthority, BrowserCapabilityGrant, BrowserDomManifestEntry, BrowserDomPath,
     BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource,
 };
-use mech_host_browser::{BrowserDomBackend, BrowserResourceProvider};
+use mech_browser::{BrowserDomBackend, BrowserResourceProvider};
+use mech_core::Value;
 use mech_runtime::{
     MechRuntime, ResourcePathCapability, RuntimeBuilder, RuntimeCapabilityOperation,
     RuntimeValueSnapshot,

@@ -12,7 +12,7 @@ use mech_build::{
     MECH_COMPONENT_VERSION, NativeActorBootstrap, NativeApplicationBuilder,
     NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest, NativeDependencySource,
     NativeEmit, NativeHostCatalog, NativeHostLinkage, NativeRuntimeConfig, NativeTargetFamily,
-    standard_native_host_catalog,
+    selected_native_host_catalog,
 };
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant, MResult,
@@ -1081,8 +1081,8 @@ fn native_plan(fixture: &Fixture) -> AppResult<mech_build::NativeBuildPlan> {
     };
     let host_catalog = match fixture.plan_catalog {
         PlanCatalog::SyntheticLive => synthetic_live_host_catalog()?,
-        PlanCatalog::Standard => standard_native_host_catalog()
-            .map_err(|error| mech_error("standard native host catalog", error))?,
+        PlanCatalog::Standard => selected_native_host_catalog()
+            .map_err(|error| mech_error("selected native host catalog", error))?,
     };
     let binary_name = fixture
         .file

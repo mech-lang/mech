@@ -26989,66 +26989,6 @@
       "owner": "mech-matrix"
     },
     {
-      "name": "MatMulRDVD<f32>",
-      "id_hex": "00e51a5f527be040",
-      "owner": "mech-matrix"
-    },
-    {
-      "name": "MatMulRDVD<f64>",
-      "id_hex": "0031ebb7477eb3a4",
-      "owner": "mech-matrix"
-    },
-    {
-      "name": "MatMulRDVD<i128>",
-      "id_hex": "00570c1676459d48",
-      "owner": "mech-matrix"
-    },
-    {
-      "name": "MatMulRDVD<i16>",
-      "id_hex": "00f94cb131992ea5",
-      "owner": "mech-matrix"
-    },
-    {
-      "name": "MatMulRDVD<i32>",
-      "id_hex": "009f45f7c30a0993",
-      "owner": "mech-matrix"
-    },
-    {
-      "name": "MatMulRDVD<i64>",
-      "id_hex": "00c9e54f873f326b",
-      "owner": "mech-matrix"
-    },
-    {
-      "name": "MatMulRDVD<i8>",
-      "id_hex": "00a04b27c1b43518",
-      "owner": "mech-matrix"
-    },
-    {
-      "name": "MatMulRDVD<u128>",
-      "id_hex": "00cb488bcce3d02a",
-      "owner": "mech-matrix"
-    },
-    {
-      "name": "MatMulRDVD<u16>",
-      "id_hex": "00bd34dc3e8944f1",
-      "owner": "mech-matrix"
-    },
-    {
-      "name": "MatMulRDVD<u32>",
-      "id_hex": "009507375bff2230",
-      "owner": "mech-matrix"
-    },
-    {
-      "name": "MatMulRDVD<u64>",
-      "id_hex": "000ca2e1a7caee3e",
-      "owner": "mech-matrix"
-    },
-    {
-      "name": "MatMulRDVD<u8>",
-      "id_hex": "00716a6d5a6cd82c",
-      "owner": "mech-matrix"
-    },
-    {
       "name": "MatMulScalar<f32>",
       "id_hex": "005aac4b189a1470",
       "owner": "mech-matrix"

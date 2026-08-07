@@ -1,16 +1,36 @@
-name: Exhaustive CI
+name: Full CI
 
 on:
-  schedule:
-    - cron: "17 5 * * *"
+  workflow_call:
+    inputs:
+      release_channel:
+        description: Artifact channel used by the full-validation dry run
+        required: false
+        type: string
+        default: stable
+      release_date:
+        description: UTC date for nightly artifact names
+        required: false
+        type: string
+        default: ""
   workflow_dispatch:
-  push:
-    tags:
-      - "v*"
+    inputs:
+      release_channel:
+        description: Artifact channel used by the full-validation dry run
+        required: true
+        type: choice
+        default: stable
+        options:
+          - stable
+          - nightly
+      release_date:
+        description: UTC date for nightly artifact names (YYYY-MM-DD)
+        required: false
+        type: string
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
-  cancel-in-progress: true
+  group: ci-full-${{ github.sha }}
+  cancel-in-progress: false
 
 jobs:
   cargo-features:
@@ -74,7 +94,7 @@ jobs:
       fail-fast: false
       matrix:
         slice:
-          - machines
+          - source
           - consumer
     env:
       CARGO_TERM_COLOR: always
@@ -135,6 +155,12 @@ jobs:
 
       - name: Check ${{ matrix.profile }} distribution
         run: bash scripts/check-static-distribution-profiles.sh "${{ matrix.profile }}"
+
+      - name: Derive the full product catalog contract
+        if: ${{ matrix.profile == 'static' }}
+        run: |
+          cargo fetch --locked
+          python3 -B scripts/check-distribution-contracts.py --profile full
 
   wasm-source-profile:
     name: WASM source profile
@@ -402,6 +428,31 @@ jobs:
           path: target/native-linkage/coverage-full.json
           retention-days: 14
 
+  native-linkage-closures:
+    name: Exact native closure (${{ matrix.shard }}/8)
+    needs: native-linkage
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target/native-linkage/exact-closures/shard-${{ matrix.shard }}/cargo-target
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch locked workspace dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
+      - name: Download full native linkage inventory
+        uses: actions/download-artifact@v4
+        with:
+          name: native-linkage-coverage
+          path: target/native-linkage
+      - name: Compile exact minimal feature closures
+        run: python3 scripts/check-native-linkage-coverage.py closure ${{ matrix.shard }}
+
   native-plan:
     name: Native plan
     runs-on: ubuntu-latest
@@ -581,6 +632,7 @@ jobs:
       - bytecode-v1-determinism
       - native-linkage-owners
       - native-linkage
+      - native-linkage-closures
       - native-plan
       - native-engine
       - native-hosted
@@ -604,6 +656,7 @@ jobs:
           BYTECODE_DETERMINISM_RESULT: ${{ needs.bytecode-v1-determinism.result }}
           NATIVE_LINKAGE_OWNERS_RESULT: ${{ needs.native-linkage-owners.result }}
           NATIVE_LINKAGE_RESULT: ${{ needs.native-linkage.result }}
+          NATIVE_LINKAGE_CLOSURES_RESULT: ${{ needs.native-linkage-closures.result }}
           NATIVE_PLAN_RESULT: ${{ needs.native-plan.result }}
           NATIVE_ENGINE_RESULT: ${{ needs.native-engine.result }}
           NATIVE_HOSTED_RESULT: ${{ needs.native-hosted.result }}
@@ -624,6 +677,7 @@ jobs:
           test "$BYTECODE_DETERMINISM_RESULT" = success
           test "$NATIVE_LINKAGE_OWNERS_RESULT" = success
           test "$NATIVE_LINKAGE_RESULT" = success
+          test "$NATIVE_LINKAGE_CLOSURES_RESULT" = success
           test "$NATIVE_PLAN_RESULT" = success
           test "$NATIVE_ENGINE_RESULT" = success
           test "$NATIVE_HOSTED_RESULT" = success
@@ -762,16 +816,16 @@ jobs:
       - name: Run CLI host and context-send regression coverage
         run: |
           cargo test -p mech-syntax --test context_parser
-          cargo test -p mech-host-cli --features provider --test provider
-          cargo test -p mech-host-console
-          cargo test -p mech-host-browser
-          cargo test -p mech-host-browser --features provider
-          cargo test -p mech-host-browser --features delegation
-          cargo test -p mech-host-browser --features delegation_signing
+          cargo test -p mech-terminal --features provider --test provider
+          cargo test -p mech-console
+          cargo test -p mech-browser
+          cargo test -p mech-browser --features provider
+          cargo test -p mech-browser --features delegation
+          cargo test -p mech-browser --features delegation_signing
           cargo test --features "run repl pretty_print" --test mech_cli_host
           cargo test --features "run repl pretty_print" cli::run::tests
-          cargo check -p mech-runtime -p mech-host-browser -p mech-host-cli
-          cargo check -p mech-host-cli --no-default-features
+          cargo check -p mech-runtime -p mech-browser -p mech-terminal
+          cargo check -p mech-terminal --no-default-features
 
       - name: Run REPL Ctrl-C regression
         run: |
@@ -854,15 +908,15 @@ jobs:
       - name: Run native project tests
         run: |
           cargo test \
-            -p mech-host-time \
+            -p mech-time \
             --no-default-features \
             --features native
           cargo test \
-            -p mech-host-timer \
+            -p mech-timer \
             --no-default-features \
             --features native
           cargo test \
-            -p mech-host-scene \
+            -p mech-scene \
             --no-default-features \
             --features native
           cargo test \
@@ -1197,3 +1251,43 @@ jobs:
 
       - name: Run dynamic module smoke path
         run: bash scripts/test-dynamic-modules.sh
+
+  release-package-dry-run:
+    name: ${{ matrix.distribution }} release package (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+        distribution:
+          - standard
+          - full
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_RELEASE_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Build and package the exact distribution
+        id: package
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/mech-release-target
+        run: >-
+          python3 scripts/build-distribution-artifact.py
+          --channel "${{ inputs.release_channel }}"
+          --distribution "${{ matrix.distribution }}"
+          --output-dir target/distribution-artifacts
+          --date "${{ inputs.release_date }}"
+      - name: Retain the dry-run distribution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: distribution-${{ matrix.distribution }}-${{ runner.os }}
+          path: |
+            ${{ steps.package.outputs.archive }}
+            ${{ steps.package.outputs.report }}
+          if-no-files-found: error
+          retention-days: 14

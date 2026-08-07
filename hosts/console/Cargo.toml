@@ -1,5 +1,5 @@
 [package]
-name = "mech-host-console"
+name = "mech-console"
 version = "0.3.5"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Cross-platform console output host provider for Mech runtime."

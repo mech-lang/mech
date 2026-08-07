@@ -21,9 +21,9 @@ done
 
 mode=${1:-all}
 case "$mode" in
-  all | engine | selected-runtime | standard-runtime | standard-source | standard-compiler | wasm-source | static) ;;
+  all | engine | selected-runtime | full-runtime | full-source | full-compiler | wasm-source | static) ;;
   *)
-    echo "usage: $0 [all|engine|selected-runtime|standard-runtime|standard-source|standard-compiler|wasm-source|static]" >&2
+    echo "usage: $0 [all|engine|selected-runtime|full-runtime|full-source|full-compiler|wasm-source|static]" >&2
     exit 2
     ;;
 esac
@@ -90,22 +90,22 @@ for disposition, needle in requirements:
 PY
 }
 
-standard_machines="mech-combinatorics mech-compare mech-logic mech-math mech-matrix mech-range mech-set mech-stats mech-string"
+machine_packages="mech-combinatorics mech-compare mech-logic mech-math mech-matrix mech-range mech-set mech-stats mech-string"
 
-check_no_standard_machines() {
+check_no_machine_packages() {
   graph=$1
   contract=$2
-  for package in $standard_machines
+  for package in $machine_packages
   do
     check_graph "$graph" "$contract" "forbid=$package v"
   done
 }
 
-check_standard_machine_layers() {
+check_full_machine_layers() {
   graph=$1
   contract=$2
   expected=$3
-  for package in $standard_machines
+  for package in $machine_packages
   do
     check_graph "$graph" "$contract" "require=$package feature \"runtime\""
     case "$expected" in
@@ -124,7 +124,7 @@ check_standard_machine_layers() {
           "require=$package feature \"source\"" \
           "require=$package feature \"compiler\""
         ;;
-      *) fail "unknown standard machine layer expectation '$expected'" ;;
+      *) fail "unknown machine layer expectation '$expected'" ;;
     esac
   done
   case "$expected" in
@@ -255,7 +255,7 @@ for path in sorted(source_root.rglob("*.rs")):
     for identifier in machine_identifiers:
         if re.search(rf"\b{re.escape(identifier)}\b", text):
             raise SystemExit(
-                f"static distribution profile contract failed: engine imports standard machine "
+                f"static distribution profile contract failed: engine imports machine "
                 f"identifier {identifier} in {path}"
             )
     for symbol in obsolete:
@@ -287,25 +287,38 @@ contracts = json.loads(contracts_text)
 if contracts.get("schema") != 1:
     raise SystemExit("static distribution profile contract failed: unsupported profile schema")
 expected_profiles = {
-    "selected-runtime", "standard-runtime", "standard-source", "standard-compiler",
+    "selected-runtime", "full-runtime", "full-source", "full-compiler",
 }
 profiles = {profile["profile_name"]: profile for profile in contracts.get("profiles", [])}
 if set(profiles) != expected_profiles:
     raise SystemExit(
         "static distribution profile contract failed: deterministic profile set mismatch"
     )
-expected_digest = "b7385da248524bcfbd1a20768fc13648b01054625459985251e5f53cae872322"
+expected_digest = "8beffad53bcd4d6905a883e23e34441371f4adc6faaf8ceaee030703b3a41d06"
 selected_digest = "a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d"
-actual_digest = sha256(runtime_surface_path.read_bytes()).hexdigest()
+runtime_surface = json.loads(runtime_surface_path.read_text(encoding="utf-8"))
+runtime_factories = runtime_surface.get("runtime_factories")
+if not isinstance(runtime_factories, list):
+    raise SystemExit(
+        "static distribution profile contract failed: frozen runtime factories are missing"
+    )
+canonical_runtime_surface = "".join(
+    f"{entry['id_hex']}\t{entry['name']}\n"
+    for entry in sorted(
+        runtime_factories,
+        key=lambda entry: (entry["id_hex"], entry["name"]),
+    )
+).encode("utf-8")
+actual_digest = sha256(canonical_runtime_surface).hexdigest()
 if actual_digest != expected_digest:
     raise SystemExit(
         f"static distribution profile contract failed: frozen runtime digest is {actual_digest}"
     )
 expected_surface = {
     "selected-runtime": (3, 0, 0, 0, 0, selected_digest, "sha256-canonical-id-tab-name-lf-v1"),
-    "standard-runtime": (9022, 0, 0, 0, 0, expected_digest, "sha256-raw-frozen-runtime-surface-json"),
-    "standard-source": (9022, 119, 10, 52, 50, expected_digest, "sha256-raw-frozen-runtime-surface-json"),
-    "standard-compiler": (9022, 119, 10, 52, 50, expected_digest, "sha256-raw-frozen-runtime-surface-json"),
+    "full-runtime": (9010, 0, 0, 0, 0, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
+    "full-source": (9010, 119, 10, 52, 50, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
+    "full-compiler": (9010, 119, 10, 52, 50, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
 }
 surface_keys = (
     "catalog_factory_count", "source_specializer_count", "intrinsic_count",
@@ -337,7 +350,7 @@ for name, profile in profiles.items():
 machine_packages = sorted(machine_packages)
 runtime_packages = ["mech-engine", *machine_packages, "mech-stdlib"]
 compiler_packages = ["mech-core", *runtime_packages]
-standard_packages = sorted(["mech-core", *runtime_packages])
+full_packages = sorted(["mech-core", *runtime_packages])
 
 expected_packages = {
     "selected-runtime": {
@@ -348,16 +361,16 @@ expected_packages = {
             "mech-syntax",
         ],
     },
-    "standard-runtime": {
-        "required_packages": standard_packages,
+    "full-runtime": {
+        "required_packages": full_packages,
         "forbidden_packages": ["mech-bytecode", "mech-syntax"],
     },
-    "standard-source": {
-        "required_packages": sorted([*standard_packages, "mech-syntax"]),
+    "full-source": {
+        "required_packages": sorted([*full_packages, "mech-syntax"]),
         "forbidden_packages": ["mech-bytecode"],
     },
-    "standard-compiler": {
-        "required_packages": sorted([*standard_packages, "mech-bytecode", "mech-syntax"]),
+    "full-compiler": {
+        "required_packages": sorted([*full_packages, "mech-bytecode", "mech-syntax"]),
         "forbidden_packages": [],
     },
 }
@@ -383,18 +396,18 @@ expected_layers = {
             "mech-stdlib/source",
         ]),
     },
-    "standard-runtime": {
+    "full-runtime": {
         "required_feature_layers": layers(runtime_packages, ["runtime"]),
         "forbidden_feature_layers": sorted(
             layers(compiler_packages, ["compiler"])
             + layers(runtime_packages, ["source"])
         ),
     },
-    "standard-source": {
+    "full-source": {
         "required_feature_layers": layers(runtime_packages, ["runtime", "source"]),
         "forbidden_feature_layers": layers(compiler_packages, ["compiler"]),
     },
-    "standard-compiler": {
+    "full-compiler": {
         "required_feature_layers": sorted(
             layers(runtime_packages, ["runtime", "source"])
             + layers(compiler_packages, ["compiler"])
@@ -420,7 +433,7 @@ check_engine() {
     "forbid=mech-syntax v" \
     "forbid=mech-bytecode v" \
     "forbid=mech-stdlib v"
-  check_no_standard_machines "$scratch/engine-runtime.tree" "engine runtime"
+  check_no_machine_packages "$scratch/engine-runtime.tree" "engine runtime"
 
   capture_workspace_profile mech-engine source "$scratch/engine-source.tree"
   check_graph "$scratch/engine-source.tree" "engine source" \
@@ -428,7 +441,7 @@ check_engine() {
     'require=mech-engine feature "source"' \
     "forbid=mech-bytecode v" \
     "forbid=mech-stdlib v"
-  check_no_standard_machines "$scratch/engine-source.tree" "engine source"
+  check_no_machine_packages "$scratch/engine-source.tree" "engine source"
 
   capture_workspace_profile mech-engine compiler "$scratch/engine-compiler.tree"
   check_graph "$scratch/engine-compiler.tree" "engine compiler" \
@@ -436,7 +449,7 @@ check_engine() {
     "require=mech-bytecode v" \
     'require=mech-engine feature "compiler"' \
     "forbid=mech-stdlib v"
-  check_no_standard_machines "$scratch/engine-compiler.tree" "engine compiler"
+  check_no_machine_packages "$scratch/engine-compiler.tree" "engine compiler"
 }
 
 check_selected_runtime() {
@@ -469,9 +482,9 @@ check_selected_runtime() {
     'forbid=mech-core feature "compiler"'
 
   capture_workspace_profile mech-stdlib "runtime,f64" "$scratch/weak-f64.tree"
-  check_no_standard_machines "$scratch/weak-f64.tree" "weak f64 forwarding"
+  check_no_machine_packages "$scratch/weak-f64.tree" "weak f64 forwarding"
   capture_workspace_profile mech-stdlib "runtime,matrixd" "$scratch/weak-matrixd.tree"
-  check_no_standard_machines "$scratch/weak-matrixd.tree" "weak matrixd forwarding"
+  check_no_machine_packages "$scratch/weak-matrixd.tree" "weak matrixd forwarding"
 
   MECH_EXPECT_RUNTIME_FACTORY_COUNT=3 \
     MECH_EXPECT_RUNTIME_SURFACE_DIGEST=a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d \
@@ -499,82 +512,82 @@ check_selected_runtime() {
     -- "$repository_root/tests/architecture/bytecode-v1/scalar-add-f64.mecb"
 }
 
-check_standard_runtime() {
-  manifest="$repository_root/tests/fixtures/standard-bytecode-runtime/Cargo.toml"
-  capture_fixture_profile "$manifest" "$scratch/standard-runtime.tree"
+check_full_runtime() {
+  manifest="$repository_root/tests/fixtures/full-bytecode-runtime/Cargo.toml"
+  capture_fixture_profile "$manifest" "$scratch/full-runtime.tree"
   for package in mech-core mech-engine mech-stdlib mech-math mech-compare mech-logic mech-range mech-matrix mech-set mech-string mech-stats mech-combinatorics
   do
-    check_graph "$scratch/standard-runtime.tree" "standard runtime" "require=$package v"
+    check_graph "$scratch/full-runtime.tree" "full runtime" "require=$package v"
   done
-  check_graph "$scratch/standard-runtime.tree" "standard runtime" \
+  check_graph "$scratch/full-runtime.tree" "full runtime" \
     "forbid=mech-syntax v" \
     "forbid=mech-bytecode v" \
     'forbid=mech-engine feature "source"' \
     'forbid=mech-engine feature "compiler"' \
     'forbid=mech-stdlib feature "source"' \
     'forbid=mech-stdlib feature "compiler"'
-  check_standard_machine_layers "$scratch/standard-runtime.tree" "standard runtime" runtime
+  check_full_machine_layers "$scratch/full-runtime.tree" "full runtime" runtime
 
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly test \
     --manifest-path "$repository_root/Cargo.toml" \
     -p mech-stdlib \
     --no-default-features \
-    --features standard_runtime \
+    --features full_runtime \
     --test profile_contracts \
-    --target-dir "$scratch/standard-runtime-target"
+    --target-dir "$scratch/full-runtime-target"
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$manifest" \
-    --target-dir "$scratch/standard-runtime-target" \
+    --target-dir "$scratch/full-runtime-target" \
     -- "$repository_root/tests/architecture/bytecode-v1/scalar-add-f64.mecb"
 }
 
-check_standard_source() {
-  manifest="$repository_root/tests/fixtures/standard-source-runtime/Cargo.toml"
-  capture_fixture_profile "$manifest" "$scratch/standard-source.tree"
-  check_graph "$scratch/standard-source.tree" "standard source" \
+check_full_source() {
+  manifest="$repository_root/tests/fixtures/full-source-runtime/Cargo.toml"
+  capture_fixture_profile "$manifest" "$scratch/full-source.tree"
+  check_graph "$scratch/full-source.tree" "full source" \
     "require=mech-syntax v" \
     'require=mech-engine feature "source"' \
     'require=mech-stdlib feature "source"' \
     "forbid=mech-bytecode v" \
     'forbid=mech-engine feature "compiler"' \
     'forbid=mech-stdlib feature "compiler"'
-  check_standard_machine_layers "$scratch/standard-source.tree" "standard source" source
+  check_full_machine_layers "$scratch/full-source.tree" "full source" source
 
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly test \
     --manifest-path "$repository_root/Cargo.toml" \
     -p mech-stdlib \
     --no-default-features \
-    --features standard_source \
+    --features full_source \
     --test profile_contracts \
-    --target-dir "$scratch/standard-source-target"
+    --target-dir "$scratch/full-source-target"
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$manifest" \
-    --target-dir "$scratch/standard-source-target"
+    --target-dir "$scratch/full-source-target"
 }
 
-check_standard_compiler() {
+check_full_compiler() {
   producer_manifest="$repository_root/tests/fixtures/bytecode-compiler-producer/Cargo.toml"
   consumer_manifest="$repository_root/tests/fixtures/bytecode-runtime-consumer/Cargo.toml"
-  capture_fixture_profile "$producer_manifest" "$scratch/standard-compiler.tree"
-  check_graph "$scratch/standard-compiler.tree" "standard compiler" \
+  capture_fixture_profile "$producer_manifest" "$scratch/full-compiler.tree"
+  check_graph "$scratch/full-compiler.tree" "full compiler" \
     "require=mech-syntax v" \
     "require=mech-bytecode v" \
     'require=mech-engine feature "compiler"' \
     'require=mech-stdlib feature "compiler"'
-  check_standard_machine_layers "$scratch/standard-compiler.tree" "standard compiler" compiler
+  check_full_machine_layers "$scratch/full-compiler.tree" "full compiler" compiler
 
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly test \
     --manifest-path "$repository_root/Cargo.toml" \
     -p mech-stdlib \
     --no-default-features \
-    --features standard_compiler \
+    --features full_compiler \
     --test profile_contracts \
-    --target-dir "$scratch/standard-compiler-target"
+    --target-dir "$scratch/full-compiler-target"
 
   output="$scratch/compiler-produced-scalar-add.mecb"
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$producer_manifest" \
-    --target-dir "$scratch/standard-compiler-target" \
+    --target-dir "$scratch/full-compiler-target" \
     -- "$output"
   CARGO_PROFILE_DEV_DEBUG=0 cargo_nightly run \
     --manifest-path "$consumer_manifest" \
@@ -618,11 +631,11 @@ check_wasm_source() {
     'forbid=mech-wasm feature "compiler"' \
     'forbid=mech-engine feature "compiler"' \
     'forbid=mech-stdlib feature "compiler"' \
-    'forbid=mech-stdlib feature "standard_compiler"' \
-    'forbid=mech-stdlib feature "standard_operations"' \
-    'forbid=mech-stdlib feature "standard_runtime"' \
-    'forbid=mech-stdlib feature "standard_source"' \
-    'forbid=mech-stdlib feature "standard_values"' \
+    'forbid=mech-stdlib feature "full_compiler"' \
+    'forbid=mech-stdlib feature "full_operations"' \
+    'forbid=mech-stdlib feature "full_runtime"' \
+    'forbid=mech-stdlib feature "full_source"' \
+    'forbid=mech-stdlib feature "full_values"' \
     'forbid=mech-core feature "compiler"'
   for package in mech-compare mech-logic mech-math mech-matrix mech-range mech-string
   do
@@ -646,16 +659,16 @@ case "$mode" in
     check_static_boundary
     check_engine
     check_selected_runtime
-    check_standard_runtime
-    check_standard_source
-    check_standard_compiler
+    check_full_runtime
+    check_full_source
+    check_full_compiler
     check_wasm_source
     ;;
   engine) check_engine ;;
   selected-runtime) check_selected_runtime ;;
-  standard-runtime) check_standard_runtime ;;
-  standard-source) check_standard_source ;;
-  standard-compiler) check_standard_compiler ;;
+  full-runtime) check_full_runtime ;;
+  full-source) check_full_source ;;
+  full-compiler) check_full_compiler ;;
   wasm-source) check_wasm_source ;;
   static) check_static_boundary ;;
 esac

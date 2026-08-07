@@ -48,7 +48,7 @@ run_slice() {
     standard)
       cargo +nightly-2026-03-03 run \
         --no-default-features \
-        --features "standard_source,project" \
+        --features "full_source,project" \
         --example matrix_multiply
       ;;
     *)

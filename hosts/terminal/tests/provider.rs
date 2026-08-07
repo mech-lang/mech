@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
 use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
-use mech_host_cli::{CliBackend, CliResourceProvider};
 use mech_runtime::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
 };
+use mech_terminal::{CliBackend, CliResourceProvider};
 
 #[derive(Debug, Default)]
 struct FakeCliBackend {

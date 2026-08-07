@@ -1,4 +1,4 @@
-#![cfg(feature = "standard-hosts")]
+#![cfg(feature = "full-hosts")]
 
 mod support;
 
@@ -22,7 +22,7 @@ fn cli_hosted_native_application_builds_and_emits_once() {
 
     assert_exact_mech_packages(
         &result.plan,
-        &["mech-core", "mech-engine", "mech-host-cli", "mech-runtime"],
+        &["mech-core", "mech-engine", "mech-terminal", "mech-runtime"],
     );
     assert_eq!(result.plan.runtime_config.name, "native-generated-runtime");
     assert_eq!(
@@ -52,7 +52,7 @@ fn cli_hosted_native_application_builds_and_emits_once() {
     assert_eq!(result.plan.run_grants[0].host_instance, "cli");
     assert_eq!(result.plan.run_grants[0].host_context, "stdout");
     let runtime = result.runtime_source.unwrap();
-    assert!(runtime.contains("mech_host_cli::CliHostFactory::new"));
+    assert!(runtime.contains("mech_terminal::CliHostFactory::new"));
     assert_eq!(runtime.matches("CliHostFactory::new").count(), 1);
 
     let output = result.stdout.unwrap();

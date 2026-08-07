@@ -9,7 +9,12 @@ use crate::cli::outcome::{CliOutcome, RootFlags};
 #[cfg(any(feature = "formatter", feature = "serve"))]
 use crate::cli::resources::WebResourceDefaults;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+#[cfg(feature = "distribution-full")]
+const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (full)");
+#[cfg(all(feature = "distribution-standard", not(feature = "distribution-full")))]
+const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (standard)");
+#[cfg(not(any(feature = "distribution-standard", feature = "distribution-full")))]
+const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (custom)");
 const ROOT_LOGO: &str = "Mech";
 const FILESYSTEM_CAPABILITY_FLAGS_UNSUPPORTED: &str = "filesystem capability flags are only supported by `mech run`, bare run inputs, and `mech serve`";
 
