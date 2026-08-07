@@ -1,6 +1,9 @@
 #![cfg(feature = "dynamic-modules")]
 
-use mech::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
+#[path = "support/intrinsic_catalog.rs"]
+mod intrinsic_catalog;
+
+use mech::{MechProgram, ProgramInputId, ProgramInputUpdate};
 use mech_core::{Ref, Value, hash_str, structures::matrix::Matrix};
 
 fn unwrap_value(value: Value) -> Value {
@@ -74,7 +77,7 @@ fn assert_no_dynamic_node(program: &MechProgram, function: &str) {
 
 #[test]
 fn unary_status_failure_reaches_the_caller() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let plan_len = program.interpreter().plan_len();
     let error = program
         .run_string(
@@ -95,7 +98,7 @@ y",
 
 #[test]
 fn scalar_binary_status_failure_reaches_the_caller() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let plan_len = program.interpreter().plan_len();
     let error = program
         .run_string(
@@ -116,7 +119,7 @@ y",
 
 #[test]
 fn view_status_failure_reaches_the_caller() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let error = program
         .run_string(
             "+> status-test/view
@@ -131,7 +134,7 @@ y",
 
 #[test]
 fn unary_scalar_input_rolls_back_on_failure() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let input = ensure_input(&mut program, "x", Value::F64(Ref::new(1.0)));
     program
         .run_string(
@@ -161,7 +164,7 @@ y",
 
 #[test]
 fn binary_scalar_input_rolls_back_on_failure() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let input = ensure_input(&mut program, "x", Value::F64(Ref::new(1.0)));
     program
         .run_string(
@@ -191,7 +194,7 @@ y",
 
 #[test]
 fn broadcast_output_is_all_or_nothing() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let input = ensure_input(&mut program, "x", matrix_value(vec![1.0, 1.0], 1, 2));
     program
         .run_string(
@@ -221,7 +224,7 @@ y",
 
 #[test]
 fn view_output_is_all_or_nothing() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let input = ensure_input(&mut program, "x", matrix_value(vec![1.0, 1.0], 1, 2));
     program
         .run_string(

@@ -30,23 +30,23 @@ macro_rules! trace_println {
 }
 
 #[cfg(feature = "functions")]
-use crate::functions::*;
+use crate::function::*;
 #[cfg(feature = "access")]
-use crate::stdlib::access::*;
+use crate::intrinsics::access::*;
 #[cfg(feature = "assign")]
-use crate::stdlib::assign::*;
+use crate::intrinsics::assign::*;
 #[cfg(feature = "convert")]
-use crate::stdlib::convert::*;
+use crate::intrinsics::convert::*;
 #[cfg(feature = "matrix_horzcat")]
-use crate::stdlib::horzcat::*;
+use crate::intrinsics::horzcat::*;
 #[cfg(feature = "table")]
-use crate::stdlib::table_ops::*;
+use crate::intrinsics::table_ops::*;
 #[cfg(feature = "matrix_vertcat")]
-use crate::stdlib::vertcat::*;
-#[cfg(feature = "combinatorics")]
-use mech_combinatorics::*;
-#[cfg(feature = "compare")]
-use mech_compare::*;
+use crate::intrinsics::vertcat::*;
+#[cfg(any(feature = "map", feature = "table", feature = "record"))]
+use indexmap::map::IndexMap;
+#[cfg(feature = "set")]
+use indexmap::set::IndexSet;
 #[cfg(feature = "complex")]
 use mech_core::C64;
 #[cfg(feature = "enum")]
@@ -69,128 +69,74 @@ use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::*;
 use mech_core::{Dictionary, Ref, ToValue, ValRef, Value, ValueKind};
 use mech_core::{MResult, hash_str, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
-#[cfg(feature = "logic")]
-use mech_logic::*;
-#[cfg(feature = "math")]
-use mech_math::*;
-#[cfg(feature = "matrix")]
-use mech_matrix::*;
-#[cfg(feature = "range_exclusive")]
-use mech_range::exclusive::*;
-#[cfg(feature = "range_exclusive")]
-use mech_range::exclusive_increment::*;
-#[cfg(feature = "range_inclusive")]
-use mech_range::inclusive::*;
-#[cfg(feature = "range_inclusive")]
-use mech_range::inclusive_increment::*;
-#[cfg(feature = "set")]
-use mech_set::*;
-#[cfg(feature = "stats")]
-use mech_stats::*;
-#[cfg(feature = "string")]
-use mech_string::*;
-
-#[cfg(any(feature = "map", feature = "table", feature = "record"))]
-use indexmap::map::IndexMap;
-#[cfg(feature = "set")]
-use indexmap::set::IndexSet;
 #[cfg(feature = "matrix")]
 use na::DMatrix;
 use std::time::Duration;
 
-#[cfg(all(feature = "functions", feature = "symbol_table",))]
+#[cfg(all(feature = "source", feature = "functions", feature = "symbol_table"))]
 pub mod activation;
-#[cfg(all(test, feature = "compiler"))]
-mod bytecode_test_context;
+#[cfg(feature = "source")]
 pub mod expressions;
 #[cfg(feature = "functions")]
-pub mod function_catalog;
-#[cfg(feature = "functions")]
-pub mod function_environment;
-#[cfg(feature = "functions")]
-pub mod function_extensions;
-#[cfg(feature = "functions")]
-pub mod function_resolver;
-#[cfg(feature = "functions")]
-pub mod functions;
-#[cfg(feature = "invariant_define")]
+pub mod function;
+#[cfg(all(feature = "source", feature = "invariant_define"))]
 pub mod integrity;
 pub mod interpreter;
+pub mod intrinsics;
+#[cfg(feature = "source")]
 pub mod literals;
+#[cfg(feature = "source")]
 pub mod mechdown;
-#[cfg(feature = "functions")]
-pub mod modules;
-#[cfg(feature = "native")]
-pub mod native;
+#[cfg(feature = "source")]
 pub mod patterns;
-#[cfg(feature = "program")]
 pub mod program;
-pub mod program_state;
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "source", feature = "state_machines"))]
 pub mod state_machines;
+#[cfg(feature = "source")]
 pub mod statements;
-pub mod stdlib;
+#[cfg(feature = "source")]
 pub mod structures;
+#[cfg(test)]
+#[path = "../tests/support/mod.rs"]
+pub(crate) mod test_support;
 pub mod tracing;
 
 pub use mech_core::*;
 
+#[cfg(feature = "source")]
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
-pub use crate::function_catalog::*;
-#[cfg(feature = "functions")]
-pub use crate::function_environment::*;
-#[cfg(feature = "functions")]
-pub use crate::function_extensions::*;
-#[cfg(feature = "functions")]
-pub use crate::function_resolver::*;
-#[cfg(feature = "functions")]
-pub use crate::functions::*;
-#[cfg(feature = "invariant_define")]
+pub use crate::function::*;
+#[cfg(all(feature = "source", feature = "invariant_define"))]
 pub use crate::integrity::*;
 pub use crate::interpreter::*;
+#[cfg(feature = "source")]
 pub use crate::literals::*;
+#[cfg(feature = "source")]
 pub use crate::mechdown::*;
-#[cfg(feature = "functions")]
-pub use crate::modules::*;
-#[cfg(feature = "native")]
-pub use crate::native::*;
+#[cfg(feature = "source")]
 pub use crate::patterns::*;
-#[cfg(feature = "program")]
 pub use crate::program::*;
-pub use crate::program_state::*;
-#[cfg(feature = "state_machines")]
+#[cfg(all(feature = "source", feature = "state_machines"))]
 pub use crate::state_machines::*;
+#[cfg(feature = "source")]
 pub use crate::statements::*;
+#[cfg(feature = "source")]
 pub use crate::structures::*;
 pub use crate::tracing::*;
 
 #[cfg(feature = "access")]
-pub use crate::stdlib::access::*;
+pub use crate::intrinsics::access::*;
 #[cfg(feature = "assign")]
-pub use crate::stdlib::assign::*;
+pub use crate::intrinsics::assign::*;
 #[cfg(feature = "convert")]
-pub use crate::stdlib::convert::*;
+pub use crate::intrinsics::convert::*;
 #[cfg(feature = "matrix_horzcat")]
-pub use crate::stdlib::horzcat::*;
+pub use crate::intrinsics::horzcat::*;
 #[cfg(feature = "table")]
-pub use crate::stdlib::table_ops::*;
+pub use crate::intrinsics::table_ops::*;
 #[cfg(feature = "matrix_vertcat")]
-pub use crate::stdlib::vertcat::*;
-#[cfg(feature = "combinatorics")]
-pub use mech_combinatorics::*;
-#[cfg(feature = "compare")]
-pub use mech_compare::*;
-#[cfg(feature = "logic")]
-pub use mech_logic::*;
-#[cfg(feature = "math")]
-pub use mech_math::*;
-#[cfg(feature = "matrix")]
-pub use mech_matrix::*;
-#[cfg(feature = "set")]
-pub use mech_set::*;
-#[cfg(feature = "stats")]
-pub use mech_stats::*;
+pub use crate::intrinsics::vertcat::*;
 pub fn load_stdkinds(kinds: &mut KindTable) {
     #[cfg(feature = "u8")]
     kinds.insert(hash_str("u8"), ValueKind::U8);

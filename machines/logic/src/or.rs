@@ -105,6 +105,7 @@ macro_rules! or_row_mat_op {
 
 impl_logic_fxns!(Or);
 
+#[cfg(feature = "source")]
 fn impl_or_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Or,
@@ -113,4 +114,5 @@ fn impl_or_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFuncti
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(LogicOr, impl_or_fxn, "logic/or");

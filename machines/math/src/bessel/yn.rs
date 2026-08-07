@@ -278,6 +278,7 @@ impl_two_arg_fxn!(YnMDF64, DMatrix<f64>, DMatrix<f64>, DMatrix<f64>, yn_vec_op);
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(YnF64, f64, f64, f64, yn_op);
 
+#[cfg(feature = "source")]
 fn impl_yn_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
     match (arg1_value, arg2_value) {
         #[cfg(feature = "f32")]
@@ -555,8 +556,10 @@ fn impl_yn_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunc
     }
 }
 
+#[cfg(feature = "source")]
 pub struct MathYn {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathYn {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

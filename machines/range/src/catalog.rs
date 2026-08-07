@@ -1,7 +1,7 @@
-use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
-    MechFunctionFactory,
-};
+use mech_core::{FunctionCatalogBuilder, MResult, MechFunctionFactory};
+#[cfg(feature = "source")]
+use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+#[cfg(feature = "source")]
 use std::sync::Arc;
 
 #[cfg(all(not(feature = "matrix1"), feature = "matrixd"))]
@@ -17,6 +17,7 @@ use nalgebra::RowVector3;
 #[cfg(feature = "row_vector4")]
 use nalgebra::RowVector4;
 
+#[cfg(feature = "source")]
 fn install_operation<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
@@ -36,6 +37,7 @@ where
     })
 }
 
+#[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "exclusive")]
     install_operation(
@@ -183,12 +185,7 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_runtime(builder)?;
-    install_source(builder)
-}
-
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
     use mech_core::OperationId;

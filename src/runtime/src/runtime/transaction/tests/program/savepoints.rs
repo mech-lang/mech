@@ -1,4 +1,5 @@
 use super::support::savepoint_effect;
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     ActorId, CapabilityId, MechRuntime, MessageId, MessageRecord, ModuleVersionId, ObjectId,
     ObjectRecord, ResourceBudget, RuntimeAuthorityScope, RuntimeEventKind, RuntimeId,
@@ -71,7 +72,7 @@ fn program_operation_savepoint_truncates_effects_without_reusing_ids() {
 
 #[test]
 fn explicit_program_operations_use_savepoints_before_outer_abort() {
-    let mut runtime = MechRuntime::builder().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
 
@@ -91,7 +92,7 @@ fn explicit_program_operations_use_savepoints_before_outer_abort() {
         "explicit_b_test",
         |runtime, context| {
             runtime.program.run_source(&MechSourceCode::String(
-                "savepoint-rolled-back := savepoint-before-failure + 1".to_string(),
+                "savepoint-rolled-back := 2".to_string(),
             ))?;
             runtime
                 .active_transaction_mut(transaction_id)?
@@ -136,10 +137,7 @@ fn explicit_program_operations_use_savepoints_before_outer_abort() {
     assert_eq!(runtime.program_transaction_owner, Some(transaction_id));
 
     runtime
-        .run_string_with_context(
-            &mut context,
-            "savepoint-after-failure := savepoint-before-failure + 2",
-        )
+        .run_string_with_context(&mut context, "savepoint-after-failure := 3")
         .unwrap();
     assert!(
         runtime

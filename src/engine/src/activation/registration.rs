@@ -41,8 +41,7 @@ fn elaborate_patterned_activation_inner(
     }
     let compiled = preflight.arms;
     let plan = i.plan();
-    let _persistent_user_function_plan =
-        crate::functions::PersistentUserFunctionPlanScope::enter(i);
+    let _persistent_user_function_plan = crate::function::PersistentUserFunctionPlanScope::enter(i);
     let pattern_expression_values = compiled
         .iter()
         .map(|arm| {

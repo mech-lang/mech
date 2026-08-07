@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::runtime::test_support::capabilities::grant_host_call;
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     CapabilityId, MechRuntime, PlannedPureHostFunction, PlannedRuntimeManagedHostFunction,
     PlannedStagedHostFunction, PreparedRuntimeEffect, RuntimeCallContext, RuntimeHealth,
@@ -18,7 +19,7 @@ fn snapshot(value: Value) -> RuntimeValueSnapshot {
 fn failed_later_operation_discards_only_its_staged_host_effect() {
     let log = Arc::new(Mutex::new(Vec::new()));
     let effect_log = log.clone();
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = test_runtime_builder()
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
@@ -60,7 +61,7 @@ fn failed_later_operation_discards_only_its_staged_host_effect() {
 
 #[test]
 fn pure_host_panic_rolls_back_and_restores_program_and_guard() {
-    let mut runtime = MechRuntime::builder()
+    let mut runtime = test_runtime_builder()
         .host_function(PlannedPureHostFunction::new(
             "sealed/pure-panic",
             |_context, _arguments| Ok(snapshot(Value::F64(Ref::new(1.0)))),

@@ -1114,15 +1114,17 @@ impl MechServer {
         );
         let session_started = Instant::now();
         println!("{} Opening runtime workspace session…", self.badge());
-        let mut session = ServerWorkspaceSession::open_with_capabilities_and_config(
-            &root,
-            plan.targets,
-            plan.folders,
-            module_options(),
-            self.authority.kernel().clone(),
-            self.serve_subject.clone(),
-            self.runtime_config.clone(),
-        )?;
+        let mut session =
+            ServerWorkspaceSession::open_with_capabilities_config_and_function_catalog(
+                &root,
+                plan.targets,
+                plan.folders,
+                module_options(),
+                self.authority.kernel().clone(),
+                self.serve_subject.clone(),
+                self.runtime_config.clone(),
+                mech_stdlib::source_catalog(),
+            )?;
         println!(
             "{} Runtime workspace session opened in {:?}.",
             self.badge(),

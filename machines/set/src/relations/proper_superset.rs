@@ -75,6 +75,7 @@ impl MechFunctionCompiler for SetProperSupersetFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_proper_superset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetProperSupersetFxn {
@@ -93,7 +94,9 @@ fn set_proper_superset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFuncti
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetProperSuperset {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetProperSuperset {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

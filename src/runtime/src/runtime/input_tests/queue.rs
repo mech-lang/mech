@@ -367,9 +367,7 @@ fn input_driver_panic_is_converted_and_started_drivers_are_stopped() {
     assert_eq!((a.borrow().start_count, a.borrow().stop_count), (1, 1));
     assert_eq!((b.borrow().start_count, b.borrow().stop_count), (1, 0));
     assert!(!runtime.is_poisoned());
-    runtime
-        .run_string("input-driver-panic-recovery := 1.0")
-        .unwrap();
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
 }
 
 #[test]

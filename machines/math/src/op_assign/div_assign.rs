@@ -10,6 +10,7 @@ use std::ops::DivAssign;
 
 // We will mostly use the assign macros for this
 
+#[cfg(feature = "source")]
 #[macro_export]
 macro_rules! impl_div_assign_match_arms {
     ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
@@ -55,6 +56,7 @@ macro_rules! impl_div_assign_range_fxn_v {
 impl_assign_scalar_scalar!(Div, /=);
 impl_assign_vector_vector!(Div, /=);
 impl_assign_vector_scalar!(Div, /=);
+#[cfg(feature = "source")]
 fn div_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
     impl_op_assign_value_match_arms!(
       Div,
@@ -76,7 +78,9 @@ fn div_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunct
     )
 }
 
+#[cfg(feature = "source")]
 pub struct DivAssignValue {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for DivAssignValue {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
@@ -171,9 +175,12 @@ impl_div_assign_range_fxn_v!(DivAssign1DRV, div_assign_1d_range_vec, usize);
 #[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_v!(DivAssign1DRVB, div_assign_1d_range_vec_b, bool);
 
+#[cfg(feature = "source")]
 op_assign_range_fxn!(div_assign_range_fxn, DivAssign1DR);
 
+#[cfg(feature = "source")]
 pub struct DivAssignRange {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for DivAssignRange {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
@@ -283,9 +290,12 @@ impl_div_assign_range_fxn_v!(DivAssign2DRAV, div_assign_2d_vector_all_mat, usize
 #[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_v!(DivAssign2DRAVB, div_assign_2d_vector_all_mat_b, bool);
 
+#[cfg(feature = "source")]
 op_assign_range_all_fxn!(div_assign_range_all_fxn, DivAssign2DRA);
 
+#[cfg(feature = "source")]
 pub struct DivAssignRangeAll {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for DivAssignRangeAll {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {

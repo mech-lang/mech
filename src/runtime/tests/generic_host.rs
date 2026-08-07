@@ -1,7 +1,14 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
+use mech_core::{FunctionCatalogBuilder, MResult, MechError, MechErrorKind, Ref, Value};
 use mech_runtime::*;
+
+fn runtime_builder_with_intrinsics() -> RuntimeBuilder {
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut catalog).unwrap();
+    mech_engine::install_intrinsic_source(&mut catalog).unwrap();
+    RuntimeBuilder::new().function_catalog(Arc::new(catalog.build().unwrap()))
+}
 
 #[derive(Debug)]
 struct RecordingAfterCommitEffect {
@@ -280,7 +287,7 @@ impl RuntimeHostFactory for FakeBrowserFactory {
 }
 
 fn robot_runtime(log: Arc<Mutex<Vec<String>>>) -> MResult<MechRuntime> {
-    RuntimeBuilder::new()
+    runtime_builder_with_intrinsics()
         .host_factory(Box::new(FakeRobotFactory::new(log)))?
         .host_instance(HostInstanceConfig {
             name: "arm".to_string(),
@@ -464,7 +471,7 @@ fn host_instance_custom_browser_name_succeeds() {
 fn fake_robot_safe_program_writes_four_commands() {
     let log = Arc::new(Mutex::new(Vec::new()));
     let mut runtime = robot_runtime(log.clone()).unwrap();
-    runtime.run_string("+> @arm := arm/commands\n@arm/joints/shoulder/target <- 0.35\n@arm/joints/elbow/target <- 0.80\n@arm/joints/wrist/target <- -0.45\n@arm/gripper/closed <- true\n").unwrap();
+    runtime.run_string("+> @arm := arm/commands\n@arm/joints/shoulder/target <- 0.35\n@arm/joints/elbow/target <- 0.80\n@arm/joints/wrist/target <- 0.45\n@arm/gripper/closed <- true\n").unwrap();
     assert_eq!(log.lock().unwrap().len(), 4);
 }
 
@@ -607,7 +614,7 @@ fn plotter_runtime(
     grants: &[&str],
     log: Arc<Mutex<Vec<String>>>,
 ) -> MResult<MechRuntime> {
-    RuntimeBuilder::new()
+    runtime_builder_with_intrinsics()
         .host_factory(Box::new(PlotterFactory::new(operations, log)))?
         .host_instance(HostInstanceConfig {
             name: "plotter".to_string(),

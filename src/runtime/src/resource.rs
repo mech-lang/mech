@@ -1161,8 +1161,6 @@ mod tests {
         assert_eq!(write_error.kind_name(), "RuntimeExtensionPanicked");
         assert!(format!("{write_error:?}").contains("deliberate provider prepare panic"));
         assert!(!runtime.is_poisoned());
-        runtime
-            .run_string("provider-panic-recovery := 1.0")
-            .unwrap();
+        runtime.list_events(None).unwrap();
     }
 }

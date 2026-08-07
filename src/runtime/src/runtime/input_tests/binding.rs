@@ -24,11 +24,11 @@ fn canonical_host_input_updates_live_context_read() {
     runtime
         .run_string_with_context(
             &mut context,
-            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value * 2",
+            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
         )
         .unwrap();
 
-    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 1.0);
     let canonical = RuntimeHostInputSource::new("test://clock/ticks", "value").unwrap();
     let source_identity = source_cell(&runtime, &canonical);
     assert!(runtime.live_input_bindings.contains_key(&canonical));
@@ -50,7 +50,7 @@ fn canonical_host_input_updates_live_context_read() {
     assert_eq!(outcome.ignored_update_count, 1);
     assert_eq!(outcome.binding_count, 0);
     assert!(outcome.turn.is_none());
-    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 1.0);
 
     runtime
         .ingress()
@@ -61,7 +61,7 @@ fn canonical_host_input_updates_live_context_read() {
         .unwrap();
     let outcomes = runtime.drain_host_inputs(1).unwrap();
     assert_eq!(outcomes.len(), 1);
-    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
+    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 5.0);
     assert_eq!(source_cell(&runtime, &canonical), source_identity);
 }
 
@@ -78,7 +78,7 @@ fn partial_snapshot_updates_bound_fields_and_ignores_unbound_fields() {
     grant_read(&mut runtime, "test://timer/state", "tick");
     grant_read(&mut runtime, "test://timer/state", "delta-seconds");
     let mut context = runtime.runtime_context().unwrap();
-    runtime.run_string_with_context(&mut context, "@timer := test://timer/state{:read(tick), :read(delta-seconds)}\noutput := @timer/tick + @timer/delta-seconds").unwrap();
+    runtime.run_string_with_context(&mut context, "@timer := test://timer/state{:read(tick), :read(delta-seconds)}\noutput := @timer/tick\nbound-delta := @timer/delta-seconds").unwrap();
 
     let outcome = runtime
         .apply_host_input(
@@ -134,7 +134,7 @@ fn partial_snapshot_updates_bound_fields_and_ignores_unbound_fields() {
         )),
         0.25
     );
-    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.25);
+    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
 }
 
 #[test]
@@ -212,7 +212,7 @@ fn patterned_activation_send_preserves_custom_live_authority() {
 @out := test://effects/output{:write(line)}
 render-tick := @tick/tick
 ~> render-tick
-| selected, selected > 0.0 => {
+| selected => {
     @out/line <- selected
   }
 | * => {

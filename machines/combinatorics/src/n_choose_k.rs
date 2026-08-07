@@ -31,12 +31,11 @@ where
         + Div<Output = T>
         + Zero
         + One
-        + ConstElem
         + AsValueKind
         + PartialEq
         + PartialOrd,
     #[cfg(feature = "compiler")]
-    T: CompileConst,
+    T: CompileConst + ConstElem,
     Ref<T>: ToValue,
 {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -139,13 +138,12 @@ where
         + Div<Output = T>
         + Zero
         + One
-        + ConstElem
         + AsValueKind
         + PartialEq
         + PartialOrd
         + ToMatrix,
     #[cfg(feature = "compiler")]
-    T: CompileConst,
+    T: CompileConst + ConstElem,
     Ref<T>: ToValue,
     Matrix<T>: ToValue,
 {
@@ -266,6 +264,7 @@ mod transaction_state_tests {
     }
 }
 
+#[cfg(feature = "source")]
 fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn MechFunction>> {
     match (n, k) {
         #[cfg(feature = "u8")]
@@ -447,7 +446,9 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn Mech
     }
 }
 
+#[cfg(feature = "source")]
 pub struct CombinatoricsNChooseK {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for CombinatoricsNChooseK {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

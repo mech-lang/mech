@@ -11,7 +11,8 @@ fail() {
 
 obsolete_interpreter="mech-inter""preter"
 obsolete_interpreter_ident="mech_inter""preter"
-obsolete_interpreter_path="src/inter""preter/"
+# Match repository-root references without rejecting engine's src/interpreter module.
+obsolete_interpreter_path="(^|[^[:alnum:]_./-])src/inter""preter/"
 obsolete_program="mech-pro""gram"
 
 [ -f "$repository_root/src/engine/Cargo.toml" ] || fail "src/engine/Cargo.toml is missing"
@@ -128,6 +129,8 @@ fi
 # source contracts and the full runtime-factory contract. Other CI jobs own
 # machine-profile, bytecode-consumer, native, WASM, and full package suites, so
 # this boundary does not replay them.
+bash "$repository_root/scripts/check-static-distribution-profiles.sh" static
+bash "$repository_root/scripts/check-static-distribution-profiles.sh" engine
 bash "$repository_root/scripts/check-function-system-contracts.sh" surface
 
 echo "complete function-system migration boundary passed"

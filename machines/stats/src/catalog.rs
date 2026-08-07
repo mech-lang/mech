@@ -1,9 +1,10 @@
-use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
-};
+use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(feature = "source")]
+use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+#[cfg(feature = "source")]
 use std::sync::Arc;
 
-#[cfg(feature = "sum")]
+#[cfg(all(feature = "source", feature = "sum"))]
 use crate::{StatsSumColumn, StatsSumRow};
 
 macro_rules! install_numeric_runtime_factories {
@@ -83,6 +84,7 @@ macro_rules! install_numeric_runtime_factories {
     }};
 }
 
+#[cfg(feature = "source")]
 fn install_module_operation<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &'static str,
@@ -103,6 +105,7 @@ where
 }
 
 /// Installs the frozen named source-specializer surface for the statistics machine.
+#[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "sum")]
     {
@@ -187,12 +190,7 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_runtime(builder)?;
-    install_source(builder)
-}
-
-#[cfg(all(test, feature = "sum"))]
+#[cfg(all(test, feature = "source", feature = "sum"))]
 mod tests {
     use super::*;
     use mech_core::OperationId;

@@ -46,6 +46,7 @@ impl MechFunctionCompiler for StrictEqValue {
     }
 }
 
+#[cfg(feature = "source")]
 fn impl_seq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     Ok(Box::new(StrictEqValue {
         lhs: lhs_value,
@@ -54,4 +55,5 @@ fn impl_seq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     }))
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(CompareStrictEqual, impl_seq_fxn, "compare/seq");

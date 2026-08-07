@@ -62,14 +62,14 @@ cargo +nightly-2026-03-03 check \
   --target-dir "$machine_target" \
   --config "$core_patch" \
   --no-default-features \
-  --features "program functions f64 add"
+  --features "runtime f64 add"
 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$machine_manifest" \
   --target-dir "$machine_target" \
   --config "$core_patch" \
   --no-default-features \
-  --features "program compiler functions f64 add"
+  --features "compiler f64 add"
 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$repository_root/Cargo.toml" \
@@ -139,6 +139,7 @@ cargo +nightly-2026-03-03 check \
   --manifest-path "$repository_root/Cargo.toml" \
   --target-dir "$root_target" \
   -p mech-runtime \
+  --lib \
   --no-default-features \
   --features "program functions symbol_table f64"
 
@@ -171,6 +172,7 @@ cargo +nightly-2026-03-03 test \
   --manifest-path "$repository_root/Cargo.toml" \
   --target-dir "$root_target" \
   -p mech-engine \
+  --features compiler \
   --test bytecode_plan_topology
 
 producer_tree=$(cargo +nightly-2026-03-03 tree \

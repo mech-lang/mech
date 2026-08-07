@@ -10,9 +10,9 @@ use paste::paste;
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub mod catalog;
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub use self::catalog::*;
 
 #[cfg(feature = "membership")]

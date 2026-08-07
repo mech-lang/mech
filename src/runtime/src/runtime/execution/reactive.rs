@@ -7,13 +7,11 @@ use std::time::Instant;
 use web_time::Instant;
 
 impl MechRuntime {
-    #[cfg(feature = "functions")]
     pub fn step(&mut self, step_id: u64) -> MResult<()> {
         let mut context = self.runtime_context()?;
         self.step_with_context(&mut context, step_id)
     }
 
-    #[cfg(feature = "functions")]
     pub fn step_with_context(&mut self, context: &mut RuntimeContext, step_id: u64) -> MResult<()> {
         let turn_started = Instant::now();
         self.with_atomic_reactive_turn(

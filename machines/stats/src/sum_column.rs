@@ -63,14 +63,13 @@ where
         + 'static
         + Add<Output = T>
         + AddAssign
-        + ConstElem
         + AsValueKind
         + Zero
         + One
         + PartialEq
         + PartialOrd,
     #[cfg(feature = "compiler")]
-    T: CompileConst,
+    T: CompileConst + ConstElem,
     Ref<DMatrix<T>>: ToValue,
 {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -144,6 +143,7 @@ where
         );
     }
 }
+#[cfg(feature = "source")]
 macro_rules! impl_stats_sum_column_match_arms {
   ($arg:expr, $($input_type:ident, $($target_type:ident, $value_string:tt),+);+ $(;)?) => {
     paste!{
@@ -193,6 +193,7 @@ macro_rules! impl_stats_sum_column_match_arms {
   }
 }
 
+#[cfg(feature = "source")]
 fn impl_stats_sum_column_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_stats_sum_column_match_arms!(
       lhs_value,
@@ -213,6 +214,7 @@ fn impl_stats_sum_column_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>>
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_urnop_fxn!(
     StatsSumColumn,
     impl_stats_sum_column_fxn,

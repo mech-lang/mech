@@ -1,0 +1,40 @@
+[package]
+name = "standard-source-runtime"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+mech-core = {
+  path = "../../../src/core",
+  default-features = false,
+}
+mech-engine = {
+  path = "../../../src/engine",
+  default-features = false,
+  features = ["source"],
+}
+mech-stdlib = {
+  path = "../../../src/stdlib",
+  default-features = false,
+  features = ["standard_source"],
+}
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[patch.crates-io]
+mech-core = { path = "../../../src/core" }
+mech-syntax = { path = "../../../src/syntax" }
+mech-engine = { path = "../../../src/engine" }
+mech-stdlib = { path = "../../../src/stdlib" }
+mech-combinatorics = { path = "../../../machines/combinatorics" }
+mech-compare = { path = "../../../machines/compare" }
+mech-logic = { path = "../../../machines/logic" }
+mech-math = { path = "../../../machines/math" }
+mech-matrix = { path = "../../../machines/matrix" }
+mech-range = { path = "../../../machines/range" }
+mech-set = { path = "../../../machines/set" }
+mech-stats = { path = "../../../machines/stats" }
+mech-string = { path = "../../../machines/string" }
+
+[workspace]

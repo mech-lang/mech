@@ -332,6 +332,7 @@ impl_two_arg_fxn!(
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(RemainderF64, f64, f64, f64, remainder_op);
 
+#[cfg(feature = "source")]
 fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
     match (arg1_value, arg2_value) {
         #[cfg(feature = "f32")]
@@ -609,8 +610,10 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
     }
 }
 
+#[cfg(feature = "source")]
 pub struct MathRemainder {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathRemainder {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

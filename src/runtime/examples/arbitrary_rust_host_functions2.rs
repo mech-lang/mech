@@ -5,9 +5,10 @@ use mech_core::{MResult, Value};
 
 use mech_runtime::{
     BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
-    CapabilityId, DeterministicHostFunction, MechRuntime, RuntimeBuilder, RuntimeValueSnapshot,
-    TaskRecord,
+    CapabilityId, DeterministicHostFunction, MechRuntime, RuntimeValueSnapshot, TaskRecord,
 };
+
+mod support;
 
 use mech_runtime::host::*;
 
@@ -71,7 +72,8 @@ fn assert_bool(value: Value, expected: bool) {
 }
 
 fn main() -> MResult<()> {
-    let mut builder = RuntimeBuilder::new().capability_kernel(BasicCapabilityKernel::new());
+    let mut builder =
+        support::source_runtime_builder().capability_kernel(BasicCapabilityKernel::new());
 
     builder = builder.host_function(DeterministicHostFunction::new(
         "demo/text/shout",

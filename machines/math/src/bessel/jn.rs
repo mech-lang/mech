@@ -278,6 +278,7 @@ impl_two_arg_fxn!(JnMDF64, DMatrix<f64>, DMatrix<f64>, DMatrix<f64>, jn_vec_op);
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(JnF64, f64, f64, f64, jn_op);
 
+#[cfg(feature = "source")]
 fn impl_jn_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
     match (arg1_value, arg2_value) {
         #[cfg(feature = "f32")]
@@ -555,8 +556,10 @@ fn impl_jn_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunc
     }
 }
 
+#[cfg(feature = "source")]
 pub struct MathJn {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathJn {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

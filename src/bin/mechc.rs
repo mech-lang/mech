@@ -1170,10 +1170,13 @@ fn build_project(stage: &mut BuildStage, rx: mpsc::Receiver<Program>) {
     pb.set_message("Building project:…");
     pb.enable_steady_tick(Duration::from_millis(100));
 
-    let mut program = MechProgram::new(MechProgramConfig {
-        name: "build".to_string(),
-        environment: MechProgramEnvironment::default(),
-    });
+    let mut program = MechProgram::with_function_catalog(
+        MechProgramConfig {
+            name: "build".to_string(),
+            environment: MechProgramEnvironment::default(),
+        },
+        mech_stdlib::source_catalog(),
+    );
 
     for tree in rx {
         let result = program.interpreter_mut().interpret(&tree);
@@ -1366,6 +1369,7 @@ anyhow = "1.0"
 zip = "5.1"
 
 mech-engine = {{version = "{version}", default-features = false, features = [{feature_list}] }}
+mech-stdlib = {{version = "{version}", default-features = false, features = ["standard_runtime", "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2", "row_vector2", "row_vector3", "row_vector4", "vector2", "vector3", "vector4"] }}
 "#,
         name = shim_name,
         version = VERSION,
@@ -1383,9 +1387,10 @@ use mech_engine::*;
 use mech_engine::error::{MechError, MechErrorKind};
 use mech_engine::value::Value;
 use mech_engine::types::MResult;
+use mech_stdlib::runtime_catalog;
 
 fn run_bytecode(name: &str, bytecode: &[u8]) -> MResult<Value> {
-  let mut intrp = Interpreter::new(0);
+  let mut intrp = Interpreter::with_function_catalog(0, 10_000, runtime_catalog());
   match ParsedProgram::from_bytes(&bytecode) {
     Ok(prog) => {
       println!("{:#?}", prog);

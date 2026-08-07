@@ -11,6 +11,7 @@ use crate::runtime::test_support::capabilities::{
     CapabilityUseProbe, grant_host_call, grant_resource,
 };
 use crate::runtime::test_support::events::events_since;
+use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::runtime::test_support::stores::StoreCommitProbe;
 use crate::{
     CapabilityId, DeterministicHostFunction, HostCall, HostCallPolicy, InMemorySourceResolver,
@@ -578,7 +579,7 @@ fn stale_map_key_collision_is_rejected_before_host_invocation() {
 
 #[test]
 fn cyclic_root_symbol_query_returns_structured_snapshot_error() {
-    let mut runtime = RuntimeBuilder::new().build().unwrap();
+    let mut runtime = test_runtime_builder().build().unwrap();
     runtime.run_string("safe := 41.0").unwrap();
     let health_before = runtime.runtime_health();
     let cycle = cyclic_node();
@@ -603,7 +604,7 @@ fn cyclic_root_symbol_query_returns_structured_snapshot_error() {
 
 #[test]
 fn cyclic_host_plan_rolls_back_source_operation() {
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = test_runtime_builder()
         .host_function(DeterministicHostFunction::new(
             "snapshot/source-cycle",
             move |_context, _arguments| -> MResult<Value> {

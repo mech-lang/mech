@@ -3,6 +3,7 @@ use crate::*;
 use mech_core::matrix::Matrix;
 use mech_core::*;
 use nalgebra::ComplexField;
+use num_traits::{One, Zero};
 
 // Solve  ------------------------------------------------------------------
 
@@ -163,6 +164,7 @@ macro_rules! impl_solve {
 #[cfg(all(feature = "matrixd", feature = "vectord"))]
 impl_solve!(MatrixSolveMDVD, DMatrix<T>, DVector<T>, DVector<T>);
 
+#[cfg(feature = "source")]
 macro_rules! impl_solve_match_arms {
   ($arg:expr, $($($matrix_kind:tt, $target_type:tt, $value_string:tt),+);+ $(;)?) => {
     match $arg {
@@ -205,6 +207,7 @@ macro_rules! impl_solve_match_arms {
   }
 }
 
+#[cfg(feature = "source")]
 fn impl_solve_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_solve_match_arms!(
       (lhs_value, rhs_value),
@@ -215,4 +218,5 @@ fn impl_solve_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFun
     )
 }
 
+#[cfg(feature = "source")]
 impl_mech_binop_fxn!(MatrixSolve, impl_solve_fxn, "matrix/solve");

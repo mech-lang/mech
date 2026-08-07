@@ -84,6 +84,7 @@ impl MechFunctionCompiler for SetRemoveFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_remove_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
     match (arg1, arg2) {
         (Value::Set(arg1), arg2) => Ok(Box::new(SetRemoveFxn {
@@ -105,7 +106,9 @@ fn set_remove_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetRemove {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetRemove {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {

@@ -58,6 +58,7 @@ impl_math_unop!(
     FeatureFlag::Custom(hash_str("math/rint"))
 );
 
+#[cfg(feature = "source")]
 fn impl_rint_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathRint,
@@ -67,8 +68,10 @@ fn impl_rint_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     )
 }
 
+#[cfg(feature = "source")]
 pub struct MathRint {}
 
+#[cfg(feature = "source")]
 impl FunctionSpecializer for MathRint {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

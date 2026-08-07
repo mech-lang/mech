@@ -1,4 +1,5 @@
-use mech_core::{BrowserAuthority, MResult};
+use crate::BrowserAuthority;
+use mech_core::MResult;
 use mech_runtime::{
     ConfigValue, HostDelegationEnvelope, HostDelegationPayload, VerifiedHostDelegation,
     encode_bool, encode_option_string, encode_option_u64, encode_string, encode_u64,
@@ -278,17 +279,20 @@ fn push_resource(out: &mut Vec<u8>, resource: &BrowserHostResourceConfig) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "delegation_signing")]
+    use crate::BrowserOperation;
     use crate::{
         BrowserHostBrowserConfig, BrowserHostBrowserGrant, BrowserHostDiagnosticsConfig,
         BrowserHostDomManifestEntry, BrowserHostRuntimeConfig, BrowserHostRuntimeLimits,
     };
-    use mech_core::BrowserOperation;
+    use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig};
+    #[cfg(feature = "delegation_signing")]
     use mech_runtime::{
-        ConfigValue, HOST_DELEGATION_ALGORITHM_ED25519, HostDelegationKeyStore,
-        HostDelegationPublicKey, HostInstanceConfig, RunResourceGrantConfig,
+        HOST_DELEGATION_ALGORITHM_ED25519, HostDelegationKeyStore, HostDelegationPublicKey,
     };
     use std::collections::BTreeMap;
 
+    #[cfg(feature = "delegation_signing")]
     const PRIVATE_KEY: [u8; 32] = [
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1,
@@ -406,6 +410,7 @@ mod tests {
         ]))
     }
 
+    #[cfg(feature = "delegation_signing")]
     fn header() -> HostDelegationHeader {
         HostDelegationHeader {
             issuer: "host://mech-browser".to_string(),

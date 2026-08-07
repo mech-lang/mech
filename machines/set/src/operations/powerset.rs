@@ -124,6 +124,7 @@ impl MechFunctionCompiler for SetPowersetFxn {
     }
 }
 
+#[cfg(feature = "source")]
 fn set_powerset_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
     match (input) {
         (Value::Set(input)) => Ok(Box::new(SetPowersetFxn {
@@ -144,7 +145,9 @@ fn set_powerset_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
     }
 }
 
+#[cfg(feature = "source")]
 pub struct SetPowerset {}
+#[cfg(feature = "source")]
 impl FunctionSpecializer for SetPowerset {
     fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {

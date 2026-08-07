@@ -8,13 +8,19 @@ publish = false
 mech-engine = {
   path = "../../../src/engine",
   default-features = false,
-  features = ["program", "functions", "formulas", "symbol_table", "f64", "math_add"],
+  features = ["runtime", "f64"],
+}
+mech-stdlib = {
+  path = "../../../src/stdlib",
+  default-features = false,
+  features = ["runtime", "f64", "math_add"],
 }
 
 [patch.crates-io]
 mech-core = { path = "../../../src/core" }
 mech-syntax = { path = "../../../src/syntax" }
 mech-engine = { path = "../../../src/engine" }
+mech-stdlib = { path = "../../../src/stdlib" }
 mech-combinatorics = { path = "../../../machines/combinatorics" }
 mech-compare = { path = "../../../machines/compare" }
 mech-logic = { path = "../../../machines/logic" }

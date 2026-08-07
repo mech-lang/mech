@@ -6,8 +6,10 @@ use mech_core::MResult;
 use mech_runtime::{
     BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
     CapabilityId, InMemoryHostRegistry, InMemorySourceResolver, ModuleBuildOptions, ObjectRecord,
-    RuntimeBuilder, SourceRequest, register_actor_context_host_functions,
+    SourceRequest, register_actor_context_host_functions,
 };
+
+mod support;
 
 fn short_text(text: &str) -> String {
     if text.len() <= 18 {
@@ -46,7 +48,7 @@ fn main() -> MResult<()> {
     "#,
     )?;
 
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = support::source_runtime_builder()
         .source_resolver(source_resolver)
         .host_registry(host_registry)
         .capability_kernel(BasicCapabilityKernel::new())

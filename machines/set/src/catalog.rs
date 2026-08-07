@@ -1,46 +1,47 @@
-use mech_core::{
-    FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, MResult,
-    MechFunctionFactory,
-};
+use mech_core::{FunctionCatalogBuilder, MResult, MechFunctionFactory};
+#[cfg(feature = "source")]
+use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+#[cfg(feature = "source")]
 use std::sync::Arc;
 
-#[cfg(feature = "cartesian_product")]
+#[cfg(all(feature = "source", feature = "cartesian_product"))]
 use crate::SetCartesianProduct;
-#[cfg(feature = "difference")]
+#[cfg(all(feature = "source", feature = "difference"))]
 use crate::SetDifference;
-#[cfg(feature = "disjoint")]
+#[cfg(all(feature = "source", feature = "disjoint"))]
 use crate::SetDisjoint;
-#[cfg(feature = "element_of")]
+#[cfg(all(feature = "source", feature = "element_of"))]
 use crate::SetElementOf;
-#[cfg(feature = "equals")]
+#[cfg(all(feature = "source", feature = "equals"))]
 use crate::SetEquals;
-#[cfg(feature = "insert")]
+#[cfg(all(feature = "source", feature = "insert"))]
 use crate::SetInsert;
-#[cfg(feature = "intersection")]
+#[cfg(all(feature = "source", feature = "intersection"))]
 use crate::SetIntersection;
-#[cfg(feature = "not_element_of")]
+#[cfg(all(feature = "source", feature = "not_element_of"))]
 use crate::SetNotElementOf;
-#[cfg(feature = "not_equals")]
+#[cfg(all(feature = "source", feature = "not_equals"))]
 use crate::SetNotEquals;
-#[cfg(feature = "powerset")]
+#[cfg(all(feature = "source", feature = "powerset"))]
 use crate::SetPowerset;
-#[cfg(feature = "proper_subset")]
+#[cfg(all(feature = "source", feature = "proper_subset"))]
 use crate::SetProperSubset;
-#[cfg(feature = "proper_superset")]
+#[cfg(all(feature = "source", feature = "proper_superset"))]
 use crate::SetProperSuperset;
-#[cfg(feature = "remove")]
+#[cfg(all(feature = "source", feature = "remove"))]
 use crate::SetRemove;
-#[cfg(all(feature = "size", feature = "u64"))]
+#[cfg(all(feature = "source", feature = "size", feature = "u64"))]
 use crate::SetSize;
-#[cfg(feature = "subset")]
+#[cfg(all(feature = "source", feature = "subset"))]
 use crate::SetSubset;
-#[cfg(feature = "superset")]
+#[cfg(all(feature = "source", feature = "superset"))]
 use crate::SetSuperset;
-#[cfg(feature = "symmetric_difference")]
+#[cfg(all(feature = "source", feature = "symmetric_difference"))]
 use crate::SetSymmetricDifference;
-#[cfg(feature = "union")]
+#[cfg(all(feature = "source", feature = "union"))]
 use crate::SetUnion;
 
+#[cfg(feature = "source")]
 fn install_operation<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &'static str,
@@ -64,6 +65,7 @@ where
 ///
 /// `set/complement` was not part of that surface, and the undeclared legacy
 /// `src/union.rs` implementation is deliberately not reachable from here.
+#[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "cartesian_product")]
     install_operation(
@@ -281,13 +283,9 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-pub fn install_catalog(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_runtime(builder)?;
-    install_source(builder)
-}
-
 #[cfg(all(
     test,
+    feature = "source",
     feature = "cartesian_product",
     feature = "difference",
     feature = "disjoint",

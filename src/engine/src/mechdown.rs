@@ -213,6 +213,7 @@ fn eval_fenced_code_block(
         match mech_code(c, interpreter) {
             Ok(value) => out = value,
             Err(err) => {
+                #[cfg(feature = "string")]
                 if isolate_errors {
                     return Ok(Value::String(Ref::new(err.full_chain_message())));
                 }
@@ -223,6 +224,7 @@ fn eval_fenced_code_block(
             match comment(cmmnt, interpreter) {
                 Ok(_) => {}
                 Err(err) => {
+                    #[cfg(feature = "string")]
                     if isolate_errors {
                         return Ok(Value::String(Ref::new(err.full_chain_message())));
                     }

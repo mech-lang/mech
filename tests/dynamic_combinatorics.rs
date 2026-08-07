@@ -1,16 +1,18 @@
 extern crate mech_core;
 
-use mech::{MechProgram, MechProgramConfig};
+#[path = "support/intrinsic_catalog.rs"]
+mod intrinsic_catalog;
+
 use mech_core::{Value, structures::matrix::Matrix};
 
 fn run(source: &str) -> bool {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     program.run_string(source).is_ok()
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn run_matrix_n_choose_k(source: &str, expected: Vec<f64>) {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let result = program.run_string(source).unwrap();
 
     let detached = match result {
@@ -91,7 +93,7 @@ fn dynamic_combinatorics_glob_import_matrix_broadcast_works() {
 #[cfg(feature = "dynamic-modules")]
 #[test]
 fn dynamic_combinatorics_matrix_matrix_shape_mismatch_errors() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let result = program
         .run_string("+> combinatorics/n-choose-k\nx := n-choose-k([10.0 20.0], [2.0 3.0 4.0])\nx");
 
@@ -101,7 +103,7 @@ fn dynamic_combinatorics_matrix_matrix_shape_mismatch_errors() {
 #[cfg(feature = "dynamic-modules")]
 #[test]
 fn dynamic_combinatorics_matrix_matrix_same_cells_different_shape_errors() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
+    let mut program = intrinsic_catalog::program();
     let result = program.run_string(
         "+> combinatorics/n-choose-k\nx := n-choose-k([10.0 20.0 30.0 40.0], [2.0 3.0; 4.0 5.0])\nx",
     );

@@ -1,7 +1,9 @@
 use std::fs;
 
 use mech_core::MResult;
-use mech_runtime::{FileSourceResolver, ModuleBuildOptions, RuntimeBuilder, SourceRequest};
+use mech_runtime::{FileSourceResolver, ModuleBuildOptions, SourceRequest};
+
+mod support;
 
 fn runtime_target() -> String {
     format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH)
@@ -21,7 +23,9 @@ fn main() -> MResult<()> {
     fs::write(root.join("dep.mec"), "y := 1\ny\n")?;
 
     let resolver = FileSourceResolver::new(&root);
-    let mut runtime = RuntimeBuilder::new().source_resolver(resolver).build()?;
+    let mut runtime = support::source_runtime_builder()
+        .source_resolver(resolver)
+        .build()?;
     let target = runtime_target();
     let options =
         ModuleBuildOptions::new(env!("CARGO_PKG_VERSION"), "mech-current", &target, &[], &[]);

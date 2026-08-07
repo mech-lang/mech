@@ -4,7 +4,7 @@ use std::rc::Rc;
 use std::thread;
 use std::time::Duration;
 
-use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
+use mech_core::{FunctionCatalogBuilder, MResult, MechError, MechErrorKind, Ref, Value};
 
 use super::super::{MechRuntime, RuntimeBuilder};
 use crate::{
@@ -219,8 +219,15 @@ pub(crate) fn test_provider_with(base_uri: &str, path: &str, value: f64) -> Test
     TestResourceProvider::new().with_value(base_uri, path, Value::F64(Ref::new(value)))
 }
 
+pub(crate) fn test_runtime_builder() -> RuntimeBuilder {
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut catalog).unwrap();
+    mech_engine::install_intrinsic_source(&mut catalog).unwrap();
+    RuntimeBuilder::new().function_catalog(std::sync::Arc::new(catalog.build().unwrap()))
+}
+
 pub(crate) fn test_runtime(provider: TestResourceProvider) -> MechRuntime {
-    RuntimeBuilder::new()
+    test_runtime_builder()
         .resource_provider(Box::new(provider))
         .build()
         .unwrap()
@@ -230,7 +237,7 @@ pub(crate) fn test_runtime_with_host(
     provider: TestResourceProvider,
     function: impl Into<RegisteredHostFunction>,
 ) -> MechRuntime {
-    RuntimeBuilder::new()
+    test_runtime_builder()
         .resource_provider(Box::new(provider))
         .host_function(function)
         .unwrap()
@@ -242,7 +249,7 @@ pub(crate) fn test_runtime_with_output(
     provider: TestResourceProvider,
 ) -> (MechRuntime, RecordingTestOutput) {
     let output = RecordingTestOutput::default();
-    let runtime = RuntimeBuilder::new()
+    let runtime = test_runtime_builder()
         .resource_provider(Box::new(provider))
         .resource_provider(Box::new(TestOutputProvider::new(output.clone())))
         .build()
@@ -255,7 +262,7 @@ pub(crate) fn test_runtime_with_output_host(
     function: impl Into<RegisteredHostFunction>,
 ) -> (MechRuntime, RecordingTestOutput) {
     let output = RecordingTestOutput::default();
-    let runtime = RuntimeBuilder::new()
+    let runtime = test_runtime_builder()
         .resource_provider(Box::new(provider))
         .resource_provider(Box::new(TestOutputProvider::new(output.clone())))
         .host_function(function)

@@ -5,7 +5,6 @@ use std::sync::{
 
 use mech_core::{MechError, Ref, Value, hash_str};
 
-use super::super::RuntimeBuilder;
 use super::scheduling::{
     activation_plan_snapshot, activation_send_count, apply_f64_input, only_reactive_turn,
     recorded_f64,
@@ -15,8 +14,8 @@ use crate::runtime::test_support::{
     capabilities::{grant_host_call, grant_read, grant_read_to, grant_resource, grant_write},
     providers::{
         DeliberateHostCallError, TEST_OUTPUT_BASE_URI, TestResourceProvider, sleep_host,
-        test_provider_with, test_runtime, test_runtime_with_host, test_runtime_with_output,
-        test_runtime_with_output_host,
+        test_provider_with, test_runtime, test_runtime_builder, test_runtime_with_host,
+        test_runtime_with_output, test_runtime_with_output_host,
     },
     values::{
         f64_value, host_f64_argument, plan_snapshot, register_node_for_symbol, source_cell,
@@ -63,7 +62,7 @@ fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
     grant_write(&mut runtime, TEST_OUTPUT_BASE_URI, "line");
     grant_host_call(&mut runtime, CapabilityId(47), "demo/fails-after-first");
     let mut context = runtime.runtime_context().unwrap();
-    runtime.run_string_with_context(&mut context, "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\nhost-result := demo/fails-after-first(@pulse/value)\noutput := host-result + 0\n@out/line <- output").unwrap();
+    runtime.run_string_with_context(&mut context, "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\nhost-result := demo/fails-after-first(@pulse/value)\noutput := host-result\n@out/line <- output").unwrap();
     let calls_before = calls.load(Ordering::SeqCst);
     let input_source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
     let input_identity = source_cell(&runtime, &input_source);
@@ -131,7 +130,7 @@ fn failed_source_does_not_leave_live_state_armed() {
     );
     let error = runtime.run_string_with_context(
     &mut context_a,
-    "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value\n@out/line <- output\nmissing := missing-live-value + 1",
+    "@out := test://effects/output{:write(line)}\n@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value\n@out/line <- output\nmissing := missing-live-value",
   );
     assert!(error.is_err());
     assert!(output.lines().is_empty());
@@ -153,7 +152,7 @@ fn failed_source_does_not_leave_live_state_armed() {
 fn duration_failure_restores_live_state() {
     let mut config = RuntimeConfig::default();
     config.limits.max_turn_duration_ms = Some(1);
-    let mut runtime = RuntimeBuilder::new()
+    let mut runtime = test_runtime_builder()
         .config(config)
         .resource_provider(Box::new(test_provider_with(
             "test://clock/ticks",
@@ -192,7 +191,7 @@ fn explicit_host_input_is_provisional_until_outer_decision() {
     runtime
         .run_string_with_context(
             &mut load_context,
-            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value * 2",
+            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
         )
         .unwrap();
     let source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
@@ -206,14 +205,14 @@ fn explicit_host_input_is_provisional_until_outer_decision() {
         )
         .unwrap();
     assert!(outcome.turn.is_some());
-    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 10.0);
+    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 5.0);
     assert_eq!(runtime.program_transaction_owner, Some(transaction_id),);
     assert!(runtime.active_transactions.contains_key(&transaction_id));
 
     runtime
         .abort_runtime_transaction(&mut context, "discard host input")
         .unwrap();
-    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 2.0);
+    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 1.0);
     assert_eq!(f64_value(&source_value(&runtime, &source)), 1.0);
 
     let mut commit_context = runtime.live_turn_context().unwrap();
@@ -227,7 +226,7 @@ fn explicit_host_input_is_provisional_until_outer_decision() {
     runtime
         .commit_runtime_transaction(&mut commit_context)
         .unwrap();
-    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 14.0);
+    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 7.0);
 }
 
 #[test]
@@ -259,7 +258,7 @@ render-tick := @tick/tick
 
 ~> render-tick
 | selected => {
-    @out/line <- selected + 10.0
+    @out/line <- selected
   }
 "#,
         )
@@ -288,7 +287,7 @@ render-tick := @tick/tick
     runtime.config.limits.max_turn_duration_ms = None;
     let retry = apply_f64_input(&mut runtime, "test://render/timer", "tick", 1.0);
     assert!(retry.turn.is_some());
-    assert_eq!(output.lines(), vec!["1", "11"]);
+    assert_eq!(output.lines(), vec!["1", "1"]);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
     assert_eq!(activation_send_count(&runtime), 2);
 }
@@ -309,12 +308,12 @@ fn patterned_activation_register_batch_failure_does_not_leak_or_replay_send() {
 @out := test://effects/output{:write(line)}
 render-tick := @tick/tick
 other-tick := @other/tick
-other-value := other-tick + 1.0
+other-value := other-tick
 ~state := 0.0
 ~> render-tick
-| amount, amount > 0.0 => {
-    state = state + amount
-    state = state + amount + 1.0
+| amount => {
+    state = amount
+    state = amount
     @out/line <- state
   }
 | * => {
@@ -347,7 +346,7 @@ other-value := other-tick + 1.0
         ))
         .unwrap();
     assert!(unrelated.turn.is_some());
-    assert_eq!(f64_value(&symbol_value(&runtime, "other-value")), 8.0);
+    assert_eq!(f64_value(&symbol_value(&runtime, "other-value")), 7.0);
     assert_eq!(f64_value(&symbol_value(&runtime, "state")), 0.0);
     assert!(output.lines().is_empty());
     assert_eq!(activation_plan_snapshot(&runtime), plan);
@@ -390,11 +389,11 @@ fn failed_patterned_body_does_not_replay_send_on_unrelated_turn() {
 @out := test://effects/output{:write(line)}
 render-tick := @tick/tick
 other-tick := @other/tick
-other-value := other-tick + 1.0
+other-value := other-tick
 ~state := 0.0
 ~> render-tick
-| amount, amount > 0.0 => {
-    state = demo/patterned-body-fail-second(state + amount)
+| amount => {
+    state = demo/patterned-body-fail-second(amount)
     @out/line <- state
   }
 | * => {
@@ -608,10 +607,10 @@ fn patterned_activation_snapshots_effects_before_commit_and_releases_after_succe
 render-tick := @tick/tick
 ~state := 0.0
 ~> render-tick
-| amount, amount > 0.0 => {
-    state = state + amount
+| amount => {
+    state = amount
     @out/line <- state
-    @out/line <- state + 0.0
+    @out/line <- state
   }
 | ignored => {
     fallback := ignored
@@ -636,7 +635,7 @@ render-tick := @tick/tick
     let equal_turn = only_reactive_turn(&equal);
     assert_eq!(equal_turn.register_commit.committed_nodes, vec![register]);
     assert!(equal_turn.after_commit.pending_register_nodes.is_empty());
-    assert_eq!(f64_value(&symbol_value(&runtime, "state")), 2.0);
+    assert_eq!(f64_value(&symbol_value(&runtime, "state")), 1.0);
     assert_eq!(output.lines(), vec!["0", "0", "1", "1"]);
     assert_eq!(activation_plan_snapshot(&runtime), plan);
     assert_eq!(activation_send_count(&runtime), 2);

@@ -193,7 +193,11 @@ fn activation_pattern_arm_definitions_do_not_leak_between_arms() {
 
 #[test]
 fn activation_arm_alias_of_live_input_remains_sampled_until_trigger() {
-    let mut interpreter = Interpreter::new(0, 10_000);
+    let mut interpreter = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
     let outer_id = hash_str("outer");
     {
         let symbols = interpreter.symbols();

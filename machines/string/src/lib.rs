@@ -42,9 +42,9 @@ use nalgebra::Vector4;
 
 use paste::paste;
 
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub mod catalog;
-#[cfg(feature = "functions")]
+#[cfg(feature = "runtime")]
 pub use self::catalog::*;
 
 #[cfg(feature = "concat")]
@@ -80,9 +80,9 @@ macro_rules! impl_string_binop {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            T: std::fmt::Debug + Clone + Sync + Send + 'static + ConstElem + AsValueKind + Concat,
+            T: std::fmt::Debug + Clone + Sync + Send + 'static + AsValueKind + Concat,
             #[cfg(feature = "compiler")]
-            T: CompileConst,
+            T: ConstElem + CompileConst,
             Ref<$out_type>: ToValue,
         {
             fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
