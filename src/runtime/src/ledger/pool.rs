@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use mech_core::{MResult, MechError, MechErrorKind};
 
-use crate::AccountedRecord;
+use crate::turn_record::AccountedRecord;
 
 #[derive(Debug)]
 struct PoolState {

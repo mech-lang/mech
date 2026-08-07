@@ -6,6 +6,8 @@ use mech_core::{MResult, MechError, MechErrorKind};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(test)]
+use crate::RuntimeEventKind;
 use crate::TransactionId;
 
 macro_rules! sequence_id {
@@ -158,8 +160,34 @@ pub struct TurnRecordHeader {
     pub failure: Option<TurnFailureRecord>,
 }
 
+/// Projects only the existing standalone transaction lifecycle for compatibility tests.
+#[cfg(test)]
+pub(crate) fn project_transaction_lifecycle_events(
+    header: &TurnRecordHeader,
+) -> MResult<impl Iterator<Item = RuntimeEventKind>> {
+    header.validate()?;
+    let started = RuntimeEventKind::TransactionStarted {
+        transaction_id: header.transaction_id,
+    };
+    let completed = match (&header.status, &header.failure) {
+        (TurnRecordStatus::Accepted, None) => Some(RuntimeEventKind::TransactionCommitted {
+            transaction_id: header.transaction_id,
+        }),
+        (TurnRecordStatus::Rejected, Some(failure)) => Some(RuntimeEventKind::TransactionAborted {
+            transaction_id: header.transaction_id,
+            message: failure.message.clone(),
+        }),
+        (TurnRecordStatus::Staged, None) => None,
+        _ => unreachable!("TurnRecordHeader::validate accepted an invalid status/failure pair"),
+    };
+    Ok([Some(started), completed].into_iter().flatten())
+}
+
 impl TurnRecordHeader {
     pub fn validate(&self) -> MResult<()> {
+        if self.transaction_id.is_zero() {
+            return invalid_turn_record("transaction_id", "transaction ID must be non-zero");
+        }
         if let Some(range) = self.input_range {
             InputSequenceRange::new(range.first, range.last)?;
         }
@@ -169,6 +197,9 @@ impl TurnRecordHeader {
             }
             (TurnRecordStatus::Rejected, None) => {
                 return invalid_turn_record("failure", "rejected turns require a failure");
+            }
+            (TurnRecordStatus::Staged, Some(_)) => {
+                return invalid_turn_record("failure", "staged turns may not contain a failure");
             }
             _ => {}
         }
@@ -185,28 +216,47 @@ impl TurnRecordHeader {
     }
 }
 
-/// Reports the owned heap bytes retained by a record body.
-pub trait AccountedRecord {
+mod sealed {
+    pub trait Sealed {}
+}
+
+/// Reports the owned heap bytes retained by a trusted record representation.
+///
+/// The private supertrait prevents callers of the benchmark facade from
+/// supplying unaccounted payload implementations.
+pub trait AccountedRecord: sealed::Sealed {
+    /// Validates trusted semantic structure before byte accounting is bound.
+    fn validate_for_recording(&self) -> MResult<()> {
+        Ok(())
+    }
+
     fn retained_bytes(&self) -> usize;
 }
 
+impl sealed::Sealed for Vec<u8> {}
 impl AccountedRecord for Vec<u8> {
     fn retained_bytes(&self) -> usize {
         self.capacity()
     }
 }
 
+impl sealed::Sealed for String {}
 impl AccountedRecord for String {
     fn retained_bytes(&self) -> usize {
         self.capacity()
     }
 }
 
+impl sealed::Sealed for Box<[u8]> {}
 impl AccountedRecord for Box<[u8]> {
     fn retained_bytes(&self) -> usize {
         self.len()
     }
 }
+
+impl sealed::Sealed for crate::ledger::PooledRecordBuffer {}
+
+impl<P: AccountedRecord> sealed::Sealed for crate::outbox::OwnedEffectIntent<P> {}
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -234,7 +284,13 @@ impl<B: AccountedRecord> OwnedTurnRecord<B> {
     }
 }
 
+impl<B: AccountedRecord> sealed::Sealed for OwnedTurnRecord<B> {}
+
 impl<B: AccountedRecord> AccountedRecord for OwnedTurnRecord<B> {
+    fn validate_for_recording(&self) -> MResult<()> {
+        self.validate()
+    }
+
     fn retained_bytes(&self) -> usize {
         self.header
             .retained_bytes()
@@ -380,5 +436,100 @@ mod tests {
             header.validate().unwrap_err().kind_name(),
             "InvalidTurnRecord"
         );
+    }
+
+    fn assert_owned_record<T: Send + 'static>() {}
+
+    fn build_owned_record() -> OwnedTurnRecord<String> {
+        let builder_text = String::from("owned after builder drop");
+        OwnedTurnRecord {
+            header: TurnRecordHeader {
+                turn_id: TurnId::new(1).unwrap(),
+                transaction_id: TransactionId::new(1),
+                input_range: None,
+                status: TurnRecordStatus::Accepted,
+                failure: None,
+            },
+            body: builder_text,
+        }
+    }
+
+    #[test]
+    fn owned_record_outlives_builder_and_workspace_reuse() {
+        assert_owned_record::<OwnedTurnRecord<String>>();
+        let record = build_owned_record();
+        assert_eq!(record.body, "owned after builder drop");
+
+        let mut workspace = vec![1_u8, 2, 3, 4];
+        let record = OwnedTurnRecord {
+            header: record.header,
+            body: workspace.clone().into_boxed_slice(),
+        };
+        workspace.fill(0);
+        drop(workspace);
+        assert_eq!(&*record.body, &[1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn staged_projection_has_no_final_lifecycle_event() {
+        let header = TurnRecordHeader {
+            turn_id: TurnId::new(1).unwrap(),
+            transaction_id: TransactionId::new(1),
+            input_range: None,
+            status: TurnRecordStatus::Staged,
+            failure: None,
+        };
+        assert_eq!(
+            project_transaction_lifecycle_events(&header)
+                .unwrap()
+                .count(),
+            1
+        );
+    }
+
+    #[test]
+    fn header_rejects_zero_transaction_and_staged_failure() {
+        let zero_transaction = TurnRecordHeader {
+            turn_id: TurnId::new(1).unwrap(),
+            transaction_id: TransactionId::ZERO,
+            input_range: None,
+            status: TurnRecordStatus::Accepted,
+            failure: None,
+        };
+        assert_eq!(
+            zero_transaction.validate().unwrap_err().kind_name(),
+            "InvalidTurnRecord"
+        );
+
+        let staged_failure = TurnRecordHeader {
+            turn_id: TurnId::new(1).unwrap(),
+            transaction_id: TransactionId::new(1),
+            input_range: None,
+            status: TurnRecordStatus::Staged,
+            failure: Some(TurnFailureRecord {
+                phase: TurnFailurePhase::Execution,
+                kind: "Rejected".to_string(),
+                message: "not valid for staged".to_string(),
+            }),
+        };
+        assert_eq!(
+            staged_failure.validate().unwrap_err().kind_name(),
+            "InvalidTurnRecord"
+        );
+    }
+
+    #[test]
+    fn failure_accounting_includes_retained_string_capacity() {
+        let mut kind = String::with_capacity(128);
+        kind.push('k');
+        let mut message = String::with_capacity(256);
+        message.push('m');
+        let failure = TurnFailureRecord {
+            phase: TurnFailurePhase::Execution,
+            kind,
+            message,
+        };
+        failure.validate().unwrap();
+        assert!(failure.retained_bytes() >= 384);
     }
 }

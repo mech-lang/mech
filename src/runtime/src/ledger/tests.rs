@@ -1,4 +1,5 @@
 use core::num::NonZeroU64;
+use std::sync::{Arc, Barrier};
 
 use super::*;
 
@@ -227,6 +228,254 @@ fn prepared_queue_append_survives_health_change_and_poison_recovery() {
     queue.poison_mutex_for_test();
     queue.append(prepared);
     assert_eq!(queue.len(), 1);
+}
+
+#[test]
+fn multiple_unused_permits_are_allowed_but_only_one_append_may_be_prepared() {
+    let mut ledger = RetainedTurnLedger::new(2, 8).unwrap();
+    let first = ledger
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    let second = ledger
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    assert_eq!(first.sequence().get(), 1);
+    assert_eq!(second.sequence().get(), 2);
+
+    let prepared_first = ledger.prepare_append(first, boxed(4)).unwrap();
+    let error = ledger.prepare_append(second, boxed(4)).unwrap_err();
+    assert_eq!(error.kind_name(), "LedgerPermitInvalid");
+    assert_eq!(ledger.append(prepared_first).get(), 1);
+    assert_eq!(
+        ledger
+            .iter()
+            .map(|(sequence, _)| sequence.get())
+            .collect::<Vec<_>>(),
+        vec![1]
+    );
+}
+
+#[test]
+fn wrong_ledger_preparation_is_rejected_before_append() {
+    let first = RetainedTurnLedger::<Box<[u8]>>::new(1, 4).unwrap();
+    let second = RetainedTurnLedger::<Box<[u8]>>::new(1, 4).unwrap();
+    let permit = first
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+
+    assert_eq!(
+        second
+            .prepare_append(permit, boxed(4))
+            .unwrap_err()
+            .kind_name(),
+        "LedgerPermitInvalid"
+    );
+    assert!(
+        first
+            .reserve(RecordEstimate {
+                records: 1,
+                bytes: 4,
+            })
+            .is_ok()
+    );
+}
+
+#[test]
+fn invalid_owned_turn_record_is_rejected_during_preparation() {
+    let ledger = RetainedTurnLedger::new(1, 4).unwrap();
+    let permit = ledger
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    let invalid = crate::turn_record::OwnedTurnRecord {
+        header: crate::turn_record::TurnRecordHeader {
+            turn_id: crate::turn_record::TurnId::new(1).unwrap(),
+            transaction_id: crate::TransactionId::ZERO,
+            input_range: None,
+            status: crate::turn_record::TurnRecordStatus::Accepted,
+            failure: None,
+        },
+        body: boxed(4),
+    };
+
+    assert_eq!(
+        ledger
+            .prepare_append(permit, invalid)
+            .unwrap_err()
+            .kind_name(),
+        "InvalidTurnRecord"
+    );
+    assert!(ledger.is_empty());
+    assert!(
+        ledger
+            .reserve(RecordEstimate {
+                records: 1,
+                bytes: 4,
+            })
+            .is_ok()
+    );
+}
+
+#[test]
+fn internal_wrong_destination_assertion_preserves_origin_capacity() {
+    let first = OwnedTurnRecordQueue::new(1, 4).unwrap();
+    let second = OwnedTurnRecordQueue::new(1, 4).unwrap();
+    let permit = first
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    let prepared = first.prepare_append(permit, boxed(4)).unwrap();
+
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        second.append(prepared);
+    }));
+    assert!(result.is_err());
+    assert!(first.is_empty());
+    assert!(second.is_empty());
+    assert!(
+        first
+            .reserve(RecordEstimate {
+                records: 1,
+                bytes: 4,
+            })
+            .is_ok()
+    );
+}
+
+#[test]
+fn dropping_prepared_record_releases_lease_and_bound_capacity() {
+    let mut ledger = RetainedTurnLedger::new(1, 4).unwrap();
+    let permit = ledger
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    let prepared = ledger.prepare_append(permit, boxed(4)).unwrap();
+    drop(prepared);
+
+    let retry = ledger
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    let prepared = ledger.prepare_append(retry, boxed(4)).unwrap();
+    assert_eq!(ledger.append(prepared).get(), 2);
+}
+
+#[test]
+fn older_and_duplicate_sequences_are_rejected_after_drain_but_newer_appends() {
+    let mut ledger = RetainedTurnLedger::new(2, 8).unwrap();
+    let older = ledger
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    let newer = ledger
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    let prepared = ledger.prepare_append(newer, boxed(4)).unwrap();
+    assert_eq!(ledger.append(prepared).get(), 2);
+    assert_eq!(ledger.drain().count(), 1);
+
+    assert_eq!(
+        ledger
+            .prepare_append(older, boxed(4))
+            .unwrap_err()
+            .kind_name(),
+        "LedgerPermitInvalid"
+    );
+
+    ledger.set_sequence_for_test(NonZeroU64::new(2).unwrap());
+    let duplicate = ledger
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    assert_eq!(
+        ledger
+            .prepare_append(duplicate, boxed(4))
+            .unwrap_err()
+            .kind_name(),
+        "LedgerPermitInvalid"
+    );
+
+    let next = ledger
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    let prepared = ledger.prepare_append(next, boxed(4)).unwrap();
+    assert_eq!(ledger.append(prepared).get(), 3);
+}
+
+#[test]
+fn cloned_queue_producers_race_for_one_preparation_lease() {
+    let queue = OwnedTurnRecordQueue::new(2, 8).unwrap();
+    let first = queue
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    let second = queue
+        .reserve(RecordEstimate {
+            records: 1,
+            bytes: 4,
+        })
+        .unwrap();
+    let start = Arc::new(Barrier::new(2));
+    let finish = Arc::new(Barrier::new(2));
+
+    let handles = [(queue.clone(), first), (queue.clone(), second)]
+        .into_iter()
+        .map(|(producer, permit)| {
+            let start = Arc::clone(&start);
+            let finish = Arc::clone(&finish);
+            std::thread::spawn(move || {
+                start.wait();
+                let prepared = producer.prepare_append(permit, boxed(4));
+                finish.wait();
+                prepared.is_ok()
+            })
+        })
+        .collect::<Vec<_>>();
+
+    let successes = handles
+        .into_iter()
+        .map(|handle| handle.join().unwrap())
+        .filter(|success| *success)
+        .count();
+    assert_eq!(successes, 1);
+    assert!(queue.is_empty());
+    assert!(
+        queue
+            .reserve(RecordEstimate {
+                records: 2,
+                bytes: 8,
+            })
+            .is_ok()
+    );
 }
 
 #[test]

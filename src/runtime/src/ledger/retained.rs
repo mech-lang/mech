@@ -93,11 +93,11 @@ impl<R: AccountedRecord> TurnLedger<R> for RetainedTurnLedger<R> {
     }
 
     fn append(&mut self, prepared: PreparedLedgerAppend<R>) -> LedgerSequence {
-        let prepared_controller = prepared.controller().clone();
-        let (reservation, record) = prepared.into_parts();
+        let reservation = prepared.reservation();
         let sequence = reservation.sequence;
         self.controller
-            .commit_prepared(&prepared_controller, reservation);
+            .commit_prepared(prepared.controller(), reservation);
+        let (_, record) = prepared.into_parts();
         self.records.push_back((sequence, record));
         self.record_bytes.push_back(reservation.bytes);
         sequence

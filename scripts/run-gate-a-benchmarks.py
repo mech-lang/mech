@@ -158,6 +158,54 @@ def hardware_description(machine_label: str | None = None) -> str:
     )
 
 
+def runtime_limits(bench: str) -> Any:
+    if bench == "history_scaling":
+        return {
+            "default": "RuntimeConfig::default()",
+            "lane_overrides": [
+                {
+                    "operation": "context_event_retention_steady",
+                    "history": limit,
+                    "max_in_memory_events": limit,
+                }
+                for limit in (32, 1_024, 16_384, 100_000)
+            ],
+        }
+    histories = (0, 1_000, 100_000)
+    return {
+        "source": "src/runtime/benches/recording_primitives.rs",
+        "retained_ledger": [
+            {
+                "history": history,
+                "max_records": history + 1,
+                "max_bytes": (history + 1) * 32,
+            }
+            for history in histories
+        ],
+        "owned_queue": [
+            {
+                "history": history,
+                "max_records": history + 1,
+                "max_bytes": (history + 1) * 32,
+            }
+            for history in histories
+        ],
+        "record_buffer_pool": {
+            "max_segments": 1,
+            "max_total_capacity": 64,
+            "max_reusable_capacity": 64,
+        },
+        "effect_outbox": [
+            {
+                "history": history,
+                "max_effects": history + 1,
+                "max_bytes": (history + 1) * 64,
+            }
+            for history in histories
+        ],
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -188,6 +236,12 @@ def parse_args() -> argparse.Namespace:
         "--machine-label",
         help="stable controlled-machine model label when automatic detection is unavailable",
     )
+    parser.add_argument(
+        "--bench",
+        choices=("history_scaling", "recording_primitives"),
+        default="history_scaling",
+        help="controlled Gate A benchmark target",
+    )
     return parser.parse_args()
 
 
@@ -208,11 +262,13 @@ def main() -> int:
         return 2
     commit = command_output(["git", "rev-parse", "HEAD"])
     target_dir = cargo_target_directory(os.environ)
+    raw_name = (
+        "history_scaling-extended.log"
+        if args.bench == "history_scaling" and args.extended
+        else f"{args.bench}.log"
+    )
     raw_output = args.raw_output or (
-        target_dir
-        / "gate-a-benchmark-runs"
-        / commit
-        / ("history_scaling-extended.log" if args.extended else "history_scaling.log")
+        target_dir / "gate-a-benchmark-runs" / commit / raw_name
     )
     if not raw_output.is_absolute():
         raw_output = (ROOT / raw_output).resolve()
@@ -224,12 +280,19 @@ def main() -> int:
         "-p",
         "mech-runtime",
         "--bench",
-        "history_scaling",
-        "--features",
-        "source_default,runtime_bench_probes",
-        "--",
-        "--noplot",
+        args.bench,
     ]
+    if args.bench == "history_scaling":
+        command.extend([
+            "--features",
+            "source_default,runtime_bench_probes",
+        ])
+    else:
+        command.extend([
+            "--features",
+            "runtime_default,runtime_bench_probes",
+        ])
+    command.extend(["--", "--noplot"])
     sample_size = args.sample_size or 10
     if args.filter:
         command.append(args.filter)
@@ -237,7 +300,7 @@ def main() -> int:
 
     clear_gate_a_criterion_results(target_dir)
     environment = os.environ.copy()
-    if args.extended:
+    if args.bench == "history_scaling" and args.extended:
         environment["MECH_GATE_A_EXTENDED"] = "1"
     else:
         environment.pop("MECH_GATE_A_EXTENDED", None)
@@ -265,29 +328,28 @@ def main() -> int:
             "RUSTFLAGS": os.environ.get("RUSTFLAGS", ""),
             "CARGO_ENCODED_RUSTFLAGS": os.environ.get("CARGO_ENCODED_RUSTFLAGS", ""),
         },
-        "runtime_limits": {
-            "default": "RuntimeConfig::default()",
-            "lane_overrides": [
-                {
-                    "operation": "context_event_retention_steady",
-                    "history": limit,
-                    "max_in_memory_events": limit,
-                }
-                for limit in (32, 1_024, 16_384, 100_000)
-            ],
-        },
+        "runtime_limits": runtime_limits(args.bench),
         "sample_protocol": {
             "criterion_sample_size": sample_size,
             "fixed_history_per_sample": True,
-            "measured_operations_per_fixture": {
-                "single_operation_lanes": 1,
-                "context_event_retention_steady": (
-                    "max(criterion_requested_iterations, retention_limit)"
-                ),
-            },
+            "measured_operations_per_fixture": (
+                {
+                    "single_operation_lanes": 1,
+                    "context_event_retention_steady": (
+                        "max(criterion_requested_iterations, retention_limit)"
+                    ),
+                }
+                if args.bench == "history_scaling"
+                else 1
+            ),
             "setup_included_in_timing": False,
+            "criterion_measured_phase": (
+                "append" if args.bench == "recording_primitives" else "operation"
+            ),
             "profile": "release",
-            "extended_direct_store_sweep": args.extended,
+            "extended_direct_store_sweep": (
+                args.extended if args.bench == "history_scaling" else False
+            ),
         },
         "benchmark_arguments": command,
         "raw_criterion_directory": str(target_dir / "criterion"),

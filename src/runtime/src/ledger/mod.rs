@@ -84,6 +84,13 @@ pub struct PreparedLedgerAppend<R> {
 }
 
 impl<R> PreparedLedgerAppend<R> {
+    pub(crate) fn reservation(&self) -> CapacityReservation {
+        *self
+            .reservation
+            .as_ref()
+            .expect("live prepared ledger append reservation")
+    }
+
     pub fn sequence(&self) -> LedgerSequence {
         self.reservation
             .as_ref()
@@ -123,7 +130,7 @@ impl<R> Drop for PreparedLedgerAppend<R> {
 }
 
 /// Reserve, prepare, then infallibly append an owned record.
-pub trait TurnLedger<R>
+pub(crate) trait TurnLedger<R>
 where
     R: AccountedRecord,
 {
@@ -147,6 +154,7 @@ pub(crate) fn prepare<R: AccountedRecord>(
     permit: LedgerPermit,
     record: R,
 ) -> MResult<PreparedLedgerAppend<R>> {
+    record.validate_for_recording()?;
     let actual_bytes = record.retained_bytes();
     let (prepared_controller, reservation) =
         prepare_reservation(controller, permit, 1, actual_bytes)?;

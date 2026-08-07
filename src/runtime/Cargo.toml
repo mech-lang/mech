@@ -315,6 +315,11 @@ name = "module_smoke"
 path = "tests/module_smoke.rs"
 required-features = ["source_default"]
 
+[[test]]
+name = "recording_bench_facade"
+path = "tests/recording_bench_facade.rs"
+required-features = ["runtime_default", "runtime_bench_probes"]
+
 [[bench]]
 name = "program_transaction"
 harness = false
@@ -329,3 +334,8 @@ required-features = ["source_default"]
 name = "history_scaling"
 harness = false
 required-features = ["source_default", "runtime_bench_probes"]
+
+[[bench]]
+name = "recording_primitives"
+harness = false
+required-features = ["runtime_default", "runtime_bench_probes"]

@@ -106,13 +106,13 @@ impl<P> RetainedEffectOutbox<P> {
         self.effects.iter()
     }
 
-    pub fn reserve(&self, estimate: RecordEstimate) -> MResult<OutboxPermit> {
+    pub(crate) fn reserve(&self, estimate: RecordEstimate) -> MResult<OutboxPermit> {
         Ok(OutboxPermit {
             inner: Some(reserve(&self.controller, estimate)?),
         })
     }
 
-    pub fn prepare_batch(
+    pub(crate) fn prepare_batch(
         &self,
         mut permit: OutboxPermit,
         mut effects: Vec<OwnedEffectIntent<P>>,
@@ -178,12 +178,15 @@ impl<P> RetainedEffectOutbox<P> {
     }
 
     /// Transfers a prepared batch without allocation or a recoverable failure branch.
-    pub fn append(&mut self, prepared: PreparedOutboxBatch<P>) {
-        let prepared_controller = prepared.controller.clone();
-        let (reservation, effects) = prepared.into_parts();
-        let last_appended_id = effects.last().map(|(_, effect)| effect.id);
+    pub(crate) fn append(&mut self, prepared: PreparedOutboxBatch<P>) {
+        let reservation = *prepared
+            .reservation
+            .as_ref()
+            .expect("live prepared outbox reservation");
         self.controller
-            .commit_prepared(&prepared_controller, reservation);
+            .commit_prepared(&prepared.controller, reservation);
+        let (_, effects) = prepared.into_parts();
+        let last_appended_id = effects.last().map(|(_, effect)| effect.id);
         for (bytes, effect) in effects {
             self.effects.push_back(effect);
             self.effect_bytes.push_back(bytes);

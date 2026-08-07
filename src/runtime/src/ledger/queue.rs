@@ -87,11 +87,11 @@ impl<R> OwnedTurnRecordQueue<R> {
         self.controller.mark_unhealthy();
     }
 
-    pub fn reserve(&self, estimate: RecordEstimate) -> MResult<LedgerPermit> {
+    pub(crate) fn reserve(&self, estimate: RecordEstimate) -> MResult<LedgerPermit> {
         reserve(&self.controller, estimate)
     }
 
-    pub fn prepare_append(
+    pub(crate) fn prepare_append(
         &self,
         permit: LedgerPermit,
         record: R,
@@ -103,16 +103,16 @@ impl<R> OwnedTurnRecordQueue<R> {
     }
 
     /// Appends a valid prepared record without allocation or a recoverable failure branch.
-    pub fn append(&self, prepared: PreparedLedgerAppend<R>) -> LedgerSequence
+    pub(crate) fn append(&self, prepared: PreparedLedgerAppend<R>) -> LedgerSequence
     where
         R: Send + 'static,
     {
-        let prepared_controller = prepared.controller().clone();
-        let (reservation, record) = prepared.into_parts();
+        let reservation = prepared.reservation();
         let sequence = reservation.sequence;
         let mut state = self.lock();
         self.controller
-            .commit_prepared(&prepared_controller, reservation);
+            .commit_prepared(prepared.controller(), reservation);
+        let (_, record) = prepared.into_parts();
         state.records.push_back((sequence, record));
         state.record_bytes.push_back(reservation.bytes);
         sequence

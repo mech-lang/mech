@@ -8,7 +8,10 @@ use mech_core::{MResult, MechError, MechErrorKind};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{AccountedRecord, TurnId};
+use crate::{
+    ledger::LedgerPermit,
+    turn_record::{AccountedRecord, TurnId},
+};
 
 pub use retained::{PreparedOutboxBatch, RetainedEffectOutbox};
 
@@ -74,6 +77,10 @@ impl<P: AccountedRecord> OwnedEffectIntent<P> {
 }
 
 impl<P: AccountedRecord> AccountedRecord for OwnedEffectIntent<P> {
+    fn validate_for_recording(&self) -> MResult<()> {
+        self.validate()
+    }
+
     fn retained_bytes(&self) -> usize {
         self.accounted_bytes()
             .expect("validated owned effect byte accounting")
@@ -82,20 +89,18 @@ impl<P: AccountedRecord> AccountedRecord for OwnedEffectIntent<P> {
 
 #[derive(Debug)]
 pub struct OutboxPermit {
-    pub(crate) inner: Option<crate::LedgerPermit>,
+    pub(crate) inner: Option<LedgerPermit>,
 }
 
 impl OutboxPermit {
     pub fn reserved_effects(&self) -> usize {
         self.inner
             .as_ref()
-            .map_or(0, crate::LedgerPermit::reserved_records)
+            .map_or(0, LedgerPermit::reserved_records)
     }
 
     pub fn reserved_bytes(&self) -> usize {
-        self.inner
-            .as_ref()
-            .map_or(0, crate::LedgerPermit::reserved_bytes)
+        self.inner.as_ref().map_or(0, LedgerPermit::reserved_bytes)
     }
 }
 

@@ -1,5 +1,5 @@
 use super::*;
-use crate::RecordEstimate;
+use crate::{ledger::RecordEstimate, turn_record::AccountedRecord};
 
 fn effect(turn: u64, ordinal: u32, payload: &'static [u8]) -> OwnedEffectIntent<Box<[u8]>> {
     OwnedEffectIntent {
@@ -115,4 +115,58 @@ fn dropping_prepared_batch_releases_capacity_and_owned_payloads() {
     let prepared = outbox.prepare_batch(permit, effects).unwrap();
     drop(prepared);
     assert!(outbox.reserve(estimate).is_ok());
+}
+
+#[test]
+fn overlapping_batch_preparation_is_rejected_before_publication() {
+    let mut outbox = RetainedEffectOutbox::new(2, 256).unwrap();
+    let first = vec![effect(1, 0, b"first")];
+    let second = vec![effect(2, 0, b"second")];
+    let first_permit = outbox.reserve(estimate(&first)).unwrap();
+    let second_permit = outbox.reserve(estimate(&second)).unwrap();
+
+    let prepared_first = outbox.prepare_batch(first_permit, first).unwrap();
+    let error = outbox.prepare_batch(second_permit, second).unwrap_err();
+    assert_eq!(error.kind_name(), "LedgerPermitInvalid");
+    outbox.append(prepared_first);
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox.iter().next().unwrap().id.turn_id.get(), 1);
+}
+
+#[test]
+fn dropped_batch_releases_preparation_lease_for_retry() {
+    let mut outbox = RetainedEffectOutbox::new(1, 128).unwrap();
+    let first = vec![effect(1, 0, b"first")];
+    let permit = outbox.reserve(estimate(&first)).unwrap();
+    let prepared = outbox.prepare_batch(permit, first).unwrap();
+    drop(prepared);
+
+    let retry = vec![effect(1, 0, b"retry")];
+    let permit = outbox.reserve(estimate(&retry)).unwrap();
+    let prepared = outbox.prepare_batch(permit, retry).unwrap();
+    outbox.append(prepared);
+    assert_eq!(outbox.len(), 1);
+}
+
+#[test]
+fn effect_payload_outlives_its_builder_storage() {
+    fn build() -> OwnedEffectIntent<Box<[u8]>> {
+        let temporary = vec![4_u8, 3, 2, 1];
+        OwnedEffectIntent {
+            id: OutboxEffectId {
+                turn_id: TurnId::new(1).unwrap(),
+                ordinal: 0,
+            },
+            operation: String::from("write"),
+            target: String::from("test"),
+            payload: temporary.into_boxed_slice(),
+            idempotency_key: String::from("1:0"),
+            delivery: OutboxDeliveryPolicy::AtLeastOnce,
+        }
+    }
+
+    fn assert_owned_effect<T: Send + 'static>() {}
+    assert_owned_effect::<OwnedEffectIntent<Box<[u8]>>>();
+    let effect = build();
+    assert_eq!(&*effect.payload, &[4, 3, 2, 1]);
 }
