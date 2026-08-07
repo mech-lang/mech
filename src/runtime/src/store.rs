@@ -42,6 +42,7 @@ use crate::resolver::{
     SourceImportAlias, SourceImportDeclaration, SourceScope, import_requires_source_dependency,
 };
 
+mod prepared_commit;
 mod validation;
 
 // -----------------------------------------------------------------------------
@@ -1581,8 +1582,9 @@ impl MechStore for InMemoryStore {
         if self.panic_on_commit_runtime {
             panic!("deliberate store commit panic");
         }
-        validation::validate_runtime_commit(self, &commit)?;
-        let id = commit.transaction.id;
+        let prepared = prepared_commit::PreparedInMemoryCommit::prepare(self, commit)?;
+        let id = prepared.transaction.id;
+        let commit = prepared.into_runtime_commit();
         #[cfg(any(test, feature = "runtime_bench_probes"))]
         crate::runtime::gate_a_probe::record_in_memory_store_clone(
             self.gate_a_cloned_record_count(),
@@ -1745,6 +1747,24 @@ impl MechErrorKind for StoreRecordNotFoundError {
 #[derive(Debug, Clone)]
 pub struct StoreCapabilityNotRevocableError {
     pub capability: CapabilityId,
+}
+
+#[derive(Debug, Clone)]
+pub struct StoreCapacityReservationError {
+    pub structure: &'static str,
+}
+
+impl MechErrorKind for StoreCapacityReservationError {
+    fn name(&self) -> &str {
+        "StoreCapacityReservation"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "unable to reserve capacity for in-memory store structure `{}`",
+            self.structure
+        )
+    }
 }
 
 impl MechErrorKind for StoreCapabilityNotRevocableError {
