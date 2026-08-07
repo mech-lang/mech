@@ -338,14 +338,15 @@ impl MechRuntime {
                 ));
             }
 
-            let store_before = self
-                .active_execution_transaction(transaction_id)?
-                .store
-                .clone();
-            let overlay_mark = self
-                .active_execution_transaction(transaction_id)?
-                .capabilities
-                .mark();
+            let transaction = self.active_execution_transaction(transaction_id)?;
+            #[cfg(any(test, feature = "runtime_bench_probes"))]
+            crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+                transaction.store.gate_a_staged_item_count(),
+            );
+            let store_before = transaction.store.clone();
+            let overlay_mark = transaction.capabilities.mark();
+            #[cfg(any(test, feature = "runtime_bench_probes"))]
+            crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
             let context_events_before = context.events.clone();
             let context_authority_before = context.authority.clone();
 
@@ -382,6 +383,8 @@ impl MechRuntime {
             return Err(finish_failed_capability_grant(id, error, rollback_failures));
         }
 
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
         let context_events_before = context.events.clone();
 
         if let Err(error) = self.emit_event_to_context(
@@ -448,14 +451,15 @@ impl MechRuntime {
                 ));
             }
 
-            let store_before = self
-                .active_execution_transaction(transaction_id)?
-                .store
-                .clone();
-            let overlay_mark = self
-                .active_execution_transaction(transaction_id)?
-                .capabilities
-                .mark();
+            let transaction = self.active_execution_transaction(transaction_id)?;
+            #[cfg(any(test, feature = "runtime_bench_probes"))]
+            crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+                transaction.store.gate_a_staged_item_count(),
+            );
+            let store_before = transaction.store.clone();
+            let overlay_mark = transaction.capabilities.mark();
+            #[cfg(any(test, feature = "runtime_bench_probes"))]
+            crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
             let context_events_before = context.events.clone();
             let context_authority_before = context.authority.clone();
 

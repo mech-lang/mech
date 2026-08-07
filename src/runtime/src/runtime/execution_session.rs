@@ -102,6 +102,8 @@ impl RuntimeSessionServices<'_> {
 
     fn emit_event(&mut self, kind: RuntimeEventKind) -> MResult<EventId> {
         self.validate_context()?;
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_context_event_snapshot(self.context.events.len());
         let context_events_before = self.context.events.clone();
         let event = RuntimeEvent::new(
             self.id_generator.event_id(),
@@ -259,8 +261,14 @@ impl RuntimeSessionServices<'_> {
         let cost = metadata.cost;
         self.context.charge_bytes(cost.bytes)?;
         self.context.charge_items(cost.items)?;
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+            self.transaction.store.gate_a_staged_item_count(),
+        );
         let store_before = self.transaction.store.clone();
         let effect_mark = self.transaction.effects.mark();
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_context_event_snapshot(self.context.events.len());
         let context_events_before = self.context.events.clone();
         let transaction_id = self.transaction.store.id;
         let effect_id = self.transaction.effects.stage(transaction_id, effect);
@@ -305,8 +313,14 @@ impl RuntimeSessionServices<'_> {
         let cost = metadata.cost;
         self.context.charge_bytes(cost.bytes)?;
         self.context.charge_items(cost.items)?;
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+            self.transaction.store.gate_a_staged_item_count(),
+        );
         let store_before = self.transaction.store.clone();
         let effect_mark = self.transaction.effects.mark();
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_context_event_snapshot(self.context.events.len());
         let context_events_before = self.context.events.clone();
         let transaction_id = self.transaction.store.id;
         let effect_id = self.transaction.effects.stage_resource_write(

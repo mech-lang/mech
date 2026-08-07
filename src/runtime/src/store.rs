@@ -933,6 +933,30 @@ impl InMemoryStore {
         Self::default()
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
+    fn gate_a_cloned_record_count(&self) -> usize {
+        self.modules.len()
+            + self.module_versions.len()
+            + self.active_module_versions.len()
+            + self.objects.len()
+            + self.tasks.len()
+            + self.actors.len()
+            + self.mailboxes.len()
+            + self.mailboxes.values().map(VecDeque::len).sum::<usize>()
+            + self.capabilities.len()
+            + self.capabilities_by_subject.len()
+            + self
+                .capabilities_by_subject
+                .values()
+                .map(Vec::len)
+                .sum::<usize>()
+            + self.revoked_capabilities.len()
+            + self.events.len()
+            + self.event_order.len()
+            + self.transactions.len()
+            + self.transaction_order.len()
+    }
+
     #[cfg(test)]
     pub(crate) fn panic_on_get_object_for_test(&mut self) {
         self.panic_on_get_object = true;
@@ -1545,6 +1569,8 @@ impl MechStore for InMemoryStore {
     }
 
     fn commit_runtime(&mut self, commit: RuntimeStoreCommit) -> MResult<TransactionId> {
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_commit_runtime_call();
         #[cfg(test)]
         if let Some(counter) = &self.commit_runtime_calls {
             counter.fetch_add(1, Ordering::SeqCst);
@@ -1554,6 +1580,10 @@ impl MechStore for InMemoryStore {
             panic!("deliberate store commit panic");
         }
         let id = commit.transaction.id;
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_in_memory_store_clone(
+            self.gate_a_cloned_record_count(),
+        );
         let mut temporary = self.clone();
 
         for module in commit.module_puts {
@@ -1622,6 +1652,8 @@ impl MechStore for InMemoryStore {
         let id = tx.id;
         self.transactions.insert(id, tx);
         self.transaction_order.push(id);
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_transaction_committed();
         Ok(id)
     }
 
@@ -1753,6 +1785,67 @@ mod tests {
             message_enqueues: Vec::new(),
             events: Vec::new(),
         }
+    }
+
+    #[test]
+    fn gate_a_store_clone_count_sums_logical_records_and_indexes() {
+        let mut store = InMemoryStore::new();
+        store
+            .modules
+            .insert(ModuleId(1), ModuleRecord::new(ModuleId(1), "one"));
+        store.modules_by_name.insert("one".to_string(), ModuleId(1));
+        store.module_versions.insert(
+            ModuleVersionId(2),
+            ModuleVersionRecord::new(ModuleVersionId(2), ModuleId(1), 1),
+        );
+        store
+            .active_module_versions
+            .insert(ModuleId(1), ModuleVersionId(2));
+        store.objects.insert(
+            ObjectId(3),
+            ObjectRecord::text(ObjectId(3), "object", "value"),
+        );
+        store
+            .tasks
+            .insert(TaskId(4), TaskRecord::new(TaskId(4), "task:4"));
+        store
+            .actors
+            .insert(ActorId(5), ActorRecord::new(ActorId(5), "actor:5"));
+        store.mailboxes.insert(
+            ActorId(5),
+            VecDeque::from([MessageRecord::new(
+                MessageId(6),
+                ActorId(5),
+                "message",
+                Vec::new(),
+            )]),
+        );
+        let capability = Arc::new(BasicCapability::new(
+            CapabilityId(7),
+            &BasicSubject::new("subject"),
+            &BasicResource::new("resource"),
+            [BasicOperation::new("read")],
+        ));
+        store.capabilities.insert(CapabilityId(7), capability);
+        store
+            .capabilities_by_subject
+            .insert("subject".to_string(), vec![CapabilityId(7)]);
+        store.revoked_capabilities.insert(CapabilityId(7), false);
+        store.events.insert(
+            EventId(8),
+            RuntimeEvent::new(EventId(8), 0, RuntimeEventKind::RuntimeTickStarted),
+        );
+        store.event_order.push(EventId(8));
+        store.transactions.insert(
+            TransactionId(9),
+            TransactionRecord::new(TransactionId(9), "subject"),
+        );
+        store.transaction_order.push(TransactionId(9));
+
+        // The module-name index is deliberately excluded by the frozen Gate A
+        // diagnostic definition; all requested record and index families sum
+        // to sixteen logical retained items here.
+        assert_eq!(store.gate_a_cloned_record_count(), 16);
     }
 
     #[test]

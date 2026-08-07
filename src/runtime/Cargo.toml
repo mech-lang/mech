@@ -18,6 +18,7 @@ std = ["mech-core/std", "mech-engine/std"]
 no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-syntax?/no_std"]
 
 runtime = ["mech-engine/runtime"]
+runtime_bench_probes = ["mech-engine/runtime_bench_probes"]
 native-link = ["runtime", "string"]
 source = ["runtime", "mech-engine/source", "dep:mech-syntax"]
 compiler = ["source", "mech-engine/compiler"]

@@ -95,6 +95,8 @@ pub(in crate::runtime) struct RuntimeContextCheckpoint {
 
 impl RuntimeContextCheckpoint {
     pub(in crate::runtime) fn capture(context: &RuntimeContext) -> Self {
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
         Self {
             runtime: context.runtime,
             subject: context.subject.clone(),
@@ -135,6 +137,8 @@ impl RuntimeContextCheckpoint {
             max_messages: self.budget.max_messages,
             used_messages,
         };
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_context_event_snapshot(self.events.len());
         context.events = self.events.clone();
         context.actor_message = self.actor_message.clone();
         context.actor_state = self.actor_state;

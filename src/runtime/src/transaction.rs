@@ -87,6 +87,34 @@ impl RuntimeTransaction {
         }
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
+    pub(crate) fn gate_a_staged_item_count(&self) -> usize {
+        self.read_set.len()
+            + self.write_set.len()
+            + self.events.len()
+            + self.staged_puts.len()
+            + self.staged_updates.len()
+            + self.staged_task_updates.len()
+            + self.staged_actor_updates.len()
+            + self.staged_message_enqueues.len()
+            + self
+                .staged_message_enqueues
+                .values()
+                .map(Vec::len)
+                .sum::<usize>()
+            + self.staged_message_acks.len()
+            + self
+                .staged_message_acks
+                .values()
+                .map(Vec::len)
+                .sum::<usize>()
+            + self.staged_events.len()
+            + self.message_acks.len()
+            + self.message_sends.len()
+            + self.task_updates.len()
+            + self.actor_updates.len()
+    }
+
     pub fn record_message_ack(&mut self, message: MessageId) -> MResult<()> {
         self.ensure_open()?;
 
@@ -703,5 +731,43 @@ mod tests {
 
         assert_eq!(tx.staged_message_enqueue_count(ActorId(1)).unwrap(), 1);
         assert_eq!(tx.staged_message_ack_count(ActorId(1)).unwrap(), 1);
+    }
+
+    #[test]
+    fn gate_a_savepoint_item_count_sums_staged_collections() {
+        let mut tx = RuntimeTransaction::new(TransactionId(1), "task:1");
+        tx.read_set.push(ObjectId(1));
+        tx.write_set.push(ObjectId(2));
+        tx.events.push(EventId(3));
+        tx.staged_puts
+            .insert(ObjectId(4), ObjectRecord::text(ObjectId(4), "put", "a"));
+        tx.staged_updates
+            .insert(ObjectId(5), ObjectRecord::text(ObjectId(5), "update", "b"));
+        tx.staged_task_updates
+            .insert(TaskId(6), TaskRecord::new(TaskId(6), "task:6"));
+        tx.staged_actor_updates
+            .insert(ActorId(7), ActorRecord::new(ActorId(7), "actor:7"));
+        tx.staged_message_enqueues.insert(
+            ActorId(7),
+            vec![
+                MessageRecord::new(MessageId(8), ActorId(7), "one", Vec::new()),
+                MessageRecord::new(MessageId(9), ActorId(7), "two", Vec::new()),
+            ],
+        );
+        tx.staged_message_acks
+            .insert(ActorId(7), vec![MessageId(10), MessageId(11)]);
+        tx.staged_events.push(RuntimeEvent::new(
+            EventId(12),
+            0,
+            RuntimeEventKind::ObjectCreated {
+                object_id: ObjectId(4),
+            },
+        ));
+        tx.message_acks.push(MessageId(13));
+        tx.message_sends.push(MessageId(14));
+        tx.task_updates.push(TaskId(15));
+        tx.actor_updates.push(ActorId(16));
+
+        assert_eq!(tx.gate_a_staged_item_count(), 18);
     }
 }

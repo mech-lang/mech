@@ -150,6 +150,8 @@ impl MechRuntime {
     }
 
     fn capture_runtime_program_checkpoint(&self) -> MResult<MechProgramCheckpoint> {
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_program_checkpoint();
         #[cfg(test)]
         RUNTIME_PROGRAM_CHECKPOINT_COUNT.with(|count| {
             count.set(count.get().saturating_add(1));
@@ -361,6 +363,10 @@ impl MechRuntime {
         transaction_id: TransactionId,
     ) -> MResult<RuntimeOperationSavepoint> {
         let transaction = self.active_execution_transaction(transaction_id)?;
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+            transaction.store.gate_a_staged_item_count(),
+        );
         Ok(RuntimeOperationSavepoint {
             store: transaction.store.clone(),
             module_mark: transaction.modules.mark(),
@@ -392,6 +398,10 @@ impl MechRuntime {
                     .capabilities
                     .rollback_to(savepoint.capability_mark);
                 let module_result = transaction.modules.rollback_to(savepoint.module_mark);
+                #[cfg(any(test, feature = "runtime_bench_probes"))]
+                crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+                    savepoint.store.gate_a_staged_item_count(),
+                );
                 transaction.store = savepoint.store.clone();
                 Some((
                     effect_failures,

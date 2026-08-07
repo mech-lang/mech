@@ -2,6 +2,29 @@ use crate::*;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+#[cfg(feature = "runtime_bench_probes")]
+thread_local! {
+    static LAST_REACTIVE_JOURNAL_CELL_COUNT: std::cell::Cell<usize> =
+        const { std::cell::Cell::new(0) };
+}
+
+#[cfg(feature = "runtime_bench_probes")]
+#[doc(hidden)]
+pub fn reset_last_reactive_journal_cell_count() {
+    LAST_REACTIVE_JOURNAL_CELL_COUNT.with(|count| count.set(0));
+}
+
+#[cfg(feature = "runtime_bench_probes")]
+#[doc(hidden)]
+pub fn take_last_reactive_journal_cell_count() -> usize {
+    LAST_REACTIVE_JOURNAL_CELL_COUNT.with(|count| count.replace(0))
+}
+
+#[cfg(feature = "runtime_bench_probes")]
+fn record_reactive_journal_cell_count(count: usize) {
+    LAST_REACTIVE_JOURNAL_CELL_COUNT.with(|slot| slot.set(count));
+}
+
 #[cfg(all(target_arch = "wasm32", target_os = "unknown",))]
 use web_time::Instant;
 
@@ -180,6 +203,8 @@ impl<'journal> ProgramReactiveTurnJournal<'journal> {
     }
 
     fn commit(self) {
+        #[cfg(feature = "runtime_bench_probes")]
+        record_reactive_journal_cell_count(self.cell_count());
         self.participant.commit();
     }
 }
@@ -304,6 +329,8 @@ impl MechProgram {
 
     #[cfg(feature = "functions")]
     fn rollback_reactive_turn(&mut self, journal: ProgramReactiveTurnJournal<'_>) -> MResult<()> {
+        #[cfg(feature = "runtime_bench_probes")]
+        record_reactive_journal_cell_count(journal.cell_count());
         self.preflight_reactive_turn_rollback(&journal)?;
         let ProgramReactiveTurnJournal {
             participant,

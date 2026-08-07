@@ -373,6 +373,8 @@ impl MechRuntime {
         });
         let mut services = RuntimeCoordinatedExecutionServices { turn: &turn };
         let mut after_program = Some(after_program);
+        #[cfg(feature = "runtime_bench_probes")]
+        mech_engine::reset_last_reactive_journal_cell_count();
         let execution_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let mut finalize = |value: &T| {
                 let mut turn = match turn.try_borrow_mut() {
@@ -418,6 +420,17 @@ impl MechRuntime {
             };
             execute(&mut program, &mut services, &mut finalize)
         }));
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_reactive_journal_cells({
+            #[cfg(feature = "runtime_bench_probes")]
+            {
+                mech_engine::take_last_reactive_journal_cell_count()
+            }
+            #[cfg(not(feature = "runtime_bench_probes"))]
+            {
+                0
+            }
+        });
         {
             // The execution callback has returned, so every adapter and finalizer
             // borrow is out of scope. This local RefCell never escapes this method.

@@ -22,6 +22,8 @@ std = ["mech-core/std"]
 no_std = ["mech-core/no_std", "mech-syntax?/no_std"]
 
 runtime = ["program", "functions"]
+# Runtime-only diagnostic hook consumed by mech-runtime's non-default Gate A probes.
+runtime_bench_probes = ["runtime"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 source = ["runtime", "dep:mech-syntax"]

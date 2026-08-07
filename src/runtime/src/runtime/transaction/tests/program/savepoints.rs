@@ -1,4 +1,5 @@
 use super::support::savepoint_effect;
+use crate::runtime::gate_a_probe::{gate_a_cost_snapshot, reset_gate_a_costs};
 use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     ActorId, CapabilityId, MechRuntime, MessageId, MessageRecord, ModuleVersionId, ObjectId,
@@ -24,6 +25,7 @@ fn program_operation_savepoint_truncates_effects_without_reusing_ids() {
         .unwrap();
     assert_eq!(first.sequence, 0);
 
+    reset_gate_a_costs();
     let failed: MResult<()> = runtime.with_atomic_program_operation(
         &mut context,
         "effect_savepoint_failed",
@@ -39,6 +41,9 @@ fn program_operation_savepoint_truncates_effects_without_reusing_ids() {
         },
     );
     assert_eq!(failed.unwrap_err().kind_name(), "RuntimeInvalidOperation");
+    let costs = gate_a_cost_snapshot();
+    assert_eq!(costs.runtime_transaction_savepoint_clone_count, 3);
+    assert_eq!(costs.runtime_transaction_savepoint_items, 9);
 
     let transaction = runtime
         .active_execution_transaction(transaction_id)

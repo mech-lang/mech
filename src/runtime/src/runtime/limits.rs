@@ -128,7 +128,10 @@ impl MechRuntime {
         };
         let max_events = usize::try_from(max_events).unwrap_or(usize::MAX);
         if events.len() > max_events {
-            events.drain(0..(events.len() - max_events));
+            let removed = events.len() - max_events;
+            events.drain(0..removed);
+            #[cfg(any(test, feature = "runtime_bench_probes"))]
+            crate::runtime::gate_a_probe::record_context_event_compaction(events.len());
         }
     }
 

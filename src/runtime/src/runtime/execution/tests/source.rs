@@ -642,6 +642,7 @@ fn direct_bytecode_source_limit_uses_borrowed_length() {
 
 #[test]
 fn context_event_retention_is_bounded() {
+    crate::runtime::gate_a_probe::reset_gate_a_costs();
     let mut config = RuntimeConfig::default();
     config.limits.max_in_memory_events = Some(2);
     let mut runtime = MechRuntime::new(config).unwrap();
@@ -667,6 +668,12 @@ fn context_event_retention_is_bounded() {
         })
         .collect::<Vec<_>>();
     assert_eq!(object_ids, vec![ObjectId(2), ObjectId(3)]);
+    let costs = crate::runtime::gate_a_probe::gate_a_cost_snapshot();
+    assert!(costs.context_event_compaction_count > 0);
+    assert_eq!(
+        costs.context_event_compaction_moved_items,
+        costs.context_event_compaction_count * 2,
+    );
 }
 
 #[test]

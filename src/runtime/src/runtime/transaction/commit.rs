@@ -743,6 +743,8 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         kind: RuntimeEventKind,
     ) -> MResult<EventId> {
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
         let context_events_before = context.events.clone();
         let event = self.make_event(kind);
         let id = event.id;
@@ -760,6 +762,8 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         kind: RuntimeEventKind,
     ) -> MResult<EventId> {
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
         let context_events_before = context.events.clone();
         let event = self.make_event(kind);
         let id = event.id;
