@@ -1,0 +1,994 @@
+{
+  "schema": 1,
+  "base_commit": "f7768e0c6bbde69d27410be6d1ecacbd08c238c5",
+  "full_source_specializers": [
+    {
+      "name": "combinatorics/n-choose-k",
+      "id_hex": "00956dd291431449"
+    },
+    {
+      "name": "compare/eq",
+      "id_hex": "00f7439d8425f4ae"
+    },
+    {
+      "name": "compare/gt",
+      "id_hex": "007ba0fe4452f8a7"
+    },
+    {
+      "name": "compare/gte",
+      "id_hex": "00a8effb511a48e5"
+    },
+    {
+      "name": "compare/lt",
+      "id_hex": "00d6a43eb12d6051"
+    },
+    {
+      "name": "compare/lte",
+      "id_hex": "009576680a22b5e4"
+    },
+    {
+      "name": "compare/max",
+      "id_hex": "0089f92840bef598"
+    },
+    {
+      "name": "compare/min",
+      "id_hex": "007f700a62caac57"
+    },
+    {
+      "name": "compare/neq",
+      "id_hex": "00dde4694640d8cd"
+    },
+    {
+      "name": "compare/seq",
+      "id_hex": "00750538d1702500"
+    },
+    {
+      "name": "compare/sneq",
+      "id_hex": "0055a262353d2a60"
+    },
+    {
+      "name": "logic/and",
+      "id_hex": "00d13b32c6a0b67e"
+    },
+    {
+      "name": "logic/not",
+      "id_hex": "00ddc2d109a0ffa2"
+    },
+    {
+      "name": "logic/or",
+      "id_hex": "00f99d693dcbaa4b"
+    },
+    {
+      "name": "logic/xor",
+      "id_hex": "003d2b2d383079a3"
+    },
+    {
+      "name": "math/abs",
+      "id_hex": "0044150643e997b7"
+    },
+    {
+      "name": "math/acos",
+      "id_hex": "00ae12e77bd0fcf4"
+    },
+    {
+      "name": "math/acosh",
+      "id_hex": "00fb6cf9c35add4d"
+    },
+    {
+      "name": "math/acot",
+      "id_hex": "00a9bddbc3365883"
+    },
+    {
+      "name": "math/acsc",
+      "id_hex": "0010d8c28fcba758"
+    },
+    {
+      "name": "math/add",
+      "id_hex": "00cc529041cb60c3"
+    },
+    {
+      "name": "math/add-assign",
+      "id_hex": "0071ac80616e256e"
+    },
+    {
+      "name": "math/add-assign/range",
+      "id_hex": "00caa88282710f4d"
+    },
+    {
+      "name": "math/add-assign/range-all",
+      "id_hex": "00ce3913b8d48804"
+    },
+    {
+      "name": "math/asec",
+      "id_hex": "00bc0da033d98c3f"
+    },
+    {
+      "name": "math/asin",
+      "id_hex": "00adbb759e0907c8"
+    },
+    {
+      "name": "math/asinh",
+      "id_hex": "0064b95759506fe5"
+    },
+    {
+      "name": "math/atan",
+      "id_hex": "004aaa340d46bed4"
+    },
+    {
+      "name": "math/atan2",
+      "id_hex": "00d4d25a8fdc050d"
+    },
+    {
+      "name": "math/atanh",
+      "id_hex": "00b01adaa302b243"
+    },
+    {
+      "name": "math/bessel/j0",
+      "id_hex": "00d29ec80ffebd15"
+    },
+    {
+      "name": "math/bessel/j1",
+      "id_hex": "00d8a5f939480677"
+    },
+    {
+      "name": "math/bessel/jn",
+      "id_hex": "00891d3754163b21"
+    },
+    {
+      "name": "math/bessel/y0",
+      "id_hex": "000cd0e9e2eb5ca5"
+    },
+    {
+      "name": "math/bessel/y1",
+      "id_hex": "002682447964ce70"
+    },
+    {
+      "name": "math/bessel/yn",
+      "id_hex": "005d55dda7323553"
+    },
+    {
+      "name": "math/cbrt",
+      "id_hex": "003cb37f0faf2f42"
+    },
+    {
+      "name": "math/ceil",
+      "id_hex": "00b291f2361758ec"
+    },
+    {
+      "name": "math/copysign",
+      "id_hex": "007c32a7c76c39ea"
+    },
+    {
+      "name": "math/cos",
+      "id_hex": "007f2321e183e5b7"
+    },
+    {
+      "name": "math/cosh",
+      "id_hex": "0062e81379887c12"
+    },
+    {
+      "name": "math/cot",
+      "id_hex": "00e293e4c397b4bf"
+    },
+    {
+      "name": "math/csc",
+      "id_hex": "00f177e6ec83990e"
+    },
+    {
+      "name": "math/div",
+      "id_hex": "001215e305eb82eb"
+    },
+    {
+      "name": "math/div-assign",
+      "id_hex": "002f316776b29a4e"
+    },
+    {
+      "name": "math/div-assign/range",
+      "id_hex": "00e76d2a2fc60bab"
+    },
+    {
+      "name": "math/div-assign/range-all",
+      "id_hex": "00e3bc6175354e0e"
+    },
+    {
+      "name": "math/erf",
+      "id_hex": "00e4e7ada456adaf"
+    },
+    {
+      "name": "math/erfc",
+      "id_hex": "00eeb913d4a6409c"
+    },
+    {
+      "name": "math/floor",
+      "id_hex": "0038032b869e4443"
+    },
+    {
+      "name": "math/fmod",
+      "id_hex": "0069dee336f93bfc"
+    },
+    {
+      "name": "math/lgamma",
+      "id_hex": "00473fb63d47af80"
+    },
+    {
+      "name": "math/log",
+      "id_hex": "003792262239c319"
+    },
+    {
+      "name": "math/log10",
+      "id_hex": "0097dc801ff96a49"
+    },
+    {
+      "name": "math/log1p",
+      "id_hex": "00a16f7cd45b08da"
+    },
+    {
+      "name": "math/log2",
+      "id_hex": "0044e15386aab013"
+    },
+    {
+      "name": "math/mod",
+      "id_hex": "00e6ce30aa97fb66"
+    },
+    {
+      "name": "math/mul",
+      "id_hex": "009cfd0bb2c8ebb6"
+    },
+    {
+      "name": "math/mul-assign/range",
+      "id_hex": "00dd347e7d0d48c2"
+    },
+    {
+      "name": "math/mul-assign/range-all",
+      "id_hex": "00345ea802649756"
+    },
+    {
+      "name": "math/neg",
+      "id_hex": "00091be6bcbfe4eb"
+    },
+    {
+      "name": "math/nextafter",
+      "id_hex": "00f62fcea70d2168"
+    },
+    {
+      "name": "math/pow",
+      "id_hex": "00bc6df505aac6a2"
+    },
+    {
+      "name": "math/remainder",
+      "id_hex": "0035c6c7cf2931d1"
+    },
+    {
+      "name": "math/rint",
+      "id_hex": "000b77e57bfbb917"
+    },
+    {
+      "name": "math/round",
+      "id_hex": "00c4f94116342cbb"
+    },
+    {
+      "name": "math/roundeven",
+      "id_hex": "004d44c90043de97"
+    },
+    {
+      "name": "math/sec",
+      "id_hex": "00ecfba99fd088fc"
+    },
+    {
+      "name": "math/sin",
+      "id_hex": "00fb4714f815def4"
+    },
+    {
+      "name": "math/sinh",
+      "id_hex": "008ff66b6574c629"
+    },
+    {
+      "name": "math/sqrt",
+      "id_hex": "00f40177d51fbf64"
+    },
+    {
+      "name": "math/sub",
+      "id_hex": "00ddb220aa651901"
+    },
+    {
+      "name": "math/sub-assign",
+      "id_hex": "003b684262572d6d"
+    },
+    {
+      "name": "math/sub-assign/range",
+      "id_hex": "0027c61629fcbb54"
+    },
+    {
+      "name": "math/sub-assign/range-all",
+      "id_hex": "009bb97d4b7e54c8"
+    },
+    {
+      "name": "math/tan",
+      "id_hex": "0055d04beeb2cd1b"
+    },
+    {
+      "name": "math/tanh",
+      "id_hex": "00c48c5462f44166"
+    },
+    {
+      "name": "math/tgamma",
+      "id_hex": "0002703eada2d853"
+    },
+    {
+      "name": "math/trunc",
+      "id_hex": "00d77a78dae3dbc2"
+    },
+    {
+      "name": "matrix/comprehension",
+      "id_hex": "006902325d2d3226"
+    },
+    {
+      "name": "matrix/dot",
+      "id_hex": "00e8e2fd8c05113d"
+    },
+    {
+      "name": "matrix/horzcat",
+      "id_hex": "003299d97fd48d44"
+    },
+    {
+      "name": "matrix/matmul",
+      "id_hex": "00746cc2a235ebeb"
+    },
+    {
+      "name": "matrix/solve",
+      "id_hex": "00f97de64555f6ce"
+    },
+    {
+      "name": "matrix/transpose",
+      "id_hex": "002eb793e3822364"
+    },
+    {
+      "name": "matrix/vertcat",
+      "id_hex": "0028eceed65f65d6"
+    },
+    {
+      "name": "range/exclusive",
+      "id_hex": "00034d8ea099c892"
+    },
+    {
+      "name": "range/exclusive-increment",
+      "id_hex": "00dc1f1f08534976"
+    },
+    {
+      "name": "range/inclusive",
+      "id_hex": "0012cc1a3bd2d7e8"
+    },
+    {
+      "name": "range/inclusive-increment",
+      "id_hex": "00bca71b7f93e1bd"
+    },
+    {
+      "name": "set/cartesian-product",
+      "id_hex": "005908183ef9538a"
+    },
+    {
+      "name": "set/comprehension",
+      "id_hex": "0064c0b449898be0"
+    },
+    {
+      "name": "set/define",
+      "id_hex": "0022bb5370115b0c"
+    },
+    {
+      "name": "set/difference",
+      "id_hex": "00b93a988400c0bf"
+    },
+    {
+      "name": "set/disjoint",
+      "id_hex": "003f8c1a1d3fd414"
+    },
+    {
+      "name": "set/element-of",
+      "id_hex": "00d23e3782ccbf89"
+    },
+    {
+      "name": "set/equals",
+      "id_hex": "004c35dd235075a5"
+    },
+    {
+      "name": "set/insert",
+      "id_hex": "00198e1c7e7d4710"
+    },
+    {
+      "name": "set/intersection",
+      "id_hex": "00b7167cb6e547ff"
+    },
+    {
+      "name": "set/not-element-of",
+      "id_hex": "0098bbd5f1c6048b"
+    },
+    {
+      "name": "set/not_equals",
+      "id_hex": "00405355de4c9852"
+    },
+    {
+      "name": "set/powerset",
+      "id_hex": "000714249f382ad7"
+    },
+    {
+      "name": "set/proper-superset",
+      "id_hex": "00fb87d317cfb9e7"
+    },
+    {
+      "name": "set/proper_subset",
+      "id_hex": "00992c9c557eccf3"
+    },
+    {
+      "name": "set/remove",
+      "id_hex": "00846cb1d215eb57"
+    },
+    {
+      "name": "set/size",
+      "id_hex": "0079ea69e921a336"
+    },
+    {
+      "name": "set/subset",
+      "id_hex": "00e07b409e34831f"
+    },
+    {
+      "name": "set/superset",
+      "id_hex": "00f61f2c50b5cf28"
+    },
+    {
+      "name": "set/symmetric-difference",
+      "id_hex": "00d262bda6bb2508"
+    },
+    {
+      "name": "set/union",
+      "id_hex": "0077cd3ee203dbc2"
+    },
+    {
+      "name": "stats/sum/column",
+      "id_hex": "004439aa0edd0827"
+    },
+    {
+      "name": "stats/sum/row",
+      "id_hex": "00b66e428ea721e9"
+    },
+    {
+      "name": "string/concat",
+      "id_hex": "0017216086cc0361"
+    },
+    {
+      "name": "table/full-outer-join",
+      "id_hex": "00f2616322368f16"
+    },
+    {
+      "name": "table/join",
+      "id_hex": "00553d19f22f1b37"
+    },
+    {
+      "name": "table/left-anti-join",
+      "id_hex": "00b60a3764791d2e"
+    },
+    {
+      "name": "table/left-outer-join",
+      "id_hex": "00696ea422cf29c2"
+    },
+    {
+      "name": "table/left-semi-join",
+      "id_hex": "0010d23147654c36"
+    },
+    {
+      "name": "table/right-outer-join",
+      "id_hex": "0075a7a07bcfd366"
+    }
+  ],
+  "prelude_source_specializers": [
+    {
+      "name": "compare/eq",
+      "id_hex": "00f7439d8425f4ae"
+    },
+    {
+      "name": "compare/gt",
+      "id_hex": "007ba0fe4452f8a7"
+    },
+    {
+      "name": "compare/gte",
+      "id_hex": "00a8effb511a48e5"
+    },
+    {
+      "name": "compare/lt",
+      "id_hex": "00d6a43eb12d6051"
+    },
+    {
+      "name": "compare/lte",
+      "id_hex": "009576680a22b5e4"
+    },
+    {
+      "name": "compare/neq",
+      "id_hex": "00dde4694640d8cd"
+    },
+    {
+      "name": "logic/and",
+      "id_hex": "00d13b32c6a0b67e"
+    },
+    {
+      "name": "logic/not",
+      "id_hex": "00ddc2d109a0ffa2"
+    },
+    {
+      "name": "logic/or",
+      "id_hex": "00f99d693dcbaa4b"
+    },
+    {
+      "name": "logic/xor",
+      "id_hex": "003d2b2d383079a3"
+    },
+    {
+      "name": "math/add",
+      "id_hex": "00cc529041cb60c3"
+    },
+    {
+      "name": "math/add-assign",
+      "id_hex": "0071ac80616e256e"
+    },
+    {
+      "name": "math/add-assign/range",
+      "id_hex": "00caa88282710f4d"
+    },
+    {
+      "name": "math/add-assign/range-all",
+      "id_hex": "00ce3913b8d48804"
+    },
+    {
+      "name": "math/div",
+      "id_hex": "001215e305eb82eb"
+    },
+    {
+      "name": "math/div-assign",
+      "id_hex": "002f316776b29a4e"
+    },
+    {
+      "name": "math/div-assign/range",
+      "id_hex": "00e76d2a2fc60bab"
+    },
+    {
+      "name": "math/div-assign/range-all",
+      "id_hex": "00e3bc6175354e0e"
+    },
+    {
+      "name": "math/mod",
+      "id_hex": "00e6ce30aa97fb66"
+    },
+    {
+      "name": "math/mul",
+      "id_hex": "009cfd0bb2c8ebb6"
+    },
+    {
+      "name": "math/mul-assign/range",
+      "id_hex": "00dd347e7d0d48c2"
+    },
+    {
+      "name": "math/mul-assign/range-all",
+      "id_hex": "00345ea802649756"
+    },
+    {
+      "name": "math/neg",
+      "id_hex": "00091be6bcbfe4eb"
+    },
+    {
+      "name": "math/pow",
+      "id_hex": "00bc6df505aac6a2"
+    },
+    {
+      "name": "math/sub",
+      "id_hex": "00ddb220aa651901"
+    },
+    {
+      "name": "math/sub-assign",
+      "id_hex": "003b684262572d6d"
+    },
+    {
+      "name": "math/sub-assign/range",
+      "id_hex": "0027c61629fcbb54"
+    },
+    {
+      "name": "math/sub-assign/range-all",
+      "id_hex": "009bb97d4b7e54c8"
+    },
+    {
+      "name": "matrix/comprehension",
+      "id_hex": "006902325d2d3226"
+    },
+    {
+      "name": "matrix/dot",
+      "id_hex": "00e8e2fd8c05113d"
+    },
+    {
+      "name": "matrix/horzcat",
+      "id_hex": "003299d97fd48d44"
+    },
+    {
+      "name": "matrix/matmul",
+      "id_hex": "00746cc2a235ebeb"
+    },
+    {
+      "name": "matrix/solve",
+      "id_hex": "00f97de64555f6ce"
+    },
+    {
+      "name": "matrix/transpose",
+      "id_hex": "002eb793e3822364"
+    },
+    {
+      "name": "matrix/vertcat",
+      "id_hex": "0028eceed65f65d6"
+    },
+    {
+      "name": "range/exclusive",
+      "id_hex": "00034d8ea099c892"
+    },
+    {
+      "name": "range/inclusive",
+      "id_hex": "0012cc1a3bd2d7e8"
+    },
+    {
+      "name": "set/comprehension",
+      "id_hex": "0064c0b449898be0"
+    },
+    {
+      "name": "set/define",
+      "id_hex": "0022bb5370115b0c"
+    },
+    {
+      "name": "set/difference",
+      "id_hex": "00b93a988400c0bf"
+    },
+    {
+      "name": "set/disjoint",
+      "id_hex": "003f8c1a1d3fd414"
+    },
+    {
+      "name": "set/equals",
+      "id_hex": "004c35dd235075a5"
+    },
+    {
+      "name": "set/insert",
+      "id_hex": "00198e1c7e7d4710"
+    },
+    {
+      "name": "set/intersection",
+      "id_hex": "00b7167cb6e547ff"
+    },
+    {
+      "name": "set/not_equals",
+      "id_hex": "00405355de4c9852"
+    },
+    {
+      "name": "set/powerset",
+      "id_hex": "000714249f382ad7"
+    },
+    {
+      "name": "set/proper_subset",
+      "id_hex": "00992c9c557eccf3"
+    },
+    {
+      "name": "set/remove",
+      "id_hex": "00846cb1d215eb57"
+    },
+    {
+      "name": "set/size",
+      "id_hex": "0079ea69e921a336"
+    },
+    {
+      "name": "set/subset",
+      "id_hex": "00e07b409e34831f"
+    },
+    {
+      "name": "set/superset",
+      "id_hex": "00f61f2c50b5cf28"
+    },
+    {
+      "name": "set/union",
+      "id_hex": "0077cd3ee203dbc2"
+    }
+  ],
+  "module_exports": [
+    {
+      "module": "combinatorics",
+      "item": "n-choose-k",
+      "canonical_name": "combinatorics/n-choose-k",
+      "id_hex": "00956dd291431449"
+    },
+    {
+      "module": "math",
+      "item": "abs",
+      "canonical_name": "math/abs",
+      "id_hex": "0044150643e997b7"
+    },
+    {
+      "module": "math",
+      "item": "acos",
+      "canonical_name": "math/acos",
+      "id_hex": "00ae12e77bd0fcf4"
+    },
+    {
+      "module": "math",
+      "item": "acosh",
+      "canonical_name": "math/acosh",
+      "id_hex": "00fb6cf9c35add4d"
+    },
+    {
+      "module": "math",
+      "item": "acot",
+      "canonical_name": "math/acot",
+      "id_hex": "00a9bddbc3365883"
+    },
+    {
+      "module": "math",
+      "item": "acsc",
+      "canonical_name": "math/acsc",
+      "id_hex": "0010d8c28fcba758"
+    },
+    {
+      "module": "math",
+      "item": "asec",
+      "canonical_name": "math/asec",
+      "id_hex": "00bc0da033d98c3f"
+    },
+    {
+      "module": "math",
+      "item": "asin",
+      "canonical_name": "math/asin",
+      "id_hex": "00adbb759e0907c8"
+    },
+    {
+      "module": "math",
+      "item": "asinh",
+      "canonical_name": "math/asinh",
+      "id_hex": "0064b95759506fe5"
+    },
+    {
+      "module": "math",
+      "item": "atan",
+      "canonical_name": "math/atan",
+      "id_hex": "004aaa340d46bed4"
+    },
+    {
+      "module": "math",
+      "item": "atan2",
+      "canonical_name": "math/atan2",
+      "id_hex": "00d4d25a8fdc050d"
+    },
+    {
+      "module": "math",
+      "item": "atanh",
+      "canonical_name": "math/atanh",
+      "id_hex": "00b01adaa302b243"
+    },
+    {
+      "module": "math",
+      "item": "bessel/j0",
+      "canonical_name": "math/bessel/j0",
+      "id_hex": "00d29ec80ffebd15"
+    },
+    {
+      "module": "math",
+      "item": "bessel/j1",
+      "canonical_name": "math/bessel/j1",
+      "id_hex": "00d8a5f939480677"
+    },
+    {
+      "module": "math",
+      "item": "bessel/jn",
+      "canonical_name": "math/bessel/jn",
+      "id_hex": "00891d3754163b21"
+    },
+    {
+      "module": "math",
+      "item": "bessel/y0",
+      "canonical_name": "math/bessel/y0",
+      "id_hex": "000cd0e9e2eb5ca5"
+    },
+    {
+      "module": "math",
+      "item": "bessel/y1",
+      "canonical_name": "math/bessel/y1",
+      "id_hex": "002682447964ce70"
+    },
+    {
+      "module": "math",
+      "item": "bessel/yn",
+      "canonical_name": "math/bessel/yn",
+      "id_hex": "005d55dda7323553"
+    },
+    {
+      "module": "math",
+      "item": "cbrt",
+      "canonical_name": "math/cbrt",
+      "id_hex": "003cb37f0faf2f42"
+    },
+    {
+      "module": "math",
+      "item": "ceil",
+      "canonical_name": "math/ceil",
+      "id_hex": "00b291f2361758ec"
+    },
+    {
+      "module": "math",
+      "item": "copysign",
+      "canonical_name": "math/copysign",
+      "id_hex": "007c32a7c76c39ea"
+    },
+    {
+      "module": "math",
+      "item": "cos",
+      "canonical_name": "math/cos",
+      "id_hex": "007f2321e183e5b7"
+    },
+    {
+      "module": "math",
+      "item": "cosh",
+      "canonical_name": "math/cosh",
+      "id_hex": "0062e81379887c12"
+    },
+    {
+      "module": "math",
+      "item": "cot",
+      "canonical_name": "math/cot",
+      "id_hex": "00e293e4c397b4bf"
+    },
+    {
+      "module": "math",
+      "item": "csc",
+      "canonical_name": "math/csc",
+      "id_hex": "00f177e6ec83990e"
+    },
+    {
+      "module": "math",
+      "item": "erf",
+      "canonical_name": "math/erf",
+      "id_hex": "00e4e7ada456adaf"
+    },
+    {
+      "module": "math",
+      "item": "erfc",
+      "canonical_name": "math/erfc",
+      "id_hex": "00eeb913d4a6409c"
+    },
+    {
+      "module": "math",
+      "item": "floor",
+      "canonical_name": "math/floor",
+      "id_hex": "0038032b869e4443"
+    },
+    {
+      "module": "math",
+      "item": "fmod",
+      "canonical_name": "math/fmod",
+      "id_hex": "0069dee336f93bfc"
+    },
+    {
+      "module": "math",
+      "item": "lgamma",
+      "canonical_name": "math/lgamma",
+      "id_hex": "00473fb63d47af80"
+    },
+    {
+      "module": "math",
+      "item": "log",
+      "canonical_name": "math/log",
+      "id_hex": "003792262239c319"
+    },
+    {
+      "module": "math",
+      "item": "log10",
+      "canonical_name": "math/log10",
+      "id_hex": "0097dc801ff96a49"
+    },
+    {
+      "module": "math",
+      "item": "log1p",
+      "canonical_name": "math/log1p",
+      "id_hex": "00a16f7cd45b08da"
+    },
+    {
+      "module": "math",
+      "item": "log2",
+      "canonical_name": "math/log2",
+      "id_hex": "0044e15386aab013"
+    },
+    {
+      "module": "math",
+      "item": "nextafter",
+      "canonical_name": "math/nextafter",
+      "id_hex": "00f62fcea70d2168"
+    },
+    {
+      "module": "math",
+      "item": "remainder",
+      "canonical_name": "math/remainder",
+      "id_hex": "0035c6c7cf2931d1"
+    },
+    {
+      "module": "math",
+      "item": "rint",
+      "canonical_name": "math/rint",
+      "id_hex": "000b77e57bfbb917"
+    },
+    {
+      "module": "math",
+      "item": "round",
+      "canonical_name": "math/round",
+      "id_hex": "00c4f94116342cbb"
+    },
+    {
+      "module": "math",
+      "item": "roundeven",
+      "canonical_name": "math/roundeven",
+      "id_hex": "004d44c90043de97"
+    },
+    {
+      "module": "math",
+      "item": "sec",
+      "canonical_name": "math/sec",
+      "id_hex": "00ecfba99fd088fc"
+    },
+    {
+      "module": "math",
+      "item": "sin",
+      "canonical_name": "math/sin",
+      "id_hex": "00fb4714f815def4"
+    },
+    {
+      "module": "math",
+      "item": "sinh",
+      "canonical_name": "math/sinh",
+      "id_hex": "008ff66b6574c629"
+    },
+    {
+      "module": "math",
+      "item": "sqrt",
+      "canonical_name": "math/sqrt",
+      "id_hex": "00f40177d51fbf64"
+    },
+    {
+      "module": "math",
+      "item": "tan",
+      "canonical_name": "math/tan",
+      "id_hex": "0055d04beeb2cd1b"
+    },
+    {
+      "module": "math",
+      "item": "tanh",
+      "canonical_name": "math/tanh",
+      "id_hex": "00c48c5462f44166"
+    },
+    {
+      "module": "math",
+      "item": "tgamma",
+      "canonical_name": "math/tgamma",
+      "id_hex": "0002703eada2d853"
+    },
+    {
+      "module": "math",
+      "item": "trunc",
+      "canonical_name": "math/trunc",
+      "id_hex": "00d77a78dae3dbc2"
+    },
+    {
+      "module": "stats",
+      "item": "sum/column",
+      "canonical_name": "stats/sum/column",
+      "id_hex": "004439aa0edd0827"
+    },
+    {
+      "module": "stats",
+      "item": "sum/row",
+      "canonical_name": "stats/sum/row",
+      "id_hex": "00b66e428ea721e9"
+    },
+    {
+      "module": "string",
+      "item": "concat",
+      "canonical_name": "string/concat",
+      "id_hex": "0017216086cc0361"
+    }
+  ]
+}

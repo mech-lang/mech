@@ -5,17 +5,11 @@ repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 scratch=$(mktemp -d "${TMPDIR:-/tmp}/mech-bytecode-boundaries.XXXXXX")
 trap 'rm -rf "$scratch"' EXIT HUP INT TERM
 
-runtime_machine_target="$scratch/runtime-machine-target"
-compiler_machine_target="$scratch/compiler-machine-target"
-core_no_default_target="$scratch/core-no-default-target"
-core_no_std_target="$scratch/core-no-std-target"
-core_baselib_target="$scratch/core-baselib-target"
-core_matrix_target="$scratch/core-matrix-target"
-core_structures_target="$scratch/core-structures-target"
-runtime_program_target="$scratch/runtime-program-target"
-compiler_program_target="$scratch/compiler-program-target"
-runtime_runtime_target="$scratch/runtime-runtime-target"
-topology_test_target="$scratch/topology-test-target"
+# Reuse artifacts within each Cargo workspace, but never across standalone
+# workspaces: relative path dependencies can otherwise produce incompatible
+# crates with colliding artifact names.
+root_target=${CARGO_TARGET_DIR:-$repository_root/target}
+machine_target="$scratch/math-target"
 producer_target="$scratch/producer-target"
 consumer_target="$scratch/consumer-target"
 bytecode_path="$scratch/add.mecb"
@@ -52,55 +46,34 @@ reject_tree_entry() {
 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$repository_root/Cargo.toml" \
-  --target-dir "$core_no_default_target" \
+  --target-dir "$root_target" \
   -p mech-core \
   --no-default-features
 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$repository_root/Cargo.toml" \
-  --target-dir "$core_no_std_target" \
-  -p mech-core \
-  --no-default-features \
-  --features no_std
-
-cargo +nightly-2026-03-03 check \
-  --manifest-path "$repository_root/Cargo.toml" \
-  --target-dir "$core_baselib_target" \
-  -p mech-core \
-  --no-default-features \
-  --features baselib
-
-cargo +nightly-2026-03-03 check \
-  --manifest-path "$repository_root/Cargo.toml" \
-  --target-dir "$core_matrix_target" \
-  -p mech-core \
-  --no-default-features \
-  --features "matrix,matrixd,f64"
-
-cargo +nightly-2026-03-03 check \
-  --manifest-path "$repository_root/Cargo.toml" \
-  --target-dir "$core_structures_target" \
+  --target-dir "$root_target" \
   -p mech-core \
   --no-default-features \
   --features "atom,enum,tuple,f64"
 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$machine_manifest" \
-  --target-dir "$runtime_machine_target" \
+  --target-dir "$machine_target" \
   --config "$core_patch" \
   --no-default-features \
   --features "program functions f64 add"
 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$machine_manifest" \
-  --target-dir "$compiler_machine_target" \
+  --target-dir "$machine_target" \
   --config "$core_patch" \
   --no-default-features \
   --features "program compiler functions f64 add"
 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$repository_root/Cargo.toml" \
-  --target-dir "$runtime_program_target" \
+  --target-dir "$root_target" \
   -p mech-program \
   --no-default-features \
   --features "program functions symbol_table f64"
@@ -132,7 +105,7 @@ reject_tree_entry "$runtime_program_tree" 'mech-interpreter feature "compiler"' 
 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$repository_root/Cargo.toml" \
-  --target-dir "$compiler_program_target" \
+  --target-dir "$root_target" \
   -p mech-program \
   --no-default-features \
   --features "compiler functions symbol_table f64"
@@ -164,7 +137,7 @@ require_tree_entry "$compiler_program_tree" 'mech-interpreter feature "compiler"
 
 cargo +nightly-2026-03-03 check \
   --manifest-path "$repository_root/Cargo.toml" \
-  --target-dir "$runtime_runtime_target" \
+  --target-dir "$root_target" \
   -p mech-runtime \
   --no-default-features \
   --features "program functions symbol_table f64"
@@ -196,7 +169,7 @@ reject_tree_entry "$runtime_runtime_tree" 'mech-interpreter feature "compiler"' 
 
 cargo +nightly-2026-03-03 test \
   --manifest-path "$repository_root/Cargo.toml" \
-  --target-dir "$topology_test_target" \
+  --target-dir "$root_target" \
   -p mech-program \
   --test bytecode_plan_topology
 

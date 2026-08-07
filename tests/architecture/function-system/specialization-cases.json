@@ -1,0 +1,485 @@
+{
+  "schema": 1,
+  "base_commit": "f7768e0c6bbde69d27410be6d1ecacbd08c238c5",
+  "bytecode_version": 1,
+  "cases": [
+    {
+      "name": "combinatorics_n_choose_k_f64",
+      "operation": "combinatorics/n-choose-k",
+      "operation_id_hex": "00956dd291431449",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": []
+        },
+        {
+          "kind": "f64",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": []
+      },
+      "runtime_factories": [
+        {
+          "name": "NChooseK<f64>",
+          "id_hex": "00d268854a22e3f3"
+        }
+      ]
+    },
+    {
+      "name": "compare_lt_f64",
+      "operation": "compare/lt",
+      "operation_id_hex": "00d6a43eb12d6051",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": []
+        },
+        {
+          "kind": "f64",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "bool",
+        "shape": []
+      },
+      "runtime_factories": [
+        {
+          "name": "LTSS<f64>",
+          "id_hex": "0097888c51a6074e"
+        }
+      ]
+    },
+    {
+      "name": "logic_and_bool",
+      "operation": "logic/and",
+      "operation_id_hex": "00d13b32c6a0b67e",
+      "arguments": [
+        {
+          "kind": "bool",
+          "shape": []
+        },
+        {
+          "kind": "bool",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "bool",
+        "shape": []
+      },
+      "runtime_factories": [
+        {
+          "name": "AndSS<bool>",
+          "id_hex": "003eaceaa34de1d0"
+        }
+      ]
+    },
+    {
+      "name": "math_add_assign_f64",
+      "operation": "math/add-assign",
+      "operation_id_hex": "0071ac80616e256e",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": []
+        },
+        {
+          "kind": "f64",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": []
+      },
+      "runtime_factories": [
+        {
+          "name": "AddAssignSS<f64>",
+          "id_hex": "004b657ea4d3d973"
+        }
+      ]
+    },
+    {
+      "name": "math_add_f64_f64",
+      "operation": "math/add",
+      "operation_id_hex": "00cc529041cb60c3",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": []
+        },
+        {
+          "kind": "f64",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": []
+      },
+      "runtime_factories": [
+        {
+          "name": "AddSS<f64>",
+          "id_hex": "000a2c77688486f3"
+        }
+      ]
+    },
+    {
+      "name": "math_add_f64_matrixd",
+      "operation": "math/add",
+      "operation_id_hex": "00cc529041cb60c3",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": []
+        },
+        {
+          "kind": "f64",
+          "shape": [
+            2,
+            2
+          ]
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": [
+          2,
+          2
+        ]
+      },
+      "runtime_factories": [
+        {
+          "name": "AddSMD<f64>",
+          "id_hex": "00006564dae22a47"
+        }
+      ]
+    },
+    {
+      "name": "math_add_matrixd_f64",
+      "operation": "math/add",
+      "operation_id_hex": "00cc529041cb60c3",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": [
+            2,
+            2
+          ]
+        },
+        {
+          "kind": "f64",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": [
+          2,
+          2
+        ]
+      },
+      "runtime_factories": [
+        {
+          "name": "AddMDS<f64>",
+          "id_hex": "003abaf26ed74f43"
+        }
+      ]
+    },
+    {
+      "name": "math_add_matrixd_matrixd",
+      "operation": "math/add",
+      "operation_id_hex": "00cc529041cb60c3",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": [
+            2,
+            2
+          ]
+        },
+        {
+          "kind": "f64",
+          "shape": [
+            2,
+            2
+          ]
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": [
+          2,
+          2
+        ]
+      },
+      "runtime_factories": [
+        {
+          "name": "AddMDMD<f64>",
+          "id_hex": "008fa755537dc395"
+        }
+      ]
+    },
+    {
+      "name": "math_add_vector2_f64",
+      "operation": "math/add",
+      "operation_id_hex": "00cc529041cb60c3",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": [
+            2,
+            1
+          ]
+        },
+        {
+          "kind": "f64",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": [
+          2,
+          1
+        ]
+      },
+      "runtime_factories": [
+        {
+          "name": "AddV2S<f64>",
+          "id_hex": "002338c578646419"
+        }
+      ]
+    },
+    {
+      "name": "math_cos_f64",
+      "operation": "math/cos",
+      "operation_id_hex": "007f2321e183e5b7",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": []
+      },
+      "runtime_factories": [
+        {
+          "name": "MathCosF64S",
+          "id_hex": "00b6ea6b10742d03"
+        }
+      ]
+    },
+    {
+      "name": "matrix_matmul_matrix2_f64",
+      "operation": "matrix/matmul",
+      "operation_id_hex": "00746cc2a235ebeb",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": [
+            2,
+            2
+          ]
+        },
+        {
+          "kind": "f64",
+          "shape": [
+            2,
+            2
+          ]
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": [
+          2,
+          2
+        ]
+      },
+      "runtime_factories": [
+        {
+          "name": "MatMulM2M2<f64>",
+          "id_hex": "0063c96e18814241"
+        }
+      ]
+    },
+    {
+      "name": "matrix_solve_matrixd_vectord_f64",
+      "operation": "matrix/solve",
+      "operation_id_hex": "00f97de64555f6ce",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": [
+            2,
+            2
+          ]
+        },
+        {
+          "kind": "f64",
+          "shape": [
+            2,
+            1
+          ]
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": [
+          2,
+          1
+        ]
+      },
+      "runtime_factories": [
+        {
+          "name": "MatrixSolveMDVD<f64>",
+          "id_hex": "002588af33ff6a84"
+        }
+      ]
+    },
+    {
+      "name": "range_inclusive_f64",
+      "operation": "range/inclusive",
+      "operation_id_hex": "0012cc1a3bd2d7e8",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": []
+        },
+        {
+          "kind": "f64",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": [
+          1,
+          3
+        ]
+      },
+      "runtime_factories": [
+        {
+          "name": "RangeInclusiveScalar<f64RowDVector>",
+          "id_hex": "00f33d228e6c2196"
+        }
+      ]
+    },
+    {
+      "name": "range_inclusive_increment_f64",
+      "operation": "range/inclusive-increment",
+      "operation_id_hex": "00bca71b7f93e1bd",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": []
+        },
+        {
+          "kind": "f64",
+          "shape": []
+        },
+        {
+          "kind": "f64",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": [
+          1,
+          3
+        ]
+      },
+      "runtime_factories": [
+        {
+          "name": "RangeIncrementInclusiveScalar<f64RowDVector>",
+          "id_hex": "00acd709ad70295e"
+        }
+      ]
+    },
+    {
+      "name": "set_union_f64",
+      "operation": "set/union",
+      "operation_id_hex": "0077cd3ee203dbc2",
+      "arguments": [
+        {
+          "kind": "{f64}",
+          "shape": []
+        },
+        {
+          "kind": "{f64}",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "{f64}",
+        "shape": []
+      },
+      "runtime_factories": [
+        {
+          "name": "SetUnionFxn",
+          "id_hex": "005de049379f2469"
+        }
+      ]
+    },
+    {
+      "name": "stats_sum_column_f64",
+      "operation": "stats/sum/column",
+      "operation_id_hex": "004439aa0edd0827",
+      "arguments": [
+        {
+          "kind": "f64",
+          "shape": [
+            2,
+            2
+          ]
+        }
+      ],
+      "output": {
+        "kind": "f64",
+        "shape": [
+          2,
+          1
+        ]
+      },
+      "runtime_factories": [
+        {
+          "name": "StatsSumColumnMD<f64>",
+          "id_hex": "00d77177bf794364"
+        }
+      ]
+    },
+    {
+      "name": "string_concat",
+      "operation": "string/concat",
+      "operation_id_hex": "0017216086cc0361",
+      "arguments": [
+        {
+          "kind": "string",
+          "shape": []
+        },
+        {
+          "kind": "string",
+          "shape": []
+        }
+      ],
+      "output": {
+        "kind": "string",
+        "shape": []
+      },
+      "runtime_factories": [
+        {
+          "name": "ConcatSS<string>",
+          "id_hex": "007480ddf0d3eb25"
+        }
+      ]
+    }
+  ]
+}

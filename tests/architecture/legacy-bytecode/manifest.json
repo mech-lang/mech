@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "base_commit": "f7768e0c6bbde69d27410be6d1ecacbd08c238c5",
+  "bytecode_version": 1,
+  "cases": [
+    {
+      "name": "math-cos",
+      "file": "math-cos.mecb",
+      "source": "math/cos(0.0)",
+      "expected": {
+        "kind": "f64",
+        "value": 1.0
+      },
+      "runtime_factory_ids": [
+        {
+          "name": "MathCosF64S",
+          "id_hex": "00b6ea6b10742d03"
+        }
+      ]
+    },
+    {
+      "name": "matrix-scalar-add",
+      "file": "matrix-scalar-add.mecb",
+      "source": "[1.0 2.0] + 1.0",
+      "expected": {
+        "kind": "matrix_f64",
+        "rows": 1,
+        "cols": 2,
+        "values": [
+          2.0,
+          3.0
+        ]
+      },
+      "runtime_factory_ids": [
+        {
+          "name": "AddRDS<f64>",
+          "id_hex": "00f97269b9bac675"
+        },
+        {
+          "name": "HorizontalConcatenateRDN<f64>",
+          "id_hex": "006c13aeb8d21f6c"
+        }
+      ]
+    },
+    {
+      "name": "range-inclusive",
+      "file": "range-inclusive.mecb",
+      "source": "1.0..=3.0",
+      "expected": {
+        "kind": "matrix_f64",
+        "rows": 1,
+        "cols": 3,
+        "values": [
+          1.0,
+          2.0,
+          3.0
+        ]
+      },
+      "runtime_factory_ids": [
+        {
+          "name": "RangeInclusiveScalar<f64RowDVector>",
+          "id_hex": "00f33d228e6c2196"
+        }
+      ]
+    },
+    {
+      "name": "scalar-add",
+      "file": "scalar-add.mecb",
+      "source": "1.0 + 2.0",
+      "expected": {
+        "kind": "f64",
+        "value": 3.0
+      },
+      "runtime_factory_ids": [
+        {
+          "name": "AddSS<f64>",
+          "id_hex": "000a2c77688486f3"
+        }
+      ]
+    },
+    {
+      "name": "string-concat",
+      "file": "string-concat.mecb",
+      "source": "\"a\" + \"bc\"",
+      "expected": {
+        "kind": "string",
+        "value": "abc"
+      },
+      "runtime_factory_ids": [
+        {
+          "name": "ConcatSS<string>",
+          "id_hex": "007480ddf0d3eb25"
+        }
+      ]
+    }
+  ]
+}
