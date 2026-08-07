@@ -328,14 +328,14 @@ matrixd = ["mech-core/matrixd", "mech-engine/matrixd", "mech-math?/matrixd", "me
 mech-core = { version = "0.3.5", default-features = false }
 mech-engine = { version = "0.3.5", default-features = false, features = ["functions"] }
 mech-math = { version = "0.3.5", default-features = false, optional = true }
-mech-compare = { version = "0.3.5", default-features = false, optional = true }
-mech-logic = { version = "0.3.5", default-features = false, optional = true }
-mech-range = { version = "0.3.5", default-features = false, optional = true }
-mech-matrix = { version = "0.3.5", default-features = false, optional = true }
+mech-compare = { git = "https://github.com/mech-machines/compare", rev = "76ede1334959cad82fe9d2910f81a7443523a65e", default-features = false, optional = true }
+mech-logic = { git = "https://github.com/mech-machines/logic", rev = "48e4af75049de392096a476953d75730ed994be7", default-features = false, optional = true }
+mech-range = { git = "https://github.com/mech-machines/range", rev = "dde5e840605447d08317c85f4ccc6926463c0a1d", default-features = false, optional = true }
+mech-matrix = { git = "https://github.com/mech-machines/matrix", rev = "c42d160582abd08a4d541a917786177ae1a59279", default-features = false, optional = true }
 mech-set = { version = "0.3.5", default-features = false, optional = true }
 mech-string = { version = "0.3.5", default-features = false, optional = true }
 mech-stats = { version = "0.3.5", default-features = false, optional = true }
-mech-combinatorics = { version = "0.3.5", default-features = false, optional = true }
+mech-combinatorics = { git = "https://github.com/mech-machines/combinatorics", rev = "56f63b9307cbae42ca006bd1b64000e204204f13", default-features = false, optional = true }
 
 [dev-dependencies]
 serde = { version = "1", features = ["derive"] }

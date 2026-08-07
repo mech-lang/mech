@@ -114,8 +114,16 @@ pub enum PlannedApplicationRequirement {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(tag = "source", rename_all = "snake_case")]
 pub enum PlannedPackageSource {
-    Registry { version: String },
-    Workspace { path: PathBuf },
+    Registry {
+        version: String,
+    },
+    Git {
+        repository: String,
+        revision: String,
+    },
+    Workspace {
+        path: PathBuf,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]

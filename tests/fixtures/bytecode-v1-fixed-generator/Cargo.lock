@@ -387,6 +387,7 @@ dependencies = [
 [[package]]
 name = "mech-combinatorics"
 version = "0.3.5"
+source = "git+https://github.com/mech-machines/combinatorics?rev=56f63b9307cbae42ca006bd1b64000e204204f13#56f63b9307cbae42ca006bd1b64000e204204f13"
 dependencies = [
  "mech-core",
  "nalgebra",
@@ -395,6 +396,7 @@ dependencies = [
 [[package]]
 name = "mech-compare"
 version = "0.3.5"
+source = "git+https://github.com/mech-machines/compare?rev=76ede1334959cad82fe9d2910f81a7443523a65e#76ede1334959cad82fe9d2910f81a7443523a65e"
 dependencies = [
  "mech-core",
  "nalgebra",
@@ -432,6 +434,7 @@ dependencies = [
 [[package]]
 name = "mech-logic"
 version = "0.3.5"
+source = "git+https://github.com/mech-machines/logic?rev=48e4af75049de392096a476953d75730ed994be7#48e4af75049de392096a476953d75730ed994be7"
 dependencies = [
  "mech-core",
  "nalgebra",
@@ -452,6 +455,7 @@ dependencies = [
 [[package]]
 name = "mech-matrix"
 version = "0.3.5"
+source = "git+https://github.com/mech-machines/matrix?rev=c42d160582abd08a4d541a917786177ae1a59279#c42d160582abd08a4d541a917786177ae1a59279"
 dependencies = [
  "mech-core",
  "nalgebra",
@@ -461,6 +465,7 @@ dependencies = [
 [[package]]
 name = "mech-range"
 version = "0.3.5"
+source = "git+https://github.com/mech-machines/range?rev=dde5e840605447d08317c85f4ccc6926463c0a1d#dde5e840605447d08317c85f4ccc6926463c0a1d"
 dependencies = [
  "mech-core",
  "nalgebra",

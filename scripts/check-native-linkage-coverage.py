@@ -39,18 +39,9 @@ EXPECTED_FULL_SURFACE_SHA256 = (
 OWNERS: dict[str, tuple[Path, str, str]] = {
     "mech-engine": (ROOT / "src/engine/Cargo.toml", "extended-engine", "stdlib"),
     "mech-math": (ROOT / "machines/math/Cargo.toml", "extended-math", "full_runtime"),
-    "mech-compare": (ROOT / "machines/compare/Cargo.toml", "extended-compare", "full_runtime"),
-    "mech-logic": (ROOT / "machines/logic/Cargo.toml", "extended-logic", "full_runtime"),
-    "mech-range": (ROOT / "machines/range/Cargo.toml", "extended-range", "full_runtime"),
-    "mech-matrix": (ROOT / "machines/matrix/Cargo.toml", "extended-matrix", "full_runtime"),
     "mech-set": (ROOT / "machines/set/Cargo.toml", "extended-set", "full_runtime"),
     "mech-string": (ROOT / "machines/string/Cargo.toml", "extended-string", "full_runtime"),
     "mech-stats": (ROOT / "machines/stats/Cargo.toml", "extended-stats", "full_runtime"),
-    "mech-combinatorics": (
-        ROOT / "machines/combinatorics/Cargo.toml",
-        "extended-combinatorics",
-        "full_runtime",
-    ),
 }
 ENGINE_SURFACE_SHARDS = (
     "extended-engine-shard-unsigned",

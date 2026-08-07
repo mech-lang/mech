@@ -14,11 +14,13 @@ mech-core = {
   default-features = false,
 }
 mech-compare = {
-  path = "../../../machines/compare",
+  git = "https://github.com/mech-machines/compare",
+  rev = "76ede1334959cad82fe9d2910f81a7443523a65e",
   default-features = false,
 }
 mech-combinatorics = {
-  path = "../../../machines/combinatorics",
+  git = "https://github.com/mech-machines/combinatorics",
+  rev = "56f63b9307cbae42ca006bd1b64000e204204f13",
   default-features = false,
   features = ["n_choose_k"],
 }
@@ -33,7 +35,8 @@ mech-stdlib = {
   features = ["full_compiler"],
 }
 mech-logic = {
-  path = "../../../machines/logic",
+  git = "https://github.com/mech-machines/logic",
+  rev = "48e4af75049de392096a476953d75730ed994be7",
   default-features = false,
 }
 mech-math = {
@@ -41,11 +44,13 @@ mech-math = {
   default-features = false,
 }
 mech-matrix = {
-  path = "../../../machines/matrix",
+  git = "https://github.com/mech-machines/matrix",
+  rev = "c42d160582abd08a4d541a917786177ae1a59279",
   default-features = false,
 }
 mech-range = {
-  path = "../../../machines/range",
+  git = "https://github.com/mech-machines/range",
+  rev = "dde5e840605447d08317c85f4ccc6926463c0a1d",
   default-features = false,
 }
 mech-set = {
@@ -73,13 +78,13 @@ mech-stdlib = { path = "../../../src/stdlib" }
 mech-runtime = { path = "../../../src/runtime" }
 mech-abi = { path = "../../../src/abi" }
 mech-math = { path = "../../../machines/math" }
-mech-compare = { path = "../../../machines/compare" }
-mech-logic = { path = "../../../machines/logic" }
-mech-range = { path = "../../../machines/range" }
-mech-matrix = { path = "../../../machines/matrix" }
+mech-compare = { git = "https://github.com/mech-machines/compare", rev = "76ede1334959cad82fe9d2910f81a7443523a65e" }
+mech-logic = { git = "https://github.com/mech-machines/logic", rev = "48e4af75049de392096a476953d75730ed994be7" }
+mech-range = { git = "https://github.com/mech-machines/range", rev = "dde5e840605447d08317c85f4ccc6926463c0a1d" }
+mech-matrix = { git = "https://github.com/mech-machines/matrix", rev = "c42d160582abd08a4d541a917786177ae1a59279" }
 mech-set = { path = "../../../machines/set" }
 mech-string = { path = "../../../machines/string" }
 mech-stats = { path = "../../../machines/stats" }
-mech-combinatorics = { path = "../../../machines/combinatorics" }
+mech-combinatorics = { git = "https://github.com/mech-machines/combinatorics", rev = "56f63b9307cbae42ca006bd1b64000e204204f13" }
 
 [workspace]

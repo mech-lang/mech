@@ -427,7 +427,10 @@ fn resolve_packages(
             ))
         }
         NativeDependencySource::Workspace { root } => {
-            let selected = dependency::resolve_planned_packages(root, drafts.keys())?;
+            let workspace_packages = drafts
+                .keys()
+                .filter(|package| dependency::standard_git_package(package).is_none());
+            let selected = dependency::resolve_planned_packages(root, workspace_packages)?;
             validate_component_versions(root, &selected)?;
             let fingerprint = dependency::fingerprint_workspace(root, &selected)?.into_string();
             let selected = selected
@@ -437,15 +440,24 @@ fn resolve_packages(
             let packages = drafts
                 .into_iter()
                 .map(|(package, draft)| {
-                    let selected = selected
-                        .get(&package)
-                        .expect("trusted registry resolved every requested package");
+                    let source = match dependency::standard_git_package(&package) {
+                        Some(source) => PlannedPackageSource::Git {
+                            repository: source.repository.to_owned(),
+                            revision: source.revision.to_owned(),
+                        },
+                        None => {
+                            let selected = selected
+                                .get(&package)
+                                .expect("trusted registry resolved every requested package");
+                            PlannedPackageSource::Workspace {
+                                path: selected.relative_path.clone(),
+                            }
+                        }
+                    };
                     PlannedPackage {
                         package,
                         crate_name: draft.crate_name,
-                        source: PlannedPackageSource::Workspace {
-                            path: selected.relative_path.clone(),
-                        },
+                        source,
                         cargo_features: draft.features.into_iter().collect(),
                     }
                 })

@@ -10,8 +10,16 @@ use crate::error::{NativeBuildErrorKind, NativeProjectRelocationUnsupported, nat
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GeneratedDependencySource {
-    Registry { exact_version: String },
-    Workspace { workspace_relative_path: PathBuf },
+    Registry {
+        exact_version: String,
+    },
+    Git {
+        repository: String,
+        revision: String,
+    },
+    Workspace {
+        workspace_relative_path: PathBuf,
+    },
 }
 
 /// One dependency in a generated native application's Cargo manifest.
@@ -55,6 +63,24 @@ impl GeneratedDependency {
                 workspace_relative_path: validate_generated_relative_path(
                     workspace_relative_path.as_ref(),
                 )?,
+            },
+            cargo_features,
+        )
+    }
+
+    pub fn git(
+        package: impl Into<String>,
+        crate_name: impl Into<String>,
+        repository: impl Into<String>,
+        revision: impl Into<String>,
+        cargo_features: impl IntoIterator<Item = impl Into<String>>,
+    ) -> MResult<Self> {
+        Self::new(
+            package,
+            crate_name,
+            GeneratedDependencySource::Git {
+                repository: repository.into(),
+                revision: revision.into(),
             },
             cargo_features,
         )
@@ -179,6 +205,13 @@ pub fn render_native_project_manifest(
             GeneratedDependencySource::Registry { exact_version } => {
                 specification.insert("version", Value::from(exact_version.clone()));
             }
+            GeneratedDependencySource::Git {
+                repository,
+                revision,
+            } => {
+                specification.insert("git", Value::from(repository.clone()));
+                specification.insert("rev", Value::from(revision.clone()));
+            }
             GeneratedDependencySource::Workspace {
                 workspace_relative_path,
             } => {
@@ -263,9 +296,9 @@ pub fn render_native_project_manifest(
         }
     }
     if !patches.is_empty() {
-        let mut crates_io = Table::new();
-        crates_io.insert("crates-io", Item::Table(patches));
-        document.insert("patch", Item::Table(crates_io));
+        let mut sources = Table::new();
+        sources.insert("crates-io", Item::Table(patches));
+        document.insert("patch", Item::Table(sources));
     }
 
     let mut rendered = document.to_string();
@@ -679,6 +712,22 @@ mod tests {
             }
         );
         assert_eq!(dependency.cargo_features, ["add", "f64", "runtime"]);
+
+        let git = GeneratedDependency::git(
+            "mech-matrix",
+            "mech_matrix",
+            "https://github.com/mech-machines/matrix",
+            "c42d160582abd08a4d541a917786177ae1a59279",
+            ["runtime", "matmul"],
+        )
+        .unwrap();
+        assert_eq!(
+            git.source,
+            GeneratedDependencySource::Git {
+                repository: "https://github.com/mech-machines/matrix".into(),
+                revision: "c42d160582abd08a4d541a917786177ae1a59279".into(),
+            }
+        );
 
         let registry =
             GeneratedDependency::registry("mech-core", "mech_core", "0.3.5", ["f64", "program"])

@@ -10,6 +10,7 @@ use crate::analysis::requirements::{
     grant_covers_resource, normalize_native_runtime_config, planned_resource_grant,
     runtime_resource_grant,
 };
+use crate::dependency::standard_git_package;
 use crate::error::{NativeBuildErrorKind, native_build_error};
 use crate::plan::{
     NATIVE_BUILD_PLAN_SCHEMA, NativeApplicationKind, NativeBuildPlan, NativeBuildRequest,
@@ -69,6 +70,16 @@ pub fn generated_dependencies_from_plan(
                 &package.package,
                 &package.crate_name,
                 version,
+                package.cargo_features.iter().cloned(),
+            )?,
+            PlannedPackageSource::Git {
+                repository,
+                revision,
+            } => GeneratedDependency::git(
+                &package.package,
+                &package.crate_name,
+                repository,
+                revision,
                 package.cargo_features.iter().cloned(),
             )?,
             PlannedPackageSource::Workspace { path } => GeneratedDependency::workspace(
@@ -170,13 +181,18 @@ fn validate_dependency_source_consistency(plan: &NativeBuildPlan) -> MResult<()>
             if plan.workspace_fingerprint.is_none() {
                 return project_invalid("a workspace plan requires a workspace fingerprint");
             }
-            if plan
-                .packages
-                .iter()
-                .any(|package| !matches!(package.source, PlannedPackageSource::Workspace { .. }))
-            {
+            if plan.packages.iter().any(|package| match &package.source {
+                PlannedPackageSource::Workspace { .. } => false,
+                PlannedPackageSource::Git {
+                    repository,
+                    revision,
+                } => standard_git_package(&package.package).is_none_or(|trusted| {
+                    repository != trusted.repository || revision != trusted.revision
+                }),
+                PlannedPackageSource::Registry { .. } => true,
+            }) {
                 return project_invalid(
-                    "workspace plan packages must use workspace-relative paths",
+                    "workspace plan packages must use trusted workspace or Git sources",
                 );
             }
         }

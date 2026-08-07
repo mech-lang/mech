@@ -6,6 +6,38 @@ use mech_core::MResult;
 use super::{WorkspaceFingerprint, WorkspacePackage, fingerprint_workspace};
 use crate::error::{NativeBuildErrorKind, native_build_error};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GitPackageSource {
+    pub repository: &'static str,
+    pub revision: &'static str,
+}
+
+pub fn standard_git_package(package: &str) -> Option<GitPackageSource> {
+    match package {
+        "mech-combinatorics" => Some(GitPackageSource {
+            repository: "https://github.com/mech-machines/combinatorics",
+            revision: "56f63b9307cbae42ca006bd1b64000e204204f13",
+        }),
+        "mech-compare" => Some(GitPackageSource {
+            repository: "https://github.com/mech-machines/compare",
+            revision: "76ede1334959cad82fe9d2910f81a7443523a65e",
+        }),
+        "mech-logic" => Some(GitPackageSource {
+            repository: "https://github.com/mech-machines/logic",
+            revision: "48e4af75049de392096a476953d75730ed994be7",
+        }),
+        "mech-matrix" => Some(GitPackageSource {
+            repository: "https://github.com/mech-machines/matrix",
+            revision: "c42d160582abd08a4d541a917786177ae1a59279",
+        }),
+        "mech-range" => Some(GitPackageSource {
+            repository: "https://github.com/mech-machines/range",
+            revision: "dde5e840605447d08317c85f4ccc6926463c0a1d",
+        }),
+        _ => None,
+    }
+}
+
 /// Trusted mapping from package names to locations under a workspace root.
 ///
 /// The registry is populated from native linkage metadata selected by the
@@ -95,12 +127,6 @@ impl WorkspacePackageRegistry {
 pub fn standard_workspace_registry(root: impl Into<PathBuf>) -> MResult<WorkspacePackageRegistry> {
     let mut registry = WorkspacePackageRegistry::new(root);
     for (package, crate_name, relative_path) in [
-        (
-            "mech-combinatorics",
-            "mech_combinatorics",
-            "machines/combinatorics",
-        ),
-        ("mech-compare", "mech_compare", "machines/compare"),
         ("mech-core", "mech_core", "src/core"),
         ("mech-engine", "mech_engine", "src/engine"),
         ("mech-terminal", "mech_terminal", "hosts/terminal"),
@@ -109,10 +135,7 @@ pub fn standard_workspace_registry(root: impl Into<PathBuf>) -> MResult<Workspac
         ("mech-scene", "mech_scene", "hosts/scene"),
         ("mech-time", "mech_time", "hosts/time"),
         ("mech-timer", "mech_timer", "hosts/timer"),
-        ("mech-logic", "mech_logic", "machines/logic"),
         ("mech-math", "mech_math", "machines/math"),
-        ("mech-matrix", "mech_matrix", "machines/matrix"),
-        ("mech-range", "mech_range", "machines/range"),
         ("mech-runtime", "mech_runtime", "src/runtime"),
         ("mech-set", "mech_set", "machines/set"),
         ("mech-stats", "mech_stats", "machines/stats"),
@@ -193,15 +216,10 @@ mod tests {
                 .map(|(name, _)| name)
                 .collect::<Vec<_>>(),
             [
-                "mech-combinatorics",
-                "mech-compare",
                 "mech-console",
                 "mech-core",
                 "mech-engine",
-                "mech-logic",
                 "mech-math",
-                "mech-matrix",
-                "mech-range",
                 "mech-robot-arm",
                 "mech-runtime",
                 "mech-scene",

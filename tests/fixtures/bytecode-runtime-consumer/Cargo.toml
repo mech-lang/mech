@@ -21,12 +21,12 @@ mech-core = { path = "../../../src/core" }
 mech-syntax = { path = "../../../src/syntax" }
 mech-engine = { path = "../../../src/engine" }
 mech-stdlib = { path = "../../../src/stdlib" }
-mech-combinatorics = { path = "../../../machines/combinatorics" }
-mech-compare = { path = "../../../machines/compare" }
-mech-logic = { path = "../../../machines/logic" }
+mech-combinatorics = { git = "https://github.com/mech-machines/combinatorics", rev = "56f63b9307cbae42ca006bd1b64000e204204f13" }
+mech-compare = { git = "https://github.com/mech-machines/compare", rev = "76ede1334959cad82fe9d2910f81a7443523a65e" }
+mech-logic = { git = "https://github.com/mech-machines/logic", rev = "48e4af75049de392096a476953d75730ed994be7" }
 mech-math = { path = "../../../machines/math" }
-mech-matrix = { path = "../../../machines/matrix" }
-mech-range = { path = "../../../machines/range" }
+mech-matrix = { git = "https://github.com/mech-machines/matrix", rev = "c42d160582abd08a4d541a917786177ae1a59279" }
+mech-range = { git = "https://github.com/mech-machines/range", rev = "dde5e840605447d08317c85f4ccc6926463c0a1d" }
 mech-set = { path = "../../../machines/set" }
 mech-stats = { path = "../../../machines/stats" }
 mech-string = { path = "../../../machines/string" }

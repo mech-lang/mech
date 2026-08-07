@@ -51,12 +51,6 @@ cargo test --manifest-path machines/math/Cargo.toml --no-default-features --feat
 echo "building math dynamic provider"
 cargo build --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module" --target-dir "${TARGET_DIR}"
 
-echo "testing combinatorics dynamic provider"
-cargo test --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module"
-
-echo "building combinatorics dynamic provider"
-cargo build --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module" --target-dir "${TARGET_DIR}"
-
 echo "building dynamic status test provider"
 cargo build \
   --manifest-path tests/fixtures/dynamic-status-module/Cargo.toml \
