@@ -120,7 +120,11 @@ def cargo_graph(profile: str) -> tuple[dict[str, set[str]], set[str], int]:
     output = command(
         [
             "cargo", "tree", "--locked", "--offline", "-p", "mech", "-e", "features",
-            "--prefix", "none", "-f", "{p}\t{f}", *PROFILE_ARGUMENTS[profile],
+            # Freeze the product graph rather than the runner's host-specific
+            # graph. Cargo otherwise omits target-only dependencies, making a
+            # contract recorded on macOS drift on Linux and Windows.
+            "--target", "all", "--prefix", "none", "-f", "{p}\t{f}",
+            *PROFILE_ARGUMENTS[profile],
         ]
     )
     package_features: dict[str, set[str]] = {}

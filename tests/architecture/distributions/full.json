@@ -1,5 +1,5 @@
 {
-  "dependency_count": 345,
+  "dependency_count": 410,
   "distribution": "full",
   "native_planning_owner_count": 6,
   "runtime_factory_count": 9010,
@@ -262,6 +262,6 @@
     "whos"
   ],
   "source_specializer_count": 119,
-  "surface_digest": "18d9ce09f17a877a9059a4fef5c24b9165b88f3fa1daa59e490567a79a2c2bf6",
+  "surface_digest": "7652d0610bd6f15e27d85c0dfa8a4d5c835c2ac720c9fc5cdf3cd75f994f51cd",
   "surface_digest_algorithm": "sha256-canonical-selected-cargo-surface-v1"
 }
