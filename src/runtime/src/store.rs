@@ -1040,78 +1040,6 @@ impl InMemoryStore {
 
         Ok(())
     }
-
-    fn commit_module_put(&mut self, module: ModuleRecord) -> MResult<()> {
-        module.validate()?;
-        if module.id != module_id(&module.name) {
-            return Err(MechError::new(
-                InvalidStoreRecordError {
-                    field: "module.id",
-                    reason: "module ID does not match its canonical URI",
-                },
-                None,
-            ));
-        }
-
-        if let Some(existing) = self.modules.get(&module.id) {
-            if existing.name == module.name {
-                return Ok(());
-            }
-            return Err(MechError::new(
-                InvalidStoreRecordError {
-                    field: "module.id",
-                    reason: "module ID maps to another canonical URI",
-                },
-                None,
-            ));
-        }
-
-        if let Some(existing_id) = self.modules_by_name.get(&module.name) {
-            return Err(MechError::new(
-                InvalidStoreRecordError {
-                    field: "module.name",
-                    reason: if existing_id == &module.id {
-                        "module name index is missing its primary record"
-                    } else {
-                        "canonical URI maps to another module ID"
-                    },
-                },
-                None,
-            ));
-        }
-
-        self.modules_by_name.insert(module.name.clone(), module.id);
-        self.modules.insert(module.id, module);
-        Ok(())
-    }
-
-    fn commit_module_version_put(&mut self, version: ModuleVersionRecord) -> MResult<()> {
-        version.validate()?;
-        version.validate_import_edges()?;
-        self.ensure_module_exists(version.module)?;
-        for dependency in &version.dependencies {
-            self.ensure_module_version_exists(*dependency)?;
-        }
-        for edge in &version.import_edges {
-            self.ensure_module_version_exists(edge.dependency)?;
-        }
-
-        if let Some(existing) = self.module_versions.get(&version.id) {
-            if existing == &version {
-                return Ok(());
-            }
-            return Err(MechError::new(
-                InvalidStoreRecordError {
-                    field: "module_version.id",
-                    reason: "version ID maps to different contents",
-                },
-                None,
-            ));
-        }
-
-        self.module_versions.insert(version.id, version);
-        Ok(())
-    }
 }
 
 impl MechStore for InMemoryStore {
@@ -1583,62 +1511,7 @@ impl MechStore for InMemoryStore {
             panic!("deliberate store commit panic");
         }
         let prepared = prepared_commit::PreparedInMemoryCommit::prepare(self, commit)?;
-        let id = prepared.transaction.id;
-        let commit = prepared.into_runtime_commit();
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_in_memory_store_clone(
-            self.gate_a_cloned_record_count(),
-        );
-        let mut temporary = self.clone();
-
-        for module in commit.module_puts {
-            temporary.commit_module_put(module)?;
-        }
-
-        for version in commit.module_version_puts {
-            temporary.commit_module_version_put(version)?;
-        }
-
-        for object in commit.object_puts {
-            temporary.put_object(object)?;
-        }
-
-        for object in commit.object_updates {
-            temporary.update_object(object)?;
-        }
-
-        for task in commit.task_updates {
-            temporary.update_task(task)?;
-        }
-
-        for actor in commit.actor_updates {
-            temporary.update_actor(actor)?;
-        }
-
-        for (actor, message) in commit.message_acks {
-            temporary.ack_message(actor, message)?;
-        }
-
-        for (actor, message) in commit.message_enqueues {
-            temporary.enqueue_message(actor, message)?;
-        }
-
-        for (capability, grant) in commit.capability_grants {
-            temporary.grant_capability(capability, grant)?;
-        }
-
-        for capability in commit.capability_revocations {
-            temporary.revoke_capability(capability)?;
-        }
-
-        for event in commit.events {
-            temporary.append_event(event)?;
-        }
-
-        temporary.commit_transaction(commit.transaction)?;
-        *self = temporary;
-
-        Ok(id)
+        Ok(self.apply_prepared_runtime_commit(prepared))
     }
 
     fn commit_transaction(&mut self, tx: TransactionRecord) -> MResult<TransactionId> {

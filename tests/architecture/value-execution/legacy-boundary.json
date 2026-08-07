@@ -72,9 +72,7 @@
       "id": "in-memory-store-clone-commit",
       "description": "InMemoryStore commit_runtime clones the complete store",
       "pattern": "let mut temporary = self.clone()",
-      "allowed": [
-        { "path": "src/runtime/src/store.rs", "scope_contains": "fn commit_runtime", "max_occurrences": 1 }
-      ]
+      "allowed": []
     },
     {
       "id": "standalone-store-commit-runtime",

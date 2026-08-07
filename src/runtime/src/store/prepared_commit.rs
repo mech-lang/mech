@@ -16,6 +16,7 @@ pub(super) enum PreparedInsert<T> {
 
 pub(super) struct PreparedModulePut {
     pub(super) insert: PreparedInsert<ModuleRecord>,
+    pub(super) index_name: Option<String>,
 }
 
 pub(super) struct PreparedModuleVersionPut {
@@ -78,18 +79,7 @@ impl PreparedInMemoryCommit {
             &validated.capability_subjects,
         )?;
 
-        let module_puts = commit
-            .module_puts
-            .into_iter()
-            .zip(validated.module_inserts)
-            .map(|(module, insert)| PreparedModulePut {
-                insert: if insert {
-                    PreparedInsert::Insert(module)
-                } else {
-                    PreparedInsert::ExistingIdentical
-                },
-            })
-            .collect();
+        let module_puts = prepare_module_puts(commit.module_puts, validated.module_inserts)?;
         let module_version_puts = commit
             .module_version_puts
             .into_iter()
@@ -135,49 +125,146 @@ impl PreparedInMemoryCommit {
             events: commit.events,
         })
     }
+}
 
-    pub(super) fn into_runtime_commit(self) -> RuntimeStoreCommit {
-        RuntimeStoreCommit {
-            transaction: self.transaction,
-            module_puts: self
-                .module_puts
-                .into_iter()
-                .filter_map(|module| match module.insert {
-                    PreparedInsert::Insert(module) => Some(module),
-                    PreparedInsert::ExistingIdentical => None,
-                })
-                .collect(),
-            module_version_puts: self
-                .module_version_puts
-                .into_iter()
-                .filter_map(|version| match version.insert {
-                    PreparedInsert::Insert(version) => Some(version),
-                    PreparedInsert::ExistingIdentical => None,
-                })
-                .collect(),
-            capability_grants: self
-                .capability_grants
-                .into_iter()
-                .map(|grant| (grant.id, grant.capability))
-                .collect(),
-            capability_revocations: self.capability_revocations,
-            object_puts: self.object_puts,
-            object_updates: self.object_updates,
-            task_updates: self.task_updates,
-            actor_updates: self.actor_updates,
-            message_acks: self
-                .message_acks
-                .into_iter()
-                .map(|ack| (ack.actor, ack.message))
-                .collect(),
-            message_enqueues: self
-                .message_enqueues
-                .into_iter()
-                .map(|enqueue| (enqueue.actor, enqueue.message))
-                .collect(),
-            events: self.events,
+impl InMemoryStore {
+    pub(super) fn apply_prepared_runtime_commit(
+        &mut self,
+        prepared: PreparedInMemoryCommit,
+    ) -> super::TransactionId {
+        let PreparedInMemoryCommit {
+            transaction,
+            module_puts,
+            module_version_puts,
+            object_puts,
+            object_updates,
+            task_updates,
+            actor_updates,
+            mailbox_creates,
+            message_acks,
+            message_enqueues,
+            capability_grants,
+            capability_subject_updates,
+            capability_revocations,
+            events,
+        } = prepared;
+
+        for prepared_module in module_puts {
+            let PreparedModulePut { insert, index_name } = prepared_module;
+            if let PreparedInsert::Insert(module) = insert {
+                let index_name = index_name.expect("prepared module insert must own its index key");
+                self.modules_by_name.insert(index_name, module.id);
+                self.modules.insert(module.id, module);
+            }
         }
+        for version in module_version_puts {
+            if let PreparedInsert::Insert(version) = version.insert {
+                self.module_versions.insert(version.id, version);
+            }
+        }
+        for object in object_puts {
+            self.objects.insert(object.id, object);
+        }
+        for object in object_updates {
+            self.objects.insert(object.id, object);
+        }
+        for task in task_updates {
+            self.tasks.insert(task.id, task);
+        }
+        for actor in actor_updates {
+            self.actors.insert(actor.id, actor);
+        }
+        for mailbox in mailbox_creates {
+            let replaced = self.mailboxes.insert(mailbox.actor, mailbox.mailbox);
+            debug_assert!(replaced.is_none(), "prepared mailbox must be absent");
+        }
+        for ack in message_acks {
+            if ack.present {
+                let mailbox = self
+                    .mailboxes
+                    .get_mut(&ack.actor)
+                    .expect("prepared acknowledgement actor must have a mailbox");
+                let index = mailbox
+                    .iter()
+                    .position(|message| message.id == ack.message)
+                    .expect("prepared acknowledgement message must remain present");
+                mailbox
+                    .remove(index)
+                    .expect("prepared acknowledgement index must remain valid");
+            }
+        }
+        for enqueue in message_enqueues {
+            self.mailboxes
+                .get_mut(&enqueue.actor)
+                .expect("prepared enqueue actor must have a mailbox")
+                .push_back(enqueue.message);
+        }
+        for grant in capability_grants {
+            debug_assert!(capability_subject_updates.iter().any(|update| {
+                update.subject == grant.subject && update.ids.contains(&grant.id)
+            }));
+            self.revoked_capabilities.insert(grant.id, false);
+            self.capabilities.insert(grant.id, grant.capability);
+        }
+        for update in capability_subject_updates {
+            if update.existing {
+                self.capabilities_by_subject
+                    .get_mut(&update.subject)
+                    .expect("prepared capability subject index must exist")
+                    .extend(update.ids);
+            } else {
+                let replaced = self
+                    .capabilities_by_subject
+                    .insert(update.subject, update.ids);
+                debug_assert!(
+                    replaced.is_none(),
+                    "prepared capability subject must be new"
+                );
+            }
+        }
+        for capability in capability_revocations {
+            let previous = self.revoked_capabilities.insert(capability, true);
+            debug_assert!(previous.is_some(), "prepared capability must exist");
+        }
+        for event in events {
+            self.event_order.push(event.id);
+            self.events.insert(event.id, event);
+            self.prune_events();
+        }
+
+        let id = transaction.id;
+        self.transactions.insert(id, transaction);
+        self.transaction_order.push(id);
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_transaction_committed();
+        id
     }
+}
+
+fn prepare_module_puts(
+    modules: Vec<ModuleRecord>,
+    inserts: Vec<bool>,
+) -> MResult<Vec<PreparedModulePut>> {
+    let mut prepared = Vec::new();
+    prepared
+        .try_reserve(modules.len())
+        .map_err(|_| reservation_error("prepared_module_puts"))?;
+
+    for (module, insert) in modules.into_iter().zip(inserts) {
+        let (insert, index_name) = if insert {
+            let mut index_name = String::new();
+            index_name
+                .try_reserve_exact(module.name.len())
+                .map_err(|_| reservation_error("prepared_module_name"))?;
+            index_name.push_str(&module.name);
+            (PreparedInsert::Insert(module), Some(index_name))
+        } else {
+            (PreparedInsert::ExistingIdentical, None)
+        };
+        prepared.push(PreparedModulePut { insert, index_name });
+    }
+
+    Ok(prepared)
 }
 
 fn reserve_store_capacity(
