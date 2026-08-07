@@ -7,6 +7,8 @@ mod extension;
 pub mod id;
 #[cfg(feature = "runtime")]
 pub mod input;
+#[cfg(feature = "runtime")]
+pub mod ledger;
 pub mod operation;
 mod resource;
 #[cfg(feature = "runtime")]
@@ -50,6 +52,8 @@ pub use self::extension::{RuntimeExtensionPanicked, RuntimeStoreCommitIndetermin
 pub use self::id::*;
 #[cfg(feature = "runtime")]
 pub use self::input::*;
+#[cfg(feature = "runtime")]
+pub use self::ledger::*;
 pub use self::operation::*;
 pub use self::resource::*;
 #[cfg(feature = "runtime")]
