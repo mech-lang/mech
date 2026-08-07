@@ -42,6 +42,8 @@ use crate::resolver::{
     SourceImportAlias, SourceImportDeclaration, SourceScope, import_requires_source_dependency,
 };
 
+mod validation;
+
 // -----------------------------------------------------------------------------
 // Store Trait
 // -----------------------------------------------------------------------------
@@ -1579,6 +1581,7 @@ impl MechStore for InMemoryStore {
         if self.panic_on_commit_runtime {
             panic!("deliberate store commit panic");
         }
+        validation::validate_runtime_commit(self, &commit)?;
         let id = commit.transaction.id;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
         crate::runtime::gate_a_probe::record_in_memory_store_clone(
