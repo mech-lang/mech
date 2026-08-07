@@ -1,0 +1,256 @@
+{
+  "schema_version": 1,
+  "reference_commit": "7af9de38dfffe913eba105910d4fee46f7105da4",
+  "boundaries": [
+    {
+      "id": "implicit-reactive-transaction",
+      "description": "Legacy standalone-turn transaction construction",
+      "pattern": "RuntimeExecutionTransactionMode::ImplicitReactiveTurn",
+      "allowed": [
+        { "path": "src/runtime/src/runtime/transaction/reactive.rs", "scope_contains": "with_atomic_reactive_turn", "max_occurrences": 1 }
+      ]
+    },
+    {
+      "id": "runtime-operation-savepoint",
+      "description": "Legacy runtime operation savepoint capture and its coordinators",
+      "pattern": "capture_runtime_operation_savepoint",
+      "allowed": [
+        { "path": "src/runtime/src/runtime/transaction/program.rs", "scope_contains": "gate_a_capture_runtime_operation_savepoint", "max_occurrences": 2 },
+        { "path": "src/runtime/src/runtime/transaction/program.rs", "scope_contains": "pub(in crate::runtime) fn capture_runtime_operation_savepoint", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/transaction/program.rs", "scope_contains": "with_atomic_program_operation", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/transaction/modules.rs", "scope_contains": "with_atomic_module_operation", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/transaction/reactive.rs", "scope_contains": "with_atomic_reactive_turn", "max_occurrences": 1 }
+      ]
+    },
+    {
+      "id": "execution-session-store-savepoint",
+      "description": "Legacy staged RuntimeTransaction cloning for operation rollback",
+      "pattern": "transaction.store.clone()",
+      "allowed": [
+        { "path": "src/runtime/src/runtime/transaction/program.rs", "scope_contains": "pub(in crate::runtime) fn capture_runtime_operation_savepoint", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/execution_session.rs", "scope_contains": "fn stage_effect", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/execution_session.rs", "scope_contains": "fn stage_resource_effect", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/transaction/capabilities.rs", "scope_contains": "fn grant_capability_with_context", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/transaction/capabilities.rs", "scope_contains": "fn revoke_capability_with_context", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/transaction/effects.rs", "scope_contains": "fn stage_runtime_effect_with_context", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/transaction/effects.rs", "scope_contains": "fn stage_runtime_resource_effect_with_context", "max_occurrences": 1 }
+      ]
+    },
+    {
+      "id": "operation-savepoint-restore-clone",
+      "description": "Legacy RuntimeTransaction savepoint clone restoration",
+      "pattern": "savepoint.store.clone()",
+      "allowed": [
+        { "path": "src/runtime/src/runtime/transaction/program.rs", "scope_contains": "rollback_runtime_operation", "max_occurrences": 1 }
+      ]
+    },
+    {
+      "id": "context-checkpoint-event-clone",
+      "description": "RuntimeContextCheckpoint copies retained context events",
+      "pattern": "events: context.events.clone()",
+      "allowed": [
+        { "path": "src/runtime/src/runtime/transaction/context.rs", "scope_contains": "fn capture", "max_occurrences": 1 }
+      ]
+    },
+    {
+      "id": "context-checkpoint-event-restore-clone",
+      "description": "RuntimeContextCheckpoint restoration copies retained context events",
+      "pattern": "context.events = self.events.clone()",
+      "allowed": [
+        { "path": "src/runtime/src/runtime/transaction/context.rs", "scope_contains": "fn restore_preserving_consumption", "max_occurrences": 1 }
+      ]
+    },
+    {
+      "id": "per-emission-context-clone",
+      "description": "Event publication snapshots the complete context event history",
+      "pattern": "let context_events_before = context.events.clone()",
+      "allowed": [
+        { "path": "src/runtime/src/runtime/events.rs", "scope_contains": "emit_event_to_context", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/events.rs", "scope_contains": "emit_event_immediate_to_context", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/transaction/capabilities.rs", "scope_contains": "<file>", "max_occurrences": 3 },
+        { "path": "src/runtime/src/runtime/transaction/effects.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "src/runtime/src/runtime/transaction/commit.rs", "scope_contains": "<file>", "max_occurrences": 2 }
+      ]
+    },
+    {
+      "id": "session-event-context-clone",
+      "description": "Execution-session event publication snapshots the complete context event history",
+      "pattern": "let context_events_before = self.context.events.clone()",
+      "allowed": [
+        { "path": "src/runtime/src/runtime/execution_session.rs", "scope_contains": "fn emit_event", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/execution_session.rs", "scope_contains": "fn stage_effect", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/execution_session.rs", "scope_contains": "fn stage_resource_effect", "max_occurrences": 1 }
+      ]
+    },
+    {
+      "id": "in-memory-store-clone-commit",
+      "description": "InMemoryStore commit_runtime clones the complete store",
+      "pattern": "let mut temporary = self.clone()",
+      "allowed": [
+        { "path": "src/runtime/src/store.rs", "scope_contains": "fn commit_runtime", "max_occurrences": 1 }
+      ]
+    },
+    {
+      "id": "standalone-store-commit-runtime",
+      "description": "Standalone transaction coordinator calls the monolithic store commit",
+      "pattern": "self.store.commit_runtime(commit)",
+      "allowed": [
+        { "path": "src/runtime/src/runtime/transaction/commit.rs", "scope_contains": "commit_runtime_transaction_detailed_internal", "max_occurrences": 2 }
+      ]
+    },
+    {
+      "id": "reactive-turn-journal",
+      "description": "Legacy physical reactive rollback journal declaration and production use sites",
+      "pattern": "ReactiveTurnJournal",
+      "allowed": [
+        { "path": "src/core/src/reactive_transaction.rs", "scope_contains": "<file>", "max_occurrences": 6 },
+        { "path": "src/core/src/function/mod.rs", "scope_contains": "<file>", "max_occurrences": 14 },
+        { "path": "src/engine/src/program/instance.rs", "scope_contains": "<file>", "max_occurrences": 17 }
+      ]
+    },
+    {
+      "id": "value-state-journal",
+      "description": "Legacy mutable Value rollback journal declaration and production use sites",
+      "pattern": "ValueStateJournal",
+      "allowed": [
+        { "path": "src/core/src/reactive_transaction.rs", "scope_contains": "<file>", "max_occurrences": 3 },
+        { "path": "src/core/src/state_journal/mod.rs", "scope_contains": "<file>", "max_occurrences": 9 },
+        { "path": "src/engine/src/interpreter/bytecode/registers.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "src/engine/src/interpreter/mod.rs", "scope_contains": "<file>", "max_occurrences": 6 }
+      ]
+    },
+    {
+      "id": "transaction-state-values-api",
+      "description": "Legacy function-state discovery contract, implementations, and call sites used by journals",
+      "pattern": "transaction_state_values",
+      "allowed": [
+        { "path": "machines/combinatorics/src/n_choose_k.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "machines/compare/src/eq.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "machines/compare/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/compare/src/neq.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "machines/compare/src/seq.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/compare/src/sneq.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/logic/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/logic/src/not.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "machines/math/src/arithmetic/copysign.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/math/src/arithmetic/fdim.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/math/src/arithmetic/fmod.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/math/src/arithmetic/nextafter.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/math/src/arithmetic/remainder.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/math/src/bessel/jn.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/math/src/bessel/yn.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/math/src/op_assign/mod.rs", "scope_contains": "<file>", "max_occurrences": 5 },
+        { "path": "machines/math/src/ops/div.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/math/src/ops/mod.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/math/src/ops/modulus.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/math/src/ops/negate.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "machines/math/src/ops/pow.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "machines/math/src/trig/atan2.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/math/src/trig/hypot.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/matrix/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/matrix/src/solve.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/matrix/src/transpose.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/range/src/exclusive.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/range/src/exclusive_increment.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/range/src/inclusive.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/range/src/inclusive_increment.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/membership/element_of.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/membership/not_element_of.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/modify/insert.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/modify/remove.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/operations/cartesian_product.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/operations/difference.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/operations/intersection.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/operations/powerset.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/operations/symmetric_difference.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/operations/union.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/relations/disjoint.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/relations/equals.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/relations/not_equals.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/relations/proper_subset.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/relations/proper_superset.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/relations/subset.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/relations/superset.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/set/src/setdata/size.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/stats/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/stats/src/sum_column.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "machines/string/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/core/src/function/mod.rs", "scope_contains": "<file>", "max_occurrences": 7 },
+        { "path": "src/core/src/reactive_transaction.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/core/src/stdlib.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "src/engine/src/activation/dispatch.rs", "scope_contains": "<file>", "max_occurrences": 6 },
+        { "path": "src/engine/src/activation/guards.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/activation/registers.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/function/external/host_call.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/function/external/resource_read.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/function/external/resource_write.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/function/module.rs", "scope_contains": "<file>", "max_occurrences": 4 },
+        { "path": "src/engine/src/function/native.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/interpreter/mod.rs", "scope_contains": "<file>", "max_occurrences": 6 },
+        { "path": "src/engine/src/intrinsics/access/map.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/intrinsics/access/matrix.rs", "scope_contains": "<file>", "max_occurrences": 4 },
+        { "path": "src/engine/src/intrinsics/access/mod.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/intrinsics/access/record.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "src/engine/src/intrinsics/access/string.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/intrinsics/access/table.rs", "scope_contains": "<file>", "max_occurrences": 5 },
+        { "path": "src/engine/src/intrinsics/access/tuple.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/intrinsics/assign/map.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/intrinsics/assign/matrix.rs", "scope_contains": "<file>", "max_occurrences": 10 },
+        { "path": "src/engine/src/intrinsics/assign/mod.rs", "scope_contains": "<file>", "max_occurrences": 4 },
+        { "path": "src/engine/src/intrinsics/assign/record.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/intrinsics/assign/table.rs", "scope_contains": "<file>", "max_occurrences": 3 },
+        { "path": "src/engine/src/intrinsics/assign/tuple.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/intrinsics/constructors.rs", "scope_contains": "<file>", "max_occurrences": 3 },
+        { "path": "src/engine/src/intrinsics/convert/mat_to_mat.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "src/engine/src/intrinsics/convert/scalar.rs", "scope_contains": "<file>", "max_occurrences": 7 },
+        { "path": "src/engine/src/intrinsics/convert/scalar_to_mat.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/intrinsics/define.rs", "scope_contains": "<file>", "max_occurrences": 4 },
+        { "path": "src/engine/src/intrinsics/horzcat.rs", "scope_contains": "<file>", "max_occurrences": 53 },
+        { "path": "src/engine/src/intrinsics/mod.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "src/engine/src/intrinsics/table_ops.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+        { "path": "src/engine/src/intrinsics/vertcat.rs", "scope_contains": "<file>", "max_occurrences": 15 }
+      ]
+    },
+    {
+      "id": "reactive-cell-id",
+      "description": "Legacy pointer-derived reactive cell identity declaration and production use sites",
+      "pattern": "ReactiveCellId",
+      "allowed": [
+        { "path": "src/core/src/function/argument.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "src/core/src/function/mod.rs", "scope_contains": "<file>", "max_occurrences": 57 },
+        { "path": "src/core/src/value.rs", "scope_contains": "<file>", "max_occurrences": 57 },
+        { "path": "src/engine/src/activation/registers.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+        { "path": "src/engine/src/activation/registration.rs", "scope_contains": "<file>", "max_occurrences": 3 },
+        { "path": "src/engine/src/activation/validation.rs", "scope_contains": "<file>", "max_occurrences": 5 },
+        { "path": "src/engine/src/interpreter/mod.rs", "scope_contains": "<file>", "max_occurrences": 3 },
+        { "path": "src/engine/src/mechdown.rs", "scope_contains": "<file>", "max_occurrences": 4 },
+        { "path": "src/engine/src/program/instance.rs", "scope_contains": "<file>", "max_occurrences": 9 },
+        { "path": "src/runtime/src/runtime/test_support/values.rs", "scope_contains": "<file>", "max_occurrences": 6 }
+      ]
+    },
+    {
+      "id": "valref-pointer-extraction",
+      "description": "ValRef backing handles expose pointer-derived numeric identity",
+      "pattern": "Rc::as_ptr(&self.0) as *const ()",
+      "allowed": [
+        { "path": "src/core/src/types/mod.rs", "scope_contains": "impl<T> Ref<T>", "max_occurrences": 2 }
+      ]
+    },
+    {
+      "id": "program-cell-pointer-identity",
+      "description": "Program update deduplication derives identity from ValRef addresses",
+      "pattern": "let target_address = update.target.as_ptr() as usize",
+      "allowed": [
+        { "path": "src/engine/src/program/instance.rs", "scope_contains": "fn prepare_cell_updates", "max_occurrences": 1 }
+      ]
+    },
+    {
+      "id": "live-resource-binding-address",
+      "description": "RuntimeLiveResourceBinding target identity uses the ValRef address",
+      "pattern": "self.target.as_ptr() as usize",
+      "allowed": [
+        { "path": "src/runtime/src/input.rs", "scope_contains": "fn target_address", "max_occurrences": 1 }
+      ]
+    }
+  ]
+}
