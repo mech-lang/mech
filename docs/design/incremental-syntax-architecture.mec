@@ -35,13 +35,26 @@ Phase 2I-A adds only the generated dependency contract. Phase 2I-B freezes the
 representation of all 80 members in
 `docs/design/grammar-audit/phase-2i-syntax-schema.tsv`: 71 unconditional nodes,
 seven conditional precedence nodes, and two transparent aliases. It reserves
-73 append-only syntax kinds and reuses five existing kinds. Current canonical
-progress remains 328 / 539, and the recursive parser itself remains absent.
+73 append-only syntax kinds and reuses five existing kinds. Phase 2I-C now
+implements clean, lossless recognition for all 80 rules. Current canonical
+progress remains 328 / 539 because every Phase 2I rule remains unactivated.
 
 `phase-2i-recursive-core.tsv` defines membership and dependencies.
 `phase-2i-syntax-schema.tsv` defines module ownership and concrete tree
-emission. Phase 2I-B introduces no production parser, typed view, lowerer,
-parser root, or port activation.
+emission. Phase 2I-C adds the complete clean recognizer without a public parser
+root or port activation. Local malformed-input recovery, typed syntax,
+compatibility lowering, and parity certification remain pending. Shared
+parenthesis, bracket, brace, colon, identifier, and kind prefixes are handled
+without exponential reparsing.
+
+`MATCH-001` permits whitespace before an expression match question mark and is
+the one accepted-language correction in Phase 2I-C. Expression-level set and
+matrix comprehensions retain their formal priority over formula parsing, while
+set comprehensions remain unavailable as factors. Complete record candidates
+may fall through to maps after clean failure with measured-linear nested-prefix
+growth. Matrix structure selection preserves leading whitespace, newlines, and
+box borders, and every recursive repetition propagates committed child
+recovery. The 80 rules remain unactivated and progress remains 328 / 539.
 
 The legacy parser, public `parse` API, existing `Program` AST, formatter,
 interpreter, runtime, and accepted grammar remain unchanged while this

@@ -1,11 +1,11 @@
 Recursive Executable-Core Contract
 ===============================================================================
 
-Status: Phase 2I-B frozen syntax-emission contract.
+Status: Phase 2I-C complete clean recursive recognizer.
 
-Current canonical progress remains 328 / 539. Phase 2I-B ports zero
-productions. The generated implementation boundary contains 80 rules across
-one strongly connected component.
+Current canonical progress remains 328 / 539. Phase 2I-C implements clean,
+lossless recognition for all 80 rules but activates zero productions. The
+generated implementation boundary remains one strongly connected component.
 
 The authoritative member inventory is
 `docs/design/grammar-audit/phase-2i-recursive-core.tsv`. The generated count is
@@ -53,8 +53,8 @@ typed grammar syntax to reproduce every generated edge.
 All Phase 2I production code uses the canonical event-based parser.
 
 Nom is frozen legacy infrastructure. Phase 2I production code uses only the
-canonical event-based parser kernel. No Phase 2I parser behavior is implemented
-by calling, wrapping, translating, or extending a Nom parser.
+canonical event-based parser kernel. The Phase 2I-C recognizer does not call,
+wrap, translate, or extend a Nom parser.
 
 `ParseString` and `ParseResult` do not appear in canonical recursive-core code.
 Legacy parser functions may later be invoked only by isolated test-oracle
@@ -108,6 +108,7 @@ The planned parser layout is:
 
 ```text
 parser/canonical/recursive_core/
+  mod.rs
   kinds.rs
   literals.rs
   variables.rs
@@ -132,8 +133,13 @@ The implementation uses ordinary mutually recursive Rust functions. It does
 not introduce a parser generator, boxed parser closures, a Nom-like combinator
 framework, or one monolithic `recursive_core.rs` module.
 
-Phase 2I-B creates none of those future module directories. It introduces no
-production parser, typed view, lowerer, parser root, or port activation.
+Phase 2I-C creates the parser directory above and implements the complete clean
+recognizer. The typed-syntax and compatibility-lowering directories remain
+absent. No parser root or port activation is introduced.
+
+`MATCH-001` records the accepted-language correction that expression match
+suffixes permit whitespace before their question mark. The optional suffix
+owns that whitespace only when the following question mark matches.
 
 5. Complete-form selection
 -------------------------------------------------------------------------------
@@ -151,7 +157,9 @@ The required distinctions include:
 [1 2]             matrix
 [x | x <- xs]     matrix comprehension
 
-{a: b}            map
+{a: b}            record
+{1: b}            map
+{a: b, 1: c}      map after the complete record candidate fails cleanly
 {a, b}            set
 {a | a <- xs}     set comprehension
 {}                 empty set
@@ -234,5 +242,17 @@ This is the complete current parser-root API.
 2I-E  parity and atomic registry activation
 ```
 
-Phase 2I-B freezes representation only. Phase 2I-C implements all 80 mutually
-recursive productions against this fixed schema without partial activation.
+Phase 2I-C implements clean, lossless recognition for all 80 mutually recursive
+productions against the frozen schema. All 80 rules remain unactivated. Local
+malformed-input recovery, typed syntax, compatibility lowering, and parity
+certification remain pending.
+
+Shared parenthesis, bracket, brace, colon, identifier, and kind prefixes are
+handled without exponential reparsing. Expression-level set and matrix
+comprehensions retain their formal priority over formula parsing; set
+comprehensions are not factor forms. Complete record candidates may fall
+through to maps, and that selection remains measured-linear for nested
+record-looking maps. Matrix nodes retain leading whitespace, physical newlines,
+and box borders. Every recursive repetition propagates a committed child
+without discarding its diagnostic or parent structure. No public parser root is
+added.
