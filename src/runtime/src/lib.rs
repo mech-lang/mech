@@ -39,6 +39,8 @@ pub mod service;
 pub mod store;
 #[cfg(feature = "runtime")]
 pub mod transaction;
+#[cfg(feature = "runtime")]
+pub mod turn_record;
 #[cfg(all(feature = "watcher", feature = "source"))]
 mod workspace;
 
@@ -78,6 +80,8 @@ pub use self::service::*;
 pub use self::store::*;
 #[cfg(feature = "runtime")]
 pub use self::transaction::*;
+#[cfg(feature = "runtime")]
+pub use self::turn_record::*;
 #[cfg(all(feature = "watcher", feature = "source"))]
 pub use self::workspace::*;
 
