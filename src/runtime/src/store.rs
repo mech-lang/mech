@@ -1762,6 +1762,8 @@ impl MechErrorKind for StoreCapabilityNotRevocableError {
 mod tests {
     use super::*;
 
+    mod prepared_commit;
+
     use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
 
     use crate::event::{RuntimeEvent, RuntimeEventKind};
