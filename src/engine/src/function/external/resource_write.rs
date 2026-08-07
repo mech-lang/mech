@@ -1,7 +1,7 @@
 use mech_core::{
     ExecutionResourceRequest, InitialSolvePolicy, MResult, MechError, MechErrorKind,
-    MechExecutionServices, MechFunctionImpl, NoMechExecutionServices, ReactiveSolveStatus,
-    ResourceIntent, ValRef, Value,
+    MechExecutionServices, MechFunctionImpl, NoMechExecutionServices, ReactiveDependencyScope,
+    ReactiveSolveStatus, ResourceIntent, ValRef, Value,
 };
 
 #[cfg(feature = "compiler")]
@@ -74,6 +74,13 @@ impl MechFunctionImpl for ExternalResourceWriteFunction {
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
         self.initial_solve_policy
+    }
+
+    fn reactive_dependency_scopes(
+        &self,
+        argument_count: usize,
+    ) -> Option<Vec<ReactiveDependencyScope>> {
+        Some(vec![ReactiveDependencyScope::Logical; argument_count])
     }
 
     fn initialize_preserved_output_with(

@@ -195,22 +195,22 @@ mod tests {
             [
                 "mech-combinatorics",
                 "mech-compare",
+                "mech-console",
                 "mech-core",
                 "mech-engine",
-                "mech-terminal",
-                "mech-console",
-                "mech-robot-arm",
-                "mech-scene",
-                "mech-time",
-                "mech-timer",
                 "mech-logic",
                 "mech-math",
                 "mech-matrix",
                 "mech-range",
+                "mech-robot-arm",
                 "mech-runtime",
+                "mech-scene",
                 "mech-set",
                 "mech-stats",
                 "mech-string",
+                "mech-terminal",
+                "mech-time",
+                "mech-timer",
             ]
         );
         assert!(registry.select(["mech-stdlib"]).is_err());

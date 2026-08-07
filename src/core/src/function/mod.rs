@@ -792,6 +792,7 @@ pub enum ReactiveDependencyKind {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ReactiveDependencyScope {
     Recursive,
+    Logical,
     Root,
     None,
 }
@@ -1556,6 +1557,7 @@ impl ReactivePlan {
         {
             let cells = match scope {
                 ReactiveDependencyScope::Recursive => argument.reactive_cell_ids(),
+                ReactiveDependencyScope::Logical => argument.logical_reactive_cell_ids(),
                 ReactiveDependencyScope::Root => argument.reactive_root_cell_ids(),
                 ReactiveDependencyScope::None => Vec::new(),
             };

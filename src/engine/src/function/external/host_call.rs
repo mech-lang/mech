@@ -1,7 +1,8 @@
 use crate::apply_stable_value_update;
 use mech_core::{
     ExecutionHostFunctionRequest, InitialSolvePolicy, MResult, MechExecutionServices,
-    MechFunctionImpl, NoMechExecutionServices, ReactiveSolveStatus, ValRef, Value,
+    MechFunctionImpl, NoMechExecutionServices, ReactiveDependencyScope, ReactiveSolveStatus,
+    ValRef, Value,
 };
 
 #[cfg(feature = "compiler")]
@@ -54,6 +55,13 @@ impl MechFunctionImpl for ExternalHostCallFunction {
 
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
         self.initial_solve_policy
+    }
+
+    fn reactive_dependency_scopes(
+        &self,
+        argument_count: usize,
+    ) -> Option<Vec<ReactiveDependencyScope>> {
+        Some(vec![ReactiveDependencyScope::Logical; argument_count])
     }
 
     fn out(&self) -> Value {

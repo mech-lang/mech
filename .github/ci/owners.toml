@@ -14,7 +14,7 @@ cross_cutting = true
 
 [owners.mech-syntax]
 paths = ["src/syntax/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-syntax", "--lib", "--all-features"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-syntax", "--lib", "--no-default-features", "--features", "full"]
 standard = true
 cross_cutting = true
 

@@ -81,6 +81,7 @@ jobs:
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Build and exercise the lean standard distribution
         run: |
+          cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 build --locked --bin mech
           target/debug/mech --version | grep '(standard)'
           target/debug/mech test tests/fixtures/standard-dynamic-matrix.mec

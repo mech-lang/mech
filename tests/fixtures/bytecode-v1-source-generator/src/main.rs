@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
 
-use mech_build::standard_planning_host_factory;
+use mech_build::selected_planning_host_factory;
 use mech_core::{
     BytecodeInstruction, ModuleManifestConfig, ModuleManifestExportConfig,
     ModuleManifestExportKind, ParsedProgram, Ref, Value,
@@ -89,7 +89,7 @@ fn cli_builder() -> RuntimeBuilder {
     RuntimeBuilder::new()
         .planning()
         .function_catalog(mech_stdlib::source_catalog())
-        .host_factory(standard_planning_host_factory("cli").unwrap())
+        .host_factory(selected_planning_host_factory("cli").unwrap())
         .unwrap()
         .host_instance(HostInstanceConfig {
             name: "cli".to_owned(),
@@ -108,7 +108,7 @@ fn host_builder(provider: &str) -> RuntimeBuilder {
     RuntimeBuilder::new()
         .planning()
         .function_catalog(mech_stdlib::source_catalog())
-        .host_factory(standard_planning_host_factory(provider).unwrap())
+        .host_factory(selected_planning_host_factory(provider).unwrap())
         .unwrap()
         .host_instance(HostInstanceConfig {
             name: instance.to_owned(),

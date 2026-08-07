@@ -1258,18 +1258,10 @@ mod external_bytecode_tests {
                 (1, 0, "ExternalResourceWriteFunction".into()),
             ]
         );
-        // Bytecode inputs retain both the stable outer register cell and the
-        // recursively observed payload cell. The source form has no outer
-        // register cell, while the executable node sequence remains identical.
-        assert_eq!(
-            plan_shape(&loaded),
-            vec![
-                (2, 1, "ExternalHostCallFunction".into()),
-                (0, 1, "ExternalResourceReadFunction".into()),
-                (2, 0, "ExternalResourceWriteFunction".into()),
-                (2, 0, "ExternalResourceWriteFunction".into()),
-            ]
-        );
+        // Functions retain stable register wrappers for execution, while the
+        // reactive graph records the logical payload dependencies represented
+        // by the source plan.
+        assert_eq!(plan_shape(&loaded), source_shape);
 
         let live_target = services.bindings[0].2;
         loaded
