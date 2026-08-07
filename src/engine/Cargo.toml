@@ -134,7 +134,7 @@ stdlib = [
   "row_vectord", "vectord", "matrixd",
   "subscript_range", "logical_indexing", "swizzle",
   "subscript_formula", "dot_indexing",
-  "variable_define", "variable_assign", "kind_define",
+  "variable_define", "variable_assign", "invariant_define", "kind_define",
   "kind_annotation", "variables", "functions", "formulas",
   "access", "assign", "convert",
   "mech-core/stdlib", "mech-syntax?/stdlib",
