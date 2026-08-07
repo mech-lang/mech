@@ -7,7 +7,11 @@ mod extension;
 pub mod id;
 #[cfg(feature = "runtime")]
 pub mod input;
+#[cfg(feature = "runtime")]
+mod ledger;
 pub mod operation;
+#[cfg(feature = "runtime")]
+mod outbox;
 mod resource;
 #[cfg(feature = "runtime")]
 mod snapshot;
@@ -20,6 +24,8 @@ pub mod actor_behavior;
 pub mod capability;
 #[cfg(feature = "runtime")]
 pub mod context;
+#[cfg(feature = "runtime")]
+mod context_events;
 #[cfg(feature = "runtime")]
 pub mod event;
 pub mod host;
@@ -37,6 +43,8 @@ pub mod service;
 pub mod store;
 #[cfg(feature = "runtime")]
 pub mod transaction;
+#[cfg(feature = "runtime")]
+mod turn_record;
 #[cfg(all(feature = "watcher", feature = "source"))]
 mod workspace;
 
@@ -78,6 +86,120 @@ pub use self::store::*;
 pub use self::transaction::*;
 #[cfg(all(feature = "watcher", feature = "source"))]
 pub use self::workspace::*;
+
+/// Provisional Gate A recording primitives for controlled benchmarks only.
+///
+/// This facade is intentionally hidden behind a non-default probe feature. The
+/// normal runtime API does not expose these types while the canonical receipt,
+/// value, slot, schema, and epoch model is still under design.
+#[doc(hidden)]
+#[cfg(all(feature = "runtime", feature = "runtime_bench_probes"))]
+pub mod __gate_a_recording {
+    use mech_core::MResult;
+
+    pub use crate::ledger::{
+        LedgerPermit, OwnedTurnRecordQueue, RecordBufferPool, RecordEstimate, RetainedTurnLedger,
+    };
+    pub use crate::outbox::{
+        OutboxDeliveryPolicy, OutboxEffectId, OutboxPermit, OwnedEffectIntent, RetainedEffectOutbox,
+    };
+    pub use crate::turn_record::{AccountedRecord, LedgerSequence, TurnId};
+
+    use crate::{
+        ledger::{PreparedLedgerAppend, TurnLedger},
+        outbox::PreparedOutboxBatch,
+    };
+
+    /// A prepared retained-ledger append bound to its originating destination.
+    #[must_use = "prepared records must be appended or dropped"]
+    pub struct PreparedRetainedAppend<'a, R: AccountedRecord> {
+        ledger: &'a mut RetainedTurnLedger<R>,
+        prepared: PreparedLedgerAppend<R>,
+    }
+
+    impl<R: AccountedRecord> PreparedRetainedAppend<'_, R> {
+        pub fn append(self) -> LedgerSequence {
+            TurnLedger::append(self.ledger, self.prepared)
+        }
+    }
+
+    pub fn reserve_retained<R: AccountedRecord>(
+        ledger: &RetainedTurnLedger<R>,
+        estimate: RecordEstimate,
+    ) -> MResult<LedgerPermit> {
+        TurnLedger::reserve(ledger, estimate)
+    }
+
+    pub fn prepare_retained<'a, R: AccountedRecord>(
+        ledger: &'a mut RetainedTurnLedger<R>,
+        permit: LedgerPermit,
+        record: R,
+    ) -> MResult<PreparedRetainedAppend<'a, R>> {
+        let prepared = TurnLedger::prepare_append(ledger, permit, record)?;
+        Ok(PreparedRetainedAppend { ledger, prepared })
+    }
+
+    /// A prepared queue append that publishes only to its originating queue.
+    #[must_use = "prepared records must be appended or dropped"]
+    pub struct PreparedQueueAppend<R> {
+        queue: OwnedTurnRecordQueue<R>,
+        prepared: PreparedLedgerAppend<R>,
+    }
+
+    impl<R: Send + 'static> PreparedQueueAppend<R> {
+        pub fn append(self) -> LedgerSequence {
+            self.queue.append(self.prepared)
+        }
+    }
+
+    pub fn reserve_queue<R>(
+        queue: &OwnedTurnRecordQueue<R>,
+        estimate: RecordEstimate,
+    ) -> MResult<LedgerPermit> {
+        queue.reserve(estimate)
+    }
+
+    pub fn prepare_queue<R: AccountedRecord + Send + 'static>(
+        queue: &OwnedTurnRecordQueue<R>,
+        permit: LedgerPermit,
+        record: R,
+    ) -> MResult<PreparedQueueAppend<R>> {
+        let prepared = queue.prepare_append(permit, record)?;
+        Ok(PreparedQueueAppend {
+            queue: queue.clone(),
+            prepared,
+        })
+    }
+
+    /// A prepared effect batch bound to its originating outbox.
+    #[must_use = "prepared effect batches must be appended or dropped"]
+    pub struct PreparedEffectBatch<'a, P> {
+        outbox: &'a mut RetainedEffectOutbox<P>,
+        prepared: PreparedOutboxBatch<P>,
+    }
+
+    impl<P> PreparedEffectBatch<'_, P> {
+        pub fn append(self) {
+            self.outbox.append(self.prepared);
+        }
+    }
+
+    pub fn reserve_outbox<P>(
+        outbox: &RetainedEffectOutbox<P>,
+        estimate: RecordEstimate,
+    ) -> MResult<OutboxPermit> {
+        outbox.reserve(estimate)
+    }
+
+    pub fn prepare_outbox<'a, P: AccountedRecord + Send + 'static>(
+        outbox: &'a mut RetainedEffectOutbox<P>,
+        permit: OutboxPermit,
+        effects: Vec<OwnedEffectIntent<P>>,
+    ) -> MResult<PreparedEffectBatch<'a, P>> {
+        let prepared = outbox.prepare_batch(permit, effects)?;
+        Ok(PreparedEffectBatch { outbox, prepared })
+    }
+}
 
 #[doc(hidden)]
 #[cfg(feature = "native-link")]

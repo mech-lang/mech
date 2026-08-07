@@ -338,15 +338,13 @@ impl MechRuntime {
                 ));
             }
 
-            let store_before = self
-                .active_execution_transaction(transaction_id)?
-                .store
-                .clone();
-            let overlay_mark = self
-                .active_execution_transaction(transaction_id)?
-                .capabilities
-                .mark();
-            let context_events_before = context.events.clone();
+            let transaction = self.active_execution_transaction(transaction_id)?;
+            #[cfg(any(test, feature = "runtime_bench_probes"))]
+            crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+                transaction.store.gate_a_staged_item_count(),
+            );
+            let store_before = transaction.store.clone();
+            let overlay_mark = transaction.capabilities.mark();
             let context_authority_before = context.authority.clone();
 
             self.active_execution_transaction_mut(transaction_id)?
@@ -359,7 +357,6 @@ impl MechRuntime {
                 let transaction = self.active_execution_transaction_mut(transaction_id)?;
                 transaction.store = store_before;
                 let rollback_result = transaction.capabilities.rollback_to(overlay_mark);
-                context.events = context_events_before;
                 context.authority = context_authority_before;
                 rollback_result?;
                 return Err(error);
@@ -382,14 +379,10 @@ impl MechRuntime {
             return Err(finish_failed_capability_grant(id, error, rollback_failures));
         }
 
-        let context_events_before = context.events.clone();
-
         if let Err(error) = self.emit_event_to_context(
             context,
             RuntimeEventKind::CapabilityGranted { capability_id: id },
         ) {
-            context.events = context_events_before;
-
             let mut rollback_failures = Vec::new();
             if let Err(rollback_error) = self.capability_kernel.rollback_grant(id) {
                 rollback_failures.push(("capability kernel", rollback_error));
@@ -448,15 +441,13 @@ impl MechRuntime {
                 ));
             }
 
-            let store_before = self
-                .active_execution_transaction(transaction_id)?
-                .store
-                .clone();
-            let overlay_mark = self
-                .active_execution_transaction(transaction_id)?
-                .capabilities
-                .mark();
-            let context_events_before = context.events.clone();
+            let transaction = self.active_execution_transaction(transaction_id)?;
+            #[cfg(any(test, feature = "runtime_bench_probes"))]
+            crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+                transaction.store.gate_a_staged_item_count(),
+            );
+            let store_before = transaction.store.clone();
+            let overlay_mark = transaction.capabilities.mark();
             let context_authority_before = context.authority.clone();
 
             self.active_execution_transaction_mut(transaction_id)?
@@ -472,7 +463,6 @@ impl MechRuntime {
                 let transaction = self.active_execution_transaction_mut(transaction_id)?;
                 transaction.store = store_before;
                 let rollback_result = transaction.capabilities.rollback_to(overlay_mark);
-                context.events = context_events_before;
                 context.authority = context_authority_before;
                 rollback_result?;
                 return Err(error);

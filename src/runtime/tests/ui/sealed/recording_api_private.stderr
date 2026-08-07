@@ -1,0 +1,49 @@
+error[E0603]: module `ledger` is private
+ --> tests/ui/sealed/recording_api_private.rs:1:19
+  |
+1 | use mech_runtime::ledger::RetainedTurnLedger;
+  |                   ^^^^^^ private module
+  |
+note: the module `ledger` is defined here
+ --> src/lib.rs
+  |
+  | mod ledger;
+  | ^^^^^^^^^^
+
+error[E0603]: module `outbox` is private
+ --> tests/ui/sealed/recording_api_private.rs:2:19
+  |
+2 | use mech_runtime::outbox::RetainedEffectOutbox;
+  |                   ^^^^^^ private module
+  |
+note: the module `outbox` is defined here
+ --> src/lib.rs
+  |
+  | mod outbox;
+  | ^^^^^^^^^^
+
+error[E0603]: module `turn_record` is private
+ --> tests/ui/sealed/recording_api_private.rs:3:19
+  |
+3 | use mech_runtime::turn_record::{AccountedRecord, LedgerSequence, TurnId, TurnRecordHeader};
+  |                   ^^^^^^^^^^^   --------------- trait `AccountedRecord` is not publicly re-exported
+  |                   |
+  |                   private module
+  |
+note: the module `turn_record` is defined here
+ --> src/lib.rs
+  |
+  | mod turn_record;
+  | ^^^^^^^^^^^^^^^
+
+error[E0603]: module `turn_record` is private
+ --> tests/ui/sealed/recording_api_private.rs:3:19
+  |
+3 | use mech_runtime::turn_record::{AccountedRecord, LedgerSequence, TurnId, TurnRecordHeader};
+  |                   ^^^^^^^^^^^ private module
+  |
+note: the module `turn_record` is defined here
+ --> src/lib.rs
+  |
+  | mod turn_record;
+  | ^^^^^^^^^^^^^^^

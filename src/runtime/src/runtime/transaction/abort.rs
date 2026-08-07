@@ -107,9 +107,12 @@ impl MechRuntime {
             }
         }
 
-        envelope
+        if let Err(error) = envelope
             .context_baseline
-            .restore_preserving_consumption(context);
+            .restore_preserving_consumption(context)
+        {
+            rollback_failures.push(format!("context baseline restore failed: {:?}", error));
+        }
         if let Err(error) = self.validate_context_for_runtime(context) {
             rollback_failures.push(format!(
                 "context baseline restore invariant failed: {:?}",
@@ -175,7 +178,14 @@ impl MechRuntime {
             rollback_failures.push(format!(
         "transaction-aborted event publication failed for transaction {transaction_id}: {:?}",
         error,
-      ));
+            ));
+        }
+
+        if let Err(error) = context.finish_event_transaction_scope() {
+            rollback_failures.push(format!(
+                "context event compaction after abort failed: {:?}",
+                error,
+            ));
         }
 
         Ok((transaction_id, rollback_failures))
@@ -248,6 +258,14 @@ impl MechRuntime {
         }
         if context.transaction == Some(transaction_id) {
             context.transaction = None;
+        }
+        if context.transaction.is_none() {
+            if let Err(error) = context.finish_event_transaction_scope() {
+                failures.push(format!(
+                    "best-effort context event compaction failed: {:?}",
+                    error,
+                ));
+            }
         }
         if self
             .active_program_operation

@@ -42,6 +42,15 @@ use crate::resolver::{
     SourceImportAlias, SourceImportDeclaration, SourceScope, import_requires_source_dependency,
 };
 
+#[path = "store_prepared_commit.rs"]
+mod prepared_commit;
+#[path = "store_validation.rs"]
+mod validation;
+
+#[cfg(test)]
+#[path = "store_prepared_commit_tests.rs"]
+mod prepared_commit_tests;
+
 // -----------------------------------------------------------------------------
 // Store Trait
 // -----------------------------------------------------------------------------
@@ -912,7 +921,7 @@ pub struct InMemoryStore {
     revoked_capabilities: HashMap<CapabilityId, bool>,
 
     events: HashMap<EventId, RuntimeEvent>,
-    event_order: Vec<EventId>,
+    event_order: VecDeque<EventId>,
     max_events: Option<usize>,
 
     transactions: HashMap<TransactionId, TransactionRecord>,
@@ -931,6 +940,30 @@ pub struct InMemoryStore {
 impl InMemoryStore {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
+    fn gate_a_cloned_record_count(&self) -> usize {
+        self.modules.len()
+            + self.module_versions.len()
+            + self.active_module_versions.len()
+            + self.objects.len()
+            + self.tasks.len()
+            + self.actors.len()
+            + self.mailboxes.len()
+            + self.mailboxes.values().map(VecDeque::len).sum::<usize>()
+            + self.capabilities.len()
+            + self.capabilities_by_subject.len()
+            + self
+                .capabilities_by_subject
+                .values()
+                .map(Vec::len)
+                .sum::<usize>()
+            + self.revoked_capabilities.len()
+            + self.events.len()
+            + self.event_order.len()
+            + self.transactions.len()
+            + self.transaction_order.len()
     }
 
     #[cfg(test)]
@@ -964,8 +997,7 @@ impl InMemoryStore {
     fn prune_events(&mut self) {
         if let Some(max_events) = self.max_events {
             while self.event_order.len() > max_events {
-                if let Some(removed) = self.event_order.first().copied() {
-                    self.event_order.remove(0);
+                if let Some(removed) = self.event_order.pop_front() {
                     self.events.remove(&removed);
                 }
             }
@@ -1011,78 +1043,6 @@ impl InMemoryStore {
             ));
         }
 
-        Ok(())
-    }
-
-    fn commit_module_put(&mut self, module: ModuleRecord) -> MResult<()> {
-        module.validate()?;
-        if module.id != module_id(&module.name) {
-            return Err(MechError::new(
-                InvalidStoreRecordError {
-                    field: "module.id",
-                    reason: "module ID does not match its canonical URI",
-                },
-                None,
-            ));
-        }
-
-        if let Some(existing) = self.modules.get(&module.id) {
-            if existing.name == module.name {
-                return Ok(());
-            }
-            return Err(MechError::new(
-                InvalidStoreRecordError {
-                    field: "module.id",
-                    reason: "module ID maps to another canonical URI",
-                },
-                None,
-            ));
-        }
-
-        if let Some(existing_id) = self.modules_by_name.get(&module.name) {
-            return Err(MechError::new(
-                InvalidStoreRecordError {
-                    field: "module.name",
-                    reason: if existing_id == &module.id {
-                        "module name index is missing its primary record"
-                    } else {
-                        "canonical URI maps to another module ID"
-                    },
-                },
-                None,
-            ));
-        }
-
-        self.modules_by_name.insert(module.name.clone(), module.id);
-        self.modules.insert(module.id, module);
-        Ok(())
-    }
-
-    fn commit_module_version_put(&mut self, version: ModuleVersionRecord) -> MResult<()> {
-        version.validate()?;
-        version.validate_import_edges()?;
-        self.ensure_module_exists(version.module)?;
-        for dependency in &version.dependencies {
-            self.ensure_module_version_exists(*dependency)?;
-        }
-        for edge in &version.import_edges {
-            self.ensure_module_version_exists(edge.dependency)?;
-        }
-
-        if let Some(existing) = self.module_versions.get(&version.id) {
-            if existing == &version {
-                return Ok(());
-            }
-            return Err(MechError::new(
-                InvalidStoreRecordError {
-                    field: "module_version.id",
-                    reason: "version ID maps to different contents",
-                },
-                None,
-            ));
-        }
-
-        self.module_versions.insert(version.id, version);
         Ok(())
     }
 }
@@ -1514,7 +1474,7 @@ impl MechStore for InMemoryStore {
 
         let id = event.id;
         self.events.insert(id, event);
-        self.event_order.push(id);
+        self.event_order.push_back(id);
         self.prune_events();
         Ok(id)
     }
@@ -1545,6 +1505,8 @@ impl MechStore for InMemoryStore {
     }
 
     fn commit_runtime(&mut self, commit: RuntimeStoreCommit) -> MResult<TransactionId> {
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_commit_runtime_call();
         #[cfg(test)]
         if let Some(counter) = &self.commit_runtime_calls {
             counter.fetch_add(1, Ordering::SeqCst);
@@ -1553,56 +1515,22 @@ impl MechStore for InMemoryStore {
         if self.panic_on_commit_runtime {
             panic!("deliberate store commit panic");
         }
-        let id = commit.transaction.id;
-        let mut temporary = self.clone();
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        let prepare_started = std::time::Instant::now();
+        let prepared = prepared_commit::PreparedInMemoryCommit::prepare(self, commit);
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_in_memory_store_prepare_duration(
+            prepare_started.elapsed(),
+        );
+        let prepared = prepared?;
 
-        for module in commit.module_puts {
-            temporary.commit_module_put(module)?;
-        }
-
-        for version in commit.module_version_puts {
-            temporary.commit_module_version_put(version)?;
-        }
-
-        for object in commit.object_puts {
-            temporary.put_object(object)?;
-        }
-
-        for object in commit.object_updates {
-            temporary.update_object(object)?;
-        }
-
-        for task in commit.task_updates {
-            temporary.update_task(task)?;
-        }
-
-        for actor in commit.actor_updates {
-            temporary.update_actor(actor)?;
-        }
-
-        for (actor, message) in commit.message_acks {
-            temporary.ack_message(actor, message)?;
-        }
-
-        for (actor, message) in commit.message_enqueues {
-            temporary.enqueue_message(actor, message)?;
-        }
-
-        for (capability, grant) in commit.capability_grants {
-            temporary.grant_capability(capability, grant)?;
-        }
-
-        for capability in commit.capability_revocations {
-            temporary.revoke_capability(capability)?;
-        }
-
-        for event in commit.events {
-            temporary.append_event(event)?;
-        }
-
-        temporary.commit_transaction(commit.transaction)?;
-        *self = temporary;
-
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        let apply_started = std::time::Instant::now();
+        let id = self.apply_prepared_runtime_commit(prepared);
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_in_memory_store_apply_duration(
+            apply_started.elapsed(),
+        );
         Ok(id)
     }
 
@@ -1622,6 +1550,8 @@ impl MechStore for InMemoryStore {
         let id = tx.id;
         self.transactions.insert(id, tx);
         self.transaction_order.push(id);
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_transaction_committed();
         Ok(id)
     }
 
@@ -1712,6 +1642,24 @@ pub struct StoreCapabilityNotRevocableError {
     pub capability: CapabilityId,
 }
 
+#[derive(Debug, Clone)]
+pub struct StoreCapacityReservationError {
+    pub structure: &'static str,
+}
+
+impl MechErrorKind for StoreCapacityReservationError {
+    fn name(&self) -> &str {
+        "StoreCapacityReservation"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "unable to reserve capacity for in-memory store structure `{}`",
+            self.structure
+        )
+    }
+}
+
 impl MechErrorKind for StoreCapabilityNotRevocableError {
     fn name(&self) -> &str {
         "StoreCapabilityNotRevocable"
@@ -1753,6 +1701,67 @@ mod tests {
             message_enqueues: Vec::new(),
             events: Vec::new(),
         }
+    }
+
+    #[test]
+    fn gate_a_store_clone_count_sums_logical_records_and_indexes() {
+        let mut store = InMemoryStore::new();
+        store
+            .modules
+            .insert(ModuleId(1), ModuleRecord::new(ModuleId(1), "one"));
+        store.modules_by_name.insert("one".to_string(), ModuleId(1));
+        store.module_versions.insert(
+            ModuleVersionId(2),
+            ModuleVersionRecord::new(ModuleVersionId(2), ModuleId(1), 1),
+        );
+        store
+            .active_module_versions
+            .insert(ModuleId(1), ModuleVersionId(2));
+        store.objects.insert(
+            ObjectId(3),
+            ObjectRecord::text(ObjectId(3), "object", "value"),
+        );
+        store
+            .tasks
+            .insert(TaskId(4), TaskRecord::new(TaskId(4), "task:4"));
+        store
+            .actors
+            .insert(ActorId(5), ActorRecord::new(ActorId(5), "actor:5"));
+        store.mailboxes.insert(
+            ActorId(5),
+            VecDeque::from([MessageRecord::new(
+                MessageId(6),
+                ActorId(5),
+                "message",
+                Vec::new(),
+            )]),
+        );
+        let capability = Arc::new(BasicCapability::new(
+            CapabilityId(7),
+            &BasicSubject::new("subject"),
+            &BasicResource::new("resource"),
+            [BasicOperation::new("read")],
+        ));
+        store.capabilities.insert(CapabilityId(7), capability);
+        store
+            .capabilities_by_subject
+            .insert("subject".to_string(), vec![CapabilityId(7)]);
+        store.revoked_capabilities.insert(CapabilityId(7), false);
+        store.events.insert(
+            EventId(8),
+            RuntimeEvent::new(EventId(8), 0, RuntimeEventKind::RuntimeTickStarted),
+        );
+        store.event_order.push_back(EventId(8));
+        store.transactions.insert(
+            TransactionId(9),
+            TransactionRecord::new(TransactionId(9), "subject"),
+        );
+        store.transaction_order.push(TransactionId(9));
+
+        // The module-name index is deliberately excluded by the frozen Gate A
+        // diagnostic definition; all requested record and index families sum
+        // to sixteen logical retained items here.
+        assert_eq!(store.gate_a_cloned_record_count(), 16);
     }
 
     #[test]

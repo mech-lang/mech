@@ -1,0 +1,328 @@
+{
+  "architecture": "arm64",
+  "benchmark_arguments": [
+    "cargo",
+    "bench",
+    "-p",
+    "mech-runtime",
+    "--bench",
+    "recording_primitives",
+    "--features",
+    "runtime_default,runtime_bench_probes",
+    "--",
+    "--noplot",
+    "--sample-size",
+    "10"
+  ],
+  "criterion": [
+    {
+      "benchmark": "gate_a_recording_effect_outbox/0",
+      "median_ns": 42.0,
+      "p95_ns": 156.39999999999978,
+      "sample_count": 10
+    },
+    {
+      "benchmark": "gate_a_recording_effect_outbox/1000",
+      "median_ns": 42.0,
+      "p95_ns": 42.0,
+      "sample_count": 10
+    },
+    {
+      "benchmark": "gate_a_recording_effect_outbox/100000",
+      "median_ns": 42.0,
+      "p95_ns": 65.09999999999995,
+      "sample_count": 10
+    },
+    {
+      "benchmark": "gate_a_recording_owned_queue/0",
+      "median_ns": 41.0,
+      "p95_ns": 42.0,
+      "sample_count": 10
+    },
+    {
+      "benchmark": "gate_a_recording_owned_queue/1000",
+      "median_ns": 41.0,
+      "p95_ns": 42.0,
+      "sample_count": 10
+    },
+    {
+      "benchmark": "gate_a_recording_owned_queue/100000",
+      "median_ns": 41.0,
+      "p95_ns": 42.0,
+      "sample_count": 10
+    },
+    {
+      "benchmark": "gate_a_recording_record_pool/0",
+      "median_ns": 41.0,
+      "p95_ns": 42.00000000000001,
+      "sample_count": 10
+    },
+    {
+      "benchmark": "gate_a_recording_record_pool/1000",
+      "median_ns": 1.0000000000000002,
+      "p95_ns": 42.0,
+      "sample_count": 10
+    },
+    {
+      "benchmark": "gate_a_recording_record_pool/100000",
+      "median_ns": 41.5,
+      "p95_ns": 42.0,
+      "sample_count": 10
+    },
+    {
+      "benchmark": "gate_a_recording_retained_ledger/0",
+      "median_ns": 42.0,
+      "p95_ns": 42.0,
+      "sample_count": 10
+    },
+    {
+      "benchmark": "gate_a_recording_retained_ledger/1000",
+      "median_ns": 41.0,
+      "p95_ns": 42.0,
+      "sample_count": 10
+    },
+    {
+      "benchmark": "gate_a_recording_retained_ledger/100000",
+      "median_ns": 42.0,
+      "p95_ns": 42.00000000000001,
+      "sample_count": 10
+    }
+  ],
+  "git_commit": "0141a6a8b47b10f391bfbead40fe55a3ff987dec",
+  "hardware": "MacBook Air, Mac15,13, Apple M3",
+  "os": "macOS-26.2-arm64-arm-64bit",
+  "probes": [
+    {
+      "accounted_record_bytes": 27,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 417,
+      "deallocation_count": 1,
+      "history": 0,
+      "operation": "recording_effect_outbox",
+      "pool_reuse": false,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 1375,
+      "reserve_time_ns": 1250
+    },
+    {
+      "accounted_record_bytes": 30,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 41,
+      "deallocation_count": 1,
+      "history": 1000,
+      "operation": "recording_effect_outbox",
+      "pool_reuse": false,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 84,
+      "reserve_time_ns": 41
+    },
+    {
+      "accounted_record_bytes": 32,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 0,
+      "deallocation_count": 1,
+      "history": 100000,
+      "operation": "recording_effect_outbox",
+      "pool_reuse": false,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 83,
+      "reserve_time_ns": 0
+    },
+    {
+      "accounted_record_bytes": 32,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 250,
+      "deallocation_count": 0,
+      "history": 0,
+      "operation": "recording_owned_queue",
+      "pool_reuse": false,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 458,
+      "reserve_time_ns": 333
+    },
+    {
+      "accounted_record_bytes": 32,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 0,
+      "deallocation_count": 0,
+      "history": 1000,
+      "operation": "recording_owned_queue",
+      "pool_reuse": false,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 41,
+      "reserve_time_ns": 42
+    },
+    {
+      "accounted_record_bytes": 32,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 42,
+      "deallocation_count": 0,
+      "history": 100000,
+      "operation": "recording_owned_queue",
+      "pool_reuse": false,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 0,
+      "reserve_time_ns": 0
+    },
+    {
+      "accounted_record_bytes": 64,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 42,
+      "deallocation_count": 0,
+      "history": 0,
+      "operation": "recording_record_pool",
+      "pool_reuse": false,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 292,
+      "reserve_time_ns": 333
+    },
+    {
+      "accounted_record_bytes": 64,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 0,
+      "deallocation_count": 0,
+      "history": 1000,
+      "operation": "recording_record_pool",
+      "pool_reuse": true,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 0,
+      "reserve_time_ns": 0
+    },
+    {
+      "accounted_record_bytes": 64,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 0,
+      "deallocation_count": 0,
+      "history": 100000,
+      "operation": "recording_record_pool",
+      "pool_reuse": true,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 0,
+      "reserve_time_ns": 42
+    },
+    {
+      "accounted_record_bytes": 32,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 416,
+      "deallocation_count": 0,
+      "history": 0,
+      "operation": "recording_retained_ledger",
+      "pool_reuse": false,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 208,
+      "reserve_time_ns": 542
+    },
+    {
+      "accounted_record_bytes": 32,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 42,
+      "deallocation_count": 0,
+      "history": 1000,
+      "operation": "recording_retained_ledger",
+      "pool_reuse": false,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 42,
+      "reserve_time_ns": 41
+    },
+    {
+      "accounted_record_bytes": 32,
+      "allocated_bytes": 0,
+      "allocation_count": 0,
+      "append_time_ns": 0,
+      "deallocation_count": 0,
+      "history": 100000,
+      "operation": "recording_retained_ledger",
+      "pool_reuse": false,
+      "post_publication_failure_branch": false,
+      "prepare_time_ns": 41,
+      "reserve_time_ns": 42
+    }
+  ],
+  "raw_criterion_directory": "/private/tmp/mech-a3-measure-20260807-r3/target/criterion",
+  "raw_output": "/private/tmp/mech-a3-measure-20260807-r3/target/gate-a-benchmark-runs/0141a6a8b47b10f391bfbead40fe55a3ff987dec/recording_primitives.log",
+  "runtime_limits": {
+    "effect_outbox": [
+      {
+        "history": 0,
+        "max_bytes": 64,
+        "max_effects": 1
+      },
+      {
+        "history": 1000,
+        "max_bytes": 64064,
+        "max_effects": 1001
+      },
+      {
+        "history": 100000,
+        "max_bytes": 6400064,
+        "max_effects": 100001
+      }
+    ],
+    "owned_queue": [
+      {
+        "history": 0,
+        "max_bytes": 32,
+        "max_records": 1
+      },
+      {
+        "history": 1000,
+        "max_bytes": 32032,
+        "max_records": 1001
+      },
+      {
+        "history": 100000,
+        "max_bytes": 3200032,
+        "max_records": 100001
+      }
+    ],
+    "record_buffer_pool": {
+      "max_reusable_capacity": 64,
+      "max_segments": 1,
+      "max_total_capacity": 64
+    },
+    "retained_ledger": [
+      {
+        "history": 0,
+        "max_bytes": 32,
+        "max_records": 1
+      },
+      {
+        "history": 1000,
+        "max_bytes": 32032,
+        "max_records": 1001
+      },
+      {
+        "history": 100000,
+        "max_bytes": 3200032,
+        "max_records": 100001
+      }
+    ],
+    "source": "src/runtime/benches/recording_primitives.rs"
+  },
+  "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+  "sample_protocol": {
+    "criterion_measured_phase": "append",
+    "criterion_sample_size": 10,
+    "extended_direct_store_sweep": false,
+    "fixed_history_per_sample": true,
+    "measured_operations_per_fixture": 1,
+    "profile": "release",
+    "setup_included_in_timing": false
+  },
+  "schema_version": 1,
+  "target_cpu": {
+    "CARGO_ENCODED_RUSTFLAGS": "",
+    "RUSTFLAGS": ""
+  }
+}

@@ -18,6 +18,7 @@ std = ["mech-core/std", "mech-engine/std"]
 no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-syntax?/no_std"]
 
 runtime = ["mech-engine/runtime"]
+runtime_bench_probes = ["mech-engine/runtime_bench_probes"]
 native-link = ["runtime", "string"]
 source = ["runtime", "mech-engine/source", "dep:mech-syntax"]
 compiler = ["source", "mech-engine/compiler"]
@@ -314,6 +315,11 @@ name = "module_smoke"
 path = "tests/module_smoke.rs"
 required-features = ["source_default"]
 
+[[test]]
+name = "recording_bench_facade"
+path = "tests/recording_bench_facade.rs"
+required-features = ["runtime_default", "runtime_bench_probes"]
+
 [[bench]]
 name = "program_transaction"
 harness = false
@@ -323,3 +329,13 @@ required-features = ["source_default"]
 name = "reactive_transaction"
 harness = false
 required-features = ["source_default"]
+
+[[bench]]
+name = "history_scaling"
+harness = false
+required-features = ["source_default", "runtime_bench_probes"]
+
+[[bench]]
+name = "recording_primitives"
+harness = false
+required-features = ["runtime_default", "runtime_bench_probes"]

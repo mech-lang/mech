@@ -139,6 +139,33 @@ fn stale_aborted_transaction_context_is_rejected_not_durable() {
 }
 
 #[test]
+fn active_transaction_context_clone_is_rejected_before_transaction_consumption() {
+    let mut runtime = new_runtime();
+    let mut owner_context = runtime.runtime_context().unwrap();
+    let transaction_id = runtime.begin_transaction(&mut owner_context).unwrap();
+    let mut cloned_context = owner_context.clone();
+
+    let error = runtime
+        .abort_runtime_transaction(&mut cloned_context, "cloned context")
+        .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeTransactionContextMismatch");
+    assert!(
+        error
+            .full_chain_message()
+            .contains("event storage does not match")
+    );
+    assert!(runtime.active_transactions.contains_key(&transaction_id));
+    assert_eq!(cloned_context.transaction, Some(transaction_id));
+    assert!(!runtime.is_poisoned());
+
+    runtime
+        .abort_runtime_transaction(&mut owner_context, "owner cleanup")
+        .unwrap();
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+}
+
+#[test]
 fn foreign_context_rejected_before_host_and_capability_boundaries() {
     let runtime_a = new_runtime();
     let mut runtime_b = new_runtime();

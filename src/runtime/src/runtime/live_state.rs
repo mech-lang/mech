@@ -57,7 +57,7 @@ impl RuntimeLiveContextTemplate {
             transaction: None,
             authority: self.authority.clone(),
             budget: self.budget_limits.clone(),
-            events: Vec::new(),
+            events: Default::default(),
             actor_message: self.actor_message.clone(),
             actor_state: self.actor_state,
         }

@@ -98,4 +98,5 @@ fn transaction_commit_persists_staged_events_once() {
     assert_eq!(unique.len(), record.events.len());
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
     assert_eq!(context.transaction, None);
+    assert_eq!(context.event_storage_physical_len(), context.events().len());
 }

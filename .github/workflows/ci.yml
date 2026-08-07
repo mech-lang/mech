@@ -60,6 +60,9 @@ jobs:
           python3 -B -m unittest tests.ci.test_ci_impact
           scripts/check-unsafe-boundaries.sh
           python3 scripts/check-runtime-factory-safety.py
+          python3 scripts/check-value-execution-boundary.py
+          python3 -B -m unittest scripts/tests/test_check_value_execution_boundary.py
+          python3 -B -m unittest scripts/tests/test_run_gate_a_benchmarks.py
           python3 scripts/check-bytecode-v1-format.py
           cargo +nightly-2026-03-03 fetch --locked
           python3 -B scripts/check-distribution-contracts.py --profile standard

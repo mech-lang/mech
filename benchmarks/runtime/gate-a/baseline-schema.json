@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mech-lang.org/schemas/runtime-gate-a-baseline-v1.json",
+  "title": "Mech runtime Gate A benchmark report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "git_commit",
+    "hardware",
+    "os",
+    "architecture",
+    "rustc",
+    "target_cpu",
+    "runtime_limits",
+    "sample_protocol",
+    "criterion",
+    "probes"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "git_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "hardware": { "type": "string", "minLength": 1 },
+    "os": { "type": "string", "minLength": 1 },
+    "architecture": { "type": "string", "minLength": 1 },
+    "rustc": { "type": "string", "minLength": 1 },
+    "target_cpu": { "type": "object" },
+    "runtime_limits": {},
+    "sample_protocol": { "type": "object" },
+    "benchmark_arguments": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "raw_criterion_directory": { "type": "string" },
+    "raw_output": { "type": "string" },
+    "criterion": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["benchmark", "sample_count", "median_ns", "p95_ns"]
+      }
+    },
+    "probes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "operation",
+          "history",
+          "allocation_count",
+          "deallocation_count",
+          "allocated_bytes"
+        ],
+        "oneOf": [
+          {
+            "title": "runtime transaction probe",
+            "required": [
+              "context_event_snapshot_count",
+              "context_event_snapshot_items",
+              "context_event_compaction_count",
+              "context_event_compaction_moved_items",
+              "context_event_visible_len",
+              "context_event_physical_len",
+              "runtime_transaction_savepoint_clone_count",
+              "runtime_transaction_savepoint_items",
+              "in_memory_store_clone_count",
+              "in_memory_store_cloned_records",
+              "in_memory_store_prepare_duration_ns",
+              "in_memory_store_apply_duration_ns",
+              "commit_runtime_call_count",
+              "program_checkpoint_count",
+              "reactive_journal_cell_count",
+              "events_appended",
+              "transactions_committed"
+            ]
+          },
+          {
+            "title": "recording primitive phase probe",
+            "required": [
+              "reserve_time_ns",
+              "prepare_time_ns",
+              "append_time_ns",
+              "accounted_record_bytes",
+              "pool_reuse",
+              "post_publication_failure_branch"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -618,15 +618,13 @@ impl MechRuntime {
         let cost = metadata.cost;
         context.charge_bytes(cost.bytes)?;
         context.charge_items(cost.items)?;
-        let store_before = self
-            .active_execution_transaction(transaction_id)?
-            .store
-            .clone();
-        let effect_mark = self
-            .active_execution_transaction(transaction_id)?
-            .effects
-            .mark();
-        let context_events_before = context.events.clone();
+        let transaction = self.active_execution_transaction(transaction_id)?;
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+            transaction.store.gate_a_staged_item_count(),
+        );
+        let store_before = transaction.store.clone();
+        let effect_mark = transaction.effects.mark();
         let effect_id = self
             .active_execution_transaction_mut(transaction_id)?
             .effects
@@ -652,7 +650,6 @@ impl MechRuntime {
                 transaction.effects.rollback_to(effect_mark)
             };
             drop(phase_guard);
-            context.events = context_events_before;
             if cleanup.is_empty() {
                 return Err(error);
             }
@@ -700,15 +697,13 @@ impl MechRuntime {
         let cost = metadata.cost;
         context.charge_bytes(cost.bytes)?;
         context.charge_items(cost.items)?;
-        let store_before = self
-            .active_execution_transaction(transaction_id)?
-            .store
-            .clone();
-        let effect_mark = self
-            .active_execution_transaction(transaction_id)?
-            .effects
-            .mark();
-        let context_events_before = context.events.clone();
+        let transaction = self.active_execution_transaction(transaction_id)?;
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+            transaction.store.gate_a_staged_item_count(),
+        );
+        let store_before = transaction.store.clone();
+        let effect_mark = transaction.effects.mark();
         let effect_id = self
             .active_execution_transaction_mut(transaction_id)?
             .effects
@@ -734,7 +729,6 @@ impl MechRuntime {
                 transaction.effects.rollback_to(effect_mark)
             };
             drop(phase_guard);
-            context.events = context_events_before;
             if cleanup.is_empty() {
                 return Err(error);
             }

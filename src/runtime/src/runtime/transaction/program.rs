@@ -130,6 +130,17 @@ pub(in crate::runtime) fn runtime_program_checkpoint_count() -> usize {
 }
 
 impl MechRuntime {
+    #[cfg(feature = "runtime_bench_probes")]
+    #[doc(hidden)]
+    pub fn gate_a_capture_runtime_operation_savepoint(
+        &self,
+        context: &mut RuntimeContext,
+    ) -> MResult<()> {
+        let transaction_id = Self::context_transaction_id(context)?;
+        let _savepoint = self.capture_runtime_operation_savepoint(context, transaction_id)?;
+        Ok(())
+    }
+
     #[cfg(feature = "invariant_define")]
     pub(in crate::runtime) fn emit_integrity_failure_audit(
         &mut self,
@@ -150,6 +161,8 @@ impl MechRuntime {
     }
 
     fn capture_runtime_program_checkpoint(&self) -> MResult<MechProgramCheckpoint> {
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_program_checkpoint();
         #[cfg(test)]
         RUNTIME_PROGRAM_CHECKPOINT_COUNT.with(|count| {
             count.set(count.get().saturating_add(1));
@@ -357,10 +370,15 @@ impl MechRuntime {
 
     pub(in crate::runtime) fn capture_runtime_operation_savepoint(
         &self,
-        context: &RuntimeContext,
+        context: &mut RuntimeContext,
         transaction_id: TransactionId,
     ) -> MResult<RuntimeOperationSavepoint> {
+        context.prepare_event_checkpoint();
         let transaction = self.active_execution_transaction(transaction_id)?;
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+            transaction.store.gate_a_staged_item_count(),
+        );
         Ok(RuntimeOperationSavepoint {
             store: transaction.store.clone(),
             module_mark: transaction.modules.mark(),
@@ -392,6 +410,10 @@ impl MechRuntime {
                     .capabilities
                     .rollback_to(savepoint.capability_mark);
                 let module_result = transaction.modules.rollback_to(savepoint.module_mark);
+                #[cfg(any(test, feature = "runtime_bench_probes"))]
+                crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+                    savepoint.store.gate_a_staged_item_count(),
+                );
                 transaction.store = savepoint.store.clone();
                 Some((
                     effect_failures,
@@ -432,7 +454,9 @@ impl MechRuntime {
             )),
         }
 
-        savepoint.context.restore_preserving_consumption(context);
+        if let Err(error) = savepoint.context.restore_preserving_consumption(context) {
+            failures.push(format!("context event mark restore failed: {:?}", error));
+        }
 
         if let Err(error) = self.validate_context_for_runtime(context) {
             failures.push(format!("context restore invariant failed: {:?}", error));
