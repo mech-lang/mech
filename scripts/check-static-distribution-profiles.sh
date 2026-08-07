@@ -296,7 +296,20 @@ if set(profiles) != expected_profiles:
     )
 expected_digest = "8beffad53bcd4d6905a883e23e34441371f4adc6faaf8ceaee030703b3a41d06"
 selected_digest = "a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d"
-actual_digest = sha256(runtime_surface_path.read_bytes()).hexdigest()
+runtime_surface = json.loads(runtime_surface_path.read_text(encoding="utf-8"))
+runtime_factories = runtime_surface.get("runtime_factories")
+if not isinstance(runtime_factories, list):
+    raise SystemExit(
+        "static distribution profile contract failed: frozen runtime factories are missing"
+    )
+canonical_runtime_surface = "".join(
+    f"{entry['id_hex']}\t{entry['name']}\n"
+    for entry in sorted(
+        runtime_factories,
+        key=lambda entry: (entry["id_hex"], entry["name"]),
+    )
+).encode("utf-8")
+actual_digest = sha256(canonical_runtime_surface).hexdigest()
 if actual_digest != expected_digest:
     raise SystemExit(
         f"static distribution profile contract failed: frozen runtime digest is {actual_digest}"
