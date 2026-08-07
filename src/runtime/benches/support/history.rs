@@ -5,10 +5,10 @@ use mech_runtime::{
     ActorId, ActorRecord, BasicCapability, BasicOperation, BasicResource, BasicSubject,
     CapabilityId, EventId, InMemoryStore, MechRuntime, MechStore, MessageId, MessageRecord,
     ModuleRecord, ModuleVersionId, ModuleVersionRecord, ObjectId, ObjectRecord,
-    ResourcePathCapability, RuntimeContext, RuntimeEvent, RuntimeEventKind, RuntimeHostInput,
-    RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputValue, RuntimeIngress,
-    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeStoreCommit, SequentialIdGenerator,
-    TaskId, TaskRecord, TransactionId, TransactionRecord, module_id,
+    ResourcePathCapability, RuntimeConfig, RuntimeContext, RuntimeEvent, RuntimeEventKind,
+    RuntimeHostInput, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputValue,
+    RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeStoreCommit,
+    SequentialIdGenerator, TaskId, TaskRecord, TransactionId, TransactionRecord, module_id,
 };
 
 use super::source_runtime_builder;
@@ -86,15 +86,32 @@ pub struct HistoryTurnFixture {
 
 impl HistoryTurnFixture {
     pub fn new() -> Self {
-        Self::with_store_and_context_history(InMemoryStore::new(), 0)
+        Self::with_store_context_history_and_retention(InMemoryStore::new(), 0, None)
     }
 
     pub fn with_accepted_turns(count: usize) -> Self {
-        Self::with_store_and_context_history(accepted_turn_store(count), count.saturating_mul(2))
+        Self::with_store_context_history_and_retention(
+            accepted_turn_store(count),
+            count.saturating_mul(2),
+            None,
+        )
     }
 
-    fn with_store_and_context_history(store: InMemoryStore, context_events: usize) -> Self {
+    pub fn with_event_retention(limit: usize) -> Self {
+        Self::with_store_context_history_and_retention(InMemoryStore::new(), 0, Some(limit as u64))
+    }
+
+    fn with_store_context_history_and_retention(
+        store: InMemoryStore,
+        context_events: usize,
+        event_retention: Option<u64>,
+    ) -> Self {
+        let mut config = RuntimeConfig::default();
+        if let Some(event_retention) = event_retention {
+            config.limits.max_in_memory_events = Some(event_retention);
+        }
         let mut runtime = source_runtime_builder()
+            .config(config)
             .id_generator(SequentialIdGenerator::starting_at(1))
             .store(store)
             .resource_provider(Box::new(HistoryInputProvider))
@@ -149,11 +166,23 @@ impl HistoryTurnFixture {
     }
 
     pub fn populate_context_events(&mut self, count: usize) {
-        for _ in 0..count {
+        self.runtime
+            .gate_a_seed_context_event_history(&mut self.context, count)
+            .unwrap();
+    }
+
+    pub fn warm_context_event_retention(&mut self, operations: usize) {
+        for _ in 0..operations {
             self.runtime
                 .gate_a_emit_representative_event(&mut self.context)
                 .unwrap();
         }
+    }
+
+    pub fn context_event_lengths(&self) -> (usize, usize) {
+        self.runtime
+            .gate_a_context_event_lengths(&self.context)
+            .unwrap()
     }
 
     pub fn begin_and_stage_objects(&mut self, count: usize) {

@@ -3,8 +3,8 @@ use crate::runtime::gate_a_probe::{gate_a_cost_snapshot, reset_gate_a_costs};
 use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     ActorId, CapabilityId, MechRuntime, MessageId, MessageRecord, ModuleVersionId, ObjectId,
-    ObjectRecord, ResourceBudget, RuntimeAuthorityScope, RuntimeEventKind, RuntimeId,
-    RuntimeInvalidOperationError, TaskId,
+    ObjectRecord, ResourceBudget, RuntimeAuthorityScope, RuntimeConfig, RuntimeEventKind,
+    RuntimeId, RuntimeInvalidOperationError, TaskId,
 };
 use mech_core::{MResult, MechError, MechSourceCode, hash_str};
 
@@ -358,4 +358,135 @@ fn failed_operation_restores_context_and_staging_but_keeps_budget_usage() {
         .unwrap();
     assert_eq!(context.transaction, None);
     assert_eq!(context.budget.used_steps, baseline.budget.used_steps + 3);
+}
+
+#[test]
+fn rollback_after_retention_overflow_restores_exact_visible_baseline() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_in_memory_events = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    for object in 1..=3 {
+        runtime
+            .put_object_with_context(
+                &mut context,
+                ObjectRecord::text(ObjectId(object), "note", object.to_string()),
+            )
+            .unwrap();
+    }
+
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    let baseline = context.events().to_vec();
+    assert_eq!(baseline.len(), 3);
+
+    let result: MResult<()> = runtime.with_atomic_program_operation(
+        &mut context,
+        "retention_overflow_rollback",
+        |runtime, context| {
+            runtime.emit_event_to_context(context, RuntimeEventKind::RuntimeTickStarted)?;
+            runtime.emit_event_to_context(
+                context,
+                RuntimeEventKind::RuntimeTickCompleted { work_count: 0 },
+            )?;
+            assert_eq!(context.events().len(), 3);
+            Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "retention_overflow_rollback",
+                    reason: "deliberate failure".to_string(),
+                },
+                None,
+            ))
+        },
+    );
+
+    assert!(result.is_err());
+    assert_eq!(context.events(), baseline);
+    assert!(context.event_storage_physical_len() > context.events().len());
+    runtime
+        .abort_runtime_transaction(&mut context, "finish retention test")
+        .unwrap();
+    assert_eq!(context.events().len(), 3);
+    assert!(context.event_storage_physical_len() < 2 * context.events().len());
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+}
+
+#[test]
+fn active_explicit_transaction_bounds_hidden_event_history() {
+    const LIMIT: usize = 3;
+    let mut config = RuntimeConfig::default();
+    config.limits.max_in_memory_events = Some(LIMIT as u64);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    for object in 1..=LIMIT as u128 {
+        runtime
+            .put_object_with_context(
+                &mut context,
+                ObjectRecord::text(ObjectId(object), "seed", object.to_string()),
+            )
+            .unwrap();
+    }
+
+    let baseline_physical = context.event_storage_physical_len();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    reset_gate_a_costs();
+    for object in 100..=355 {
+        runtime
+            .put_object_with_context(
+                &mut context,
+                ObjectRecord::text(ObjectId(object), "staged", object.to_string()),
+            )
+            .unwrap();
+        assert_eq!(context.events().len(), LIMIT);
+        assert!(context.event_storage_physical_len() <= baseline_physical + 4 * LIMIT);
+    }
+
+    assert_eq!(gate_a_cost_snapshot().context_event_snapshot_items, 0);
+    runtime
+        .abort_runtime_transaction(&mut context, "bounded active history")
+        .unwrap();
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+    assert_eq!(context.events().len(), LIMIT);
+    assert!(context.event_storage_physical_len() < 2 * LIMIT);
+}
+
+#[test]
+fn outer_commit_bounds_hidden_context_event_history() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_in_memory_events = Some(3);
+    let mut runtime = MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    for object in 1..=3 {
+        runtime
+            .put_object_with_context(
+                &mut context,
+                ObjectRecord::text(ObjectId(object), "seed", object.to_string()),
+            )
+            .unwrap();
+    }
+
+    reset_gate_a_costs();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    for object in 10..=13 {
+        runtime
+            .put_object_with_context(
+                &mut context,
+                ObjectRecord::text(ObjectId(object), "staged", object.to_string()),
+            )
+            .unwrap();
+    }
+
+    assert_eq!(context.events().len(), 3);
+    assert!(context.event_storage_physical_len() > context.events().len());
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+    assert_eq!(context.transaction, None);
+    assert_eq!(context.events().len(), 3);
+    assert!(context.event_storage_physical_len() < 2 * context.events().len());
+    let costs = gate_a_cost_snapshot();
+    assert_eq!(costs.context_event_snapshot_count, 0);
+    assert_eq!(costs.context_event_snapshot_items, 0);
 }

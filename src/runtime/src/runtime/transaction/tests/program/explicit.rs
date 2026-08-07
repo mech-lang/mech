@@ -184,7 +184,12 @@ fn transaction_context_identity_includes_task_actor_message_and_state() {
         assert_eq!(error.kind_name(), "RuntimeTransactionContextMismatch");
         assert!(runtime.program.root_symbol_value("identity-test").is_err());
 
-        context = baseline;
+        context.runtime = baseline.runtime;
+        context.subject = baseline.subject;
+        context.task = baseline.task;
+        context.actor = baseline.actor;
+        context.actor_message = baseline.actor_message;
+        context.actor_state = baseline.actor_state;
         context.transaction = Some(transaction_id);
         runtime
             .abort_runtime_transaction(&mut context, "identity mismatch test")

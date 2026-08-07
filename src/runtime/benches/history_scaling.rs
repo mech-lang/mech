@@ -83,6 +83,25 @@ fn report(
     if !reported.insert((operation.to_string(), history)) {
         return;
     }
+    drop(reported);
+    emit_report(operation, history, probes, allocations);
+}
+
+fn report_latest(
+    operation: &str,
+    history: usize,
+    probes: GateACostSnapshot,
+    allocations: AllocationSnapshot,
+) {
+    emit_report(operation, history, probes, allocations);
+}
+
+fn emit_report(
+    operation: &str,
+    history: usize,
+    probes: GateACostSnapshot,
+    allocations: AllocationSnapshot,
+) {
     eprintln!(
         "GATE_A_SAMPLE {{\"operation\":\"{operation}\",\"history\":{history},\"allocation_count\":{},\"deallocation_count\":{},\"allocated_bytes\":{},\"context_event_snapshot_count\":{},\"context_event_snapshot_items\":{},\"context_event_compaction_count\":{},\"context_event_compaction_moved_items\":{},\"context_event_visible_len\":{},\"context_event_physical_len\":{},\"runtime_transaction_savepoint_clone_count\":{},\"runtime_transaction_savepoint_items\":{},\"in_memory_store_clone_count\":{},\"in_memory_store_cloned_records\":{},\"commit_runtime_call_count\":{},\"program_checkpoint_count\":{},\"reactive_journal_cell_count\":{},\"events_appended\":{},\"transactions_committed\":{}}}",
         allocations.allocations,
@@ -106,9 +125,13 @@ fn report(
     );
 }
 
-fn with_context_event_lengths(mut probes: GateACostSnapshot, visible: usize) -> GateACostSnapshot {
+fn with_context_event_lengths(
+    mut probes: GateACostSnapshot,
+    visible: usize,
+    physical: usize,
+) -> GateACostSnapshot {
     probes.context_event_visible_len = visible as u64;
-    probes.context_event_physical_len = visible as u64;
+    probes.context_event_physical_len = physical as u64;
     probes
 }
 
@@ -124,6 +147,14 @@ fn scale_single_operation(elapsed: Duration, iterations: u64) -> Duration {
     elapsed.mul_f64(iterations as f64)
 }
 
+fn scale_measured_operations(
+    elapsed: Duration,
+    requested_iterations: u64,
+    measured_operations: u64,
+) -> Duration {
+    elapsed.mul_f64(requested_iterations as f64 / measured_operations as f64)
+}
+
 fn full_turn_history(c: &mut Criterion) {
     let mut group = c.benchmark_group("gate_a/full_turn_history");
     for history in [0usize, 32, 1_024, 16_384] {
@@ -136,10 +167,8 @@ fn full_turn_history(c: &mut Criterion) {
                 fixture.accept_turn();
                 let elapsed = started.elapsed();
                 let allocations = allocation_snapshot();
-                let probes = with_context_event_lengths(
-                    gate_a_cost_snapshot(),
-                    fixture.context.events().len(),
-                );
+                let (visible, physical) = fixture.context_event_lengths();
+                let probes = with_context_event_lengths(gate_a_cost_snapshot(), visible, physical);
                 black_box(&fixture.context);
                 report("full_turn", history, probes, allocations);
                 scale_single_operation(elapsed, iterations)
@@ -167,10 +196,8 @@ fn direct_event_history(c: &mut Criterion) {
                 );
                 let elapsed = started.elapsed();
                 let allocations = allocation_snapshot();
-                let probes = with_context_event_lengths(
-                    gate_a_cost_snapshot(),
-                    fixture.context.events().len(),
-                );
+                let (visible, physical) = fixture.context_event_lengths();
+                let probes = with_context_event_lengths(gate_a_cost_snapshot(), visible, physical);
                 report("direct_event", history, probes, allocations);
                 scale_single_operation(elapsed, iterations)
             });
@@ -225,16 +252,58 @@ fn explicit_savepoint(c: &mut Criterion) {
                 let started = Instant::now();
                 fixture
                     .runtime
-                    .gate_a_capture_runtime_operation_savepoint(&fixture.context)
+                    .gate_a_capture_runtime_operation_savepoint(&mut fixture.context)
                     .unwrap();
                 let elapsed = started.elapsed();
                 let allocations = allocation_snapshot();
-                let probes = with_context_event_lengths(
-                    gate_a_cost_snapshot(),
-                    fixture.context.events().len(),
-                );
+                let (visible, physical) = fixture.context_event_lengths();
+                let probes = with_context_event_lengths(gate_a_cost_snapshot(), visible, physical);
                 report("explicit_savepoint", operations, probes, allocations);
                 scale_single_operation(elapsed, iterations)
+            });
+        });
+    }
+    group.finish();
+}
+
+fn context_event_retention_steady(c: &mut Criterion) {
+    let mut group = c.benchmark_group("gate_a/context_event_retention_steady");
+    for limit in [32usize, 1_024, 16_384, 100_000] {
+        group.bench_function(BenchmarkId::from_parameter(limit), |b| {
+            b.iter_custom(|iterations| {
+                let mut fixture = HistoryTurnFixture::with_event_retention(limit);
+                fixture.populate_context_events(limit);
+                fixture.warm_context_event_retention(limit);
+                assert_eq!(fixture.context_event_lengths(), (limit, limit));
+                let measured_operations = iterations.max(limit as u64);
+
+                reset_gate_a_costs();
+                reset_allocations();
+                let started = Instant::now();
+                for _ in 0..measured_operations {
+                    black_box(
+                        fixture
+                            .runtime
+                            .gate_a_emit_representative_event(&mut fixture.context)
+                            .unwrap(),
+                    );
+                }
+                let elapsed = started.elapsed();
+                let allocations = allocation_snapshot();
+                let (visible, physical) = fixture.context_event_lengths();
+                let probes = with_context_event_lengths(gate_a_cost_snapshot(), visible, physical);
+
+                assert_eq!(probes.context_event_snapshot_count, 0);
+                assert_eq!(probes.context_event_snapshot_items, 0);
+                assert_eq!(probes.events_appended, measured_operations);
+                assert_eq!(visible, limit);
+                assert!(physical < 2 * limit);
+                assert!(probes.context_event_compaction_count >= 1);
+                assert!(probes.context_event_compaction_moved_items <= probes.events_appended);
+                assert!(probes.context_event_compaction_count < probes.events_appended);
+
+                report_latest("context_event_retention_steady", limit, probes, allocations);
+                scale_measured_operations(elapsed, iterations, measured_operations)
             });
         });
     }
@@ -247,5 +316,6 @@ criterion_group!(
     direct_event_history,
     direct_store_history,
     explicit_savepoint,
+    context_event_retention_steady,
 );
 criterion_main!(benches);

@@ -265,11 +265,26 @@ def main() -> int:
             "RUSTFLAGS": os.environ.get("RUSTFLAGS", ""),
             "CARGO_ENCODED_RUSTFLAGS": os.environ.get("CARGO_ENCODED_RUSTFLAGS", ""),
         },
-        "runtime_limits": "RuntimeConfig::default()",
+        "runtime_limits": {
+            "default": "RuntimeConfig::default()",
+            "lane_overrides": [
+                {
+                    "operation": "context_event_retention_steady",
+                    "history": limit,
+                    "max_in_memory_events": limit,
+                }
+                for limit in (32, 1_024, 16_384, 100_000)
+            ],
+        },
         "sample_protocol": {
             "criterion_sample_size": sample_size,
             "fixed_history_per_sample": True,
-            "measured_operations_per_fixture": 1,
+            "measured_operations_per_fixture": {
+                "single_operation_lanes": 1,
+                "context_event_retention_steady": (
+                    "max(criterion_requested_iterations, retention_limit)"
+                ),
+            },
             "setup_included_in_timing": False,
             "profile": "release",
             "extended_direct_store_sweep": args.extended,

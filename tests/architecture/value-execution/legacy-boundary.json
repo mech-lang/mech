@@ -48,39 +48,25 @@
       "id": "context-checkpoint-event-clone",
       "description": "RuntimeContextCheckpoint copies retained context events",
       "pattern": "events: context.events.clone()",
-      "allowed": [
-        { "path": "src/runtime/src/runtime/transaction/context.rs", "scope_contains": "fn capture", "max_occurrences": 1 }
-      ]
+      "allowed": []
     },
     {
       "id": "context-checkpoint-event-restore-clone",
       "description": "RuntimeContextCheckpoint restoration copies retained context events",
       "pattern": "context.events = self.events.clone()",
-      "allowed": [
-        { "path": "src/runtime/src/runtime/transaction/context.rs", "scope_contains": "fn restore_preserving_consumption", "max_occurrences": 1 }
-      ]
+      "allowed": []
     },
     {
       "id": "per-emission-context-clone",
       "description": "Event publication snapshots the complete context event history",
       "pattern": "let context_events_before = context.events.clone()",
-      "allowed": [
-        { "path": "src/runtime/src/runtime/events.rs", "scope_contains": "emit_event_to_context", "max_occurrences": 1 },
-        { "path": "src/runtime/src/runtime/events.rs", "scope_contains": "emit_event_immediate_to_context", "max_occurrences": 1 },
-        { "path": "src/runtime/src/runtime/transaction/capabilities.rs", "scope_contains": "<file>", "max_occurrences": 3 },
-        { "path": "src/runtime/src/runtime/transaction/effects.rs", "scope_contains": "<file>", "max_occurrences": 2 },
-        { "path": "src/runtime/src/runtime/transaction/commit.rs", "scope_contains": "<file>", "max_occurrences": 2 }
-      ]
+      "allowed": []
     },
     {
       "id": "session-event-context-clone",
       "description": "Execution-session event publication snapshots the complete context event history",
       "pattern": "let context_events_before = self.context.events.clone()",
-      "allowed": [
-        { "path": "src/runtime/src/runtime/execution_session.rs", "scope_contains": "fn emit_event", "max_occurrences": 1 },
-        { "path": "src/runtime/src/runtime/execution_session.rs", "scope_contains": "fn stage_effect", "max_occurrences": 1 },
-        { "path": "src/runtime/src/runtime/execution_session.rs", "scope_contains": "fn stage_resource_effect", "max_occurrences": 1 }
-      ]
+      "allowed": []
     },
     {
       "id": "in-memory-store-clone-commit",

@@ -24,7 +24,18 @@ impl MechRuntime {
             let event = self.make_event(RuntimeEventKind::RuntimeTickStarted);
             context.push_event(event);
         }
+        context.reserve_benchmark_event_append();
         Ok(())
+    }
+
+    #[cfg(feature = "runtime_bench_probes")]
+    #[doc(hidden)]
+    pub fn gate_a_context_event_lengths(
+        &self,
+        context: &RuntimeContext,
+    ) -> MResult<(usize, usize)> {
+        self.validate_context_for_runtime(context)?;
+        Ok((context.events().len(), context.event_storage_physical_len()))
     }
 
     pub fn next_event_sequence(&mut self) -> u64 {

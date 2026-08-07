@@ -215,6 +215,11 @@ impl RuntimeContextEvents {
         crate::runtime::gate_a_probe::record_context_event_compaction(moved);
     }
 
+    #[cfg(feature = "runtime_bench_probes")]
+    pub(crate) fn reserve_benchmark_append(&mut self) {
+        self.storage.reserve(1);
+    }
+
     fn invalid_mark<T>(&self, reason: impl Into<String>) -> MResult<T> {
         Err(MechError::new(
             RuntimeInvalidOperationError {
@@ -263,6 +268,7 @@ impl Deref for RuntimeContextEvents {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::gate_a_probe::{gate_a_cost_snapshot, reset_gate_a_costs};
     use crate::{EventId, RuntimeEventKind};
 
     fn event(id: u128) -> RuntimeEvent {
@@ -273,7 +279,7 @@ mod tests {
     fn context_event_empty_mark_and_restore() {
         let mut events = RuntimeContextEvents::new();
         let mark = events.mark();
-        events.restore(mark).unwrap();
+        events.restore(&mark).unwrap();
         assert!(events.visible().is_empty());
     }
 
@@ -283,7 +289,7 @@ mod tests {
         events.push(event(1));
         let mark = events.mark();
         events.push(event(2));
-        events.restore(mark).unwrap();
+        events.restore(&mark).unwrap();
         assert_eq!(events.visible(), [event(1)]);
     }
 
@@ -300,7 +306,7 @@ mod tests {
         events.push(event(5));
         events.retain_last(3);
         assert_eq!(events.visible(), [event(3), event(4), event(5)]);
-        events.restore(mark).unwrap();
+        events.restore(&mark).unwrap();
         assert_eq!(events.visible(), [event(1), event(2), event(3)]);
     }
 
@@ -314,18 +320,128 @@ mod tests {
     }
 
     #[test]
-    fn context_event_compaction_invalidates_old_marks() {
+    fn hidden_prefix_smaller_than_visible_suffix_does_not_compact() {
+        let mut events = RuntimeContextEvents::new();
+        events.push(event(1));
+        events.push(event(2));
+        events.push(event(3));
+        events.push(event(4));
+        events.retain_last(3);
+        reset_gate_a_costs();
+        events.finish_transaction_scope().unwrap();
+
+        assert_eq!(events.visible(), [event(2), event(3), event(4)]);
+        assert_eq!(events.physical_len(), 4);
+        assert_eq!(gate_a_cost_snapshot().context_event_compaction_count, 0);
+    }
+
+    #[test]
+    fn hidden_prefix_equal_to_visible_suffix_compacts() {
+        let mut events = RuntimeContextEvents::new();
+        for id in 1..=4 {
+            events.push(event(id));
+        }
+        events.retain_last(2);
+        reset_gate_a_costs();
+        events.finish_transaction_scope().unwrap();
+
+        assert_eq!(events.visible(), [event(3), event(4)]);
+        assert_eq!(events.physical_len(), 2);
+        let costs = gate_a_cost_snapshot();
+        assert_eq!(costs.context_event_compaction_count, 1);
+        assert_eq!(costs.context_event_compaction_moved_items, 2);
+    }
+
+    #[test]
+    fn compaction_counts_only_the_moved_visible_suffix() {
+        let mut events = RuntimeContextEvents::new();
+        for id in 1..=5 {
+            events.push(event(id));
+        }
+        events.retain_last(2);
+        reset_gate_a_costs();
+        events.finish_transaction_scope().unwrap();
+
+        assert_eq!(events.visible(), [event(4), event(5)]);
+        let costs = gate_a_cost_snapshot();
+        assert_eq!(costs.context_event_compaction_count, 1);
+        assert_eq!(costs.context_event_compaction_moved_items, 2);
+    }
+
+    #[test]
+    fn zero_retention_compacts_to_zero_physical_entries() {
+        let mut events = RuntimeContextEvents::new();
+        events.push(event(1));
+        events.retain_last(0);
+        reset_gate_a_costs();
+        events.finish_transaction_scope().unwrap();
+
+        assert!(events.visible().is_empty());
+        assert_eq!(events.physical_len(), 0);
+        let costs = gate_a_cost_snapshot();
+        assert_eq!(costs.context_event_compaction_count, 1);
+        assert_eq!(costs.context_event_compaction_moved_items, 0);
+    }
+
+    #[test]
+    fn scope_completion_invalidates_marks_without_changing_owner() {
         let mut events = RuntimeContextEvents::new();
         events.push(event(1));
         let mark = events.mark();
-        events.retain_last(0);
-        events.compact_after_transaction().unwrap();
-        let error = events.restore(mark).unwrap_err();
+        events.finish_transaction_scope().unwrap();
+
+        assert_eq!(events.owner_id, mark.owner_id);
+        assert_eq!(events.generation, mark.generation + 1);
+        let error = events.restore(&mark).unwrap_err();
         assert_eq!(error.kind_name(), "RuntimeInvalidOperation");
     }
 
     #[test]
-    fn context_event_clone_contains_only_visible_events() {
+    fn active_mark_bounds_hidden_tail_without_losing_rollback_prefix() {
+        let mut events = RuntimeContextEvents::new();
+        for id in 1..=3 {
+            events.push(event(id));
+        }
+        let baseline = events.visible().to_vec();
+        let mark = events.mark();
+
+        for id in 4..=1_003 {
+            events.push(event(id));
+            events.retain_last(3);
+            assert!(events.physical_len() <= mark.position.storage_len + 6);
+        }
+
+        events.restore(&mark).unwrap();
+        assert_eq!(events.visible(), baseline);
+    }
+
+    #[test]
+    fn newest_mark_protects_operation_baseline_while_later_events_compact() {
+        let mut events = RuntimeContextEvents::new();
+        for id in 1..=3 {
+            events.push(event(id));
+        }
+        let _transaction_mark = events.mark();
+        for id in 4..=9 {
+            events.push(event(id));
+            events.retain_last(3);
+        }
+        events.prepare_checkpoint();
+        let operation_mark = events.mark();
+        let operation_baseline = events.visible().to_vec();
+
+        for id in 10..=1_009 {
+            events.push(event(id));
+            events.retain_last(3);
+            assert!(events.physical_len() <= operation_mark.position.storage_len + 6);
+        }
+
+        events.restore(&operation_mark).unwrap();
+        assert_eq!(events.visible(), operation_baseline);
+    }
+
+    #[test]
+    fn context_event_clone_contains_only_visible_events_and_has_a_distinct_owner() {
         let mut events = RuntimeContextEvents::new();
         events.push(event(1));
         events.push(event(2));
@@ -333,12 +449,21 @@ mod tests {
         let mark = events.mark();
         let mut cloned = events.clone();
         assert_eq!(cloned.visible(), [event(2)]);
-        assert!(cloned.restore(mark).is_err());
+        assert_ne!(cloned.owner_id, events.owner_id);
+        assert!(cloned.restore(&mark).is_err());
         assert_eq!(cloned.physical_len(), 1);
     }
 
     #[test]
-    fn context_event_drain_returns_only_visible_events() {
+    fn mark_from_another_context_is_rejected() {
+        let events = RuntimeContextEvents::new();
+        let mark = events.mark();
+        let mut other = RuntimeContextEvents::new();
+        assert!(other.restore(&mark).is_err());
+    }
+
+    #[test]
+    fn context_event_drain_transfers_visible_events_and_clears_storage() {
         let mut events = RuntimeContextEvents::new();
         events.push(event(1));
         events.push(event(2));

@@ -650,6 +650,16 @@ impl RuntimeContext {
     pub(crate) fn prepare_event_checkpoint(&mut self) {
         self.events.prepare_checkpoint();
     }
+
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
+    pub(crate) fn event_storage_physical_len(&self) -> usize {
+        self.events.physical_len()
+    }
+
+    #[cfg(feature = "runtime_bench_probes")]
+    pub(crate) fn reserve_benchmark_event_append(&mut self) {
+        self.events.reserve_benchmark_append();
+    }
     pub(crate) fn add_capability(&mut self, capability: CapabilityId) {
         self.authority.add(capability);
     }
