@@ -7,3 +7,4 @@ Design Documents
 - [Syntax Design Notes](/design/syntax-design.html) `todo`
 - [History](/design/history.html)  `todo`
 - [Roadmap](/design/ROADMAP.html)
+- [Value-resident execution architecture](/design/value-resident-execution.html)
