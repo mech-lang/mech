@@ -643,6 +643,10 @@ impl RuntimeContext {
         self.events.drain_visible()
     }
 
+    pub(crate) fn finish_event_transaction_scope(&mut self) -> MResult<()> {
+        self.events.finish_transaction_scope()
+    }
+
     pub(crate) fn add_capability(&mut self, capability: CapabilityId) {
         self.authority.add(capability);
     }

@@ -216,14 +216,16 @@ impl MechRuntime {
             Ok(event) => event,
             Err(error) => {
                 self.active_transactions.remove(&id);
-                context_baseline.restore_preserving_consumption(context);
+                context_baseline.restore_preserving_consumption(context)?;
+                context.events.finish_transaction_scope()?;
                 return Err(error);
             }
         };
 
         if let Err(error) = self.active_transaction_mut(id)?.record_event(started_event) {
             self.active_transactions.remove(&id);
-            context_baseline.restore_preserving_consumption(context);
+            context_baseline.restore_preserving_consumption(context)?;
+            context.events.finish_transaction_scope()?;
             return Err(error);
         }
 
@@ -364,7 +366,7 @@ impl MechRuntime {
             if self.program_transaction_owner == Some(transaction_id) {
                 self.program_transaction_owner = None;
             }
-            self.push_persisted_event_to_context(context, commit_event);
+            self.push_persisted_event_to_context(context, commit_event)?;
             return Ok(RuntimeCommitResolution::Committed(RuntimeCommitOutcome {
                 transaction_id: id,
                 delivery_failures: Vec::new(),
@@ -559,7 +561,7 @@ impl MechRuntime {
         if self.program_transaction_owner == Some(transaction_id) {
             self.program_transaction_owner = None;
         }
-        self.push_persisted_event_to_context(context, commit_event);
+        self.push_persisted_event_to_context(context, commit_event)?;
 
         let mut audit_failures = Vec::new();
         for effect_id in commit_report.committed {
@@ -655,11 +657,18 @@ impl MechRuntime {
         if self.program_transaction_owner == Some(transaction_id) {
             self.program_transaction_owner = None;
         }
+        let mut rollback_failures = Vec::new();
+        if let Err(compaction_error) = context.finish_event_transaction_scope() {
+            rollback_failures.push(format!(
+                "context event compaction after indeterminate store commit failed: {:?}",
+                compaction_error,
+            ));
+        }
         self.health = RuntimeHealth::Poisoned(RuntimePoisonRecord {
             operation: "commit_runtime_transaction".to_string(),
             transaction_id: Some(transaction_id),
             original_error: format!("{error:?}"),
-            rollback_failures: Vec::new(),
+            rollback_failures,
         });
         Some(RuntimeCommitResolution::CommittedWithError {
             transaction_id,
@@ -743,17 +752,11 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         kind: RuntimeEventKind,
     ) -> MResult<EventId> {
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
-        let context_events_before = context.events.clone();
         let event = self.make_event(kind);
         let id = event.id;
-        context.push_event(event.clone());
+        envelope.store.stage_event(event.clone())?;
+        context.push_event(event);
         self.apply_context_event_retention(context);
-        if let Err(error) = envelope.store.stage_event(event) {
-            context.events = context_events_before;
-            return Err(error);
-        }
         Ok(id)
     }
 
@@ -762,17 +765,11 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         kind: RuntimeEventKind,
     ) -> MResult<EventId> {
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
-        let context_events_before = context.events.clone();
         let event = self.make_event(kind);
         let id = event.id;
-        context.push_event(event.clone());
+        self.store.append_event(event.clone())?;
+        context.push_event(event);
         self.apply_context_event_retention(context);
-        if let Err(error) = self.store.append_event(event) {
-            context.events = context_events_before;
-            return Err(error);
-        }
         Ok(id)
     }
 

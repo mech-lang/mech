@@ -44,27 +44,23 @@ impl MechRuntime {
     ) -> MResult<EventId> {
         self.validate_context_for_runtime(context)?;
 
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
-        let context_events_before = context.events.clone();
         let event = self.make_event(kind);
         let id = event.id;
 
-        context.push_event(event.clone());
-        self.apply_context_event_retention(context);
         if let Some(transaction_id) = context.transaction {
             if let Some(transaction) = self.active_transactions.get_mut(&transaction_id) {
-                if let Err(error) = transaction.store.stage_event(event) {
-                    context.events = context_events_before;
-                    return Err(error);
-                }
+                transaction.store.stage_event(event.clone())?;
+                context.push_event(event);
+                self.apply_context_event_retention(context);
                 return Ok(id);
             }
         }
 
-        if let Err(error) = self.store.append_event(event) {
-            context.events = context_events_before;
-            return Err(error);
+        self.store.append_event(event.clone())?;
+        context.push_event(event);
+        self.apply_context_event_retention(context);
+        if context.transaction.is_none() {
+            context.finish_event_transaction_scope()?;
         }
 
         Ok(id)
@@ -77,17 +73,14 @@ impl MechRuntime {
     ) -> MResult<EventId> {
         self.validate_context_for_runtime(context)?;
 
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_snapshot(context.events.len());
-        let context_events_before = context.events.clone();
         let event = self.make_event(kind);
         let id = event.id;
 
-        context.push_event(event.clone());
+        self.store.append_event(event.clone())?;
+        context.push_event(event);
         self.apply_context_event_retention(context);
-        if let Err(error) = self.store.append_event(event) {
-            context.events = context_events_before;
-            return Err(error);
+        if context.transaction.is_none() {
+            context.finish_event_transaction_scope()?;
         }
 
         Ok(id)
@@ -97,10 +90,11 @@ impl MechRuntime {
         &self,
         context: &mut RuntimeContext,
         event: RuntimeEvent,
-    ) -> EventId {
+    ) -> MResult<EventId> {
         let id = event.id;
         context.push_event(event);
         self.apply_context_event_retention(context);
-        id
+        context.finish_event_transaction_scope()?;
+        Ok(id)
     }
 }

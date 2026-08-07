@@ -100,9 +100,6 @@ impl RuntimeSessionServices<'_> {
 
     fn emit_event(&mut self, kind: RuntimeEventKind) -> MResult<EventId> {
         self.validate_context()?;
-        #[cfg(any(test, feature = "runtime_bench_probes"))]
-        crate::runtime::gate_a_probe::record_context_event_snapshot(self.context.events.len());
-        let context_events_before = self.context.events.clone();
         let event = RuntimeEvent::new(
             self.id_generator.event_id(),
             {
@@ -113,12 +110,9 @@ impl RuntimeSessionServices<'_> {
             kind,
         );
         let id = event.id;
-        self.context.push_event(event.clone());
+        self.transaction.store.stage_event(event.clone())?;
+        self.context.push_event(event);
         Self::trim_context_events(self.max_events, self.context);
-        if let Err(error) = self.transaction.store.stage_event(event) {
-            self.context.events = context_events_before;
-            return Err(error);
-        }
         Ok(id)
     }
 
