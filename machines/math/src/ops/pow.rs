@@ -108,7 +108,7 @@ macro_rules! pow_row_mat_op {
 macro_rules! impl_powop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
         #[derive(Debug)]
-        struct $struct_name<T> {
+        pub(crate) struct $struct_name<T> {
             lhs: Ref<$arg1_type>,
             rhs: Ref<$arg2_type>,
             out: Ref<$out_type>,
@@ -299,7 +299,6 @@ fn impl_pow_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
     }
     impl_binop_match_arms!(
       Pow,
-      register_fxn_descriptor_inner,
       (lhs_value, rhs_value),
       U8,   u8,   "u8";
       U16,  u16,  "u16";

@@ -3,8 +3,8 @@ use mech_core::{
     MResult, ParsedProgram, Plan, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId,
     ReactiveNodeKind, ReactiveTurnState, Value, hash_str,
 };
+use mech_engine::Interpreter;
 use mech_engine::{MechProgram, MechProgramConfig};
-use mech_interpreter::Interpreter;
 
 fn symbol(interpreter: &Interpreter, name: &str) -> Value {
     interpreter
@@ -229,11 +229,9 @@ fn assert_structural_set_node(plan: &Plan, output: &Value) {
 fn decoded_variable_definition_symbol_metadata_round_trips() -> MResult<()> {
     let code = "input := 1.0\n~state := 2.0";
     let mut source = MechProgram::new(MechProgramConfig::default());
-    source.load_full_stdlib();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
     let mut decoded = MechProgram::new(MechProgramConfig::default());
-    decoded.load_full_stdlib();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     assert_eq!(decoded_output, source_output);
@@ -260,11 +258,9 @@ fn decoded_variable_definition_symbol_metadata_round_trips() -> MResult<()> {
 fn decoded_structural_alias_access_matches_source() -> MResult<()> {
     let code = "tuple := (1, 2); tuple.2";
     let mut source = MechProgram::new(MechProgramConfig::default());
-    source.load_full_stdlib();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
     let mut decoded = MechProgram::new(MechProgramConfig::default());
-    decoded.load_full_stdlib();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     assert_eq!(decoded_output, source_output);
@@ -285,11 +281,9 @@ fn decoded_structural_alias_access_matches_source() -> MResult<()> {
 fn decoded_whole_variable_assignment_matches_source_graph() -> MResult<()> {
     let code = "~x := 1.0; y := 2.0; x = y; x";
     let mut source = MechProgram::new(MechProgramConfig::default());
-    source.load_full_stdlib();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
     let mut decoded = MechProgram::new(MechProgramConfig::default());
-    decoded.load_full_stdlib();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     assert_eq!(*source_output.as_f64().unwrap().borrow(), 2.0);
@@ -306,11 +300,9 @@ fn decoded_whole_variable_assignment_matches_source_graph() -> MResult<()> {
 fn decoded_whole_add_assignment_matches_source_graph() -> MResult<()> {
     let code = "~x := 1.0; y := 2.0; x += y; x";
     let mut source = MechProgram::new(MechProgramConfig::default());
-    source.load_full_stdlib();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
     let mut decoded = MechProgram::new(MechProgramConfig::default());
-    decoded.load_full_stdlib();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     assert_eq!(*source_output.as_f64().unwrap().borrow(), 3.0);
@@ -327,11 +319,9 @@ fn decoded_whole_add_assignment_matches_source_graph() -> MResult<()> {
 fn decoded_register_commit_add_assignment_uses_staging() -> MResult<()> {
     let code = "~x := 1.0\ny := 2.0\nx += y\nx";
     let mut source = MechProgram::new(MechProgramConfig::default());
-    source.load_full_stdlib();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
     let mut decoded = MechProgram::new(MechProgramConfig::default());
-    decoded.load_full_stdlib();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     assert_eq!(*source_output.as_f64().unwrap().borrow(), 3.0);
@@ -377,11 +367,9 @@ fn decoded_register_commit_add_assignment_uses_staging() -> MResult<()> {
 fn decoded_reactive_turn_reuses_compiled_plan() -> MResult<()> {
     let code = "~x := 1.0\ny := 2.0\nx += y\nz := x + 1.0\nz";
     let mut source = MechProgram::new(MechProgramConfig::default());
-    source.load_full_stdlib();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
     let mut decoded = MechProgram::new(MechProgramConfig::default());
-    decoded.load_full_stdlib();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     assert_eq!(*source_output.as_f64().unwrap().borrow(), 4.0);
@@ -480,11 +468,9 @@ fn decoded_reactive_turn_reuses_compiled_plan() -> MResult<()> {
 fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
     let code = "[1.0 2.0; 3.0 4.0]";
     let mut source = MechProgram::new(MechProgramConfig::default());
-    source.load_full_stdlib();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
     let mut decoded = MechProgram::new(MechProgramConfig::default());
-    decoded.load_full_stdlib();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     let expected = Value::MatrixF64(ValueMatrix::from_vec(vec![1.0, 3.0, 2.0, 4.0], 2, 2));
@@ -499,11 +485,9 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
 fn decoded_set_literal_registers_structural_node() -> MResult<()> {
     let code = "{1.0, 2.0}";
     let mut source = MechProgram::new(MechProgramConfig::default());
-    source.load_full_stdlib();
     let source_output = source.run_string(code)?;
     let bytecode = source.compile_bytecode()?;
     let mut decoded = MechProgram::new(MechProgramConfig::default());
-    decoded.load_full_stdlib();
     let decoded_output = decoded.run_bytecode(&bytecode)?;
 
     assert_eq!(decoded_output, source_output);

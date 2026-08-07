@@ -8,7 +8,7 @@ use mech_core::set::MechSet;
 // Powerset ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetPowersetFxn {
+pub(crate) struct SetPowersetFxn {
     input: Ref<MechSet>,
     out: Ref<MechSet>,
 }
@@ -123,12 +123,6 @@ impl MechFunctionCompiler for SetPowersetFxn {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetPowersetFxn",
-    ptr: SetPowersetFxn::new,
-  }
-}
 
 fn set_powerset_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
     match (input) {
@@ -151,8 +145,8 @@ fn set_powerset_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
 }
 
 pub struct SetPowerset {}
-impl NativeFunctionCompiler for SetPowerset {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetPowerset {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -180,11 +174,4 @@ impl NativeFunctionCompiler for SetPowerset {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/powerset",
-    ptr: &SetPowerset{},
-  }
 }

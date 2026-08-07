@@ -9,7 +9,7 @@ use mech_core::set::MechSet;
 //
 
 #[derive(Debug)]
-struct SetNotEqualsFxn {
+pub(crate) struct SetNotEqualsFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<bool>,
@@ -75,13 +75,6 @@ impl MechFunctionCompiler for SetNotEqualsFxn {
     }
 }
 
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetNotEqualsFxn",
-    ptr: SetNotEqualsFxn::new,
-  }
-}
-
 fn set_not_equals_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetNotEqualsFxn {
@@ -101,8 +94,8 @@ fn set_not_equals_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> 
 }
 
 pub struct SetNotEquals {}
-impl NativeFunctionCompiler for SetNotEquals {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetNotEquals {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -138,11 +131,4 @@ impl NativeFunctionCompiler for SetNotEquals {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/not_equals",
-    ptr: &SetNotEquals{},
-  }
 }

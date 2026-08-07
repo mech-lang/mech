@@ -107,7 +107,6 @@ impl_math_fxns!(Sub);
 fn impl_sub_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Sub,
-      register_fxn_descriptor_inner,
       (lhs_value, rhs_value),
       I8,   i8,   "i8";
       I16,  i16,  "i16";

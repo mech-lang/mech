@@ -38,6 +38,13 @@ check_surface() {
     --target-dir "$baseline_target" \
     -- \
     --check "$repository_root/tests/architecture/function-system"
+
+  CARGO_PROFILE_DEV_DEBUG=0 cargo +nightly-2026-03-03 run \
+    --manifest-path "$baseline_manifest" \
+    --target-dir "$baseline_target" \
+    --no-default-features \
+    -- \
+    --check-runtime "$repository_root/tests/architecture/function-system"
 }
 
 check_machines() {
@@ -59,7 +66,7 @@ check_consumer() {
     --manifest-path "$consumer_manifest" \
     -e features)
 
-  for package in mech-core mech-interpreter mech-engine mech-math mech-range mech-string
+  for package in mech-core mech-engine mech-math mech-range mech-string
   do
     consumer_tree="$consumer_tree
 $(cargo +nightly-2026-03-03 tree \
@@ -70,7 +77,6 @@ $(cargo +nightly-2026-03-03 tree \
 
   reject_tree_entry "$consumer_tree" "mech-bytecode v" "mech-bytecode in the consumer graph"
   reject_tree_entry "$consumer_tree" 'mech-core feature "compiler"' "mech-core/compiler in the consumer graph"
-  reject_tree_entry "$consumer_tree" 'mech-interpreter feature "compiler"' "mech-interpreter/compiler in the consumer graph"
   reject_tree_entry "$consumer_tree" 'mech-engine feature "compiler"' "mech-engine/compiler in the consumer graph"
   reject_tree_entry "$consumer_tree" 'mech-math feature "compiler"' "mech-math/compiler in the consumer graph"
   reject_tree_entry "$consumer_tree" 'mech-range feature "compiler"' "mech-range/compiler in the consumer graph"

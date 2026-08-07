@@ -9,7 +9,7 @@ use mech_core::set::MechSet;
 //
 
 #[derive(Debug)]
-struct SetEqualsFxn {
+pub(crate) struct SetEqualsFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<bool>,
@@ -75,13 +75,6 @@ impl MechFunctionCompiler for SetEqualsFxn {
     }
 }
 
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetEqualsFxn",
-    ptr: SetEqualsFxn::new,
-  }
-}
-
 fn set_equals_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
         (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetEqualsFxn {
@@ -101,8 +94,8 @@ fn set_equals_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
 }
 
 pub struct SetEquals {}
-impl NativeFunctionCompiler for SetEquals {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetEquals {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -138,11 +131,4 @@ impl NativeFunctionCompiler for SetEquals {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/equals",
-    ptr: &SetEquals{},
-  }
 }

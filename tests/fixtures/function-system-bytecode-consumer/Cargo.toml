@@ -10,8 +10,8 @@ mech-core = {
   default-features = false,
   features = ["bool"],
 }
-mech-interpreter = {
-  path = "../../../src/interpreter",
+mech-engine = {
+  path = "../../../src/engine",
   default-features = false,
   features = [
     "program",
@@ -22,15 +22,6 @@ mech-interpreter = {
     "row_vectord",
     "vectord",
     "matrix_horzcat",
-  ],
-}
-mech-engine = {
-  path = "../../../src/engine",
-  default-features = false,
-  features = [
-    "program",
-    "functions",
-    "symbol_table",
   ],
 }
 mech-math = {
@@ -54,7 +45,6 @@ serde_json = "1"
 [patch.crates-io]
 mech-core = { path = "../../../src/core" }
 mech-syntax = { path = "../../../src/syntax" }
-mech-interpreter = { path = "../../../src/interpreter" }
 mech-engine = { path = "../../../src/engine" }
 mech-compare = { path = "../../../machines/compare" }
 mech-logic = { path = "../../../machines/logic" }

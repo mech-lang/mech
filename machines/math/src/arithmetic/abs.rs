@@ -171,8 +171,8 @@ fn impl_abs_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathAbs {}
 
-impl NativeFunctionCompiler for MathAbs {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathAbs {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -199,18 +199,4 @@ impl NativeFunctionCompiler for MathAbs {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/abs",
-    ptr: &MathAbs{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "abs",
-  }
 }

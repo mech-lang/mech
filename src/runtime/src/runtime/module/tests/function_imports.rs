@@ -1,7 +1,8 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
-use mech_core::{MechSourceCode, Ref, Value, hash_str};
+use mech_core::{FunctionSpecializer, MechSourceCode, Ref, Value};
+use mech_engine::FunctionBinding;
 
 use crate::runtime::test_support::capabilities::{CapabilityUseProbe, grant_host_call};
 use crate::{
@@ -29,6 +30,20 @@ struct HostHarness {
 
 fn snapshot(value: Value) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
+}
+
+fn bound_extension_specializer(runtime: &MechRuntime, name: &str) -> Arc<dyn FunctionSpecializer> {
+    let state = runtime.program.interpreter().state.borrow();
+    let Some(FunctionBinding::Extension(extension)) = state.function_environment.resolve_name(name)
+    else {
+        panic!("expected `{name}` to resolve to a program-local extension");
+    };
+    state
+        .function_extensions
+        .entry(extension)
+        .unwrap_or_else(|| panic!("missing extension entry for `{name}`"))
+        .specializer
+        .clone()
 }
 
 fn resolver_with_sources(sources: &[(&str, &str)]) -> InMemorySourceResolver {
@@ -206,7 +221,7 @@ fn failed_retained_root_does_not_leak_function_import_glob() {
 }
 
 #[test]
-fn failed_import_collision_restores_preexisting_host_compiler() {
+fn failed_import_collision_restores_preexisting_host_extension() {
     let resolver = resolver_with_sources(&[(
         "root-a.mec",
         "+> restore-sin := math/sin\nimported-value := restore-sin(0)\nroot-a-failure := missing\nroot-a-failure\n",
@@ -219,16 +234,7 @@ fn failed_import_collision_restores_preexisting_host_compiler() {
     assert_eq!(snapshot_f64(baseline), 731.0);
     let plans_before_failure = harness.counters.plans.load(Ordering::SeqCst);
     let invocations_before_failure = harness.counters.invocations.load(Ordering::SeqCst);
-    let host_compiler_before = harness
-        .runtime
-        .program
-        .interpreter()
-        .functions()
-        .borrow()
-        .function_compilers
-        .get(&hash_str("restore-sin"))
-        .unwrap()
-        .clone();
+    let host_specializer_before = bound_extension_specializer(&harness.runtime, "restore-sin");
 
     let error = harness
         .runtime
@@ -243,17 +249,11 @@ fn failed_import_collision_restores_preexisting_host_compiler() {
         harness.counters.invocations.load(Ordering::SeqCst),
         invocations_before_failure,
     );
-    let host_compiler_after = harness
-        .runtime
-        .program
-        .interpreter()
-        .functions()
-        .borrow()
-        .function_compilers
-        .get(&hash_str("restore-sin"))
-        .unwrap()
-        .clone();
-    assert!(Arc::ptr_eq(&host_compiler_before, &host_compiler_after,));
+    let host_specializer_after = bound_extension_specializer(&harness.runtime, "restore-sin");
+    assert!(Arc::ptr_eq(
+        &host_specializer_before,
+        &host_specializer_after,
+    ));
 
     let recovered = harness
         .runtime

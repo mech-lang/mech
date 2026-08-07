@@ -51,7 +51,7 @@ This section documents the release process for the Mech project.
   - `git commit`
   - `cargo publish`
 4. Update `interpreter` version number.
-    - Update mech versions in `src/interpreter/Cargo.toml`.
+    - Update mech versions in `src/engine/Cargo.toml`.
     - `git commit`
     - `cargo publish`
 5. Update `wasm` version number.

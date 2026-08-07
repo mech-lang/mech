@@ -42,6 +42,11 @@ use nalgebra::Vector4;
 
 use paste::paste;
 
+#[cfg(feature = "functions")]
+pub mod catalog;
+#[cfg(feature = "functions")]
+pub use self::catalog::*;
+
 #[cfg(feature = "concat")]
 pub mod concat;
 
@@ -68,7 +73,7 @@ impl Concat for String {
 macro_rules! impl_string_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
         #[derive(Debug)]
-        struct $struct_name<T> {
+        pub(crate) struct $struct_name<T> {
             lhs: Ref<$arg1_type>,
             rhs: Ref<$arg2_type>,
             out: Ref<$out_type>,
@@ -131,7 +136,6 @@ macro_rules! impl_string_binop {
                 compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
             }
         }
-        register_fxn_descriptor!($struct_name, String, "string");
     };
 }
 

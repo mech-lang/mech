@@ -6,7 +6,7 @@ use mech_core::set::MechSet;
 // Subset ------------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetSubsetFxn {
+pub(crate) struct SetSubsetFxn {
     lhs: Ref<MechSet>,
     rhs: Ref<MechSet>,
     out: Ref<bool>,
@@ -70,12 +70,6 @@ impl MechFunctionCompiler for SetSubsetFxn {
         );
     }
 }
-register_descriptor! {
-  FunctionDescriptor {
-    name: "SetSubsetFxn",
-    ptr: SetSubsetFxn::new,
-  }
-}
 
 fn set_subset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
@@ -96,8 +90,8 @@ fn set_subset_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
 }
 
 pub struct SetSubset {}
-impl NativeFunctionCompiler for SetSubset {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for SetSubset {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -133,11 +127,4 @@ impl NativeFunctionCompiler for SetSubset {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "set/subset",
-    ptr: &SetSubset{},
-  }
 }

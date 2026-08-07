@@ -19,7 +19,7 @@ mod source_reconstruction;
 
 pub(super) use activation_effects::{
     ACTIVATION_EFFECT_BARRIER_NAME, ACTIVATION_EFFECT_PAYLOAD_CAPTURE_NAME,
-    ActivationEffectBarrierCompiler, ActivationEffectPayloadCaptureCompiler,
+    ActivationEffectBarrierSpecializer, ActivationEffectPayloadCaptureSpecializer,
 };
 #[allow(unused_imports)]
 pub use context_preflight::RuntimeAddressedAssignmentUnsupported;

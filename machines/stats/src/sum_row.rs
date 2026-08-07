@@ -130,10 +130,3 @@ fn impl_stats_sum_row_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 }
 
 impl_mech_urnop_fxn!(StatsSumRow, impl_stats_sum_row_fxn, "stats/sum/row");
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "stats",
-    item: "sum/row",
-  }
-}

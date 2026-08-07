@@ -1848,15 +1848,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "inventory"
-version = "0.3.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4f0c30c76f2f4ccee3fe55a2435f691ca00c0e4bd87abe4f4a851b1d4dac39b"
-dependencies = [
- "rustversion",
-]
-
-[[package]]
 name = "ipnet"
 version = "2.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2144,7 +2135,6 @@ dependencies = [
 name = "mech-combinatorics"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "itertools 0.14.0",
  "mech-core",
  "nalgebra",
@@ -2156,7 +2146,6 @@ dependencies = [
 name = "mech-compare"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "paste",
@@ -2176,7 +2165,6 @@ dependencies = [
  "fxhash",
  "hashbrown 0.16.1",
  "indexmap",
- "inventory",
  "libm",
  "nalgebra",
  "num-rational",
@@ -2197,11 +2185,28 @@ dependencies = [
 name = "mech-engine"
 version = "0.3.5"
 dependencies = [
+ "bincode",
+ "byteorder",
  "criterion",
+ "grapheme",
+ "indexmap",
+ "libloading",
+ "mech-abi",
  "mech-bytecode",
+ "mech-combinatorics",
+ "mech-compare",
  "mech-core",
- "mech-interpreter",
+ "mech-logic",
+ "mech-math",
+ "mech-matrix",
+ "mech-range",
+ "mech-set",
+ "mech-stats",
+ "mech-string",
  "mech-syntax",
+ "nalgebra",
+ "num-traits",
+ "paste",
  "serde",
  "web-time",
 ]
@@ -2278,38 +2283,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "mech-interpreter"
-version = "0.3.5"
-dependencies = [
- "bincode",
- "byteorder",
- "grapheme",
- "indexmap",
- "inventory",
- "libloading",
- "mech-abi",
- "mech-combinatorics",
- "mech-compare",
- "mech-core",
- "mech-logic",
- "mech-math",
- "mech-matrix",
- "mech-range",
- "mech-set",
- "mech-stats",
- "mech-string",
- "mech-syntax",
- "nalgebra",
- "num-traits",
- "paste",
- "web-time",
-]
-
-[[package]]
 name = "mech-logic"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "paste",
@@ -2319,7 +2295,6 @@ dependencies = [
 name = "mech-math"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "libm",
  "mech-core",
  "nalgebra",
@@ -2332,7 +2307,6 @@ dependencies = [
 name = "mech-matrix"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "num-traits",
@@ -2343,7 +2317,6 @@ dependencies = [
 name = "mech-range"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "num-traits",
@@ -2361,7 +2334,6 @@ dependencies = [
  "mech-core",
  "mech-engine",
  "mech-host-cli",
- "mech-interpreter",
  "mech-syntax",
  "notify",
  "rand_core 0.6.4",
@@ -2379,7 +2351,6 @@ name = "mech-set"
 version = "0.3.5"
 dependencies = [
  "indexmap",
- "inventory",
  "mech-core",
  "paste",
 ]
@@ -2388,7 +2359,6 @@ dependencies = [
 name = "mech-stats"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "num-traits",
@@ -2399,7 +2369,6 @@ dependencies = [
 name = "mech-string"
 version = "0.3.5"
 dependencies = [
- "inventory",
  "mech-core",
  "nalgebra",
  "paste",
@@ -2433,12 +2402,12 @@ dependencies = [
  "gloo-net",
  "js-sys",
  "mech-core",
+ "mech-engine",
  "mech-host-browser",
  "mech-host-console",
  "mech-host-scene",
  "mech-host-time",
  "mech-host-timer",
- "mech-interpreter",
  "mech-runtime",
  "mech-syntax",
  "miniz_oxide",

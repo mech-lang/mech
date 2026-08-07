@@ -557,8 +557,8 @@ fn impl_jn_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunc
 
 pub struct MathJn {}
 
-impl NativeFunctionCompiler for MathJn {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathJn {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -594,18 +594,4 @@ impl NativeFunctionCompiler for MathJn {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/bessel/jn",
-    ptr: &MathJn{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "bessel/jn",
-  }
 }

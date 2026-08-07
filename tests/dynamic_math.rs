@@ -1,6 +1,6 @@
 extern crate mech_core;
 
-use mech::program::{MechProgram, MechProgramConfig};
+use mech::{MechProgram, MechProgramConfig};
 use mech_core::{Value, structures::matrix::Matrix};
 
 fn run(source: &str) -> bool {

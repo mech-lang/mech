@@ -64,8 +64,8 @@ fn impl_sin_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathSin {}
 
-impl NativeFunctionCompiler for MathSin {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathSin {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -92,18 +92,4 @@ impl NativeFunctionCompiler for MathSin {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/sin",
-    ptr: &MathSin{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "sin",
-  }
 }

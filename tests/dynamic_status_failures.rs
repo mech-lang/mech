@@ -1,6 +1,6 @@
 #![cfg(feature = "dynamic-modules")]
 
-use mech::program::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
+use mech::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
 use mech_core::{Ref, Value, hash_str, structures::matrix::Matrix};
 
 fn unwrap_value(value: Value) -> Value {

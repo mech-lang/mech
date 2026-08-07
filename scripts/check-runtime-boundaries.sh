@@ -133,7 +133,7 @@ fail_if_found \
   '#\[doc\(hidden\)\]' \
   src/core/src/reactive_transaction.rs \
   src/core/src/functions.rs \
-  src/interpreter/src/interpreter.rs \
+  src/engine/src/engine.rs \
   src/engine/src/program.rs
 
 fail_if_found \

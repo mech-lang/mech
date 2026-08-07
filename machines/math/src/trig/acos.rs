@@ -69,8 +69,8 @@ fn impl_acos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathAcos {}
 
-impl NativeFunctionCompiler for MathAcos {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathAcos {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -97,18 +97,4 @@ impl NativeFunctionCompiler for MathAcos {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/acos",
-    ptr: &MathAcos{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "acos",
-  }
 }

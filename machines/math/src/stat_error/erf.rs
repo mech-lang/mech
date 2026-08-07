@@ -64,8 +64,8 @@ fn impl_erf_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
 
 pub struct MathErf {}
 
-impl NativeFunctionCompiler for MathErf {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+impl FunctionSpecializer for MathErf {
+    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -92,18 +92,4 @@ impl NativeFunctionCompiler for MathErf {
             },
         }
     }
-}
-
-register_descriptor! {
-  FunctionCompilerDescriptor {
-    name: "math/erf",
-    ptr: &MathErf{},
-  }
-}
-
-register_descriptor! {
-  ModuleItemDescriptor {
-    module: "math",
-    item: "erf",
-  }
 }

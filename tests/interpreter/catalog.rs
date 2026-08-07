@@ -1,23 +1,12 @@
 use std::sync::Arc;
 
-use mech::{
-    FunctionSystem, LegacyFunctionBoundaryBuilder, MechProgram, MechProgramConfig,
-    default_function_system,
-};
+use mech::{MechProgram, MechProgramConfig, default_function_catalog};
 use mech_core::{
-    FunctionCatalogBuilder, FunctionSpecializer, MResult, MechFunction, NativeFunctionCompiler,
-    OperationId, Value, hash_str,
+    FunctionCatalogBuilder, FunctionSpecializer, MResult, MechFunction, OperationId, Value,
+    hash_str,
 };
 
 const ADD_SOURCE: &str = "result := 1.0 + 2.0\nresult";
-
-struct LegacyCompilerMustNotRun;
-
-impl NativeFunctionCompiler for LegacyCompilerMustNotRun {
-    fn compile(&self, _: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        panic!("catalog-owned named operation reached the legacy compiler")
-    }
-}
 
 struct UnreachableSpecializer;
 
@@ -27,13 +16,13 @@ impl FunctionSpecializer for UnreachableSpecializer {
     }
 }
 
-fn remove_legacy_math_add_compiler(program: &MechProgram) {
-    let operation = hash_str("math/add");
-    let functions = program.interpreter().functions();
-    let removed = functions.borrow_mut().function_compilers.remove(&operation);
+fn assert_math_add_is_catalog_owned(program: &MechProgram) {
     assert!(
-        removed.is_some(),
-        "source proof requires the legacy math/add compiler to be loaded first",
+        program
+            .function_catalog()
+            .specializer(OperationId::from_name("math/add"))
+            .is_some(),
+        "standard catalog must contain math/add",
     );
 }
 
@@ -54,16 +43,9 @@ fn assert_f64(value: Value, expected: f64) {
 }
 
 #[test]
-fn standard_catalog_source_addition_does_not_use_legacy_compiler() {
+fn standard_catalog_source_addition_uses_catalog_specializer() {
     let mut program = MechProgram::new(MechProgramConfig::default());
-    assert!(
-        program
-            .function_system()
-            .legacy_boundary()
-            .owns_operation(OperationId::from_name("math/add"))
-    );
-    program.load_full_stdlib();
-    remove_legacy_math_add_compiler(&program);
+    assert_math_add_is_catalog_owned(&program);
 
     let result = program
         .run_string(ADD_SOURCE)
@@ -73,20 +55,13 @@ fn standard_catalog_source_addition_does_not_use_legacy_compiler() {
 }
 
 #[test]
-fn explicitly_injected_catalog_source_addition_does_not_use_legacy_compiler() {
-    let function_system = default_function_system();
-    let catalog = Arc::clone(function_system.catalog());
-    let legacy_boundary = Arc::clone(function_system.legacy_boundary());
+fn explicitly_injected_catalog_source_addition_uses_catalog_specializer() {
+    let catalog = default_function_catalog();
     let mut program =
-        MechProgram::with_function_system(MechProgramConfig::default(), function_system);
+        MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
     assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
-    assert!(Arc::ptr_eq(
-        program.function_system().legacy_boundary(),
-        &legacy_boundary,
-    ));
 
-    program.load_full_stdlib();
-    remove_legacy_math_add_compiler(&program);
+    assert_math_add_is_catalog_owned(&program);
     let result = program
         .run_string(ADD_SOURCE)
         .expect("explicitly injected catalog must specialize source math/add");
@@ -98,9 +73,6 @@ fn explicitly_injected_catalog_source_addition_does_not_use_legacy_compiler() {
 fn empty_catalog_source_addition_reports_named_operation_unavailable() {
     let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
     let mut program = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
-    program.load_full_stdlib();
-    remove_legacy_math_add_compiler(&program);
-
     let error = program.run_string(ADD_SOURCE).unwrap_err();
     assert_eq!(error.kind_name(), "FunctionOperationUnavailable");
     assert_eq!(
@@ -117,7 +89,6 @@ fn non_visible_catalog_operation_reports_its_name_and_id() {
         .unwrap();
     let catalog = Arc::new(builder.build().unwrap());
     let mut program = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
-    program.load_full_stdlib();
 
     let error = program.run_string(ADD_SOURCE).unwrap_err();
     assert_eq!(error.kind_name(), "FunctionOperationNotVisible");
@@ -128,10 +99,9 @@ fn non_visible_catalog_operation_reports_its_name_and_id() {
 }
 
 #[test]
-fn named_math_add_uses_catalog_without_legacy_compiler() {
+fn named_math_add_uses_catalog() {
     let mut program = MechProgram::new(MechProgramConfig::default());
-    program.load_full_stdlib();
-    remove_legacy_math_add_compiler(&program);
+    assert_math_add_is_catalog_owned(&program);
 
     let result = program
         .run_string("math/add(1.0, 2.0)")
@@ -141,49 +111,52 @@ fn named_math_add_uses_catalog_without_legacy_compiler() {
 }
 
 #[test]
-fn empty_catalog_and_boundary_allow_named_legacy_fallback() {
-    let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
-    let function_system = FunctionSystem::from_catalog(catalog);
-    assert!(
-        !function_system
-            .legacy_boundary()
-            .owns_operation(OperationId::from_name("math/add"))
-    );
-    let mut program =
-        MechProgram::with_function_system(MechProgramConfig::default(), function_system);
-    program.load_full_stdlib();
-
+fn user_definition_shadows_named_catalog_binding_but_not_the_add_operator() {
+    let mut program = MechProgram::new(MechProgramConfig::default());
     let result = program
-        .run_string("math/add(1.0, 2.0)")
-        .expect("an unclaimed named operation must remain eligible for legacy fallback");
+        .run_string(
+            r#"math/add(left<f64>, right<f64>) => <f64>
+  | * => 40.0.
+named := math/add(1.0, 2.0)
+result := named + 2.0
+result"#,
+        )
+        .expect("user named-call precedence must not affect syntax operators");
 
-    assert_f64(result, 3.0);
+    assert_f64(result, 42.0);
 }
 
 #[test]
-fn claimed_named_operation_blocks_legacy_fallback_without_special_cases() {
-    const NAME: &str = "test/claimed";
-
+fn missing_named_function_returns_the_structured_resolver_error() {
+    const NAME: &str = "test/missing";
     let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
-    let mut boundary = LegacyFunctionBoundaryBuilder::new();
-    boundary.claim_operation(NAME);
-    let function_system = FunctionSystem::new(catalog, Arc::new(boundary.build()));
-    let mut program =
-        MechProgram::with_function_system(MechProgramConfig::default(), function_system);
-    program
-        .interpreter()
-        .functions()
-        .borrow_mut()
-        .function_compilers
-        .insert(hash_str(NAME), Arc::new(LegacyCompilerMustNotRun));
+    let mut program = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
 
-    let error = program.run_string("test/claimed(1.0)").unwrap_err();
-    assert_eq!(error.kind_name(), "FunctionOperationUnavailable");
+    let error = program.run_string("test/missing(1.0)").unwrap_err();
+
+    assert_eq!(error.kind_name(), "MissingFunction");
     assert_eq!(
         error.kind_message(),
-        format!(
-            "function operation `test/claimed` (0x{:016x}) is unavailable in the catalog",
-            OperationId::from_name(NAME).raw(),
-        ),
+        format!("Function with id {} not found", hash_str(NAME)),
+    );
+}
+
+#[test]
+fn unbound_catalog_specializer_cannot_rescue_a_named_call() {
+    const NAME: &str = "test/unbound";
+
+    let mut builder = FunctionCatalogBuilder::new();
+    builder
+        .insert_specializer(NAME, Arc::new(UnreachableSpecializer))
+        .unwrap();
+    let catalog = Arc::new(builder.build().unwrap());
+    let mut program = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
+
+    let error = program.run_string("test/unbound(1.0)").unwrap_err();
+
+    assert_eq!(error.kind_name(), "MissingFunction");
+    assert_eq!(
+        error.kind_message(),
+        format!("Function with id {} not found", hash_str(NAME)),
     );
 }

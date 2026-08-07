@@ -5,11 +5,9 @@ use crate::*;
 
 #[cfg(feature = "functions")]
 use indexmap::map::IndexMap;
-use std::cell::RefCell;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt;
 use std::rc::Rc;
-use std::sync::Arc;
 #[cfg(feature = "pretty_print")]
 use tabled::{
     Tabled,
@@ -19,10 +17,142 @@ use tabled::{
 
 // Functions ------------------------------------------------------------------
 
-pub type FunctionsRef = Ref<Functions>;
-pub type FunctionTable = HashMap<u64, fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>>;
-pub type FunctionCompilerTable = HashMap<u64, Arc<dyn NativeFunctionCompiler>>;
-pub type UserFunctionTable = HashMap<u64, FunctionDefinition>;
+/// Program-local user-function definitions keyed by their stable name hash.
+///
+/// The backing map is intentionally opaque so callers cannot accidentally
+/// replace a different name that happens to share the same stable ID.
+#[derive(Clone, Default)]
+pub struct UserFunctionTable {
+    definitions: HashMap<u64, FunctionDefinition>,
+}
+
+impl UserFunctionTable {
+    /// Resolves one exact source-visible name.
+    pub fn resolve_name(&self, name: &str) -> Option<&FunctionDefinition> {
+        let id = hash_str(name);
+        self.definitions
+            .get(&id)
+            .filter(|definition| definition.name == name)
+    }
+
+    /// Inserts a definition, replacing an existing definition only when both
+    /// definitions have the exact same name.
+    pub fn insert_or_replace(
+        &mut self,
+        definition: FunctionDefinition,
+    ) -> MResult<Option<FunctionDefinition>> {
+        validate_user_function_definition(&definition)?;
+
+        if let Some(existing) = self.definitions.get(&definition.id)
+            && existing.name != definition.name
+        {
+            return Err(MechError::new(
+                UserFunctionIdCollision {
+                    id: definition.id,
+                    existing_name: existing.name.clone(),
+                    incoming_name: definition.name,
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+
+        Ok(self.definitions.insert(definition.id, definition))
+    }
+
+    pub fn definitions(&self) -> impl ExactSizeIterator<Item = &FunctionDefinition> + '_ {
+        self.definitions.values()
+    }
+
+    pub fn len(&self) -> usize {
+        self.definitions.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.definitions.is_empty()
+    }
+
+    pub fn clear(&mut self) {
+        self.definitions.clear();
+    }
+}
+
+fn validate_user_function_definition(definition: &FunctionDefinition) -> MResult<()> {
+    if definition.name.is_empty() {
+        return Err(invalid_user_function_definition(
+            definition,
+            "name must not be empty",
+        ));
+    }
+
+    let expected = hash_str(&definition.name);
+    if expected != definition.id {
+        return Err(invalid_user_function_definition(
+            definition,
+            format!(
+                "name hashes to 0x{expected:016x}, not 0x{:016x}",
+                definition.id,
+            ),
+        ));
+    }
+
+    Ok(())
+}
+
+fn invalid_user_function_definition(
+    definition: &FunctionDefinition,
+    reason: impl Into<String>,
+) -> MechError {
+    MechError::new(
+        UserFunctionInvalidDefinition {
+            id: definition.id,
+            name: definition.name.clone(),
+            reason: reason.into(),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UserFunctionInvalidDefinition {
+    pub id: u64,
+    pub name: String,
+    pub reason: String,
+}
+
+impl MechErrorKind for UserFunctionInvalidDefinition {
+    fn name(&self) -> &str {
+        "UserFunctionInvalidDefinition"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "invalid user function {:?} at ID 0x{:016x}: {}",
+            self.name, self.id, self.reason,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UserFunctionIdCollision {
+    pub id: u64,
+    pub existing_name: String,
+    pub incoming_name: String,
+}
+
+impl MechErrorKind for UserFunctionIdCollision {
+    fn name(&self) -> &str {
+        "UserFunctionIdCollision"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "user function names {:?} and {:?} collide at ID 0x{:016x}",
+            self.existing_name, self.incoming_name, self.id,
+        )
+    }
+}
 
 #[derive(Clone, Debug)]
 pub enum FunctionArgs {
@@ -63,38 +193,6 @@ impl FunctionArgs {
             FunctionArgs::Variadic(_, arguments) => arguments.clone(),
         }
     }
-}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct FunctionDescriptor {
-    pub name: &'static str,
-    pub ptr: fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>,
-}
-
-impl Debug for FunctionDescriptor {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{{ name: {:?}, ptr: {:?} }}", self.name, self.ptr)
-    }
-}
-
-#[repr(C)]
-pub struct FunctionCompilerDescriptor {
-    pub name: &'static str,
-    pub ptr: &'static dyn NativeFunctionCompiler,
-}
-
-impl Debug for FunctionCompilerDescriptor {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.name)
-    }
-}
-
-#[repr(C)]
-#[derive(Clone, Debug)]
-pub struct ModuleItemDescriptor {
-    pub module: &'static str,
-    pub item: &'static str,
 }
 
 pub trait MechFunctionFactory {
@@ -264,66 +362,6 @@ pub enum GuardFunctionSafety {
     Unsupported,
 }
 
-pub trait NativeFunctionCompiler: Send + Sync {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
-
-    /// Whether this compiler can be elaborated into a static activation-guard
-    /// graph without executing eager or effectful work. Native compilers are
-    /// rejected by default and must opt in explicitly.
-    fn guard_safety(&self) -> GuardFunctionSafety {
-        GuardFunctionSafety::Unsupported
-    }
-}
-
-pub struct StaticNativeFunctionCompiler {
-    inner: &'static dyn NativeFunctionCompiler,
-}
-
-impl StaticNativeFunctionCompiler {
-    pub fn new(inner: &'static dyn NativeFunctionCompiler) -> Self {
-        Self { inner }
-    }
-}
-
-impl NativeFunctionCompiler for StaticNativeFunctionCompiler {
-    fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        self.inner.compile(arguments)
-    }
-
-    fn guard_safety(&self) -> GuardFunctionSafety {
-        self.inner.guard_safety()
-    }
-}
-
-#[derive(Clone)]
-pub struct Functions {
-    pub functions: FunctionTable,
-    pub function_compilers: FunctionCompilerTable,
-    pub user_functions: UserFunctionTable,
-    pub dictionary: Ref<Dictionary>,
-}
-
-#[derive(Clone)]
-pub struct FunctionsSnapshot {
-    target: FunctionsRef,
-    functions: FunctionTable,
-    function_compilers: FunctionCompilerTable,
-    user_functions: UserFunctionTable,
-    dictionary_target: Ref<Dictionary>,
-    dictionary: Dictionary,
-    user_function_snapshots: Vec<FunctionDefinitionSnapshot>,
-}
-
-#[derive(Clone)]
-struct FunctionDefinitionSnapshot {
-    symbols_target: SymbolTableRef,
-    symbols: SymbolTableSnapshot,
-    symbol_dictionary_target: Ref<Dictionary>,
-    out_target: Ref<Value>,
-    plan_target: Plan,
-    plan: PlanCheckpoint,
-}
-
 #[derive(Debug, Clone)]
 pub struct TransactionStateUnsupportedError {
     pub function: String,
@@ -357,257 +395,6 @@ impl MechErrorKind for TransactionStateBorrowConflictError {
             "Cannot inspect retained transaction state for function '{}' because {} is already borrowed.",
             self.function, self.component,
         )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct FunctionsSnapshotBorrowConflictError {
-    pub phase: &'static str,
-    pub component: &'static str,
-}
-
-impl MechErrorKind for FunctionsSnapshotBorrowConflictError {
-    fn name(&self) -> &str {
-        "FunctionsSnapshotBorrowConflict"
-    }
-    fn message(&self) -> String {
-        format!(
-            "Cannot borrow functions {} during {}.",
-            self.component, self.phase,
-        )
-    }
-}
-
-impl FunctionsSnapshot {
-    fn borrow_conflict(phase: &'static str, component: &'static str) -> MechError {
-        MechError::new(
-            FunctionsSnapshotBorrowConflictError { phase, component },
-            None,
-        )
-        .with_compiler_loc()
-    }
-
-    /// Captures all function tables and the contents and identity of their
-    /// dictionary. The original [`FunctionsRef`] is retained as the restore
-    /// target so restoration never substitutes the outer container.
-    pub fn capture(target: &FunctionsRef) -> MResult<Self> {
-        let functions = target
-            .try_borrow()
-            .map_err(|_| Self::borrow_conflict("capture", "table"))?;
-        let dictionary_target = functions.dictionary.clone();
-        let dictionary = dictionary_target
-            .try_borrow()
-            .map_err(|_| Self::borrow_conflict("capture", "dictionary"))?
-            .clone();
-        let mut user_function_snapshots = Vec::with_capacity(functions.user_functions.len());
-        for definition in functions.user_functions.values() {
-            let symbols = definition
-                .symbols
-                .try_borrow()
-                .map_err(|_| Self::borrow_conflict("capture", "user symbol table"))?;
-            let symbol_dictionary_target = symbols.dictionary.clone();
-            let _symbol_dictionary = symbol_dictionary_target
-                .try_borrow()
-                .map_err(|_| Self::borrow_conflict("capture", "user symbol dictionary"))?;
-            let symbol_snapshot = symbols.snapshot();
-            drop(_symbol_dictionary);
-            drop(symbols);
-
-            let reactive = definition
-                .plan
-                .0
-                .try_borrow()
-                .map_err(|_| Self::borrow_conflict("capture", "user reactive plan"))?;
-            let scopes = definition
-                .plan
-                .1
-                .try_borrow()
-                .map_err(|_| Self::borrow_conflict("capture", "user activation scopes"))?;
-            reactive.validate_checkpoint_invariants(scopes.len())?;
-            let plan = PlanCheckpoint {
-                reactive: reactive.checkpoint(),
-                activation_registration_scopes: scopes.clone(),
-            };
-            drop(scopes);
-            drop(reactive);
-
-            user_function_snapshots.push(FunctionDefinitionSnapshot {
-                symbols_target: definition.symbols.clone(),
-                symbols: symbol_snapshot,
-                symbol_dictionary_target,
-                out_target: definition.out.clone(),
-                plan_target: definition.plan.clone(),
-                plan,
-            });
-        }
-        let snapshot = Self {
-            target: target.clone(),
-            functions: functions.functions.clone(),
-            function_compilers: functions.function_compilers.clone(),
-            user_functions: functions.user_functions.clone(),
-            dictionary_target,
-            dictionary,
-            user_function_snapshots,
-        };
-        Ok(snapshot)
-    }
-
-    /// Verifies that both original containers can be restored without changing
-    /// either one.
-    pub fn preflight_restore(&self) -> MResult<()> {
-        {
-            let _functions = self
-                .target
-                .try_borrow_mut()
-                .map_err(|_| Self::borrow_conflict("restore", "table"))?;
-            let _dictionary = self
-                .dictionary_target
-                .try_borrow_mut()
-                .map_err(|_| Self::borrow_conflict("restore", "dictionary"))?;
-        }
-        for definition in &self.user_function_snapshots {
-            {
-                let _symbols = definition
-                    .symbols_target
-                    .try_borrow_mut()
-                    .map_err(|_| Self::borrow_conflict("restore", "user symbol table"))?;
-                let _dictionary = definition
-                    .symbol_dictionary_target
-                    .try_borrow_mut()
-                    .map_err(|_| Self::borrow_conflict("restore", "user symbol dictionary"))?;
-            }
-            definition
-                .plan_target
-                .preflight_rollback(&definition.plan)?;
-        }
-        Ok(())
-    }
-
-    /// Restores captured registry and plan structure after successful preflight.
-    ///
-    /// Consumer indexes are finalized separately so a coordinating checkpoint
-    /// can restore journal payloads before rebuilding derived state.
-    pub fn apply_restore_structure(&self) {
-        for definition in &self.user_function_snapshots {
-            {
-                let mut symbols = definition.symbols_target.borrow_mut();
-                symbols.dictionary = definition.symbol_dictionary_target.clone();
-                symbols.restore(definition.symbols.clone());
-            }
-            definition
-                .plan_target
-                .apply_rollback_structure(&definition.plan);
-        }
-
-        let mut functions = self.target.borrow_mut();
-        let mut dictionary = self.dictionary_target.borrow_mut();
-        functions.functions = self.functions.clone();
-        functions.function_compilers = self.function_compilers.clone();
-        functions.user_functions = self.user_functions.clone();
-        functions.dictionary = self.dictionary_target.clone();
-        *dictionary = self.dictionary.clone();
-    }
-
-    pub fn rebuild_checkpoint_indexes(&self) {
-        for definition in &self.user_function_snapshots {
-            definition.plan_target.rebuild_checkpoint_indexes();
-        }
-    }
-
-    pub fn validate_checkpoint_invariants(&self) -> MResult<()> {
-        for definition in &self.user_function_snapshots {
-            definition.plan_target.validate_checkpoint_invariants()?;
-        }
-        Ok(())
-    }
-
-    /// Restores the captured tables and dictionary after successful preflight.
-    ///
-    /// No function compiler, callback, or user function is invoked.
-    pub fn apply_restore(&self) {
-        self.apply_restore_structure();
-        self.rebuild_checkpoint_indexes();
-    }
-
-    /// Returns the `Value` roots retained by captured user definitions.
-    ///
-    /// This includes each outer result cell, all symbol cells, and every nested
-    /// reactive-plan function. [`ValueStateJournal`] deduplicates aliases.
-    pub fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        let mut values = Vec::new();
-        let mut seen_refs = HashSet::new();
-        for definition in &self.user_function_snapshots {
-            if seen_refs.insert(definition.out_target.addr()) {
-                values.push(Value::MutableReference(definition.out_target.clone()));
-            }
-            let symbols = definition
-                .symbols_target
-                .try_borrow()
-                .map_err(|_| Self::borrow_conflict("transaction-state", "user symbol table"))?;
-            for value in symbols
-                .symbols
-                .values()
-                .chain(symbols.mutable_variables.values())
-            {
-                if seen_refs.insert(value.addr()) {
-                    values.push(Value::MutableReference(value.clone()));
-                }
-            }
-            drop(symbols);
-            values.extend(definition.plan_target.transaction_state_values()?);
-        }
-        Ok(values)
-    }
-
-    pub fn restore(&self) -> MResult<()> {
-        self.preflight_restore()?;
-        self.apply_restore();
-        Ok(())
-    }
-}
-
-impl Functions {
-    pub fn new() -> Self {
-        Self {
-            functions: HashMap::new(),
-            function_compilers: HashMap::new(),
-            user_functions: HashMap::new(),
-            dictionary: Ref::new(Dictionary::new()),
-        }
-    }
-
-    pub fn insert_function(&mut self, fxn: FunctionDescriptor) {
-        let id = hash_str(&fxn.name);
-        self.functions.insert(id.clone(), fxn.ptr);
-        self.dictionary
-            .borrow_mut()
-            .insert(id, fxn.name.to_string());
-    }
-
-    pub fn insert_function_compiler(
-        &mut self,
-        name: impl Into<String>,
-        compiler: Arc<dyn NativeFunctionCompiler>,
-    ) {
-        let name = name.into();
-        let id = hash_str(&name);
-        self.function_compilers.insert(id, compiler);
-        self.dictionary.borrow_mut().insert(id, name);
-    }
-
-    #[cfg(feature = "pretty_print")]
-    pub fn pretty_print(&self) -> String {
-        let mut output = String::new();
-        output.push_str("\nFunctions:\n");
-        // print number of functions loaded:
-        output.push_str(&format!("Total Functions: {}\n", self.functions.len()));
-        output.push_str(&format!("User Functions: {}\n", self.user_functions.len()));
-        //for (id, fxn_ptr) in &self.functions {
-        //  let dict_brrw = self.dictionary.borrow();
-        //  let name = dict_brrw.get(id).unwrap();
-        //  output.push_str(&format!("  {}: {:?}\n", name, fxn_ptr));
-        //}
-        output
     }
 }
 
@@ -2124,6 +1911,24 @@ impl Plan {
         }
     }
 
+    /// Fallibly captures a structurally valid checkpoint without panicking on
+    /// outstanding plan borrows.
+    pub fn try_checkpoint(&self) -> MResult<PlanCheckpoint> {
+        let reactive = self
+            .0
+            .try_borrow()
+            .map_err(|_| Self::checkpoint_borrow_conflict("capture", "reactive graph"))?;
+        let scopes = self
+            .1
+            .try_borrow()
+            .map_err(|_| Self::checkpoint_borrow_conflict("capture", "activation scopes"))?;
+        reactive.validate_checkpoint_invariants(scopes.len())?;
+        Ok(PlanCheckpoint {
+            reactive: reactive.checkpoint(),
+            activation_registration_scopes: scopes.clone(),
+        })
+    }
+
     pub fn validate_checkpoint_invariants(&self) -> MResult<()> {
         let reactive = self.0.try_borrow().map_err(|_| {
             Self::checkpoint_borrow_conflict("checkpoint-validation", "reactive graph")
@@ -2479,19 +2284,6 @@ impl PrettyPrint for Plan {
 #[cfg(test)]
 #[path = "functions/tests/mod.rs"]
 mod tests;
-
-// Function Registry
-// ----------------------------------------------------------------------------
-
-// Function registry is a mapping from function IDs to the actual fucntion implementaionts
-
-/*lazy_static! {
-  pub static ref FUNCTION_REGISTRY: RefCell<HashMap<u64, Box<dyn NativeFunctionCompiler>>> = RefCell::new(HashMap::new());
-}*/
-
-pub struct FunctionRegistry {
-    pub registry: RefCell<HashMap<u64, Box<dyn MechFunctionImpl>>>,
-}
 
 #[derive(Debug, Clone)]
 pub struct UnhandledFunctionArgumentKind1 {
