@@ -10,6 +10,8 @@ pub mod input;
 #[cfg(feature = "runtime")]
 pub mod ledger;
 pub mod operation;
+#[cfg(feature = "runtime")]
+pub mod outbox;
 mod resource;
 #[cfg(feature = "runtime")]
 mod snapshot;
@@ -55,6 +57,8 @@ pub use self::input::*;
 #[cfg(feature = "runtime")]
 pub use self::ledger::*;
 pub use self::operation::*;
+#[cfg(feature = "runtime")]
+pub use self::outbox::*;
 pub use self::resource::*;
 #[cfg(feature = "runtime")]
 pub use self::snapshot::*;

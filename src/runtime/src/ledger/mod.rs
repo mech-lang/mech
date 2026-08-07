@@ -11,7 +11,7 @@ use mech_core::MResult;
 
 use crate::turn_record::{AccountedRecord, LedgerSequence};
 
-pub(crate) use capacity::{CapacityController, CapacityReservation};
+pub(crate) use capacity::{CapacityController, CapacityReservation, invalid_permit};
 pub use capacity::{
     LedgerAllocationFailed, LedgerCapacityExceeded, LedgerPermitInvalid, RecordEstimate,
 };
@@ -144,10 +144,25 @@ pub(crate) fn reserve(
 
 pub(crate) fn prepare<R: AccountedRecord>(
     controller: &CapacityController,
-    mut permit: LedgerPermit,
+    permit: LedgerPermit,
     record: R,
 ) -> MResult<PreparedLedgerAppend<R>> {
     let actual_bytes = record.retained_bytes();
+    let (prepared_controller, reservation) =
+        prepare_reservation(controller, permit, 1, actual_bytes)?;
+    Ok(PreparedLedgerAppend {
+        controller: prepared_controller,
+        reservation: Some(reservation),
+        record: Some(record),
+    })
+}
+
+pub(crate) fn prepare_reservation(
+    controller: &CapacityController,
+    mut permit: LedgerPermit,
+    actual_records: usize,
+    actual_bytes: usize,
+) -> MResult<(CapacityController, CapacityReservation)> {
     let reservation = permit
         .reservation
         .take()
@@ -158,6 +173,7 @@ pub(crate) fn prepare<R: AccountedRecord>(
         permit.ledger_generation,
         permit.consumed,
         reservation,
+        actual_records,
         actual_bytes,
     );
     let reservation = match bound {
@@ -168,9 +184,5 @@ pub(crate) fn prepare<R: AccountedRecord>(
         }
     };
     permit.consumed = true;
-    Ok(PreparedLedgerAppend {
-        controller: controller.clone(),
-        reservation: Some(reservation),
-        record: Some(record),
-    })
+    Ok((controller.clone(), reservation))
 }

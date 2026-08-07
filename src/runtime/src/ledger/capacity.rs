@@ -147,6 +147,7 @@ impl CapacityController {
         ledger_generation: u64,
         consumed: bool,
         mut reservation: CapacityReservation,
+        actual_records: usize,
         actual_bytes: usize,
     ) -> MResult<CapacityReservation> {
         if consumed {
@@ -161,8 +162,20 @@ impl CapacityController {
         if ledger_generation != state.generation.get() {
             return Err(invalid_permit("ledger permit generation is stale"));
         }
-        if reservation.records < 1 {
-            return Err(invalid_permit("ledger permit does not reserve a record"));
+        if actual_records == 0 {
+            return Err(invalid_permit("prepared append must contain a record"));
+        }
+        if actual_records > reservation.records {
+            return Err(MechError::new(
+                LedgerCapacityExceeded {
+                    resource: "prepared record count",
+                    maximum: reservation.records,
+                    retained: 0,
+                    reserved: 0,
+                    requested: actual_records,
+                },
+                None,
+            ));
         }
         if state.prepared_sequence.is_some() {
             return Err(invalid_permit(
@@ -189,11 +202,11 @@ impl CapacityController {
                 None,
             ));
         }
-        let unused_records = reservation.records - 1;
+        let unused_records = reservation.records - actual_records;
         let unused_bytes = reservation.bytes - actual_bytes;
         state.reserved_records -= unused_records;
         state.reserved_bytes -= unused_bytes;
-        reservation.records = 1;
+        reservation.records = actual_records;
         reservation.bytes = actual_bytes;
         state.prepared_sequence = Some(reservation.sequence);
         Ok(reservation)
@@ -299,13 +312,6 @@ impl CapacityController {
 
     pub(crate) fn is_healthy(&self) -> bool {
         self.lock().healthy
-    }
-
-    pub(crate) fn assert_owner(&self, owner: &Self) {
-        assert!(
-            self.identity == owner.identity && Arc::ptr_eq(&self.state, &owner.state),
-            "prepared append belongs to a different ledger"
-        );
     }
 
     #[cfg(test)]
