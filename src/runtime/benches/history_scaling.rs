@@ -103,7 +103,7 @@ fn emit_report(
     allocations: AllocationSnapshot,
 ) {
     eprintln!(
-        "GATE_A_SAMPLE {{\"operation\":\"{operation}\",\"history\":{history},\"allocation_count\":{},\"deallocation_count\":{},\"allocated_bytes\":{},\"context_event_snapshot_count\":{},\"context_event_snapshot_items\":{},\"context_event_compaction_count\":{},\"context_event_compaction_moved_items\":{},\"context_event_visible_len\":{},\"context_event_physical_len\":{},\"runtime_transaction_savepoint_clone_count\":{},\"runtime_transaction_savepoint_items\":{},\"in_memory_store_clone_count\":{},\"in_memory_store_cloned_records\":{},\"commit_runtime_call_count\":{},\"program_checkpoint_count\":{},\"reactive_journal_cell_count\":{},\"events_appended\":{},\"transactions_committed\":{}}}",
+        "GATE_A_SAMPLE {{\"operation\":\"{operation}\",\"history\":{history},\"allocation_count\":{},\"deallocation_count\":{},\"allocated_bytes\":{},\"context_event_snapshot_count\":{},\"context_event_snapshot_items\":{},\"context_event_compaction_count\":{},\"context_event_compaction_moved_items\":{},\"context_event_visible_len\":{},\"context_event_physical_len\":{},\"runtime_transaction_savepoint_clone_count\":{},\"runtime_transaction_savepoint_items\":{},\"in_memory_store_clone_count\":{},\"in_memory_store_cloned_records\":{},\"in_memory_store_prepare_duration_ns\":{},\"in_memory_store_apply_duration_ns\":{},\"commit_runtime_call_count\":{},\"program_checkpoint_count\":{},\"reactive_journal_cell_count\":{},\"events_appended\":{},\"transactions_committed\":{}}}",
         allocations.allocations,
         allocations.deallocations,
         allocations.allocated_bytes,
@@ -117,6 +117,8 @@ fn emit_report(
         probes.runtime_transaction_savepoint_items,
         probes.in_memory_store_clone_count,
         probes.in_memory_store_cloned_records,
+        probes.in_memory_store_prepare_duration_ns,
+        probes.in_memory_store_apply_duration_ns,
         probes.commit_runtime_call_count,
         probes.program_checkpoint_count,
         probes.reactive_journal_cell_count,

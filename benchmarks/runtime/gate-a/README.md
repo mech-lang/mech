@@ -31,8 +31,11 @@ valid `RuntimeStoreCommit`.
 Allocation counts cover only the measured operation. Criterion timing remains
 supporting evidence: hosted CI does not compare absolute latency. A1's hard
 gate is zero context-event snapshot items; A2's hard gate is zero complete
-in-memory-store clone records. Controlled-machine median and p95 ratios across
-history sizes are diagnostic evidence, not a Gate A pass/fail criterion.
+in-memory-store clone records. In A2 reports, benchmark probes also record the
+prepare and infallible-apply portions of each in-memory commit separately.
+A1 controlled-machine median and p95 ratios across history sizes are diagnostic
+evidence. A2 controlled-machine timing checks require the largest minimal-store
+history median to be no more than 1.10 times the zero-history median.
 
 Each Criterion sample constructs one fixture with the exact requested history,
 measures exactly one operation, and reports that duration as the per-iteration

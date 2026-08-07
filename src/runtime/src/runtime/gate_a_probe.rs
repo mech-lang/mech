@@ -17,6 +17,8 @@ pub struct GateACostSnapshot {
     pub runtime_transaction_savepoint_items: u64,
     pub in_memory_store_clone_count: u64,
     pub in_memory_store_cloned_records: u64,
+    pub in_memory_store_prepare_duration_ns: u64,
+    pub in_memory_store_apply_duration_ns: u64,
     pub commit_runtime_call_count: u64,
     pub program_checkpoint_count: u64,
     pub reactive_journal_cell_count: u64,
@@ -87,6 +89,24 @@ pub(crate) fn record_in_memory_store_clone(records: usize) {
     });
 }
 
+pub(crate) fn record_in_memory_store_prepare_duration(duration: std::time::Duration) {
+    let elapsed = u64::try_from(duration.as_nanos()).unwrap_or(u64::MAX);
+    add(|costs| {
+        costs.in_memory_store_prepare_duration_ns = costs
+            .in_memory_store_prepare_duration_ns
+            .saturating_add(elapsed);
+    });
+}
+
+pub(crate) fn record_in_memory_store_apply_duration(duration: std::time::Duration) {
+    let elapsed = u64::try_from(duration.as_nanos()).unwrap_or(u64::MAX);
+    add(|costs| {
+        costs.in_memory_store_apply_duration_ns = costs
+            .in_memory_store_apply_duration_ns
+            .saturating_add(elapsed);
+    });
+}
+
 pub(crate) fn record_commit_runtime_call() {
     add(|costs| {
         costs.commit_runtime_call_count = costs.commit_runtime_call_count.saturating_add(1);
@@ -131,6 +151,8 @@ mod tests {
         record_context_event_lengths(5, 7);
         record_runtime_transaction_savepoint_clone(5);
         record_in_memory_store_clone(7);
+        record_in_memory_store_prepare_duration(std::time::Duration::from_nanos(13));
+        record_in_memory_store_apply_duration(std::time::Duration::from_nanos(17));
         record_commit_runtime_call();
         record_program_checkpoint();
         record_reactive_journal_cells(11);
@@ -150,6 +172,8 @@ mod tests {
                 runtime_transaction_savepoint_items: 5,
                 in_memory_store_clone_count: 1,
                 in_memory_store_cloned_records: 7,
+                in_memory_store_prepare_duration_ns: 13,
+                in_memory_store_apply_duration_ns: 17,
                 commit_runtime_call_count: 1,
                 program_checkpoint_count: 1,
                 reactive_journal_cell_count: 11,

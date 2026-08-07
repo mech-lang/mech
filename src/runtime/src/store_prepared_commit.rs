@@ -227,7 +227,7 @@ impl InMemoryStore {
             debug_assert!(previous.is_some(), "prepared capability must exist");
         }
         for event in events {
-            self.event_order.push(event.id);
+            self.event_order.push_back(event.id);
             self.events.insert(event.id, event);
             self.prune_events();
         }

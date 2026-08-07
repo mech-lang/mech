@@ -42,8 +42,14 @@ use crate::resolver::{
     SourceImportAlias, SourceImportDeclaration, SourceScope, import_requires_source_dependency,
 };
 
+#[path = "store_prepared_commit.rs"]
 mod prepared_commit;
+#[path = "store_validation.rs"]
 mod validation;
+
+#[cfg(test)]
+#[path = "store_prepared_commit_tests.rs"]
+mod prepared_commit_tests;
 
 // -----------------------------------------------------------------------------
 // Store Trait
@@ -915,7 +921,7 @@ pub struct InMemoryStore {
     revoked_capabilities: HashMap<CapabilityId, bool>,
 
     events: HashMap<EventId, RuntimeEvent>,
-    event_order: Vec<EventId>,
+    event_order: VecDeque<EventId>,
     max_events: Option<usize>,
 
     transactions: HashMap<TransactionId, TransactionRecord>,
@@ -991,8 +997,7 @@ impl InMemoryStore {
     fn prune_events(&mut self) {
         if let Some(max_events) = self.max_events {
             while self.event_order.len() > max_events {
-                if let Some(removed) = self.event_order.first().copied() {
-                    self.event_order.remove(0);
+                if let Some(removed) = self.event_order.pop_front() {
                     self.events.remove(&removed);
                 }
             }
@@ -1469,7 +1474,7 @@ impl MechStore for InMemoryStore {
 
         let id = event.id;
         self.events.insert(id, event);
-        self.event_order.push(id);
+        self.event_order.push_back(id);
         self.prune_events();
         Ok(id)
     }
@@ -1510,8 +1515,23 @@ impl MechStore for InMemoryStore {
         if self.panic_on_commit_runtime {
             panic!("deliberate store commit panic");
         }
-        let prepared = prepared_commit::PreparedInMemoryCommit::prepare(self, commit)?;
-        Ok(self.apply_prepared_runtime_commit(prepared))
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        let prepare_started = std::time::Instant::now();
+        let prepared = prepared_commit::PreparedInMemoryCommit::prepare(self, commit);
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_in_memory_store_prepare_duration(
+            prepare_started.elapsed(),
+        );
+        let prepared = prepared?;
+
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        let apply_started = std::time::Instant::now();
+        let id = self.apply_prepared_runtime_commit(prepared);
+        #[cfg(any(test, feature = "runtime_bench_probes"))]
+        crate::runtime::gate_a_probe::record_in_memory_store_apply_duration(
+            apply_started.elapsed(),
+        );
+        Ok(id)
     }
 
     fn commit_transaction(&mut self, tx: TransactionRecord) -> MResult<TransactionId> {
@@ -1658,8 +1678,6 @@ impl MechErrorKind for StoreCapabilityNotRevocableError {
 mod tests {
     use super::*;
 
-    mod prepared_commit;
-
     use crate::capability::{BasicCapability, BasicOperation, BasicResource, BasicSubject};
 
     use crate::event::{RuntimeEvent, RuntimeEventKind};
@@ -1733,7 +1751,7 @@ mod tests {
             EventId(8),
             RuntimeEvent::new(EventId(8), 0, RuntimeEventKind::RuntimeTickStarted),
         );
-        store.event_order.push(EventId(8));
+        store.event_order.push_back(EventId(8));
         store.transactions.insert(
             TransactionId(9),
             TransactionRecord::new(TransactionId(9), "subject"),

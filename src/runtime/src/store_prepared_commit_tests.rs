@@ -1,5 +1,6 @@
-use super::super::prepared_commit::PreparedInMemoryCommit;
+use super::prepared_commit::PreparedInMemoryCommit;
 use super::*;
+use crate::capability::BasicCapability;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct InMemoryStoreSemanticSnapshot {
@@ -132,7 +133,7 @@ impl InMemoryStoreSemanticSnapshot {
             capabilities_by_subject,
             revoked_capabilities,
             events,
-            event_order: store.event_order.clone(),
+            event_order: store.event_order.iter().copied().collect(),
             transactions,
             transaction_order: store.transaction_order.clone(),
         }
@@ -298,7 +299,7 @@ fn prepared_complete_batch_updates_every_supported_family() {
         store.revoked_capabilities.get(&CapabilityId(50)),
         Some(&true)
     );
-    assert_eq!(store.event_order, vec![EventId(71)]);
+    assert_eq!(store.event_order, VecDeque::from([EventId(71)]));
     assert_eq!(store.events.len(), 1);
     assert_eq!(store.transaction_order, vec![TransactionId(60)]);
     assert!(store.transactions.contains_key(&TransactionId(60)));
