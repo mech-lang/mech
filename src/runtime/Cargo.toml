@@ -324,3 +324,8 @@ required-features = ["source_default"]
 name = "reactive_transaction"
 harness = false
 required-features = ["source_default"]
+
+[[bench]]
+name = "history_scaling"
+harness = false
+required-features = ["source_default", "runtime_bench_probes"]

@@ -130,6 +130,17 @@ pub(in crate::runtime) fn runtime_program_checkpoint_count() -> usize {
 }
 
 impl MechRuntime {
+    #[cfg(feature = "runtime_bench_probes")]
+    #[doc(hidden)]
+    pub fn gate_a_capture_runtime_operation_savepoint(
+        &self,
+        context: &RuntimeContext,
+    ) -> MResult<()> {
+        let transaction_id = Self::context_transaction_id(context)?;
+        let _savepoint = self.capture_runtime_operation_savepoint(context, transaction_id)?;
+        Ok(())
+    }
+
     #[cfg(feature = "invariant_define")]
     pub(in crate::runtime) fn emit_integrity_failure_audit(
         &mut self,
