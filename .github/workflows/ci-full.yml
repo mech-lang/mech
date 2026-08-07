@@ -1262,13 +1262,14 @@ jobs:
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_RELEASE_DEBUG: "0"
-      CARGO_TARGET_DIR: ${{ runner.temp }}/mech-release-target
     steps:
       - uses: actions/checkout@v7.0.1
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Build and package the exact distribution
         id: package
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/mech-release-target
         run: >-
           python3 scripts/build-distribution-artifact.py
           --channel "${{ inputs.release_channel }}"
