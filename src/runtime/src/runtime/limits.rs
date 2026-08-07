@@ -1,7 +1,7 @@
 //! Runtime budget, source, duration, and event-retention limits.
 
 use super::MechRuntime;
-use crate::{ResourceBudget, ResourceBudgetExceededError, RuntimeContext, RuntimeEvent};
+use crate::{ResourceBudget, ResourceBudgetExceededError, RuntimeContext};
 use mech_core::{MResult, MechError, MechSourceCode};
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
@@ -122,17 +122,12 @@ impl MechRuntime {
         context.charge_bytes(source_bytes)
     }
 
-    pub(in crate::runtime) fn trim_events_to_retention(&self, events: &mut Vec<RuntimeEvent>) {
+    pub(in crate::runtime) fn apply_context_event_retention(&self, context: &mut RuntimeContext) {
         let Some(max_events) = self.config.limits.max_in_memory_events else {
             return;
         };
         let max_events = usize::try_from(max_events).unwrap_or(usize::MAX);
-        if events.len() > max_events {
-            let removed = events.len() - max_events;
-            events.drain(0..removed);
-            #[cfg(any(test, feature = "runtime_bench_probes"))]
-            crate::runtime::gate_a_probe::record_context_event_compaction(events.len());
-        }
+        context.events.retain_last(max_events);
     }
 
     pub(in crate::runtime) fn enforce_turn_duration(&self, started: Instant) -> MResult<()> {

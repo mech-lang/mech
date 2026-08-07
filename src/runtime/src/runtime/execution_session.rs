@@ -91,13 +91,11 @@ impl RuntimeSessionServices<'_> {
         Ok(())
     }
 
-    fn trim_context_events(max_events: Option<usize>, events: &mut Vec<RuntimeEvent>) {
+    fn trim_context_events(max_events: Option<usize>, context: &mut RuntimeContext) {
         let Some(max_events) = max_events else {
             return;
         };
-        if events.len() > max_events {
-            events.drain(0..(events.len() - max_events));
-        }
+        context.events.retain_last(max_events);
     }
 
     fn emit_event(&mut self, kind: RuntimeEventKind) -> MResult<EventId> {
@@ -116,7 +114,7 @@ impl RuntimeSessionServices<'_> {
         );
         let id = event.id;
         self.context.push_event(event.clone());
-        Self::trim_context_events(self.max_events, &mut self.context.events);
+        Self::trim_context_events(self.max_events, self.context);
         if let Err(error) = self.transaction.store.stage_event(event) {
             self.context.events = context_events_before;
             return Err(error);

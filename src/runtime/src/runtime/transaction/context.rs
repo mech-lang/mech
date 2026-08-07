@@ -1,8 +1,9 @@
+use crate::context_events::RuntimeContextEvents;
 use crate::runtime::MechRuntime;
 use crate::{
     AccessSet, ActorId, ActorTurn, MessageRecord, ModuleVersionId, ObjectId, ResourceBudget,
-    RuntimeAuthorityScope, RuntimeContext, RuntimeEvent, RuntimeId, RuntimeInvalidOperationError,
-    TaskId, TransactionId,
+    RuntimeAuthorityScope, RuntimeContext, RuntimeId, RuntimeInvalidOperationError, TaskId,
+    TransactionId,
 };
 use mech_core::{MResult, MechError};
 
@@ -88,7 +89,7 @@ pub(in crate::runtime) struct RuntimeContextCheckpoint {
     transaction: Option<TransactionId>,
     authority: RuntimeAuthorityScope,
     budget: ResourceBudget,
-    events: Vec<RuntimeEvent>,
+    events: RuntimeContextEvents,
     actor_message: Option<MessageRecord>,
     actor_state: Option<ObjectId>,
 }

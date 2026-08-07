@@ -749,7 +749,7 @@ impl MechRuntime {
         let event = self.make_event(kind);
         let id = event.id;
         context.push_event(event.clone());
-        self.trim_events_to_retention(&mut context.events);
+        self.apply_context_event_retention(context);
         if let Err(error) = envelope.store.stage_event(event) {
             context.events = context_events_before;
             return Err(error);
@@ -768,7 +768,7 @@ impl MechRuntime {
         let event = self.make_event(kind);
         let id = event.id;
         context.push_event(event.clone());
-        self.trim_events_to_retention(&mut context.events);
+        self.apply_context_event_retention(context);
         if let Err(error) = self.store.append_event(event) {
             context.events = context_events_before;
             return Err(error);

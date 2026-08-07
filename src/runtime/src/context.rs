@@ -23,6 +23,7 @@ use std::collections::{BTreeSet, HashMap};
 use mech_core::{MResult, MechError, MechErrorKind};
 
 use crate::capability::{CapabilityContext, CapabilityRequest, Operation, Resource};
+use crate::context_events::RuntimeContextEvents;
 
 use crate::event::RuntimeEvent;
 
@@ -427,7 +428,7 @@ pub struct RuntimeContext {
     pub(crate) transaction: Option<TransactionId>,
     pub(crate) authority: RuntimeAuthorityScope,
     pub(crate) budget: ResourceBudget,
-    pub(crate) events: Vec<RuntimeEvent>,
+    pub(crate) events: RuntimeContextEvents,
     pub(crate) actor_message: Option<MessageRecord>,
     pub(crate) actor_state: Option<ObjectId>,
 }
@@ -516,7 +517,7 @@ impl RuntimeContext {
             transaction: None,
             authority: RuntimeAuthorityScope::AllForSubject,
             budget: ResourceBudget::default(),
-            events: Vec::new(),
+            events: RuntimeContextEvents::new(),
             actor_message: None,
             actor_state: None,
         }
@@ -639,7 +640,7 @@ impl RuntimeContext {
     }
 
     pub(crate) fn drain_events(&mut self) -> Vec<RuntimeEvent> {
-        std::mem::take(&mut self.events)
+        self.events.drain_visible()
     }
 
     pub(crate) fn add_capability(&mut self, capability: CapabilityId) {
@@ -738,7 +739,7 @@ impl RuntimeContext {
     }
 
     pub fn events(&self) -> &[RuntimeEvent] {
-        &self.events
+        self.events.visible()
     }
 
     pub fn authority_scope(&self) -> &RuntimeAuthorityScope {
@@ -859,7 +860,7 @@ impl RuntimeContextBuilder {
             }),
             budget: self.budget,
             access: self.access,
-            events: Vec::new(),
+            events: RuntimeContextEvents::new(),
             actor_message: self.actor_message,
             actor_state: self.actor_state,
         };

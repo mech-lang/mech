@@ -21,6 +21,8 @@ pub mod capability;
 #[cfg(feature = "runtime")]
 pub mod context;
 #[cfg(feature = "runtime")]
+mod context_events;
+#[cfg(feature = "runtime")]
 pub mod event;
 pub mod host;
 #[cfg(feature = "runtime")]
