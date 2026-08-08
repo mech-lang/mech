@@ -1,6 +1,8 @@
 //! Errors raised while constructing or canonicalizing semantic model values.
 
-use crate::{MechError, MechErrorKind};
+use crate::{
+    DimensionOperator, DimensionParameterId, KindId, KindParameterId, MechError, MechErrorKind,
+};
 
 #[cfg(feature = "no_std")]
 use alloc::string::String;
@@ -64,6 +66,44 @@ pub enum SemanticModelError {
         segment: Option<u32>,
         reason: NominalPathError,
     },
+    UnknownNamedKind {
+        id: KindId,
+    },
+    UnknownKindParameter {
+        id: KindParameterId,
+    },
+    DuplicateKindParameter {
+        id: KindParameterId,
+    },
+    ForwardKindParameterReference {
+        parameter: KindParameterId,
+        referenced: KindParameterId,
+    },
+    UnknownDimensionParameterV1 {
+        id: DimensionParameterId,
+    },
+    DuplicateDimensionParameter {
+        id: DimensionParameterId,
+    },
+    CyclicDimensionParameterBoundsV1,
+    ForwardDimensionParameterReferenceV1 {
+        parameter: DimensionParameterId,
+        referenced: DimensionParameterId,
+    },
+    CompileTimeDimensionParameterV1,
+    DimensionOverflowV1,
+    EmptyMinMaxV1 {
+        operator: DimensionOperator,
+    },
+    UnresolvedDimensionHole,
+    UnresolvedKindHole,
+    KindParameterNotClosed {
+        id: KindParameterId,
+    },
+    NonInstantiableKind {
+        kind: NonInstantiableKind,
+    },
+    InvalidVariadicKindScheme,
     DuplicateKindName {
         category: KindNameCategory,
         name: String,

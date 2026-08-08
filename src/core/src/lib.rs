@@ -109,12 +109,15 @@ use tabled::{
     settings::{Alignment, Modify, Panel, Span, Style, object::Rows},
 };
 
+pub mod dimension;
 pub mod element;
 pub mod error;
 pub mod execution;
 #[cfg(feature = "functions")]
 pub mod function;
 pub mod kind;
+pub mod kind_expr;
+pub mod kind_scheme;
 pub mod nodes;
 pub mod nominal;
 #[cfg(feature = "functions")]
@@ -138,12 +141,15 @@ pub mod program;
 pub mod stdlib;
 pub mod types;
 
+pub use self::dimension::*;
 pub use self::element::*;
 pub use self::error::*;
 pub use self::execution::*;
 #[cfg(feature = "functions")]
 pub use self::function::*;
 pub use self::kind::*;
+pub use self::kind_expr::*;
+pub use self::kind_scheme::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
 pub use self::nodes::*;
