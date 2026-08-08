@@ -111,3 +111,45 @@ impl TurnWorkspace {
             .push(slot::index(instance, slot::COVARIANCE));
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dense_marks_skip_a_clean_branch_and_deduplicate_invalidations() {
+        let plan = ActivatedPlan::activate(super::super::ProgramArtifact::frozen_ekf_batch(1));
+        let mut workspace = TurnWorkspace::activate(&plan);
+        let epoch = InstanceEpoch(7);
+        let order = [
+            NodeIndex(0),
+            NodeIndex(1),
+            NodeIndex(2),
+            NodeIndex(3),
+            NodeIndex(4),
+        ];
+        let downstream: [&[NodeIndex]; 5] =
+            [&[NodeIndex(1)], &[NodeIndex(3)], &[NodeIndex(4)], &[], &[]];
+
+        workspace.begin([0.0; 4]);
+        workspace.mark_dirty(NodeIndex(0), epoch);
+        workspace.mark_dirty(NodeIndex(0), epoch);
+        assert_eq!(workspace.dirty_nodes, [NodeIndex(0)]);
+        for node in order {
+            if !workspace.is_dirty(node, epoch) {
+                continue;
+            }
+            workspace.record_node_execution(node, epoch);
+            for child in downstream[node.0 as usize] {
+                workspace.mark_dirty(*child, epoch);
+            }
+        }
+
+        assert_eq!(
+            workspace.executed_nodes,
+            [NodeIndex(0), NodeIndex(1), NodeIndex(3)]
+        );
+        assert!(!workspace.is_dirty(NodeIndex(2), epoch));
+        assert!(!workspace.is_dirty(NodeIndex(4), epoch));
+    }
+}
