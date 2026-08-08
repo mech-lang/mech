@@ -99,6 +99,29 @@ impl StateArena {
         (states, candidate_states, covariances, candidate_covariances)
     }
 
+    pub(crate) fn candidate_state_hash(&self, candidate: usize) -> u64 {
+        let mut batch_hash = 0xcbf29ce484222325_u64;
+        for (state, covariance) in self.states.buffers[candidate]
+            .iter()
+            .zip(self.covariances.buffers[candidate].iter())
+        {
+            let mut state_hash = 0xcbf29ce484222325_u64;
+            for value in state.iter().chain(covariance.iter()) {
+                for byte in value.to_bits().to_le_bytes() {
+                    state_hash ^= u64::from(byte);
+                    state_hash = state_hash.wrapping_mul(0x100000001b3);
+                }
+            }
+            batch_hash ^= state_hash;
+            batch_hash = batch_hash.wrapping_mul(0x100000001b3);
+        }
+        batch_hash
+    }
+
+    pub(crate) fn contains_epoch(&self, epoch: InstanceEpoch) -> bool {
+        self.states.epochs.contains(&Some(epoch)) || self.covariances.epochs.contains(&Some(epoch))
+    }
+
     #[inline]
     pub(crate) fn published_state(&self, epoch: InstanceEpoch, instance: usize) -> [f64; 3] {
         self.states.buffers[self.states.published_index(epoch)][instance]

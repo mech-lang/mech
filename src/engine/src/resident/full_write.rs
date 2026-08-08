@@ -2,7 +2,7 @@ use core::sync::atomic::{AtomicU64, Ordering};
 
 use mech_core::InstanceEpoch;
 
-use super::{ResidentExecutionError, publish_epoch};
+use super::{ResidentExecutionError, bench::ResidentTurnSummary, publish_epoch};
 
 pub const FULL_WRITE_ELEMENTS: usize = 64 * 64;
 
@@ -14,6 +14,104 @@ pub struct ResidentFullWrite {
     next_epoch: Option<InstanceEpoch>,
     #[cfg(feature = "runtime_bench_probes")]
     publication_store_count: u64,
+}
+
+#[must_use = "prepared resident full writes must be published or aborted"]
+pub struct PreparedResidentFullWrite<'a> {
+    candidate: Option<PreparedFullWriteCandidate<'a>>,
+    summary: ResidentTurnSummary,
+}
+
+#[must_use = "resident full-write candidates must be published or aborted"]
+struct PreparedFullWriteCandidate<'a> {
+    resident: Option<&'a mut ResidentFullWrite>,
+    candidate: usize,
+    before_epoch: InstanceEpoch,
+    working_epoch: InstanceEpoch,
+}
+
+impl PreparedResidentFullWrite<'_> {
+    pub fn summary(&self) -> ResidentTurnSummary {
+        self.summary
+    }
+
+    #[inline]
+    pub fn publish(mut self) {
+        self.candidate
+            .take()
+            .expect("live prepared resident full write")
+            .publish();
+    }
+
+    pub fn abort(mut self) {
+        self.candidate
+            .take()
+            .expect("live prepared resident full write")
+            .abort();
+    }
+}
+
+impl Drop for PreparedResidentFullWrite<'_> {
+    fn drop(&mut self) {
+        debug_assert!(
+            self.candidate.is_none(),
+            "prepared resident full write must publish or abort explicitly"
+        );
+    }
+}
+
+impl PreparedFullWriteCandidate<'_> {
+    fn summary(&self) -> ResidentTurnSummary {
+        let resident = self
+            .resident
+            .as_deref()
+            .expect("live resident full-write candidate");
+        let mut state_hash = 0xcbf29ce484222325_u64;
+        for value in &resident.versions[self.candidate] {
+            for byte in value.to_bits().to_le_bytes() {
+                state_hash ^= u64::from(byte);
+                state_hash = state_hash.wrapping_mul(0x100000001b3);
+            }
+        }
+        ResidentTurnSummary {
+            before_epoch: self.before_epoch.0,
+            after_epoch: self.working_epoch.0,
+            state_hash,
+            touched_slots: 1,
+            changed_slots: 1,
+            dirty_nodes: 1,
+        }
+    }
+
+    #[inline]
+    fn publish(mut self) {
+        let resident = self
+            .resident
+            .take()
+            .expect("live resident full-write candidate");
+        publish_epoch(&resident.published_epoch, self.working_epoch);
+        #[cfg(feature = "runtime_bench_probes")]
+        {
+            resident.publication_store_count += 1;
+        }
+    }
+
+    fn abort(mut self) {
+        let resident = self
+            .resident
+            .take()
+            .expect("live resident full-write candidate");
+        resident.buffer_epochs[self.candidate] = None;
+    }
+}
+
+impl Drop for PreparedFullWriteCandidate<'_> {
+    fn drop(&mut self) {
+        debug_assert!(
+            self.resident.is_none(),
+            "resident full-write candidate must publish or abort explicitly"
+        );
+    }
 }
 
 impl ResidentFullWrite {
@@ -44,7 +142,10 @@ impl ResidentFullWrite {
         }
     }
 
-    fn execute(&mut self, input: f64, publish: bool) -> Result<(), ResidentExecutionError> {
+    fn execute_candidate(
+        &mut self,
+        input: f64,
+    ) -> Result<PreparedFullWriteCandidate<'_>, ResidentExecutionError> {
         let working_epoch = self
             .next_epoch
             .ok_or(ResidentExecutionError::EpochExhausted)?;
@@ -72,25 +173,35 @@ impl ResidentFullWrite {
             self.buffer_epochs[candidate] = None;
             return Err(ResidentExecutionError::NonFiniteState);
         }
-        if publish {
-            publish_epoch(&self.published_epoch, working_epoch);
-            #[cfg(feature = "runtime_bench_probes")]
-            {
-                self.publication_store_count += 1;
-            }
-        } else {
-            self.buffer_epochs[candidate] = None;
-        }
-        Ok(())
+        Ok(PreparedFullWriteCandidate {
+            resident: Some(self),
+            candidate,
+            before_epoch: published_epoch,
+            working_epoch,
+        })
+    }
+
+    pub fn prepare_turn(
+        &mut self,
+        input: f64,
+    ) -> Result<PreparedResidentFullWrite<'_>, ResidentExecutionError> {
+        let candidate = self.execute_candidate(input)?;
+        let summary = candidate.summary();
+        Ok(PreparedResidentFullWrite {
+            candidate: Some(candidate),
+            summary,
+        })
     }
 
     #[inline]
     pub fn turn(&mut self, input: f64) -> Result<(), ResidentExecutionError> {
-        self.execute(input, true)
+        self.execute_candidate(input)?.publish();
+        Ok(())
     }
 
     pub fn execute_then_abort(&mut self, input: f64) -> Result<(), ResidentExecutionError> {
-        self.execute(input, false)
+        self.execute_candidate(input)?.abort();
+        Ok(())
     }
 
     pub fn published(&self) -> &[f64] {

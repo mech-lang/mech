@@ -15,7 +15,7 @@ pub(crate) use arena::*;
 pub(crate) use artifact::*;
 pub use candidate::ResidentExecutionError;
 pub(crate) use candidate::{Candidate, ReactiveInstance, publish_epoch};
-pub use full_write::{FULL_WRITE_ELEMENTS, ResidentFullWrite};
+pub use full_write::{FULL_WRITE_ELEMENTS, PreparedResidentFullWrite, ResidentFullWrite};
 pub(crate) use kernel::*;
 pub(crate) use workspace::*;
 
