@@ -13,12 +13,15 @@ sys.modules[SPEC.name] = CHECKER
 SPEC.loader.exec_module(CHECKER)
 
 
-def lane(name, instances):
+def lane(name, instances, retained_history=0, next_epoch=1):
     is_numpy = name == "numpy-persistent"
     is_epoch = name == "rust-epoch"
     is_full_epoch = name == "rust-epoch-full-write"
     is_resident = name == "mech-resident-kernel"
     is_resident_full = name == "mech-resident-kernel-full-write"
+    is_scheduled = name == "mech-resident-scheduled"
+    is_turn = name == "mech-resident-turn"
+    is_turn_full = name == "mech-resident-turn-full-write"
     is_legacy = name.startswith("mech-legacy-atomic")
     allocation_count = None if is_numpy else (1 if is_legacy else 0)
     allocated_bytes = None if is_numpy else (8 if is_legacy else 0)
@@ -31,6 +34,13 @@ def lane(name, instances):
         "commit_runtime_call_count": None if is_numpy else 0,
         "legacy_journal_capture_count": None if is_numpy else 0,
         "abort_output_hash": None,
+        "dirty_node_count": None,
+        "record_preparation_count": None,
+        "record_append_count": None,
+        "records_retained_before_timing": None,
+        "records_appended": None,
+        "ledger_records_inspected": None,
+        "post_publication_append_infallible": None,
     }
     if is_epoch:
         structural.update(
@@ -38,6 +48,11 @@ def lane(name, instances):
                 "candidate_written_bytes": instances * 96,
                 "publication_store_count": 1,
                 "receipt_bytes": 64,
+                "record_preparation_count": 1,
+                "record_append_count": 1,
+                "records_appended": 4096,
+                "ledger_records_inspected": 0,
+                "post_publication_append_infallible": True,
             }
         )
     if is_full_epoch:
@@ -47,6 +62,11 @@ def lane(name, instances):
                 "publication_store_count": 1,
                 "receipt_bytes": 64,
                 "abort_output_hash": "c" * 64,
+                "record_preparation_count": 1,
+                "record_append_count": 1,
+                "records_appended": 4096,
+                "ledger_records_inspected": 0,
+                "post_publication_append_infallible": True,
             }
         )
     if is_resident:
@@ -54,6 +74,44 @@ def lane(name, instances):
             {
                 "candidate_written_bytes": instances * 96,
                 "publication_store_count": 1,
+            }
+        )
+    if is_scheduled:
+        structural.update(
+            {
+                "candidate_written_bytes": 96,
+                "publication_store_count": 1,
+            }
+        )
+    if is_turn:
+        structural.update(
+            {
+                "candidate_written_bytes": 96,
+                "publication_store_count": 1,
+                "receipt_bytes": 64,
+                "dirty_node_count": 15,
+                "record_preparation_count": 1,
+                "record_append_count": 1,
+                "records_retained_before_timing": retained_history,
+                "records_appended": 4096,
+                "ledger_records_inspected": 0,
+                "post_publication_append_infallible": True,
+            }
+        )
+    if is_turn_full:
+        structural.update(
+            {
+                "candidate_written_bytes": 64 * 64 * 8,
+                "publication_store_count": 1,
+                "receipt_bytes": 64,
+                "dirty_node_count": 1,
+                "record_preparation_count": 1,
+                "record_append_count": 1,
+                "records_retained_before_timing": 0,
+                "records_appended": 4096,
+                "ledger_records_inspected": 0,
+                "post_publication_append_infallible": True,
+                "abort_output_hash": "c" * 64,
             }
         )
     if is_resident_full:
@@ -77,13 +135,15 @@ def lane(name, instances):
     return {
         "lane": name,
         "instances": instances,
+        "retained_history": retained_history,
+        "next_epoch": next_epoch,
         "sample_count": 10,
         "turns_per_sample": 4096,
         "timing": {
             "median_ns_per_turn": 100.0
             if name == "mech-legacy-atomic"
             else 25.0,
-            "p95_ns_per_turn": 125.0,
+            "p95_ns_per_turn": 30.0 if is_turn else 125.0,
         },
         "allocation": {
             "allocations_per_turn": None
@@ -101,7 +161,9 @@ def lane(name, instances):
             if is_numpy or name.endswith("full-write")
             else CHECKER.REFERENCE_HASH
         ),
-        "reference_quantized_state_hash": CHECKER.REFERENCE_HASH,
+        "reference_quantized_state_hash": (
+            "d" * 64 if name.endswith("full-write") else CHECKER.REFERENCE_HASH
+        ),
         "structural": structural,
     }
 
@@ -206,6 +268,50 @@ def valid_b1_report():
     return report
 
 
+def valid_b2_report():
+    report = valid_b1_report()
+    report["phase"] = "B2-resident-turn"
+    report["git_branch"] = "perf/runtime-resident-ekf-efficacy"
+    report["lanes"].extend(
+        [
+            lane("mech-resident-scheduled", 1),
+            lane("mech-resident-turn", 1),
+            lane("mech-resident-turn", 1, retained_history=1_000),
+            lane("mech-resident-turn", 1, retained_history=100_000),
+            lane("mech-resident-turn", 1, next_epoch=1_000_000_001),
+            lane("mech-resident-turn-full-write", 1),
+        ]
+    )
+    report["b2_decision"] = {
+        "legacy_gap_closure": 1.0,
+        "raw_epoch_ratio": 1.0,
+        "executor_tax_ns": 0.0,
+        "scheduler_tax_ns": 0.0,
+        "recording_tax_ns": 0.0,
+        "numpy_ratio": 1.0,
+        "tail_ratio": 1.2,
+        "history_1k_over_history_0_median_ratio": 1.0,
+        "history_100k_over_history_0_median_ratio": 1.0,
+        "high_epoch_over_low_epoch_median_ratio": 1.0,
+        "hard_gates": {
+            "correctness": True,
+            "zero_allocation": True,
+            "constant_publication": True,
+            "no_full_clone": True,
+            "history_independent": True,
+            "legacy_gap_closure": True,
+            "raw_epoch_ratio": True,
+            "executor_tax": True,
+            "tail_stability": True,
+            "post_publication_append_infallible": True,
+        },
+        "numpy_target": True,
+        "decision": "Pass",
+        "conditional_attribution": None,
+    }
+    return report
+
+
 class GateBContractCheckerTests(unittest.TestCase):
     def test_committed_static_contract_passes(self):
         self.assertEqual(CHECKER.static_contract_errors(), [])
@@ -215,6 +321,50 @@ class GateBContractCheckerTests(unittest.TestCase):
 
     def test_valid_b1_report_requires_resident_kernel_lanes(self):
         self.assertEqual(CHECKER.report_contract_errors(valid_b1_report()), [])
+
+    def test_valid_b2_report_recomputes_complete_turn_decision(self):
+        self.assertEqual(CHECKER.report_contract_errors(valid_b2_report()), [])
+
+    def test_b2_rejects_forged_decision_metric(self):
+        report = valid_b2_report()
+        report["b2_decision"]["raw_epoch_ratio"] = 0.1
+        errors = CHECKER.report_contract_errors(report)
+        self.assertTrue(any("raw_epoch_ratio" in error for error in errors))
+
+    def test_b2_rejects_history_iteration(self):
+        report = valid_b2_report()
+        result = next(
+            lane
+            for lane in report["lanes"]
+            if lane["lane"] == "mech-resident-turn"
+            and lane["retained_history"] == 100_000
+        )
+        result["structural"]["ledger_records_inspected"] = 100_000
+        errors = CHECKER.report_contract_errors(report)
+        self.assertTrue(any("ledger_records_inspected" in error for error in errors))
+
+    def test_b2_history_independence_uses_five_percent_ceiling(self):
+        report = valid_b2_report()
+        result = next(
+            lane
+            for lane in report["lanes"]
+            if lane["lane"] == "mech-resident-turn"
+            and lane["retained_history"] == 1_000
+        )
+        result["timing"]["median_ns_per_turn"] = 26.5
+        errors = CHECKER.report_contract_errors(report)
+        self.assertTrue(any("hard gates" in error for error in errors))
+
+    def test_b2_raw_epoch_requires_equivalent_record_evidence(self):
+        report = valid_b2_report()
+        result = next(
+            lane
+            for lane in report["lanes"]
+            if lane["lane"] == "rust-epoch" and lane["instances"] == 8
+        )
+        result["structural"]["record_append_count"] = 0
+        errors = CHECKER.report_contract_errors(report)
+        self.assertTrue(any("raw epoch 8 reports wrong record_append_count" in error for error in errors))
 
     def test_unknown_phase_is_rejected(self):
         report = valid_report()

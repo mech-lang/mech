@@ -1,9 +1,11 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use mech_runtime::__gate_b_recording::{
-    GateBFixedReceipt, LedgerPermit, RecordEstimate, RetainedTurnLedger, prepare_retained,
-    reserve_retained,
+    GateBFixedReceipt, InputSequence, InputSequenceRange, LedgerPermit, OwnedTurnRecord,
+    RecordEstimate, RetainedTurnLedger, TurnId, TurnRecordHeader, TurnRecordStatus,
+    prepare_retained, reserve_retained,
 };
+use mech_runtime::TransactionId;
 use sha2::{Digest, Sha256};
 
 use super::contract::{EPISODE_LENGTH, trace};
@@ -19,6 +21,11 @@ pub struct FullWriteProbe {
     pub published_buffer_copy_bytes: usize,
     pub publication_store_count: usize,
     pub receipt_bytes: usize,
+    pub record_preparation_count: usize,
+    pub record_append_count: usize,
+    pub records_appended: usize,
+    pub ledger_records_inspected: usize,
+    pub post_publication_append_infallible: bool,
 }
 
 pub fn initial_values() -> Vec<f64> {
@@ -66,7 +73,7 @@ pub struct FullWriteEpochFixture {
     coefficient: Box<[f64]>,
     published_epoch: AtomicU64,
     next_epoch: u64,
-    ledger: RetainedTurnLedger<GateBFixedReceipt>,
+    ledger: RetainedTurnLedger<OwnedTurnRecord<GateBFixedReceipt>>,
     permits: Vec<Option<LedgerPermit>>,
 }
 
@@ -124,14 +131,28 @@ impl FullWriteEpochFixture {
             return Err("forced full-write rejection");
         }
 
-        let receipt = GateBFixedReceipt::accepted(
-            base_epoch,
-            working_epoch,
-            buffer_hash64(&self.versions[working_index]),
-            1,
-            1,
-            1,
-        );
+        let identity = u64::try_from(turn + 1).expect("Gate B full-write identity");
+        let input_sequence = InputSequence::new(identity).expect("non-zero Gate B input");
+        let receipt = OwnedTurnRecord {
+            header: TurnRecordHeader {
+                turn_id: TurnId::new(identity).expect("non-zero Gate B turn"),
+                transaction_id: TransactionId::new(u128::from(identity)),
+                input_range: Some(
+                    InputSequenceRange::new(input_sequence, input_sequence)
+                        .expect("one-input Gate B range"),
+                ),
+                status: TurnRecordStatus::Accepted,
+                failure: None,
+            },
+            body: GateBFixedReceipt::accepted(
+                base_epoch,
+                working_epoch,
+                buffer_hash64(&self.versions[working_index]),
+                1,
+                1,
+                1,
+            ),
+        };
         let permit = self.permits[turn].take().expect("unused Gate B admission");
         let prepared = prepare_retained(&mut self.ledger, permit, receipt)
             .expect("Gate B full-write receipt preparation");
@@ -162,6 +183,11 @@ impl FullWriteEpochFixture {
             published_buffer_copy_bytes: 0,
             publication_store_count: 1,
             receipt_bytes: GateBFixedReceipt::RETAINED_BYTES,
+            record_preparation_count: 1,
+            record_append_count: 1,
+            records_appended: EPISODE_LENGTH,
+            ledger_records_inspected: 0,
+            post_publication_append_infallible: true,
         }
     }
 }

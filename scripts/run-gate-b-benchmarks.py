@@ -22,6 +22,8 @@ FROZEN_BASE = "437f6c6c636d9818729597342165dfc9af5eb4a7"
 FROZEN_B0_BRANCH = "test/resident-ekf-efficacy-contract"
 FROZEN_B1_BRANCH = "feat/engine-resident-ekf-substrate"
 FROZEN_B1_BASE = "c4f7cb1d27b9645b3f669d944c7e49bcd0829ccc"
+B2_BRANCH = "perf/runtime-resident-ekf-efficacy"
+FROZEN_B2_BASE = "75d0775209c8ee0eae5480facba3a9b2c9c12143"
 EPISODE_LENGTH = 4_096
 SCALED_INSTANCES = (1, 8, 64)
 THREAD_VARIABLES = (
@@ -112,35 +114,58 @@ def criterion_samples(target_dir: Path) -> dict[str, dict[str, Any]]:
     return summaries
 
 
-def parse_probe_samples(output: str) -> dict[tuple[str, int], dict[str, Any]]:
-    samples: dict[tuple[str, int], dict[str, Any]] = {}
+ProbeKey = tuple[str, int, int, int]
+
+
+def probe_key(sample: dict[str, Any]) -> ProbeKey:
+    return (
+        str(sample["lane"]),
+        int(sample["instances"]),
+        int(sample.get("retained_history", 0)),
+        int(sample.get("next_epoch", 1)),
+    )
+
+
+def parse_probe_samples(output: str) -> dict[ProbeKey, dict[str, Any]]:
+    samples: dict[ProbeKey, dict[str, Any]] = {}
     for line in output.splitlines():
         marker = line.find(SAMPLE_PREFIX)
         if marker < 0:
             continue
         sample = json.loads(line[marker + len(SAMPLE_PREFIX) :])
-        samples[(sample["lane"], int(sample["instances"]))] = sample
+        samples[probe_key(sample)] = sample
     return samples
 
 
 def merge_structural_probes(
-    timed: dict[tuple[str, int], dict[str, Any]],
-    structural: dict[tuple[str, int], dict[str, Any]],
-) -> dict[tuple[str, int], dict[str, Any]]:
+    timed: dict[ProbeKey, dict[str, Any]],
+    structural: dict[ProbeKey, dict[str, Any]],
+) -> dict[ProbeKey, dict[str, Any]]:
     merged = {key: value.copy() for key, value in timed.items()}
     legacy = {
-        *(("mech-legacy-atomic", instances) for instances in SCALED_INSTANCES),
-        ("mech-legacy-atomic-full-write", 1),
+        *(("mech-legacy-atomic", instances, 0, 1) for instances in SCALED_INSTANCES),
+        ("mech-legacy-atomic-full-write", 1, 0, 1),
     }
     resident = {
-        *(("mech-resident-kernel", instances) for instances in SCALED_INSTANCES),
-        ("mech-resident-kernel-full-write", 1),
+        *(("mech-resident-kernel", instances, 0, 1) for instances in SCALED_INSTANCES),
+        ("mech-resident-kernel-full-write", 1, 0, 1),
     }
+    if any(key[0] == "mech-resident-turn" for key in timed):
+        resident.update(
+            {
+                ("mech-resident-scheduled", 1, 0, 1),
+                ("mech-resident-turn", 1, 0, 1),
+                ("mech-resident-turn", 1, 1_000, 1),
+                ("mech-resident-turn", 1, 100_000, 1),
+                ("mech-resident-turn", 1, 0, 1_000_000_001),
+                ("mech-resident-turn-full-write", 1, 0, 1),
+            }
+        )
     for key in legacy | resident:
         if key not in merged:
-            raise ValueError(f"missing timed structural probe {key[0]}/{key[1]}")
+            raise ValueError(f"missing timed structural probe {key}")
         if key not in structural:
-            raise ValueError(f"missing untimed structural probe {key[0]}/{key[1]}")
+            raise ValueError(f"missing untimed structural probe {key}")
         fields = (
             ("commit_runtime_call_count", "legacy_journal_capture_count")
             if key in legacy
@@ -282,6 +307,13 @@ STRUCTURAL_FIELDS = (
     "commit_runtime_call_count",
     "legacy_journal_capture_count",
     "abort_output_hash",
+    "dirty_node_count",
+    "record_preparation_count",
+    "record_append_count",
+    "records_retained_before_timing",
+    "records_appended",
+    "ledger_records_inspected",
+    "post_publication_append_infallible",
 )
 
 
@@ -300,6 +332,8 @@ def lane_record(
     return {
         "lane": lane,
         "instances": instances,
+        "retained_history": int(probe.get("retained_history", 0)),
+        "next_epoch": int(probe.get("next_epoch", 1)),
         "sample_count": sample_count,
         "turns_per_sample": turns,
         "timing": {
@@ -327,7 +361,7 @@ def lane_record(
 
 def assemble_lanes(
     criterion: dict[str, dict[str, Any]],
-    probes: dict[tuple[str, int], dict[str, Any]],
+    probes: dict[ProbeKey, dict[str, Any]],
     numpy_results: list[dict[str, Any]],
     reference_hash: str,
 ) -> list[dict[str, Any]]:
@@ -343,7 +377,7 @@ def assemble_lanes(
             benchmark = benchmark_template.format(instances=instances)
             if benchmark not in criterion:
                 raise ValueError(f"missing Criterion result {benchmark}")
-            key = (lane, instances)
+            key = (lane, instances, 0, 1)
             if key not in probes:
                 raise ValueError(f"missing structural probe {lane}/{instances}")
             timing = criterion[benchmark]
@@ -365,7 +399,7 @@ def assemble_lanes(
     ):
         if benchmark not in criterion:
             raise ValueError(f"missing Criterion result {benchmark}")
-        key = (lane, 1)
+        key = (lane, 1, 0, 1)
         if key not in probes:
             raise ValueError(f"missing structural probe {lane}/1")
         timing = criterion[benchmark]
@@ -380,6 +414,66 @@ def assemble_lanes(
                 probes[key]["quantized_state_hash"],
             )
         )
+    if ("mech-resident-turn", 1, 0, 1) in probes:
+        for lane, benchmark, history, next_epoch in (
+            (
+                "mech-resident-scheduled",
+                "gate_b/mech-resident-scheduled/1",
+                0,
+                1,
+            ),
+            (
+                "mech-resident-turn",
+                "gate_b/mech-resident-turn/history-0-low-epoch",
+                0,
+                1,
+            ),
+            (
+                "mech-resident-turn",
+                "gate_b/mech-resident-turn/history-1000-low-epoch",
+                1_000,
+                1,
+            ),
+            (
+                "mech-resident-turn",
+                "gate_b/mech-resident-turn/history-100000-low-epoch",
+                100_000,
+                1,
+            ),
+            (
+                "mech-resident-turn",
+                "gate_b/mech-resident-turn/history-0-high-epoch",
+                0,
+                1_000_000_001,
+            ),
+            (
+                "mech-resident-turn-full-write",
+                "gate_b/full-write/mech-resident-turn",
+                0,
+                1,
+            ),
+        ):
+            if benchmark not in criterion:
+                raise ValueError(f"missing Criterion result {benchmark}")
+            key = (lane, 1, history, next_epoch)
+            if key not in probes:
+                raise ValueError(f"missing structural probe {key}")
+            timing = criterion[benchmark]
+            lanes.append(
+                lane_record(
+                    lane,
+                    1,
+                    int(timing["sample_count"]),
+                    float(timing["median_episode_ns"]),
+                    float(timing["p95_episode_ns"]),
+                    probes[key],
+                    (
+                        probes[key]["quantized_state_hash"]
+                        if lane == "mech-resident-turn-full-write"
+                        else reference_hash
+                    ),
+                )
+            )
     for result in numpy_results:
         durations = [float(value) for value in result["samples_ns"]]
         probe = {
@@ -398,14 +492,25 @@ def assemble_lanes(
                 result["reference_quantized_state_hash"],
             )
         )
-    return sorted(lanes, key=lambda lane: (lane["lane"], lane["instances"]))
+    return sorted(
+        lanes,
+        key=lambda lane: (
+            lane["lane"],
+            lane["instances"],
+            lane["retained_history"],
+            lane["next_epoch"],
+        ),
+    )
 
 
 def primary_median(lanes: list[dict[str, Any]], name: str) -> float:
     matches = [
         lane
         for lane in lanes
-        if lane["lane"] == name and lane["instances"] == 1
+        if lane["lane"] == name
+        and lane["instances"] == 1
+        and lane.get("retained_history", 0) == 0
+        and lane.get("next_epoch", 1) == 1
     ]
     if len(matches) != 1:
         raise ValueError(f"expected exactly one primary {name} lane")
@@ -442,6 +547,145 @@ def b1_progression(lanes: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def selected_lane(
+    lanes: list[dict[str, Any]],
+    name: str,
+    *,
+    history: int = 0,
+    next_epoch: int = 1,
+) -> dict[str, Any]:
+    matches = [
+        lane
+        for lane in lanes
+        if lane["lane"] == name
+        and lane["instances"] == 1
+        and lane.get("retained_history", 0) == history
+        and lane.get("next_epoch", 1) == next_epoch
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            f"expected exactly one {name} lane for history={history}, "
+            f"next_epoch={next_epoch}"
+        )
+    return matches[0]
+
+
+def b2_decision(lanes: list[dict[str, Any]]) -> dict[str, Any]:
+    legacy = primary_median(lanes, "mech-legacy-atomic")
+    raw_epoch = primary_median(lanes, "rust-epoch")
+    numpy = primary_median(lanes, "numpy-persistent")
+    kernel = primary_median(lanes, "mech-resident-kernel")
+    scheduled = primary_median(lanes, "mech-resident-scheduled")
+    turn = selected_lane(lanes, "mech-resident-turn")
+    turn_median = float(turn["timing"]["median_ns_per_turn"])
+    turn_p95 = float(turn["timing"]["p95_ns_per_turn"])
+    history_100k = selected_lane(
+        lanes, "mech-resident-turn", history=100_000
+    )
+    history_1k = selected_lane(lanes, "mech-resident-turn", history=1_000)
+    high_epoch = selected_lane(
+        lanes, "mech-resident-turn", next_epoch=1_000_000_001
+    )
+    full_write = selected_lane(lanes, "mech-resident-turn-full-write")
+    resident_lanes = [
+        lane
+        for lane in lanes
+        if lane["lane"]
+        in {
+            "mech-resident-scheduled",
+            "mech-resident-turn",
+            "mech-resident-turn-full-write",
+        }
+    ]
+    legacy_gap_closure = (legacy - turn_median) / (legacy - raw_epoch)
+    raw_epoch_ratio = turn_median / raw_epoch
+    executor_tax = turn_median - kernel
+    scheduler_tax = scheduled - kernel
+    recording_tax = turn_median - scheduled
+    numpy_ratio = turn_median / numpy
+    tail_ratio = turn_p95 / turn_median
+    history_ratio = (
+        float(history_100k["timing"]["median_ns_per_turn"]) / turn_median
+    )
+    history_1k_ratio = (
+        float(history_1k["timing"]["median_ns_per_turn"]) / turn_median
+    )
+    high_epoch_ratio = (
+        float(high_epoch["timing"]["median_ns_per_turn"]) / turn_median
+    )
+
+    structural = turn["structural"]
+    full_structural = full_write["structural"]
+    hard_gates = {
+        "correctness": all(
+            lane["correctness"]
+            and lane["quantized_state_hash"]
+            == lane["reference_quantized_state_hash"]
+            for lane in resident_lanes
+        ),
+        "zero_allocation": all(
+            lane["allocation"]["episode_allocation_count"] == 0
+            for lane in resident_lanes
+        ),
+        "constant_publication": (
+            structural["publication_store_count"] == 1
+            and full_structural["publication_store_count"] == 1
+        ),
+        "no_full_clone": (
+            structural["candidate_seed_bytes"] == 0
+            and structural["published_buffer_copy_bytes"] == 0
+            and full_structural["candidate_seed_bytes"] == 0
+            and full_structural["candidate_written_bytes"] == 32_768
+            and full_structural["published_buffer_copy_bytes"] == 0
+        ),
+        "history_independent": (
+            history_1k_ratio <= 1.05
+            and history_ratio <= 1.05
+            and high_epoch_ratio <= 1.05
+            and all(
+                lane["structural"]["ledger_records_inspected"] == 0
+                for lane in resident_lanes
+                if lane["lane"] == "mech-resident-turn"
+            )
+        ),
+        "legacy_gap_closure": legacy_gap_closure >= 0.80,
+        "raw_epoch_ratio": raw_epoch_ratio <= 1.25,
+        "executor_tax": executor_tax <= (1.25 * raw_epoch - kernel),
+        "tail_stability": tail_ratio <= 1.50,
+        "post_publication_append_infallible": (
+            structural["post_publication_append_infallible"] is True
+            and full_structural["post_publication_append_infallible"] is True
+        ),
+    }
+    numpy_target = turn_median <= 1.10 * numpy
+    hard_pass = all(hard_gates.values())
+    if hard_pass and numpy_target:
+        decision = "Pass"
+        attribution = None
+    elif hard_pass:
+        decision = "ConditionalPass"
+        attribution = "kernel selection, numerical backend, or data layout"
+    else:
+        decision = "Fail"
+        attribution = None
+    return {
+        "legacy_gap_closure": legacy_gap_closure,
+        "raw_epoch_ratio": raw_epoch_ratio,
+        "executor_tax_ns": executor_tax,
+        "scheduler_tax_ns": scheduler_tax,
+        "recording_tax_ns": recording_tax,
+        "numpy_ratio": numpy_ratio,
+        "tail_ratio": tail_ratio,
+        "history_1k_over_history_0_median_ratio": history_1k_ratio,
+        "history_100k_over_history_0_median_ratio": history_ratio,
+        "high_epoch_over_low_epoch_median_ratio": high_epoch_ratio,
+        "hard_gates": hard_gates,
+        "numpy_target": numpy_target,
+        "decision": decision,
+        "conditional_attribution": attribution,
+    }
+
+
 def worktree_changes() -> str:
     return command_output(["git", "status", "--porcelain=v1", "--untracked-files=all"])
 
@@ -450,6 +694,7 @@ def frozen_base_error(commit: str, branch: str) -> str | None:
     expected_base = {
         FROZEN_B0_BRANCH: FROZEN_BASE,
         FROZEN_B1_BRANCH: FROZEN_B1_BASE,
+        B2_BRANCH: FROZEN_B2_BASE,
     }.get(branch)
     if expected_base is None:
         return f"Gate B controls cannot run on unapproved branch {branch}"
@@ -627,7 +872,13 @@ def main() -> int:
     summary = {
         "schema_version": 1,
         "gate": "B",
-        "phase": "B0-controls" if branch == FROZEN_B0_BRANCH else "B1-resident-kernel",
+        "phase": (
+            "B0-controls"
+            if branch == FROZEN_B0_BRANCH
+            else "B1-resident-kernel"
+            if branch == FROZEN_B1_BRANCH
+            else "B2-resident-turn"
+        ),
         "git_commit": commit,
         "git_branch": branch,
         "machine": {
@@ -685,6 +936,9 @@ def main() -> int:
     }
     if branch == FROZEN_B1_BRANCH:
         summary["b1_progression"] = b1_progression(lanes)
+    if branch == B2_BRANCH:
+        summary["b1_progression"] = b1_progression(lanes)
+        summary["b2_decision"] = b2_decision(lanes)
     rendered = json.dumps(summary, indent=2, sort_keys=True) + "\n"
     if args.output:
         output = args.output if args.output.is_absolute() else ROOT / args.output
@@ -704,6 +958,12 @@ def main() -> int:
             file=sys.stderr,
         )
         return 4
+    if branch == B2_BRANCH and summary["b2_decision"]["decision"] == "Fail":
+        print(
+            "Gate B B2 stop: complete resident turn failed one or more hard gates",
+            file=sys.stderr,
+        )
+        return 5
     return 0
 
 

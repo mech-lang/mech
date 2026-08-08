@@ -22,13 +22,17 @@ use support::gate_b::raw_kernel::KernelFixture;
 use support::gate_b::resident_kernel::{
     ResidentFullWriteFixture, ResidentKernelFixture, ResidentKernelProbe,
 };
+use support::gate_b::resident_turn::{
+    ResidentCompleteProbe, ResidentFullWriteTurnFixture, ResidentScheduledFixture,
+    ResidentTurnFixture,
+};
 
 struct CountingAllocator;
 
 static ALLOCATIONS: AtomicU64 = AtomicU64::new(0);
 static DEALLOCATIONS: AtomicU64 = AtomicU64::new(0);
 static ALLOCATED_BYTES: AtomicU64 = AtomicU64::new(0);
-static REPORTED: OnceLock<Mutex<BTreeSet<(String, usize)>>> = OnceLock::new();
+static REPORTED: OnceLock<Mutex<BTreeSet<(String, usize, usize, u64)>>> = OnceLock::new();
 
 unsafe impl GlobalAlloc for CountingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
@@ -89,6 +93,13 @@ struct StructuralProbe {
     receipt_bytes: usize,
     commit_runtime_call_count: u64,
     legacy_journal_capture_count: u64,
+    dirty_node_count: usize,
+    record_preparation_count: usize,
+    record_append_count: usize,
+    records_retained_before_timing: usize,
+    records_appended: usize,
+    ledger_records_inspected: usize,
+    post_publication_append_infallible: bool,
 }
 
 impl From<EpochProbe> for StructuralProbe {
@@ -99,6 +110,11 @@ impl From<EpochProbe> for StructuralProbe {
             published_buffer_copy_bytes: probe.published_buffer_copy_bytes,
             publication_store_count: probe.publication_store_count,
             receipt_bytes: probe.receipt_bytes,
+            record_preparation_count: probe.record_preparation_count,
+            record_append_count: probe.record_append_count,
+            records_appended: probe.records_appended,
+            ledger_records_inspected: probe.ledger_records_inspected,
+            post_publication_append_infallible: probe.post_publication_append_infallible,
             ..Self::default()
         }
     }
@@ -112,6 +128,11 @@ impl From<FullWriteProbe> for StructuralProbe {
             published_buffer_copy_bytes: probe.published_buffer_copy_bytes,
             publication_store_count: probe.publication_store_count,
             receipt_bytes: probe.receipt_bytes,
+            record_preparation_count: probe.record_preparation_count,
+            record_append_count: probe.record_append_count,
+            records_appended: probe.records_appended,
+            ledger_records_inspected: probe.ledger_records_inspected,
+            post_publication_append_infallible: probe.post_publication_append_infallible,
             ..Self::default()
         }
     }
@@ -129,9 +150,52 @@ impl From<ResidentKernelProbe> for StructuralProbe {
     }
 }
 
+impl From<ResidentCompleteProbe> for StructuralProbe {
+    fn from(probe: ResidentCompleteProbe) -> Self {
+        Self {
+            candidate_seed_bytes: probe.candidate_seed_bytes,
+            candidate_written_bytes: probe.candidate_written_bytes,
+            published_buffer_copy_bytes: probe.published_buffer_copy_bytes,
+            publication_store_count: probe.publication_store_count,
+            receipt_bytes: probe.receipt_bytes,
+            dirty_node_count: probe.dirty_nodes,
+            record_preparation_count: probe.record_preparation_count,
+            record_append_count: probe.record_append_count,
+            records_retained_before_timing: probe.records_retained_before_timing,
+            records_appended: probe.records_appended,
+            ledger_records_inspected: probe.ledger_records_inspected,
+            post_publication_append_infallible: true,
+            ..Self::default()
+        }
+    }
+}
+
 fn report(
     lane: &str,
     instances: usize,
+    allocations: AllocationSnapshot,
+    probe: StructuralProbe,
+    output_hash: &str,
+    abort_output_hash: Option<&str>,
+) {
+    report_dimensions(
+        lane,
+        instances,
+        0,
+        1,
+        allocations,
+        probe,
+        output_hash,
+        abort_output_hash,
+    );
+}
+
+#[allow(clippy::too_many_arguments)]
+fn report_dimensions(
+    lane: &str,
+    instances: usize,
+    retained_history: usize,
+    next_epoch: u64,
     allocations: AllocationSnapshot,
     probe: StructuralProbe,
     output_hash: &str,
@@ -141,7 +205,7 @@ fn report(
         .get_or_init(|| Mutex::new(BTreeSet::new()))
         .lock()
         .expect("Gate B report lock");
-    if !reported.insert((lane.to_string(), instances)) {
+    if !reported.insert((lane.to_string(), instances, retained_history, next_epoch)) {
         return;
     }
     drop(reported);
@@ -149,7 +213,7 @@ fn report(
         .map(|hash| format!("\"{hash}\""))
         .unwrap_or_else(|| "null".to_string());
     let line = format!(
-        "GATE_B_SAMPLE {{\"lane\":\"{lane}\",\"instances\":{instances},\"turns\":{EPISODE_LENGTH},\"allocation_count\":{},\"deallocation_count\":{},\"allocated_bytes\":{},\"correctness\":true,\"quantized_state_hash\":\"{output_hash}\",\"candidate_seed_bytes\":{},\"candidate_written_bytes\":{},\"published_buffer_copy_bytes\":{},\"publication_store_count\":{},\"receipt_bytes\":{},\"commit_runtime_call_count\":{},\"legacy_journal_capture_count\":{},\"abort_output_hash\":{abort}}}",
+        "GATE_B_SAMPLE {{\"lane\":\"{lane}\",\"instances\":{instances},\"turns\":{EPISODE_LENGTH},\"retained_history\":{retained_history},\"next_epoch\":{next_epoch},\"allocation_count\":{},\"deallocation_count\":{},\"allocated_bytes\":{},\"correctness\":true,\"quantized_state_hash\":\"{output_hash}\",\"candidate_seed_bytes\":{},\"candidate_written_bytes\":{},\"published_buffer_copy_bytes\":{},\"publication_store_count\":{},\"receipt_bytes\":{},\"commit_runtime_call_count\":{},\"legacy_journal_capture_count\":{},\"dirty_node_count\":{},\"record_preparation_count\":{},\"record_append_count\":{},\"records_retained_before_timing\":{},\"records_appended\":{},\"ledger_records_inspected\":{},\"post_publication_append_infallible\":{},\"abort_output_hash\":{abort}}}",
         allocations.allocations,
         allocations.deallocations,
         allocations.allocated_bytes,
@@ -160,6 +224,13 @@ fn report(
         probe.receipt_bytes,
         probe.commit_runtime_call_count,
         probe.legacy_journal_capture_count,
+        probe.dirty_node_count,
+        probe.record_preparation_count,
+        probe.record_append_count,
+        probe.records_retained_before_timing,
+        probe.records_appended,
+        probe.ledger_records_inspected,
+        probe.post_publication_append_infallible,
     );
     let mut stderr = std::io::stderr().lock();
     stderr
@@ -209,6 +280,19 @@ fn validate_controls() {
     let mut resident_rejected = ResidentKernelFixture::new(1);
     resident_rejected.force_rejected_turn_preserves_publication();
 
+    let mut scheduled = ResidentScheduledFixture::new(1);
+    assert_eq!(
+        scheduled.run_and_validate_every_turn(),
+        REFERENCE_TRAJECTORY_SHA256
+    );
+
+    let mut complete = ResidentTurnFixture::new(1, 0, 1);
+    assert_eq!(
+        complete.run_and_validate_every_turn(),
+        REFERENCE_TRAJECTORY_SHA256
+    );
+    complete.validate_final();
+
     let mut legacy = LegacyEkfFixture::new(1);
     assert_eq!(
         legacy.run_and_validate_every_turn(),
@@ -225,6 +309,9 @@ fn validate_controls() {
     let mut full_resident = ResidentFullWriteFixture::new();
     full_resident.run_episode();
     assert_eq!(buffer_hash(full_resident.published()), full_hash);
+    let mut full_resident_turn = ResidentFullWriteTurnFixture::new();
+    full_resident_turn.run_episode();
+    assert_eq!(buffer_hash(full_resident_turn.published()), full_hash);
     let mut full_rejected = FullWriteEpochFixture::new();
     assert_eq!(
         full_rejected.abort_output_hash(),
@@ -323,6 +410,86 @@ fn resident_kernel(c: &mut Criterion) {
                         instances,
                         allocations,
                         StructuralProbe::default(),
+                        &trajectory_hash,
+                        None,
+                    );
+                }
+                elapsed
+            });
+        });
+    }
+    group.finish();
+}
+
+fn resident_scheduled(c: &mut Criterion) {
+    let mut correctness = ResidentScheduledFixture::new(1);
+    let trajectory_hash = correctness.run_and_validate_every_turn();
+    assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+    let mut group = c.benchmark_group("gate_b/mech-resident-scheduled");
+    group.bench_function("1", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = ResidentScheduledFixture::new(1);
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                fixture.validate_final();
+                black_box(fixture.state(0));
+                report(
+                    "mech-resident-scheduled",
+                    1,
+                    allocations,
+                    StructuralProbe {
+                        candidate_written_bytes: 96,
+                        publication_store_count: 1,
+                        dirty_node_count: 15,
+                        ..StructuralProbe::default()
+                    },
+                    &trajectory_hash,
+                    None,
+                );
+            }
+            elapsed
+        });
+    });
+    group.finish();
+}
+
+fn resident_turn(c: &mut Criterion) {
+    let mut correctness = ResidentTurnFixture::new(1, 0, 1);
+    let trajectory_hash = correctness.run_and_validate_every_turn();
+    assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+    correctness.validate_final();
+
+    let mut group = c.benchmark_group("gate_b/mech-resident-turn");
+    for (name, history, next_epoch) in [
+        ("history-0-low-epoch", 0, 1),
+        ("history-1000-low-epoch", 1_000, 1),
+        ("history-100000-low-epoch", 100_000, 1),
+        ("history-0-high-epoch", 0, 1_000_000_001),
+    ] {
+        group.bench_function(name, |benchmark| {
+            benchmark.iter_custom(|iterations| {
+                let mut elapsed = Duration::ZERO;
+                for _ in 0..iterations {
+                    let mut fixture = ResidentTurnFixture::new(1, history, next_epoch);
+                    reset_allocations();
+                    let started = Instant::now();
+                    fixture.run_episode();
+                    elapsed += started.elapsed();
+                    let allocations = allocation_snapshot();
+                    fixture.validate_final();
+                    black_box(fixture.state(0));
+                    report_dimensions(
+                        "mech-resident-turn",
+                        1,
+                        history,
+                        next_epoch,
+                        allocations,
+                        fixture.probe().into(),
                         &trajectory_hash,
                         None,
                     );
@@ -451,6 +618,32 @@ fn full_write(c: &mut Criterion) {
             elapsed
         });
     });
+    group.bench_function("mech-resident-turn", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = ResidentFullWriteTurnFixture::new();
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                let output_hash = buffer_hash(fixture.published());
+                let mut rejected = ResidentFullWriteTurnFixture::new();
+                let abort_hash = rejected.abort_output_hash_with_rejection();
+                black_box(fixture.published());
+                report(
+                    "mech-resident-turn-full-write",
+                    1,
+                    allocations,
+                    fixture.probe().into(),
+                    &output_hash,
+                    Some(&abort_hash),
+                );
+            }
+            elapsed
+        });
+    });
     group.finish();
 }
 
@@ -481,6 +674,51 @@ fn resident_structural_samples() {
         fixture.probe().into(),
         &output_hash,
         Some(&abort_hash),
+    );
+
+    let mut scheduled = ResidentScheduledFixture::new(1);
+    let scheduled_hash = scheduled.run_and_validate_every_turn();
+    report(
+        "mech-resident-scheduled",
+        1,
+        AllocationSnapshot::default(),
+        StructuralProbe {
+            candidate_written_bytes: 96,
+            publication_store_count: 1,
+            dirty_node_count: 15,
+            ..StructuralProbe::default()
+        },
+        &scheduled_hash,
+        None,
+    );
+
+    for (history, next_epoch) in [(0, 1), (1_000, 1), (100_000, 1), (0, 1_000_000_001)] {
+        let mut complete = ResidentTurnFixture::new(1, history, next_epoch);
+        let complete_hash = complete.run_and_validate_every_turn();
+        report_dimensions(
+            "mech-resident-turn",
+            1,
+            history,
+            next_epoch,
+            AllocationSnapshot::default(),
+            complete.probe().into(),
+            &complete_hash,
+            None,
+        );
+    }
+
+    let mut complete_full = ResidentFullWriteTurnFixture::new();
+    complete_full.run_episode();
+    let complete_full_hash = buffer_hash(complete_full.published());
+    let mut rejected_full = ResidentFullWriteTurnFixture::new();
+    let complete_abort_hash = rejected_full.abort_output_hash_with_rejection();
+    report(
+        "mech-resident-turn-full-write",
+        1,
+        AllocationSnapshot::default(),
+        complete_full.probe().into(),
+        &complete_full_hash,
+        Some(&complete_abort_hash),
     );
 }
 
@@ -541,6 +779,8 @@ fn gate_b_controls(c: &mut Criterion) {
     rust_kernel(c);
     rust_epoch(c);
     resident_kernel(c);
+    resident_scheduled(c);
+    resident_turn(c);
     legacy_atomic(c);
     full_write(c);
 }

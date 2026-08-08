@@ -48,9 +48,12 @@ def import_roots(source: str) -> set[str]:
     return roots
 
 
-def required_lane_keys() -> set[tuple[str, int]]:
+LaneKey = tuple[str, int, int, int]
+
+
+def required_lane_keys() -> set[LaneKey]:
     keys = {
-        (lane, instances)
+        (lane, instances, 0, 1)
         for lane in (
             "rust-kernel",
             "rust-epoch",
@@ -61,20 +64,34 @@ def required_lane_keys() -> set[tuple[str, int]]:
     }
     keys.update(
         {
-            ("rust-epoch-full-write", 1),
-            ("mech-legacy-atomic-full-write", 1),
+            ("rust-epoch-full-write", 1, 0, 1),
+            ("mech-legacy-atomic-full-write", 1, 0, 1),
         }
     )
     return keys
 
 
-def required_phase_lane_keys(phase: str) -> set[tuple[str, int]]:
-    if phase not in {"B0-controls", "B1-resident-kernel"}:
+def required_phase_lane_keys(phase: str) -> set[LaneKey]:
+    if phase not in {"B0-controls", "B1-resident-kernel", "B2-resident-turn"}:
         raise ValueError(f"unsupported Gate B report phase {phase!r}")
     keys = required_lane_keys()
-    if phase == "B1-resident-kernel":
-        keys.update(("mech-resident-kernel", instances) for instances in SCALED_INSTANCES)
-        keys.add(("mech-resident-kernel-full-write", 1))
+    if phase in {"B1-resident-kernel", "B2-resident-turn"}:
+        keys.update(
+            ("mech-resident-kernel", instances, 0, 1)
+            for instances in SCALED_INSTANCES
+        )
+        keys.add(("mech-resident-kernel-full-write", 1, 0, 1))
+    if phase == "B2-resident-turn":
+        keys.update(
+            {
+                ("mech-resident-scheduled", 1, 0, 1),
+                ("mech-resident-turn", 1, 0, 1),
+                ("mech-resident-turn", 1, 1_000, 1),
+                ("mech-resident-turn", 1, 100_000, 1),
+                ("mech-resident-turn", 1, 0, 1_000_000_001),
+                ("mech-resident-turn-full-write", 1, 0, 1),
+            }
+        )
     return keys
 
 
@@ -194,6 +211,8 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         root / "src/runtime/benches/support/gate_b/full_write.rs",
         root / "src/runtime/benches/support/gate_b/legacy_atomic.rs",
         root / "src/runtime/benches/support/gate_b/resident_kernel.rs",
+        root / "src/runtime/benches/support/gate_b/resident_turn.rs",
+        root / "src/runtime/src/resident_gate_b.rs",
         root / "src/engine/src/resident/artifact.rs",
         root / "src/engine/src/resident/activation.rs",
         root / "src/engine/src/resident/arena.rs",
@@ -331,8 +350,82 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
     resident_fixture = read_text(
         root / "src/runtime/benches/support/gate_b/resident_kernel.rs"
     )
+    resident_turn_fixture = read_text(
+        root / "src/runtime/benches/support/gate_b/resident_turn.rs"
+    )
+    resident_recorder = read_text(root / "src/runtime/src/resident_gate_b.rs")
     if "resident: ResidentEkfBatch" not in resident_fixture:
         errors.append("scaled resident lanes do not use one ResidentEkfBatch")
+    complete_path = resident_turn_fixture + "\n" + resident_recorder
+    forbidden_complete_identifiers = forbidden_resident_identifiers | {
+        "RuntimeContext",
+        "HashSet",
+        "BinaryHeap",
+    }
+    complete_identifiers = set(re.split(r"[^A-Za-z0-9_]+", complete_path))
+    forbidden_complete = forbidden_complete_identifiers.intersection(
+        complete_identifiers
+    )
+    if forbidden_complete:
+        errors.append(
+            "resident complete path uses forbidden legacy or variable-work state: "
+            + ", ".join(sorted(forbidden_complete))
+        )
+    if re.search(r"GateBFixedReceipt\s*[<&]", complete_path):
+        errors.append("resident complete path retains a receipt payload reference")
+    for frozen in (
+        "pub fn prepare_commit<'instance>",
+        "pub fn prepare_full_write_commit<'instance>",
+        "let summary = turn.summary();",
+        "self.prepare_accepted_append(permit, summary)",
+        "PreparedResidentPublication::Ekf(turn)",
+        "PreparedResidentPublication::FullWrite(turn)",
+        "turn.abort();",
+    ):
+        if frozen not in resident_recorder:
+            errors.append(f"resident candidate/receipt binding contract lost: {frozen}")
+    for forbidden in (
+        "pub fn prepare_accepted(",
+        "pub fn new_full_write(",
+        "pub fn new(\n        turn: PreparedResidentTurn",
+    ):
+        if forbidden in resident_recorder:
+            errors.append(f"resident mismatched receipt construction remains public: {forbidden}")
+    for frozen in (
+        ".prepare_commit(permit, prepared)",
+        ".prepare_full_write_commit(permit, prepared)",
+    ):
+        if frozen not in resident_turn_fixture:
+            errors.append(f"resident benchmark bypasses bound commit preparation: {frozen}")
+    commit_body = resident_recorder[
+        resident_recorder.find("pub fn commit(self)") :
+    ]
+    if not call_occurs_before(commit_body, "self.turn.publish", "self.append.append"):
+        errors.append("resident commit does not publish before retained append")
+    if "fn append(self) -> LedgerSequence" not in resident_recorder:
+        errors.append("resident post-publication append is not statically infallible")
+    if "pub fn commit(self) -> LedgerSequence" not in resident_recorder:
+        errors.append("resident complete commit exposes post-publication failure")
+    if "OwnedTurnRecord<GateBFixedReceipt>" not in raw_epoch:
+        errors.append("raw epoch does not use the fixed resident receipt type")
+    if "OwnedTurnRecord<GateBFixedReceipt>" not in resident_recorder:
+        errors.append("resident turn does not use the fixed raw-epoch receipt type")
+    resident_full_write = resident_sources[full_write_path]
+    if "self.execute_candidate(input)?.publish();" not in resident_full_write:
+        errors.append("resident kernel full-write lane computes complete receipt summary")
+    if not call_occurs_before(
+        resident_full_write, "self.execute_candidate", "let summary = candidate.summary();"
+    ):
+        errors.append("resident complete full-write summary is not derived after execution")
+    for frozen in (
+        "EdgeTiming::SameTurn",
+        "EdgeTiming::NextTurn",
+        "same_turn_downstream",
+        "next_turn_consumers",
+        "timing == EdgeTiming::SameTurn",
+    ):
+        if frozen not in activation_source:
+            errors.append(f"resident temporal topology contract lost: {frozen}")
     if "raw_kernel::step(" not in raw_epoch or "raw_kernel::step(" not in legacy:
         errors.append("raw epoch and legacy controls must call the shared raw EKF kernel")
     if raw_epoch.count("published_epoch.store(") != 1:
@@ -401,10 +494,15 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
 
     allowed_production = {
         root / "src/runtime/src/lib.rs",
+        root / "src/runtime/src/resident_gate_b.rs",
         root / "src/runtime/src/turn_record.rs",
     }
     for source in (root / "src").rglob("*.rs"):
-        if "/benches/" in source.as_posix() or source in allowed_production:
+        if (
+            "/benches/" in source.as_posix()
+            or "/tests/" in source.as_posix()
+            or source in allowed_production
+        ):
             continue
         text = read_text(source)
         if "GateBFixedReceipt" in text or "__gate_b_recording" in text:
@@ -421,16 +519,21 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
     return errors
 
 
-def _lane_map(report: dict[str, Any], errors: list[str]) -> dict[tuple[str, int], dict[str, Any]]:
-    lanes: dict[tuple[str, int], dict[str, Any]] = {}
+def _lane_map(report: dict[str, Any], errors: list[str]) -> dict[LaneKey, dict[str, Any]]:
+    lanes: dict[LaneKey, dict[str, Any]] = {}
     for lane in report.get("lanes", []):
         try:
-            key = (str(lane["lane"]), int(lane["instances"]))
+            key = (
+                str(lane["lane"]),
+                int(lane["instances"]),
+                int(lane.get("retained_history", 0)),
+                int(lane.get("next_epoch", 1)),
+            )
         except (KeyError, TypeError, ValueError):
             errors.append("Gate B report contains an invalid lane identity")
             continue
         if key in lanes:
-            errors.append(f"Gate B report duplicates lane {key[0]}/{key[1]}")
+            errors.append(f"Gate B report duplicates lane {key}")
         lanes[key] = lane
     return lanes
 
@@ -506,7 +609,16 @@ def report_contract_errors(
     if missing:
         errors.append(
             "Gate B report is missing lanes: "
-            + ", ".join(f"{lane}/{instances}" for lane, instances in sorted(missing))
+            + ", ".join(
+                f"{lane}/{instances}/history-{history}/epoch-{epoch}"
+                for lane, instances, history, epoch in sorted(missing)
+            )
+        )
+    unexpected = set(lanes).difference(required_lanes)
+    if required_lanes and unexpected:
+        errors.append(
+            "Gate B report contains unexpected lanes: "
+            + ", ".join(str(key) for key in sorted(unexpected))
         )
     for key, lane in lanes.items():
         if lane.get("sample_count", 0) < 10:
@@ -529,7 +641,7 @@ def report_contract_errors(
                 errors.append(f"Gate B Rust EKF lane {key[0]}/{key[1]} changed its trajectory hash")
 
     for instances in SCALED_INSTANCES:
-        key = ("rust-epoch", instances)
+        key = ("rust-epoch", instances, 0, 1)
         if key not in lanes:
             continue
         lane = lanes[key]
@@ -547,12 +659,27 @@ def report_contract_errors(
             errors.append(f"raw epoch {instances} reports the wrong written-byte count")
         if structural.get("receipt_bytes") != 64:
             errors.append(f"raw epoch {instances} reports the wrong receipt size")
+        if report["phase"] == "B2-resident-turn":
+            for field, expected_value in {
+                "record_preparation_count": 1,
+                "record_append_count": 1,
+                "records_appended": EPISODE_LENGTH,
+                "ledger_records_inspected": 0,
+                "post_publication_append_infallible": True,
+            }.items():
+                if structural.get(field) != expected_value:
+                    errors.append(f"raw epoch {instances} reports wrong {field}")
 
-    if report["phase"] == "B1-resident-kernel":
-        if report["git_branch"] != "feat/engine-resident-ekf-substrate":
+    if report["phase"] in {"B1-resident-kernel", "B2-resident-turn"}:
+        expected_branch = (
+            "feat/engine-resident-ekf-substrate"
+            if report["phase"] == "B1-resident-kernel"
+            else "perf/runtime-resident-ekf-efficacy"
+        )
+        if report["git_branch"] != expected_branch:
             errors.append("B1 evidence is attributed to the wrong branch")
         for instances in SCALED_INSTANCES:
-            key = ("mech-resident-kernel", instances)
+            key = ("mech-resident-kernel", instances, 0, 1)
             if key not in lanes:
                 continue
             lane = lanes[key]
@@ -577,7 +704,7 @@ def report_contract_errors(
             if structural.get("legacy_journal_capture_count") != 0:
                 errors.append(f"resident kernel {instances} captures a legacy journal")
 
-        resident_full_key = ("mech-resident-kernel-full-write", 1)
+        resident_full_key = ("mech-resident-kernel-full-write", 1, 0, 1)
         if resident_full_key in lanes:
             lane = lanes[resident_full_key]
             allocation = lane.get("allocation", {})
@@ -599,7 +726,7 @@ def report_contract_errors(
                 errors.append("resident full-write does not use one publication store")
             if not structural.get("abort_output_hash"):
                 errors.append("resident full-write has no forced-abort output hash")
-            raw_full = lanes.get(("rust-epoch-full-write", 1))
+            raw_full = lanes.get(("rust-epoch-full-write", 1, 0, 1))
             if raw_full is not None:
                 if lane.get("quantized_state_hash") != raw_full.get("quantized_state_hash"):
                     errors.append("resident full-write terminal hash differs from raw epoch")
@@ -608,7 +735,7 @@ def report_contract_errors(
                 ):
                     errors.append("resident full-write forced-abort hash differs from raw epoch")
 
-    full_key = ("rust-epoch-full-write", 1)
+    full_key = ("rust-epoch-full-write", 1, 0, 1)
     if full_key in lanes:
         lane = lanes[full_key]
         allocation = lane.get("allocation", {})
@@ -624,6 +751,16 @@ def report_contract_errors(
             errors.append("raw full-write epoch does not use one publication store")
         if not structural.get("abort_output_hash"):
             errors.append("raw full-write epoch has no forced-abort output hash")
+        if report["phase"] == "B2-resident-turn":
+            for field, expected_value in {
+                "record_preparation_count": 1,
+                "record_append_count": 1,
+                "records_appended": EPISODE_LENGTH,
+                "ledger_records_inspected": 0,
+                "post_publication_append_infallible": True,
+            }.items():
+                if structural.get(field) != expected_value:
+                    errors.append(f"raw full-write epoch reports wrong {field}")
 
     for lane_name in ("mech-legacy-atomic", "mech-legacy-atomic-full-write"):
         for key, lane in lanes.items():
@@ -635,9 +772,11 @@ def report_contract_errors(
             if structural.get("legacy_journal_capture_count", 0) <= 0:
                 errors.append(f"legacy lane {key[0]}/{key[1]} did not capture journal state")
 
-    if ("mech-legacy-atomic", 1) in lanes and ("rust-epoch", 1) in lanes:
-        legacy = lanes[("mech-legacy-atomic", 1)]["timing"]["median_ns_per_turn"]
-        raw_epoch = lanes[("rust-epoch", 1)]["timing"]["median_ns_per_turn"]
+    legacy_key = ("mech-legacy-atomic", 1, 0, 1)
+    raw_epoch_key = ("rust-epoch", 1, 0, 1)
+    if legacy_key in lanes and raw_epoch_key in lanes:
+        legacy = lanes[legacy_key]["timing"]["median_ns_per_turn"]
+        raw_epoch = lanes[raw_epoch_key]["timing"]["median_ns_per_turn"]
         denominator = legacy - raw_epoch
         derived = report["derived"]
         reported = derived.get("legacy_denominator_ns_per_turn")
@@ -652,21 +791,21 @@ def report_contract_errors(
         if report["stop_condition"].get("passed") is not (denominator > 0.0):
             errors.append("Gate B stop-condition result disagrees with the denominator")
 
-    if report["phase"] == "B1-resident-kernel":
+    if report["phase"] in {"B1-resident-kernel", "B2-resident-turn"}:
         progression = report.get("b1_progression")
         if not isinstance(progression, dict):
             errors.append("B1 report is missing b1_progression")
         elif all(
             key in lanes
             for key in (
-                ("mech-resident-kernel", 1),
-                ("rust-kernel", 1),
-                ("rust-epoch", 1),
+                ("mech-resident-kernel", 1, 0, 1),
+                ("rust-kernel", 1, 0, 1),
+                ("rust-epoch", 1, 0, 1),
             )
         ):
-            resident = lanes[("mech-resident-kernel", 1)]["timing"]["median_ns_per_turn"]
-            rust_kernel = lanes[("rust-kernel", 1)]["timing"]["median_ns_per_turn"]
-            rust_epoch = lanes[("rust-epoch", 1)]["timing"]["median_ns_per_turn"]
+            resident = lanes[("mech-resident-kernel", 1, 0, 1)]["timing"]["median_ns_per_turn"]
+            rust_kernel = lanes[("rust-kernel", 1, 0, 1)]["timing"]["median_ns_per_turn"]
+            rust_epoch = lanes[("rust-epoch", 1, 0, 1)]["timing"]["median_ns_per_turn"]
             expected = {
                 "resident_kernel_ns_per_turn": resident,
                 "rust_kernel_ns_per_turn": rust_kernel,
@@ -685,6 +824,198 @@ def report_contract_errors(
             passed = resident <= 1.05 * rust_epoch
             if progression.get("passed") is not passed:
                 errors.append("B1 progression passed flag disagrees with the unchanged limit")
+
+    if report["phase"] == "B2-resident-turn":
+        turn_keys = [
+            ("mech-resident-turn", 1, 0, 1),
+            ("mech-resident-turn", 1, 1_000, 1),
+            ("mech-resident-turn", 1, 100_000, 1),
+            ("mech-resident-turn", 1, 0, 1_000_000_001),
+        ]
+        complete_keys = [
+            ("mech-resident-scheduled", 1, 0, 1),
+            *turn_keys,
+            ("mech-resident-turn-full-write", 1, 0, 1),
+        ]
+        for key in complete_keys:
+            if key not in lanes:
+                continue
+            lane = lanes[key]
+            allocation = lane.get("allocation", {})
+            structural = lane.get("structural", {})
+            if (
+                allocation.get("episode_allocation_count") != 0
+                or allocation.get("episode_allocated_bytes") != 0
+            ):
+                errors.append(f"B2 resident lane {key} allocates during the timed episode")
+            if structural.get("publication_store_count") != 1:
+                errors.append(f"B2 resident lane {key} does not use one publication store")
+            if structural.get("candidate_seed_bytes") != 0:
+                errors.append(f"B2 resident lane {key} seeds candidate storage")
+            if structural.get("published_buffer_copy_bytes") != 0:
+                errors.append(f"B2 resident lane {key} copies published storage")
+
+        for key in turn_keys:
+            if key not in lanes:
+                continue
+            structural = lanes[key].get("structural", {})
+            expected_structural = {
+                "candidate_written_bytes": 96,
+                "receipt_bytes": 64,
+                "dirty_node_count": 15,
+                "record_preparation_count": 1,
+                "record_append_count": 1,
+                "records_retained_before_timing": key[2],
+                "records_appended": EPISODE_LENGTH,
+                "ledger_records_inspected": 0,
+                "post_publication_append_infallible": True,
+            }
+            for field, expected_value in expected_structural.items():
+                if structural.get(field) != expected_value:
+                    errors.append(
+                        f"B2 resident lane {key} reports wrong {field}"
+                    )
+
+        full_turn_key = ("mech-resident-turn-full-write", 1, 0, 1)
+        if full_turn_key in lanes:
+            full = lanes[full_turn_key]
+            structural = full.get("structural", {})
+            expected_structural = {
+                "candidate_written_bytes": 32_768,
+                "receipt_bytes": 64,
+                "dirty_node_count": 1,
+                "record_preparation_count": 1,
+                "record_append_count": 1,
+                "records_retained_before_timing": 0,
+                "records_appended": EPISODE_LENGTH,
+                "ledger_records_inspected": 0,
+                "post_publication_append_infallible": True,
+            }
+            for field, expected_value in expected_structural.items():
+                if structural.get(field) != expected_value:
+                    errors.append(f"B2 full-write lane reports wrong {field}")
+            if not structural.get("abort_output_hash"):
+                errors.append("B2 full-write lane has no forced-rejection output hash")
+
+        decision_keys = {
+            ("mech-legacy-atomic", 1, 0, 1),
+            ("rust-epoch", 1, 0, 1),
+            ("numpy-persistent", 1, 0, 1),
+            ("mech-resident-kernel", 1, 0, 1),
+            ("mech-resident-scheduled", 1, 0, 1),
+            ("mech-resident-turn", 1, 0, 1),
+            ("mech-resident-turn", 1, 1_000, 1),
+            ("mech-resident-turn", 1, 100_000, 1),
+            ("mech-resident-turn", 1, 0, 1_000_000_001),
+            full_turn_key,
+        }
+        b2 = report.get("b2_decision")
+        if not isinstance(b2, dict):
+            errors.append("B2 report is missing b2_decision")
+        elif decision_keys.issubset(lanes):
+            median = lambda key: float(lanes[key]["timing"]["median_ns_per_turn"])
+            legacy = median(("mech-legacy-atomic", 1, 0, 1))
+            raw_epoch = median(("rust-epoch", 1, 0, 1))
+            numpy = median(("numpy-persistent", 1, 0, 1))
+            kernel = median(("mech-resident-kernel", 1, 0, 1))
+            scheduled = median(("mech-resident-scheduled", 1, 0, 1))
+            turn_key = ("mech-resident-turn", 1, 0, 1)
+            turn = median(turn_key)
+            turn_p95 = float(lanes[turn_key]["timing"]["p95_ns_per_turn"])
+            history_ratio = median(("mech-resident-turn", 1, 100_000, 1)) / turn
+            history_1k_ratio = median(("mech-resident-turn", 1, 1_000, 1)) / turn
+            high_epoch_ratio = median(
+                ("mech-resident-turn", 1, 0, 1_000_000_001)
+            ) / turn
+            metrics = {
+                "legacy_gap_closure": (legacy - turn) / (legacy - raw_epoch),
+                "raw_epoch_ratio": turn / raw_epoch,
+                "executor_tax_ns": turn - kernel,
+                "scheduler_tax_ns": scheduled - kernel,
+                "recording_tax_ns": turn - scheduled,
+                "numpy_ratio": turn / numpy,
+                "tail_ratio": turn_p95 / turn,
+                "history_1k_over_history_0_median_ratio": history_1k_ratio,
+                "history_100k_over_history_0_median_ratio": history_ratio,
+                "high_epoch_over_low_epoch_median_ratio": high_epoch_ratio,
+            }
+            for field, expected_value in metrics.items():
+                reported = b2.get(field)
+                if not isinstance(reported, (int, float)) or not math.isclose(
+                    float(reported), expected_value, rel_tol=1.0e-12, abs_tol=1.0e-9
+                ):
+                    errors.append(f"B2 decision {field} is inconsistent with lane evidence")
+
+            resident_decision_lanes = [
+                lanes[key]
+                for key in complete_keys
+                if key in lanes
+            ]
+            primary_structural = lanes[turn_key]["structural"]
+            full_structural = lanes[full_turn_key]["structural"]
+            hard_gates = {
+                "correctness": all(
+                    lane.get("correctness") is True
+                    and lane.get("quantized_state_hash")
+                    == lane.get("reference_quantized_state_hash")
+                    for lane in resident_decision_lanes
+                ),
+                "zero_allocation": all(
+                    lane.get("allocation", {}).get("episode_allocation_count") == 0
+                    for lane in resident_decision_lanes
+                ),
+                "constant_publication": (
+                    primary_structural.get("publication_store_count") == 1
+                    and full_structural.get("publication_store_count") == 1
+                ),
+                "no_full_clone": (
+                    primary_structural.get("candidate_seed_bytes") == 0
+                    and primary_structural.get("published_buffer_copy_bytes") == 0
+                    and full_structural.get("candidate_seed_bytes") == 0
+                    and full_structural.get("candidate_written_bytes") == 32_768
+                    and full_structural.get("published_buffer_copy_bytes") == 0
+                ),
+                "history_independent": (
+                    history_1k_ratio <= 1.05
+                    and history_ratio <= 1.05
+                    and high_epoch_ratio <= 1.05
+                    and all(
+                        lanes[key]["structural"].get("ledger_records_inspected") == 0
+                        for key in turn_keys
+                    )
+                ),
+                "legacy_gap_closure": metrics["legacy_gap_closure"] >= 0.80,
+                "raw_epoch_ratio": metrics["raw_epoch_ratio"] <= 1.25,
+                "executor_tax": metrics["executor_tax_ns"]
+                <= (1.25 * raw_epoch - kernel),
+                "tail_stability": metrics["tail_ratio"] <= 1.50,
+                "post_publication_append_infallible": (
+                    primary_structural.get("post_publication_append_infallible") is True
+                    and full_structural.get("post_publication_append_infallible") is True
+                ),
+            }
+            if b2.get("hard_gates") != hard_gates:
+                errors.append("B2 decision hard gates are inconsistent with lane evidence")
+            numpy_target = turn <= 1.10 * numpy
+            if b2.get("numpy_target") is not numpy_target:
+                errors.append("B2 decision NumPy target is inconsistent with lane evidence")
+            hard_pass = all(hard_gates.values())
+            expected_decision = (
+                "Pass"
+                if hard_pass and numpy_target
+                else "ConditionalPass"
+                if hard_pass
+                else "Fail"
+            )
+            expected_attribution = (
+                "kernel selection, numerical backend, or data layout"
+                if expected_decision == "ConditionalPass"
+                else None
+            )
+            if b2.get("decision") != expected_decision:
+                errors.append("B2 final decision is inconsistent with recomputed gates")
+            if b2.get("conditional_attribution") != expected_attribution:
+                errors.append("B2 conditional attribution is inconsistent with its decision")
     return errors
 
 

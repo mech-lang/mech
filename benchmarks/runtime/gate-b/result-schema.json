@@ -218,7 +218,8 @@
       }
     },
     "resident_breakdown": { "type": "object" },
-    "decision": { "type": "object" }
+    "decision": { "type": "object" },
+    "b2_decision": { "type": "object" }
   },
   "$defs": {
     "lane": {
@@ -239,6 +240,8 @@
       "properties": {
         "lane": { "type": "string", "minLength": 1 },
         "instances": { "enum": [1, 8, 64] },
+        "retained_history": { "type": "integer", "minimum": 0 },
+        "next_epoch": { "type": "integer", "minimum": 1 },
         "sample_count": { "type": "integer", "minimum": 10 },
         "turns_per_sample": { "const": 4096 },
         "timing": {
@@ -293,6 +296,13 @@
             "receipt_bytes": { "type": ["integer", "null"], "minimum": 0 },
             "commit_runtime_call_count": { "type": ["integer", "null"], "minimum": 0 },
             "legacy_journal_capture_count": { "type": ["integer", "null"], "minimum": 0 },
+            "dirty_node_count": { "type": ["integer", "null"], "minimum": 0 },
+            "record_preparation_count": { "type": ["integer", "null"], "minimum": 0 },
+            "record_append_count": { "type": ["integer", "null"], "minimum": 0 },
+            "records_retained_before_timing": { "type": ["integer", "null"], "minimum": 0 },
+            "records_appended": { "type": ["integer", "null"], "minimum": 0 },
+            "ledger_records_inspected": { "type": ["integer", "null"], "minimum": 0 },
+            "post_publication_append_infallible": { "type": ["boolean", "null"] },
             "abort_output_hash": {
               "type": ["string", "null"],
               "pattern": "^[0-9a-f]{64}$"

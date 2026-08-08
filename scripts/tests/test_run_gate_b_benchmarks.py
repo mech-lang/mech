@@ -77,33 +77,33 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
         }
         output = "prefix\nGATE_B_SAMPLE " + json.dumps(payload) + "\n"
         self.assertEqual(
-            RUNNER.parse_probe_samples(output)[("rust-epoch", 8)], payload
+            RUNNER.parse_probe_samples(output)[("rust-epoch", 8, 0, 1)], payload
         )
 
     def test_untimed_probe_merge_preserves_timed_allocation(self):
         timed = {}
         structural = {}
         for instances in RUNNER.SCALED_INSTANCES:
-            key = ("mech-legacy-atomic", instances)
+            key = ("mech-legacy-atomic", instances, 0, 1)
             timed[key] = {"allocation_count": 7}
             structural[key] = {
                 "commit_runtime_call_count": 4096,
                 "legacy_journal_capture_count": 12,
             }
-        full_key = ("mech-legacy-atomic-full-write", 1)
+        full_key = ("mech-legacy-atomic-full-write", 1, 0, 1)
         timed[full_key] = {"allocation_count": 9}
         structural[full_key] = {
             "commit_runtime_call_count": 4096,
             "legacy_journal_capture_count": 13,
         }
         for instances in RUNNER.SCALED_INSTANCES:
-            key = ("mech-resident-kernel", instances)
+            key = ("mech-resident-kernel", instances, 0, 1)
             timed[key] = {"allocation_count": 0}
             structural[key] = {
                 field: (1 if field == "publication_store_count" else 0)
                 for field in RUNNER.STRUCTURAL_FIELDS
             }
-        resident_full = ("mech-resident-kernel-full-write", 1)
+        resident_full = ("mech-resident-kernel-full-write", 1, 0, 1)
         timed[resident_full] = {"allocation_count": 0}
         structural[resident_full] = {
             field: (1 if field == "publication_store_count" else 0)
@@ -113,7 +113,7 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(merged[full_key]["allocation_count"], 9)
         self.assertEqual(merged[full_key]["commit_runtime_call_count"], 4096)
         self.assertEqual(
-            merged[("mech-resident-kernel", 64)]["publication_store_count"], 1
+            merged[("mech-resident-kernel", 64, 0, 1)]["publication_store_count"], 1
         )
 
     def test_frozen_base_requires_exact_merge_base(self):
@@ -195,6 +195,49 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
         progression = RUNNER.b1_progression(lanes)
         self.assertEqual(progression["limit_ns_per_turn"], 23.1)
         self.assertTrue(progression["passed"])
+
+    def test_b2_history_independence_uses_five_percent_ceiling(self):
+        def lane(name, median, *, history=0, next_epoch=1, full_write=False):
+            structural = {
+                "candidate_seed_bytes": 0,
+                "candidate_written_bytes": 32_768 if full_write else 96,
+                "published_buffer_copy_bytes": 0,
+                "publication_store_count": 1,
+                "ledger_records_inspected": 0,
+                "post_publication_append_infallible": True,
+            }
+            return {
+                "lane": name,
+                "instances": 1,
+                "retained_history": history,
+                "next_epoch": next_epoch,
+                "timing": {
+                    "median_ns_per_turn": median,
+                    "p95_ns_per_turn": median,
+                },
+                "allocation": {"episode_allocation_count": 0},
+                "structural": structural,
+                "correctness": True,
+                "quantized_state_hash": "a" * 64,
+                "reference_quantized_state_hash": "a" * 64,
+            }
+
+        lanes = [
+            lane("mech-legacy-atomic", 100.0),
+            lane("rust-epoch", 20.0),
+            lane("numpy-persistent", 30.0),
+            lane("mech-resident-kernel", 19.0),
+            lane("mech-resident-scheduled", 20.0),
+            lane("mech-resident-turn", 21.0),
+            lane("mech-resident-turn", 22.1, history=1_000),
+            lane("mech-resident-turn", 21.0, history=100_000),
+            lane("mech-resident-turn", 21.0, next_epoch=1_000_000_001),
+            lane("mech-resident-turn-full-write", 21.0, full_write=True),
+        ]
+
+        decision = RUNNER.b2_decision(lanes)
+        self.assertGreater(decision["history_1k_over_history_0_median_ratio"], 1.05)
+        self.assertFalse(decision["hard_gates"]["history_independent"])
 
     def test_explicit_machine_label_is_preserved(self):
         self.assertEqual(

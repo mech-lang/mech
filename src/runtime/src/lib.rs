@@ -216,7 +216,8 @@ pub mod __gate_b_recording {
         PreparedResidentCommit, ResidentRecordInspection, ResidentTurnRecorder,
     };
     pub use crate::turn_record::{
-        AccountedRecord, GateBFixedReceipt, LedgerSequence, OwnedTurnRecord, TurnFailurePhase,
+        AccountedRecord, GateBFixedReceipt, InputSequence, InputSequenceRange, LedgerSequence,
+        OwnedTurnRecord, TurnFailurePhase, TurnId, TurnRecordHeader, TurnRecordStatus,
     };
 
     use crate::ledger::{PreparedLedgerAppend, TurnLedger};

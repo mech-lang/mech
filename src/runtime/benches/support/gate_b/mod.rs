@@ -4,3 +4,4 @@ pub mod legacy_atomic;
 pub mod raw_epoch;
 pub mod raw_kernel;
 pub mod resident_kernel;
+pub mod resident_turn;
