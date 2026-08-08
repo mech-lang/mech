@@ -1,0 +1,424 @@
+use std::alloc::{GlobalAlloc, Layout, System};
+use std::collections::BTreeSet;
+use std::hint::black_box;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
+
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+#[cfg(feature = "runtime_bench_probes")]
+use mech_runtime::{gate_a_cost_snapshot, reset_gate_a_costs};
+
+mod support;
+use support::gate_b::contract::{
+    EPISODE_LENGTH, EkfState, REFERENCE_TRAJECTORY_SHA256, SCALED_INSTANCES, TRACE_SHA256,
+    assert_state_close, reference_trajectory, trace_sha256,
+};
+use support::gate_b::full_write::{FullWriteEpochFixture, FullWriteProbe, buffer_hash};
+use support::gate_b::legacy_atomic::{LegacyEkfFixture, LegacyFullWriteFixture};
+use support::gate_b::raw_epoch::{EpochFixture, EpochProbe};
+use support::gate_b::raw_kernel::KernelFixture;
+
+struct CountingAllocator;
+
+static ALLOCATIONS: AtomicU64 = AtomicU64::new(0);
+static DEALLOCATIONS: AtomicU64 = AtomicU64::new(0);
+static ALLOCATED_BYTES: AtomicU64 = AtomicU64::new(0);
+static REPORTED: OnceLock<Mutex<BTreeSet<(String, usize)>>> = OnceLock::new();
+
+unsafe impl GlobalAlloc for CountingAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
+        ALLOCATED_BYTES.fetch_add(layout.size() as u64, Ordering::Relaxed);
+        unsafe { System.alloc(layout) }
+    }
+
+    unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
+        DEALLOCATIONS.fetch_add(1, Ordering::Relaxed);
+        unsafe { System.dealloc(pointer, layout) }
+    }
+
+    unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+        ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
+        ALLOCATED_BYTES.fetch_add(layout.size() as u64, Ordering::Relaxed);
+        unsafe { System.alloc_zeroed(layout) }
+    }
+
+    unsafe fn realloc(&self, pointer: *mut u8, old: Layout, size: usize) -> *mut u8 {
+        ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
+        DEALLOCATIONS.fetch_add(1, Ordering::Relaxed);
+        ALLOCATED_BYTES.fetch_add(size as u64, Ordering::Relaxed);
+        unsafe { System.realloc(pointer, old, size) }
+    }
+}
+
+#[global_allocator]
+static GLOBAL: CountingAllocator = CountingAllocator;
+
+#[derive(Clone, Copy, Debug, Default)]
+struct AllocationSnapshot {
+    allocations: u64,
+    deallocations: u64,
+    allocated_bytes: u64,
+}
+
+fn reset_allocations() {
+    ALLOCATIONS.store(0, Ordering::Relaxed);
+    DEALLOCATIONS.store(0, Ordering::Relaxed);
+    ALLOCATED_BYTES.store(0, Ordering::Relaxed);
+}
+
+fn allocation_snapshot() -> AllocationSnapshot {
+    AllocationSnapshot {
+        allocations: ALLOCATIONS.load(Ordering::Relaxed),
+        deallocations: DEALLOCATIONS.load(Ordering::Relaxed),
+        allocated_bytes: ALLOCATED_BYTES.load(Ordering::Relaxed),
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+struct StructuralProbe {
+    candidate_seed_bytes: usize,
+    candidate_written_bytes: usize,
+    published_buffer_copy_bytes: usize,
+    publication_store_count: usize,
+    receipt_bytes: usize,
+    commit_runtime_call_count: u64,
+    legacy_journal_capture_count: u64,
+}
+
+impl From<EpochProbe> for StructuralProbe {
+    fn from(probe: EpochProbe) -> Self {
+        Self {
+            candidate_seed_bytes: probe.candidate_seed_bytes,
+            candidate_written_bytes: probe.candidate_written_bytes,
+            published_buffer_copy_bytes: probe.published_buffer_copy_bytes,
+            publication_store_count: probe.publication_store_count,
+            receipt_bytes: probe.receipt_bytes,
+            ..Self::default()
+        }
+    }
+}
+
+impl From<FullWriteProbe> for StructuralProbe {
+    fn from(probe: FullWriteProbe) -> Self {
+        Self {
+            candidate_seed_bytes: probe.candidate_seed_bytes,
+            candidate_written_bytes: probe.candidate_written_bytes,
+            published_buffer_copy_bytes: probe.published_buffer_copy_bytes,
+            publication_store_count: probe.publication_store_count,
+            receipt_bytes: probe.receipt_bytes,
+            ..Self::default()
+        }
+    }
+}
+
+fn report(
+    lane: &str,
+    instances: usize,
+    allocations: AllocationSnapshot,
+    probe: StructuralProbe,
+    output_hash: &str,
+    abort_output_hash: Option<&str>,
+) {
+    let mut reported = REPORTED
+        .get_or_init(|| Mutex::new(BTreeSet::new()))
+        .lock()
+        .expect("Gate B report lock");
+    if !reported.insert((lane.to_string(), instances)) {
+        return;
+    }
+    drop(reported);
+    let abort = abort_output_hash
+        .map(|hash| format!("\"{hash}\""))
+        .unwrap_or_else(|| "null".to_string());
+    eprintln!(
+        "GATE_B_SAMPLE {{\"lane\":\"{lane}\",\"instances\":{instances},\"turns\":{EPISODE_LENGTH},\"allocation_count\":{},\"deallocation_count\":{},\"allocated_bytes\":{},\"correctness\":true,\"quantized_state_hash\":\"{output_hash}\",\"candidate_seed_bytes\":{},\"candidate_written_bytes\":{},\"published_buffer_copy_bytes\":{},\"publication_store_count\":{},\"receipt_bytes\":{},\"commit_runtime_call_count\":{},\"legacy_journal_capture_count\":{},\"abort_output_hash\":{abort}}}",
+        allocations.allocations,
+        allocations.deallocations,
+        allocations.allocated_bytes,
+        probe.candidate_seed_bytes,
+        probe.candidate_written_bytes,
+        probe.published_buffer_copy_bytes,
+        probe.publication_store_count,
+        probe.receipt_bytes,
+        probe.commit_runtime_call_count,
+        probe.legacy_journal_capture_count,
+    );
+}
+
+fn validate_final(states: &[EkfState]) {
+    for state in states {
+        assert_state_close(*state, EkfState::REFERENCE_FINAL, EPISODE_LENGTH);
+    }
+}
+
+fn validate_controls() {
+    assert_eq!(trace_sha256(), TRACE_SHA256);
+    assert_eq!(reference_trajectory().len(), EPISODE_LENGTH);
+
+    let mut kernel = KernelFixture::new(1);
+    assert_eq!(
+        kernel.run_and_validate_every_turn(),
+        REFERENCE_TRAJECTORY_SHA256
+    );
+    validate_final(kernel.states());
+
+    let mut epoch = EpochFixture::new(1);
+    assert_eq!(
+        epoch.run_and_validate_every_turn(),
+        REFERENCE_TRAJECTORY_SHA256
+    );
+    validate_final(epoch.published_states());
+    assert_eq!(epoch.published_epoch(), EPISODE_LENGTH as u64);
+    assert_eq!(epoch.retained_receipts(), EPISODE_LENGTH);
+    assert_eq!(epoch.probe().candidate_seed_bytes, 0);
+    assert_eq!(epoch.probe().published_buffer_copy_bytes, 0);
+    assert_eq!(epoch.probe().publication_store_count, 1);
+
+    let mut rejected = EpochFixture::new(1);
+    rejected.force_rejected_turn_preserves_publication();
+
+    let mut legacy = LegacyEkfFixture::new(1);
+    assert_eq!(
+        legacy.run_and_validate_every_turn(),
+        REFERENCE_TRAJECTORY_SHA256
+    );
+    validate_final(&legacy.states());
+
+    let mut full_epoch = FullWriteEpochFixture::new();
+    full_epoch.run_episode();
+    let full_hash = buffer_hash(full_epoch.published());
+    let mut full_legacy = LegacyFullWriteFixture::new();
+    full_legacy.run_episode();
+    assert_eq!(buffer_hash(&full_legacy.published()), full_hash);
+    let mut full_rejected = FullWriteEpochFixture::new();
+    assert_eq!(
+        full_rejected.abort_output_hash(),
+        buffer_hash(full_rejected.published())
+    );
+}
+
+fn rust_kernel(c: &mut Criterion) {
+    let mut group = c.benchmark_group("gate_b/rust-kernel");
+    for instances in SCALED_INSTANCES {
+        let mut correctness = KernelFixture::new(instances);
+        let trajectory_hash = correctness.run_and_validate_every_turn();
+        assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+        group.bench_function(BenchmarkId::from_parameter(instances), |benchmark| {
+            benchmark.iter_custom(|iterations| {
+                let mut elapsed = Duration::ZERO;
+                for _ in 0..iterations {
+                    let mut fixture = KernelFixture::new(instances);
+                    reset_allocations();
+                    let started = Instant::now();
+                    fixture.run_episode();
+                    elapsed += started.elapsed();
+                    let allocations = allocation_snapshot();
+                    validate_final(fixture.states());
+                    black_box(fixture.states());
+                    report(
+                        "rust-kernel",
+                        instances,
+                        allocations,
+                        StructuralProbe::default(),
+                        &trajectory_hash,
+                        None,
+                    );
+                }
+                elapsed
+            });
+        });
+    }
+    group.finish();
+}
+
+fn rust_epoch(c: &mut Criterion) {
+    let mut group = c.benchmark_group("gate_b/rust-epoch");
+    for instances in SCALED_INSTANCES {
+        let mut correctness = EpochFixture::new(instances);
+        let trajectory_hash = correctness.run_and_validate_every_turn();
+        assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+        group.bench_function(BenchmarkId::from_parameter(instances), |benchmark| {
+            benchmark.iter_custom(|iterations| {
+                let mut elapsed = Duration::ZERO;
+                for _ in 0..iterations {
+                    let mut fixture = EpochFixture::new(instances);
+                    reset_allocations();
+                    let started = Instant::now();
+                    fixture.run_episode();
+                    elapsed += started.elapsed();
+                    let allocations = allocation_snapshot();
+                    validate_final(fixture.published_states());
+                    black_box(fixture.published_states());
+                    report(
+                        "rust-epoch",
+                        instances,
+                        allocations,
+                        fixture.probe().into(),
+                        &trajectory_hash,
+                        None,
+                    );
+                }
+                elapsed
+            });
+        });
+    }
+    group.finish();
+}
+
+fn legacy_atomic(c: &mut Criterion) {
+    let mut group = c.benchmark_group("gate_b/mech-legacy-atomic");
+    for instances in SCALED_INSTANCES {
+        let mut correctness = LegacyEkfFixture::new(instances);
+        let trajectory_hash = correctness.run_and_validate_every_turn();
+        assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+        group.bench_function(BenchmarkId::from_parameter(instances), |benchmark| {
+            benchmark.iter_custom(|iterations| {
+                let mut elapsed = Duration::ZERO;
+                for _ in 0..iterations {
+                    let mut fixture = LegacyEkfFixture::new(instances);
+                    reset_allocations();
+                    let started = Instant::now();
+                    fixture.run_episode();
+                    elapsed += started.elapsed();
+                    let allocations = allocation_snapshot();
+                    let states = fixture.states();
+                    validate_final(&states);
+                    black_box(states);
+                    report(
+                        "mech-legacy-atomic",
+                        instances,
+                        allocations,
+                        StructuralProbe::default(),
+                        &trajectory_hash,
+                        None,
+                    );
+                }
+                elapsed
+            });
+        });
+    }
+    group.finish();
+}
+
+fn full_write(c: &mut Criterion) {
+    let mut group = c.benchmark_group("gate_b/full-write");
+    group.bench_function("rust-epoch", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = FullWriteEpochFixture::new();
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                let output_hash = buffer_hash(fixture.published());
+                let mut rejected = FullWriteEpochFixture::new();
+                let abort_hash = rejected.abort_output_hash();
+                black_box(fixture.published());
+                report(
+                    "rust-epoch-full-write",
+                    1,
+                    allocations,
+                    fixture.probe().into(),
+                    &output_hash,
+                    Some(&abort_hash),
+                );
+            }
+            elapsed
+        });
+    });
+    group.bench_function("mech-legacy-atomic", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = LegacyFullWriteFixture::new();
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                let published = fixture.published();
+                let output_hash = buffer_hash(&published);
+                black_box(published);
+                report(
+                    "mech-legacy-atomic-full-write",
+                    1,
+                    allocations,
+                    StructuralProbe {
+                        candidate_written_bytes: support::gate_b::full_write::WRITTEN_BYTES,
+                        ..StructuralProbe::default()
+                    },
+                    &output_hash,
+                    None,
+                );
+            }
+            elapsed
+        });
+    });
+    group.finish();
+}
+
+#[cfg(feature = "runtime_bench_probes")]
+fn legacy_structural_samples() {
+    for instances in SCALED_INSTANCES {
+        let mut fixture = LegacyEkfFixture::new(instances);
+        reset_gate_a_costs();
+        reset_allocations();
+        let trajectory_hash = fixture.run_and_validate_every_turn();
+        let allocations = allocation_snapshot();
+        let costs = gate_a_cost_snapshot();
+        report(
+            "mech-legacy-atomic",
+            instances,
+            allocations,
+            StructuralProbe {
+                commit_runtime_call_count: costs.commit_runtime_call_count,
+                legacy_journal_capture_count: costs.reactive_journal_cell_count,
+                ..StructuralProbe::default()
+            },
+            &trajectory_hash,
+            None,
+        );
+    }
+
+    let mut fixture = LegacyFullWriteFixture::new();
+    reset_gate_a_costs();
+    reset_allocations();
+    fixture.run_episode();
+    let allocations = allocation_snapshot();
+    let costs = gate_a_cost_snapshot();
+    let published = fixture.published();
+    let output_hash = buffer_hash(&published);
+    report(
+        "mech-legacy-atomic-full-write",
+        1,
+        allocations,
+        StructuralProbe {
+            candidate_written_bytes: support::gate_b::full_write::WRITTEN_BYTES,
+            commit_runtime_call_count: costs.commit_runtime_call_count,
+            legacy_journal_capture_count: costs.reactive_journal_cell_count,
+            ..StructuralProbe::default()
+        },
+        &output_hash,
+        None,
+    );
+}
+
+fn gate_b_controls(c: &mut Criterion) {
+    validate_controls();
+    #[cfg(feature = "runtime_bench_probes")]
+    if std::env::var_os("MECH_GATE_B_STRUCTURAL_ONLY").is_some() {
+        legacy_structural_samples();
+        return;
+    }
+    rust_kernel(c);
+    rust_epoch(c);
+    legacy_atomic(c);
+    full_write(c);
+}
+
+criterion_group!(benches, gate_b_controls);
+criterion_main!(benches);

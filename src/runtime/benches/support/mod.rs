@@ -6,6 +6,8 @@ use mech_core::{
 };
 use mech_runtime::RuntimeBuilder;
 
+#[cfg(feature = "runtime_bench_gate_b")]
+pub mod gate_b;
 #[cfg(feature = "runtime_bench_probes")]
 pub mod history;
 

@@ -201,6 +201,49 @@ pub mod __gate_a_recording {
     }
 }
 
+/// Fixed-receipt wrapper over the Gate A ledger for Gate B controls only.
+///
+/// Normal runtime builds do not expose this provisional benchmark surface.
+#[doc(hidden)]
+#[cfg(all(feature = "runtime", feature = "runtime_bench_gate_b"))]
+pub mod __gate_b_recording {
+    use mech_core::MResult;
+
+    pub use crate::ledger::{LedgerPermit, RecordEstimate, RetainedTurnLedger};
+    pub use crate::turn_record::{AccountedRecord, GateBFixedReceipt, LedgerSequence};
+
+    use crate::ledger::{PreparedLedgerAppend, TurnLedger};
+
+    /// A Gate B prepared append bound to its originating retained ledger.
+    #[must_use = "prepared records must be appended or dropped"]
+    pub struct PreparedRetainedAppend<'a, R: AccountedRecord> {
+        ledger: &'a mut RetainedTurnLedger<R>,
+        prepared: PreparedLedgerAppend<R>,
+    }
+
+    impl<R: AccountedRecord> PreparedRetainedAppend<'_, R> {
+        pub fn append(self) -> LedgerSequence {
+            TurnLedger::append(self.ledger, self.prepared)
+        }
+    }
+
+    pub fn reserve_retained<R: AccountedRecord>(
+        ledger: &RetainedTurnLedger<R>,
+        estimate: RecordEstimate,
+    ) -> MResult<LedgerPermit> {
+        TurnLedger::reserve(ledger, estimate)
+    }
+
+    pub fn prepare_retained<'a, R: AccountedRecord>(
+        ledger: &'a mut RetainedTurnLedger<R>,
+        permit: LedgerPermit,
+        record: R,
+    ) -> MResult<PreparedRetainedAppend<'a, R>> {
+        let prepared = TurnLedger::prepare_append(ledger, permit, record)?;
+        Ok(PreparedRetainedAppend { ledger, prepared })
+    }
+}
+
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {

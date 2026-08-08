@@ -254,6 +254,55 @@ impl AccountedRecord for Box<[u8]> {
     }
 }
 
+/// Fixed private receipt used only by the Gate B efficacy benchmark.
+///
+/// The payload is inline so binding and retained append require no turn-time
+/// heap allocation. It is not the canonical resident receipt model.
+#[doc(hidden)]
+#[cfg(feature = "runtime_bench_gate_b")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GateBFixedReceipt {
+    words: [u64; 8],
+}
+
+#[cfg(feature = "runtime_bench_gate_b")]
+impl GateBFixedReceipt {
+    pub const RETAINED_BYTES: usize = core::mem::size_of::<Self>();
+
+    pub fn accepted(before_epoch: u64, after_epoch: u64, state_hash: u64, touched: u16) -> Self {
+        Self {
+            words: [
+                before_epoch,
+                after_epoch,
+                state_hash,
+                u64::from(touched),
+                1,
+                0,
+                0,
+                0,
+            ],
+        }
+    }
+
+    pub fn before_epoch(&self) -> u64 {
+        self.words[0]
+    }
+
+    pub fn after_epoch(&self) -> u64 {
+        self.words[1]
+    }
+}
+
+#[cfg(feature = "runtime_bench_gate_b")]
+impl sealed::Sealed for GateBFixedReceipt {}
+
+#[cfg(feature = "runtime_bench_gate_b")]
+impl AccountedRecord for GateBFixedReceipt {
+    fn retained_bytes(&self) -> usize {
+        Self::RETAINED_BYTES
+    }
+}
+
 impl sealed::Sealed for crate::ledger::PooledRecordBuffer {}
 
 impl<P: AccountedRecord> sealed::Sealed for crate::outbox::OwnedEffectIntent<P> {}
