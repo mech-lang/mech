@@ -92,6 +92,14 @@ pub mod patterns;
 pub mod program;
 #[cfg(feature = "resident-ekf")]
 mod resident;
+#[cfg(feature = "resident-ekf")]
+#[doc(hidden)]
+pub mod __gate_b_resident {
+    #[cfg(feature = "runtime_bench_probes")]
+    pub use crate::resident::bench::ResidentTurnProbe;
+    pub use crate::resident::bench::{ResidentEkfBatch, ResidentEkfState};
+    pub use crate::resident::{FULL_WRITE_ELEMENTS, ResidentExecutionError, ResidentFullWrite};
+}
 #[cfg(all(feature = "source", feature = "state_machines"))]
 pub mod state_machines;
 #[cfg(feature = "source")]
