@@ -42,6 +42,48 @@ CANONICAL_REFERENCE_PATH = ROOT / "scripts/tests/canonical_encoding_v1_reference
 EXPECTED_LEGACY_SCANNER_SHA256 = (
     "9624eb89c01085cc5e412506b30671f442ba53b057c228b3fbcd113cc77ad834"
 )
+EXPECTED_HASH_CONTRACTS_V1 = {
+    "NominalKey": {
+        "algorithm": "SHA-256",
+        "bytes": 32,
+        "domain_separator_utf8": "mech-nominal-v1\0",
+        "input": [
+            "domain-separator",
+            "U8-nominal-kind-tag",
+            "U32-segment-count",
+            "each-segment-as-Utf8",
+        ],
+    },
+    "SchemaKey": {
+        "algorithm": "SHA-256",
+        "bytes": 32,
+        "domain_separator_utf8": "mech-schema-v1\0",
+        "input": ["domain-separator", "canonical-schema-bytes"],
+    },
+    "KeyHash": {
+        "algorithm": "SHA-256",
+        "bytes": 32,
+        "domain_separator_utf8": "mech-key-v1\0",
+        "input": [
+            "domain-separator",
+            "SchemaKey",
+            "canonical-shape-bytes",
+            "canonical-key-payload-bytes",
+        ],
+    },
+    "ValueHash": {
+        "algorithm": "SHA-256",
+        "bytes": 32,
+        "domain_separator_utf8": "mech-value-v1\0",
+        "durability": "durable-snapshot-identity",
+        "input": [
+            "domain-separator",
+            "SchemaKey",
+            "canonical-shape-bytes",
+            "canonical-payload-bytes",
+        ],
+    },
+}
 
 
 def load_module(name: str, path: Path):
@@ -2017,6 +2059,11 @@ def canonical_encoding_failures(
         "TypeOf": 17,
     }
     schema_checks = (
+        (
+            "complete hash contracts",
+            canonical.get("hashes"),
+            EXPECTED_HASH_CONTRACTS_V1,
+        ),
         (
             "SchemaKey hash contract",
             canonical.get("hashes", {}).get("SchemaKey"),

@@ -668,7 +668,6 @@ mod vector_tests {
             Err(SemanticModelError::UnknownDimensionParameterV1 { .. })
         ));
     }
-
     #[test]
     fn test_only_limit_proves_dimension_parameter_identity_exhaustion() {
         let mut builder = DimensionEnvironmentBuilder::new();

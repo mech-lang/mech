@@ -125,6 +125,7 @@ pub mod reactive_transaction;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub mod resident_execution;
+pub mod schema;
 pub mod semantic_error;
 pub mod semantic_identity;
 pub mod state_journal;
@@ -160,6 +161,7 @@ pub use self::reactive_transaction::*;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub use self::resident_execution::*;
+pub use self::schema::*;
 pub use self::semantic_error::*;
 pub use self::semantic_identity::*;
 pub use self::state_journal::*;

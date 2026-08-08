@@ -2,6 +2,7 @@
 
 use crate::{
     DimensionOperator, DimensionParameterId, KindId, KindParameterId, MechError, MechErrorKind,
+    SchemaKey,
 };
 
 #[cfg(feature = "no_std")]
@@ -107,6 +108,26 @@ pub enum SemanticModelError {
     DuplicateKindName {
         category: KindNameCategory,
         name: String,
+    },
+    DuplicateSchemaNameV1 {
+        category: SchemaNameCategory,
+        name: String,
+    },
+    SchemaNotKeyableV1,
+    ShapeParameterCountMismatchV1 {
+        expected: u32,
+        actual: u32,
+    },
+    ShapeBoundViolationV1 {
+        parameter: DimensionParameterId,
+        value: u64,
+        lower: u64,
+        upper: Option<u64>,
+    },
+    SchemaIdExhausted,
+    InvalidSchemaHandleV1,
+    SchemaKeyCollision {
+        key: SchemaKey,
     },
 }
 
