@@ -333,7 +333,7 @@
     },
     "path": "non-empty-U32-counted-ordered-sequence-of-exact-Utf8-segments",
     "segment_derivation": {
-      "collision_rule": "duplicate-resolved-package-names-are-rejected-only-when-more-than-one-such-package-defines-a-nominal-declaration-reachable-in-the-current-compilation",
+      "collision_rule": "same-complete-CanonicalNominalPath-from-distinct-Cargo-package-IDs-in-one-ProgramArtifact-is-AmbiguousNominalDeclarationV1",
       "crate_aliases": "excluded",
       "module_source": "defining-module-canonical-namespace-relative-to-package-root",
       "package_name_source": "resolved-package-manifest-declared-name-exact-Utf8",

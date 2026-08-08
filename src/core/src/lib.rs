@@ -116,11 +116,14 @@ pub mod execution;
 pub mod function;
 pub mod kind;
 pub mod nodes;
+pub mod nominal;
 #[cfg(feature = "functions")]
 pub mod reactive_transaction;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub mod resident_execution;
+pub mod semantic_error;
+pub mod semantic_identity;
 pub mod state_journal;
 pub mod structures;
 pub mod value;
@@ -144,12 +147,15 @@ pub use self::kind::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
 pub use self::nodes::*;
+pub use self::nominal::*;
 pub use self::program::*;
 #[cfg(feature = "functions")]
 pub use self::reactive_transaction::*;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub use self::resident_execution::*;
+pub use self::semantic_error::*;
+pub use self::semantic_identity::*;
 pub use self::state_journal::*;
 pub use self::stdlib::*;
 pub use self::structures::*;

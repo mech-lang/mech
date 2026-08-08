@@ -149,7 +149,7 @@ impl ResidentFullWrite {
         let working_epoch = self
             .next_epoch
             .ok_or(ResidentExecutionError::EpochExhausted)?;
-        self.next_epoch = working_epoch.checked_next();
+        self.next_epoch = working_epoch.checked_next().ok();
         let published_epoch = InstanceEpoch(self.published_epoch.load(Ordering::Acquire));
         let published = self.published_index(published_epoch);
         debug_assert_eq!(self.buffer_epochs[published], Some(published_epoch));

@@ -307,11 +307,14 @@ the exact declaration name. Package versions and dependency-source identities
 are excluded so a compatible package release does not silently change durable
 keys. Local crate/dependency aliases and re-export paths are excluded: every
 re-export resolves back to the defining declaration before path construction.
-Duplicate package names elsewhere in the Cargo resolution do not invalidate a
-nominal identity. A collision is rejected before `NominalKey` construction
-only when more than one resolved package with the same declared name defines a
-nominal declaration reachable in the current compilation. A filesystem path
-or process-local numeric hash is never a nominal identity.
+Only nominal declarations included in one `ProgramArtifact` participate in
+collision detection. Declarations are grouped by complete
+`CanonicalNominalPath`; the same full path from two distinct Cargo package IDs
+is `AmbiguousNominalDeclarationV1`, while different full paths from same-name
+packages are legal. Duplicate dependency names elsewhere in `Cargo.lock` are
+irrelevant. A Cargo package ID is only an internal collision discriminator and
+is never encoded in `NominalKey`. A filesystem path or process-local numeric
+hash is never a nominal identity.
 
 The checked-in golden-vector document is independently frozen by the canonical
 JSON SHA-256 `0be9531a4514ef359bedc3172f6ea327c28bcaab0fa493d9725d430799343a9f`,

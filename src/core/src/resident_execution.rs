@@ -1,27 +1,6 @@
 //! Dependency-neutral identities for the experimental resident executor.
 
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
-#[repr(transparent)]
-pub struct CellSlotId(pub u32);
-
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
-#[repr(transparent)]
-pub struct SlotIndex(pub u32);
-
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
-#[repr(transparent)]
-pub struct InstanceEpoch(pub u64);
-
-impl InstanceEpoch {
-    /// Returns the next unique resident epoch, or `None` after `u64::MAX`.
-    #[inline]
-    pub const fn checked_next(self) -> Option<Self> {
-        match self.0.checked_add(1) {
-            Some(next) => Some(Self(next)),
-            None => None,
-        }
-    }
-}
+pub use crate::semantic_identity::{CellSlotId, InstanceEpoch, SlotIndex};
 
 #[cfg(test)]
 mod tests {
@@ -41,7 +20,7 @@ mod tests {
             core::mem::size_of::<InstanceEpoch>(),
             core::mem::size_of::<u64>()
         );
-        assert_eq!(InstanceEpoch(41).checked_next(), Some(InstanceEpoch(42)));
-        assert_eq!(InstanceEpoch(u64::MAX).checked_next(), None);
+        assert_eq!(InstanceEpoch(41).checked_next(), Ok(InstanceEpoch(42)));
+        assert!(InstanceEpoch(u64::MAX).checked_next().is_err());
     }
 }
