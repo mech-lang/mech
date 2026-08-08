@@ -110,6 +110,8 @@ impl EpochFixture {
             working_epoch,
             state_hash,
             u16::try_from(self.versions[working_index].len() * 2).expect("Gate B touched count"),
+            u16::try_from(self.versions[working_index].len() * 2).expect("Gate B changed count"),
+            u16::try_from(self.versions[working_index].len() * 15).expect("Gate B dirty count"),
         );
         let permit = self.permits[turn].take().expect("unused Gate B admission");
         let prepared = prepare_retained(&mut self.ledger, permit, receipt)

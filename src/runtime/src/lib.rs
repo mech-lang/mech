@@ -12,6 +12,8 @@ mod ledger;
 pub mod operation;
 #[cfg(feature = "runtime")]
 mod outbox;
+#[cfg(all(feature = "runtime", feature = "runtime_bench_gate_b"))]
+mod resident_gate_b;
 mod resource;
 #[cfg(feature = "runtime")]
 mod snapshot;
@@ -210,7 +212,12 @@ pub mod __gate_b_recording {
     use mech_core::MResult;
 
     pub use crate::ledger::{LedgerPermit, RecordEstimate, RetainedTurnLedger};
-    pub use crate::turn_record::{AccountedRecord, GateBFixedReceipt, LedgerSequence};
+    pub use crate::resident_gate_b::{
+        PreparedResidentCommit, ResidentRecordInspection, ResidentTurnRecorder,
+    };
+    pub use crate::turn_record::{
+        AccountedRecord, GateBFixedReceipt, LedgerSequence, OwnedTurnRecord, TurnFailurePhase,
+    };
 
     use crate::ledger::{PreparedLedgerAppend, TurnLedger};
 

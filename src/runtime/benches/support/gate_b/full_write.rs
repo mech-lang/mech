@@ -129,6 +129,8 @@ impl FullWriteEpochFixture {
             working_epoch,
             buffer_hash64(&self.versions[working_index]),
             1,
+            1,
+            1,
         );
         let permit = self.permits[turn].take().expect("unused Gate B admission");
         let prepared = prepare_retained(&mut self.ledger, permit, receipt)

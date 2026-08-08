@@ -269,18 +269,31 @@ pub struct GateBFixedReceipt {
 impl GateBFixedReceipt {
     pub const RETAINED_BYTES: usize = core::mem::size_of::<Self>();
 
-    pub fn accepted(before_epoch: u64, after_epoch: u64, state_hash: u64, touched: u16) -> Self {
+    pub fn accepted(
+        before_epoch: u64,
+        after_epoch: u64,
+        state_hash: u64,
+        touched: u16,
+        changed: u16,
+        dirty_nodes: u16,
+    ) -> Self {
         Self {
             words: [
                 before_epoch,
                 after_epoch,
                 state_hash,
                 u64::from(touched),
+                u64::from(changed),
+                u64::from(dirty_nodes),
                 1,
                 0,
-                0,
-                0,
             ],
+        }
+    }
+
+    pub fn rejected(before_epoch: u64) -> Self {
+        Self {
+            words: [before_epoch, 0, 0, 0, 0, 0, 2, 0],
         }
     }
 
@@ -290,6 +303,30 @@ impl GateBFixedReceipt {
 
     pub fn after_epoch(&self) -> u64 {
         self.words[1]
+    }
+
+    pub fn state_hash(&self) -> u64 {
+        self.words[2]
+    }
+
+    pub fn touched_slots(&self) -> u16 {
+        self.words[3] as u16
+    }
+
+    pub fn changed_slots(&self) -> u16 {
+        self.words[4] as u16
+    }
+
+    pub fn dirty_nodes(&self) -> u16 {
+        self.words[5] as u16
+    }
+
+    pub fn is_accepted(&self) -> bool {
+        self.words[6] == 1
+    }
+
+    pub fn version(&self) -> u64 {
+        self.words[7]
     }
 }
 
