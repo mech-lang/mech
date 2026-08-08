@@ -2170,6 +2170,7 @@ dependencies = [
  "num-traits",
  "paste",
  "serde",
+ "sha2",
  "web-time",
 ]
 
@@ -2248,6 +2249,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "sha2",
  "tracing",
  "trybuild",
  "uuid",

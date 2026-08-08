@@ -24,6 +24,7 @@ no_std = ["mech-core/no_std", "mech-syntax?/no_std"]
 runtime = ["program", "functions"]
 # Runtime-only diagnostic hook consumed by mech-runtime's non-default Gate A probes.
 runtime_bench_probes = ["runtime"]
+resident-ekf = ["mech-core/resident-execution"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 source = ["runtime", "dep:mech-syntax"]
@@ -478,6 +479,7 @@ optional = true
 
 [dev-dependencies]
 criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
+sha2 = "0.10"
 
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
 web-time = "1.1.0"

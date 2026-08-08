@@ -1,0 +1,1052 @@
+{
+  "b1_progression": {
+    "limit_multiplier": 1.05,
+    "limit_ns_per_turn": 259.0853160184973,
+    "passed": true,
+    "resident_kernel_ns_per_turn": 90.26945949245143,
+    "resident_kernel_ratio": 0.8801083173121869,
+    "resident_kernel_vs_raw_epoch": 0.36583675958041184,
+    "rust_epoch_ns_per_turn": 246.74792001761642,
+    "rust_kernel_ns_per_turn": 102.56630657477537
+  },
+  "b2_decision": {
+    "conditional_attribution": null,
+    "decision": "Pass",
+    "executor_tax_ns": 202.0937852074259,
+    "hard_gates": {
+      "constant_publication": true,
+      "correctness": true,
+      "executor_tax": true,
+      "history_independent": true,
+      "legacy_gap_closure": true,
+      "no_full_clone": true,
+      "post_publication_append_infallible": true,
+      "raw_epoch_ratio": true,
+      "tail_stability": true,
+      "zero_allocation": true
+    },
+    "high_epoch_over_low_epoch_median_ratio": 1.0006389195929932,
+    "history_100k_over_history_0_median_ratio": 1.0020690289853063,
+    "history_1k_over_history_0_median_ratio": 1.0003214859048637,
+    "legacy_gap_closure": 0.9945923105078902,
+    "numpy_ratio": 0.014056930367226172,
+    "numpy_target": true,
+    "raw_epoch_ratio": 1.1848660960505937,
+    "recording_tax_ns": 173.67423775432567,
+    "scheduler_tax_ns": 28.419547453100222,
+    "tail_ratio": 1.0015773771153091
+  },
+  "benchmark_arguments": [
+    "cargo",
+    "bench",
+    "-p",
+    "mech-runtime",
+    "--bench",
+    "resident_ekf",
+    "--features",
+    "source_default,runtime_bench_gate_b",
+    "--",
+    "--noplot",
+    "--sample-size",
+    "10",
+    "--warm-up-time",
+    "1.0",
+    "--measurement-time",
+    "3.0",
+    "--nresamples",
+    "10000"
+  ],
+  "derived": {
+    "legacy_denominator_ns_per_turn": 8435.27069163603,
+    "mech_legacy_atomic_ns_per_turn": 8682.018611653646,
+    "positive": true,
+    "rust_epoch_ns_per_turn": 246.74792001761642
+  },
+  "gate": "B",
+  "git_branch": "perf/runtime-resident-ekf-efficacy",
+  "git_commit": "bb3aa18d77cd8726fc6771b791ebd8cc7dea9fdd",
+  "lanes": [
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 23161.53125,
+        "allocations_per_turn": 211.01318359375,
+        "episode_allocated_bytes": 94869632,
+        "episode_allocation_count": 864310
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-legacy-atomic",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 4096,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 36864,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 8682.018611653646,
+        "p95_ns_per_turn": 8755.59219909668
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 83361.53125,
+        "allocations_per_turn": 766.01318359375,
+        "episode_allocated_bytes": 341448832,
+        "episode_allocation_count": 3137590
+      },
+      "correctness": true,
+      "instances": 8,
+      "lane": "mech-legacy-atomic",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 4096,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 294912,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 34547.00895182292,
+        "p95_ns_per_turn": 34713.677779134116
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 568014.171875,
+        "allocations_per_turn": 5047.662353515625,
+        "episode_allocated_bytes": 2326586048,
+        "episode_allocation_count": 20675225
+      },
+      "correctness": true,
+      "instances": 64,
+      "lane": "mech-legacy-atomic",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 4096,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 2359296,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 315144.41931152344,
+        "p95_ns_per_turn": 316674.3144897461
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 115888.349609375,
+        "allocations_per_turn": 143.013671875,
+        "episode_allocated_bytes": 474678680,
+        "episode_allocation_count": 585784
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-legacy-atomic-full-write",
+      "next_epoch": 1,
+      "quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "reference_quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 32768,
+        "commit_runtime_call_count": 4096,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 12288,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 8820.038592529298,
+        "p95_ns_per_turn": 8879.694102478028
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-kernel",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 90.26945949245143,
+        "p95_ns_per_turn": 90.67700541728252
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 8,
+      "lane": "mech-resident-kernel",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 768,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 658.670415969122,
+        "p95_ns_per_turn": 662.6643672252836
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 64,
+      "lane": "mech-resident-kernel",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 6144,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 5074.559934828016,
+        "p95_ns_per_turn": 5078.158612060547
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-kernel-full-write",
+      "next_epoch": 1,
+      "quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "reference_quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": "c10b5fea1f26905e04b7ca4c90b56710bdebdd356b1936aaf40f55f92675191d",
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 32768,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 3857.809248352051,
+        "p95_ns_per_turn": 3860.495324707031
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-scheduled",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 15,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 118.68900694555165,
+        "p95_ns_per_turn": 119.55135901314871
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-turn",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 15,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 292.3632446998773,
+        "p95_ns_per_turn": 292.82441179142444
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-turn",
+      "next_epoch": 1000000001,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 15,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 292.55004130518716,
+        "p95_ns_per_turn": 292.74378769985464
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-turn",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 1000,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 15,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 1000
+      },
+      "timing": {
+        "median_ns_per_turn": 292.45723536214854,
+        "p95_ns_per_turn": 292.72996307266715
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-turn",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 100000,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 15,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 100000
+      },
+      "timing": {
+        "median_ns_per_turn": 292.96815272739957,
+        "p95_ns_per_turn": 293.2680892944336
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-turn-full-write",
+      "next_epoch": 1,
+      "quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "reference_quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": "c10b5fea1f26905e04b7ca4c90b56710bdebdd356b1936aaf40f55f92675191d",
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 32768,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 1,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 37040.43572998047,
+        "p95_ns_per_turn": 37046.10489501953
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": null,
+        "allocations_per_turn": null,
+        "episode_allocated_bytes": null,
+        "episode_allocation_count": null
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "numpy-persistent",
+      "next_epoch": 1,
+      "quantized_state_hash": "1b0856ee87055bd50f895f5d8c54f7c29cf6ff6d1530ad3f82332560f392e98f",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": null,
+        "candidate_written_bytes": null,
+        "commit_runtime_call_count": null,
+        "dirty_node_count": null,
+        "ledger_records_inspected": null,
+        "legacy_journal_capture_count": null,
+        "post_publication_append_infallible": null,
+        "publication_store_count": null,
+        "published_buffer_copy_bytes": null,
+        "receipt_bytes": null,
+        "record_append_count": null,
+        "record_preparation_count": null,
+        "records_appended": null,
+        "records_retained_before_timing": null
+      },
+      "timing": {
+        "median_ns_per_turn": 20798.5126953125,
+        "p95_ns_per_turn": 20875.262451171875
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": null,
+        "allocations_per_turn": null,
+        "episode_allocated_bytes": null,
+        "episode_allocation_count": null
+      },
+      "correctness": true,
+      "instances": 8,
+      "lane": "numpy-persistent",
+      "next_epoch": 1,
+      "quantized_state_hash": "1b0856ee87055bd50f895f5d8c54f7c29cf6ff6d1530ad3f82332560f392e98f",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": null,
+        "candidate_written_bytes": null,
+        "commit_runtime_call_count": null,
+        "dirty_node_count": null,
+        "ledger_records_inspected": null,
+        "legacy_journal_capture_count": null,
+        "post_publication_append_infallible": null,
+        "publication_store_count": null,
+        "published_buffer_copy_bytes": null,
+        "receipt_bytes": null,
+        "record_append_count": null,
+        "record_preparation_count": null,
+        "records_appended": null,
+        "records_retained_before_timing": null
+      },
+      "timing": {
+        "median_ns_per_turn": 161391.0421142578,
+        "p95_ns_per_turn": 162486.77113037108
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": null,
+        "allocations_per_turn": null,
+        "episode_allocated_bytes": null,
+        "episode_allocation_count": null
+      },
+      "correctness": true,
+      "instances": 64,
+      "lane": "numpy-persistent",
+      "next_epoch": 1,
+      "quantized_state_hash": "1b0856ee87055bd50f895f5d8c54f7c29cf6ff6d1530ad3f82332560f392e98f",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": null,
+        "candidate_written_bytes": null,
+        "commit_runtime_call_count": null,
+        "dirty_node_count": null,
+        "ledger_records_inspected": null,
+        "legacy_journal_capture_count": null,
+        "post_publication_append_infallible": null,
+        "publication_store_count": null,
+        "published_buffer_copy_bytes": null,
+        "receipt_bytes": null,
+        "record_append_count": null,
+        "record_preparation_count": null,
+        "records_appended": null,
+        "records_retained_before_timing": null
+      },
+      "timing": {
+        "median_ns_per_turn": 1295971.2575683594,
+        "p95_ns_per_turn": 1302969.670666504
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "rust-epoch",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 246.74792001761642,
+        "p95_ns_per_turn": 246.99667886305997
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 8,
+      "lane": "rust-epoch",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 768,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 1393.8555859375,
+        "p95_ns_per_turn": 1394.712113647461
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 64,
+      "lane": "rust-epoch",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 6144,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 10573.925255475726,
+        "p95_ns_per_turn": 10584.814434814452
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "rust-epoch-full-write",
+      "next_epoch": 1,
+      "quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "reference_quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": "c10b5fea1f26905e04b7ca4c90b56710bdebdd356b1936aaf40f55f92675191d",
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 32768,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 34928.34480794271,
+        "p95_ns_per_turn": 35209.873962402344
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "rust-kernel",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 102.56630657477537,
+        "p95_ns_per_turn": 102.71644867952847
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 8,
+      "lane": "rust-kernel",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 775.4906441824777,
+        "p95_ns_per_turn": 801.4443363613552
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 64,
+      "lane": "rust-kernel",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 0,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 6181.268360279224,
+        "p95_ns_per_turn": 6273.83397623698
+      },
+      "turns_per_sample": 4096
+    }
+  ],
+  "machine": {
+    "architecture": "arm64",
+    "identity": "MacBook Air, Mac15,13, Apple M3",
+    "os": "macOS-26.2-arm64-arm-64bit"
+  },
+  "phase": "B2-resident-turn",
+  "raw_criterion_directory": "/private/tmp/mech-b2-v04/target/criterion",
+  "raw_output": "/private/tmp/mech-b2-v04/target/gate-b-benchmark-runs/bb3aa18d77cd8726fc6771b791ebd8cc7dea9fdd/b0-controls.log",
+  "raw_structural_probe_output": "/private/tmp/mech-b2-v04/target/gate-b-benchmark-runs/bb3aa18d77cd8726fc6771b791ebd8cc7dea9fdd/b0-structural.log",
+  "sample_protocol": {
+    "correctness_included_in_timing": false,
+    "criterion_sample_size": 10,
+    "fixture_setup_included_in_timing": false,
+    "measurement_seconds": 3.0,
+    "numpy_sample_size": 10,
+    "profile": "release",
+    "turns_per_sample": 4096,
+    "warm_up_seconds": 1.0
+  },
+  "schema_version": 1,
+  "stop_condition": {
+    "name": "positive-legacy-denominator",
+    "passed": true
+  },
+  "structural_probe_arguments": [
+    "cargo",
+    "bench",
+    "-p",
+    "mech-runtime",
+    "--bench",
+    "resident_ekf",
+    "--features",
+    "source_default,runtime_bench_gate_b,runtime_bench_probes",
+    "--",
+    "--noplot"
+  ],
+  "thread_environment": {
+    "BLIS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "toolchain": {
+    "CARGO_ENCODED_RUSTFLAGS": "",
+    "RUSTFLAGS": "",
+    "blas_lapack_provider": "accelerate",
+    "numpy": "2.0.2",
+    "numpy_config": "{\n  \"Compilers\": {\n    \"c\": {\n      \"name\": \"clang\",\n      \"linker\": \"ld64\",\n      \"version\": \"15.0.0\",\n      \"commands\": \"cc\"\n    },\n    \"cython\": {\n      \"name\": \"cython\",\n      \"linker\": \"cython\",\n      \"version\": \"3.0.11\",\n      \"commands\": \"cython\"\n    },\n    \"c++\": {\n      \"name\": \"clang\",\n      \"linker\": \"ld64\",\n      \"version\": \"15.0.0\",\n      \"commands\": \"c++\"\n    }\n  },\n  \"Machine Information\": {\n    \"host\": {\n      \"cpu\": \"aarch64\",\n      \"family\": \"aarch64\",\n      \"endian\": \"little\",\n      \"system\": \"darwin\"\n    },\n    \"build\": {\n      \"cpu\": \"aarch64\",\n      \"family\": \"aarch64\",\n      \"endian\": \"little\",\n      \"system\": \"darwin\"\n    }\n  },\n  \"Build Dependencies\": {\n    \"blas\": {\n      \"name\": \"accelerate\",\n      \"found\": true,\n      \"version\": \"unknown\",\n      \"detection method\": \"system\",\n      \"include directory\": \"unknown\",\n      \"lib directory\": \"unknown\",\n      \"openblas configuration\": \"unknown\",\n      \"pc file directory\": \"unknown\"\n    },\n    \"lapack\": {\n      \"name\": \"accelerate\",\n      \"found\": true,\n      \"version\": \"unknown\",\n      \"detection method\": \"system\",\n      \"include directory\": \"unknown\",\n      \"lib directory\": \"unknown\",\n      \"openblas configuration\": \"unknown\",\n      \"pc file directory\": \"unknown\"\n    }\n  },\n  \"Python Information\": {\n    \"path\": \"/private/var/folders/4d/0gnh84wj53j7wyk695q0tc_80000gn/T/build-env-kq4kuj35/bin/python\",\n    \"version\": \"3.9\"\n  },\n  \"SIMD Extensions\": {\n    \"baseline\": [\n      \"NEON\",\n      \"NEON_FP16\",\n      \"NEON_VFPV4\",\n      \"ASIMD\"\n    ],\n    \"found\": [\n      \"ASIMDHP\"\n    ],\n    \"not found\": [\n      \"ASIMDFHM\"\n    ]\n  }\n}",
+    "python": "3.9.6",
+    "python_executable": "/private/tmp/mech-gate-b-venv/bin/python",
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0"
+  },
+  "trace": {
+    "file": "ekf-input-v1.bin",
+    "sha256": "ab901e1d115aa92166dc2a6d45a28732e6a548363b829997aa410ae4c2d77c8b"
+  },
+  "workload": {
+    "episode_length": 4096,
+    "matrix_storage": "column-major",
+    "scalar": "f64",
+    "scaled_instances": [
+      1,
+      8,
+      64
+    ],
+    "version": "resident-ekf-v1"
+  }
+}

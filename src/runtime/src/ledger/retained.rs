@@ -63,6 +63,12 @@ impl<R> RetainedTurnLedger<R> {
             .map(|(sequence, record)| (*sequence, record))
     }
 
+    pub fn last(&self) -> Option<(LedgerSequence, &R)> {
+        self.records
+            .back()
+            .map(|(sequence, record)| (*sequence, record))
+    }
+
     pub fn pop_front(&mut self) -> Option<(LedgerSequence, R)> {
         let entry = self.records.pop_front()?;
         let bytes = self

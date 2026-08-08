@@ -122,6 +122,7 @@ src/engine/src/intrinsics/table_ops.rs|typed-interpreter-kernel|mech-engine|vali
 src/engine/src/intrinsics/vertcat.rs|typed-interpreter-kernel|mech-engine|validated Value variants match every erased reference and output container|existing typed interpreter dispatch
 src/runtime/benches/history_scaling.rs|benchmark-probe|mech-runtime|the counting allocator forwards the exact pointer and layout to System and retains no allocation pointer|benchmark-only allocation accounting for Gate A evidence
 src/runtime/benches/recording_primitives.rs|benchmark-probe|mech-runtime|the counting allocator forwards the exact pointer and layout to System and retains no allocation pointer|benchmark-only allocation accounting for Gate A evidence
+src/runtime/benches/resident_ekf.rs|benchmark-probe|mech-runtime|the counting allocator forwards the exact pointer and layout to System and retains no allocation pointer|benchmark-only allocation accounting for Gate B evidence
 src/wasm/src/websocket.rs|ffi|mech-wasm|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 tests/fixtures/dynamic-status-module/src/lib.rs|ffi|repository-tests|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 tests/mech_repl_ctrlc.rs|ffi|repository-tests|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary

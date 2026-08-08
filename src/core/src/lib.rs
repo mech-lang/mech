@@ -118,6 +118,9 @@ pub mod kind;
 pub mod nodes;
 #[cfg(feature = "functions")]
 pub mod reactive_transaction;
+#[cfg(feature = "resident-execution")]
+#[doc(hidden)]
+pub mod resident_execution;
 pub mod state_journal;
 pub mod structures;
 pub mod value;
@@ -144,6 +147,9 @@ pub use self::nodes::*;
 pub use self::program::*;
 #[cfg(feature = "functions")]
 pub use self::reactive_transaction::*;
+#[cfg(feature = "resident-execution")]
+#[doc(hidden)]
+pub use self::resident_execution::*;
 pub use self::state_journal::*;
 pub use self::stdlib::*;
 pub use self::structures::*;

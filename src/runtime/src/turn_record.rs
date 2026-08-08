@@ -254,6 +254,92 @@ impl AccountedRecord for Box<[u8]> {
     }
 }
 
+/// Fixed private receipt used only by the Gate B efficacy benchmark.
+///
+/// The payload is inline so binding and retained append require no turn-time
+/// heap allocation. It is not the canonical resident receipt model.
+#[doc(hidden)]
+#[cfg(feature = "runtime_bench_gate_b")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GateBFixedReceipt {
+    words: [u64; 8],
+}
+
+#[cfg(feature = "runtime_bench_gate_b")]
+impl GateBFixedReceipt {
+    pub const RETAINED_BYTES: usize = core::mem::size_of::<Self>();
+
+    pub fn accepted(
+        before_epoch: u64,
+        after_epoch: u64,
+        state_hash: u64,
+        touched: u16,
+        changed: u16,
+        dirty_nodes: u16,
+    ) -> Self {
+        Self {
+            words: [
+                before_epoch,
+                after_epoch,
+                state_hash,
+                u64::from(touched),
+                u64::from(changed),
+                u64::from(dirty_nodes),
+                1,
+                0,
+            ],
+        }
+    }
+
+    pub fn rejected(before_epoch: u64) -> Self {
+        Self {
+            words: [before_epoch, 0, 0, 0, 0, 0, 2, 0],
+        }
+    }
+
+    pub fn before_epoch(&self) -> u64 {
+        self.words[0]
+    }
+
+    pub fn after_epoch(&self) -> u64 {
+        self.words[1]
+    }
+
+    pub fn state_hash(&self) -> u64 {
+        self.words[2]
+    }
+
+    pub fn touched_slots(&self) -> u16 {
+        self.words[3] as u16
+    }
+
+    pub fn changed_slots(&self) -> u16 {
+        self.words[4] as u16
+    }
+
+    pub fn dirty_nodes(&self) -> u16 {
+        self.words[5] as u16
+    }
+
+    pub fn is_accepted(&self) -> bool {
+        self.words[6] == 1
+    }
+
+    pub fn version(&self) -> u64 {
+        self.words[7]
+    }
+}
+
+#[cfg(feature = "runtime_bench_gate_b")]
+impl sealed::Sealed for GateBFixedReceipt {}
+
+#[cfg(feature = "runtime_bench_gate_b")]
+impl AccountedRecord for GateBFixedReceipt {
+    fn retained_bytes(&self) -> usize {
+        Self::RETAINED_BYTES
+    }
+}
+
 impl sealed::Sealed for crate::ledger::PooledRecordBuffer {}
 
 impl<P: AccountedRecord> sealed::Sealed for crate::outbox::OwnedEffectIntent<P> {}
