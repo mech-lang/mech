@@ -90,6 +90,8 @@ pub mod mechdown;
 #[cfg(feature = "source")]
 pub mod patterns;
 pub mod program;
+#[cfg(feature = "resident-ekf")]
+mod resident;
 #[cfg(all(feature = "source", feature = "state_machines"))]
 pub mod state_machines;
 #[cfg(feature = "source")]
