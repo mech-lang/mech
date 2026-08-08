@@ -1,6 +1,7 @@
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::collections::BTreeSet;
 use std::hint::black_box;
+use std::io::Write;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -132,7 +133,7 @@ fn report(
     let abort = abort_output_hash
         .map(|hash| format!("\"{hash}\""))
         .unwrap_or_else(|| "null".to_string());
-    eprintln!(
+    let line = format!(
         "GATE_B_SAMPLE {{\"lane\":\"{lane}\",\"instances\":{instances},\"turns\":{EPISODE_LENGTH},\"allocation_count\":{},\"deallocation_count\":{},\"allocated_bytes\":{},\"correctness\":true,\"quantized_state_hash\":\"{output_hash}\",\"candidate_seed_bytes\":{},\"candidate_written_bytes\":{},\"published_buffer_copy_bytes\":{},\"publication_store_count\":{},\"receipt_bytes\":{},\"commit_runtime_call_count\":{},\"legacy_journal_capture_count\":{},\"abort_output_hash\":{abort}}}",
         allocations.allocations,
         allocations.deallocations,
@@ -145,6 +146,11 @@ fn report(
         probe.commit_runtime_call_count,
         probe.legacy_journal_capture_count,
     );
+    let mut stderr = std::io::stderr().lock();
+    stderr
+        .write_all(line.as_bytes())
+        .and_then(|()| stderr.write_all(b"\n"))
+        .expect("write Gate B structural sample");
 }
 
 fn validate_final(states: &[EkfState]) {

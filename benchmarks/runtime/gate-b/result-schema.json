@@ -1,0 +1,281 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mech-lang.org/schemas/runtime-gate-b-result-v1.json",
+  "title": "Mech runtime Gate B benchmark report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "gate",
+    "phase",
+    "git_commit",
+    "git_branch",
+    "machine",
+    "toolchain",
+    "thread_environment",
+    "trace",
+    "workload",
+    "sample_protocol",
+    "benchmark_arguments",
+    "structural_probe_arguments",
+    "raw_criterion_directory",
+    "raw_output",
+    "raw_structural_probe_output",
+    "lanes",
+    "derived",
+    "stop_condition"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "gate": { "const": "B" },
+    "phase": { "type": "string", "minLength": 1 },
+    "git_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "git_branch": { "type": "string", "minLength": 1 },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "os", "architecture"],
+      "properties": {
+        "identity": { "type": "string", "minLength": 1 },
+        "os": { "type": "string", "minLength": 1 },
+        "architecture": { "type": "string", "minLength": 1 }
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rustc",
+        "RUSTFLAGS",
+        "CARGO_ENCODED_RUSTFLAGS",
+        "python",
+        "python_executable",
+        "numpy",
+        "numpy_config",
+        "blas_lapack_provider"
+      ],
+      "properties": {
+        "rustc": { "type": "string", "minLength": 1 },
+        "RUSTFLAGS": { "type": "string" },
+        "CARGO_ENCODED_RUSTFLAGS": { "type": "string" },
+        "python": { "type": "string", "minLength": 1 },
+        "python_executable": { "type": "string", "minLength": 1 },
+        "numpy": { "type": "string", "minLength": 1 },
+        "numpy_config": { "type": "string", "minLength": 1 },
+        "blas_lapack_provider": { "type": "string", "minLength": 1 }
+      }
+    },
+    "thread_environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "OMP_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "BLIS_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "RAYON_NUM_THREADS"
+      ],
+      "properties": {
+        "OMP_NUM_THREADS": { "const": "1" },
+        "OPENBLAS_NUM_THREADS": { "const": "1" },
+        "BLIS_NUM_THREADS": { "const": "1" },
+        "MKL_NUM_THREADS": { "const": "1" },
+        "VECLIB_MAXIMUM_THREADS": { "const": "1" },
+        "NUMEXPR_NUM_THREADS": { "const": "1" },
+        "RAYON_NUM_THREADS": { "const": "1" }
+      }
+    },
+    "trace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "file"],
+      "properties": {
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "file": { "const": "ekf-input-v1.bin" }
+      }
+    },
+    "workload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "episode_length",
+        "scaled_instances",
+        "scalar",
+        "matrix_storage"
+      ],
+      "properties": {
+        "version": { "const": "resident-ekf-v1" },
+        "episode_length": { "const": 4096 },
+        "scaled_instances": {
+          "type": "array",
+          "prefixItems": [
+            { "const": 1 },
+            { "const": 8 },
+            { "const": 64 }
+          ],
+          "items": false
+        },
+        "scalar": { "const": "f64" },
+        "matrix_storage": { "const": "column-major" }
+      }
+    },
+    "sample_protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "criterion_sample_size",
+        "numpy_sample_size",
+        "warm_up_seconds",
+        "measurement_seconds",
+        "turns_per_sample",
+        "fixture_setup_included_in_timing",
+        "correctness_included_in_timing",
+        "profile"
+      ],
+      "properties": {
+        "criterion_sample_size": { "type": "integer", "minimum": 10 },
+        "numpy_sample_size": { "type": "integer", "minimum": 10 },
+        "warm_up_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "measurement_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "turns_per_sample": { "const": 4096 },
+        "fixture_setup_included_in_timing": { "const": false },
+        "correctness_included_in_timing": { "const": false },
+        "profile": { "const": "release" }
+      }
+    },
+    "benchmark_arguments": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "structural_probe_arguments": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "raw_criterion_directory": { "type": "string", "minLength": 1 },
+    "raw_output": { "type": "string", "minLength": 1 },
+    "raw_structural_probe_output": { "type": "string", "minLength": 1 },
+    "lanes": {
+      "type": "array",
+      "minItems": 14,
+      "items": { "$ref": "#/$defs/lane" }
+    },
+    "derived": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "mech_legacy_atomic_ns_per_turn",
+        "rust_epoch_ns_per_turn",
+        "legacy_denominator_ns_per_turn",
+        "positive"
+      ],
+      "properties": {
+        "mech_legacy_atomic_ns_per_turn": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "rust_epoch_ns_per_turn": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "legacy_denominator_ns_per_turn": { "type": "number" },
+        "positive": { "type": "boolean" }
+      }
+    },
+    "stop_condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "passed"],
+      "properties": {
+        "name": { "const": "positive-legacy-denominator" },
+        "passed": { "type": "boolean" }
+      }
+    },
+    "resident_breakdown": { "type": "object" },
+    "decision": { "type": "object" }
+  },
+  "$defs": {
+    "lane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lane",
+        "instances",
+        "sample_count",
+        "turns_per_sample",
+        "timing",
+        "allocation",
+        "correctness",
+        "quantized_state_hash",
+        "reference_quantized_state_hash",
+        "structural"
+      ],
+      "properties": {
+        "lane": { "type": "string", "minLength": 1 },
+        "instances": { "enum": [1, 8, 64] },
+        "sample_count": { "type": "integer", "minimum": 10 },
+        "turns_per_sample": { "const": 4096 },
+        "timing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["median_ns_per_turn", "p95_ns_per_turn"],
+          "properties": {
+            "median_ns_per_turn": { "type": "number", "exclusiveMinimum": 0 },
+            "p95_ns_per_turn": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "allocation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allocations_per_turn",
+            "allocated_bytes_per_turn",
+            "episode_allocation_count",
+            "episode_allocated_bytes"
+          ],
+          "properties": {
+            "allocations_per_turn": { "type": ["number", "null"], "minimum": 0 },
+            "allocated_bytes_per_turn": { "type": ["number", "null"], "minimum": 0 },
+            "episode_allocation_count": { "type": ["integer", "null"], "minimum": 0 },
+            "episode_allocated_bytes": { "type": ["integer", "null"], "minimum": 0 }
+          }
+        },
+        "correctness": { "type": "boolean" },
+        "quantized_state_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "reference_quantized_state_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "structural": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "candidate_seed_bytes",
+            "candidate_written_bytes",
+            "published_buffer_copy_bytes",
+            "publication_store_count",
+            "receipt_bytes",
+            "commit_runtime_call_count",
+            "legacy_journal_capture_count",
+            "abort_output_hash"
+          ],
+          "properties": {
+            "candidate_seed_bytes": { "type": ["integer", "null"], "minimum": 0 },
+            "candidate_written_bytes": { "type": ["integer", "null"], "minimum": 0 },
+            "published_buffer_copy_bytes": { "type": ["integer", "null"], "minimum": 0 },
+            "publication_store_count": { "type": ["integer", "null"], "minimum": 0 },
+            "receipt_bytes": { "type": ["integer", "null"], "minimum": 0 },
+            "commit_runtime_call_count": { "type": ["integer", "null"], "minimum": 0 },
+            "legacy_journal_capture_count": { "type": ["integer", "null"], "minimum": 0 },
+            "abort_output_hash": {
+              "type": ["string", "null"],
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    }
+  }
+}

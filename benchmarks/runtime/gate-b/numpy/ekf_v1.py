@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import importlib.util
+import io
 import json
 import math
 import os
@@ -13,6 +15,7 @@ import platform
 import struct
 import sys
 import time
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -368,12 +371,38 @@ def benchmark(instances: int, samples: int) -> dict[str, Any]:
 
 
 def describe() -> dict[str, Any]:
+    config_output = io.StringIO()
+    with warnings.catch_warnings(), contextlib.redirect_stdout(config_output):
+        warnings.simplefilter("ignore", UserWarning)
+        np.show_config()
+    numpy_config = config_output.getvalue().strip()
+    config = getattr(np.__config__, "CONFIG", {})
+    dependencies = config.get("Build Dependencies", {})
+    provider_names = {
+        dependency.get("name", "unknown")
+        for kind, dependency in dependencies.items()
+        if kind.lower() in {"blas", "lapack"}
+    }
+    if provider_names:
+        blas_lapack_provider = ", ".join(sorted(provider_names))
+    else:
+        lowered_config = numpy_config.lower()
+        blas_lapack_provider = next(
+            (
+                provider
+                for provider in ("Accelerate", "OpenBLAS", "MKL", "BLIS")
+                if provider.lower() in lowered_config
+            ),
+            "unknown",
+        )
     return {
         "type": "ready",
         "protocol": "gate-b-numpy-v1",
         "pid": os.getpid(),
         "python": platform.python_version(),
         "numpy": np.__version__,
+        "numpy_config": numpy_config,
+        "blas_lapack_provider": blas_lapack_provider,
         "trace_sha256": MANIFEST["trace"]["sha256"],
         "workload": MANIFEST["workload"],
         "episode_length": EPISODE_LENGTH,
