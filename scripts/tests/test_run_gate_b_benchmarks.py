@@ -80,7 +80,7 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
             RUNNER.parse_probe_samples(output)[("rust-epoch", 8)], payload
         )
 
-    def test_untimed_legacy_probe_merge_preserves_timed_allocation(self):
+    def test_untimed_probe_merge_preserves_timed_allocation(self):
         timed = {}
         structural = {}
         for instances in RUNNER.SCALED_INSTANCES:
@@ -96,9 +96,25 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
             "commit_runtime_call_count": 4096,
             "legacy_journal_capture_count": 13,
         }
-        merged = RUNNER.merge_legacy_structural_probes(timed, structural)
+        for instances in RUNNER.SCALED_INSTANCES:
+            key = ("mech-resident-kernel", instances)
+            timed[key] = {"allocation_count": 0}
+            structural[key] = {
+                field: (1 if field == "publication_store_count" else 0)
+                for field in RUNNER.STRUCTURAL_FIELDS
+            }
+        resident_full = ("mech-resident-kernel-full-write", 1)
+        timed[resident_full] = {"allocation_count": 0}
+        structural[resident_full] = {
+            field: (1 if field == "publication_store_count" else 0)
+            for field in RUNNER.STRUCTURAL_FIELDS
+        }
+        merged = RUNNER.merge_structural_probes(timed, structural)
         self.assertEqual(merged[full_key]["allocation_count"], 9)
         self.assertEqual(merged[full_key]["commit_runtime_call_count"], 4096)
+        self.assertEqual(
+            merged[("mech-resident-kernel", 64)]["publication_store_count"], 1
+        )
 
     def test_frozen_base_requires_exact_merge_base(self):
         with patch.object(
@@ -114,6 +130,13 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
                 "a" * 40, RUNNER.FROZEN_B0_BRANCH
             )
         self.assertIn("not based on frozen base", error)
+
+        with patch.object(
+            RUNNER, "command_output", return_value=RUNNER.FROZEN_B1_BASE
+        ):
+            self.assertIsNone(
+                RUNNER.frozen_base_error("c" * 40, RUNNER.FROZEN_B1_BRANCH)
+            )
 
     def test_lane_record_normalizes_by_host_turn_not_instance(self):
         probe = {
@@ -150,6 +173,28 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
         derived = RUNNER.legacy_denominator(lanes)
         self.assertEqual(derived["legacy_denominator_ns_per_turn"], 75.0)
         self.assertTrue(derived["positive"])
+
+    def test_b1_progression_uses_same_session_primary_medians(self):
+        lanes = [
+            {
+                "lane": "mech-resident-kernel",
+                "instances": 1,
+                "timing": {"median_ns_per_turn": 21.0},
+            },
+            {
+                "lane": "rust-kernel",
+                "instances": 1,
+                "timing": {"median_ns_per_turn": 20.0},
+            },
+            {
+                "lane": "rust-epoch",
+                "instances": 1,
+                "timing": {"median_ns_per_turn": 22.0},
+            },
+        ]
+        progression = RUNNER.b1_progression(lanes)
+        self.assertEqual(progression["limit_ns_per_turn"], 23.1)
+        self.assertTrue(progression["passed"])
 
     def test_explicit_machine_label_is_preserved(self):
         self.assertEqual(

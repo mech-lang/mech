@@ -193,6 +193,30 @@
         "passed": { "type": "boolean" }
       }
     },
+    "b1_progression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resident_kernel_ns_per_turn",
+        "rust_kernel_ns_per_turn",
+        "rust_epoch_ns_per_turn",
+        "resident_kernel_ratio",
+        "resident_kernel_vs_raw_epoch",
+        "limit_multiplier",
+        "limit_ns_per_turn",
+        "passed"
+      ],
+      "properties": {
+        "resident_kernel_ns_per_turn": { "type": "number", "exclusiveMinimum": 0 },
+        "rust_kernel_ns_per_turn": { "type": "number", "exclusiveMinimum": 0 },
+        "rust_epoch_ns_per_turn": { "type": "number", "exclusiveMinimum": 0 },
+        "resident_kernel_ratio": { "type": "number", "exclusiveMinimum": 0 },
+        "resident_kernel_vs_raw_epoch": { "type": "number", "exclusiveMinimum": 0 },
+        "limit_multiplier": { "const": 1.05 },
+        "limit_ns_per_turn": { "type": "number", "exclusiveMinimum": 0 },
+        "passed": { "type": "boolean" }
+      }
+    },
     "resident_breakdown": { "type": "object" },
     "decision": { "type": "object" }
   },

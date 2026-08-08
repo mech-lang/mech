@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run and summarize the controlled Gate B B0 benchmark lanes."""
+"""Run and summarize the controlled Gate B benchmark lanes."""
 
 from __future__ import annotations
 
@@ -20,6 +20,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_PREFIX = "GATE_B_SAMPLE "
 FROZEN_BASE = "437f6c6c636d9818729597342165dfc9af5eb4a7"
 FROZEN_B0_BRANCH = "test/resident-ekf-efficacy-contract"
+FROZEN_B1_BRANCH = "feat/engine-resident-ekf-substrate"
+FROZEN_B1_BASE = "c4f7cb1d27b9645b3f669d944c7e49bcd0829ccc"
 EPISODE_LENGTH = 4_096
 SCALED_INSTANCES = (1, 8, 64)
 THREAD_VARIABLES = (
@@ -121,24 +123,30 @@ def parse_probe_samples(output: str) -> dict[tuple[str, int], dict[str, Any]]:
     return samples
 
 
-def merge_legacy_structural_probes(
+def merge_structural_probes(
     timed: dict[tuple[str, int], dict[str, Any]],
     structural: dict[tuple[str, int], dict[str, Any]],
 ) -> dict[tuple[str, int], dict[str, Any]]:
     merged = {key: value.copy() for key, value in timed.items()}
-    required = {
+    legacy = {
         *(("mech-legacy-atomic", instances) for instances in SCALED_INSTANCES),
         ("mech-legacy-atomic-full-write", 1),
     }
-    for key in required:
+    resident = {
+        *(("mech-resident-kernel", instances) for instances in SCALED_INSTANCES),
+        ("mech-resident-kernel-full-write", 1),
+    }
+    for key in legacy | resident:
         if key not in merged:
-            raise ValueError(f"missing timed legacy probe {key[0]}/{key[1]}")
+            raise ValueError(f"missing timed structural probe {key[0]}/{key[1]}")
         if key not in structural:
-            raise ValueError(f"missing untimed legacy probe {key[0]}/{key[1]}")
-        for field in (
-            "commit_runtime_call_count",
-            "legacy_journal_capture_count",
-        ):
+            raise ValueError(f"missing untimed structural probe {key[0]}/{key[1]}")
+        fields = (
+            ("commit_runtime_call_count", "legacy_journal_capture_count")
+            if key in legacy
+            else STRUCTURAL_FIELDS
+        )
+        for field in fields:
             merged[key][field] = structural[key].get(field)
     return merged
 
@@ -327,6 +335,7 @@ def assemble_lanes(
     rust_lanes = (
         ("rust-kernel", "gate_b/rust-kernel/{instances}"),
         ("rust-epoch", "gate_b/rust-epoch/{instances}"),
+        ("mech-resident-kernel", "gate_b/mech-resident-kernel/{instances}"),
         ("mech-legacy-atomic", "gate_b/mech-legacy-atomic/{instances}"),
     )
     for lane, benchmark_template in rust_lanes:
@@ -352,6 +361,7 @@ def assemble_lanes(
     for lane, benchmark in (
         ("rust-epoch-full-write", "gate_b/full-write/rust-epoch"),
         ("mech-legacy-atomic-full-write", "gate_b/full-write/mech-legacy-atomic"),
+        ("mech-resident-kernel-full-write", "gate_b/full-write/mech-resident-kernel"),
     ):
         if benchmark not in criterion:
             raise ValueError(f"missing Criterion result {benchmark}")
@@ -414,18 +424,40 @@ def legacy_denominator(lanes: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def b1_progression(lanes: list[dict[str, Any]]) -> dict[str, Any]:
+    resident = primary_median(lanes, "mech-resident-kernel")
+    rust_kernel = primary_median(lanes, "rust-kernel")
+    rust_epoch = primary_median(lanes, "rust-epoch")
+    multiplier = 1.05
+    limit = multiplier * rust_epoch
+    return {
+        "resident_kernel_ns_per_turn": resident,
+        "rust_kernel_ns_per_turn": rust_kernel,
+        "rust_epoch_ns_per_turn": rust_epoch,
+        "resident_kernel_ratio": resident / rust_kernel,
+        "resident_kernel_vs_raw_epoch": resident / rust_epoch,
+        "limit_multiplier": multiplier,
+        "limit_ns_per_turn": limit,
+        "passed": resident <= limit,
+    }
+
+
 def worktree_changes() -> str:
     return command_output(["git", "status", "--porcelain=v1", "--untracked-files=all"])
 
 
 def frozen_base_error(commit: str, branch: str) -> str | None:
-    if branch != FROZEN_B0_BRANCH:
-        return f"Gate B B0 must run on {FROZEN_B0_BRANCH}, not {branch}"
-    merge_base = command_output(["git", "merge-base", commit, FROZEN_BASE])
-    if merge_base != FROZEN_BASE:
+    expected_base = {
+        FROZEN_B0_BRANCH: FROZEN_BASE,
+        FROZEN_B1_BRANCH: FROZEN_B1_BASE,
+    }.get(branch)
+    if expected_base is None:
+        return f"Gate B controls cannot run on unapproved branch {branch}"
+    merge_base = command_output(["git", "merge-base", commit, expected_base])
+    if merge_base != expected_base:
         return (
-            f"Gate B B0 commit {commit} is not based on frozen base "
-            f"{FROZEN_BASE}; merge-base is {merge_base}"
+            f"Gate B commit {commit} is not based on frozen base "
+            f"{expected_base}; merge-base is {merge_base}"
         )
     return None
 
@@ -577,7 +609,7 @@ def main() -> int:
                 encoding="utf-8"
             )
         )
-        probes = merge_legacy_structural_probes(
+        probes = merge_structural_probes(
             parse_probe_samples(process.stdout),
             parse_probe_samples(structural_process.stdout),
         )
@@ -595,7 +627,7 @@ def main() -> int:
     summary = {
         "schema_version": 1,
         "gate": "B",
-        "phase": "B0-controls",
+        "phase": "B0-controls" if branch == FROZEN_B0_BRANCH else "B1-resident-kernel",
         "git_commit": commit,
         "git_branch": branch,
         "machine": {
@@ -651,6 +683,8 @@ def main() -> int:
             "passed": bool(derived["positive"]),
         },
     }
+    if branch == FROZEN_B1_BRANCH:
+        summary["b1_progression"] = b1_progression(lanes)
     rendered = json.dumps(summary, indent=2, sort_keys=True) + "\n"
     if args.output:
         output = args.output if args.output.is_absolute() else ROOT / args.output
@@ -664,6 +698,12 @@ def main() -> int:
             file=sys.stderr,
         )
         return 3
+    if branch == FROZEN_B1_BRANCH and not summary["b1_progression"]["passed"]:
+        print(
+            "Gate B B1 stop: mech-resident-kernel exceeds 1.05 x rust-epoch",
+            file=sys.stderr,
+        )
+        return 4
     return 0
 
 

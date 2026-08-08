@@ -19,6 +19,9 @@ use support::gate_b::full_write::{FullWriteEpochFixture, FullWriteProbe, buffer_
 use support::gate_b::legacy_atomic::{LegacyEkfFixture, LegacyFullWriteFixture};
 use support::gate_b::raw_epoch::{EpochFixture, EpochProbe};
 use support::gate_b::raw_kernel::KernelFixture;
+use support::gate_b::resident_kernel::{
+    ResidentFullWriteFixture, ResidentKernelFixture, ResidentKernelProbe,
+};
 
 struct CountingAllocator;
 
@@ -114,6 +117,18 @@ impl From<FullWriteProbe> for StructuralProbe {
     }
 }
 
+impl From<ResidentKernelProbe> for StructuralProbe {
+    fn from(probe: ResidentKernelProbe) -> Self {
+        Self {
+            candidate_seed_bytes: probe.candidate_seed_bytes,
+            candidate_written_bytes: probe.candidate_written_bytes,
+            published_buffer_copy_bytes: probe.published_buffer_copy_bytes,
+            publication_store_count: probe.publication_store_count,
+            ..Self::default()
+        }
+    }
+}
+
 fn report(
     lane: &str,
     instances: usize,
@@ -185,6 +200,15 @@ fn validate_controls() {
     let mut rejected = EpochFixture::new(1);
     rejected.force_rejected_turn_preserves_publication();
 
+    let mut resident = ResidentKernelFixture::new(1);
+    assert_eq!(
+        resident.run_and_validate_every_turn(),
+        REFERENCE_TRAJECTORY_SHA256
+    );
+    resident.validate_final();
+    let mut resident_rejected = ResidentKernelFixture::new(1);
+    resident_rejected.force_rejected_turn_preserves_publication();
+
     let mut legacy = LegacyEkfFixture::new(1);
     assert_eq!(
         legacy.run_and_validate_every_turn(),
@@ -198,6 +222,9 @@ fn validate_controls() {
     let mut full_legacy = LegacyFullWriteFixture::new();
     full_legacy.run_episode();
     assert_eq!(buffer_hash(&full_legacy.published()), full_hash);
+    let mut full_resident = ResidentFullWriteFixture::new();
+    full_resident.run_episode();
+    assert_eq!(buffer_hash(full_resident.published()), full_hash);
     let mut full_rejected = FullWriteEpochFixture::new();
     assert_eq!(
         full_rejected.abort_output_hash(),
@@ -262,6 +289,40 @@ fn rust_epoch(c: &mut Criterion) {
                         instances,
                         allocations,
                         fixture.probe().into(),
+                        &trajectory_hash,
+                        None,
+                    );
+                }
+                elapsed
+            });
+        });
+    }
+    group.finish();
+}
+
+fn resident_kernel(c: &mut Criterion) {
+    let mut group = c.benchmark_group("gate_b/mech-resident-kernel");
+    for instances in SCALED_INSTANCES {
+        let mut correctness = ResidentKernelFixture::new(instances);
+        let trajectory_hash = correctness.run_and_validate_every_turn();
+        assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+        group.bench_function(BenchmarkId::from_parameter(instances), |benchmark| {
+            benchmark.iter_custom(|iterations| {
+                let mut elapsed = Duration::ZERO;
+                for _ in 0..iterations {
+                    let mut fixture = ResidentKernelFixture::new(instances);
+                    reset_allocations();
+                    let started = Instant::now();
+                    fixture.run_episode();
+                    elapsed += started.elapsed();
+                    let allocations = allocation_snapshot();
+                    fixture.validate_final();
+                    black_box(fixture.state(0));
+                    report(
+                        "mech-resident-kernel",
+                        instances,
+                        allocations,
+                        StructuralProbe::default(),
                         &trajectory_hash,
                         None,
                     );
@@ -364,7 +425,63 @@ fn full_write(c: &mut Criterion) {
             elapsed
         });
     });
+    group.bench_function("mech-resident-kernel", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = ResidentFullWriteFixture::new();
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                let output_hash = buffer_hash(fixture.published());
+                let mut rejected = ResidentFullWriteFixture::new();
+                let abort_hash = rejected.abort_output_hash();
+                black_box(fixture.published());
+                report(
+                    "mech-resident-kernel-full-write",
+                    1,
+                    allocations,
+                    StructuralProbe::default(),
+                    &output_hash,
+                    Some(&abort_hash),
+                );
+            }
+            elapsed
+        });
+    });
     group.finish();
+}
+
+#[cfg(feature = "runtime_bench_probes")]
+fn resident_structural_samples() {
+    for instances in SCALED_INSTANCES {
+        let mut fixture = ResidentKernelFixture::new(instances);
+        let trajectory_hash = fixture.run_and_validate_every_turn();
+        report(
+            "mech-resident-kernel",
+            instances,
+            AllocationSnapshot::default(),
+            fixture.probe().into(),
+            &trajectory_hash,
+            None,
+        );
+    }
+
+    let mut fixture = ResidentFullWriteFixture::new();
+    fixture.run_episode();
+    let output_hash = buffer_hash(fixture.published());
+    let mut rejected = ResidentFullWriteFixture::new();
+    let abort_hash = rejected.abort_output_hash();
+    report(
+        "mech-resident-kernel-full-write",
+        1,
+        AllocationSnapshot::default(),
+        fixture.probe().into(),
+        &output_hash,
+        Some(&abort_hash),
+    );
 }
 
 #[cfg(feature = "runtime_bench_probes")]
@@ -417,11 +534,13 @@ fn gate_b_controls(c: &mut Criterion) {
     validate_controls();
     #[cfg(feature = "runtime_bench_probes")]
     if std::env::var_os("MECH_GATE_B_STRUCTURAL_ONLY").is_some() {
+        resident_structural_samples();
         legacy_structural_samples();
         return;
     }
     rust_kernel(c);
     rust_epoch(c);
+    resident_kernel(c);
     legacy_atomic(c);
     full_write(c);
 }
