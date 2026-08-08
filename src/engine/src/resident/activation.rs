@@ -8,6 +8,12 @@ use super::artifact::{
 #[repr(transparent)]
 pub(crate) struct NodeIndex(pub(crate) u32);
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum EdgeTiming {
+    SameTurn,
+    NextTurn,
+}
+
 pub(crate) type ActivatedKernel = EkfOp;
 
 #[derive(Clone, Copy, Debug)]
@@ -23,8 +29,8 @@ pub(crate) struct ResolvedSlot {
 pub(crate) struct ActivatedNode {
     pub(crate) kernel: ActivatedKernel,
     pub(crate) instance: u32,
-    pub(crate) downstream_start: u32,
-    pub(crate) downstream_len: u16,
+    pub(crate) same_turn_downstream_start: u32,
+    pub(crate) same_turn_downstream_len: u16,
 }
 
 #[derive(Clone, Debug)]
@@ -32,8 +38,11 @@ pub(crate) struct DependencyTopology {
     pub(crate) linear_node_order: Box<[NodeIndex]>,
     pub(crate) consumer_offsets: Box<[u32]>,
     pub(crate) consumer_nodes: Box<[NodeIndex]>,
-    pub(crate) downstream_offsets: Box<[u32]>,
-    pub(crate) downstream_nodes: Box<[NodeIndex]>,
+    pub(crate) same_turn_downstream_offsets: Box<[u32]>,
+    pub(crate) same_turn_downstream_nodes: Box<[NodeIndex]>,
+    pub(crate) next_turn_consumer_offsets: Box<[u32]>,
+    pub(crate) next_turn_consumer_nodes: Box<[NodeIndex]>,
+    pub(crate) turn_root_nodes: Box<[NodeIndex]>,
 }
 
 impl DependencyTopology {
@@ -44,11 +53,18 @@ impl DependencyTopology {
         &self.consumer_nodes[start..end]
     }
 
-    pub(crate) fn downstream(&self, node: NodeIndex) -> &[NodeIndex] {
+    pub(crate) fn same_turn_downstream(&self, node: NodeIndex) -> &[NodeIndex] {
         let index = node.0 as usize;
-        let start = self.downstream_offsets[index] as usize;
-        let end = self.downstream_offsets[index + 1] as usize;
-        &self.downstream_nodes[start..end]
+        let start = self.same_turn_downstream_offsets[index] as usize;
+        let end = self.same_turn_downstream_offsets[index + 1] as usize;
+        &self.same_turn_downstream_nodes[start..end]
+    }
+
+    pub(crate) fn next_turn_consumers(&self, slot: CellSlotId) -> &[NodeIndex] {
+        let index = slot.0 as usize;
+        let start = self.next_turn_consumer_offsets[index] as usize;
+        let end = self.next_turn_consumer_offsets[index + 1] as usize;
+        &self.next_turn_consumer_nodes[start..end]
     }
 }
 
@@ -101,30 +117,53 @@ impl ActivatedPlan {
         }
         let (consumer_offsets, consumer_nodes) = flatten(&consumers);
 
-        let mut downstream = vec![Vec::<NodeIndex>::new(); artifact.nodes.len()];
+        let mut same_turn_downstream = vec![Vec::<NodeIndex>::new(); artifact.nodes.len()];
+        let mut next_turn_consumers = vec![Vec::<NodeIndex>::new(); logical_slot_count];
+        let mut turn_roots = Vec::<NodeIndex>::new();
+        for slot in &artifact.slots {
+            if matches!(slot.role, SlotRole::Input | SlotRole::Stateful) {
+                turn_roots.extend_from_slice(&consumers[slot.id.0 as usize]);
+            }
+            if slot.role == SlotRole::Stateful {
+                next_turn_consumers[slot.id.0 as usize]
+                    .extend_from_slice(&consumers[slot.id.0 as usize]);
+            }
+        }
+        turn_roots.sort_by_key(|index| index.0);
+        turn_roots.dedup();
+
         for (node, declaration) in artifact.nodes.iter().enumerate() {
             for output in &declaration.writes {
+                let timing = if artifact.slots[output.0 as usize].role == SlotRole::Stateful {
+                    EdgeTiming::NextTurn
+                } else {
+                    EdgeTiming::SameTurn
+                };
                 for consumer in &consumers[output.0 as usize] {
-                    if !downstream[node].contains(consumer) {
-                        downstream[node].push(*consumer);
+                    if timing == EdgeTiming::SameTurn
+                        && !same_turn_downstream[node].contains(consumer)
+                    {
+                        same_turn_downstream[node].push(*consumer);
                     }
                 }
             }
-            downstream[node].sort_by_key(|index| index.0);
+            same_turn_downstream[node].sort_by_key(|index| index.0);
         }
-        let (downstream_offsets, downstream_nodes) = flatten(&downstream);
+        let (same_turn_downstream_offsets, same_turn_downstream_nodes) =
+            flatten(&same_turn_downstream);
+        let (next_turn_consumer_offsets, next_turn_consumer_nodes) = flatten(&next_turn_consumers);
         let nodes: Box<[_]> = artifact
             .nodes
             .iter()
             .enumerate()
             .map(|(index, declaration)| {
-                let start = downstream_offsets[index];
-                let end = downstream_offsets[index + 1];
+                let start = same_turn_downstream_offsets[index];
+                let end = same_turn_downstream_offsets[index + 1];
                 ActivatedNode {
                     kernel: declaration.op,
                     instance: declaration.instance,
-                    downstream_start: start,
-                    downstream_len: u16::try_from(end - start)
+                    same_turn_downstream_start: start,
+                    same_turn_downstream_len: u16::try_from(end - start)
                         .expect("resident node fanout fits u16"),
                 }
             })
@@ -135,9 +174,39 @@ impl ActivatedPlan {
                 .collect(),
             consumer_offsets,
             consumer_nodes,
-            downstream_offsets,
-            downstream_nodes,
+            same_turn_downstream_offsets,
+            same_turn_downstream_nodes,
+            next_turn_consumer_offsets,
+            next_turn_consumer_nodes,
+            turn_root_nodes: turn_roots.into_boxed_slice(),
         };
+        for node in topology.linear_node_order.iter().copied() {
+            for downstream in topology.same_turn_downstream(node) {
+                assert!(
+                    downstream.0 > node.0,
+                    "same-turn resident edges must point forward"
+                );
+            }
+        }
+        for slot in artifact
+            .slots
+            .iter()
+            .filter(|slot| slot.role == SlotRole::Stateful)
+        {
+            for consumer in topology.next_turn_consumers(slot.id) {
+                assert!(
+                    topology.turn_root_nodes.contains(consumer),
+                    "next-turn feedback must target a legal turn root"
+                );
+            }
+        }
+        for instance in 0..artifact.instances {
+            let final_node = NodeIndex((instance * NODES_PER_EKF + NODES_PER_EKF - 1) as u32);
+            assert!(
+                topology.same_turn_downstream(final_node).is_empty(),
+                "final state publication node must not feed back in the same turn"
+            );
+        }
         debug_assert_eq!(artifact.instances * NODES_PER_EKF, nodes.len());
         debug_assert_eq!(
             artifact.instances * LOGICAL_SLOTS_PER_EKF as usize,
@@ -174,21 +243,27 @@ mod tests {
             );
             assert_eq!(left.topology.consumer_nodes, right.topology.consumer_nodes);
             assert_eq!(
-                left.topology.downstream_offsets,
-                right.topology.downstream_offsets
+                left.topology.same_turn_downstream_offsets,
+                right.topology.same_turn_downstream_offsets
             );
             assert_eq!(
-                left.topology.downstream_nodes,
-                right.topology.downstream_nodes
+                left.topology.same_turn_downstream_nodes,
+                right.topology.same_turn_downstream_nodes
+            );
+            assert_eq!(
+                left.topology.turn_root_nodes,
+                right.topology.turn_root_nodes
             );
             for (expected, node) in left.nodes.iter().enumerate() {
                 assert_eq!(node.instance as usize, expected / NODES_PER_EKF);
-                let downstream = left.topology.downstream(NodeIndex(expected as u32));
+                let downstream = left
+                    .topology
+                    .same_turn_downstream(NodeIndex(expected as u32));
                 assert_eq!(
-                    node.downstream_start,
-                    left.topology.downstream_offsets[expected]
+                    node.same_turn_downstream_start,
+                    left.topology.same_turn_downstream_offsets[expected]
                 );
-                assert_eq!(node.downstream_len as usize, downstream.len());
+                assert_eq!(node.same_turn_downstream_len as usize, downstream.len());
             }
             for instance in 0..instances as u32 {
                 assert_eq!(
@@ -215,10 +290,20 @@ mod tests {
                 for input in &declaration.reads {
                     assert!(left.topology.consumers(*input).contains(&node));
                 }
-                let downstream = left.topology.downstream(node);
+                let downstream = left.topology.same_turn_downstream(node);
                 for output in &declaration.writes {
                     for consumer in left.topology.consumers(*output) {
-                        assert!(downstream.contains(consumer));
+                        let role = left.slots[output.0 as usize].role;
+                        if role == SlotRole::Stateful {
+                            assert!(!downstream.contains(consumer));
+                            assert!(
+                                left.topology
+                                    .next_turn_consumers(*output)
+                                    .contains(consumer)
+                            );
+                        } else {
+                            assert!(downstream.contains(consumer));
+                        }
                     }
                 }
             }

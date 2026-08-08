@@ -28,7 +28,10 @@ pub(crate) struct TurnWorkspace {
     pub(crate) touched_slots: Vec<SlotIndex>,
     pub(crate) invalidated_slots: Vec<SlotIndex>,
     pub(crate) changed_slots: Vec<SlotIndex>,
+    pub(crate) dirty_node_marks: Box<[InstanceEpoch]>,
     pub(crate) node_execution_marks: Box<[InstanceEpoch]>,
+    pub(crate) dirty_nodes: Vec<NodeIndex>,
+    pub(crate) executed_nodes: Vec<NodeIndex>,
     pub(crate) linear_node_order: Box<[NodeIndex]>,
 }
 
@@ -42,7 +45,10 @@ impl TurnWorkspace {
             touched_slots: Vec::with_capacity(persistent_capacity),
             invalidated_slots: Vec::with_capacity(persistent_capacity),
             changed_slots: Vec::with_capacity(persistent_capacity),
+            dirty_node_marks: vec![InstanceEpoch(0); plan.nodes.len()].into_boxed_slice(),
             node_execution_marks: vec![InstanceEpoch(0); plan.nodes.len()].into_boxed_slice(),
+            dirty_nodes: Vec::with_capacity(plan.nodes.len()),
+            executed_nodes: Vec::with_capacity(plan.nodes.len()),
             linear_node_order: plan.topology.linear_node_order.clone(),
         }
     }
@@ -53,6 +59,36 @@ impl TurnWorkspace {
         self.touched_slots.clear();
         self.invalidated_slots.clear();
         self.changed_slots.clear();
+        self.dirty_nodes.clear();
+        self.executed_nodes.clear();
+    }
+
+    #[inline]
+    pub(crate) fn mark_dirty(&mut self, node: NodeIndex, epoch: InstanceEpoch) {
+        let mark = &mut self.dirty_node_marks[node.0 as usize];
+        if *mark != epoch {
+            *mark = epoch;
+            self.dirty_nodes.push(node);
+        }
+    }
+
+    #[inline]
+    pub(crate) fn seed_turn_roots(&mut self, roots: &[NodeIndex], epoch: InstanceEpoch) {
+        for node in roots.iter().copied() {
+            self.mark_dirty(node, epoch);
+        }
+    }
+
+    #[inline]
+    pub(crate) fn is_dirty(&self, node: NodeIndex, epoch: InstanceEpoch) -> bool {
+        self.dirty_node_marks[node.0 as usize] == epoch
+    }
+
+    #[inline]
+    pub(crate) fn record_node_execution(&mut self, node: NodeIndex, epoch: InstanceEpoch) {
+        debug_assert_ne!(self.node_execution_marks[node.0 as usize], epoch);
+        self.node_execution_marks[node.0 as usize] = epoch;
+        self.executed_nodes.push(node);
     }
 
     #[inline]
