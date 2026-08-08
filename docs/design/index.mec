@@ -8,3 +8,4 @@ Design Documents
 - [History](/design/history.html)  `todo`
 - [Roadmap](/design/ROADMAP.html)
 - [Value-resident execution architecture](/design/value-resident-execution.html)
+- [Immutable value semantics and migration contract](/design/value-semantics-and-migration.html)

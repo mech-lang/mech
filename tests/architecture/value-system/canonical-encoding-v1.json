@@ -1,0 +1,603 @@
+{
+  "aggregate_encoding": {
+    "Map": "U64-count-then-canonical-key-payload-and-value-snapshot-payload-sorted-by-KeyOrder",
+    "Matrix": "logical-lexicographic-elements-last-dimension-fastest",
+    "Option": "U8-tag-then-payload-only-when-present",
+    "Record": "schema-field-order-without-payload-names",
+    "Set": "U64-count-then-canonical-key-payloads-sorted-by-KeyOrder",
+    "String": "Bytes-valid-UTF8",
+    "Table": "schema-column-order-then-semantic-row-order",
+    "Tuple": "positional-order"
+  },
+  "common_framing": {
+    "Bytes": "U64-byte-length-then-exactly-length-bytes",
+    "Node": "U64-byte-length-then-exactly-that-nodes-encoded-bytes",
+    "U16": "two-bytes-little-endian",
+    "U32": "four-bytes-little-endian",
+    "U64": "eight-bytes-little-endian",
+    "U8": "one-byte",
+    "Utf8": "Bytes-containing-valid-UTF-8-with-no-Unicode-normalization",
+    "invalid": [
+      "unknown-tags",
+      "trailing-bytes",
+      "invalid-UTF-8",
+      "noncanonical-booleans",
+      "invalid-widths",
+      "duplicate-names",
+      "inconsistent-lengths"
+    ],
+    "recursive_children": "every-schema-kind-and-dimension-child-is-Node-framed"
+  },
+  "dimension_expression_encoding": {
+    "constant_overflow": "checked-u64-overflow-is-invalid",
+    "errors": {
+      "empty_min_max": "EmptyMinMaxV1",
+      "overflow": "DimensionOverflowV1",
+      "unknown_parameter": "UnknownDimensionParameterV1"
+    },
+    "canonicalization": {
+      "Add": [
+        "flatten-same-tag",
+        "recursively-canonicalize",
+        "fold-constants",
+        "remove-zero",
+        "sort-encoded-operands-lexicographically",
+        "zero-operands-is-Constant-0"
+      ],
+      "Max": [
+        "flatten-same-tag",
+        "recursively-canonicalize",
+        "remove-duplicates",
+        "sort-encoded-operands-lexicographically",
+        "zero-operands-invalid"
+      ],
+      "Min": [
+        "flatten-same-tag",
+        "recursively-canonicalize",
+        "remove-duplicates",
+        "sort-encoded-operands-lexicographically",
+        "zero-operands-invalid"
+      ],
+      "Multiply": [
+        "flatten-same-tag",
+        "recursively-canonicalize",
+        "fold-constants",
+        "remove-one",
+        "zero-factor-is-Constant-0",
+        "sort-encoded-operands-lexicographically",
+        "zero-operands-is-Constant-1"
+      ],
+      "one_operand": "canonicalizes-to-the-operand"
+    },
+    "not_in_v1": [
+      "subtraction",
+      "division",
+      "host-usize",
+      "opaque-callback"
+    ],
+    "payloads": {
+      "Add": [
+        "U32-count",
+        "Node-operands"
+      ],
+      "Constant": [
+        "U64-value"
+      ],
+      "Max": [
+        "U32-count",
+        "Node-operands"
+      ],
+      "Min": [
+        "U32-count",
+        "Node-operands"
+      ],
+      "Multiply": [
+        "U32-count",
+        "Node-operands"
+      ],
+      "Parameter": [
+        "U32-ordinal"
+      ]
+    },
+    "tags": {
+      "Add": 3,
+      "Constant": 1,
+      "Max": 6,
+      "Min": 5,
+      "Multiply": 4,
+      "Parameter": 2
+    }
+  },
+  "dimension_parameters": {
+    "canonicalization": [
+      "parameter-names-not-encoded",
+      "remove-unused-parameters",
+      "rewrite-references-to-zero-based-U32-ordinals",
+      "retain-explicit-parameters-in-source-declaration-order",
+      "append-inferred-parameters-in-first-preorder-occurrence-order",
+      "include-parameters-referenced-by-reachable-bounds",
+      "bounds-may-reference-only-earlier-retained-parameters",
+      "parameter-bound-dependencies-must-be-acyclic"
+    ],
+    "compile_time": "encoded-as-Constant-not-parameter",
+    "frame": [
+      "U8-lifetime-tag",
+      "Node-lower-bound",
+      "U8-upper-present",
+      "Node-upper-bound-only-when-present"
+    ],
+    "lifetime_tags": {
+      "Activation": 1,
+      "Turn": 2
+    },
+    "ordering": [
+      "explicit-source-declaration-order",
+      "inferred-first-preorder-occurrence"
+    ],
+    "errors": {
+      "cycle": "CyclicDimensionParameterBoundsV1",
+      "forward_reference": "ForwardDimensionParameterReferenceV1",
+      "unknown_parameter": "UnknownDimensionParameterV1"
+    },
+    "shared_environment": "one-root-environment-shared-by-schema-or-kind-expression-and-all-dimension-children"
+  },
+  "encoding_name": "MechSnapshotEncodingV1",
+  "hashes": {
+    "NominalKey": {
+      "algorithm": "SHA-256",
+      "bytes": 32,
+      "domain_separator_utf8": "mech-nominal-v1\u0000",
+      "input": [
+        "domain-separator",
+        "U8-nominal-kind-tag",
+        "U32-segment-count",
+        "each-segment-as-Utf8"
+      ]
+    },
+    "SchemaKey": {
+      "algorithm": "SHA-256",
+      "bytes": 32,
+      "domain_separator_utf8": "mech-schema-v1\u0000",
+      "input": [
+        "domain-separator",
+        "canonical-schema-bytes"
+      ]
+    },
+    "KeyHash": {
+      "algorithm": "SHA-256",
+      "bytes": 32,
+      "domain_separator_utf8": "mech-key-v1\u0000",
+      "input": [
+        "domain-separator",
+        "SchemaKey",
+        "canonical-shape-bytes",
+        "canonical-key-payload-bytes"
+      ]
+    },
+    "ValueHash": {
+      "algorithm": "SHA-256",
+      "bytes": 32,
+      "domain_separator_utf8": "mech-value-v1\u0000",
+      "durability": "durable-snapshot-identity",
+      "input": [
+        "domain-separator",
+        "SchemaKey",
+        "canonical-shape-bytes",
+        "canonical-payload-bytes"
+      ]
+    }
+  },
+  "golden_vectors": {
+    "canonical_json_sha256": "0be9531a4514ef359bedc3172f6ea327c28bcaab0fa493d9725d430799343a9f",
+    "encoding_name": "MechSnapshotEncodingV1",
+    "schema_version": 3
+  },
+  "key_order": {
+    "bool": "false-before-true",
+    "float": "canonicalize-negative-zero-and-all-nans-then-IEEE-totalOrder",
+    "integer": "numerical",
+    "nominal": "SchemaKey-then-variant-ordinal-then-payload",
+    "option": "absent-before-present",
+    "rational64": "compare-i128-n1-times-d2-with-i128-n2-times-d1",
+    "recursive_keyability": true,
+    "string": "lexicographic-UTF8-bytes",
+    "tuple_record": "lexicographic-component-order"
+  },
+  "key_encoding": {
+    "collection_normalization": [
+      "convert-every-key-to-canonical-key-payload",
+      "compare-by-schema-KeyOrder",
+      "detect-equality-by-KeyEquality",
+      "reject-duplicates-as-DuplicateCanonicalKeyV1",
+      "sort-set-elements-and-map-entries-by-KeyOrder",
+      "encode-canonical-key-payload-not-original-float-bits"
+    ],
+    "duplicate_error": "DuplicateCanonicalKeyV1",
+    "float_normalization": {
+      "F32_NaN": "0x7fc00000",
+      "F32_negative_zero": "0x00000000",
+      "F64_NaN": "0x7ff8000000000000",
+      "F64_negative_zero": "0x0000000000000000",
+      "non_NaN_non_negative_zero": "retain-original-bits",
+      "order": "IEEE-754-totalOrder-after-normalization",
+      "snapshot_payload": "exact-bits-without-key-normalization"
+    },
+    "rational64": {
+      "comparison": "i128(n1)*i128(d2)-compared-with-i128(n2)*i128(d1)",
+      "denominator": "positive-u64",
+      "error": "NonCanonicalRationalV1",
+      "numerator": "signed-i64",
+      "reduction": "greatest-common-divisor-is-1",
+      "zero": "exactly-0-over-1"
+    },
+    "schema_not_keyable_error": "SchemaNotKeyableV1"
+  },
+  "kind_expression_encoding": {
+    "aggregate_framing": "mirrors-schema-framing",
+    "closed": "standalone-reified-KindExpr-has-no-free-kind-parameters",
+    "payloads": {
+      "Atom": [
+        "32-byte-NominalKey"
+      ],
+      "Enum": [
+        "32-byte-NominalKey"
+      ],
+      "Hole": [],
+      "Id": [],
+      "Index": [],
+      "Map": [
+        "Node-key-kind",
+        "Node-value-kind",
+        "Node-cardinality-expression"
+      ],
+      "Matrix": [
+        "Node-element-kind",
+        "U32-rank",
+        "Node-dimension-expression-per-axis"
+      ],
+      "Named": [
+        "CanonicalNominalPath"
+      ],
+      "Never": [],
+      "Option": [
+        "Node-element-kind"
+      ],
+      "Record": [
+        "U32-field-count",
+        "Utf8-name-and-Node-child-kind-per-field"
+      ],
+      "Reference": [
+        "Node-referent-kind"
+      ],
+      "Set": [
+        "Node-element-kind",
+        "Node-cardinality-expression"
+      ],
+      "Table": [
+        "U32-column-count",
+        "Utf8-name-and-Node-child-kind-per-column",
+        "Node-row-count-expression"
+      ],
+      "Tuple": [
+        "U32-arity",
+        "child-Nodes"
+      ],
+      "TypeOf": [
+        "Node-inner-kind"
+      ],
+      "Wildcard": []
+    },
+    "root": [
+      "U8-version-0x01",
+      "U32-dimension-parameter-count",
+      "dimension-parameter-frames",
+      "Node-root-kind-expression"
+    ],
+    "tags": {
+      "Atom": 7,
+      "Enum": 8,
+      "Hole": 3,
+      "Id": 5,
+      "Index": 6,
+      "Map": 15,
+      "Matrix": 9,
+      "Named": 4,
+      "Never": 2,
+      "Option": 10,
+      "Record": 12,
+      "Reference": 16,
+      "Set": 14,
+      "Table": 13,
+      "Tuple": 11,
+      "TypeOf": 17,
+      "Wildcard": 1
+    },
+    "version": 1
+  },
+  "nominal_identity": {
+    "compiler_source": "resolved-module-identity-and-declaration-name",
+    "forbidden_identity_sources": [
+      "Unicode-normalization",
+      "filesystem-path",
+      "process-local-numeric-hash"
+    ],
+    "forbidden_segments": [
+      "empty",
+      ".",
+      "..",
+      "contains-NUL"
+    ],
+    "nominal_kind_tags": {
+      "Atom": 1,
+      "Enum": 2
+    },
+    "path": "non-empty-U32-counted-ordered-sequence-of-exact-Utf8-segments",
+    "segment_derivation": {
+      "collision_rule": "duplicate-resolved-package-names-are-rejected-only-when-more-than-one-such-package-defines-a-nominal-declaration-reachable-in-the-current-compilation",
+      "crate_aliases": "excluded",
+      "module_source": "defining-module-canonical-namespace-relative-to-package-root",
+      "package_name_source": "resolved-package-manifest-declared-name-exact-Utf8",
+      "package_version_and_dependency_source": "excluded",
+      "reexports": "resolve-to-the-defining-declaration",
+      "segments": [
+        "resolved-package-name",
+        "zero-or-more-defining-module-namespace-segments",
+        "declaration-name"
+      ]
+    }
+  },
+  "payload_encoding": {
+    "Atom": "empty-payload-NominalKey-is-in-Schema",
+    "Bool": "U8-exactly-0-or-1",
+    "Complex": "real-floating-component-then-imaginary-floating-component",
+    "Enum": "U32-variant-ordinal-then-declared-variant-payload-when-present",
+    "FloatingPoint": "exact-IEEE-bits-at-declared-width-little-endian",
+    "Id": "U64-little-endian",
+    "Index": "U64-little-endian",
+    "Map": "U64-entry-count-then-canonical-key-payload-and-value-snapshot-payload-sorted-by-KeyOrder",
+    "Matrix": "element-payloads-in-logical-lexicographic-index-order-last-dimension-fastest-shape-not-repeated",
+    "Option": "U8-0-absent-or-U8-1-then-element-payload",
+    "Rational64": "i64-numerator-little-endian-then-u64-denominator-little-endian",
+    "Record": "child-payloads-in-schema-field-order-without-field-names",
+    "ReifiedType": "U8-1-then-Node-closed-KindExpr-or-U8-2-then-32-byte-SchemaKey",
+    "Set": "U64-element-count-then-canonical-key-payloads-sorted-by-KeyOrder",
+    "SignedInteger": "declared-fixed-width-twos-complement-little-endian",
+    "String": "U64-byte-length-then-exact-valid-UTF8-bytes",
+    "Table": "schema-column-order-then-each-row-in-semantic-row-order-row-count-not-repeated",
+    "Tuple": "child-payloads-in-positional-order",
+    "UnsignedInteger": "declared-fixed-width-little-endian"
+  },
+  "primitive_encoding": {
+    "bool": "U8-exactly-0-or-1",
+    "byte_order": "little-endian",
+    "enum_variant_ordinal": "u32",
+    "float": "exact-IEEE-bits-at-schema-width",
+    "index": {
+      "host_usize_conversion": "checked-fallible",
+      "semantic_type": "u64"
+    },
+    "integer": "fixed-width-declared-by-schema",
+    "lengths_and_cardinalities": "u64",
+    "option_tag": "U8-0-absent-1-present",
+    "rank": "u32"
+  },
+  "reified_type_payload": {
+    "payloads": {
+      "KindExpr": [
+        "Node-canonical-closed-KindExpr-bytes"
+      ],
+      "Schema": [
+        "32-byte-SchemaKey"
+      ]
+    },
+    "tags": {
+      "KindExpr": 1,
+      "Schema": 2
+    },
+    "value_variant": "ValueData::Type(ReifiedType)"
+  },
+  "schema_encoding": {
+    "allowed_widths": {
+      "Complex": [
+        32,
+        64
+      ],
+      "FloatingPoint": [
+        32,
+        64
+      ],
+      "Id": 64,
+      "Index": 64,
+      "Rational": [
+        [
+          64,
+          64
+        ]
+      ],
+      "SignedInteger": [
+        8,
+        16,
+        32,
+        64,
+        128
+      ],
+      "UnsignedInteger": [
+        8,
+        16,
+        32,
+        64,
+        128
+      ]
+    },
+    "dimension_fields": [
+      "Matrix-dimensions",
+      "Table-row-count",
+      "Set-cardinality",
+      "Map-cardinality"
+    ],
+    "enum_ordinal": "U32-declaration-order",
+    "enum_variant_frame": [
+      "Utf8-local-name",
+      "U8-payload-present",
+      "Node-payload-schema-only-when-present"
+    ],
+    "graph": "acyclic-tree-encoded-by-value-shared-pointers-are-not-semantic",
+    "keyability": {
+      "always_keyable": [
+        "Bool",
+        "UnsignedInteger",
+        "SignedInteger",
+        "FloatingPoint",
+        "Rational",
+        "String",
+        "Id",
+        "Index",
+        "Atom"
+      ],
+      "not_keyable": [
+        "Complex",
+        "Matrix",
+        "Table",
+        "Set",
+        "Map",
+        "ReifiedType"
+      ],
+      "recursively_keyable": [
+        "Enum",
+        "Option",
+        "Tuple",
+        "Record"
+      ],
+      "storage": "derived-from-schema-body-not-encoded-as-independent-flag"
+    },
+    "no_schema_for": [
+      "Wildcard",
+      "Never",
+      "Hole",
+      "Reference",
+      "execution-no-result",
+      "uninitialized-storage"
+    ],
+    "payloads": {
+      "Atom": [
+        "32-byte-NominalKey"
+      ],
+      "Bool": [],
+      "Complex": [
+        "U16-component-bit-width"
+      ],
+      "Enum": [
+        "32-byte-NominalKey",
+        "U32-variant-count",
+        "variant-frames"
+      ],
+      "FloatingPoint": [
+        "U16-bit-width"
+      ],
+      "Id": [],
+      "Index": [],
+      "Map": [
+        "Node-key-schema",
+        "Node-value-schema",
+        "Node-cardinality-expression"
+      ],
+      "Matrix": [
+        "Node-element-schema",
+        "U32-rank",
+        "Node-dimension-expression-per-axis"
+      ],
+      "Option": [
+        "Node-element-schema-body"
+      ],
+      "Rational": [
+        "U16-numerator-width",
+        "U16-denominator-width"
+      ],
+      "Record": [
+        "U32-field-count",
+        "Utf8-name-and-Node-child-schema-per-field"
+      ],
+      "ReifiedType": [],
+      "Set": [
+        "Node-element-schema",
+        "Node-cardinality-expression"
+      ],
+      "SignedInteger": [
+        "U16-bit-width"
+      ],
+      "String": [],
+      "Table": [
+        "U32-column-count",
+        "Utf8-name-and-Node-child-schema-per-column",
+        "Node-row-count-expression"
+      ],
+      "Tuple": [
+        "U32-arity",
+        "child-Nodes"
+      ],
+      "UnsignedInteger": [
+        "U16-bit-width"
+      ]
+    },
+    "record_and_table_names": "unique-valid-Utf8-in-declaration-order-not-sorted",
+    "recursive_error": "RecursiveSchemaUnsupportedV1",
+    "root": [
+      "U8-version-0x01",
+      "U32-dimension-parameter-count",
+      "dimension-parameter-frames",
+      "Node-root-schema-body"
+    ],
+    "tags": {
+      "Atom": 10,
+      "Bool": 1,
+      "Complex": 5,
+      "Enum": 11,
+      "FloatingPoint": 4,
+      "Id": 8,
+      "Index": 9,
+      "Map": 18,
+      "Matrix": 15,
+      "Option": 12,
+      "Rational": 6,
+      "Record": 14,
+      "ReifiedType": 19,
+      "Set": 17,
+      "SignedInteger": 3,
+      "String": 7,
+      "Table": 16,
+      "Tuple": 13,
+      "UnsignedInteger": 2
+    },
+    "version": 1
+  },
+  "schema_version": 1,
+  "validation_errors": {
+    "AggregateArityMismatchV1": "tuple-payload-or-key-arity-does-not-equal-schema-arity",
+    "AggregateFieldMismatchV1": "record-or-table-field-name-set-does-not-equal-schema-name-set",
+    "DuplicateSchemaNameV1": "record-field-table-column-or-enum-variant-name-is-duplicated",
+    "EnumOrdinalOutOfRangeV1": "enum-ordinal-is-not-an-in-range-integer",
+    "EnumPayloadMismatchV1": "enum-payload-presence-or-fields-do-not-match-selected-variant",
+    "InvalidSchemaWidthV1": "primitive-width-is-not-one-of-the-exact-V1-widths",
+    "MapEntryArityMismatchV1": "map-entry-does-not-contain-exactly-key-and-value",
+    "PayloadCardinalityMismatchV1": "option-matrix-table-set-or-map-payload-cardinality-does-not-match-schema",
+    "ShapeBoundViolationV1": "shape-value-is-outside-its-resolved-lower-or-upper-bound",
+    "ShapeParameterCountMismatchV1": "shape-value-count-does-not-equal-canonical-retained-parameter-count"
+  },
+  "shape_encoding": {
+    "compile_time": "constants-already-in-SchemaKey-and-not-repeated",
+    "count": "must-equal-canonical-retained-schema-parameter-count",
+    "parameter_order": "canonical-retained-schema-parameter-order",
+    "frame": [
+      "U8-version-0x01",
+      "U32-resolved-parameter-count",
+      "U64-resolved-values-in-schema-parameter-order"
+    ],
+    "validation": [
+      "lifetime",
+      "lower-bound",
+      "upper-bound",
+      "all-dimension-expressions"
+    ],
+    "version": 1
+  }
+}
