@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mech-lang.org/schemas/value-system-legacy-growth-baseline-v3.json",
+  "additionalProperties": false,
+  "properties": {
+    "legacy_aliases": {
+      "items": { "$ref": "#/$defs/legacyAlias" },
+      "type": "array"
+    },
+    "required_compatibility_aliases": {
+      "items": { "$ref": "#/$defs/compatibilityAlias" },
+      "minItems": 2,
+      "maxItems": 2,
+      "type": "array"
+    },
+    "high_risk_api_uses": {
+      "additionalProperties": { "$ref": "#/$defs/useList" },
+      "type": "object"
+    },
+    "reference_commit": {
+      "const": "d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10"
+    },
+    "scanner_contract": {
+      "const": {
+        "baseline_policy": "checked-in-archived-source-oracle-may-only-shrink-v1",
+        "identifier_comparison": "canonical-identifier-v1",
+        "implementation_sha256": "9624eb89c01085cc5e412506b30671f442ba53b057c228b3fbcd113cc77ad834",
+        "ref_alias_resolution": "transitive-generic-identity-wrapper-v1",
+        "module": "scripts/value_system_legacy_scanner_v1.py",
+        "version": "c0-legacy-growth-v1"
+      }
+    },
+    "schema_version": { "const": 3 }
+  },
+  "required": [
+    "schema_version",
+    "reference_commit",
+    "scanner_contract",
+    "legacy_aliases",
+    "required_compatibility_aliases",
+    "high_risk_api_uses"
+  ],
+  "type": "object",
+  "$defs": {
+    "legacyAlias": {
+      "additionalProperties": false,
+      "properties": {
+        "line": { "minimum": 1, "type": "integer" },
+        "column": { "minimum": 1, "type": "integer" },
+        "name": { "enum": ["MutableReference", "ValRef"] },
+        "path": { "minLength": 1, "type": "string" },
+        "raw_name": { "minLength": 1, "type": "string" },
+        "target": { "minLength": 1, "type": "string" },
+        "visibility": { "const": "pub" }
+      },
+      "required": ["name", "raw_name", "target", "path", "line", "column", "visibility"],
+      "type": "object"
+    },
+    "reexportRoute": {
+      "additionalProperties": false,
+      "properties": {
+        "declaration": { "minLength": 1, "type": "string" },
+        "line": { "minimum": 1, "type": "integer" },
+        "path": { "minLength": 1, "type": "string" }
+      },
+      "required": ["path", "line", "declaration"],
+      "type": "object"
+    },
+    "compatibilityAlias": {
+      "additionalProperties": false,
+      "properties": {
+        "column": { "minimum": 1, "type": "integer" },
+        "line": { "minimum": 1, "type": "integer" },
+        "name": { "enum": ["SymbolTableRef", "InterpreterRef"] },
+        "path": { "minLength": 1, "type": "string" },
+        "public_reexport_route": { "items": { "$ref": "#/$defs/reexportRoute" }, "minItems": 1, "type": "array" },
+        "raw_name": { "minLength": 1, "type": "string" },
+        "target": { "minLength": 1, "type": "string" },
+        "visibility": { "const": "pub" }
+      },
+      "required": ["name", "raw_name", "target", "path", "line", "column", "visibility", "public_reexport_route"],
+      "type": "object"
+    },
+    "site": {
+      "additionalProperties": false,
+      "properties": {
+        "column": { "minimum": 1, "type": "integer" },
+        "fingerprint": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
+        "line": { "minimum": 1, "type": "integer" }
+      },
+      "required": ["line", "column", "fingerprint"],
+      "type": "object"
+    },
+    "use": {
+      "additionalProperties": false,
+      "properties": {
+        "count": { "minimum": 1, "type": "integer" },
+        "path": { "minLength": 1, "type": "string" },
+        "sites": {
+          "items": { "$ref": "#/$defs/site" },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": ["path", "sites", "count"],
+      "type": "object"
+    },
+    "useList": {
+      "items": { "$ref": "#/$defs/use" },
+      "type": "array"
+    }
+  }
+}

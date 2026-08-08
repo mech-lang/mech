@@ -1,0 +1,6 @@
+fn production(value: Value) {
+    let _ = Value::MutableReference(match value {
+        Value::MutableReference(reference) => reference,
+        _ => panic!(),
+    });
+}

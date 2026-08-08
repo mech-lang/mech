@@ -217,135 +217,134 @@ impl ValueKind {
     }
 
     pub fn is_convertible_to(&self, other: &ValueKind) -> bool {
-        use ValueKind::*;
         match (self, other) {
             // Unsigned widening
-            (U8, U16)
-            | (U8, U32)
-            | (U8, U64)
-            | (U8, U128)
-            | (U16, U32)
-            | (U16, U64)
-            | (U16, U128)
-            | (U32, U64)
-            | (U32, U128)
-            | (U64, U128) => true,
+            (ValueKind::U8, ValueKind::U16)
+            | (ValueKind::U8, ValueKind::U32)
+            | (ValueKind::U8, ValueKind::U64)
+            | (ValueKind::U8, ValueKind::U128)
+            | (ValueKind::U16, ValueKind::U32)
+            | (ValueKind::U16, ValueKind::U64)
+            | (ValueKind::U16, ValueKind::U128)
+            | (ValueKind::U32, ValueKind::U64)
+            | (ValueKind::U32, ValueKind::U128)
+            | (ValueKind::U64, ValueKind::U128) => true,
 
             // Signed widening
-            (I8, I16)
-            | (I8, I32)
-            | (I8, I64)
-            | (I8, I128)
-            | (I16, I32)
-            | (I16, I64)
-            | (I16, I128)
-            | (I32, I64)
-            | (I32, I128)
-            | (I64, I128) => true,
+            (ValueKind::I8, ValueKind::I16)
+            | (ValueKind::I8, ValueKind::I32)
+            | (ValueKind::I8, ValueKind::I64)
+            | (ValueKind::I8, ValueKind::I128)
+            | (ValueKind::I16, ValueKind::I32)
+            | (ValueKind::I16, ValueKind::I64)
+            | (ValueKind::I16, ValueKind::I128)
+            | (ValueKind::I32, ValueKind::I64)
+            | (ValueKind::I32, ValueKind::I128)
+            | (ValueKind::I64, ValueKind::I128) => true,
 
             // Unsigned -> signed widening
-            (U8, I16)
-            | (U8, I32)
-            | (U8, I64)
-            | (U8, I128)
-            | (U16, I32)
-            | (U16, I64)
-            | (U16, I128)
-            | (U32, I64)
-            | (U32, I128)
-            | (U64, I128) => true,
+            (ValueKind::U8, ValueKind::I16)
+            | (ValueKind::U8, ValueKind::I32)
+            | (ValueKind::U8, ValueKind::I64)
+            | (ValueKind::U8, ValueKind::I128)
+            | (ValueKind::U16, ValueKind::I32)
+            | (ValueKind::U16, ValueKind::I64)
+            | (ValueKind::U16, ValueKind::I128)
+            | (ValueKind::U32, ValueKind::I64)
+            | (ValueKind::U32, ValueKind::I128)
+            | (ValueKind::U64, ValueKind::I128) => true,
 
             // Signed -> unsigned widening (runtime safety not enforced here)
-            (I8, U16)
-            | (I8, U32)
-            | (I8, U64)
-            | (I8, U128)
-            | (I16, U32)
-            | (I16, U64)
-            | (I16, U128)
-            | (I32, U64)
-            | (I32, U128)
-            | (I64, U128) => true,
+            (ValueKind::I8, ValueKind::U16)
+            | (ValueKind::I8, ValueKind::U32)
+            | (ValueKind::I8, ValueKind::U64)
+            | (ValueKind::I8, ValueKind::U128)
+            | (ValueKind::I16, ValueKind::U32)
+            | (ValueKind::I16, ValueKind::U64)
+            | (ValueKind::I16, ValueKind::U128)
+            | (ValueKind::I32, ValueKind::U64)
+            | (ValueKind::I32, ValueKind::U128)
+            | (ValueKind::I64, ValueKind::U128) => true,
 
             // Integer -> float
-            (U8, F32)
-            | (U8, F64)
-            | (U16, F32)
-            | (U16, F64)
-            | (U32, F32)
-            | (U32, F64)
-            | (U64, F32)
-            | (U64, F64)
-            | (U128, F32)
-            | (U128, F64)
-            | (I8, F32)
-            | (I8, F64)
-            | (I16, F32)
-            | (I16, F64)
-            | (I32, F32)
-            | (I32, F64)
-            | (I64, F32)
-            | (I64, F64)
-            | (I128, F32)
-            | (I128, F64) => true,
+            (ValueKind::U8, ValueKind::F32)
+            | (ValueKind::U8, ValueKind::F64)
+            | (ValueKind::U16, ValueKind::F32)
+            | (ValueKind::U16, ValueKind::F64)
+            | (ValueKind::U32, ValueKind::F32)
+            | (ValueKind::U32, ValueKind::F64)
+            | (ValueKind::U64, ValueKind::F32)
+            | (ValueKind::U64, ValueKind::F64)
+            | (ValueKind::U128, ValueKind::F32)
+            | (ValueKind::U128, ValueKind::F64)
+            | (ValueKind::I8, ValueKind::F32)
+            | (ValueKind::I8, ValueKind::F64)
+            | (ValueKind::I16, ValueKind::F32)
+            | (ValueKind::I16, ValueKind::F64)
+            | (ValueKind::I32, ValueKind::F32)
+            | (ValueKind::I32, ValueKind::F64)
+            | (ValueKind::I64, ValueKind::F32)
+            | (ValueKind::I64, ValueKind::F64)
+            | (ValueKind::I128, ValueKind::F32)
+            | (ValueKind::I128, ValueKind::F64) => true,
 
             // Float widening + narrowing
-            (F32, F64) | (F64, F32) => true,
+            (ValueKind::F32, ValueKind::F64) | (ValueKind::F64, ValueKind::F32) => true,
 
             // Float -> integer (allowed, but lossy)
-            (F32, I8)
-            | (F32, I16)
-            | (F32, I32)
-            | (F32, I64)
-            | (F32, I128)
-            | (F32, U8)
-            | (F32, U16)
-            | (F32, U32)
-            | (F32, U64)
-            | (F32, U128)
-            | (F64, I8)
-            | (F64, I16)
-            | (F64, I32)
-            | (F64, I64)
-            | (F64, I128)
-            | (F64, U8)
-            | (F64, U16)
-            | (F64, U32)
-            | (F64, U64)
-            | (F64, U128) => true,
+            (ValueKind::F32, ValueKind::I8)
+            | (ValueKind::F32, ValueKind::I16)
+            | (ValueKind::F32, ValueKind::I32)
+            | (ValueKind::F32, ValueKind::I64)
+            | (ValueKind::F32, ValueKind::I128)
+            | (ValueKind::F32, ValueKind::U8)
+            | (ValueKind::F32, ValueKind::U16)
+            | (ValueKind::F32, ValueKind::U32)
+            | (ValueKind::F32, ValueKind::U64)
+            | (ValueKind::F32, ValueKind::U128)
+            | (ValueKind::F64, ValueKind::I8)
+            | (ValueKind::F64, ValueKind::I16)
+            | (ValueKind::F64, ValueKind::I32)
+            | (ValueKind::F64, ValueKind::I64)
+            | (ValueKind::F64, ValueKind::I128)
+            | (ValueKind::F64, ValueKind::U8)
+            | (ValueKind::F64, ValueKind::U16)
+            | (ValueKind::F64, ValueKind::U32)
+            | (ValueKind::F64, ValueKind::U64)
+            | (ValueKind::F64, ValueKind::U128) => true,
 
             // Index conversions (both ways)
-            (Index, U8)
-            | (Index, U16)
-            | (Index, U32)
-            | (Index, U64)
-            | (Index, U128)
-            | (Index, I8)
-            | (Index, I16)
-            | (Index, I32)
-            | (Index, I64)
-            | (Index, I128)
-            | (Index, F32)
-            | (Index, F64)
-            | (U8, Index)
-            | (U16, Index)
-            | (U32, Index)
-            | (U64, Index)
-            | (U128, Index)
-            | (I8, Index)
-            | (I16, Index)
-            | (I32, Index)
-            | (I64, Index)
-            | (I128, Index) => true,
+            (ValueKind::Index, ValueKind::U8)
+            | (ValueKind::Index, ValueKind::U16)
+            | (ValueKind::Index, ValueKind::U32)
+            | (ValueKind::Index, ValueKind::U64)
+            | (ValueKind::Index, ValueKind::U128)
+            | (ValueKind::Index, ValueKind::I8)
+            | (ValueKind::Index, ValueKind::I16)
+            | (ValueKind::Index, ValueKind::I32)
+            | (ValueKind::Index, ValueKind::I64)
+            | (ValueKind::Index, ValueKind::I128)
+            | (ValueKind::Index, ValueKind::F32)
+            | (ValueKind::Index, ValueKind::F64)
+            | (ValueKind::U8, ValueKind::Index)
+            | (ValueKind::U16, ValueKind::Index)
+            | (ValueKind::U32, ValueKind::Index)
+            | (ValueKind::U64, ValueKind::Index)
+            | (ValueKind::U128, ValueKind::Index)
+            | (ValueKind::I8, ValueKind::Index)
+            | (ValueKind::I16, ValueKind::Index)
+            | (ValueKind::I32, ValueKind::Index)
+            | (ValueKind::I64, ValueKind::Index)
+            | (ValueKind::I128, ValueKind::Index) => true,
 
             // Matrix: element type convertible and shape matches.
             // An empty target shape (`[]`) is treated as a wildcard shape.
-            (Matrix(a, _ashape), Matrix(b, bshape))
+            (ValueKind::Matrix(a, _ashape), ValueKind::Matrix(b, bshape))
                 if bshape.is_empty() && a.as_ref().is_convertible_to(b.as_ref()) =>
             {
                 true
             }
-            (Matrix(a, ashape), Matrix(b, bshape))
+            (ValueKind::Matrix(a, ashape), ValueKind::Matrix(b, bshape))
                 if ashape.into_iter().product::<usize>()
                     == bshape.into_iter().product::<usize>()
                     && a.as_ref().is_convertible_to(b.as_ref()) =>
@@ -354,15 +353,23 @@ impl ValueKind {
             }
 
             // Option conversions
-            (x, Option(b)) if x.is_convertible_to(b.as_ref()) => true,
-            (Empty, Option(_)) => true,
-            (Option(a), Option(b)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
+            (x, ValueKind::Option(b)) if x.is_convertible_to(b.as_ref()) => true,
+            (ValueKind::Empty, ValueKind::Option(_)) => true,
+            (ValueKind::Option(a), ValueKind::Option(b))
+                if a.as_ref().is_convertible_to(b.as_ref()) =>
+            {
+                true
+            }
 
             // Reference conversions
-            (Reference(a), Reference(b)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
+            (ValueKind::Reference(a), ValueKind::Reference(b))
+                if a.as_ref().is_convertible_to(b.as_ref()) =>
+            {
+                true
+            }
 
             // Tuple conversions (element-wise)
-            (Tuple(a), Tuple(b))
+            (ValueKind::Tuple(a), ValueKind::Tuple(b))
                 if a.len() == b.len()
                     && a.iter().zip(b.iter()).all(|(x, y)| x.is_convertible_to(y)) =>
             {
@@ -370,10 +377,14 @@ impl ValueKind {
             }
 
             // Set conversions
-            (Set(a, _), Set(b, _)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
+            (ValueKind::Set(a, _), ValueKind::Set(b, _))
+                if a.as_ref().is_convertible_to(b.as_ref()) =>
+            {
+                true
+            }
 
             // Map conversions
-            (Map(ak, av), Map(bk, bv))
+            (ValueKind::Map(ak, av), ValueKind::Map(bk, bv))
                 if ak.as_ref().is_convertible_to(bk.as_ref())
                     && av.as_ref().is_convertible_to(bv.as_ref()) =>
             {
@@ -381,7 +392,7 @@ impl ValueKind {
             }
 
             // Table conversions: allow source to have extra columns
-            (Table(acols, _), Table(bcols, _))
+            (ValueKind::Table(acols, _), ValueKind::Table(bcols, _))
                 if bcols.iter().all(|(bk, bv)| {
                     acols
                         .iter()
@@ -392,7 +403,7 @@ impl ValueKind {
             }
 
             // Record conversions: allow source to have extra fields
-            (Record(afields), Record(bfields))
+            (ValueKind::Record(afields), ValueKind::Record(bfields))
                 if bfields.iter().all(|(bk, bv)| {
                     afields
                         .iter()
