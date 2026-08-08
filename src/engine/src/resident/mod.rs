@@ -18,3 +18,6 @@ pub(crate) use candidate::{Candidate, ReactiveInstance, publish_epoch};
 pub use full_write::{FULL_WRITE_ELEMENTS, ResidentFullWrite};
 pub(crate) use kernel::*;
 pub(crate) use workspace::*;
+
+#[cfg(test)]
+mod tests;

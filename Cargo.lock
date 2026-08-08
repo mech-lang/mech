@@ -2170,6 +2170,7 @@ dependencies = [
  "num-traits",
  "paste",
  "serde",
+ "sha2",
  "web-time",
 ]
 

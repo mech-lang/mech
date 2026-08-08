@@ -68,6 +68,16 @@ def required_lane_keys() -> set[tuple[str, int]]:
     return keys
 
 
+def required_phase_lane_keys(phase: str) -> set[tuple[str, int]]:
+    if phase not in {"B0-controls", "B1-resident-kernel"}:
+        raise ValueError(f"unsupported Gate B report phase {phase!r}")
+    keys = required_lane_keys()
+    if phase == "B1-resident-kernel":
+        keys.update(("mech-resident-kernel", instances) for instances in SCALED_INSTANCES)
+        keys.add(("mech-resident-kernel-full-write", 1))
+    return keys
+
+
 def call_occurs_before(source: str, call: str, boundary: str) -> bool:
     call_position = source.find(f"{call}(")
     boundary_position = source.find(boundary)
@@ -183,6 +193,15 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         root / "src/runtime/benches/support/gate_b/raw_epoch.rs",
         root / "src/runtime/benches/support/gate_b/full_write.rs",
         root / "src/runtime/benches/support/gate_b/legacy_atomic.rs",
+        root / "src/runtime/benches/support/gate_b/resident_kernel.rs",
+        root / "src/engine/src/resident/artifact.rs",
+        root / "src/engine/src/resident/activation.rs",
+        root / "src/engine/src/resident/arena.rs",
+        root / "src/engine/src/resident/workspace.rs",
+        root / "src/engine/src/resident/candidate.rs",
+        root / "src/engine/src/resident/full_write.rs",
+        root / "src/engine/src/resident/kernel.rs",
+        root / "src/engine/src/resident/efficacy/ekf.rs",
     )
     errors = [f"missing required Gate B fixture: {path.relative_to(root)}" for path in required if not path.is_file()]
     if errors:
@@ -252,6 +271,68 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
     full_write = read_text(root / "src/runtime/benches/support/gate_b/full_write.rs")
     legacy = read_text(root / "src/runtime/benches/support/gate_b/legacy_atomic.rs")
     benchmark = read_text(root / "src/runtime/benches/resident_ekf.rs")
+    resident_root = root / "src/engine/src/resident"
+    resident_sources = {
+        source: read_text(source) for source in resident_root.rglob("*.rs")
+    }
+    forbidden_resident_identifiers = {
+        "Value", "Ref", "ValRef", "ReactiveCellId", "ReactiveTurnJournal",
+        "ValueStateJournal", "RuntimeExecutionTransaction",
+        "transaction_state_values", "capture_runtime_operation_savepoint",
+        "commit_runtime",
+    }
+    for source, text in resident_sources.items():
+        identifiers = set(re.split(r"[^A-Za-z0-9_]+", text))
+        forbidden = forbidden_resident_identifiers.intersection(identifiers)
+        if forbidden:
+            errors.append(
+                f"resident source {source.relative_to(root)} uses legacy state: "
+                + ", ".join(sorted(forbidden))
+            )
+    resident_text = "\n".join(resident_sources.values())
+    forbidden_resident_source = (
+        "slots: Box<[Versioned<Box<[f64]>>]>",
+        "plan.slot(",
+        "left_rows",
+        "left_columns",
+        "right_columns",
+        "Vec<ResidentEkf>",
+        "raw_kernel::step",
+        "ekf_step",
+    )
+    for forbidden in forbidden_resident_source:
+        if forbidden in resident_text:
+            errors.append(f"resident timed implementation contains forbidden {forbidden}")
+    full_write_path = root / "src/engine/src/resident/full_write.rs"
+    for source, text in resident_sources.items():
+        if source != full_write_path and "Box<[f64]>" in text:
+            errors.append(
+                "resident typed EKF storage is erased in "
+                f"{source.relative_to(root)}"
+            )
+    if sum(text.count(".store(") for text in resident_sources.values()) != 1:
+        errors.append("resident execution must contain exactly one publication store site")
+    candidate_source = resident_sources[root / "src/engine/src/resident/candidate.rs"]
+    if "next_epoch: Option<InstanceEpoch>" not in candidate_source or "checked_next()" not in candidate_source:
+        errors.append("resident candidate epochs do not use checked exhaustion")
+    artifact_source = resident_sources[root / "src/engine/src/resident/artifact.rs"]
+    if artifact_source.count("node(") < 15:
+        errors.append("resident EKF artifact lost its explicit node manifest")
+    activation_source = resident_sources[root / "src/engine/src/resident/activation.rs"]
+    for required_topology in (
+        "consumer_offsets",
+        "consumer_nodes",
+        "downstream_offsets",
+        "downstream_nodes",
+        "linear_node_order",
+    ):
+        if required_topology not in activation_source:
+            errors.append(f"resident activation lost {required_topology}")
+    resident_fixture = read_text(
+        root / "src/runtime/benches/support/gate_b/resident_kernel.rs"
+    )
+    if "resident: ResidentEkfBatch" not in resident_fixture:
+        errors.append("scaled resident lanes do not use one ResidentEkfBatch")
     if "raw_kernel::step(" not in raw_epoch or "raw_kernel::step(" not in legacy:
         errors.append("raw epoch and legacy controls must call the shared raw EKF kernel")
     if raw_epoch.count("published_epoch.store(") != 1:
@@ -416,7 +497,12 @@ def report_contract_errors(
         errors.append("Gate B report includes correctness work in timing")
 
     lanes = _lane_map(report, errors)
-    missing = required_lane_keys().difference(lanes)
+    try:
+        required_lanes = required_phase_lane_keys(report["phase"])
+    except ValueError as error:
+        errors.append(str(error))
+        required_lanes = set()
+    missing = required_lanes.difference(lanes)
     if missing:
         errors.append(
             "Gate B report is missing lanes: "
@@ -462,6 +548,66 @@ def report_contract_errors(
         if structural.get("receipt_bytes") != 64:
             errors.append(f"raw epoch {instances} reports the wrong receipt size")
 
+    if report["phase"] == "B1-resident-kernel":
+        if report["git_branch"] != "feat/engine-resident-ekf-substrate":
+            errors.append("B1 evidence is attributed to the wrong branch")
+        for instances in SCALED_INSTANCES:
+            key = ("mech-resident-kernel", instances)
+            if key not in lanes:
+                continue
+            lane = lanes[key]
+            allocation = lane.get("allocation", {})
+            structural = lane.get("structural", {})
+            if allocation.get("episode_allocation_count") != 0 or allocation.get("episode_allocated_bytes") != 0:
+                errors.append(f"resident kernel {instances} allocates during the timed episode")
+            if structural.get("candidate_seed_bytes") != 0:
+                errors.append(f"resident kernel {instances} seeds candidate storage")
+            if structural.get("published_buffer_copy_bytes") != 0:
+                errors.append(f"resident kernel {instances} copies published storage")
+            if structural.get("publication_store_count") != 1:
+                errors.append(f"resident kernel {instances} does not use one publication store")
+            if structural.get("candidate_written_bytes") != instances * 96:
+                errors.append(
+                    f"resident kernel {instances} reports the wrong written-byte count"
+                )
+            if structural.get("receipt_bytes") != 0:
+                errors.append(f"resident kernel {instances} constructs a receipt in B1")
+            if structural.get("commit_runtime_call_count") != 0:
+                errors.append(f"resident kernel {instances} calls the runtime commit path")
+            if structural.get("legacy_journal_capture_count") != 0:
+                errors.append(f"resident kernel {instances} captures a legacy journal")
+
+        resident_full_key = ("mech-resident-kernel-full-write", 1)
+        if resident_full_key in lanes:
+            lane = lanes[resident_full_key]
+            allocation = lane.get("allocation", {})
+            structural = lane.get("structural", {})
+            if allocation.get("episode_allocation_count") != 0 or allocation.get("episode_allocated_bytes") != 0:
+                errors.append("resident full-write allocates during the timed episode")
+            for field in (
+                "candidate_seed_bytes",
+                "published_buffer_copy_bytes",
+                "receipt_bytes",
+                "commit_runtime_call_count",
+                "legacy_journal_capture_count",
+            ):
+                if structural.get(field) != 0:
+                    errors.append(f"resident full-write reports nonzero {field}")
+            if structural.get("candidate_written_bytes") != 64 * 64 * 8:
+                errors.append("resident full-write reports the wrong written-byte count")
+            if structural.get("publication_store_count") != 1:
+                errors.append("resident full-write does not use one publication store")
+            if not structural.get("abort_output_hash"):
+                errors.append("resident full-write has no forced-abort output hash")
+            raw_full = lanes.get(("rust-epoch-full-write", 1))
+            if raw_full is not None:
+                if lane.get("quantized_state_hash") != raw_full.get("quantized_state_hash"):
+                    errors.append("resident full-write terminal hash differs from raw epoch")
+                if structural.get("abort_output_hash") != raw_full.get("structural", {}).get(
+                    "abort_output_hash"
+                ):
+                    errors.append("resident full-write forced-abort hash differs from raw epoch")
+
     full_key = ("rust-epoch-full-write", 1)
     if full_key in lanes:
         lane = lanes[full_key]
@@ -505,6 +651,40 @@ def report_contract_errors(
             errors.append("Gate B derived positive flag disagrees with the denominator")
         if report["stop_condition"].get("passed") is not (denominator > 0.0):
             errors.append("Gate B stop-condition result disagrees with the denominator")
+
+    if report["phase"] == "B1-resident-kernel":
+        progression = report.get("b1_progression")
+        if not isinstance(progression, dict):
+            errors.append("B1 report is missing b1_progression")
+        elif all(
+            key in lanes
+            for key in (
+                ("mech-resident-kernel", 1),
+                ("rust-kernel", 1),
+                ("rust-epoch", 1),
+            )
+        ):
+            resident = lanes[("mech-resident-kernel", 1)]["timing"]["median_ns_per_turn"]
+            rust_kernel = lanes[("rust-kernel", 1)]["timing"]["median_ns_per_turn"]
+            rust_epoch = lanes[("rust-epoch", 1)]["timing"]["median_ns_per_turn"]
+            expected = {
+                "resident_kernel_ns_per_turn": resident,
+                "rust_kernel_ns_per_turn": rust_kernel,
+                "rust_epoch_ns_per_turn": rust_epoch,
+                "resident_kernel_ratio": resident / rust_kernel,
+                "resident_kernel_vs_raw_epoch": resident / rust_epoch,
+                "limit_multiplier": 1.05,
+                "limit_ns_per_turn": 1.05 * rust_epoch,
+            }
+            for field, value in expected.items():
+                reported = progression.get(field)
+                if not isinstance(reported, (int, float)) or not math.isclose(
+                    float(reported), float(value), rel_tol=1.0e-12, abs_tol=1.0e-9
+                ):
+                    errors.append(f"B1 progression {field} is inconsistent with lane medians")
+            passed = resident <= 1.05 * rust_epoch
+            if progression.get("passed") is not passed:
+                errors.append("B1 progression passed flag disagrees with the unchanged limit")
     return errors
 
 

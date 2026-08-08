@@ -17,6 +17,8 @@ def lane(name, instances):
     is_numpy = name == "numpy-persistent"
     is_epoch = name == "rust-epoch"
     is_full_epoch = name == "rust-epoch-full-write"
+    is_resident = name == "mech-resident-kernel"
+    is_resident_full = name == "mech-resident-kernel-full-write"
     is_legacy = name.startswith("mech-legacy-atomic")
     allocation_count = None if is_numpy else (1 if is_legacy else 0)
     allocated_bytes = None if is_numpy else (8 if is_legacy else 0)
@@ -44,6 +46,21 @@ def lane(name, instances):
                 "candidate_written_bytes": 64 * 64 * 8,
                 "publication_store_count": 1,
                 "receipt_bytes": 64,
+                "abort_output_hash": "c" * 64,
+            }
+        )
+    if is_resident:
+        structural.update(
+            {
+                "candidate_written_bytes": instances * 96,
+                "publication_store_count": 1,
+            }
+        )
+    if is_resident_full:
+        structural.update(
+            {
+                "candidate_written_bytes": 64 * 64 * 8,
+                "publication_store_count": 1,
                 "abort_output_hash": "c" * 64,
             }
         )
@@ -168,12 +185,66 @@ def valid_report():
     }
 
 
+def valid_b1_report():
+    report = valid_report()
+    report["phase"] = "B1-resident-kernel"
+    report["git_branch"] = "feat/engine-resident-ekf-substrate"
+    for instances in (1, 8, 64):
+        resident = lane("mech-resident-kernel", instances)
+        report["lanes"].append(resident)
+    report["lanes"].append(lane("mech-resident-kernel-full-write", 1))
+    report["b1_progression"] = {
+        "resident_kernel_ns_per_turn": 25.0,
+        "rust_kernel_ns_per_turn": 25.0,
+        "rust_epoch_ns_per_turn": 25.0,
+        "resident_kernel_ratio": 1.0,
+        "resident_kernel_vs_raw_epoch": 1.0,
+        "limit_multiplier": 1.05,
+        "limit_ns_per_turn": 26.25,
+        "passed": True,
+    }
+    return report
+
+
 class GateBContractCheckerTests(unittest.TestCase):
     def test_committed_static_contract_passes(self):
         self.assertEqual(CHECKER.static_contract_errors(), [])
 
     def test_valid_b0_report_passes(self):
         self.assertEqual(CHECKER.report_contract_errors(valid_report()), [])
+
+    def test_valid_b1_report_requires_resident_kernel_lanes(self):
+        self.assertEqual(CHECKER.report_contract_errors(valid_b1_report()), [])
+
+    def test_unknown_phase_is_rejected(self):
+        report = valid_report()
+        report["phase"] = "B1-resident-kernel-typo"
+        errors = CHECKER.report_contract_errors(report)
+        self.assertTrue(any("unsupported Gate B report phase" in error for error in errors))
+
+    def test_empty_and_unknown_future_phases_are_rejected(self):
+        for phase in ("", "B2-dirty-scheduler"):
+            report = valid_report()
+            report["phase"] = phase
+            errors = CHECKER.report_contract_errors(report)
+            self.assertTrue(any("unsupported Gate B report phase" in error for error in errors))
+
+    def test_b1_progression_is_recomputed_from_primary_medians(self):
+        report = valid_b1_report()
+        report["b1_progression"]["resident_kernel_vs_raw_epoch"] = 0.5
+        errors = CHECKER.report_contract_errors(report)
+        self.assertTrue(any("resident_kernel_vs_raw_epoch" in error for error in errors))
+
+    def test_scaled_resident_requires_one_batch_publication(self):
+        report = valid_b1_report()
+        result = next(
+            lane
+            for lane in report["lanes"]
+            if lane["lane"] == "mech-resident-kernel" and lane["instances"] == 64
+        )
+        result["structural"]["publication_store_count"] = 64
+        errors = CHECKER.report_contract_errors(report)
+        self.assertTrue(any("does not use one publication store" in error for error in errors))
 
     def test_nonpositive_denominator_is_a_hard_error(self):
         report = valid_report()
