@@ -1,0 +1,509 @@
+{
+  "benchmark_arguments": [
+    "cargo",
+    "bench",
+    "-p",
+    "mech-runtime",
+    "--bench",
+    "resident_ekf",
+    "--features",
+    "source_default,runtime_bench_gate_b",
+    "--",
+    "--noplot",
+    "--sample-size",
+    "10",
+    "--warm-up-time",
+    "1.0",
+    "--measurement-time",
+    "3.0",
+    "--nresamples",
+    "10000"
+  ],
+  "derived": {
+    "legacy_denominator_ns_per_turn": 8337.26001122904,
+    "mech_legacy_atomic_ns_per_turn": 8559.309088134765,
+    "positive": true,
+    "rust_epoch_ns_per_turn": 222.0490769057246
+  },
+  "gate": "B",
+  "git_branch": "test/resident-ekf-efficacy-contract",
+  "git_commit": "b935671a18ad3f5b85bf90398071d7f1e06e85e4",
+  "lanes": [
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 23161.53125,
+        "allocations_per_turn": 211.01318359375,
+        "episode_allocated_bytes": 94869632,
+        "episode_allocation_count": 864310
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-legacy-atomic",
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 4096,
+        "legacy_journal_capture_count": 36864,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 8559.309088134765,
+        "p95_ns_per_turn": 8628.492210693359
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 83361.53125,
+        "allocations_per_turn": 766.01318359375,
+        "episode_allocated_bytes": 341448832,
+        "episode_allocation_count": 3137590
+      },
+      "correctness": true,
+      "instances": 8,
+      "lane": "mech-legacy-atomic",
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 4096,
+        "legacy_journal_capture_count": 294912,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 33570.85335286458,
+        "p95_ns_per_turn": 33919.063456217445
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 568304.703125,
+        "allocations_per_turn": 5048.675537109375,
+        "episode_allocated_bytes": 2327776064,
+        "episode_allocation_count": 20679375
+      },
+      "correctness": true,
+      "instances": 64,
+      "lane": "mech-legacy-atomic",
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 4096,
+        "legacy_journal_capture_count": 2359296,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 305919.68798828125,
+        "p95_ns_per_turn": 306814.56149902346
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 115888.349609375,
+        "allocations_per_turn": 143.013671875,
+        "episode_allocated_bytes": 474678680,
+        "episode_allocation_count": 585784
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-legacy-atomic-full-write",
+      "quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "reference_quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 32768,
+        "commit_runtime_call_count": 4096,
+        "legacy_journal_capture_count": 12288,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 8550.176458740234,
+        "p95_ns_per_turn": 8571.80423965454
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": null,
+        "allocations_per_turn": null,
+        "episode_allocated_bytes": null,
+        "episode_allocation_count": null
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "numpy-persistent",
+      "quantized_state_hash": "1b0856ee87055bd50f895f5d8c54f7c29cf6ff6d1530ad3f82332560f392e98f",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": null,
+        "candidate_written_bytes": null,
+        "commit_runtime_call_count": null,
+        "legacy_journal_capture_count": null,
+        "publication_store_count": null,
+        "published_buffer_copy_bytes": null,
+        "receipt_bytes": null
+      },
+      "timing": {
+        "median_ns_per_turn": 20868.377807617188,
+        "p95_ns_per_turn": 20972.793188476564
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": null,
+        "allocations_per_turn": null,
+        "episode_allocated_bytes": null,
+        "episode_allocation_count": null
+      },
+      "correctness": true,
+      "instances": 8,
+      "lane": "numpy-persistent",
+      "quantized_state_hash": "1b0856ee87055bd50f895f5d8c54f7c29cf6ff6d1530ad3f82332560f392e98f",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": null,
+        "candidate_written_bytes": null,
+        "commit_runtime_call_count": null,
+        "legacy_journal_capture_count": null,
+        "publication_store_count": null,
+        "published_buffer_copy_bytes": null,
+        "receipt_bytes": null
+      },
+      "timing": {
+        "median_ns_per_turn": 163723.11401367188,
+        "p95_ns_per_turn": 164348.7579711914
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": null,
+        "allocations_per_turn": null,
+        "episode_allocated_bytes": null,
+        "episode_allocation_count": null
+      },
+      "correctness": true,
+      "instances": 64,
+      "lane": "numpy-persistent",
+      "quantized_state_hash": "1b0856ee87055bd50f895f5d8c54f7c29cf6ff6d1530ad3f82332560f392e98f",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": null,
+        "candidate_written_bytes": null,
+        "commit_runtime_call_count": null,
+        "legacy_journal_capture_count": null,
+        "publication_store_count": null,
+        "published_buffer_copy_bytes": null,
+        "receipt_bytes": null
+      },
+      "timing": {
+        "median_ns_per_turn": 1302108.2355957031,
+        "p95_ns_per_turn": 1307160.5906616212
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "rust-epoch",
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "legacy_journal_capture_count": 0,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64
+      },
+      "timing": {
+        "median_ns_per_turn": 222.0490769057246,
+        "p95_ns_per_turn": 222.4600737276133
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 8,
+      "lane": "rust-epoch",
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 768,
+        "commit_runtime_call_count": 0,
+        "legacy_journal_capture_count": 0,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64
+      },
+      "timing": {
+        "median_ns_per_turn": 1343.7673553466798,
+        "p95_ns_per_turn": 1345.1858441162108
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 64,
+      "lane": "rust-epoch",
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 6144,
+        "commit_runtime_call_count": 0,
+        "legacy_journal_capture_count": 0,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64
+      },
+      "timing": {
+        "median_ns_per_turn": 10299.34818013509,
+        "p95_ns_per_turn": 10319.960870361328
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "rust-epoch-full-write",
+      "quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "reference_quantized_state_hash": "da2a7736565a2cfc2b9d33e66f81b757c82766cea69f216a060fdc5b24a91ff2",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": "c10b5fea1f26905e04b7ca4c90b56710bdebdd356b1936aaf40f55f92675191d",
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 32768,
+        "commit_runtime_call_count": 0,
+        "legacy_journal_capture_count": 0,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64
+      },
+      "timing": {
+        "median_ns_per_turn": 34886.81205240886,
+        "p95_ns_per_turn": 34890.13326822917
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "rust-kernel",
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 0,
+        "legacy_journal_capture_count": 0,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 100.28482732557713,
+        "p95_ns_per_turn": 100.3942700335171
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 8,
+      "lane": "rust-kernel",
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 0,
+        "legacy_journal_capture_count": 0,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 761.7380710177952,
+        "p95_ns_per_turn": 767.0500566948784
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 64,
+      "lane": "rust-kernel",
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 0,
+        "commit_runtime_call_count": 0,
+        "legacy_journal_capture_count": 0,
+        "publication_store_count": 0,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 6083.0510660807295,
+        "p95_ns_per_turn": 6087.951564728268
+      },
+      "turns_per_sample": 4096
+    }
+  ],
+  "machine": {
+    "architecture": "arm64",
+    "identity": "MacBook Air, Mac15,13, Apple M3",
+    "os": "macOS-26.2-arm64-arm-64bit"
+  },
+  "phase": "B0-controls",
+  "raw_criterion_directory": "/private/tmp/mech-a0-v04-base/target/criterion",
+  "raw_output": "/private/tmp/mech-a0-v04-base/target/gate-b-benchmark-runs/b935671a18ad3f5b85bf90398071d7f1e06e85e4/b0-controls.log",
+  "raw_structural_probe_output": "/private/tmp/mech-a0-v04-base/target/gate-b-benchmark-runs/b935671a18ad3f5b85bf90398071d7f1e06e85e4/b0-structural.log",
+  "sample_protocol": {
+    "correctness_included_in_timing": false,
+    "criterion_sample_size": 10,
+    "fixture_setup_included_in_timing": false,
+    "measurement_seconds": 3.0,
+    "numpy_sample_size": 10,
+    "profile": "release",
+    "turns_per_sample": 4096,
+    "warm_up_seconds": 1.0
+  },
+  "schema_version": 1,
+  "stop_condition": {
+    "name": "positive-legacy-denominator",
+    "passed": true
+  },
+  "structural_probe_arguments": [
+    "cargo",
+    "bench",
+    "-p",
+    "mech-runtime",
+    "--bench",
+    "resident_ekf",
+    "--features",
+    "source_default,runtime_bench_gate_b,runtime_bench_probes",
+    "--",
+    "--noplot"
+  ],
+  "thread_environment": {
+    "BLIS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "toolchain": {
+    "CARGO_ENCODED_RUSTFLAGS": "",
+    "RUSTFLAGS": "",
+    "blas_lapack_provider": "accelerate",
+    "numpy": "2.0.2",
+    "numpy_config": "{\n  \"Compilers\": {\n    \"c\": {\n      \"name\": \"clang\",\n      \"linker\": \"ld64\",\n      \"version\": \"15.0.0\",\n      \"commands\": \"cc\"\n    },\n    \"cython\": {\n      \"name\": \"cython\",\n      \"linker\": \"cython\",\n      \"version\": \"3.0.11\",\n      \"commands\": \"cython\"\n    },\n    \"c++\": {\n      \"name\": \"clang\",\n      \"linker\": \"ld64\",\n      \"version\": \"15.0.0\",\n      \"commands\": \"c++\"\n    }\n  },\n  \"Machine Information\": {\n    \"host\": {\n      \"cpu\": \"aarch64\",\n      \"family\": \"aarch64\",\n      \"endian\": \"little\",\n      \"system\": \"darwin\"\n    },\n    \"build\": {\n      \"cpu\": \"aarch64\",\n      \"family\": \"aarch64\",\n      \"endian\": \"little\",\n      \"system\": \"darwin\"\n    }\n  },\n  \"Build Dependencies\": {\n    \"blas\": {\n      \"name\": \"accelerate\",\n      \"found\": true,\n      \"version\": \"unknown\",\n      \"detection method\": \"system\",\n      \"include directory\": \"unknown\",\n      \"lib directory\": \"unknown\",\n      \"openblas configuration\": \"unknown\",\n      \"pc file directory\": \"unknown\"\n    },\n    \"lapack\": {\n      \"name\": \"accelerate\",\n      \"found\": true,\n      \"version\": \"unknown\",\n      \"detection method\": \"system\",\n      \"include directory\": \"unknown\",\n      \"lib directory\": \"unknown\",\n      \"openblas configuration\": \"unknown\",\n      \"pc file directory\": \"unknown\"\n    }\n  },\n  \"Python Information\": {\n    \"path\": \"/private/var/folders/4d/0gnh84wj53j7wyk695q0tc_80000gn/T/build-env-kq4kuj35/bin/python\",\n    \"version\": \"3.9\"\n  },\n  \"SIMD Extensions\": {\n    \"baseline\": [\n      \"NEON\",\n      \"NEON_FP16\",\n      \"NEON_VFPV4\",\n      \"ASIMD\"\n    ],\n    \"found\": [\n      \"ASIMDHP\"\n    ],\n    \"not found\": [\n      \"ASIMDFHM\"\n    ]\n  }\n}",
+    "python": "3.9.6",
+    "python_executable": "/private/tmp/mech-gate-b-venv/bin/python",
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0"
+  },
+  "trace": {
+    "file": "ekf-input-v1.bin",
+    "sha256": "ab901e1d115aa92166dc2a6d45a28732e6a548363b829997aa410ae4c2d77c8b"
+  },
+  "workload": {
+    "episode_length": 4096,
+    "matrix_storage": "column-major",
+    "scalar": "f64",
+    "scaled_instances": [
+      1,
+      8,
+      64
+    ],
+    "version": "resident-ekf-v1"
+  }
+}
