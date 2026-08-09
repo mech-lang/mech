@@ -2,8 +2,8 @@
   "schema_version": 1,
   "reference_commit": "d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10",
   "evidence_path": "benchmarks/runtime/gate-b/b2-resident-turn.json",
-  "evidence_commit": "bb3aa18d77cd8726fc6771b791ebd8cc7dea9fdd",
-  "evidence_sha256": "08b7c37f9976a1c6c1d182a4472576939655353ee9bf327f35a7cf14fe447230",
+  "evidence_commit": "501a40d9b1e634c62d5c8565aa2a14ff9aa13237",
+  "evidence_sha256": "12cc4c4940752fd864702ac3b0a80a2d60fde064442837b5f3beb0a36b1d0b87",
   "protected_paths": {
     "exact": [
       "Cargo.toml",

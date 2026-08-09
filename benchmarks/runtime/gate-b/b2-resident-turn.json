@@ -1,18 +1,18 @@
 {
   "b1_progression": {
     "limit_multiplier": 1.05,
-    "limit_ns_per_turn": 259.0853160184973,
+    "limit_ns_per_turn": 256.9543830871582,
     "passed": true,
-    "resident_kernel_ns_per_turn": 90.26945949245143,
-    "resident_kernel_ratio": 0.8801083173121869,
-    "resident_kernel_vs_raw_epoch": 0.36583675958041184,
-    "rust_epoch_ns_per_turn": 246.74792001761642,
-    "rust_kernel_ns_per_turn": 102.56630657477537
+    "resident_kernel_ns_per_turn": 100.97939221270673,
+    "resident_kernel_ratio": 0.981049429172642,
+    "resident_kernel_vs_raw_epoch": 0.4126349609198047,
+    "rust_epoch_ns_per_turn": 244.7184600830078,
+    "rust_kernel_ns_per_turn": 102.92997397477379
   },
   "b2_decision": {
     "conditional_attribution": null,
     "decision": "Pass",
-    "executor_tax_ns": 202.0937852074259,
+    "executor_tax_ns": 195.4713425343171,
     "hard_gates": {
       "constant_publication": true,
       "correctness": true,
@@ -25,16 +25,16 @@
       "tail_stability": true,
       "zero_allocation": true
     },
-    "high_epoch_over_low_epoch_median_ratio": 1.0006389195929932,
-    "history_100k_over_history_0_median_ratio": 1.0020690289853063,
-    "history_1k_over_history_0_median_ratio": 1.0003214859048637,
-    "legacy_gap_closure": 0.9945923105078902,
-    "numpy_ratio": 0.014056930367226172,
+    "high_epoch_over_low_epoch_median_ratio": 0.9979227382221013,
+    "history_100k_over_history_0_median_ratio": 1.0063871010852192,
+    "history_1k_over_history_0_median_ratio": 1.0031794571445067,
+    "legacy_gap_closure": 0.9937288493736265,
+    "numpy_ratio": 0.014051982014868352,
     "numpy_target": true,
-    "raw_epoch_ratio": 1.1848660960505937,
-    "recording_tax_ns": 173.67423775432567,
-    "scheduler_tax_ns": 28.419547453100222,
-    "tail_ratio": 1.0015773771153091
+    "raw_epoch_ratio": 1.211395064542612,
+    "recording_tax_ns": 177.63218044443022,
+    "scheduler_tax_ns": 17.839162089886884,
+    "tail_ratio": 1.0005617152848103
   },
   "benchmark_arguments": [
     "cargo",
@@ -57,14 +57,14 @@
     "10000"
   ],
   "derived": {
-    "legacy_denominator_ns_per_turn": 8435.27069163603,
-    "mech_legacy_atomic_ns_per_turn": 8682.018611653646,
+    "legacy_denominator_ns_per_turn": 8249.247665405273,
+    "mech_legacy_atomic_ns_per_turn": 8493.966125488281,
     "positive": true,
-    "rust_epoch_ns_per_turn": 246.74792001761642
+    "rust_epoch_ns_per_turn": 244.7184600830078
   },
   "gate": "B",
-  "git_branch": "perf/runtime-resident-ekf-efficacy",
-  "git_commit": "bb3aa18d77cd8726fc6771b791ebd8cc7dea9fdd",
+  "git_branch": "feat/core-semantic-foundations",
+  "git_commit": "501a40d9b1e634c62d5c8565aa2a14ff9aa13237",
   "lanes": [
     {
       "allocation": {
@@ -99,8 +99,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 8682.018611653646,
-        "p95_ns_per_turn": 8755.59219909668
+        "median_ns_per_turn": 8493.966125488281,
+        "p95_ns_per_turn": 8517.089626736111
       },
       "turns_per_sample": 4096
     },
@@ -137,17 +137,17 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 34547.00895182292,
-        "p95_ns_per_turn": 34713.677779134116
+        "median_ns_per_turn": 33590.13704427083,
+        "p95_ns_per_turn": 33654.50233968099
       },
       "turns_per_sample": 4096
     },
     {
       "allocation": {
-        "allocated_bytes_per_turn": 568014.171875,
-        "allocations_per_turn": 5047.662353515625,
-        "episode_allocated_bytes": 2326586048,
-        "episode_allocation_count": 20675225
+        "allocated_bytes_per_turn": 568019.9375,
+        "allocations_per_turn": 5047.6923828125,
+        "episode_allocated_bytes": 2326609664,
+        "episode_allocation_count": 20675348
       },
       "correctness": true,
       "instances": 64,
@@ -175,8 +175,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 315144.41931152344,
-        "p95_ns_per_turn": 316674.3144897461
+        "median_ns_per_turn": 307012.6953125,
+        "p95_ns_per_turn": 308058.21536865237
       },
       "turns_per_sample": 4096
     },
@@ -213,8 +213,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 8820.038592529298,
-        "p95_ns_per_turn": 8879.694102478028
+        "median_ns_per_turn": 8431.893379720052,
+        "p95_ns_per_turn": 8455.191897583007
       },
       "turns_per_sample": 4096
     },
@@ -251,8 +251,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 90.26945949245143,
-        "p95_ns_per_turn": 90.67700541728252
+        "median_ns_per_turn": 100.97939221270673,
+        "p95_ns_per_turn": 101.05640817353219
       },
       "turns_per_sample": 4096
     },
@@ -289,8 +289,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 658.670415969122,
-        "p95_ns_per_turn": 662.6643672252836
+        "median_ns_per_turn": 668.7274145943778,
+        "p95_ns_per_turn": 670.2401345214844
       },
       "turns_per_sample": 4096
     },
@@ -327,8 +327,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 5074.559934828016,
-        "p95_ns_per_turn": 5078.158612060547
+        "median_ns_per_turn": 5115.8505472819015,
+        "p95_ns_per_turn": 5117.014921061198
       },
       "turns_per_sample": 4096
     },
@@ -365,8 +365,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 3857.809248352051,
-        "p95_ns_per_turn": 3860.495324707031
+        "median_ns_per_turn": 3863.901032511393,
+        "p95_ns_per_turn": 3865.6957934570314
       },
       "turns_per_sample": 4096
     },
@@ -403,8 +403,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 118.68900694555165,
-        "p95_ns_per_turn": 119.55135901314871
+        "median_ns_per_turn": 118.81855430259361,
+        "p95_ns_per_turn": 118.87546802417653
       },
       "turns_per_sample": 4096
     },
@@ -441,8 +441,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 292.3632446998773,
-        "p95_ns_per_turn": 292.82441179142444
+        "median_ns_per_turn": 296.45073474702383,
+        "p95_ns_per_turn": 296.6172556559245
       },
       "turns_per_sample": 4096
     },
@@ -479,8 +479,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 292.55004130518716,
-        "p95_ns_per_turn": 292.74378769985464
+        "median_ns_per_turn": 295.83492896670384,
+        "p95_ns_per_turn": 297.5053303552052
       },
       "turns_per_sample": 4096
     },
@@ -517,8 +517,8 @@
         "records_retained_before_timing": 1000
       },
       "timing": {
-        "median_ns_per_turn": 292.45723536214854,
-        "p95_ns_per_turn": 292.72996307266715
+        "median_ns_per_turn": 297.39328715360955,
+        "p95_ns_per_turn": 300.0099749805481
       },
       "turns_per_sample": 4096
     },
@@ -555,8 +555,8 @@
         "records_retained_before_timing": 100000
       },
       "timing": {
-        "median_ns_per_turn": 292.96815272739957,
-        "p95_ns_per_turn": 293.2680892944336
+        "median_ns_per_turn": 298.3441955566406,
+        "p95_ns_per_turn": 299.7076424008324
       },
       "turns_per_sample": 4096
     },
@@ -593,8 +593,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 37040.43572998047,
-        "p95_ns_per_turn": 37046.10489501953
+        "median_ns_per_turn": 37019.782958984375,
+        "p95_ns_per_turn": 37402.5133178711
       },
       "turns_per_sample": 4096
     },
@@ -631,8 +631,8 @@
         "records_retained_before_timing": null
       },
       "timing": {
-        "median_ns_per_turn": 20798.5126953125,
-        "p95_ns_per_turn": 20875.262451171875
+        "median_ns_per_turn": 21096.720336914062,
+        "p95_ns_per_turn": 21369.779931640624
       },
       "turns_per_sample": 4096
     },
@@ -669,8 +669,8 @@
         "records_retained_before_timing": null
       },
       "timing": {
-        "median_ns_per_turn": 161391.0421142578,
-        "p95_ns_per_turn": 162486.77113037108
+        "median_ns_per_turn": 163948.9237060547,
+        "p95_ns_per_turn": 164907.5140991211
       },
       "turns_per_sample": 4096
     },
@@ -707,8 +707,8 @@
         "records_retained_before_timing": null
       },
       "timing": {
-        "median_ns_per_turn": 1295971.2575683594,
-        "p95_ns_per_turn": 1302969.670666504
+        "median_ns_per_turn": 1297939.9973144531,
+        "p95_ns_per_turn": 1311197.6252319335
       },
       "turns_per_sample": 4096
     },
@@ -745,8 +745,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 246.74792001761642,
-        "p95_ns_per_turn": 246.99667886305997
+        "median_ns_per_turn": 244.7184600830078,
+        "p95_ns_per_turn": 245.10851117647613
       },
       "turns_per_sample": 4096
     },
@@ -783,8 +783,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 1393.8555859375,
-        "p95_ns_per_turn": 1394.712113647461
+        "median_ns_per_turn": 1366.7692260742188,
+        "p95_ns_per_turn": 1374.1418328857421
       },
       "turns_per_sample": 4096
     },
@@ -821,8 +821,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 10573.925255475726,
-        "p95_ns_per_turn": 10584.814434814452
+        "median_ns_per_turn": 10386.620413208007,
+        "p95_ns_per_turn": 10393.649809265136
       },
       "turns_per_sample": 4096
     },
@@ -859,8 +859,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 34928.34480794271,
-        "p95_ns_per_turn": 35209.873962402344
+        "median_ns_per_turn": 34900.83825683594,
+        "p95_ns_per_turn": 34908.40073649088
       },
       "turns_per_sample": 4096
     },
@@ -897,8 +897,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 102.56630657477537,
-        "p95_ns_per_turn": 102.71644867952847
+        "median_ns_per_turn": 102.92997397477379,
+        "p95_ns_per_turn": 103.03495442245946
       },
       "turns_per_sample": 4096
     },
@@ -935,8 +935,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 775.4906441824777,
-        "p95_ns_per_turn": 801.4443363613552
+        "median_ns_per_turn": 775.723930754485,
+        "p95_ns_per_turn": 776.3695649888781
       },
       "turns_per_sample": 4096
     },
@@ -973,21 +973,21 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 6181.268360279224,
-        "p95_ns_per_turn": 6273.83397623698
+        "median_ns_per_turn": 6202.690832519531,
+        "p95_ns_per_turn": 6209.535029602051
       },
       "turns_per_sample": 4096
     }
   ],
   "machine": {
     "architecture": "arm64",
-    "identity": "MacBook Air, Mac15,13, Apple M3",
+    "identity": "MacBook Air (Mac15,13), Apple M3, 8 cores, 16 GB",
     "os": "macOS-26.2-arm64-arm-64bit"
   },
   "phase": "B2-resident-turn",
-  "raw_criterion_directory": "/private/tmp/mech-b2-v04/target/criterion",
-  "raw_output": "/private/tmp/mech-b2-v04/target/gate-b-benchmark-runs/bb3aa18d77cd8726fc6771b791ebd8cc7dea9fdd/b0-controls.log",
-  "raw_structural_probe_output": "/private/tmp/mech-b2-v04/target/gate-b-benchmark-runs/bb3aa18d77cd8726fc6771b791ebd8cc7dea9fdd/b0-structural.log",
+  "raw_criterion_directory": "/private/tmp/mech-c1/target/criterion",
+  "raw_output": "/private/tmp/mech-c1/target/gate-b-benchmark-runs/501a40d9b1e634c62d5c8565aa2a14ff9aa13237/b0-controls.log",
+  "raw_structural_probe_output": "/private/tmp/mech-c1/target/gate-b-benchmark-runs/501a40d9b1e634c62d5c8565aa2a14ff9aa13237/b0-structural.log",
   "sample_protocol": {
     "correctness_included_in_timing": false,
     "criterion_sample_size": 10,
