@@ -1,3 +1,4 @@
+mod constants;
 mod data;
 mod draft;
 mod encoding;
@@ -6,6 +7,9 @@ mod relations;
 mod sequence;
 pub(crate) mod validation;
 
+pub use self::constants::{
+    ConstantEntry, ConstantHandle, ConstantStore, ConstantStoreBuild, ConstantStoreBuilder,
+};
 pub use self::data::{
     CanonicalKeyValue, Complex32Bits, Complex64Bits, EnumValue, F32Bits, F64Bits, MapEntryValue,
     MapValue, MatrixValue, Rational64Value, RecordValue, ReifiedKind, ReifiedType, SetValue,
@@ -20,4 +24,4 @@ pub use self::error::{
 };
 pub use self::sequence::SequenceView;
 pub use self::validation::{SnapshotValidationContext, Value};
-pub use crate::{KeyHash, ValueHash};
+pub use crate::{ConstantId, KeyHash, ValueHash};

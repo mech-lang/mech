@@ -50,6 +50,20 @@ opaque_hash_id!(NominalKey);
 opaque_hash_id!(ValueHash);
 opaque_hash_id!(KeyHash);
 
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[repr(transparent)]
+pub struct ConstantId(u32);
+
+impl ConstantId {
+    pub const fn new(raw: u32) -> Self {
+        Self(raw)
+    }
+
+    pub const fn get(self) -> u32 {
+        self.0
+    }
+}
+
 opaque_u32_id!(KindId);
 opaque_u32_id!(KindParameterId);
 opaque_u32_id!(DimensionParameterId);

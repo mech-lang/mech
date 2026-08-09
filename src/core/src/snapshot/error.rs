@@ -1,4 +1,4 @@
-use crate::{SchemaId, SchemaKey, SemanticModelError};
+use crate::{SchemaId, SchemaKey, SemanticModelError, ValueHash};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, vec::Vec};
@@ -157,6 +157,10 @@ pub enum SnapshotValueError {
     SchemaNotKeyableV1,
     NonCanonicalRationalV1,
     MissingNamedKindResolver,
+    InvalidConstantHandleV1,
+    ValueHashCollision {
+        hash: ValueHash,
+    },
 }
 
 impl From<SemanticModelError> for SnapshotValueError {

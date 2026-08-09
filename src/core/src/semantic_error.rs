@@ -18,6 +18,8 @@ pub enum SemanticIdentityKind {
     PlanGeneration,
     LayoutGeneration,
     DimensionParameterId,
+    ConstantHandle,
+    ConstantId,
     SchemaHandle,
     SchemaId,
 }

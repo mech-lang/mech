@@ -137,6 +137,7 @@ pub use self::value_snapshot::{
 #[cfg(feature = "mika")]
 pub mod mika;
 pub mod program;
+pub mod read_source;
 pub mod stdlib;
 pub mod types;
 
@@ -153,13 +154,17 @@ pub use self::nodes::*;
 pub use self::program::*;
 #[cfg(feature = "functions")]
 pub use self::reactive_transaction::*;
+pub use self::read_source::ReadSource;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub use self::resident_execution::*;
 pub use self::schema::*;
 pub use self::semantic_error::*;
 pub use self::semantic_identity::*;
-pub use self::snapshot::{SnapshotValueError, Value, ValueData, ValueDataDraft, ValueDraft};
+pub use self::snapshot::{
+    ConstantHandle, ConstantStore, ConstantStoreBuilder, SnapshotValueError, Value, ValueData,
+    ValueDataDraft, ValueDraft,
+};
 pub use self::state_journal::*;
 pub use self::stdlib::*;
 pub use self::structures::*;
