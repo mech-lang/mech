@@ -121,6 +121,7 @@ pub mod reactive_transaction;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub mod resident_execution;
+pub mod snapshot;
 pub mod state_journal;
 pub mod structures;
 // The physical path remains value.rs during migration so the frozen
@@ -158,6 +159,7 @@ pub use self::resident_execution::*;
 pub use self::schema::*;
 pub use self::semantic_error::*;
 pub use self::semantic_identity::*;
+pub use self::snapshot::{SnapshotValueError, Value, ValueData, ValueDataDraft, ValueDraft};
 pub use self::state_journal::*;
 pub use self::stdlib::*;
 pub use self::structures::*;
