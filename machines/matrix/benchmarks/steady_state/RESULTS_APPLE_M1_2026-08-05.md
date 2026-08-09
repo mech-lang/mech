@@ -14,6 +14,7 @@ harness in this directory.
 - NumPy 2.5.1 using Apple's Accelerate BLAS/LAPACK backend
 - Lua 5.5.1
 - LuaJIT 2.1.1785763465
+- Julia 1.12.6
 
 NumPy ran with `VECLIB_MAXIMUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1`, and
 `OMP_NUM_THREADS=1`. The native and NumPy values below are the means of two
@@ -251,3 +252,24 @@ advantage even though source and bytecode execution remain equivalent. The
 opt-in fail-stop path demonstrates that the rest of the retained runtime loop
 can run within a few percent of the kernel when restart-on-error semantics are
 acceptable.
+
+## Julia follow-up
+
+Julia 1.12.6 was added on 2026-08-08 with `JULIA_NUM_THREADS=1` and the same
+single-thread environment, deterministic inputs, warmup, nine samples, and
+75 ms target batches. Julia's garbage collector remains enabled and any
+allocation or collection caused by `\` is measured.
+
+| Size | Multiply | Scale + transpose | Solve |
+| ---: | ---: | ---: | ---: |
+| 64 | 0.012364 ms | 0.002240 ms | 0.021687 ms |
+| 128 | 0.091621 ms | 0.010094 ms | 0.094692 ms |
+| 256 | 0.700237 ms | 0.040333 ms | 0.482867 ms |
+| 512 | 5.525095 ms | 0.163608 ms | 2.818546 ms |
+
+At 256, Julia multiplication matches portable nalgebra/Mech within 2.5%, its
+materialized scale-plus-transpose is faster than the prior NumPy result, and
+its solve is 2.7x faster than portable nalgebra but 2.7x slower than
+NumPy/Accelerate. This official Julia binary uses its own BLAS/LAPACK routing;
+the table is a language-runtime baseline, not a claim that all rows share the
+same backend library.

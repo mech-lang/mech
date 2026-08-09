@@ -104,14 +104,20 @@ optional = true
 
 [dev-dependencies]
 mech-engine = { path = "../../src/engine", default-features = false, features = [
-  "compiler", "f64", "matrixd", "vectord", "variable_define", "formulas",
-  "math_mul", "matrix_matmul", "matrix_solve", "matrix_transpose",
+  "compiler", "native-plan", "f64", "string", "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+  "row_vector2", "row_vector3", "row_vector4", "row_vectord", "vector2", "vector3", "vector4", "matrixd", "vectord", "variable_define",
+  "variable_assign", "formulas", "access", "subscript_formula", "subscript_range", "math_add", "math_sub", "math_mul", "math_div", "math_pow", "math_neg",
+  "matrix_dot", "matrix_matmul", "matrix_solve", "matrix_transpose",
 ] }
 mech-math = { path = "../math", default-features = false, features = [
-  "compiler", "source", "f64", "matrixd", "vectord", "mul",
+  "compiler", "source", "f64", "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3",
+  "matrix3x2", "row_vector2", "row_vector3", "row_vector4", "row_vectord", "vector2", "vector3", "vector4", "matrixd", "vectord", "add", "sub",
+  "mul", "div", "pow", "neg", "sin", "cos", "atan2",
 ] }
 mech-runtime = { path = "../../src/runtime", default-features = false, features = [
-  "compiler", "f64", "matrixd", "vectord", "variables", "formulas",
+  "compiler", "f64", "string", "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+  "row_vector2", "row_vector3", "row_vector4", "row_vectord", "vector2", "vector3", "vector4", "matrixd", "vectord", "variables", "formulas",
+  "access", "subscript_formula", "subscript_range",
 ] }
 
 [target.'cfg(target_os = "macos")'.dependencies]

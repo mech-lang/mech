@@ -33,6 +33,16 @@ Use `install_runtime` to add selected factories to a catalog builder and, with
 Mech distributions normally route these features and installers through
 `mech-stdlib`.
 
+## Benchmarks
+
+- [Matrix steady-state](benchmarks/steady_state/README.md) compares matrix
+  multiplication, materialized transpose, and solve across retained Mech,
+  Rust, Python, NumPy, Lua, LuaJIT, and Julia.
+- [EKF runtime loop](benchmarks/ekf/README.md) compares a persistent
+  three-state extended Kalman filter across the same runtime families.
+- [N-body](benchmarks/nbody/README.md) provides exact Computer Language
+  Benchmarks Game programs plus NumPy and validated retained Mech fixtures.
+
 ## License
 
 Apache 2.0

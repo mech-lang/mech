@@ -1,0 +1,2 @@
+# Preserve the official source archive byte-for-byte, including whitespace.
+* -whitespace
