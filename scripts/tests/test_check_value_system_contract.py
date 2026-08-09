@@ -100,15 +100,16 @@ fn classified_uses() {
 
 
 def target(identifier, category, gate, representation=None):
-    return {
+    result = {
         "id": identifier,
         "semantic_category": category,
         "representation": representation or identifier,
         "implementation_gate": gate,
         "key_semantics": "not-keyable",
         "runtime_storage": "not-applicable",
-        "status": copy.deepcopy(CHECKER.STATUS_EXPECTED),
     }
+    result["status"] = CHECKER.expected_target_status(result)
+    return result
 
 
 class ReviewedContractsTests(unittest.TestCase):
@@ -250,7 +251,9 @@ class ReviewedContractsTests(unittest.TestCase):
         for family in self.migration["families"]:
             for item in family["targets"]:
                 self.assertIsNone(CHECKER.AMBIGUOUS_TARGET.search(json.dumps(item)))
-                self.assertEqual(item["status"], CHECKER.STATUS_EXPECTED)
+                self.assertEqual(
+                    item["status"], CHECKER.expected_target_status(item)
+                )
 
     def test_type_contract_source_inventory_is_exact(self):
         self.assertEqual(
@@ -1310,6 +1313,247 @@ class BoundaryAndReportingTests(unittest.TestCase):
                 )
             ),
         )
+
+    def test_c1_semantic_modules_reject_mutable_value_and_layout_dependencies(self):
+        for relative, source in (
+            ("src/core/src/semantic_identity.rs", "struct Bad(ValueKind);\n"),
+            ("src/core/src/nominal.rs", "use crate::Ref;\n"),
+            ("src/core/src/dimension.rs", "struct Bad(ReactiveCellId);\n"),
+            ("src/core/src/kind_expr.rs", "use nalgebra::DMatrix;\n"),
+            ("src/core/src/kind_scheme.rs", "struct Bad(StateArena);\n"),
+            ("src/core/src/schema/new.rs", "struct Bad(ValueStateJournal);\n"),
+            ("src/core/src/schema/new.rs", "fn stride() {}\n"),
+        ):
+            with self.subTest(relative=relative, source=source):
+                self.assertIn(
+                    "C1-SEMANTIC-BOUNDARY",
+                    self.ids(self.root_with(relative, source)),
+                )
+
+    def test_c1_semantic_modules_resolve_transitive_aliases_and_wrappers(self):
+        root = self.root_with(
+            "src/core/src/storage_alias.rs",
+            "pub struct Hidden(StateArena);\npub type Reexport = Hidden;\n",
+        )
+        semantic = root / "src/core/src/schema/hidden.rs"
+        semantic.parent.mkdir(parents=True, exist_ok=True)
+        semantic.write_text(
+            "use crate::storage_alias::Reexport as Innocent;\n"
+            "pub struct Bad(Innocent);\n",
+            encoding="utf-8",
+        )
+        self.assertIn("C1-SEMANTIC-BOUNDARY", self.ids(root))
+
+    def test_c1_semantic_modules_reject_standard_interior_mutability(self):
+        for type_name in (
+            "UnsafeCell",
+            "Cell",
+            "RefCell",
+            "Mutex",
+            "RwLock",
+            "Once",
+            "OnceCell",
+            "OnceLock",
+            "LazyCell",
+            "LazyLock",
+            "Barrier",
+            "Condvar",
+            "AtomicU64",
+            "AtomicPtr",
+        ):
+            with self.subTest(type_name=type_name):
+                field_type = (
+                    type_name
+                    if type_name in {"Once", "Barrier", "Condvar", "AtomicU64"}
+                    else f"{type_name}<u8>"
+                )
+                source = f"pub struct Bad({field_type});\n"
+                self.assertIn(
+                    "C1-SEMANTIC-BOUNDARY",
+                    self.ids(self.root_with("src/core/src/schema/interior.rs", source)),
+                )
+
+    def test_c1_semantic_modules_reject_renamed_and_wrapped_interior_mutability(self):
+        root = self.root_with(
+            "src/core/src/interior_wrapper.rs",
+            "use std::sync::Mutex as Lock;\npub struct Hidden(Lock<u8>);\n",
+        )
+        semantic = root / "src/core/src/schema/interior.rs"
+        semantic.parent.mkdir(parents=True, exist_ok=True)
+        semantic.write_text(
+            "use crate::interior_wrapper::Hidden as ApparentlyImmutable;\n"
+            "pub struct Bad(ApparentlyImmutable);\n",
+            encoding="utf-8",
+        )
+        self.assertIn("C1-SEMANTIC-BOUNDARY", self.ids(root))
+
+    def test_finalized_semantic_types_cannot_regain_derived_deserialize(self):
+        for relative, type_name in (
+            ("src/core/src/nominal.rs", "CanonicalNominalPath"),
+            ("src/core/src/dimension.rs", "DimensionParameter"),
+            ("src/core/src/kind_scheme.rs", "KindScheme"),
+            ("src/core/src/schema/mod.rs", "Schema"),
+            ("src/core/src/schema/shape.rs", "ShapeInstance"),
+        ):
+            with self.subTest(type_name=type_name):
+                source = (
+                    '#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]\n'
+                    '#[derive(Clone)]\n'
+                    f"pub struct {type_name};\n"
+                )
+                self.assertIn(
+                    "C1-FINALIZED-SERDE-BOUNDARY",
+                    self.ids(self.root_with(relative, source)),
+                )
+
+    def test_finalized_semantic_types_cannot_gain_manual_deserialize(self):
+        for relative, type_name in (
+            ("src/core/src/nominal.rs", "CanonicalNominalPath"),
+            ("src/core/src/dimension.rs", "DimensionParameter"),
+            ("src/core/src/kind_scheme.rs", "KindScheme"),
+            ("src/core/src/schema/mod.rs", "Schema"),
+            ("src/core/src/schema/shape.rs", "ShapeInstance"),
+            ("src/core/src/schema/table.rs", "SchemaHandle"),
+        ):
+            with self.subTest(relative=relative, type_name=type_name):
+                source = f"impl<'de> Deserialize<'de> for {type_name} {{}}\n"
+                self.assertIn(
+                    "C1-FINALIZED-SERDE-BOUNDARY",
+                    self.ids(self.root_with(relative, source)),
+                )
+
+    def test_manual_deserialize_check_resolves_qualified_and_aliased_names(self):
+        cases = (
+            (
+                "src/core/src/schema/mod.rs",
+                "impl<'de> serde::de::Deserialize<'de> for crate::Schema {}\n",
+            ),
+            (
+                "src/core/src/schema/shape.rs",
+                "use serde::de::Deserialize as Decode;\n"
+                "impl<'de> Decode<'de> for ShapeInstance {}\n",
+            ),
+            (
+                "src/core/src/kind_scheme.rs",
+                "type Hidden = KindScheme;\n"
+                "impl<'de> Deserialize<'de> for Hidden {}\n",
+            ),
+        )
+        for relative, source in cases:
+            with self.subTest(relative=relative, source=source):
+                self.assertIn(
+                    "C1-FINALIZED-SERDE-BOUNDARY",
+                    self.ids(self.root_with(relative, source)),
+                )
+
+    def test_non_final_semantic_types_may_implement_deserialize(self):
+        source = "impl<'de> Deserialize<'de> for SchemaDraft {}\n"
+        self.assertNotIn(
+            "C1-FINALIZED-SERDE-BOUNDARY",
+            self.ids(self.root_with("src/core/src/schema/mod.rs", source)),
+        )
+
+    def test_open_semantic_syntax_must_keep_deserialize(self):
+        source = (
+            '#[cfg_attr(feature = "serde", derive(Serialize))]\n'
+            '#[derive(Clone)]\n'
+            "pub enum KindExpr { Id }\n"
+        )
+        self.assertIn(
+            "C1-OPEN-SERDE-BOUNDARY",
+            self.ids(self.root_with("src/core/src/kind_expr.rs", source)),
+        )
+
+    def test_schema_handles_cannot_gain_standalone_serde_construction(self):
+        source = (
+            '#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]\n'
+            '#[derive(Clone)]\n'
+            "pub struct SchemaHandle(u32);\n"
+        )
+        self.assertIn(
+            "C1-EPHEMERAL-HANDLE-SERDE-BOUNDARY",
+            self.ids(self.root_with("src/core/src/schema/table.rs", source)),
+        )
+
+    def test_semantic_builders_cannot_panic_on_identity_or_input(self):
+        for relative, source in (
+            (
+                "src/core/src/dimension.rs",
+                "pub fn declare() -> DimensionParameterId { assert!(false); todo!() }\n"
+                "pub fn declarations() {}\n",
+            ),
+            (
+                "src/core/src/schema/table.rs",
+                "pub fn insert() -> SchemaHandle { value.expect(\"id\") }\n"
+                "pub fn finish() {}\n",
+            ),
+        ):
+            with self.subTest(relative=relative):
+                self.assertIn(
+                    "C1-SEMANTIC-BUILDER-ERROR",
+                    self.ids(self.root_with(relative, source)),
+                )
+
+    def test_canonical_vectors_must_use_validated_finalization_and_shape_apis(self):
+        root = self.root_with(
+            "src/core/tests/canonical_schema_vectors.rs",
+            "fn vectors() { draft.finalize(); }\n",
+        )
+        self.assertIn("C1-FINALIZED-CONSTRUCTION", self.ids(root))
+
+    def test_c1_validation_routes_cannot_be_removed(self):
+        for relative, source in (
+            ("src/core/src/kind_expr.rs", "fn canonical_closed_kind_bytes() {}\n"),
+            ("src/core/src/kind_scheme.rs", "fn new() {}\n"),
+            ("src/core/src/legacy_adapter/kind.rs", "fn kind_expr_from_legacy() {}\n"),
+            ("src/core/src/schema/shape.rs", "fn evaluate_body_extents() {}\n"),
+        ):
+            with self.subTest(relative=relative):
+                self.assertIn(
+                    "C1-VALIDATED-CONSTRUCTION-ROUTE",
+                    self.ids(self.root_with(relative, source)),
+                )
+
+    def test_legacy_adapter_is_the_explicit_kind_value_kind_exception(self):
+        root = self.root_with(
+            "src/core/src/legacy_adapter/kind.rs",
+            "fn adapt(kind: Kind, value: ValueKind) {}\n",
+        )
+        self.assertNotIn("C1-SEMANTIC-BOUNDARY", self.ids(root))
+
+    def test_legacy_adapter_cannot_hide_future_variants_behind_catch_all(self):
+        for fallback in (
+            "_ => ()",
+            "other => drop(other)",
+            "other @ _ => drop(other)",
+            "_ | Kind::Any => ()",
+            "Kind::Any | _ => ()",
+            "| Kind::Any | _ => ()",
+            "(other) | Kind::Any => drop(other)",
+            "other @ (_ | Kind::Any) => drop(other)",
+            "#[allow(unreachable_patterns)] (_ | Kind::Any) => ()",
+            "#[allow(unused_variables)] other => drop(other)",
+            "#[cfg_attr(feature = \"strict\", allow(unused_variables))] mut other => drop(other)",
+            "#[cfg(any())] #[allow(unused_variables)] ref other @ _ => drop(other)",
+        ):
+            with self.subTest(fallback=fallback):
+                root = self.root_with(
+                    "src/core/src/legacy_adapter/kind.rs",
+                    f"fn adapt(kind: Kind) {{ match kind {{ Kind::Any => (), {fallback} }} }}\n",
+                )
+                self.assertIn("C1-LEGACY-ADAPTER-EXHAUSTIVE", self.ids(root))
+
+    def test_legacy_adapter_allows_explicit_or_patterns_and_guarded_wildcards(self):
+        for fallback in (
+            "Kind::Any | Kind::Empty => ()",
+            "_ if condition => ()",
+        ):
+            with self.subTest(fallback=fallback):
+                root = self.root_with(
+                    "src/core/src/legacy_adapter/kind.rs",
+                    f"fn adapt(kind: Kind) {{ match kind {{ {fallback} }} }}\n",
+                )
+                self.assertNotIn("C1-LEGACY-ADAPTER-EXHAUSTIVE", self.ids(root))
 
     def test_legacy_adapter_may_mention_both_representations(self):
         root = self.root_with("src/core/src/legacy_adapter/convert.rs", "fn convert(_: LegacyValue) -> snapshot::Value { todo!() }\n")

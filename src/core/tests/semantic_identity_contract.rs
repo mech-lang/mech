@@ -28,6 +28,18 @@ fn resident_ids_keep_their_exact_scalar_layout() {
     );
 }
 
+#[cfg(feature = "resident-execution")]
+#[test]
+fn resident_execution_paths_reexport_the_final_identity_types() {
+    fn accepts_slot(_: mech_core::resident_execution::CellSlotId) {}
+    fn accepts_index(_: mech_core::resident_execution::SlotIndex) {}
+    fn accepts_epoch(_: mech_core::resident_execution::InstanceEpoch) {}
+
+    accepts_slot(CellSlotId::new(1));
+    accepts_index(SlotIndex::new(2));
+    accepts_epoch(InstanceEpoch::new(3));
+}
+
 #[test]
 fn every_generation_increment_is_checked() {
     assert!(InstanceEpoch::new(u64::MAX).checked_next().is_err());

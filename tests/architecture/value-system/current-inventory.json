@@ -1120,6 +1120,16 @@
         },
         {
           "kinds": [
+            "test"
+          ],
+          "name": "semantic_serde_contract",
+          "reachable_rust_files": [
+            "src/core/tests/semantic_serde_contract.rs"
+          ],
+          "root": "src/core/tests/semantic_serde_contract.rs"
+        },
+        {
+          "kinds": [
             "bench"
           ],
           "name": "solve_result_overhead",
@@ -2476,6 +2486,7 @@
     "src/core/tests/legacy_kind_adapter_contract.rs",
     "src/core/tests/schema_contract.rs",
     "src/core/tests/semantic_identity_contract.rs",
+    "src/core/tests/semantic_serde_contract.rs",
     "src/engine/benches/integrity_constraints.rs",
     "src/engine/benches/program_checkpoint.rs",
     "src/engine/benches/reactive_turn_rollback.rs",
@@ -16799,7 +16810,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 50,
+      "line": 70,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Any"
     },
@@ -16855,7 +16866,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 56,
+      "line": 76,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Atom"
     },
@@ -16918,7 +16929,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 52,
+      "line": 72,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Empty"
     },
@@ -16974,7 +16985,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 64,
+      "line": 84,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Enum"
     },
@@ -17030,7 +17041,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 54,
+      "line": 74,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Id"
     },
@@ -17079,7 +17090,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 55,
+      "line": 75,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Index"
     },
@@ -17128,7 +17139,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 179,
+      "line": 199,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Kind"
     },
@@ -17191,7 +17202,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 156,
+      "line": 176,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Map"
     },
@@ -17254,7 +17265,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 72,
+      "line": 92,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Matrix"
     },
@@ -17317,7 +17328,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 51,
+      "line": 71,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "None"
     },
@@ -17373,7 +17384,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 90,
+      "line": 110,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Option"
     },
@@ -17436,7 +17447,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 109,
+      "line": 129,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Record"
     },
@@ -17499,7 +17510,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 176,
+      "line": 196,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Reference"
     },
@@ -17555,7 +17566,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 53,
+      "line": 73,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Scalar"
     },
@@ -17618,7 +17629,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 137,
+      "line": 157,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Set"
     },
@@ -17688,7 +17699,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 116,
+      "line": 136,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Table"
     },
@@ -17751,7 +17762,7 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 95,
+      "line": 115,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Tuple"
     },
@@ -51561,14 +51572,14 @@
     {
       "column": 28,
       "enum": "ValueKind",
-      "line": 234,
+      "line": 254,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Any"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 472,
+      "line": 492,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Any"
     },
@@ -51764,14 +51775,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 294,
+      "line": 314,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Atom"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 478,
+      "line": 498,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Atom"
     },
@@ -51869,14 +51880,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 231,
+      "line": 251,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Bool"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 468,
+      "line": 488,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Bool"
     },
@@ -52023,14 +52034,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 228,
+      "line": 248,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "C64"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 465,
+      "line": 485,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "C64"
     },
@@ -52198,14 +52209,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 234,
+      "line": 254,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Empty"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 471,
+      "line": 491,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Empty"
     },
@@ -52450,14 +52461,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 257,
+      "line": 277,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Enum"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 475,
+      "line": 495,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Enum"
     },
@@ -52674,14 +52685,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 226,
+      "line": 246,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "F32"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 463,
+      "line": 483,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "F32"
     },
@@ -53045,14 +53056,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 227,
+      "line": 247,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "F64"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 464,
+      "line": 484,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "F64"
     },
@@ -53437,14 +53448,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 225,
+      "line": 245,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I128"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 462,
+      "line": 482,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I128"
     },
@@ -53731,14 +53742,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 222,
+      "line": 242,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I16"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 459,
+      "line": 479,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I16"
     },
@@ -54025,14 +54036,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 223,
+      "line": 243,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I32"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 460,
+      "line": 480,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I32"
     },
@@ -54319,14 +54330,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 224,
+      "line": 244,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I64"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 461,
+      "line": 481,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I64"
     },
@@ -54613,14 +54624,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 221,
+      "line": 241,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I8"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 458,
+      "line": 478,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I8"
     },
@@ -54914,14 +54925,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 232,
+      "line": 252,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Id"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 469,
+      "line": 489,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Id"
     },
@@ -54991,14 +55002,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 233,
+      "line": 253,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Index"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 470,
+      "line": 490,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Index"
     },
@@ -55278,14 +55289,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 361,
+      "line": 381,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Kind"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 484,
+      "line": 504,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Kind"
     },
@@ -55341,14 +55352,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 274,
+      "line": 294,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Map"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 477,
+      "line": 497,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Map"
     },
@@ -55467,14 +55478,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 239,
+      "line": 259,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Matrix"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 474,
+      "line": 494,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Matrix"
     },
@@ -56069,14 +56080,14 @@
     {
       "column": 45,
       "enum": "ValueKind",
-      "line": 234,
+      "line": 254,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "None"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 473,
+      "line": 493,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "None"
     },
@@ -56153,14 +56164,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 356,
+      "line": 376,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Option"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 483,
+      "line": 503,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Option"
     },
@@ -56510,14 +56521,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 229,
+      "line": 249,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "R64"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 466,
+      "line": 486,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "R64"
     },
@@ -56650,14 +56661,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 267,
+      "line": 287,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Record"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 476,
+      "line": 496,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Record"
     },
@@ -56797,14 +56808,14 @@
     {
       "column": 63,
       "enum": "ValueKind",
-      "line": 234,
+      "line": 254,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Reference"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 481,
+      "line": 501,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Reference"
     },
@@ -56993,14 +57004,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 337,
+      "line": 357,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Set"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 482,
+      "line": 502,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Set"
     },
@@ -57119,14 +57130,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 230,
+      "line": 250,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "String"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 467,
+      "line": 487,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "String"
     },
@@ -57329,14 +57340,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 302,
+      "line": 322,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Table"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 479,
+      "line": 499,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Table"
     },
@@ -57532,14 +57543,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 323,
+      "line": 343,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Tuple"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 480,
+      "line": 500,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Tuple"
     },
@@ -57686,14 +57697,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 220,
+      "line": 240,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U128"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 457,
+      "line": 477,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U128"
     },
@@ -57987,14 +57998,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 217,
+      "line": 237,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U16"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 454,
+      "line": 474,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U16"
     },
@@ -58288,14 +58299,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 218,
+      "line": 238,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U32"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 455,
+      "line": 475,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U32"
     },
@@ -58589,14 +58600,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 219,
+      "line": 239,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U64"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 456,
+      "line": 476,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U64"
     },
@@ -58890,14 +58901,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 216,
+      "line": 236,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U8"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 453,
+      "line": 473,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U8"
     },
@@ -59194,7 +59205,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 878
+      "rust_file_count": 879
     },
     {
       "directory": "hosts/browser",
@@ -59260,7 +59271,7 @@
       "directory": "src/core",
       "manifest": "src/core/Cargo.toml",
       "name": "mech-core",
-      "rust_file_count": 96
+      "rust_file_count": 97
     },
     {
       "directory": "src/engine",

@@ -40,7 +40,8 @@ jobs:
     needs: impact
     if: needs.impact.outputs.static_contracts_required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # Temporary headroom while the C1 architecture suite is stabilized.
+    timeout-minutes: 15
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"

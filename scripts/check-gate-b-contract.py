@@ -18,6 +18,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 GATE_B_DIR = ROOT / "benchmarks/runtime/gate-b"
+B2_EVIDENCE_FLOOR = "d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10"
 TRACE_SHA256 = "ab901e1d115aa92166dc2a6d45a28732e6a548363b829997aa410ae4c2d77c8b"
 REFERENCE_HASH = "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758"
 EPISODE_LENGTH = 4_096
@@ -35,6 +36,22 @@ THREAD_VARIABLES = (
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def commit_descends_from(
+    commit: str,
+    floor: str = B2_EVIDENCE_FLOOR,
+    root: Path = ROOT,
+) -> bool:
+    """Return whether commit exists and is a descendant of the frozen B2 floor."""
+    result = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", floor, commit],
+        cwd=root,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return result.returncode == 0
 
 
 def import_roots(source: str) -> set[str]:
@@ -485,6 +502,8 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         "git\", \"merge-base",
         "MECH_GATE_B_STRUCTURAL_ONLY",
         "legacy_denominator",
+        f'B2_EVIDENCE_FLOOR = "{B2_EVIDENCE_FLOOR}"',
+        'choices=("B2-resident-turn",)',
     ):
         if frozen not in runner:
             errors.append(f"Gate B runner attribution/fairness contract lost: {frozen}")
@@ -671,13 +690,24 @@ def report_contract_errors(
                     errors.append(f"raw epoch {instances} reports wrong {field}")
 
     if report["phase"] in {"B1-resident-kernel", "B2-resident-turn"}:
-        expected_branch = (
-            "feat/engine-resident-ekf-substrate"
-            if report["phase"] == "B1-resident-kernel"
-            else "perf/runtime-resident-ekf-efficacy"
-        )
-        if report["git_branch"] != expected_branch:
+        if (
+            report["phase"] == "B1-resident-kernel"
+            and report["git_branch"] != "feat/engine-resident-ekf-substrate"
+        ):
             errors.append("B1 evidence is attributed to the wrong branch")
+        if (
+            report["phase"] == "B2-resident-turn"
+            and report["git_branch"] != "perf/runtime-resident-ekf-efficacy"
+        ):
+            if expected_commit is None:
+                errors.append(
+                    "B2 descendant refresh evidence requires an exact expected commit"
+                )
+            elif not commit_descends_from(commit):
+                errors.append(
+                    f"B2 descendant refresh commit {commit} does not descend from "
+                    f"the frozen evidence floor {B2_EVIDENCE_FLOOR}"
+                )
         for instances in SCALED_INSTANCES:
             key = ("mech-resident-kernel", instances, 0, 1)
             if key not in lanes:

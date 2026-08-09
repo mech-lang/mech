@@ -24,6 +24,7 @@ FROZEN_B1_BRANCH = "feat/engine-resident-ekf-substrate"
 FROZEN_B1_BASE = "c4f7cb1d27b9645b3f669d944c7e49bcd0829ccc"
 B2_BRANCH = "perf/runtime-resident-ekf-efficacy"
 FROZEN_B2_BASE = "75d0775209c8ee0eae5480facba3a9b2c9c12143"
+B2_EVIDENCE_FLOOR = "d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10"
 EPISODE_LENGTH = 4_096
 SCALED_INSTANCES = (1, 8, 64)
 THREAD_VARIABLES = (
@@ -690,12 +691,17 @@ def worktree_changes() -> str:
     return command_output(["git", "status", "--porcelain=v1", "--untracked-files=all"])
 
 
-def frozen_base_error(commit: str, branch: str) -> str | None:
-    expected_base = {
-        FROZEN_B0_BRANCH: FROZEN_BASE,
-        FROZEN_B1_BRANCH: FROZEN_B1_BASE,
-        B2_BRANCH: FROZEN_B2_BASE,
-    }.get(branch)
+def frozen_base_error(
+    commit: str, branch: str, phase: str | None = None
+) -> str | None:
+    if phase == "B2-resident-turn":
+        expected_base = B2_EVIDENCE_FLOOR
+    else:
+        expected_base = {
+            FROZEN_B0_BRANCH: FROZEN_BASE,
+            FROZEN_B1_BRANCH: FROZEN_B1_BASE,
+            B2_BRANCH: FROZEN_B2_BASE,
+        }.get(branch)
     if expected_base is None:
         return f"Gate B controls cannot run on unapproved branch {branch}"
     merge_base = command_output(["git", "merge-base", commit, expected_base])
@@ -733,6 +739,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--warm-up-time", type=float, default=1.0)
     parser.add_argument("--measurement-time", type=float, default=3.0)
     parser.add_argument(
+        "--phase",
+        choices=("B2-resident-turn",),
+        help="refresh the complete B2 evidence lane set on a descendant branch",
+    )
+    parser.add_argument(
         "--machine-label",
         help="stable controlled-machine model label when automatic detection is unavailable",
     )
@@ -763,7 +774,7 @@ def main() -> int:
 
     commit = command_output(["git", "rev-parse", "HEAD"])
     branch = command_output(["git", "symbolic-ref", "--short", "HEAD"])
-    base_error = frozen_base_error(commit, branch)
+    base_error = frozen_base_error(commit, branch, args.phase)
     if base_error:
         print(base_error, file=sys.stderr)
         return 2
@@ -872,7 +883,8 @@ def main() -> int:
     summary = {
         "schema_version": 1,
         "gate": "B",
-        "phase": (
+        "phase": args.phase
+        or (
             "B0-controls"
             if branch == FROZEN_B0_BRANCH
             else "B1-resident-kernel"
@@ -936,7 +948,7 @@ def main() -> int:
     }
     if branch == FROZEN_B1_BRANCH:
         summary["b1_progression"] = b1_progression(lanes)
-    if branch == B2_BRANCH:
+    if branch == B2_BRANCH or args.phase == "B2-resident-turn":
         summary["b1_progression"] = b1_progression(lanes)
         summary["b2_decision"] = b2_decision(lanes)
     rendered = json.dumps(summary, indent=2, sort_keys=True) + "\n"
@@ -958,7 +970,9 @@ def main() -> int:
             file=sys.stderr,
         )
         return 4
-    if branch == B2_BRANCH and summary["b2_decision"]["decision"] == "Fail":
+    if (
+        branch == B2_BRANCH or args.phase == "B2-resident-turn"
+    ) and summary["b2_decision"]["decision"] == "Fail":
         print(
             "Gate B B2 stop: complete resident turn failed one or more hard gates",
             file=sys.stderr,

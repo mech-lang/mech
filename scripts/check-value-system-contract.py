@@ -1379,6 +1379,19 @@ def production_corpus(root: Path) -> Iterable[tuple[Path, str]]:
         yield path, GENERATOR.production_source(source)
 
 
+def analyzed_production_corpus(
+    root: Path,
+) -> list[tuple[Path, str, str, list[Any]]]:
+    """Read, mask, and tokenize each production source exactly once per audit."""
+    analyzed: list[tuple[Path, str, str, list[Any]]] = []
+    for path, source in production_corpus(root):
+        searchable = GENERATOR.mask_non_code(source)
+        analyzed.append(
+            (path, source, searchable, GENERATOR.rust_tokens(source, searchable))
+        )
+    return analyzed
+
+
 def local_conversion_aliases(tokens: list[Any]) -> dict[str, set[str]]:
     return GENERATOR.LEGACY_SCANNER.transparent_conversion_aliases(tokens)
 
@@ -1456,15 +1469,685 @@ def module_file_or_descendant(root: Path, resolved: Path, name: str) -> bool:
     return resolved == file_path or directory in resolved.parents
 
 
+FINALIZED_SEMANTIC_SERDE_TYPES = {
+    "src/core/src/nominal.rs": {"CanonicalNominalPath"},
+    "src/core/src/dimension.rs": {"DimensionParameter"},
+    "src/core/src/kind_scheme.rs": {"KindScheme"},
+    "src/core/src/schema/mod.rs": {"Schema"},
+    "src/core/src/schema/shape.rs": {"ShapeInstance"},
+}
+OPEN_SEMANTIC_SERDE_TYPES = {
+    "src/core/src/dimension.rs": {
+        "DimensionExpr",
+        "DimensionParameterDeclaration",
+    },
+    "src/core/src/kind_expr.rs": {"KindExpr"},
+    "src/core/src/kind_scheme.rs": {
+        "KindParameter",
+        "InputKindScheme",
+        "KindConstraint",
+    },
+    "src/core/src/schema/mod.rs": {"SchemaDraft", "SchemaBody"},
+}
+NON_SERDE_SEMANTIC_TYPES = {
+    "src/core/src/schema/table.rs": {"SchemaHandle"},
+}
+FINALIZED_SEMANTIC_TYPE_NAMES = set().union(
+    *FINALIZED_SEMANTIC_SERDE_TYPES.values(),
+    *NON_SERDE_SEMANTIC_TYPES.values(),
+)
+STANDARD_INTERIOR_MUTABILITY_IDENTIFIERS = {
+    "UnsafeCell",
+    "SyncUnsafeCell",
+    "Cell",
+    "RefCell",
+    "OnceCell",
+    "LazyCell",
+    "Mutex",
+    "RwLock",
+    "Once",
+    "OnceLock",
+    "LazyLock",
+    "Barrier",
+    "Condvar",
+    "AtomicBool",
+    "AtomicI8",
+    "AtomicI16",
+    "AtomicI32",
+    "AtomicI64",
+    "AtomicI128",
+    "AtomicIsize",
+    "AtomicU8",
+    "AtomicU16",
+    "AtomicU32",
+    "AtomicU64",
+    "AtomicU128",
+    "AtomicUsize",
+    "AtomicPtr",
+}
+SEMANTIC_FORBIDDEN_IDENTIFIERS = STANDARD_INTERIOR_MUTABILITY_IDENTIFIERS | {
+    "Kind",
+    "Value",
+    "ValueKind",
+    "Ref",
+    "ValRef",
+    "MutableReference",
+    "ReactiveCellId",
+    "ValueStateJournal",
+    "ReactiveTurnJournal",
+    "RuntimeExecutionTransaction",
+    "StateArena",
+    "nalgebra",
+    "DMatrix",
+}
+
+
+def rust_type_identifiers(tokens: Iterable[Any]) -> set[str]:
+    return {
+        GENERATOR.canonical_identifier(token.value)
+        for token in tokens
+        if re.fullmatch(r"(?:r#)?[A-Za-z_][A-Za-z0-9_]*", token.value)
+    }
+
+
+def field_type_dependencies(tokens: list[Any]) -> set[str]:
+    dependencies: set[str] = set()
+    for field in GENERATOR.LEGACY_SCANNER.split_top_level_tokens(tokens):
+        colon = next(
+            (index for index, token in enumerate(field) if token.value == ":"),
+            None,
+        )
+        field_type = field[colon + 1 :] if colon is not None else field
+        dependencies.update(rust_type_identifiers(field_type))
+    return dependencies
+
+
+def declared_type_dependencies(tokens: list[Any]) -> dict[str, set[str]]:
+    declarations: dict[str, set[str]] = {}
+    for alias in GENERATOR.LEGACY_SCANNER.type_alias_declarations(tokens):
+        if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", alias.name) is None:
+            continue
+        declarations.setdefault(alias.name, set()).update(
+            rust_type_identifiers(alias.rhs) - set(alias.parameters)
+        )
+
+    offset = 0
+    while offset + 1 < len(tokens):
+        declaration_kind = GENERATOR.canonical_identifier(tokens[offset].value)
+        if declaration_kind not in {"struct", "enum", "union"}:
+            offset += 1
+            continue
+        name_token = tokens[offset + 1]
+        if re.fullmatch(r"(?:r#)?[A-Za-z_][A-Za-z0-9_]*", name_token.value) is None:
+            offset += 1
+            continue
+        name = GENERATOR.canonical_identifier(name_token.value)
+        opening = next(
+            (
+                index
+                for index in range(offset + 2, len(tokens))
+                if tokens[index].value in {"{", "(", ";"}
+            ),
+            None,
+        )
+        if opening is None or tokens[opening].value == ";":
+            offset += 2
+            continue
+        delimiter = tokens[opening].value
+        closing = GENERATOR.balanced_token_end(
+            tokens, opening, delimiter, "}" if delimiter == "{" else ")"
+        )
+        if closing is None:
+            offset += 2
+            continue
+        body = list(tokens[opening + 1 : closing])
+        dependencies: set[str] = set()
+        if declaration_kind in {"struct", "union"}:
+            dependencies = field_type_dependencies(body)
+        else:
+            for variant in GENERATOR.LEGACY_SCANNER.split_top_level_tokens(body):
+                payload = next(
+                    (
+                        index
+                        for index, token in enumerate(variant[1:], start=1)
+                        if token.value in {"(", "{"}
+                    ),
+                    None,
+                )
+                if payload is None:
+                    continue
+                payload_delimiter = variant[payload].value
+                payload_end = GENERATOR.balanced_token_end(
+                    variant,
+                    payload,
+                    payload_delimiter,
+                    "}" if payload_delimiter == "{" else ")",
+                )
+                if payload_end is None:
+                    continue
+                payload_tokens = list(variant[payload + 1 : payload_end])
+                dependencies.update(
+                    field_type_dependencies(payload_tokens)
+                    if payload_delimiter == "{"
+                    else rust_type_identifiers(payload_tokens)
+                )
+        declarations.setdefault(name, set()).update(dependencies)
+        offset = closing + 1
+    return declarations
+
+
+def finalized_semantic_type_aliases(
+    corpus: list[tuple[Path, str, str, list[Any]]],
+) -> set[str]:
+    """Resolve aliases and renamed imports that denote a finalized C1 type."""
+    declarations: dict[str, set[str]] = {}
+    for _path, _source, _searchable, tokens in corpus:
+        for alias in GENERATOR.LEGACY_SCANNER.type_alias_declarations(tokens):
+            declarations.setdefault(alias.name, set()).update(
+                rust_type_identifiers(alias.rhs) - set(alias.parameters)
+            )
+        for binding in GENERATOR.LEGACY_SCANNER.use_bindings(tokens):
+            if binding.path and not binding.glob:
+                declarations.setdefault(binding.local, set()).add(binding.path[-1])
+
+    aliases = set(FINALIZED_SEMANTIC_TYPE_NAMES)
+    changed = True
+    while changed:
+        changed = False
+        for name, dependencies in declarations.items():
+            if name not in aliases and dependencies & aliases:
+                aliases.add(name)
+                changed = True
+    return aliases
+
+
+def manual_deserialize_impls(
+    tokens: list[Any], target_aliases: set[str]
+) -> list[tuple[int, str, str]]:
+    """Find Deserialize implementations whose self type is a finalized C1 type."""
+    trait_aliases = GENERATOR.LEGACY_SCANNER.imported_trait_aliases(
+        tokens, {"Deserialize"}
+    )
+    implementations: list[tuple[int, str, str]] = []
+    for opening, token in enumerate(tokens):
+        if token.value != "impl":
+            continue
+        index = opening + 1
+        if index < len(tokens) and tokens[index].value == "<":
+            generic_end = GENERATOR.balanced_token_end(tokens, index, "<", ">")
+            if generic_end is None:
+                continue
+            index = generic_end + 1
+        header_end = index
+        while header_end < len(tokens) and tokens[header_end].value not in {"{", ";"}:
+            header_end += 1
+        for_indexes = [
+            position
+            for position in range(index, header_end)
+            if tokens[position].value == "for"
+        ]
+        if not for_indexes:
+            continue
+        for_index = for_indexes[-1]
+
+        trait_tokens = list(tokens[index:for_index])
+        if any(item.value == "!" for item in trait_tokens):
+            continue
+        trait_generic = next(
+            (
+                position
+                for position, item in enumerate(trait_tokens)
+                if item.value == "<"
+            ),
+            len(trait_tokens),
+        )
+        trait_names = [
+            GENERATOR.canonical_identifier(item.value)
+            for item in trait_tokens[:trait_generic]
+            if re.fullmatch(r"(?:r#)?[A-Za-z_][A-Za-z0-9_]*", item.value)
+        ]
+        if not trait_names or trait_names[-1] not in trait_aliases:
+            continue
+
+        self_end = for_index + 1
+        while self_end < header_end and tokens[self_end].value != "where":
+            self_end += 1
+        self_tokens = GENERATOR.LEGACY_SCANNER.strip_outer_parentheses(
+            tokens[for_index + 1 : self_end]
+        )
+        self_generic = next(
+            (
+                position
+                for position, item in enumerate(self_tokens)
+                if item.value == "<"
+            ),
+            len(self_tokens),
+        )
+        self_names = [
+            GENERATOR.canonical_identifier(item.value)
+            for item in self_tokens[:self_generic]
+            if re.fullmatch(r"(?:r#)?[A-Za-z_][A-Za-z0-9_]*", item.value)
+        ]
+        if not self_names or self_names[-1] not in target_aliases:
+            continue
+        implementations.append(
+            (
+                token.line,
+                self_names[-1],
+                " ".join(item.value for item in tokens[opening:header_end]),
+            )
+        )
+    return implementations
+
+
+def transitive_semantic_forbidden_names(
+    corpus: list[tuple[Path, str, str, list[Any]]],
+) -> set[str]:
+    declarations: dict[str, set[str]] = {}
+    for _path, _source, _searchable, tokens in corpus:
+        local = declared_type_dependencies(tokens)
+        for name, dependencies in local.items():
+            declarations.setdefault(name, set()).update(dependencies)
+        for binding in GENERATOR.LEGACY_SCANNER.use_bindings(tokens):
+            if (
+                binding.path
+                and not binding.glob
+                and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", binding.local)
+                and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", binding.path[-1])
+            ):
+                declarations.setdefault(binding.local, set()).add(binding.path[-1])
+
+    forbidden = set(SEMANTIC_FORBIDDEN_IDENTIFIERS)
+    changed = True
+    while changed:
+        changed = False
+        for name, dependencies in declarations.items():
+            if name not in forbidden and dependencies & forbidden:
+                forbidden.add(name)
+                changed = True
+    return forbidden
+
+
+def semantic_serde_attribute(source: str, type_name: str) -> str | None:
+    declaration = re.search(rf"\bpub\s+(?:struct|enum)\s+{type_name}\b", source)
+    if declaration is None:
+        return None
+    attribute_start = source.rfind(
+        '#[cfg_attr(feature = "serde", derive(', 0, declaration.start()
+    )
+    if attribute_start < 0:
+        return ""
+    attribute_end = source.find(")]", attribute_start, declaration.start())
+    if attribute_end < 0:
+        return ""
+    return source[attribute_start : attribute_end + 2]
+
+
+def semantic_builder_segment(
+    searchable: str, start_marker: str, end_marker: str
+) -> str | None:
+    start = searchable.find(start_marker)
+    if start < 0:
+        return None
+    end = searchable.find(end_marker, start + len(start_marker))
+    return searchable[start:] if end < 0 else searchable[start:end]
+
+
+def skip_outer_attributes(source: str, offset: int) -> int:
+    while True:
+        whitespace = re.match(r"\s*", source[offset:])
+        assert whitespace is not None
+        offset += whitespace.end()
+        if offset >= len(source) or source[offset] != "#":
+            return offset
+        attribute = offset + 1
+        while attribute < len(source) and source[attribute].isspace():
+            attribute += 1
+        if attribute < len(source) and source[attribute] == "!":
+            attribute += 1
+            while attribute < len(source) and source[attribute].isspace():
+                attribute += 1
+        if attribute >= len(source) or source[attribute] != "[":
+            return offset
+        depth = 1
+        attribute += 1
+        while attribute < len(source) and depth:
+            if source[attribute] == "[":
+                depth += 1
+            elif source[attribute] == "]":
+                depth -= 1
+            attribute += 1
+        if depth:
+            return offset
+        offset = attribute
+
+
+def top_level_character_positions(source: str, character: str) -> list[int]:
+    depths = {"(": 0, "[": 0, "{": 0}
+    closers = {")": "(", "]": "[", "}": "{"}
+    positions: list[int] = []
+    for offset, current in enumerate(source):
+        if current in depths:
+            depths[current] += 1
+        elif current in closers:
+            opening = closers[current]
+            if depths[opening]:
+                depths[opening] -= 1
+        elif current == character and not any(depths.values()):
+            positions.append(offset)
+    return positions
+
+
+def strip_outer_pattern_parentheses(pattern: str) -> str:
+    result = pattern.strip()
+    while result.startswith("("):
+        depth = 0
+        closing = None
+        for offset, character in enumerate(result):
+            if character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+                if depth == 0:
+                    closing = offset
+                    break
+        if closing != len(result) - 1:
+            break
+        result = result[1:-1].strip()
+    return result
+
+
+def pattern_has_top_level_guard(pattern: str) -> bool:
+    depths = {"(": 0, "[": 0, "{": 0}
+    closers = {")": "(", "]": "[", "}": "{"}
+    offset = 0
+    while offset < len(pattern):
+        character = pattern[offset]
+        if character in depths:
+            depths[character] += 1
+            offset += 1
+            continue
+        if character in closers:
+            opening = closers[character]
+            if depths[opening]:
+                depths[opening] -= 1
+            offset += 1
+            continue
+        if not any(depths.values()) and (character.isalpha() or character == "_"):
+            end = offset + 1
+            while end < len(pattern) and (
+                pattern[end].isalnum() or pattern[end] == "_"
+            ):
+                end += 1
+            if pattern[offset:end] == "if" and pattern[max(0, offset - 2) : offset] != "r#":
+                return True
+            offset = end
+            continue
+        offset += 1
+    return False
+
+
+def irrefutable_pattern(pattern: str) -> bool:
+    candidate = strip_outer_pattern_parentheses(pattern)
+    separators = top_level_character_positions(candidate, "|")
+    alternatives = [
+        candidate[start:end].strip()
+        for start, end in zip(
+            [0, *(position + 1 for position in separators)],
+            [*separators, len(candidate)],
+        )
+        if candidate[start:end].strip()
+    ]
+    if separators:
+        return any(irrefutable_pattern(alternative) for alternative in alternatives)
+
+    bindings = top_level_character_positions(candidate, "@")
+    if bindings:
+        binding = bindings[0]
+        left = re.sub(r"^(?:(?:ref|mut)\s+)+", "", candidate[:binding].strip())
+        return bool(
+            re.fullmatch(r"(?:r#)?[a-z_][A-Za-z0-9_]*", left)
+            and irrefutable_pattern(candidate[binding + 1 :])
+        )
+
+    candidate = re.sub(r"^(?:(?:ref|mut)\s+)+", "", candidate).strip()
+    return bool(
+        candidate == "_"
+        or re.fullmatch(r"(?:r#)?[a-z_][A-Za-z0-9_]*", candidate)
+    )
+
+
+def match_arm_pattern(source: str, offset: int) -> tuple[str, int] | None:
+    start = skip_outer_attributes(source, offset)
+    depths = {"(": 0, "[": 0, "{": 0}
+    closers = {")": "(", "]": "[", "}": "{"}
+    cursor = start
+    while cursor < len(source):
+        character = source[cursor]
+        if character in depths:
+            depths[character] += 1
+        elif character in closers:
+            opening = closers[character]
+            if depths[opening]:
+                depths[opening] -= 1
+            elif character == "}":
+                return None
+        elif not any(depths.values()):
+            if character == "=" and cursor + 1 < len(source) and source[cursor + 1] == ">":
+                return source[start:cursor].strip(), start
+            if character in {",", ";"}:
+                return None
+        cursor += 1
+    return None
+
+
+def legacy_adapter_catch_all(source: str) -> int | None:
+    for boundary in re.finditer(r"^|[,{}]", source, re.MULTILINE):
+        arm = match_arm_pattern(source, boundary.end())
+        if arm is None:
+            continue
+        pattern, offset = arm
+        if not pattern_has_top_level_guard(pattern) and irrefutable_pattern(pattern):
+            return offset
+    return None
+
+
 def future_boundary_failures(root: Path) -> list[Failure]:
     root = root.resolve()
     failures: list[Failure] = []
     schema_dependency = re.compile(r"\b(?:mech_runtime|mech_engine|crate::runtime|crate::engine)\b")
-    for path, source in production_corpus(root):
+    corpus = analyzed_production_corpus(root)
+    semantic_forbidden_names = transitive_semantic_forbidden_names(corpus)
+    finalized_type_aliases = finalized_semantic_type_aliases(corpus)
+    for path, source, searchable, tokens in corpus:
         resolved = path.resolve()
         relative = path.relative_to(root).as_posix()
-        searchable = GENERATOR.mask_non_code(source)
-        tokens = GENERATOR.rust_tokens(source, searchable)
+        for line, type_name, implementation in manual_deserialize_impls(
+            tokens, finalized_type_aliases
+        ):
+            failures.append(
+                failure(
+                    "C1-FINALIZED-SERDE-BOUNDARY",
+                    type_name,
+                    relative,
+                    "no Deserialize implementation; construction requires the validated API",
+                    implementation,
+                    "src/core/tests/semantic_serde_contract.rs",
+                    line,
+                )
+            )
+        for type_name in FINALIZED_SEMANTIC_SERDE_TYPES.get(relative, set()):
+            attribute = semantic_serde_attribute(source, type_name)
+            if attribute is not None and attribute != '#[cfg_attr(feature = "serde", derive(Serialize))]':
+                failures.append(
+                    failure(
+                        "C1-FINALIZED-SERDE-BOUNDARY",
+                        type_name,
+                        relative,
+                        "Serialize only; construction requires the validated API",
+                        attribute or "missing serde derive",
+                        "src/core/tests/semantic_serde_contract.rs",
+                    )
+                )
+        for type_name in OPEN_SEMANTIC_SERDE_TYPES.get(relative, set()):
+            attribute = semantic_serde_attribute(source, type_name)
+            if attribute is not None and attribute != '#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]':
+                failures.append(
+                    failure(
+                        "C1-OPEN-SERDE-BOUNDARY",
+                        type_name,
+                        relative,
+                        "Serialize + Deserialize on open semantic syntax",
+                        attribute or "missing serde derive",
+                        "src/core/tests/semantic_serde_contract.rs",
+                    )
+                )
+        for type_name in NON_SERDE_SEMANTIC_TYPES.get(relative, set()):
+            attribute = semantic_serde_attribute(source, type_name)
+            if attribute:
+                failures.append(
+                    failure(
+                        "C1-EPHEMERAL-HANDLE-SERDE-BOUNDARY",
+                        type_name,
+                        relative,
+                        "no standalone Serde construction for builder-local handles",
+                        attribute,
+                        "src/core/tests/schema_contract.rs",
+                    )
+                )
+        builder_spec = {
+            "src/core/src/dimension.rs": (
+                "pub fn declare(",
+                "pub fn declarations(",
+                "Result<DimensionParameterId, SemanticModelError>",
+            ),
+            "src/core/src/schema/table.rs": (
+                "pub fn insert(",
+                "pub fn finish(",
+                "Result<SchemaHandle, SemanticModelError>",
+            ),
+        }.get(relative)
+        if builder_spec is not None:
+            start_marker, end_marker, result_type = builder_spec
+            segment = semantic_builder_segment(searchable, start_marker, end_marker)
+            if segment is not None:
+                panic_api = re.search(r"\b(?:assert|panic)\s*!|\.\s*expect\s*\(", segment)
+                compact_segment = "".join(segment.split())
+                compact_result = "".join(result_type.split())
+                if panic_api is not None or compact_result not in compact_segment:
+                    actual = (
+                        panic_api.group(0)
+                        if panic_api is not None
+                        else "missing structured Result signature"
+                    )
+                    failures.append(
+                        failure(
+                            "C1-SEMANTIC-BUILDER-ERROR",
+                            start_marker,
+                            relative,
+                            f"{result_type} without assert!/panic!/expect",
+                            actual,
+                            "src/core/tests/dimension_contract.rs",
+                        )
+                    )
+        c1_semantic_module = any(
+            module_file_or_descendant(root, resolved, name)
+            for name in (
+                "semantic_identity",
+                "nominal",
+                "dimension",
+                "kind_expr",
+                "kind_scheme",
+                "schema",
+            )
+        )
+        if c1_semantic_module:
+            direct_forbidden = next(
+                (
+                    token
+                    for token in tokens
+                    if GENERATOR.canonical_identifier(token.value)
+                    in SEMANTIC_FORBIDDEN_IDENTIFIERS
+                ),
+                None,
+            )
+            declared_dependencies = set().union(
+                *declared_type_dependencies(tokens).values()
+            )
+            imported_dependencies = {
+                binding.local
+                for binding in GENERATOR.LEGACY_SCANNER.use_bindings(tokens)
+                if binding.path
+                and not binding.glob
+                and binding.path[-1] in semantic_forbidden_names
+            }
+            transitive_forbidden = next(
+                iter(
+                    sorted(
+                        (declared_dependencies | imported_dependencies)
+                        & (semantic_forbidden_names - SEMANTIC_FORBIDDEN_IDENTIFIERS)
+                    )
+                ),
+                None,
+            )
+            physical = re.search(
+                r"\bbuffer\s+strategy\b|\bstride\b|\bcapacity\b", searchable
+            )
+            if direct_forbidden is not None or transitive_forbidden is not None or physical is not None:
+                symbol = (
+                    direct_forbidden.value
+                    if direct_forbidden is not None
+                    else transitive_forbidden
+                    if transitive_forbidden is not None
+                    else physical.group(0)
+                )
+                transitive_token = (
+                    next(
+                        (
+                            token
+                            for token in tokens
+                            if GENERATOR.canonical_identifier(token.value)
+                            == transitive_forbidden
+                        ),
+                        None,
+                    )
+                    if transitive_forbidden is not None
+                    else None
+                )
+                failures.append(
+                    failure(
+                        "C1-SEMANTIC-BOUNDARY",
+                        symbol,
+                        relative,
+                        "semantic model independent of mutable values, resident state, and physical layout",
+                        "forbidden production dependency",
+                        "src/core/src/legacy_adapter/",
+                        direct_forbidden.line
+                        if direct_forbidden is not None
+                        else transitive_token.line
+                        if transitive_token is not None
+                        else source.count("\n", 0, physical.start()) + 1,
+                        direct_forbidden.column
+                        if direct_forbidden is not None
+                        else transitive_token.column
+                        if transitive_token is not None
+                        else None,
+                    )
+                )
+        if module_file_or_descendant(root, resolved, "legacy_adapter"):
+            catch_all = legacy_adapter_catch_all(searchable)
+            if catch_all is not None:
+                failures.append(
+                    failure(
+                        "C1-LEGACY-ADAPTER-EXHAUSTIVE",
+                        "catch-all match arm",
+                        relative,
+                        "explicit outcome for every current Kind and ValueKind variant",
+                        "binding or wildcard fallback",
+                        "src/core/src/legacy_adapter/",
+                        source.count("\n", 0, catch_all) + 1,
+                    )
+                )
         if module_file_or_descendant(root, resolved, "snapshot"):
             resolver = GENERATOR.LEGACY_SCANNER.TransparentTypeResolver(
                 tokens, relative=relative
@@ -1552,6 +2235,52 @@ def future_boundary_failures(root: Path) -> list[Failure]:
                     "tests/architecture/value-system/migration.json",
                 )
             )
+    canonical_test = root / "src/core/tests/canonical_schema_vectors.rs"
+    if canonical_test.is_file():
+        canonical_source = canonical_test.read_text(encoding="utf-8")
+        for marker in (".finalize()", ".instantiate_shape("):
+            if marker not in canonical_source:
+                failures.append(
+                    failure(
+                        "C1-FINALIZED-CONSTRUCTION",
+                        marker,
+                        canonical_test.relative_to(root).as_posix(),
+                        "canonical conformance constructs finalized values through validation APIs",
+                        "validation marker absent",
+                        "src/core/tests/semantic_serde_contract.rs",
+                    )
+                )
+    validation_routes = {
+        "src/core/src/kind_expr.rs": (
+            "validate_kind_structure(kind)?;",
+            "KindNameCategory::RecordField",
+            "KindNameCategory::TableColumn",
+        ),
+        "src/core/src/kind_scheme.rs": ("validate_kind_structure(kind)?;",),
+        "src/core/src/legacy_adapter/kind.rs": (
+            "validate_legacy_kind_resolution(&kind, &dimension_parameters)?;",
+            "canonicalize_dimension_environment(declarations, &all_declarations)?;",
+            "normalize_dimension(dimension, declarations.len())",
+        ),
+        "src/core/src/schema/shape.rs": (".checked_mul(extent)",),
+    }
+    for relative, markers in validation_routes.items():
+        path = root / relative
+        if not path.is_file():
+            continue
+        source = path.read_text(encoding="utf-8")
+        for marker in markers:
+            if marker not in source:
+                failures.append(
+                    failure(
+                        "C1-VALIDATED-CONSTRUCTION-ROUTE",
+                        marker,
+                        relative,
+                        "C1 semantic construction retains every validated entry route",
+                        "validation marker absent",
+                        "src/core/tests/semantic_serde_contract.rs",
+                    )
+                )
     return failures
 
 

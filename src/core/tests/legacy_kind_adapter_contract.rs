@@ -202,6 +202,32 @@ fn unspecified_extents_are_context_controlled_and_allocate_dense_parameters() {
 }
 
 #[test]
+fn concrete_matrix_extents_are_constants_while_map_always_uses_context() {
+    let mut context = FakeContext::default();
+    let matrix =
+        kind_expr_from_legacy(&Kind::Matrix(Box::new(Kind::Id), vec![2, 3]), &mut context).unwrap();
+    let KindExpr::Matrix { dimensions, .. } = matrix.kind else {
+        panic!("expected matrix")
+    };
+    assert_eq!(
+        dimensions.as_ref(),
+        &[DimensionExpr::Constant(2), DimensionExpr::Constant(3)]
+    );
+    assert!(context.extent_sites.is_empty());
+
+    kind_expr_from_legacy(
+        &Kind::Map(Box::new(Kind::Id), Box::new(Kind::Index)),
+        &mut context,
+    )
+    .unwrap();
+    assert_eq!(context.extent_sites.len(), 1);
+    assert_eq!(
+        context.extent_sites[0].role,
+        LegacyExtentRole::MapCardinality
+    );
+}
+
+#[test]
 fn enum_variants_come_from_context_and_ambiguous_value_kinds_are_structured_errors() {
     let mut context = FakeContext::default();
     let schema =

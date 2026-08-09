@@ -26,6 +26,13 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(arguments.sample_size, 10)
         self.assertEqual(arguments.warm_up_time, 1.0)
         self.assertEqual(arguments.measurement_time, 3.0)
+        self.assertIsNone(arguments.phase)
+
+    def test_only_b2_has_an_explicit_evidence_refresh_phase(self):
+        arguments = self.parse_args("--phase", "B2-resident-turn")
+        self.assertEqual(arguments.phase, "B2-resident-turn")
+        with self.assertRaises(SystemExit):
+            self.parse_args("--phase", "B1-resident-kernel")
 
     def test_controlled_environment_forces_one_thread(self):
         environment = RUNNER.controlled_environment(
@@ -137,6 +144,28 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
             self.assertIsNone(
                 RUNNER.frozen_base_error("c" * 40, RUNNER.FROZEN_B1_BRANCH)
             )
+
+    def test_b2_refresh_phase_allows_any_descendant_branch(self):
+        with patch.object(
+            RUNNER,
+            "command_output",
+            return_value=RUNNER.B2_EVIDENCE_FLOOR,
+        ):
+            self.assertIsNone(
+                RUNNER.frozen_base_error(
+                    "d" * 40,
+                    "feat/core-semantic-foundations",
+                    "B2-resident-turn",
+                )
+            )
+        with patch.object(RUNNER, "command_output", return_value="e" * 40):
+            error = RUNNER.frozen_base_error(
+                "d" * 40,
+                "feat/core-semantic-foundations",
+                "B2-resident-turn",
+            )
+        self.assertIn(RUNNER.B2_EVIDENCE_FLOOR, error)
+        self.assertIn("unapproved branch", RUNNER.frozen_base_error("d" * 40, "other"))
 
     def test_lane_record_normalizes_by_host_turn_not_instance(self):
         probe = {

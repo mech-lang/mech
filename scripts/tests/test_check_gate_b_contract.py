@@ -3,6 +3,7 @@ import importlib.util
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "check-gate-b-contract.py"
@@ -324,6 +325,57 @@ class GateBContractCheckerTests(unittest.TestCase):
 
     def test_valid_b2_report_recomputes_complete_turn_decision(self):
         self.assertEqual(CHECKER.report_contract_errors(valid_b2_report()), [])
+
+    def test_b2_descendant_refresh_requires_and_accepts_exact_commit(self):
+        report = valid_b2_report()
+        report["git_branch"] = "feat/core-semantic-foundations"
+        self.assertIn(
+            "B2 descendant refresh evidence requires an exact expected commit",
+            CHECKER.report_contract_errors(report),
+        )
+        with mock.patch.object(CHECKER, "commit_descends_from", return_value=True):
+            self.assertEqual(
+                CHECKER.report_contract_errors(report, report["git_commit"]),
+                [],
+            )
+
+    def test_b2_descendant_refresh_rejects_unrelated_commit(self):
+        report = valid_b2_report()
+        report["git_branch"] = "feat/core-semantic-foundations"
+        with mock.patch.object(CHECKER, "commit_descends_from", return_value=False):
+            errors = CHECKER.report_contract_errors(report, report["git_commit"])
+        self.assertTrue(any("does not descend" in error for error in errors))
+
+    def test_b2_frozen_historical_branch_does_not_require_ancestry_lookup(self):
+        report = valid_b2_report()
+        with mock.patch.object(CHECKER, "commit_descends_from") as ancestry:
+            self.assertEqual(CHECKER.report_contract_errors(report), [])
+        ancestry.assert_not_called()
+
+    def test_commit_ancestry_distinguishes_descendant_unrelated_and_missing(self):
+        for return_code, expected in ((0, True), (1, False), (128, False)):
+            with self.subTest(return_code=return_code):
+                completed = mock.Mock(returncode=return_code)
+                with mock.patch.object(
+                    CHECKER.subprocess, "run", return_value=completed
+                ) as run:
+                    self.assertEqual(
+                        CHECKER.commit_descends_from("a" * 40),
+                        expected,
+                    )
+                run.assert_called_once_with(
+                    [
+                        "git",
+                        "merge-base",
+                        "--is-ancestor",
+                        CHECKER.B2_EVIDENCE_FLOOR,
+                        "a" * 40,
+                    ],
+                    cwd=CHECKER.ROOT,
+                    check=False,
+                    stdout=CHECKER.subprocess.DEVNULL,
+                    stderr=CHECKER.subprocess.DEVNULL,
+                )
 
     def test_b2_rejects_forged_decision_metric(self):
         report = valid_b2_report()
