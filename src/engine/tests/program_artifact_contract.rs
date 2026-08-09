@@ -1,0 +1,1273 @@
+#![cfg(feature = "compiler")]
+
+use mech_engine::*;
+
+use mech_core::{
+    CanonicalNominalPath, ConstantHandle, ConstantStoreBuilder, DimensionExpr, DimensionLifetime,
+    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
+    IntegerWidth, KindExpr, LegacyValue, NominalKey, NominalKind, SchemaBody, SchemaDraft,
+    SchemaField, SchemaHandle, SchemaTableBuilder, Value, ValueDataDraft, ValueDraft,
+    snapshot::{
+        Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
+        MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SnapshotValidationContext,
+        TableColumnDraft,
+    },
+};
+use std::collections::BTreeMap;
+
+#[derive(Clone, Copy)]
+struct Schemas {
+    bool_: SchemaId,
+    f64_: SchemaId,
+    vector2: SchemaId,
+    vector3: SchemaId,
+    matrix2: SchemaId,
+    matrix3: SchemaId,
+    matrix2x3: SchemaId,
+    matrix3x2: SchemaId,
+    record: SchemaId,
+}
+
+#[derive(Clone, Copy)]
+struct Constants {
+    false_: ConstantId,
+    one: ConstantId,
+    two: ConstantId,
+    vector3: ConstantId,
+    matrix3: ConstantId,
+    matrix2: ConstantId,
+}
+
+struct FixtureData {
+    schemas: SchemaTable,
+    constants: ConstantStore,
+    schema: Schemas,
+    constant: Constants,
+}
+
+fn schema(body: SchemaBody) -> mech_core::Schema {
+    SchemaDraft {
+        dimension_parameters: Box::new([]),
+        body,
+    }
+    .finalize()
+    .unwrap()
+}
+
+fn matrix_schema(rows: u64, columns: u64) -> mech_core::Schema {
+    schema(SchemaBody::Matrix {
+        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+        dimensions: vec![
+            DimensionExpr::Constant(rows),
+            DimensionExpr::Constant(columns),
+        ]
+        .into_boxed_slice(),
+    })
+}
+
+fn resolve_schema(build: &mech_core::SchemaTableBuild, handle: SchemaHandle) -> SchemaId {
+    build.resolve(handle).unwrap()
+}
+
+fn scalar_value(schemas: &SchemaTable, schema: SchemaId, value: f64) -> Value {
+    ValueDraft {
+        schema,
+        shape_values: Box::new([]),
+        data: ValueDataDraft::F64(F64Bits::from_f64(value)),
+    }
+    .finalize(&SnapshotValidationContext::new(schemas))
+    .unwrap()
+}
+
+fn bool_value(schemas: &SchemaTable, schema: SchemaId, value: bool) -> Value {
+    ValueDraft {
+        schema,
+        shape_values: Box::new([]),
+        data: ValueDataDraft::Bool(value),
+    }
+    .finalize(&SnapshotValidationContext::new(schemas))
+    .unwrap()
+}
+
+fn matrix_value(
+    schemas: &SchemaTable,
+    schema: SchemaId,
+    rows: usize,
+    columns: usize,
+    value: f64,
+) -> Value {
+    ValueDraft {
+        schema,
+        shape_values: Box::new([]),
+        data: ValueDataDraft::Matrix(
+            vec![ValueDataDraft::F64(F64Bits::from_f64(value)); rows * columns].into_boxed_slice(),
+        ),
+    }
+    .finalize(&SnapshotValidationContext::new(schemas))
+    .unwrap()
+}
+
+fn fixture_data() -> FixtureData {
+    let mut schemas = SchemaTableBuilder::new();
+    let bool_ = schemas.insert(schema(SchemaBody::Bool)).unwrap();
+    let f64_ = schemas
+        .insert(schema(SchemaBody::FloatingPoint(FloatWidth::W64)))
+        .unwrap();
+    let vector2 = schemas.insert(matrix_schema(2, 1)).unwrap();
+    let vector3 = schemas.insert(matrix_schema(3, 1)).unwrap();
+    let matrix2 = schemas.insert(matrix_schema(2, 2)).unwrap();
+    let matrix3 = schemas.insert(matrix_schema(3, 3)).unwrap();
+    let matrix2x3 = schemas.insert(matrix_schema(2, 3)).unwrap();
+    let matrix3x2 = schemas.insert(matrix_schema(3, 2)).unwrap();
+    let record = schemas
+        .insert(schema(SchemaBody::Record(
+            vec![
+                SchemaField {
+                    name: "value".to_owned(),
+                    schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+                },
+                SchemaField {
+                    name: "valid".to_owned(),
+                    schema: SchemaBody::Bool,
+                },
+            ]
+            .into_boxed_slice(),
+        )))
+        .unwrap();
+    let build = schemas.finish().unwrap();
+    let schema = Schemas {
+        bool_: resolve_schema(&build, bool_),
+        f64_: resolve_schema(&build, f64_),
+        vector2: resolve_schema(&build, vector2),
+        vector3: resolve_schema(&build, vector3),
+        matrix2: resolve_schema(&build, matrix2),
+        matrix3: resolve_schema(&build, matrix3),
+        matrix2x3: resolve_schema(&build, matrix2x3),
+        matrix3x2: resolve_schema(&build, matrix3x2),
+        record: resolve_schema(&build, record),
+    };
+    let (schemas, _) = build.into_parts();
+
+    let mut constants = ConstantStoreBuilder::new(&schemas);
+    let false_ = constants
+        .insert(bool_value(&schemas, schema.bool_, false))
+        .unwrap();
+    let one = constants
+        .insert(scalar_value(&schemas, schema.f64_, 1.0))
+        .unwrap();
+    let two = constants
+        .insert(scalar_value(&schemas, schema.f64_, 2.0))
+        .unwrap();
+    let vector3 = constants
+        .insert(matrix_value(&schemas, schema.vector3, 3, 1, 0.0))
+        .unwrap();
+    let matrix3 = constants
+        .insert(matrix_value(&schemas, schema.matrix3, 3, 3, 0.0))
+        .unwrap();
+    let matrix2 = constants
+        .insert(matrix_value(&schemas, schema.matrix2, 2, 2, 1.0))
+        .unwrap();
+    let build = constants.finish().unwrap();
+    let constant = Constants {
+        false_: resolve_constant(&build, false_),
+        one: resolve_constant(&build, one),
+        two: resolve_constant(&build, two),
+        vector3: resolve_constant(&build, vector3),
+        matrix3: resolve_constant(&build, matrix3),
+        matrix2: resolve_constant(&build, matrix2),
+    };
+    let (constants, _) = build.into_parts();
+    FixtureData {
+        schemas,
+        constants,
+        schema,
+        constant,
+    }
+}
+
+fn resolve_constant(build: &ConstantStoreBuild, handle: ConstantHandle) -> ConstantId {
+    build.resolve(handle).unwrap()
+}
+
+fn operation(module: &str, name: &str) -> OperationReference {
+    OperationReference {
+        module_path: vec![module.to_owned()].into_boxed_slice(),
+        operation_name: name.to_owned(),
+    }
+}
+
+fn node(
+    operation: OperationReference,
+    inputs: Vec<SourceValue>,
+    outputs: Vec<SourceNodeOutput>,
+) -> SourceNode {
+    SourceNode {
+        operation,
+        inputs: inputs.into_boxed_slice(),
+        outputs: outputs.into_boxed_slice(),
+    }
+}
+
+fn single_node_fixture(
+    operation: OperationReference,
+    inputs: Vec<SourceValue>,
+    schema: SchemaId,
+) -> SourceProgram {
+    SourceProgram {
+        nodes: vec![node(
+            operation,
+            inputs,
+            vec![SourceNodeOutput::Derived { schema }],
+        )]
+        .into_boxed_slice(),
+        outputs: vec![SourceOutput {
+            name: "result".to_owned(),
+            source: SourceSlot::NodeOutput {
+                node: 0,
+                output_ordinal: 0,
+            },
+            schema,
+        }]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    }
+}
+
+fn constant_scalar(data: &FixtureData) -> SourceProgram {
+    single_node_fixture(
+        operation("core", "constant"),
+        vec![SourceValue::Constant(data.constant.one)],
+        data.schema.f64_,
+    )
+}
+
+fn scalar_add(data: &FixtureData) -> SourceProgram {
+    single_node_fixture(
+        operation("math", "add"),
+        vec![
+            SourceValue::Constant(data.constant.one),
+            SourceValue::Constant(data.constant.two),
+        ],
+        data.schema.f64_,
+    )
+}
+
+fn fixed_matrix_add(data: &FixtureData) -> SourceProgram {
+    single_node_fixture(
+        operation("math", "add"),
+        vec![
+            SourceValue::Constant(data.constant.matrix2),
+            SourceValue::Constant(data.constant.matrix2),
+        ],
+        data.schema.matrix2,
+    )
+}
+
+fn stateful_register(data: &FixtureData) -> SourceProgram {
+    SourceProgram {
+        inputs: vec![SourceInput {
+            name: "next".to_owned(),
+            schema: data.schema.f64_,
+        }]
+        .into_boxed_slice(),
+        states: vec![SourceState {
+            schema: data.schema.f64_,
+            initializer: Some(data.constant.one),
+            producer_node: 0,
+            producer_output_ordinal: 0,
+        }]
+        .into_boxed_slice(),
+        nodes: vec![node(
+            operation("state", "register"),
+            vec![SourceValue::Input(0), SourceValue::State(0)],
+            vec![SourceNodeOutput::State(0)],
+        )]
+        .into_boxed_slice(),
+        outputs: vec![SourceOutput {
+            name: "state".to_owned(),
+            source: SourceSlot::State(0),
+            schema: data.schema.f64_,
+        }]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    }
+}
+
+fn matrix_selection(data: &FixtureData, all: bool) -> SourceProgram {
+    single_node_fixture(
+        operation("matrix", if all { "select-all" } else { "select-element" }),
+        vec![SourceValue::Constant(data.constant.matrix2)],
+        if all {
+            data.schema.matrix2
+        } else {
+            data.schema.f64_
+        },
+    )
+}
+
+fn record_construction(data: &FixtureData) -> SourceProgram {
+    single_node_fixture(
+        operation("record", "construct"),
+        vec![
+            SourceValue::Constant(data.constant.one),
+            SourceValue::Constant(data.constant.false_),
+        ],
+        data.schema.record,
+    )
+}
+
+fn ekf(data: &FixtureData) -> SourceProgram {
+    use SourceNodeOutput::{Derived, State};
+    use SourceValue::{Input, NodeOutput, State as StateSource};
+    let output = |node, output_ordinal| NodeOutput {
+        node,
+        output_ordinal,
+    };
+    let derived = |schema| vec![Derived { schema }];
+    let nodes = vec![
+        node(
+            operation("ekf", "trigonometric-state"),
+            vec![StateSource(0)],
+            derived(data.schema.vector2),
+        ),
+        node(
+            operation("ekf", "motion-jacobian"),
+            vec![StateSource(0), Input(0), output(0, 0)],
+            derived(data.schema.matrix3),
+        ),
+        node(
+            operation("ekf", "control-jacobian"),
+            vec![output(0, 0)],
+            derived(data.schema.matrix3x2),
+        ),
+        node(
+            operation("ekf", "predicted-state"),
+            vec![StateSource(0), Input(0), output(0, 0)],
+            derived(data.schema.vector3),
+        ),
+        node(
+            operation("ekf", "predicted-covariance"),
+            vec![StateSource(1), output(1, 0), output(2, 0)],
+            derived(data.schema.matrix3),
+        ),
+        node(
+            operation("ekf", "landmark-delta-and-range"),
+            vec![output(3, 0)],
+            derived(data.schema.vector3),
+        ),
+        node(
+            operation("ekf", "predicted-measurement"),
+            vec![output(3, 0), output(5, 0)],
+            derived(data.schema.vector2),
+        ),
+        node(
+            operation("ekf", "measurement-jacobian"),
+            vec![output(5, 0)],
+            derived(data.schema.matrix2x3),
+        ),
+        node(
+            operation("ekf", "innovation-covariance"),
+            vec![output(4, 0), output(7, 0)],
+            derived(data.schema.matrix2),
+        ),
+        node(
+            operation("ekf", "solve-2x2"),
+            vec![output(8, 0)],
+            derived(data.schema.matrix2),
+        ),
+        node(
+            operation("ekf", "kalman-gain"),
+            vec![output(4, 0), output(7, 0), output(9, 0)],
+            derived(data.schema.matrix3x2),
+        ),
+        node(
+            operation("ekf", "innovation"),
+            vec![Input(0), output(6, 0)],
+            derived(data.schema.vector2),
+        ),
+        node(
+            operation("ekf", "corrected-state"),
+            vec![output(3, 0), output(10, 0), output(11, 0)],
+            derived(data.schema.vector3),
+        ),
+        node(
+            operation("ekf", "joseph-covariance-update"),
+            vec![output(4, 0), output(7, 0), output(10, 0)],
+            derived(data.schema.matrix3),
+        ),
+        node(
+            operation("ekf", "covariance-symmetrization"),
+            vec![output(12, 0), output(13, 0)],
+            vec![State(0), State(1)],
+        ),
+    ];
+    SourceProgram {
+        inputs: vec![SourceInput {
+            name: "measurement".to_owned(),
+            schema: data.schema.matrix2,
+        }]
+        .into_boxed_slice(),
+        states: vec![
+            SourceState {
+                schema: data.schema.vector3,
+                initializer: Some(data.constant.vector3),
+                producer_node: 14,
+                producer_output_ordinal: 0,
+            },
+            SourceState {
+                schema: data.schema.matrix3,
+                initializer: Some(data.constant.matrix3),
+                producer_node: 14,
+                producer_output_ordinal: 1,
+            },
+        ]
+        .into_boxed_slice(),
+        nodes: nodes.into_boxed_slice(),
+        outputs: vec![
+            SourceOutput {
+                name: "state".to_owned(),
+                source: SourceSlot::State(0),
+                schema: data.schema.vector3,
+            },
+            SourceOutput {
+                name: "covariance".to_owned(),
+                source: SourceSlot::State(1),
+                schema: data.schema.matrix3,
+            },
+        ]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    }
+}
+
+fn build_both(data: &FixtureData, graph: SourceProgram) -> (ProgramArtifact, ProgramArtifact) {
+    let mut source_context = ArtifactBuildContext::new(&data.schemas, &data.constants);
+    let source = compile_source_program(&graph, &mut source_context).unwrap();
+    let bytes = encode_program_artifact_bytecode_v1(&source).unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
+    assert!(!parsed.artifact.is_empty());
+    let bytecode = decode_program_artifact_sections(&parsed.artifact).unwrap();
+    (source, bytecode)
+}
+
+#[test]
+fn representative_source_and_bytecode_routes_produce_identical_artifacts() {
+    let data = fixture_data();
+    let fixtures = [
+        constant_scalar(&data),
+        scalar_add(&data),
+        fixed_matrix_add(&data),
+        stateful_register(&data),
+        matrix_selection(&data, false),
+        matrix_selection(&data, true),
+        record_construction(&data),
+        ekf(&data),
+    ];
+    for graph in fixtures {
+        let (source, bytecode) = build_both(&data, graph);
+        assert_eq!(source.revision(), bytecode.revision());
+        assert_eq!(source.inputs(), bytecode.inputs());
+        assert_eq!(source.slots(), bytecode.slots());
+        assert_eq!(source.nodes(), bytecode.nodes());
+        assert_eq!(source.bindings(), bytecode.bindings());
+        assert_eq!(source.outputs(), bytecode.outputs());
+        assert!(
+            source
+                .slots()
+                .iter()
+                .all(|slot| slot.slot.get() < source.slots().len() as u32)
+        );
+        assert!(
+            source
+                .bindings()
+                .iter()
+                .enumerate()
+                .all(|(index, binding)| {
+                    binding.id() == BindingId(u32::try_from(index).unwrap())
+                })
+        );
+    }
+}
+
+#[test]
+fn state_slots_are_initialized_and_break_feedback_cycles() {
+    let data = fixture_data();
+    let (register, _) = build_both(&data, stateful_register(&data));
+    let state = register
+        .slots()
+        .iter()
+        .find(|slot| slot.role == SlotRole::State)
+        .unwrap();
+    assert!(matches!(
+        state.initializer,
+        Some(InitializerReference::Constant(_))
+    ));
+    assert!(matches!(
+        state.producer,
+        ProducerReference::NodeOutput { .. }
+    ));
+
+    let (ekf, _) = build_both(&data, ekf(&data));
+    assert_eq!(ekf.nodes().len(), 15);
+    assert_eq!(ekf.slots().len(), 17);
+    assert_eq!(
+        ekf.slots()
+            .iter()
+            .filter(|slot| slot.role == SlotRole::State)
+            .count(),
+        2
+    );
+    assert!(
+        ekf.slots()
+            .iter()
+            .filter(|slot| slot.role == SlotRole::State)
+            .all(|slot| slot.initializer.is_some())
+    );
+}
+
+#[test]
+fn constants_are_sources_and_never_receive_slots() {
+    let data = fixture_data();
+    let (artifact, _) = build_both(&data, scalar_add(&data));
+    assert_eq!(artifact.slots().len(), 1);
+    assert_eq!(artifact.constants().len(), data.constants.len());
+    assert!(artifact.bindings().iter().any(|binding| matches!(
+        binding,
+        BindingDeclaration::Input {
+            source: ArtifactSource::Constant(_),
+            ..
+        }
+    )));
+}
+
+#[test]
+fn combinational_cycles_are_rejected_but_state_feedback_is_valid() {
+    let data = fixture_data();
+    let graph = SourceProgram {
+        nodes: vec![
+            node(
+                operation("test", "first"),
+                vec![SourceValue::NodeOutput {
+                    node: 1,
+                    output_ordinal: 0,
+                }],
+                vec![SourceNodeOutput::Derived {
+                    schema: data.schema.f64_,
+                }],
+            ),
+            node(
+                operation("test", "second"),
+                vec![SourceValue::NodeOutput {
+                    node: 0,
+                    output_ordinal: 0,
+                }],
+                vec![SourceNodeOutput::Derived {
+                    schema: data.schema.f64_,
+                }],
+            ),
+        ]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+    let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
+    assert!(matches!(
+        compile_source_program(&graph, &mut context),
+        Err(ArtifactBuildError::CombinationalCycle)
+    ));
+    assert!(build_both(&data, stateful_register(&data)).0.nodes().len() == 1);
+}
+
+#[test]
+fn compiler_pseudo_values_never_enter_snapshot_constants() {
+    assert_eq!(
+        compiler_ir_from_legacy_pseudo_value(&LegacyValue::Empty).unwrap(),
+        ExpressionIR::Empty
+    );
+    assert_eq!(
+        compiler_ir_from_legacy_pseudo_value(&LegacyValue::IndexAll).unwrap(),
+        ExpressionIR::Selection(SelectionIR::All)
+    );
+}
+
+#[test]
+fn matrix_literal_resolution_is_homogeneous_and_structured() {
+    let data = fixture_data();
+    let literal = MatrixLiteralIR {
+        rows: 2,
+        columns: 2,
+        elements: vec![ExpressionIR::Constant(data.constant.one); 4].into_boxed_slice(),
+    };
+    let value = literal
+        .resolve_constant(data.schema.matrix2, &data.schemas, &data.constants)
+        .unwrap();
+    assert_eq!(value.schema(), data.schema.matrix2);
+
+    let heterogeneous = MatrixLiteralIR {
+        rows: 2,
+        columns: 2,
+        elements: vec![
+            ExpressionIR::Constant(data.constant.one),
+            ExpressionIR::Constant(data.constant.one),
+            ExpressionIR::Constant(data.constant.one),
+            ExpressionIR::Constant(data.constant.false_),
+        ]
+        .into_boxed_slice(),
+    };
+    assert!(matches!(
+        heterogeneous.resolve_constant(data.schema.matrix2, &data.schemas, &data.constants),
+        Err(CompilerIrError::HeterogeneousMatrixLiteral { index: 3 })
+    ));
+
+    let unresolved = MatrixLiteralIR {
+        rows: 2,
+        columns: 2,
+        elements: vec![ExpressionIR::Slot(CellSlotId(0)); 4].into_boxed_slice(),
+    };
+    assert!(matches!(
+        unresolved.resolve_constant(data.schema.matrix2, &data.schemas, &data.constants),
+        Err(CompilerIrError::MatrixLiteralElementNotConstant { index: 0 })
+    ));
+}
+
+#[test]
+fn matrix_literal_resolution_accepts_homogeneous_aggregate_elements() {
+    let mut schemas = SchemaTableBuilder::new();
+    let tuple = schemas
+        .insert(schema(SchemaBody::Tuple(
+            vec![SchemaBody::Bool, SchemaBody::String].into_boxed_slice(),
+        )))
+        .unwrap();
+    let matrix = schemas
+        .insert(schema(SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Tuple(
+                vec![SchemaBody::Bool, SchemaBody::String].into_boxed_slice(),
+            )),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                .into_boxed_slice(),
+        }))
+        .unwrap();
+    let build = schemas.finish().unwrap();
+    let tuple = build.resolve(tuple).unwrap();
+    let matrix = build.resolve(matrix).unwrap();
+    let (schemas, _) = build.into_parts();
+    let validation = SnapshotValidationContext::new(&schemas);
+    let mut constants = ConstantStoreBuilder::new(&schemas);
+    let mut handles = Vec::new();
+    for (flag, text) in [(true, "left"), (false, "right")] {
+        handles.push(
+            constants
+                .insert(
+                    ValueDraft {
+                        schema: tuple,
+                        shape_values: Box::new([]),
+                        data: ValueDataDraft::Tuple(
+                            vec![
+                                ValueDataDraft::Bool(flag),
+                                ValueDataDraft::String(text.to_owned()),
+                            ]
+                            .into_boxed_slice(),
+                        ),
+                    }
+                    .finalize(&validation)
+                    .unwrap(),
+                )
+                .unwrap(),
+        );
+    }
+    let build = constants.finish().unwrap();
+    let constants_ids = handles
+        .into_iter()
+        .map(|handle| build.resolve(handle).unwrap())
+        .collect::<Vec<_>>();
+    let (constants, _) = build.into_parts();
+    let literal = MatrixLiteralIR {
+        rows: 1,
+        columns: 2,
+        elements: constants_ids
+            .into_iter()
+            .map(ExpressionIR::Constant)
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+    };
+    let value = literal
+        .resolve_constant(matrix, &schemas, &constants)
+        .unwrap();
+    assert_eq!(value.schema(), matrix);
+}
+
+#[test]
+fn malformed_artifacts_reject_reviewed_validation_gaps() {
+    let data = fixture_data();
+    let mismatched_initializer = SourceProgram {
+        states: vec![SourceState {
+            schema: data.schema.f64_,
+            initializer: Some(data.constant.false_),
+            producer_node: 0,
+            producer_output_ordinal: 0,
+        }]
+        .into_boxed_slice(),
+        nodes: vec![node(
+            operation("state", "register"),
+            vec![SourceValue::Constant(data.constant.one)],
+            vec![SourceNodeOutput::State(0)],
+        )]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+    assert!(matches!(
+        compile_source_program(
+            &mismatched_initializer,
+            &mut ArtifactBuildContext::new(&data.schemas, &data.constants)
+        ),
+        Err(ArtifactBuildError::InitializerSchemaMismatch { .. })
+    ));
+
+    let missing_binding = ProgramArtifactDraft {
+        schemas: data.schemas.clone(),
+        constants: data.constants.clone(),
+        inputs: Box::new([]),
+        slots: vec![SlotDeclaration {
+            slot: CellSlotId(0),
+            schema: data.schema.f64_,
+            role: SlotRole::Derived,
+            producer: ProducerReference::NodeOutput {
+                node: NodeId(0),
+                output_ordinal: 0,
+            },
+            initializer: None,
+        }]
+        .into_boxed_slice(),
+        nodes: vec![NodeDeclaration {
+            node: NodeId(0),
+            operation: operation("test", "producer"),
+            input_bindings: 0..0,
+            output_bindings: 0..0,
+        }]
+        .into_boxed_slice(),
+        bindings: Box::new([]),
+        outputs: Box::new([]),
+        constraints: Box::new([]),
+    };
+    assert!(matches!(
+        missing_binding.finalize(),
+        Err(ArtifactBuildError::MissingProducerBinding { .. })
+    ));
+
+    let empty_module = SourceProgram {
+        nodes: vec![node(
+            OperationReference {
+                module_path: Box::new([]),
+                operation_name: "invalid".to_owned(),
+            },
+            Vec::new(),
+            vec![SourceNodeOutput::Derived {
+                schema: data.schema.f64_,
+            }],
+        )]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+    assert!(matches!(
+        compile_source_program(
+            &empty_module,
+            &mut ArtifactBuildContext::new(&data.schemas, &data.constants)
+        ),
+        Err(ArtifactBuildError::InvalidOperationReference { .. })
+    ));
+
+    let too_many_ports = SourceProgram {
+        nodes: vec![node(
+            operation("test", "wide"),
+            vec![SourceValue::Constant(data.constant.one); u16::MAX as usize + 2],
+            vec![SourceNodeOutput::Derived {
+                schema: data.schema.f64_,
+            }],
+        )]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+    assert!(matches!(
+        compile_source_program(
+            &too_many_ports,
+            &mut ArtifactBuildContext::new(&data.schemas, &data.constants)
+        ),
+        Err(ArtifactBuildError::ArtifactIdentityExhausted {
+            identity: "input port ordinal"
+        })
+    ));
+}
+
+#[test]
+fn decoded_artifact_sections_revalidate_structure_and_limits() {
+    let data = fixture_data();
+    let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
+    let artifact = compile_source_program(&stateful_register(&data), &mut context).unwrap();
+    let sections = encode_program_artifact_sections(&artifact).unwrap();
+
+    let mut missing_binding = sections.clone();
+    missing_binding.bindings = b"[]".to_vec();
+    let mut nodes: serde_json::Value = serde_json::from_slice(&missing_binding.nodes).unwrap();
+    for node in nodes.as_array_mut().unwrap() {
+        node["input_start"] = serde_json::Value::from(0);
+        node["input_end"] = serde_json::Value::from(0);
+        node["output_start"] = serde_json::Value::from(0);
+        node["output_end"] = serde_json::Value::from(0);
+    }
+    missing_binding.nodes = serde_json::to_vec(&nodes).unwrap();
+    assert!(matches!(
+        decode_program_artifact_sections(&missing_binding),
+        Err(ArtifactBytecodeError::Artifact(
+            ArtifactBuildError::MissingProducerBinding { .. }
+        ))
+    ));
+
+    let mut mismatch = sections.clone();
+    let mut slots: serde_json::Value = serde_json::from_slice(&mismatch.slots).unwrap();
+    let state = slots
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|slot| slot["role"] == 2)
+        .unwrap();
+    state["initializer"] = serde_json::Value::from(data.constant.false_.get());
+    mismatch.slots = serde_json::to_vec(&slots).unwrap();
+    assert!(matches!(
+        decode_program_artifact_sections(&mismatch),
+        Err(ArtifactBytecodeError::Artifact(
+            ArtifactBuildError::InitializerSchemaMismatch { .. }
+        ))
+    ));
+
+    let mut empty_module = sections.clone();
+    let mut operations: serde_json::Value =
+        serde_json::from_slice(&empty_module.operations).unwrap();
+    operations.as_array_mut().unwrap()[0]["module_path"] = serde_json::json!([]);
+    empty_module.operations = serde_json::to_vec(&operations).unwrap();
+    assert!(matches!(
+        decode_program_artifact_sections(&empty_module),
+        Err(ArtifactBytecodeError::Artifact(
+            ArtifactBuildError::InvalidOperationReference { .. }
+        ))
+    ));
+
+    let mut unused_operation = sections.clone();
+    let mut operations: serde_json::Value =
+        serde_json::from_slice(&unused_operation.operations).unwrap();
+    operations.as_array_mut().unwrap().push(serde_json::json!({
+        "module_path": ["unused"],
+        "operation_name": "operation"
+    }));
+    unused_operation.operations = serde_json::to_vec(&operations).unwrap();
+    assert!(matches!(
+        decode_program_artifact_sections(&unused_operation),
+        Err(ArtifactBytecodeError::NonCanonicalOperationTable)
+    ));
+
+    let mut duplicate_operation = sections.clone();
+    let mut operations: serde_json::Value =
+        serde_json::from_slice(&duplicate_operation.operations).unwrap();
+    let duplicate = operations.as_array().unwrap()[0].clone();
+    operations.as_array_mut().unwrap().push(duplicate);
+    duplicate_operation.operations = serde_json::to_vec(&operations).unwrap();
+    assert!(matches!(
+        decode_program_artifact_sections(&duplicate_operation),
+        Err(ArtifactBytecodeError::NonCanonicalOperationTable)
+    ));
+
+    let (multi_operation, _) = build_both(&data, ekf(&data));
+    let mut reordered_operation = encode_program_artifact_sections(&multi_operation).unwrap();
+    let mut operations: serde_json::Value =
+        serde_json::from_slice(&reordered_operation.operations).unwrap();
+    operations.as_array_mut().unwrap().swap(0, 1);
+    reordered_operation.operations = serde_json::to_vec(&operations).unwrap();
+    let mut nodes: serde_json::Value = serde_json::from_slice(&reordered_operation.nodes).unwrap();
+    for node in nodes.as_array_mut().unwrap() {
+        node["operation"] = match node["operation"].as_u64().unwrap() {
+            0 => serde_json::Value::from(1),
+            1 => serde_json::Value::from(0),
+            operation => serde_json::Value::from(operation),
+        };
+    }
+    reordered_operation.nodes = serde_json::to_vec(&nodes).unwrap();
+    assert!(matches!(
+        decode_program_artifact_sections(&reordered_operation),
+        Err(ArtifactBytecodeError::NonCanonicalOperationTable)
+    ));
+
+    assert!(matches!(
+        decode_program_artifact_sections_with_limits(
+            &sections,
+            ArtifactDecodeLimits {
+                max_constants: 0,
+                ..ArtifactDecodeLimits::default()
+            }
+        ),
+        Err(ArtifactBytecodeError::SectionItemLimit {
+            section: "constants",
+            ..
+        })
+    ));
+    assert!(matches!(
+        decode_program_artifact_sections_with_limits(
+            &sections,
+            ArtifactDecodeLimits {
+                max_section_bytes: 1,
+                ..ArtifactDecodeLimits::default()
+            }
+        ),
+        Err(ArtifactBytecodeError::SectionByteLimit { .. })
+    ));
+}
+
+#[test]
+fn program_revision_changes_with_semantic_graph_order() {
+    let data = fixture_data();
+    let (forward, _) = build_both(&data, scalar_add(&data));
+    let mut reversed = scalar_add(&data);
+    reversed.nodes[0].inputs.swap(0, 1);
+    let (reversed, _) = build_both(&data, reversed);
+    assert_ne!(forward.revision(), reversed.revision());
+}
+
+#[test]
+fn bytecode_v1_round_trips_every_c2_snapshot_family() {
+    let atom_path =
+        CanonicalNominalPath::new(vec!["test".to_owned(), "atom".to_owned()].into_boxed_slice())
+            .unwrap();
+    let enum_path =
+        CanonicalNominalPath::new(vec!["test".to_owned(), "enum".to_owned()].into_boxed_slice())
+            .unwrap();
+    let atom_key = NominalKey::from_path(NominalKind::Atom, &atom_path);
+    let enum_key = NominalKey::from_path(NominalKind::Enum, &enum_path);
+
+    let mut builder = SchemaTableBuilder::new();
+    let mut handles = BTreeMap::<&'static str, SchemaHandle>::new();
+    let mut insert = |name, body| {
+        handles.insert(name, builder.insert(schema(body)).unwrap());
+    };
+    insert("u8", SchemaBody::UnsignedInteger(IntegerWidth::W8));
+    insert("u16", SchemaBody::UnsignedInteger(IntegerWidth::W16));
+    insert("u32", SchemaBody::UnsignedInteger(IntegerWidth::W32));
+    insert("u64", SchemaBody::UnsignedInteger(IntegerWidth::W64));
+    insert("u128", SchemaBody::UnsignedInteger(IntegerWidth::W128));
+    insert("i8", SchemaBody::SignedInteger(IntegerWidth::W8));
+    insert("i16", SchemaBody::SignedInteger(IntegerWidth::W16));
+    insert("i32", SchemaBody::SignedInteger(IntegerWidth::W32));
+    insert("i64", SchemaBody::SignedInteger(IntegerWidth::W64));
+    insert("i128", SchemaBody::SignedInteger(IntegerWidth::W128));
+    insert("f32", SchemaBody::FloatingPoint(FloatWidth::W32));
+    insert("f64", SchemaBody::FloatingPoint(FloatWidth::W64));
+    insert("c32", SchemaBody::Complex(FloatWidth::W32));
+    insert("c64", SchemaBody::Complex(FloatWidth::W64));
+    insert("r64", SchemaBody::Rational64);
+    insert("bool", SchemaBody::Bool);
+    insert("string", SchemaBody::String);
+    insert("id", SchemaBody::Id);
+    insert("index", SchemaBody::Index);
+    insert("atom", SchemaBody::Atom(atom_key));
+    insert(
+        "enum",
+        SchemaBody::Enum {
+            key: enum_key,
+            variants: vec![mech_core::EnumVariantSchema {
+                name: "payload".to_owned(),
+                payload: Some(SchemaBody::FloatingPoint(FloatWidth::W64)),
+            }]
+            .into_boxed_slice(),
+        },
+    );
+    insert(
+        "option",
+        SchemaBody::Option(Box::new(SchemaBody::FloatingPoint(FloatWidth::W64))),
+    );
+    insert(
+        "tuple",
+        SchemaBody::Tuple(vec![SchemaBody::Bool, SchemaBody::String].into_boxed_slice()),
+    );
+    insert(
+        "record",
+        SchemaBody::Record(
+            vec![
+                SchemaField {
+                    name: "value".to_owned(),
+                    schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+                },
+                SchemaField {
+                    name: "valid".to_owned(),
+                    schema: SchemaBody::Bool,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+    );
+    insert(
+        "table",
+        SchemaBody::Table {
+            columns: vec![
+                SchemaField {
+                    name: "number".to_owned(),
+                    schema: SchemaBody::FloatingPoint(FloatWidth::W64),
+                },
+                SchemaField {
+                    name: "flag".to_owned(),
+                    schema: SchemaBody::Bool,
+                },
+            ]
+            .into_boxed_slice(),
+            rows: DimensionExpr::Constant(2),
+        },
+    );
+    insert(
+        "set",
+        SchemaBody::Set {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+            cardinality: DimensionExpr::Constant(2),
+        },
+    );
+    insert(
+        "map",
+        SchemaBody::Map {
+            key: Box::new(SchemaBody::String),
+            value: Box::new(SchemaBody::Option(Box::new(SchemaBody::FloatingPoint(
+                FloatWidth::W64,
+            )))),
+            cardinality: DimensionExpr::Constant(1),
+        },
+    );
+    insert("type", SchemaBody::ReifiedType);
+    drop(insert);
+    let matrix_handle = builder
+        .insert(
+            SchemaDraft {
+                dimension_parameters: vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(1),
+                    upper_bound: Some(DimensionExpr::Constant(4)),
+                }]
+                .into_boxed_slice(),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Tuple(
+                        vec![SchemaBody::Bool, SchemaBody::String].into_boxed_slice(),
+                    )),
+                    dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(0))]
+                        .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    handles.insert("matrix", matrix_handle);
+
+    let build = builder.finish().unwrap();
+    let ids = handles
+        .into_iter()
+        .map(|(name, handle)| (name, build.resolve(handle).unwrap()))
+        .collect::<BTreeMap<_, _>>();
+    let (schemas, _) = build.into_parts();
+    let id = |name| ids[name];
+    let f64 = |value| ValueDataDraft::F64(F64Bits::from_f64(value));
+    let tuple = |flag, text: &str| {
+        ValueDataDraft::Tuple(
+            vec![
+                ValueDataDraft::Bool(flag),
+                ValueDataDraft::String(text.to_owned()),
+            ]
+            .into_boxed_slice(),
+        )
+    };
+    let drafts: Vec<(&str, Box<[u64]>, ValueDataDraft)> = vec![
+        ("u8", Box::new([]), ValueDataDraft::U8(1)),
+        ("u16", Box::new([]), ValueDataDraft::U16(2)),
+        ("u32", Box::new([]), ValueDataDraft::U32(3)),
+        ("u64", Box::new([]), ValueDataDraft::U64(4)),
+        ("u128", Box::new([]), ValueDataDraft::U128(5)),
+        ("i8", Box::new([]), ValueDataDraft::I8(-1)),
+        ("i16", Box::new([]), ValueDataDraft::I16(-2)),
+        ("i32", Box::new([]), ValueDataDraft::I32(-3)),
+        ("i64", Box::new([]), ValueDataDraft::I64(-4)),
+        ("i128", Box::new([]), ValueDataDraft::I128(-5)),
+        (
+            "f32",
+            Box::new([]),
+            ValueDataDraft::F32(F32Bits::from_f32(1.25)),
+        ),
+        ("f64", Box::new([]), f64(2.5)),
+        (
+            "c32",
+            Box::new([]),
+            ValueDataDraft::Complex32(Complex32Bits::new(
+                F32Bits::from_f32(1.0),
+                F32Bits::from_f32(-1.0),
+            )),
+        ),
+        (
+            "c64",
+            Box::new([]),
+            ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(2.0),
+                F64Bits::from_f64(-2.0),
+            )),
+        ),
+        (
+            "r64",
+            Box::new([]),
+            ValueDataDraft::Rational64 {
+                numerator: 2,
+                denominator: 3,
+            },
+        ),
+        ("bool", Box::new([]), ValueDataDraft::Bool(true)),
+        (
+            "string",
+            Box::new([]),
+            ValueDataDraft::String("hello".to_owned()),
+        ),
+        ("id", Box::new([]), ValueDataDraft::Id(7)),
+        ("index", Box::new([]), ValueDataDraft::Index(8)),
+        ("atom", Box::new([]), ValueDataDraft::Atom),
+        (
+            "enum",
+            Box::new([]),
+            ValueDataDraft::Enum(EnumDraft {
+                ordinal: 0,
+                payload: Some(Box::new(f64(9.0))),
+            }),
+        ),
+        (
+            "option",
+            Box::new([]),
+            ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(Box::new(f64(10.0))),
+            }),
+        ),
+        ("tuple", Box::new([]), tuple(true, "tuple")),
+        (
+            "record",
+            Box::new([]),
+            ValueDataDraft::Record(
+                vec![
+                    NamedValueDraft {
+                        name: "value".to_owned(),
+                        value: f64(11.0),
+                    },
+                    NamedValueDraft {
+                        name: "valid".to_owned(),
+                        value: ValueDataDraft::Bool(true),
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "matrix",
+            vec![2].into_boxed_slice(),
+            ValueDataDraft::Matrix(vec![tuple(true, "a"), tuple(false, "b")].into_boxed_slice()),
+        ),
+        (
+            "table",
+            Box::new([]),
+            ValueDataDraft::Table(
+                vec![
+                    TableColumnDraft {
+                        name: "number".to_owned(),
+                        values: vec![f64(1.0), f64(2.0)].into_boxed_slice(),
+                    },
+                    TableColumnDraft {
+                        name: "flag".to_owned(),
+                        values: vec![ValueDataDraft::Bool(true), ValueDataDraft::Bool(false)]
+                            .into_boxed_slice(),
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "set",
+            Box::new([]),
+            ValueDataDraft::Set(
+                vec![ValueDataDraft::U8(1), ValueDataDraft::U8(2)].into_boxed_slice(),
+            ),
+        ),
+        (
+            "map",
+            Box::new([]),
+            ValueDataDraft::Map(
+                vec![MapEntryDraft {
+                    items: vec![
+                        ValueDataDraft::String("key".to_owned()),
+                        ValueDataDraft::Option(OptionDraft {
+                            present: true,
+                            value: Some(Box::new(f64(12.0))),
+                        }),
+                    ]
+                    .into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "type",
+            Box::new([]),
+            ValueDataDraft::Type(ReifiedTypeDraft::Schema(
+                schemas.entry(id("record")).unwrap().key(),
+            )),
+        ),
+        (
+            "type",
+            Box::new([]),
+            ValueDataDraft::Type(ReifiedTypeDraft::Kind {
+                kind: KindExpr::Tuple(vec![KindExpr::Id, KindExpr::Index].into_boxed_slice()),
+                dimension_parameters: Box::new([]),
+            }),
+        ),
+    ];
+
+    let validation = SnapshotValidationContext::new(&schemas);
+    let mut constants = ConstantStoreBuilder::new(&schemas);
+    for (schema, shape_values, data) in drafts {
+        let value = ValueDraft {
+            schema: id(schema),
+            shape_values,
+            data,
+        }
+        .finalize(&validation)
+        .unwrap();
+        constants.insert(value).unwrap();
+    }
+    let constants = constants.finish().unwrap().into_parts().0;
+    let artifact = ProgramArtifactDraft {
+        schemas,
+        constants,
+        inputs: Box::new([]),
+        slots: Box::new([]),
+        nodes: Box::new([]),
+        bindings: Box::new([]),
+        outputs: Box::new([]),
+        constraints: Box::new([]),
+    }
+    .finalize()
+    .unwrap();
+    let bytes = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = decode_program_artifact_bytecode_v1(&bytes).unwrap();
+
+    assert_eq!(decoded.revision(), artifact.revision());
+    assert_eq!(decoded.constants().len(), artifact.constants().len());
+    for raw in 0..artifact.constants().len() {
+        let constant = ConstantId::new(raw as u32);
+        let left = artifact.constants().get(constant).unwrap();
+        let right = decoded.constants().get(constant).unwrap();
+        assert_eq!(left.schema_key(), right.schema_key());
+        assert_eq!(
+            left.value_hash(artifact.schemas()).unwrap(),
+            right.value_hash(decoded.schemas()).unwrap()
+        );
+        assert_eq!(
+            left.shape().parameter_values(),
+            right.shape().parameter_values()
+        );
+    }
+}
