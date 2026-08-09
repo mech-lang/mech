@@ -28,6 +28,26 @@ fn resident_ids_keep_their_exact_scalar_layout() {
     );
 }
 
+#[test]
+fn final_artifact_identities_are_dense_u32_domains() {
+    macro_rules! assert_artifact_id {
+        ($identity:ty) => {
+            assert_eq!(core::mem::size_of::<$identity>(), 4);
+            assert_eq!(core::mem::align_of::<$identity>(), 4);
+            assert_eq!(<$identity>::new(17).get(), 17);
+        };
+    }
+
+    assert_artifact_id!(NodeId);
+    assert_artifact_id!(BindingId);
+    assert_artifact_id!(InputId);
+    assert_artifact_id!(OutputId);
+    assert_artifact_id!(IntegrityConstraintId);
+
+    fn accepts_node(_: NodeId) {}
+    accepts_node(NodeId(3));
+}
+
 #[cfg(feature = "resident-execution")]
 #[test]
 fn resident_execution_paths_reexport_the_final_identity_types() {

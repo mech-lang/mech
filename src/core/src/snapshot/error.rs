@@ -157,6 +157,7 @@ pub enum SnapshotValueError {
     SchemaNotKeyableV1,
     NonCanonicalRationalV1,
     MissingNamedKindResolver,
+    InvalidCanonicalReifiedKindV1,
     InvalidConstantHandleV1,
     ValueHashCollision {
         hash: ValueHash,

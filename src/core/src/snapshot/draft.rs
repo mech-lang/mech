@@ -139,5 +139,6 @@ pub enum ReifiedTypeDraft {
         kind: KindExpr,
         dimension_parameters: Box<[DimensionParameterDeclaration]>,
     },
+    CanonicalKind(Box<[u8]>),
     Schema(SchemaKey),
 }

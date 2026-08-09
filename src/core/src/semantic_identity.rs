@@ -69,6 +69,31 @@ opaque_u32_id!(KindParameterId);
 opaque_u32_id!(DimensionParameterId);
 opaque_u32_id!(SchemaId);
 
+macro_rules! artifact_id {
+    ($name:ident) => {
+        #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+        #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+        #[repr(transparent)]
+        pub struct $name(pub u32);
+
+        impl $name {
+            pub const fn new(raw: u32) -> Self {
+                Self(raw)
+            }
+
+            pub const fn get(self) -> u32 {
+                self.0
+            }
+        }
+    };
+}
+
+artifact_id!(NodeId);
+artifact_id!(BindingId);
+artifact_id!(InputId);
+artifact_id!(OutputId);
+artifact_id!(IntegrityConstraintId);
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(transparent)]

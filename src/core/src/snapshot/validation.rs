@@ -353,6 +353,9 @@ pub(super) fn finalize_data(
         (SchemaBody::ReifiedType, ValueDataDraft::Type(draft)) => {
             let reified = match draft {
                 ReifiedTypeDraft::Schema(key) => ReifiedType::Schema(key),
+                ReifiedTypeDraft::CanonicalKind(bytes) => {
+                    ReifiedType::Kind(ReifiedKind::from_canonical_bytes(bytes)?)
+                }
                 ReifiedTypeDraft::Kind {
                     kind,
                     dimension_parameters,
