@@ -24,7 +24,7 @@ fn commit_prepared(
 fn finish_prepared(
     prepared: PreparedResidentTurn<'_>,
     recorder: &mut ResidentTurnRecorder,
-    permit: mech_runtime::__gate_b_recording::LedgerPermit,
+    permit: mech_runtime::__gate_b_recording::ResidentAdmissionPermit,
 ) -> LedgerSequence {
     recorder.prepare_commit(permit, prepared).unwrap().commit()
 }

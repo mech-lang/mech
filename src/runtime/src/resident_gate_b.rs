@@ -7,7 +7,6 @@ use mech_engine::__gate_b_resident::{
 
 use crate::{
     TransactionId,
-    ledger::{LedgerPermit, PreparedLedgerAppend, RecordEstimate, RetainedTurnLedger, TurnLedger},
     turn_record::{
         GateBFixedReceipt, InputSequence, InputSequenceRange, LedgerSequence, OwnedTurnRecord,
         TurnFailurePhase, TurnFailureRecord, TurnId, TurnRecordHeader, TurnRecordStatus,
@@ -15,11 +14,6 @@ use crate::{
 };
 
 pub(crate) type ResidentTurnRecord = OwnedTurnRecord<GateBFixedReceipt>;
-const RESIDENT_RECORD_RESERVATION_BYTES: usize = 256;
-const RESIDENT_RECORD_ESTIMATE: RecordEstimate = RecordEstimate {
-    records: 1,
-    bytes: RESIDENT_RECORD_RESERVATION_BYTES,
-};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct ResidentRecorderFailure(&'static str);
@@ -52,20 +46,33 @@ pub struct ResidentRecordInspection<'a> {
 }
 
 struct PreparedResidentAppend<'ledger> {
-    ledger: &'ledger mut RetainedTurnLedger<ResidentTurnRecord>,
-    prepared: PreparedLedgerAppend<ResidentTurnRecord>,
+    recorder: &'ledger mut ResidentTurnRecorder,
+    sequence: LedgerSequence,
+    record: ResidentTurnRecord,
 }
 
 impl PreparedResidentAppend<'_> {
     #[inline]
     fn append(self) -> LedgerSequence {
-        TurnLedger::append(self.ledger, self.prepared)
+        debug_assert!(self.recorder.recorded_len < self.recorder.records.len());
+        self.recorder.records[self.recorder.recorded_len] = (self.sequence, self.record);
+        self.recorder.recorded_len += 1;
+        self.sequence
     }
 }
 
+/// An admission token backed by storage reserved when the recorder is created.
+#[must_use = "admitted resident turns must be prepared or explicitly abandoned"]
+pub struct ResidentAdmissionPermit {
+    _private: (),
+}
+
 pub struct ResidentTurnRecorder {
-    ledger: RetainedTurnLedger<ResidentTurnRecord>,
-    permits: Box<[Option<LedgerPermit>]>,
+    // Gate B has one turn owner and a fixed admission window. Reserving the
+    // complete window here makes successful append an infallible slot write.
+    records: Box<[(LedgerSequence, ResidentTurnRecord)]>,
+    recorded_len: usize,
+    permits: Box<[Option<ResidentAdmissionPermit>]>,
     next_turn: Option<u64>,
     records_inspected: usize,
     fail_next_preparation: bool,
@@ -76,39 +83,44 @@ impl ResidentTurnRecorder {
         let capacity = retained_history
             .checked_add(episode_turns)
             .ok_or_else(|| error("ledger capacity overflow"))?;
-        let max_bytes = capacity
-            .checked_mul(RESIDENT_RECORD_RESERVATION_BYTES)
-            .ok_or_else(|| error("ledger byte capacity overflow"))?;
-        let mut ledger = RetainedTurnLedger::new(capacity, max_bytes)?;
-        for ordinal in 1..=retained_history {
-            let identity =
-                u64::try_from(ordinal).map_err(|_| error("history identity overflow"))?;
-            let record = accepted_record(
-                identity,
-                ResidentTurnSummary {
-                    before_epoch: identity.saturating_sub(1),
-                    after_epoch: identity,
-                    state_hash: 0,
-                    touched_slots: 0,
-                    changed_slots: 0,
-                    dirty_nodes: 0,
-                },
-            )?;
-            let permit = TurnLedger::reserve(&ledger, RESIDENT_RECORD_ESTIMATE)?;
-            let prepared = TurnLedger::prepare_append(&ledger, permit, record)?;
-            TurnLedger::append(&mut ledger, prepared);
+        let mut records = Vec::new();
+        records
+            .try_reserve_exact(capacity)
+            .map_err(|_| error("resident receipt storage allocation failed"))?;
+        for ordinal in 1..=capacity {
+            let identity = if ordinal <= retained_history {
+                u64::try_from(ordinal).map_err(|_| error("history identity overflow"))?
+            } else {
+                1
+            };
+            records.push((
+                LedgerSequence::new(identity).expect("non-zero reserved identity"),
+                accepted_record(
+                    identity,
+                    ResidentTurnSummary {
+                        before_epoch: identity.saturating_sub(1),
+                        after_epoch: identity,
+                        state_hash: 0,
+                        touched_slots: 0,
+                        changed_slots: 0,
+                        dirty_nodes: 0,
+                    },
+                ),
+            ));
         }
-
+        let records = records.into_boxed_slice();
+        debug_assert_eq!(records.len(), capacity);
         let permits = (0..episode_turns)
-            .map(|_| TurnLedger::reserve(&ledger, RESIDENT_RECORD_ESTIMATE).map(Some))
-            .collect::<MResult<Vec<_>>>()?
+            .map(|_| Some(ResidentAdmissionPermit { _private: () }))
+            .collect::<Vec<_>>()
             .into_boxed_slice();
         let next_turn = u64::try_from(retained_history)
             .ok()
             .and_then(|history| history.checked_add(1))
             .ok_or_else(|| error("turn identity overflow"))?;
         Ok(Self {
-            ledger,
+            records,
+            recorded_len: retained_history,
             permits,
             next_turn: Some(next_turn),
             records_inspected: 0,
@@ -116,7 +128,8 @@ impl ResidentTurnRecorder {
         })
     }
 
-    pub fn take_admission_permit(&mut self, turn: usize) -> MResult<LedgerPermit> {
+    #[inline]
+    pub fn take_admission_permit(&mut self, turn: usize) -> MResult<ResidentAdmissionPermit> {
         self.permits
             .get_mut(turn)
             .and_then(Option::take)
@@ -125,25 +138,26 @@ impl ResidentTurnRecorder {
 
     fn prepare_accepted_append(
         &mut self,
-        permit: LedgerPermit,
+        _permit: ResidentAdmissionPermit,
         summary: ResidentTurnSummary,
     ) -> MResult<PreparedResidentAppend<'_>> {
         let identity = self.take_turn_identity()?;
         if core::mem::take(&mut self.fail_next_preparation) {
-            drop(permit);
             return Err(error("forced resident ledger preparation failure"));
         }
-        let record = accepted_record(identity, summary)?;
-        let prepared = TurnLedger::prepare_append(&self.ledger, permit, record)?;
+        let sequence = LedgerSequence::new(identity)
+            .ok_or_else(|| error("resident ledger sequence must be non-zero"))?;
+        let record = accepted_record(identity, summary);
         Ok(PreparedResidentAppend {
-            ledger: &mut self.ledger,
-            prepared,
+            recorder: self,
+            sequence,
+            record,
         })
     }
 
     pub fn prepare_commit<'instance>(
         &mut self,
-        permit: LedgerPermit,
+        permit: ResidentAdmissionPermit,
         turn: PreparedResidentTurn<'instance>,
     ) -> MResult<PreparedResidentCommit<'instance, '_>> {
         let summary = turn.summary();
@@ -161,7 +175,7 @@ impl ResidentTurnRecorder {
 
     pub fn prepare_full_write_commit<'instance>(
         &mut self,
-        permit: LedgerPermit,
+        permit: ResidentAdmissionPermit,
         turn: PreparedResidentFullWrite<'instance>,
     ) -> MResult<PreparedResidentCommit<'instance, '_>> {
         let summary = turn.summary();
@@ -179,21 +193,23 @@ impl ResidentTurnRecorder {
 
     pub fn prepare_rejected(
         &mut self,
-        permit: LedgerPermit,
+        _permit: ResidentAdmissionPermit,
         before_epoch: u64,
         failure: ResidentExecutionError,
     ) -> MResult<PreparedRejectedAppend<'_>> {
         let identity = self.take_turn_identity()?;
+        let sequence = LedgerSequence::new(identity)
+            .ok_or_else(|| error("resident ledger sequence must be non-zero"))?;
         let record = rejected_record(identity, before_epoch, failure)?;
-        let prepared = TurnLedger::prepare_append(&self.ledger, permit, record)?;
         Ok(PreparedRejectedAppend(PreparedResidentAppend {
-            ledger: &mut self.ledger,
-            prepared,
+            recorder: self,
+            sequence,
+            record,
         }))
     }
 
     pub fn recorded_ledger_len(&self) -> usize {
-        self.ledger.len()
+        self.recorded_len
     }
 
     pub fn records_inspected(&self) -> usize {
@@ -202,7 +218,7 @@ impl ResidentTurnRecorder {
 
     pub fn inspect_last(&mut self) -> Option<ResidentRecordInspection<'_>> {
         self.records_inspected += 1;
-        let (sequence, record) = self.ledger.last()?;
+        let (sequence, record) = self.records.get(self.recorded_len.checked_sub(1)?)?;
         let range = record.header.input_range?;
         Some(ResidentRecordInspection {
             sequence: sequence.get(),
@@ -233,8 +249,11 @@ impl ResidentTurnRecorder {
     }
 
     #[doc(hidden)]
-    pub fn reserve_additional_permit_for_test(&self) -> MResult<LedgerPermit> {
-        TurnLedger::reserve(&self.ledger, RESIDENT_RECORD_ESTIMATE)
+    pub fn reserve_additional_permit_for_test(&self) -> MResult<ResidentAdmissionPermit> {
+        if self.recorded_len >= self.records.len() {
+            return Err(error("resident receipt capacity exhausted"));
+        }
+        Ok(ResidentAdmissionPermit { _private: () })
     }
 
     fn take_turn_identity(&mut self) -> MResult<u64> {
@@ -259,21 +278,23 @@ fn header(
     identity: u64,
     status: TurnRecordStatus,
     failure: Option<TurnFailureRecord>,
-) -> MResult<TurnRecordHeader> {
-    let input =
-        InputSequence::new(identity).ok_or_else(|| error("input identity must be non-zero"))?;
-    Ok(TurnRecordHeader {
-        turn_id: TurnId::new(identity).ok_or_else(|| error("turn identity must be non-zero"))?,
+) -> TurnRecordHeader {
+    let input = InputSequence::new(identity).expect("resident input identity is non-zero");
+    TurnRecordHeader {
+        turn_id: TurnId::new(identity).expect("resident turn identity is non-zero"),
         transaction_id: TransactionId::new(u128::from(identity)),
-        input_range: Some(InputSequenceRange::new(input, input)?),
+        input_range: Some(InputSequenceRange {
+            first: input,
+            last: input,
+        }),
         status,
         failure,
-    })
+    }
 }
 
-fn accepted_record(identity: u64, summary: ResidentTurnSummary) -> MResult<ResidentTurnRecord> {
-    Ok(OwnedTurnRecord {
-        header: header(identity, TurnRecordStatus::Accepted, None)?,
+fn accepted_record(identity: u64, summary: ResidentTurnSummary) -> ResidentTurnRecord {
+    OwnedTurnRecord {
+        header: header(identity, TurnRecordStatus::Accepted, None),
         body: GateBFixedReceipt::accepted(
             summary.before_epoch,
             summary.after_epoch,
@@ -282,7 +303,7 @@ fn accepted_record(identity: u64, summary: ResidentTurnSummary) -> MResult<Resid
             summary.changed_slots,
             summary.dirty_nodes,
         ),
-    })
+    }
 }
 
 fn rejected_record(
@@ -331,7 +352,7 @@ fn rejected_record(
                 kind: kind.to_string(),
                 message: message.to_string(),
             }),
-        )?,
+        ),
         body: GateBFixedReceipt::rejected(before_epoch),
     })
 }

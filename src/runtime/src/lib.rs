@@ -213,7 +213,8 @@ pub mod __gate_b_recording {
 
     pub use crate::ledger::{LedgerPermit, RecordEstimate, RetainedTurnLedger};
     pub use crate::resident_gate_b::{
-        PreparedResidentCommit, ResidentRecordInspection, ResidentTurnRecorder,
+        PreparedResidentCommit, ResidentAdmissionPermit, ResidentRecordInspection,
+        ResidentTurnRecorder,
     };
     pub use crate::turn_record::{
         AccountedRecord, GateBFixedReceipt, InputSequence, InputSequenceRange, LedgerSequence,

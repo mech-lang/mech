@@ -100,20 +100,16 @@ impl StateArena {
     }
 
     pub(crate) fn candidate_state_hash(&self, candidate: usize) -> u64 {
-        let mut batch_hash = 0xcbf29ce484222325_u64;
+        let mut batch_hash = STATE_HASH_SEED;
         for (state, covariance) in self.states.buffers[candidate]
             .iter()
             .zip(self.covariances.buffers[candidate].iter())
         {
-            let mut state_hash = 0xcbf29ce484222325_u64;
+            let mut state_hash = STATE_HASH_SEED;
             for value in state.iter().chain(covariance.iter()) {
-                for byte in value.to_bits().to_le_bytes() {
-                    state_hash ^= u64::from(byte);
-                    state_hash = state_hash.wrapping_mul(0x100000001b3);
-                }
+                state_hash = mix_state_hash(state_hash, value.to_bits());
             }
-            batch_hash ^= state_hash;
-            batch_hash = batch_hash.wrapping_mul(0x100000001b3);
+            batch_hash = mix_state_hash(batch_hash, state_hash);
         }
         batch_hash
     }
@@ -150,4 +146,14 @@ impl StateArena {
             ],
         )
     }
+}
+
+const STATE_HASH_SEED: u64 = 0x517c_c1b7_2722_0a95;
+
+// Receipt hashes are diagnostic fingerprints, so mix native words instead of
+// serializing each word into eight byte-at-a-time FNV rounds.
+#[inline(always)]
+fn mix_state_hash(hash: u64, word: u64) -> u64 {
+    let mixed = (hash ^ word).wrapping_mul(0x9e37_79b1_85eb_ca87);
+    mixed ^ mixed.rotate_right(29)
 }

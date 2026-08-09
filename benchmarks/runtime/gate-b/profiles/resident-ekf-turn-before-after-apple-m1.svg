@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title description">
+  <title id="title">Resident EKF complete turn before and after optimization</title>
+  <desc id="description">Two stacked bars on a common 400 nanosecond scale. The complete turn falls from 367.3 to 196.0 nanoseconds. State hashing saves 100.3 nanoseconds and the receipt log saves 71.0 nanoseconds.</desc>
+  <defs>
+    <pattern id="saved" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="#eef2f4"/>
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#82919a" stroke-width="3"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#25323a"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="520" fill="#ffffff"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" fill="#172027">
+    <text x="60" y="42" font-size="24" font-weight="700">Resident EKF complete turn: before vs after</text>
+    <text x="60" y="68" font-size="14" fill="#56656e">Apple M1 · 4,096-turn steady-state episode · common nanosecond scale</text>
+
+    <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12">
+      <line x1="120" y1="102" x2="1120" y2="102" stroke="#9aa8b0"/>
+      <g text-anchor="middle" fill="#56656e">
+        <path d="M120 102v7 M245 102v7 M370 102v7 M495 102v7 M620 102v7 M745 102v7 M870 102v7 M995 102v7 M1120 102v7" stroke="#9aa8b0"/>
+        <text x="120" y="94">0</text><text x="245" y="94">50</text><text x="370" y="94">100</text><text x="495" y="94">150</text>
+        <text x="620" y="94">200</text><text x="745" y="94">250</text><text x="870" y="94">300</text><text x="995" y="94">350</text><text x="1120" y="94">400 ns</text>
+      </g>
+
+      <line x1="740.25" y1="112" x2="740.25" y2="325" stroke="#6f7e86" stroke-dasharray="5 5"/>
+      <text x="750" y="322" fill="#56656e">Julia 248.1 ns</text>
+
+      <text x="105" y="158" text-anchor="end" font-size="14" font-weight="700">Before</text>
+      <rect x="120" y="132" width="408.75" height="48" fill="#e7b94f"/>
+      <rect x="528.75" y="132" width="280.25" height="48" fill="#df6b63"/>
+      <rect x="809" y="132" width="229.25" height="48" fill="#58a5b8"/>
+      <rect x="120" y="132" width="918.25" height="48" fill="none" stroke="#25323a"/>
+      <text x="324" y="161" text-anchor="middle">kernel + scheduler 163.5</text>
+      <text x="669" y="161" text-anchor="middle">hash 112.1</text>
+      <text x="923" y="161" text-anchor="middle">receipt log 91.7</text>
+      <text x="1050" y="161" font-size="14" font-weight="700">367.3 ns</text>
+
+      <text x="105" y="278" text-anchor="end" font-size="14" font-weight="700">After</text>
+      <rect x="120" y="252" width="408.75" height="48" fill="#e7b94f"/>
+      <rect x="528.75" y="252" width="29.5" height="48" fill="#df6b63"/>
+      <rect x="558.25" y="252" width="51.75" height="48" fill="#58a5b8"/>
+      <rect x="120" y="252" width="490" height="48" fill="none" stroke="#25323a"/>
+      <rect x="610" y="252" width="428.25" height="48" fill="url(#saved)"/>
+      <text x="324" y="281" text-anchor="middle">kernel + scheduler 163.5</text>
+      <text x="621.5" y="281" font-size="14" font-weight="700">196.0 ns</text>
+
+      <line x1="610" y1="229" x2="1038.25" y2="229" stroke="#25323a" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+      <text x="824" y="218" text-anchor="middle" font-size="15" font-weight="700">171.3 ns removed · 46.6% faster</text>
+
+      <path d="M669 186 C669 330 350 320 350 367" fill="none" stroke="#b7433b" stroke-width="2" marker-end="url(#arrow)"/>
+      <rect x="100" y="376" width="470" height="66" fill="#fff7f6" stroke="#df6b63"/>
+      <text x="120" y="402" font-size="14" font-weight="700">Hash and summary: 112.1 → 11.8 ns</text>
+      <text x="120" y="425" fill="#56656e">−100.3 ns · 96 byte-wise FNV rounds → 12 native-word mixes</text>
+
+      <path d="M923 186 C923 330 850 320 850 367" fill="none" stroke="#27768a" stroke-width="2" marker-end="url(#arrow)"/>
+      <rect x="630" y="376" width="470" height="66" fill="#f4fbfc" stroke="#58a5b8"/>
+      <text x="650" y="402" font-size="14" font-weight="700">Receipt log: 91.7 → 20.7 ns</text>
+      <text x="650" y="425" fill="#56656e">−71.0 ns · generic mutex ledger → pre-admitted single writer</text>
+
+      <text x="60" y="478" font-weight="700">Sampled hot stacks</text>
+      <text x="205" y="478" fill="#56656e">before: kernel 36.7% · state hash 14.0% · prepare_commit 34.9% · mutex visible</text>
+      <text x="205" y="501" fill="#56656e">after: kernel 69.1% · no distinct hash samples · prepare_commit 6.9% · no mutex in 13,958 samples</text>
+    </g>
+  </g>
+</svg>

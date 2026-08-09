@@ -165,6 +165,6 @@ matrix loops avoid sending a long sequence of 2-by-2 and 3-by-3 operations
 through NumPy's Python/API dispatch boundary. Raw data is in
 `julia/RESULTS_APPLE_M1_2026-08-08.csv`.
 
-The resident turn-shell follow-up, including a Time Profiler flame graph and
-layer subtraction, is recorded in
+The resident turn-shell follow-up, including before/after Time Profiler data,
+an annotated comparison, and layer subtraction, is recorded in
 [`profiles/PROFILE_APPLE_M1_2026-08-09.md`](profiles/PROFILE_APPLE_M1_2026-08-09.md).

@@ -34,24 +34,26 @@ fn input_array(input: EkfInput) -> [f64; 4] {
 }
 
 fn state_hash64(state: EkfState) -> u64 {
-    let mut hash = 0xcbf29ce484222325_u64;
+    let mut hash = 0x517c_c1b7_2722_0a95_u64;
     for value in state.values() {
-        for byte in value.to_bits().to_le_bytes() {
-            hash ^= u64::from(byte);
-            hash = hash.wrapping_mul(0x100000001b3);
-        }
+        hash = mix_state_hash(hash, value.to_bits());
     }
     hash
 }
 
 fn batch_state_hash(state: EkfState, instances: usize) -> u64 {
     let state_hash = state_hash64(state);
-    let mut hash = 0xcbf29ce484222325_u64;
+    let mut hash = 0x517c_c1b7_2722_0a95_u64;
     for _ in 0..instances {
-        hash ^= state_hash;
-        hash = hash.wrapping_mul(0x100000001b3);
+        hash = mix_state_hash(hash, state_hash);
     }
     hash
+}
+
+#[inline(always)]
+fn mix_state_hash(hash: u64, word: u64) -> u64 {
+    let mixed = (hash ^ word).wrapping_mul(0x9e37_79b1_85eb_ca87);
+    mixed ^ mixed.rotate_right(29)
 }
 
 pub struct ResidentScheduledFixture {
@@ -159,12 +161,13 @@ pub struct ResidentTurnFixture {
 
 impl ResidentTurnFixture {
     pub fn new(instances: usize, retained_history: usize, next_epoch: u64) -> Self {
+        let recorder = ResidentTurnRecorder::new(EPISODE_LENGTH, retained_history)
+            .expect("resident Gate B recorder setup");
         let mut resident = ResidentEkfBatch::new(instances);
         resident.set_next_epoch_for_gate_b(next_epoch);
         Self {
             resident,
-            recorder: ResidentTurnRecorder::new(EPISODE_LENGTH, retained_history)
-                .expect("resident Gate B recorder setup"),
+            recorder,
             instances,
             retained_history,
         }
