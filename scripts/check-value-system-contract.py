@@ -34,13 +34,18 @@ DEFAULT_FROZEN_TARGETS = CONTRACT_ROOT / "frozen-semantic-targets-v1.json"
 DEFAULT_FROZEN_TARGETS_SCHEMA = (
     CONTRACT_ROOT / "frozen-semantic-targets-v1-schema.json"
 )
+DEFAULT_C2_ADAPTER_BOUNDARY = CONTRACT_ROOT / "c2-legacy-adapter-boundary.json"
+DEFAULT_C2_ADAPTER_BOUNDARY_SCHEMA = (
+    CONTRACT_ROOT / "c2-legacy-adapter-boundary-schema.json"
+)
 DEFAULT_GATE_B = CONTRACT_ROOT / "gate-b-regression.json"
 GATE_A_MANIFEST = ROOT / "tests/architecture/value-execution/legacy-boundary.json"
 GENERATOR_PATH = ROOT / "scripts/generate-value-system-inventory.py"
 GATE_A_CHECKER_PATH = ROOT / "scripts/check-value-execution-boundary.py"
 CANONICAL_REFERENCE_PATH = ROOT / "scripts/tests/canonical_encoding_v1_reference.py"
+C2_ADAPTER_GENERATOR_PATH = ROOT / "scripts/generate-c2-legacy-adapter-boundary.py"
 EXPECTED_LEGACY_SCANNER_SHA256 = (
-    "8211e9b71af90bca7dd8da33b6caaca83c3ab5569fd2739ae35423b7795fad5b"
+    "78529f2ffce2e3c3fc0d3ffabd55c8df1846ace2edd11500c095e82c8a12eed3"
 )
 EXPECTED_HASH_CONTRACTS_V1 = {
     "NominalKey": {
@@ -157,7 +162,7 @@ def expected_target_status(target: dict[str, Any]) -> dict[str, bool]:
     return {
         "inventoried": True,
         "semantics_frozen": True,
-        "implemented": target["implementation_gate"] == "C1",
+        "implemented": target["implementation_gate"] in {"C1", "C2"},
         "artifact_migrated": False,
         "ports_migrated": False,
         "resident_storage_migrated": False,
@@ -316,7 +321,7 @@ def features(cfg: str | None) -> set[str]:
 
 
 ENUM_FIELDS = {
-    "Value": "value_variants",
+    "LegacyValue": "value_variants",
     "ValueKind": "value_kind_variants",
     "Kind": "kind_variants",
 }
@@ -336,7 +341,7 @@ def coverage_failures(
     failures: list[Failure] = []
     families = migration["families"]
     contract_ids = {
-        "Value": "C0-VALUE-COVERAGE",
+        "LegacyValue": "C0-VALUE-COVERAGE",
         "ValueKind": "C0-VALUE-KIND-COVERAGE",
         "Kind": "C0-KIND-COVERAGE",
     }
@@ -392,7 +397,7 @@ def family_contract_failures(
 ) -> list[Failure]:
     failures: list[Failure] = []
     live_values = {
-        row["name"]: row for row in live["enums"]["Value"]["variants"]
+        row["name"]: row for row in live["enums"]["LegacyValue"]["variants"]
     }
     target_owners: dict[str, list[str]] = {}
     family_ids: list[str] = []
@@ -841,7 +846,7 @@ def classified_targets(migration: dict[str, Any], enum_name: str, variant: str) 
 def frozen_semantics_failures(migration: dict[str, Any], migration_path: Path) -> list[Failure]:
     failures: list[Failure] = []
     exact_targets = {
-        ("Value", "Empty"): {
+        ("LegacyValue", "Empty"): {
             "source-empty-expression",
             "option-absence",
             "execution-no-result",
@@ -851,12 +856,12 @@ def frozen_semantics_failures(migration: dict[str, Any], migration_path: Path) -
         },
         ("ValueKind", "Empty"): {"value-kind-hole"},
         ("Kind", "Empty"): {"kind-hole"},
-        ("Value", "MatrixValue"): {
+        ("LegacyValue", "MatrixValue"): {
             "matrix-construction-ir",
             "homogeneous-matrix-snapshot",
             "legacy-matrix-value-adapter",
         },
-        ("Value", "EmptyKind"): {"legacy-typed-empty-adapter"},
+        ("LegacyValue", "EmptyKind"): {"legacy-typed-empty-adapter"},
     }
     for (enum_name, variant), expected in exact_targets.items():
         actual = set(classified_targets(migration, enum_name, variant))
@@ -875,7 +880,7 @@ def frozen_semantics_failures(migration: dict[str, Any], migration_path: Path) -
             )
     targets, owners = target_index(migration)
     decisions = (
-        ("Value", "Kind", "reified-type-snapshot", "reified-type-snapshot"),
+        ("LegacyValue", "Kind", "reified-type-snapshot", "reified-type-snapshot"),
         ("Kind", "Reference", "reference-binding-contract", "binding-contract"),
         ("ValueKind", "Any", "kind-wildcard", "kind-expression"),
     )
@@ -930,7 +935,7 @@ def frozen_semantics_failures(migration: dict[str, Any], migration_path: Path) -
                 "C2",
                 repr(adapter.get("implementation_gate")),
                 f"{migration_path}:families",
-                enum_name="Value",
+                enum_name="LegacyValue",
                 variant="EmptyKind",
             )
         )
@@ -943,7 +948,7 @@ def matrix_value_classification_failures(
     rejected = [
         (row["path"], site)
         for row in migration["use_classifications"]
-        if row["enum"] == "Value"
+        if row["enum"] == "LegacyValue"
         and row["variant"] == "MatrixValue"
         and row["target"] == "heterogeneous-matrix-rejected"
         for site in row["sites"]
@@ -958,7 +963,7 @@ def matrix_value_classification_failures(
             f"{migration_path}:use_classifications",
             int(site["line"]),
             int(site["column"]),
-            "Value",
+            "LegacyValue",
             "MatrixValue",
         )
         for path, site in rejected
@@ -1157,6 +1162,15 @@ def high_risk_failures(
         current_sites = Counter(
             (row["path"], site["fingerprint"])
             for row in current_rows
+            if not (
+                row["path"] == "src/core/src/legacy_adapter/value.rs"
+                and identifier
+                in {
+                    "mutable-reference-alias",
+                    "value-mutable-reference",
+                    "value-typed-wrapper",
+                }
+            )
             for site in row["sites"]
         )
         additions = current_sites - approved_sites
@@ -1224,9 +1238,30 @@ def legacy_alias_baseline_failures(
 def compatibility_alias_failures(
     baseline: dict[str, Any], live: dict[str, Any], baseline_path: Path
 ) -> list[Failure]:
+    def structural(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return [
+            {
+                key: (
+                    [
+                        {
+                            route_key: route_value
+                            for route_key, route_value in route.items()
+                            if route_key != "line"
+                        }
+                        for route in value
+                    ]
+                    if key == "public_reexport_route"
+                    else value
+                )
+                for key, value in row.items()
+                if key not in {"line", "column"}
+            }
+            for row in rows
+        ]
+
     approved = baseline.get("required_compatibility_aliases", [])
     current = live.get("required_compatibility_aliases", [])
-    if current == approved:
+    if structural(current) == structural(approved):
         return []
     return [
         failure(
@@ -1488,13 +1523,50 @@ OPEN_SEMANTIC_SERDE_TYPES = {
         "KindConstraint",
     },
     "src/core/src/schema/mod.rs": {"SchemaDraft", "SchemaBody"},
+    "src/core/src/snapshot/data.rs": {
+        "F32Bits",
+        "F64Bits",
+        "Complex32Bits",
+        "Complex64Bits",
+    },
+    "src/core/src/snapshot/draft.rs": {
+        "ValueDraft",
+        "ValueDataDraft",
+        "NamedValueDraft",
+        "TableColumnDraft",
+        "MapEntryDraft",
+        "OptionDraft",
+        "EnumDraft",
+        "ReifiedTypeDraft",
+    },
 }
 NON_SERDE_SEMANTIC_TYPES = {
     "src/core/src/schema/table.rs": {"SchemaHandle"},
+    "src/core/src/snapshot/data.rs": {"ValueData"},
+}
+FINALIZED_SNAPSHOT_TYPES = {
+    "src/core/src/snapshot/validation.rs": {"Value"},
+    "src/core/src/snapshot/data.rs": {
+        "ValueData",
+        "ReifiedKind",
+        "ReifiedType",
+        "Rational64Value",
+        "RecordValue",
+        "MatrixValue",
+        "TableValue",
+        "SetValue",
+        "MapValue",
+    },
+    "src/core/src/snapshot/constants.rs": {
+        "ConstantStore",
+        "ConstantEntry",
+        "ConstantHandle",
+    },
 }
 FINALIZED_SEMANTIC_TYPE_NAMES = set().union(
     *FINALIZED_SEMANTIC_SERDE_TYPES.values(),
     *NON_SERDE_SEMANTIC_TYPES.values(),
+    *FINALIZED_SNAPSHOT_TYPES.values(),
 )
 STANDARD_INTERIOR_MUTABILITY_IDENTIFIERS = {
     "UnsafeCell",
@@ -1539,6 +1611,21 @@ SEMANTIC_FORBIDDEN_IDENTIFIERS = STANDARD_INTERIOR_MUTABILITY_IDENTIFIERS | {
     "StateArena",
     "nalgebra",
     "DMatrix",
+}
+SNAPSHOT_FORBIDDEN_IDENTIFIERS = STANDARD_INTERIOR_MUTABILITY_IDENTIFIERS | {
+    "LegacyValue",
+    "ValueKind",
+    "Ref",
+    "ValRef",
+    "MutableReference",
+    "ReactiveCellId",
+    "StateArena",
+    "RuntimeExecutionTransaction",
+    "ValueStateJournal",
+    "ReactiveTurnJournal",
+    "nalgebra",
+    "DMatrix",
+    "Rc",
 }
 
 
@@ -1740,8 +1827,9 @@ def manual_deserialize_impls(
     return implementations
 
 
-def transitive_semantic_forbidden_names(
+def transitive_forbidden_names(
     corpus: list[tuple[Path, str, str, list[Any]]],
+    initial: set[str],
 ) -> set[str]:
     declarations: dict[str, set[str]] = {}
     for _path, _source, _searchable, tokens in corpus:
@@ -1757,7 +1845,7 @@ def transitive_semantic_forbidden_names(
             ):
                 declarations.setdefault(binding.local, set()).add(binding.path[-1])
 
-    forbidden = set(SEMANTIC_FORBIDDEN_IDENTIFIERS)
+    forbidden = set(initial)
     changed = True
     while changed:
         changed = False
@@ -1768,12 +1856,22 @@ def transitive_semantic_forbidden_names(
     return forbidden
 
 
+def transitive_semantic_forbidden_names(
+    corpus: list[tuple[Path, str, str, list[Any]]],
+) -> set[str]:
+    return transitive_forbidden_names(corpus, SEMANTIC_FORBIDDEN_IDENTIFIERS)
+
+
 def semantic_serde_attribute(source: str, type_name: str) -> str | None:
     declaration = re.search(rf"\bpub\s+(?:struct|enum)\s+{type_name}\b", source)
     if declaration is None:
         return None
+    group_boundary = source.rfind("\n\n", 0, declaration.start())
+    declaration_group_start = 0 if group_boundary < 0 else group_boundary + 2
     attribute_start = source.rfind(
-        '#[cfg_attr(feature = "serde", derive(', 0, declaration.start()
+        '#[cfg_attr(feature = "serde", derive(',
+        declaration_group_start,
+        declaration.start(),
     )
     if attribute_start < 0:
         return ""
@@ -1952,12 +2050,198 @@ def legacy_adapter_catch_all(source: str) -> int | None:
     return None
 
 
+def snapshot_relation_failures(
+    source: str, tokens: list[Any], relative: str
+) -> list[Failure]:
+    """Keep the general snapshot relations explicit and schema-aware."""
+    failures: list[Failure] = []
+    prohibited = {"PartialEq", "Eq", "Hash", "Ord"}
+    for type_name in ("Value", "ValueData"):
+        declaration = re.search(rf"\bpub\s+(?:struct|enum)\s+{type_name}\b", source)
+        if declaration is None:
+            continue
+        group_boundary = source.rfind("\n\n", 0, declaration.start())
+        prefix_start = 0 if group_boundary < 0 else group_boundary + 2
+        prefix = source[prefix_start : declaration.start()]
+        for derive in re.finditer(r"#\s*\[\s*derive\s*\(([^)]*)\)\s*\]", prefix):
+            traits = {
+                item.strip().split("::")[-1]
+                for item in derive.group(1).split(",")
+            }
+            forbidden = sorted(traits & prohibited)
+            if forbidden:
+                failures.append(
+                    failure(
+                        "C2-EXPLICIT-VALUE-RELATIONS",
+                        type_name,
+                        relative,
+                        "no derived PartialEq/Eq/Hash/Ord on general snapshot values",
+                        f"derived {forbidden!r}",
+                        "src/core/src/snapshot/relations.rs",
+                        source.count("\n", 0, prefix_start + derive.start()) + 1,
+                    )
+                )
+
+    trait_aliases = GENERATOR.LEGACY_SCANNER.imported_trait_aliases(tokens, prohibited)
+    type_aliases = {"Value", "ValueData"}
+    changed = True
+    while changed:
+        changed = False
+        for alias in GENERATOR.LEGACY_SCANNER.type_alias_declarations(tokens):
+            dependencies = rust_type_identifiers(alias.rhs) - set(alias.parameters)
+            if alias.name not in type_aliases and dependencies & type_aliases:
+                type_aliases.add(alias.name)
+                changed = True
+        for binding in GENERATOR.LEGACY_SCANNER.use_bindings(tokens):
+            if (
+                binding.path
+                and not binding.glob
+                and binding.local not in type_aliases
+                and binding.path[-1] in type_aliases
+            ):
+                type_aliases.add(binding.local)
+                changed = True
+
+    for opening, token in enumerate(tokens):
+        if token.value != "impl":
+            continue
+        header_end = opening + 1
+        while header_end < len(tokens) and tokens[header_end].value not in {"{", ";"}:
+            header_end += 1
+        header = tokens[opening + 1 : header_end]
+        for_indexes = [index for index, item in enumerate(header) if item.value == "for"]
+        if not for_indexes:
+            continue
+        for_index = for_indexes[-1]
+        trait_names = [
+            GENERATOR.canonical_identifier(item.value)
+            for item in header[:for_index]
+            if re.fullmatch(r"(?:r#)?[A-Za-z_][A-Za-z0-9_]*", item.value)
+        ]
+        self_names = [
+            GENERATOR.canonical_identifier(item.value)
+            for item in header[for_index + 1 :]
+            if re.fullmatch(r"(?:r#)?[A-Za-z_][A-Za-z0-9_]*", item.value)
+        ]
+        if (
+            trait_names
+            and self_names
+            and trait_names[-1] in trait_aliases
+            and self_names[-1] in type_aliases
+        ):
+            failures.append(
+                failure(
+                    "C2-EXPLICIT-VALUE-RELATIONS",
+                    self_names[-1],
+                    relative,
+                    "snapshot_eq/language_eq/key_cmp only",
+                    "manual general relation implementation",
+                    "src/core/src/snapshot/relations.rs",
+                    token.line,
+                    token.column,
+                )
+            )
+    return failures
+
+
+def c2_adapter_boundary_failures(
+    root: Path, approved: dict[str, Any], approved_path: Path
+) -> list[Failure]:
+    """Freeze C2's boundary-only legacy allowance while permitting shrinkage."""
+    generator = load_module("c2_legacy_adapter_boundary", C2_ADAPTER_GENERATOR_PATH)
+    live = generator.generate(root)
+    failures: list[Failure] = []
+    expected_pairs = {
+        "legacy-value": "LegacyValue",
+        "legacy-value-kind": "ValueKind",
+        "legacy-ref-allocation": "Ref",
+        "cycle-guard-address": "addr",
+    }
+    approved_rows = {
+        (row.get("category"), row.get("identifier")): row
+        for row in approved.get("uses", [])
+    }
+    if len(approved_rows) != len(approved.get("uses", [])):
+        failures.append(
+            failure(
+                "C2-ADAPTER-ALLOWANCE",
+                "unique allowance rows",
+                str(approved_path),
+                "one row per category and identifier",
+                "duplicate allowance row",
+                str(approved_path),
+            )
+        )
+    for category, identifier in expected_pairs.items():
+        row = approved_rows.get((category, identifier))
+        current = next(
+            (
+                item
+                for item in live["uses"]
+                if item["category"] == category and item["identifier"] == identifier
+            ),
+            {"sites": []},
+        )
+        if row is None:
+            failures.append(
+                failure(
+                    "C2-ADAPTER-ALLOWANCE",
+                    identifier,
+                    str(approved_path),
+                    "frozen category allowance",
+                    "missing allowance row",
+                    str(approved_path),
+                )
+            )
+            continue
+        if row.get("count") != len(row.get("sites", [])):
+            failures.append(
+                failure(
+                    "C2-ADAPTER-ALLOWANCE",
+                    identifier,
+                    str(approved_path),
+                    "count equals frozen site cardinality",
+                    repr(row.get("count")),
+                    str(approved_path),
+                )
+            )
+        approved_fingerprints = Counter(
+            site["fingerprint"] for site in row.get("sites", [])
+        )
+        live_fingerprints = Counter(
+            site["fingerprint"] for site in current.get("sites", [])
+        )
+        excess = live_fingerprints - approved_fingerprints
+        if excess:
+            offending = next(
+                site
+                for site in current["sites"]
+                if site["fingerprint"] in excess
+            )
+            failures.append(
+                failure(
+                    "C2-ADAPTER-ALLOWANCE",
+                    identifier,
+                    live["boundary"],
+                    "live stable site IDs are a multiset subset of the frozen allowance",
+                    f"unapproved stable site IDs {dict(excess)!r}",
+                    str(approved_path),
+                    int(offending["line"]),
+                    int(offending["column"]),
+                )
+            )
+    return failures
+
+
 def future_boundary_failures(root: Path) -> list[Failure]:
     root = root.resolve()
     failures: list[Failure] = []
     schema_dependency = re.compile(r"\b(?:mech_runtime|mech_engine|crate::runtime|crate::engine)\b")
     corpus = analyzed_production_corpus(root)
     semantic_forbidden_names = transitive_semantic_forbidden_names(corpus)
+    snapshot_forbidden_names = transitive_forbidden_names(
+        corpus, SNAPSHOT_FORBIDDEN_IDENTIFIERS
+    )
     finalized_type_aliases = finalized_semantic_type_aliases(corpus)
     for path, source, searchable, tokens in corpus:
         resolved = path.resolve()
@@ -1989,6 +2273,19 @@ def future_boundary_failures(root: Path) -> list[Failure]:
                         "src/core/tests/semantic_serde_contract.rs",
                     )
                 )
+        for type_name in FINALIZED_SNAPSHOT_TYPES.get(relative, set()):
+            attribute = semantic_serde_attribute(source, type_name)
+            if attribute is not None and "Deserialize" in attribute:
+                failures.append(
+                    failure(
+                        "C2-FINALIZED-SNAPSHOT-SERDE",
+                        type_name,
+                        relative,
+                        "no Deserialize; construction requires snapshot validation",
+                        attribute,
+                        "src/core/tests/snapshot_serde_contract.rs",
+                    )
+                )
         for type_name in OPEN_SEMANTIC_SERDE_TYPES.get(relative, set()):
             attribute = semantic_serde_attribute(source, type_name)
             if attribute is not None and attribute != '#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]':
@@ -2005,14 +2302,21 @@ def future_boundary_failures(root: Path) -> list[Failure]:
         for type_name in NON_SERDE_SEMANTIC_TYPES.get(relative, set()):
             attribute = semantic_serde_attribute(source, type_name)
             if attribute:
+                snapshot_data = type_name == "ValueData"
                 failures.append(
                     failure(
-                        "C1-EPHEMERAL-HANDLE-SERDE-BOUNDARY",
+                        "C2-FINALIZED-SNAPSHOT-SERDE"
+                        if snapshot_data
+                        else "C1-EPHEMERAL-HANDLE-SERDE-BOUNDARY",
                         type_name,
                         relative,
-                        "no standalone Serde construction for builder-local handles",
+                        "no physical-layout Serde for finalized snapshot data"
+                        if snapshot_data
+                        else "no standalone Serde construction for builder-local handles",
                         attribute,
-                        "src/core/tests/schema_contract.rs",
+                        "src/core/tests/snapshot_serde_contract.rs"
+                        if snapshot_data
+                        else "src/core/tests/schema_contract.rs",
                     )
                 )
         builder_spec = {
@@ -2152,29 +2456,72 @@ def future_boundary_failures(root: Path) -> list[Failure]:
             resolver = GENERATOR.LEGACY_SCANNER.TransparentTypeResolver(
                 tokens, relative=relative
             )
-            forbidden = next(
+            direct_forbidden = next(
                 (
                     token
                     for token in tokens
                     if GENERATOR.canonical_identifier(token.value)
-                    == "ReactiveCellId"
+                    in SNAPSHOT_FORBIDDEN_IDENTIFIERS
                     or resolver.resolve([token]) == "Ref"
                 ),
                 None,
             )
-            if forbidden is not None:
+            declared_dependencies = set().union(
+                *declared_type_dependencies(tokens).values()
+            )
+            imported_dependencies = {
+                binding.local
+                for binding in GENERATOR.LEGACY_SCANNER.use_bindings(tokens)
+                if binding.path
+                and not binding.glob
+                and binding.path[-1] in snapshot_forbidden_names
+            }
+            transitive_forbidden = next(
+                iter(
+                    sorted(
+                        (declared_dependencies | imported_dependencies)
+                        & (snapshot_forbidden_names - SNAPSHOT_FORBIDDEN_IDENTIFIERS)
+                    )
+                ),
+                None,
+            )
+            if direct_forbidden is not None or transitive_forbidden is not None:
+                transitive_token = (
+                    next(
+                        (
+                            token
+                            for token in tokens
+                            if GENERATOR.canonical_identifier(token.value)
+                            == transitive_forbidden
+                        ),
+                        None,
+                    )
+                    if transitive_forbidden is not None
+                    else None
+                )
                 failures.append(
                     failure(
                         "C0-SNAPSHOT-LEGACY-IMPORT",
-                        GENERATOR.canonical_identifier(forbidden.value),
+                        GENERATOR.canonical_identifier(direct_forbidden.value)
+                        if direct_forbidden is not None
+                        else str(transitive_forbidden),
                         relative,
-                        "snapshot module independent of legacy identity/storage",
-                        "forbidden legacy symbol",
-                        "src/core/src/legacy_adapter/",
-                        forbidden.line,
-                        forbidden.column,
+                        "snapshot tree independent of mutable values, resident state, and interior mutability",
+                        "forbidden direct or transitive dependency",
+                        "src/core/src/legacy_adapter/value.rs",
+                        direct_forbidden.line
+                        if direct_forbidden is not None
+                        else transitive_token.line
+                        if transitive_token is not None
+                        else None,
+                        direct_forbidden.column
+                        if direct_forbidden is not None
+                        else transitive_token.column
+                        if transitive_token is not None
+                        else None,
                     )
                 )
+            failures.extend(snapshot_relation_failures(source, tokens, relative))
         if module_file_or_descendant(root, resolved, "schema"):
             match = schema_dependency.search(searchable)
             if match is not None:
@@ -2190,11 +2537,19 @@ def future_boundary_failures(root: Path) -> list[Failure]:
                     )
                 )
         mentions_legacy = re.search(r"\bLegacyValue\b", searchable) is not None
-        mentions_snapshot = re.search(r"\bsnapshot\s*::\s*Value\b", searchable) is not None
+        mentions_snapshot = (
+            re.search(r"\bsnapshot\s*::\s*Value\b", searchable) is not None
+            or any(
+                binding.path
+                and "snapshot" in binding.path
+                and binding.path[-1] == "Value"
+                for binding in GENERATOR.LEGACY_SCANNER.use_bindings(tokens)
+            )
+        )
         if (
             mentions_legacy
             and mentions_snapshot
-            and not module_file_or_descendant(root, resolved, "legacy_adapter")
+            and relative != "src/core/src/legacy_adapter/value.rs"
         ):
             failures.append(
                 failure(
@@ -2235,6 +2590,53 @@ def future_boundary_failures(root: Path) -> list[Failure]:
                     "tests/architecture/value-system/migration.json",
                 )
             )
+        resident_path = (
+            relative == "src/core/src/resident_execution.rs"
+            or relative == "src/runtime/src/resident_gate_b.rs"
+            or relative.startswith("src/engine/src/resident/")
+            or relative.startswith("src/runtime/src/ledger/")
+        )
+        if resident_path:
+            forbidden_resident = next(
+                (
+                    token
+                    for token in tokens
+                    if GENERATOR.canonical_identifier(token.value)
+                    in {
+                        "ValueDraft",
+                        "ValueDataDraft",
+                        "SnapshotValidationContext",
+                        "ConstantStore",
+                        "ConstantStoreBuilder",
+                        "ValueHash",
+                        "KeyHash",
+                    }
+                ),
+                None,
+            )
+            snapshot_import = next(
+                (
+                    binding
+                    for binding in GENERATOR.LEGACY_SCANNER.use_bindings(tokens)
+                    if binding.path and "snapshot" in binding.path
+                ),
+                None,
+            )
+            if forbidden_resident is not None or snapshot_import is not None:
+                failures.append(
+                    failure(
+                        "C2-RESIDENT-LEGACY-HOT-PATH",
+                        forbidden_resident.value
+                        if forbidden_resident is not None
+                        else "snapshot import",
+                        relative,
+                        "resident turn remains on compact legacy cells and pre-resolved metadata",
+                        "snapshot construction, hashing, schema, or constant lookup dependency",
+                        "src/engine/tests/resident_ekf_contract.rs",
+                        forbidden_resident.line if forbidden_resident is not None else None,
+                        forbidden_resident.column if forbidden_resident is not None else None,
+                    )
+                )
     canonical_test = root / "src/core/tests/canonical_schema_vectors.rs"
     if canonical_test.is_file():
         canonical_source = canonical_test.read_text(encoding="utf-8")
@@ -3364,8 +3766,11 @@ def audit(
     canonical_vectors_schema_path: Path = DEFAULT_CANONICAL_VECTORS_SCHEMA,
     frozen_targets_path: Path = DEFAULT_FROZEN_TARGETS,
     frozen_targets_schema_path: Path = DEFAULT_FROZEN_TARGETS_SCHEMA,
+    c2_adapter_boundary_path: Path = DEFAULT_C2_ADAPTER_BOUNDARY,
+    c2_adapter_boundary_schema_path: Path = DEFAULT_C2_ADAPTER_BOUNDARY_SCHEMA,
     verify_reference: bool = True,
     check_gate_a: bool = True,
+    check_c2_adapter: bool = True,
     baseline_inventory: dict[str, Any] | None = None,
 ) -> list[Failure]:
     root = root.resolve()
@@ -3382,6 +3787,8 @@ def audit(
     canonical_vectors_schema = load_json(canonical_vectors_schema_path)
     frozen_targets = load_json(frozen_targets_path)
     frozen_targets_schema = load_json(frozen_targets_schema_path)
+    c2_adapter_boundary = load_json(c2_adapter_boundary_path)
+    c2_adapter_boundary_schema = load_json(c2_adapter_boundary_schema_path)
     failures: list[Failure] = []
     for contract_id, payload, schema, path in (
         ("C0-INVENTORY-SCHEMA", inventory, inventory_schema, inventory_path),
@@ -3399,6 +3806,12 @@ def audit(
             frozen_targets,
             frozen_targets_schema,
             frozen_targets_path,
+        ),
+        (
+            "C2-ADAPTER-ALLOWANCE-SCHEMA",
+            c2_adapter_boundary,
+            c2_adapter_boundary_schema,
+            c2_adapter_boundary_path,
         ),
     ):
         for message in schema_errors(payload, schema):
@@ -3503,6 +3916,12 @@ def audit(
         )
     if check_gate_a:
         failures.extend(gate_a_failures(root, inventory))
+    if check_c2_adapter:
+        failures.extend(
+            c2_adapter_boundary_failures(
+                root, c2_adapter_boundary, c2_adapter_boundary_path
+            )
+        )
     failures.extend(future_boundary_failures(root))
     failures.extend(canonical_encoding_failures(canonical, canonical_path))
     failures.extend(
@@ -3537,6 +3956,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--canonical-vectors-schema", type=Path, default=DEFAULT_CANONICAL_VECTORS_SCHEMA)
     parser.add_argument("--frozen-targets", type=Path, default=DEFAULT_FROZEN_TARGETS)
     parser.add_argument("--frozen-targets-schema", type=Path, default=DEFAULT_FROZEN_TARGETS_SCHEMA)
+    parser.add_argument("--c2-adapter-boundary", type=Path, default=DEFAULT_C2_ADAPTER_BOUNDARY)
+    parser.add_argument("--c2-adapter-boundary-schema", type=Path, default=DEFAULT_C2_ADAPTER_BOUNDARY_SCHEMA)
     return parser.parse_args()
 
 
@@ -3558,6 +3979,8 @@ def main() -> int:
             canonical_vectors_schema_path=args.canonical_vectors_schema,
             frozen_targets_path=args.frozen_targets,
             frozen_targets_schema_path=args.frozen_targets_schema,
+            c2_adapter_boundary_path=args.c2_adapter_boundary,
+            c2_adapter_boundary_schema_path=args.c2_adapter_boundary_schema,
         )
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
         print(f"value-system contract checker failed internally: {error}", file=sys.stderr)

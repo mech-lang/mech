@@ -238,7 +238,7 @@ class ValueSystemInventoryGeneratorTests(unittest.TestCase):
             "src/core/src/live.rs",
             tokens,
             {
-                "Value": {"Empty", "Typed", "MatrixValue"},
+                "LegacyValue": {"Empty", "Typed", "MatrixValue"},
                 "ValueKind": {"Any", "Empty"},
                 "Kind": {"Any", "Empty", "Reference"},
             },
@@ -365,7 +365,7 @@ class ValueSystemInventoryGeneratorTests(unittest.TestCase):
 
     def test_semantic_and_syntax_kind_paths_are_distinguished(self):
         variants = {
-            "Value": {"Empty"},
+            "LegacyValue": {"Empty"},
             "ValueKind": {"Any"},
             "Kind": {"Any"},
         }
@@ -413,7 +413,7 @@ class ValueSystemInventoryGeneratorTests(unittest.TestCase):
         )
 
     def test_kind_resolution_is_lexically_scoped(self):
-        variants = {"Value": {"Empty"}, "ValueKind": {"Any"}, "Kind": {"Any"}}
+        variants = {"LegacyValue": {"Empty"}, "ValueKind": {"Any"}, "Kind": {"Any"}}
         source = (
             "use mech_core::kind::Kind;\n"
             "mod syntax { enum Kind { Any } fn local() { let _ = Kind::Any; } }\n"

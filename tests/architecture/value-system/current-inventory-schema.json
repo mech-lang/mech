@@ -1,16 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://mech-lang.org/schemas/value-system-current-inventory-v5.json",
+  "$id": "https://mech-lang.org/schemas/value-system-current-inventory-v6.json",
   "additionalProperties": false,
   "properties": {
     "enums": {
       "additionalProperties": false,
       "properties": {
         "Kind": { "$ref": "#/$defs/enumInventory" },
-        "Value": { "$ref": "#/$defs/valueEnumInventory" },
+        "LegacyValue": { "$ref": "#/$defs/valueEnumInventory" },
         "ValueKind": { "$ref": "#/$defs/enumInventory" }
       },
-      "required": ["Value", "ValueKind", "Kind"],
+      "required": ["LegacyValue", "ValueKind", "Kind"],
       "type": "object"
     },
     "high_risk_api_uses": {
@@ -56,7 +56,23 @@
       "type": "array"
     },
     "reference_commit": { "pattern": "^[0-9a-f]{40}$", "type": "string" },
-    "schema_version": { "const": 5 },
+    "schema_version": { "const": 6 },
+    "snapshot_types": {
+      "additionalProperties": false,
+      "properties": {
+        "Value": {
+          "additionalProperties": false,
+          "properties": {
+            "source": { "const": "src/core/src/snapshot/mod.rs" },
+            "category": { "const": "immutable-snapshot" }
+          },
+          "required": ["source", "category"],
+          "type": "object"
+        }
+      },
+      "required": ["Value"],
+      "type": "object"
+    },
     "workspace_packages": {
       "items": { "$ref": "#/$defs/workspacePackage" },
       "minItems": 1,
@@ -100,6 +116,7 @@
     "enumerated_rust_files",
     "audited_rust_files",
     "enums",
+    "snapshot_types",
     "variant_uses",
     "type_contract_sources",
     "auxiliary_rust_fixtures",
@@ -345,7 +362,7 @@
       "additionalProperties": false,
       "properties": {
         "column": { "minimum": 1, "type": "integer" },
-        "enum": { "enum": ["Value", "ValueKind", "Kind"] },
+        "enum": { "enum": ["LegacyValue", "ValueKind", "Kind"] },
         "line": { "minimum": 1, "type": "integer" },
         "path": { "minLength": 1, "type": "string" },
         "variant": { "minLength": 1, "type": "string" }

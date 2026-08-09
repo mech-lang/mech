@@ -43,7 +43,7 @@ LEGACY_SCANNER_CONTRACT = {
     "identifier_comparison": "canonical-identifier-v1",
     "ref_alias_resolution": "transitive-generic-identity-wrapper-v1",
     "baseline_policy": "checked-in-archived-source-oracle-may-only-shrink-v1",
-    "implementation_sha256": "8211e9b71af90bca7dd8da33b6caaca83c3ab5569fd2739ae35423b7795fad5b",
+    "implementation_sha256": "78529f2ffce2e3c3fc0d3ffabd55c8df1846ace2edd11500c095e82c8a12eed3",
 }
 AUDITED_ENUMS = ("LegacyValue", "ValueKind", "Kind")
 EXCLUDED_SOURCE_DIRECTORIES = {

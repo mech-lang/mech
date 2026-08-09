@@ -208,7 +208,7 @@ class ReviewedContractsTests(unittest.TestCase):
             "unspecified-extent",
             "generic-dispatch",
         }
-        actual = CHECKER.classified_targets(self.migration, "Value", "Empty")
+        actual = CHECKER.classified_targets(self.migration, "LegacyValue", "Empty")
         self.assertEqual(set(actual), expected)
         for identifier in expected:
             self.assertGreater(actual.count(identifier), 0)
@@ -219,7 +219,7 @@ class ReviewedContractsTests(unittest.TestCase):
             "homogeneous-matrix-snapshot",
             "legacy-matrix-value-adapter",
         }
-        actual = CHECKER.classified_targets(self.migration, "Value", "MatrixValue")
+        actual = CHECKER.classified_targets(self.migration, "LegacyValue", "MatrixValue")
         self.assertEqual(set(actual), expected)
         for identifier in expected:
             self.assertGreater(actual.count(identifier), 0)
@@ -229,16 +229,16 @@ class ReviewedContractsTests(unittest.TestCase):
         sites = {
             (row["path"], site["line"], site["column"]): row["target"]
             for row in self.migration["use_classifications"]
-            if row["enum"] == "Value" and row["variant"] == "MatrixValue"
+            if row["enum"] == "LegacyValue" and row["variant"] == "MatrixValue"
             for site in row["sites"]
         }
         self.assertEqual(
-            sites[("src/engine/src/structures.rs", 726, 19)],
+            sites[("src/engine/src/structures.rs", 742, 19)],
             "homogeneous-matrix-snapshot",
         )
         self.assertEqual(
             sum(target == "legacy-matrix-value-adapter" for target in sites.values()),
-            6,
+            8,
         )
 
     def test_targets_are_unambiguous_and_have_frozen_status(self):
@@ -332,7 +332,7 @@ class TargetApplicabilityTests(unittest.TestCase):
         self.assertEqual(self.failures(), [])
         targets, _owners = CHECKER.target_index(self.migration)
         self.assertIn(
-            ("Value", "F64"),
+            ("LegacyValue", "F64"),
             {
                 (row["enum"], variant)
                 for row in targets["floating-point-snapshot"]["applies_to"]
@@ -358,7 +358,7 @@ class TargetApplicabilityTests(unittest.TestCase):
 
     def test_value_snapshot_cannot_select_schema_target(self):
         migration = copy.deepcopy(self.migration)
-        self.classification(migration, "Value", "F64")["target"] = "floating-point-schema"
+        self.classification(migration, "LegacyValue", "F64")["target"] = "floating-point-schema"
         self.assertTrue(self.failures(migration))
 
     def test_value_kind_schema_cannot_select_snapshot_target(self):
@@ -368,7 +368,7 @@ class TargetApplicabilityTests(unittest.TestCase):
 
     def test_mutable_reference_cannot_select_binding_target(self):
         migration = copy.deepcopy(self.migration)
-        self.classification(migration, "Value", "MutableReference")[
+        self.classification(migration, "LegacyValue", "MutableReference")[
             "target"
         ] = "reference-binding-contract"
         self.assertTrue(self.failures(migration))
@@ -376,7 +376,7 @@ class TargetApplicabilityTests(unittest.TestCase):
     def test_target_cannot_apply_outside_owning_family(self):
         migration = copy.deepcopy(self.migration)
         self.target(migration, "floating-point-snapshot")["applies_to"] = [
-            {"enum": "Value", "variants": ["String"]}
+            {"enum": "LegacyValue", "variants": ["String"]}
         ]
         self.assertTrue(self.failures(migration))
 
@@ -421,7 +421,7 @@ class FrozenTargetProjectionTests(unittest.TestCase):
             "implementation_gate": "changed-gate",
             "key_semantics": "changed-key-semantics",
             "runtime_storage": "changed-storage",
-            "applies_to": [{"enum": "Value", "variants": ["Bool"]}],
+            "applies_to": [{"enum": "LegacyValue", "variants": ["Bool"]}],
         }
         target_ids = (
             "option-absence",
@@ -470,12 +470,12 @@ class FrozenOccurrenceTargetTests(unittest.TestCase):
         first = next(
             row
             for row in migration["use_classifications"]
-            if row["enum"] == "Value" and row["variant"] == "Empty"
+            if row["enum"] == "LegacyValue" and row["variant"] == "Empty"
         )
         second = next(
             row
             for row in migration["use_classifications"]
-            if row["enum"] == "Value"
+            if row["enum"] == "LegacyValue"
             and row["variant"] == "Empty"
             and row["target"] != first["target"]
         )
@@ -696,9 +696,9 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
             ]
         )
         defaults = {
-            ("Value", "MutableReference"): "mutable-reference-runtime-storage",
-            ("Value", "EmptyKind"): "legacy-typed-empty-adapter",
-            ("Value", "Kind"): "reified-type-snapshot",
+            ("LegacyValue", "MutableReference"): "mutable-reference-runtime-storage",
+            ("LegacyValue", "EmptyKind"): "legacy-typed-empty-adapter",
+            ("LegacyValue", "Kind"): "reified-type-snapshot",
             ("ValueKind", "Empty"): "value-kind-hole",
             ("ValueKind", "Any"): "kind-wildcard",
             ("Kind", "Empty"): "kind-hole",
@@ -707,9 +707,9 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
         classifications = []
         for use in self.inventory["variant_uses"]:
             key = (use["enum"], use["variant"])
-            if key == ("Value", "Empty"):
+            if key == ("LegacyValue", "Empty"):
                 destination = next(empty_targets)
-            elif key == ("Value", "MatrixValue"):
+            elif key == ("LegacyValue", "MatrixValue"):
                 destination = next(matrix_targets)
             else:
                 destination = defaults[key]
@@ -745,7 +745,7 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
                 elif item["semantic_category"] == "kind-expression":
                     applicable = [("Kind", members["kind_variants"])]
                 else:
-                    applicable = [("Value", members["value_variants"])]
+                    applicable = [("LegacyValue", members["value_variants"])]
                 item["applies_to"] = [
                     {"enum": enum_name, "variants": list(variants)}
                     for enum_name, variants in applicable
@@ -776,6 +776,7 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
             frozen_targets_schema_path=self.frozen_targets_schema_path,
             verify_reference=False,
             check_gate_a=False,
+            check_c2_adapter=False,
             baseline_inventory=self.baseline,
         )
 
@@ -948,8 +949,8 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
         self.assertIn("C0-OCCURRENCE-CLASSIFICATION", self.ids(self.audit()))
 
     def test_same_file_two_variants_can_have_different_roles(self):
-        empty = next(r for r in self.migration["use_classifications"] if r["enum"] == "Value" and r["variant"] == "Empty")
-        matrix = next(r for r in self.migration["use_classifications"] if r["enum"] == "Value" and r["variant"] == "MatrixValue")
+        empty = next(r for r in self.migration["use_classifications"] if r["enum"] == "LegacyValue" and r["variant"] == "Empty")
+        matrix = next(r for r in self.migration["use_classifications"] if r["enum"] == "LegacyValue" and r["variant"] == "MatrixValue")
         empty["roles"] = ["machine-output"]
         matrix["roles"] = ["compiler-type-data"]
         self.save_path(self.migration_path, self.migration)
@@ -959,7 +960,7 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
         targets = {
             row["target"]
             for row in self.migration["use_classifications"]
-            if row["enum"] == "Value" and row["variant"] == "Empty"
+            if row["enum"] == "LegacyValue" and row["variant"] == "Empty"
         }
         self.assertEqual(len(targets), 6)
 
@@ -1258,6 +1259,46 @@ class GateBFreshnessTests(unittest.TestCase):
         self.assertEqual(self.failures(), [])
 
 
+class C2AdapterAllowanceTests(unittest.TestCase):
+    def setUp(self):
+        self.approved = CHECKER.load_json(
+            CONTRACTS / "c2-legacy-adapter-boundary.json"
+        )
+        self.approved_path = CONTRACTS / "c2-legacy-adapter-boundary.json"
+
+    def root_with_boundary(self, source):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        path = root / "src/core/src/legacy_adapter/value.rs"
+        path.parent.mkdir(parents=True)
+        path.write_text(source, encoding="utf-8")
+        return root
+
+    def ids(self, root):
+        return {
+            item.contract_id
+            for item in CHECKER.c2_adapter_boundary_failures(
+                root, self.approved, self.approved_path
+            )
+        }
+
+    def test_checked_in_adapter_allowance_matches(self):
+        self.assertEqual(self.ids(ROOT), set())
+
+    def test_approved_adapter_uses_may_all_disappear(self):
+        self.assertEqual(self.ids(self.root_with_boundary("")), set())
+
+    def test_new_adapter_use_requires_an_explicit_allowance(self):
+        source = (ROOT / "src/core/src/legacy_adapter/value.rs").read_text(
+            encoding="utf-8"
+        )
+        root = self.root_with_boundary(
+            source + "\nfn unapproved(value: &LegacyValue) { let _ = value; }\n"
+        )
+        self.assertIn("C2-ADAPTER-ALLOWANCE", self.ids(root))
+
+
 class BoundaryAndReportingTests(unittest.TestCase):
     def root_with(self, relative, source):
         temporary = tempfile.TemporaryDirectory()
@@ -1300,6 +1341,70 @@ class BoundaryAndReportingTests(unittest.TestCase):
             "type Hidden = SymbolTableRef;\nstruct Snapshot(Hidden);\n",
         )
         self.assertIn("C0-SNAPSHOT-LEGACY-IMPORT", self.ids(root))
+
+    def test_snapshot_rejects_every_c2_mutable_or_physical_dependency(self):
+        for type_name in (
+            "LegacyValue",
+            "ValueKind",
+            "MutableReference",
+            "ReactiveCellId",
+            "StateArena",
+            "RuntimeExecutionTransaction",
+            "ValueStateJournal",
+            "ReactiveTurnJournal",
+            "DMatrix",
+            "Rc",
+            "RefCell",
+            "Cell",
+            "UnsafeCell",
+            "Mutex",
+            "RwLock",
+            "AtomicU64",
+        ):
+            with self.subTest(type_name=type_name):
+                root = self.root_with(
+                    "src/core/src/snapshot/forbidden.rs",
+                    f"pub struct Bad({type_name});\n",
+                )
+                self.assertIn("C0-SNAPSHOT-LEGACY-IMPORT", self.ids(root))
+
+    def test_snapshot_rejects_transitive_wrappers_and_renamed_imports(self):
+        root = self.root_with(
+            "src/core/src/mutable_wrapper.rs",
+            "pub struct Hidden(StateArena);\npub type Reexport = Hidden;\n",
+        )
+        snapshot = root / "src/core/src/snapshot/hidden.rs"
+        snapshot.parent.mkdir(parents=True, exist_ok=True)
+        snapshot.write_text(
+            "use crate::mutable_wrapper::Reexport as ApparentlyImmutable;\n"
+            "pub struct Bad(ApparentlyImmutable);\n",
+            encoding="utf-8",
+        )
+        self.assertIn("C0-SNAPSHOT-LEGACY-IMPORT", self.ids(root))
+
+    def test_general_snapshot_values_cannot_derive_relations(self):
+        for type_name, declaration in (
+            ("Value", "struct"),
+            ("ValueData", "enum"),
+        ):
+            with self.subTest(type_name=type_name):
+                source = f"#[derive(Clone, PartialEq, Eq, Hash, Ord)]\npub {declaration} {type_name} {{}}\n"
+                self.assertIn(
+                    "C2-EXPLICIT-VALUE-RELATIONS",
+                    self.ids(self.root_with("src/core/src/snapshot/value.rs", source)),
+                )
+
+    def test_general_snapshot_values_cannot_gain_manual_or_aliased_relations(self):
+        for source in (
+            "impl PartialEq for Value { fn eq(&self, _: &Self) -> bool { true } }\n",
+            "type Hidden = ValueData;\nimpl core::hash::Hash for Hidden { fn hash<H>(&self, _: &mut H) {} }\n",
+            "use core::cmp::Ord as Compare;\nimpl Compare for Value { fn cmp(&self, _: &Self) -> core::cmp::Ordering { todo!() } }\n",
+        ):
+            with self.subTest(source=source):
+                self.assertIn(
+                    "C2-EXPLICIT-VALUE-RELATIONS",
+                    self.ids(self.root_with("src/core/src/snapshot/value.rs", source)),
+                )
 
     def test_schema_cannot_depend_on_runtime(self):
         self.assertIn("C0-SCHEMA-DEPENDENCY", self.ids(self.root_with("src/core/src/schema/new.rs", "use mech_runtime::Runtime;\n")))
@@ -1453,6 +1558,46 @@ class BoundaryAndReportingTests(unittest.TestCase):
             self.ids(self.root_with("src/core/src/schema/mod.rs", source)),
         )
 
+    def test_finalized_snapshot_types_cannot_regain_deserialize(self):
+        for relative, type_name, declaration in (
+            ("src/core/src/snapshot/validation.rs", "Value", "struct"),
+            ("src/core/src/snapshot/data.rs", "ValueData", "enum"),
+            ("src/core/src/snapshot/data.rs", "MapValue", "struct"),
+            ("src/core/src/snapshot/constants.rs", "ConstantHandle", "struct"),
+        ):
+            with self.subTest(type_name=type_name):
+                source = (
+                    '#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]\n'
+                    f"pub {declaration} {type_name} {{}}\n"
+                )
+                self.assertIn(
+                    "C2-FINALIZED-SNAPSHOT-SERDE",
+                    self.ids(self.root_with(relative, source)),
+                )
+
+    def test_open_snapshot_drafts_and_bit_wrappers_keep_serde(self):
+        for relative, type_name, declaration in (
+            ("src/core/src/snapshot/draft.rs", "ValueDraft", "struct"),
+            ("src/core/src/snapshot/draft.rs", "ValueDataDraft", "enum"),
+            ("src/core/src/snapshot/data.rs", "F32Bits", "struct"),
+        ):
+            with self.subTest(type_name=type_name):
+                source = (
+                    '#[cfg_attr(feature = "serde", derive(Serialize))]\n'
+                    f"pub {declaration} {type_name} {{}}\n"
+                )
+                self.assertIn(
+                    "C1-OPEN-SERDE-BOUNDARY",
+                    self.ids(self.root_with(relative, source)),
+                )
+
+    def test_resident_paths_cannot_acquire_snapshot_work(self):
+        root = self.root_with(
+            "src/engine/src/resident/turn.rs",
+            "fn turn(store: ConstantStore, value: ValueDraft) {}\n",
+        )
+        self.assertIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
+
     def test_open_semantic_syntax_must_keep_deserialize(self):
         source = (
             '#[cfg_attr(feature = "serde", derive(Serialize))]\n'
@@ -1555,9 +1700,13 @@ class BoundaryAndReportingTests(unittest.TestCase):
                 )
                 self.assertNotIn("C1-LEGACY-ADAPTER-EXHAUSTIVE", self.ids(root))
 
-    def test_legacy_adapter_may_mention_both_representations(self):
-        root = self.root_with("src/core/src/legacy_adapter/convert.rs", "fn convert(_: LegacyValue) -> snapshot::Value { todo!() }\n")
+    def test_exact_c2_value_adapter_may_mention_both_representations(self):
+        root = self.root_with("src/core/src/legacy_adapter/value.rs", "fn convert(_: LegacyValue) -> snapshot::Value { todo!() }\n")
         self.assertNotIn("C0-ADAPTER-COEXISTENCE", self.ids(root))
+
+    def test_other_legacy_adapter_cannot_mention_both_representations(self):
+        root = self.root_with("src/core/src/legacy_adapter/convert.rs", "fn convert(_: LegacyValue) -> snapshot::Value { todo!() }\n")
+        self.assertIn("C0-ADAPTER-COEXISTENCE", self.ids(root))
 
     def test_non_adapter_cannot_mention_both_representations(self):
         root = self.root_with("src/core/src/convert.rs", "fn convert(_: LegacyValue) -> snapshot::Value { todo!() }\n")
@@ -1611,11 +1760,11 @@ class BoundaryAndReportingTests(unittest.TestCase):
     def test_failure_render_includes_every_required_field(self):
         item = CHECKER.failure(
             "C0-FIXTURE", "subject", "src/core/src/value.rs", "classified", "missing",
-            "tests/architecture/value-system/migration.json", 12, 7, "Value", "Added"
+            "tests/architecture/value-system/migration.json", 12, 7, "LegacyValue", "Added"
         )
         rendered = item.render()
         for field in (
-            "C0-FIXTURE", "enum=Value", "variant=Added", "path=src/core/src/value.rs",
+            "C0-FIXTURE", "enum=LegacyValue", "variant=Added", "path=src/core/src/value.rs",
             "line=12", "column=7", "expected=", "actual=", "update=",
         ):
             self.assertIn(field, rendered)
@@ -1876,7 +2025,7 @@ class BoundaryAndReportingTests(unittest.TestCase):
         row = next(
             item
             for item in migration["use_classifications"]
-            if item["enum"] == "Value"
+            if item["enum"] == "LegacyValue"
             and item["variant"] == "MatrixValue"
             and item["target"] == "legacy-matrix-value-adapter"
         )

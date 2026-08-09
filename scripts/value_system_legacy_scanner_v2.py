@@ -724,29 +724,81 @@ def raw_approved_aliases(
 
 
 def occurrence_fingerprint(tokens: Sequence[Token], target: int) -> str:
-    """Identify an occurrence by stable nearby Rust tokens, not formatting."""
-    start = max(0, target - 12)
-    end = min(len(tokens), target + 13)
-    marked = []
-    for index in range(start, end):
+    """Identify an occurrence by its stable clause and identifier context.
+
+    Punctuation and whitespace-sensitive layout are deliberately absent: the C2
+    owner rename can make rustfmt wrap an otherwise unchanged arm, and it can
+    reorder a grouped import. Cardinality within the resulting clause ID still
+    detects additions and substitutions.
+    """
+
+    def normalized_identifier(index: int) -> str | None:
         identifier = canonical_identifier(tokens[index].value)
-        if identifier in {"Value", "LegacyValue"}:
-            identifier = "LegacyValue"
-        marked.append(("@" if index == target else "") + identifier)
-    normalized: list[str] = []
-    offset = 0
-    while offset < len(marked):
-        if (
-            offset + 2 < len(marked)
-            and marked[offset] == "mech_core"
-            and marked[offset + 1] == "::"
-            and marked[offset + 2] == "ValueKind"
-        ):
-            offset += 2
-            continue
-        normalized.append(marked[offset])
-        offset += 1
-    return hashlib.sha256("\0".join(normalized).encode("utf-8")).hexdigest()
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", identifier):
+            return None
+        return "LegacyValue" if identifier in {"Value", "LegacyValue"} else identifier
+
+    stack: list[int] = []
+    for index, token in enumerate(tokens[:target]):
+        if token.value == "{":
+            stack.append(index)
+        elif token.value == "}" and stack:
+            stack.pop()
+
+    scope = ["module"]
+    for opening_index in reversed(stack):
+        parent = next((item for item in reversed(stack) if item < opening_index), -1)
+        header = tokens[parent + 1 : opening_index]
+        candidate: tuple[str, str] | None = None
+        for index, token in enumerate(header[:-1]):
+            keyword = canonical_identifier(token.value)
+            if keyword not in {"fn", "type", "struct", "enum", "union", "const", "static"}:
+                continue
+            name = canonical_identifier(header[index + 1].value)
+            if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+                candidate = (keyword, "LegacyValue" if name == "Value" else name)
+        if candidate is not None:
+            scope = [*candidate]
+            break
+
+    target_identifier = normalized_identifier(target) or canonical_identifier(tokens[target].value)
+    use_group = any(
+        any(token.value == "use" for token in tokens[parent + 1 : opening_index])
+        for opening_index in stack
+        for parent in [next((item for item in reversed(stack) if item < opening_index), -1)]
+    )
+    statement_start = max(
+        (
+            index
+            for index in range(target)
+            if tokens[index].value in {";", "}"}
+        ),
+        default=-1,
+    )
+    module_use = use_group or any(
+        token.value == "use" for token in tokens[statement_start + 1 : target]
+    )
+    if module_use:
+        context = ["module-use"]
+    else:
+        identifiers = [
+            (index, identifier)
+            for index in range(len(tokens))
+            for identifier in [normalized_identifier(index)]
+            if identifier is not None
+        ]
+        target_offset = next(
+            offset for offset, (index, _identifier) in enumerate(identifiers) if index == target
+        )
+        context = [
+            identifier
+            for index, identifier in identifiers[
+                max(0, target_offset - 8) : target_offset + 9
+            ]
+            if index != target
+        ]
+    material = [*scope, f"@{target_identifier}", *context]
+    return hashlib.sha256("\0".join(material).encode("utf-8")).hexdigest()
 
 
 def use_at(relative: str, tokens: Sequence[Token], index: int) -> Use:

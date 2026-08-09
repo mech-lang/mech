@@ -26,7 +26,7 @@
     "applicability": {
       "additionalProperties": false,
       "properties": {
-        "enum": { "enum": ["Value", "ValueKind", "Kind"] },
+        "enum": { "enum": ["LegacyValue", "ValueKind", "Kind"] },
         "variants": {
           "items": { "minLength": 1, "type": "string" },
           "minItems": 1,
@@ -171,7 +171,7 @@
     "useClassification": {
       "additionalProperties": false,
       "properties": {
-        "enum": { "enum": ["Value", "ValueKind", "Kind"] },
+        "enum": { "enum": ["LegacyValue", "ValueKind", "Kind"] },
         "path": { "minLength": 1, "type": "string" },
         "roles": {
           "items": { "$ref": "#/$defs/role" },
