@@ -51,25 +51,64 @@ def main() -> int:
     width = 1280
     left = 265
     right = 50
-    top = 155
+    overview_top = 200
+    overview_height = 230
+    top = 525
     lane_height = 108
     plot_height = 62
     height = top + lane_height * len(LANES) + 70
     plot_width = width - left - right
+    values_by_lane = {
+        lane: [row["elapsed_ns"] / row["turns"] for row in grouped[lane]]
+        for lane, _, _ in LANES
+    }
+    overview_max = max(max(values) for values in values_by_lane.values()) * 1.05
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#090d14"/>',
         '<style>text{font-family:Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:0}.title{fill:#f8fafc;font-size:28px;font-weight:700}.sub{fill:#94a3b8;font-size:14px}.name{fill:#e2e8f0;font-size:16px;font-weight:650}.stat{fill:#94a3b8;font-size:12px}.axis{fill:#64748b;font-size:11px}.grid{stroke:#263244;stroke-width:1}.base{stroke:#64748b;stroke-width:1;stroke-dasharray:4 5}.line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}</style>',
-        '<text class="title" x="54" y="58">Gate B EKF latency over cumulative turns</text>',
-        '<text class="sub" x="54" y="88">60 ordered steady-state episodes per lane; 4,096 turns per episode; setup and reset excluded; GC enabled</text>',
-        '<text class="sub" x="54" y="111">Each lane has an adaptive relative scale around its own median so pauses remain visible across a 350x throughput range.</text>',
+        '<text class="title" x="54" y="48">Gate B EKF latency: absolute performance and pause shape</text>',
+        '<text class="sub" x="54" y="76">60 ordered steady-state episodes per lane; 4,096 turns per episode; setup and reset excluded; GC enabled</text>',
+        '<text class="sub" x="54" y="99">Top: every runtime on one linear scale. Bottom: adaptive per-lane scales reveal pauses that the absolute view compresses.</text>',
+        f'<rect x="{left}" y="{overview_top}" width="{plot_width}" height="{overview_height}" rx="3" fill="#0f1622" stroke="#263244"/>',
+        f'<text class="name" x="54" y="{overview_top + 24}">Shared linear scale</text>',
+        f'<text class="stat" x="54" y="{overview_top + 46}">absolute time per turn</text>',
     ]
     samples = payload["protocol"]["samples"]
+    for index, (lane, label, color) in enumerate(LANES):
+        column = index % 4
+        row = index // 4
+        x = 54 + column * 300
+        y = 132 + row * 25
+        median = statistics.median(values_by_lane[lane])
+        parts.append(f'<line x1="{x}" y1="{y - 4}" x2="{x + 22}" y2="{y - 4}" stroke="{color}" stroke-width="3"/>')
+        parts.append(f'<text class="stat" x="{x + 30}" y="{y}">{html.escape(label)} {fmt_ns(median)}</text>')
+
+    for tick in range(0, 5):
+        value = overview_max * tick / 4
+        y = overview_top + overview_height * (1.0 - tick / 4)
+        parts.append(f'<line class="grid" x1="{left}" y1="{y:.1f}" x2="{left + plot_width}" y2="{y:.1f}"/>')
+        parts.append(f'<text class="axis" x="{left - 12}" y="{y + 4:.1f}" text-anchor="end">{value / 1_000:.0f} us</text>')
+
     for tick in range(0, 5):
         x = left + plot_width * tick / 4
         turns = round(samples * payload["protocol"]["turns_per_sample"] * tick / 4)
+        parts.append(f'<line class="grid" x1="{x:.1f}" y1="{overview_top}" x2="{x:.1f}" y2="{overview_top + overview_height}" opacity="0.45"/>')
+        parts.append(f'<text class="axis" x="{x:.1f}" y="{overview_top + overview_height + 20}" text-anchor="middle">{turns / 1_000:.0f}k</text>')
         parts.append(f'<line class="grid" x1="{x:.1f}" y1="{top - 16}" x2="{x:.1f}" y2="{height - 58}" opacity="0.45"/>')
         parts.append(f'<text class="axis" x="{x:.1f}" y="{height - 34}" text-anchor="middle">{turns / 1_000:.0f}k</text>')
+
+    for lane, _, color in LANES:
+        points = []
+        for index, value in enumerate(values_by_lane[lane]):
+            x = left + plot_width * index / max(1, len(values_by_lane[lane]) - 1)
+            y = overview_top + overview_height * (1.0 - value / overview_max)
+            points.append(f"{x:.2f},{y:.2f}")
+        parts.append(f'<polyline class="line" stroke="{color}" points="{" ".join(points)}"/>')
+
+    parts.append(f'<text class="axis" x="{left + plot_width / 2}" y="{overview_top + overview_height + 42}" text-anchor="middle">cumulative EKF turns</text>')
+    parts.append(f'<text class="axis" x="64" y="{top - 38}">Adaptive relative scale around each lane median</text>')
+    parts.append(f'<circle cx="355" cy="{top - 42}" r="4" fill="#ef4444"/><text class="axis" x="366" y="{top - 38}">reported GC interval (none)</text><circle cx="560" cy="{top - 42}" r="3" fill="#f59e0b"/><text class="axis" x="570" y="{top - 38}">Lua heap drop (inferred collection)</text>')
 
     for lane_index, (lane, label, color) in enumerate(LANES):
         rows = grouped[lane]
@@ -105,7 +144,6 @@ def main() -> int:
     parts.extend(
         (
             f'<text class="axis" x="{left + plot_width / 2}" y="{height - 10}" text-anchor="middle">cumulative EKF turns</text>',
-            '<circle cx="55" cy="135" r="4" fill="#ef4444"/><text class="axis" x="66" y="139">reported GC interval (none)</text><circle cx="260" cy="135" r="3" fill="#f59e0b"/><text class="axis" x="270" y="139">Lua heap drop (inferred collection)</text>',
             '</svg>',
         )
     )

@@ -26,9 +26,10 @@ episode is marked only as an inferred collection. It is evidence that a collecto
 cycle ran during the sample, not proof that GC caused the full latency deviation.
 
 The horizontal axis is cumulative EKF turns rather than wall time. This gives every
-lane the same amount of work at every x position. The per-lane latency axis should be
-normalized to that lane's median when the goal is to compare pause shape; use the
-absolute nanoseconds-per-turn values when comparing throughput.
+lane the same amount of work at every x position. The graph first overlays every
+runtime on one shared linear nanoseconds-per-turn scale for direct throughput
+comparison. The stacked panels then use adaptive per-lane scales around the median
+so pauses remain visible instead of being flattened by the roughly 350x range.
 
 ## Apple M1, 2026-08-09
 
