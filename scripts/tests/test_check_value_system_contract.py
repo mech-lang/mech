@@ -1757,6 +1757,13 @@ class BoundaryAndReportingTests(unittest.TestCase):
         root = self.root_with("src/engine/src/resident/artifact.rs", "fn artifact(_: LegacyValue) {}\n")
         self.assertIn("C0-ENGINE-LEGACY-ARTIFACT", self.ids(root))
 
+    def test_compiler_artifact_adapter_may_accept_legacy_value(self):
+        root = self.root_with(
+            "src/engine/src/artifact/compiler.rs",
+            "fn compile_executable_program_artifact(_: LegacyValue) {}\n",
+        )
+        self.assertNotIn("C0-ENGINE-LEGACY-ARTIFACT", self.ids(root))
+
     def test_failure_render_includes_every_required_field(self):
         item = CHECKER.failure(
             "C0-FIXTURE", "subject", "src/core/src/value.rs", "classified", "missing",

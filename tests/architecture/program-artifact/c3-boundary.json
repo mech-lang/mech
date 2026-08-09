@@ -1,0 +1,49 @@
+{
+  "$schema": "./c3-boundary-schema.json",
+  "contract": "mech-program-artifact-c3-v1",
+  "base_commit": "e5a28e962a57ec386928aad5b7354f2710cc09a4",
+  "bytecode_version": 1,
+  "bytecode_sections": [
+    "ArtifactSchemas",
+    "ArtifactConstants",
+    "ArtifactInputs",
+    "ArtifactSlots",
+    "ArtifactProducers",
+    "ArtifactNodes",
+    "ArtifactBindings",
+    "ArtifactOutputs",
+    "ArtifactIntegrityConstraints",
+    "ArtifactOperations"
+  ],
+  "artifact_fields": [
+    "revision",
+    "schemas",
+    "constants",
+    "inputs",
+    "slots",
+    "nodes",
+    "bindings",
+    "outputs",
+    "constraints"
+  ],
+  "forbidden_artifact_tokens": [
+    "LegacyValue",
+    "ReactiveInstanceId",
+    "CellId",
+    "InstanceEpoch",
+    "PlanGeneration",
+    "LayoutGeneration",
+    "SlotIndex",
+    "Ref<"
+  ],
+  "protected_execution_paths": [
+    "src/engine/src/program",
+    "src/engine/src/interpreter",
+    "src/engine/src/resident",
+    "src/runtime/src"
+  ],
+  "allowed_protected_changes": [
+    "src/engine/src/program/instance.rs",
+    "src/runtime/src/capability/basic.rs"
+  ]
+}

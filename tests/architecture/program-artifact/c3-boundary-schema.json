@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "$schema",
+    "contract",
+    "base_commit",
+    "bytecode_version",
+    "bytecode_sections",
+    "artifact_fields",
+    "forbidden_artifact_tokens",
+    "protected_execution_paths",
+    "allowed_protected_changes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "const": "./c3-boundary-schema.json" },
+    "contract": { "const": "mech-program-artifact-c3-v1" },
+    "base_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "bytecode_version": { "const": 1 },
+    "bytecode_sections": {
+      "type": "array",
+      "minItems": 10,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "artifact_fields": {
+      "type": "array",
+      "minItems": 9,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "forbidden_artifact_tokens": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "protected_execution_paths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "allowed_protected_changes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

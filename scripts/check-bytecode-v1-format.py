@@ -14,29 +14,29 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
-EXPECTED_MANIFEST_SHA256 = "f133a5ecf32998fa8ba986bdd21522649098e83b3ad9c99b65e69423040ab034"
+EXPECTED_MANIFEST_SHA256 = "4fa0693131815898f6863f17f81d3d90c7ca86d37ad21b994a21a3a954eaa20f"
 EXPECTED_FIXTURE_SHA256 = {
-    "canonical-scalars.mecb": "a437e67ca6120b90c928eb55ee0479c4a95afbb23a854c406c7fd531df2c85cc",
-    "canonical-matrices.mecb": "1e0d08eabb54b9c4edc5caae095dbab607cd633867d1c0b642126f5451ecf55d",
-    "canonical-composites.mecb": "b825bdb8a73062a8463a55aab2e2bffc9c6c20e6183f3f04a183d03d4dec6eb0",
-    "literal-f64.mecb": "dd9596d0a47e87de8b0a6455bbf0058583649c7db16dab4336a5a91694bcac92",
-    "scalar-add-f64.mecb": "732def592c0ba921b7dd8e782163a2803a0ac21adfa5469c133bbeca5fe0f4f2",
-    "fixed-matrix-add-f64.mecb": "d60ec57aadbc280bca7a3fa577cc10cc2727acb146193eada141f44c80189227",
-    "dynamic-matrix-add-f64.mecb": "7355c52b197e169b87bd425a0e147f86dcad744d76f743e716223a23b2890924",
-    "variadic-horzcat-f64.mecb": "f59cafbed042d33d8ab7ad2e1dc35eb8d25cc556f3d5af3479923c47abd7edaf",
-    "string.mecb": "54a12c290f5539a774bb3793835416e1ae2d8314141b32f96360163f7b9631f0",
-    "unary.mecb": "8bb13ad22de29f59160ec4ec51f7d04e9491069da710836468c16765487298f2",
-    "ternary.mecb": "5362544462bdc214915c4ae41df632a4b03a189f79324f9e8af2fcdb14e6c575",
-    "quaternary.mecb": "75a23eb4144efcbd6b28fae4ac534cff2dad581bf385cd2114f828f033422dca",
-    "named-module-operation.mecb": "d155bc55b645b9ad23879a3a6233a0717f37f67570b5bf36e1e5a09c0b15833a",
-    "cli-stdout.mecb": "0e7b45ab3c74b20c7cb9d079d1eee1af26ef792fc3b1f19b4de425aa3792eccd",
-    "console.mecb": "9f504a06f716328d0b516a247ebe7560abf7fffc5bcceb34a08034e24d788015",
-    "time.mecb": "e1fad86d1a908f13477a96e5317596842f74a3d70637f38d7bd0e4ff1396638f",
-    "timer.mecb": "5c0beb99d395e3903e76db7d3cac700e9a24ad2fc8ead2036c80238e871ced2f",
-    "scene.mecb": "387423ec89fd0b66e387bb390f0e72fae26a3e7460f3461e5562aa4bbf6017a0",
-    "robot-arm.mecb": "eca24602a7ce456ec410f65bcbc50624188c890b105377cce3264d470984c941",
-    "actor-host-function.mecb": "feaec635e1e33399fb4148ec7ec789373b065ca60161c995cbb61b71b2e7d917",
-    "synthetic-live-read.mecb": "49874edb1d9015122d14e01943dadc82b9bfafe23d0d1b59021fe5643576c5af",
+    "canonical-scalars.mecb": "4ee0f3bb5af90d457a12d25084275fd49a0e8a57b200eb61e1581aef4b97cf8e",
+    "canonical-matrices.mecb": "29eb6fd0261e8caa9f49def66909f5f452fc6d007c8b82b90725e607f4528a62",
+    "canonical-composites.mecb": "a016580a32d216a10904cece6a783fd6fce4d3b0b6db4f1657942bcbd1150c7a",
+    "literal-f64.mecb": "dd0f2f9b4cdd873dd24d576ca23e47d51810a0e105e41e51e36fa2f054ad92cb",
+    "scalar-add-f64.mecb": "30bafce07539346e36e3f1b142d6f14de9f5b96daf373fc8f5beb6ced15616a6",
+    "fixed-matrix-add-f64.mecb": "009e78834614a2f71ef490d534d078caf6a04714b2a90aea3537dee5d17b0d75",
+    "dynamic-matrix-add-f64.mecb": "99bac8e2da5eb687388751d4493ce75cc308c9205df48615b9e8fff5819652e0",
+    "variadic-horzcat-f64.mecb": "e975fa17d0273ed124dc9f1970aefe1449316214ba09a99d53d8d8d3db57fb16",
+    "string.mecb": "e71702dbad8a0c1f47271822aeb2637d012809908238d35bff094a4eead1dd94",
+    "unary.mecb": "49cdc62c60d0b2c7c8849fd92d9928990dd9a0dc3f08a3fdcbf406300e959406",
+    "ternary.mecb": "1918ad22c9907c406da17528b97ab3e16c1e0af5b37d5db85777fe6ebcc7d8cf",
+    "quaternary.mecb": "55039f735e3fdbb8b566807ae62ebd94d944044e640ad7b4840652c1d72bf0ef",
+    "named-module-operation.mecb": "1506f1b195de4f89ccc2e528e01debae650b5f0557c2c2c476d682074fbc3957",
+    "cli-stdout.mecb": "5e2d5fba7ef7b56a972e6c97323c6b733ea8137956164f10a86903f05d20d408",
+    "console.mecb": "e894a7dd0d9dabb755136a1effb21fe9b4d34b0257c13b25ed0496eefa286d6e",
+    "time.mecb": "abc33e0ad636a1ac2c19937e30624136bad8ee0e5fac74bd37a421badfae4a84",
+    "timer.mecb": "ebffe3dc4fecb64c9f292003ec2da814d6766652ea133b938eaef004a99c00a0",
+    "scene.mecb": "06c7ed62bb5f6af535487b595266870644dfe602c40664cafff96e3ff272e2fc",
+    "robot-arm.mecb": "3729127cd73577bc78dee2f364a4faee919befd4185dfc5a8070939360516f72",
+    "actor-host-function.mecb": "4752c1106755e9b74cbc80c3d231708fd2471cf26c88934b5ce3780234ebb43e",
+    "synthetic-live-read.mecb": "3871e0907a9276f23cb9141c8d96485f3b8eee4b50af35035c047fded2c5c464",
 }
 EXPECTED_FILES = [
     "canonical-scalars.mecb",
@@ -92,6 +92,16 @@ SECTION_NAMES = [
     "Instructions",
     "Dictionary",
     "ApplicationRequirements",
+    "ArtifactSchemas",
+    "ArtifactConstants",
+    "ArtifactInputs",
+    "ArtifactSlots",
+    "ArtifactProducers",
+    "ArtifactNodes",
+    "ArtifactBindings",
+    "ArtifactOutputs",
+    "ArtifactIntegrityConstraints",
+    "ArtifactOperations",
 ]
 TYPE_NAMES = {
     1: "u8",
@@ -855,7 +865,7 @@ def validate_fixture(entry: dict[str, object]) -> None:
     require(version == 1 and header_size == 64, f"{name}: wrong v1 header")
     require((mech_major, mech_minor, mech_patch) == (0, 3, 5), f"{name}: wrong Mech version")
     require(flags == 0 and reserved0 == 0 and reserved == bytes(12), f"{name}: nonzero reserved header field")
-    require(section_count == 7 and section_table_offset == 64, f"{name}: wrong section directory")
+    require(section_count == 17 and section_table_offset == 64, f"{name}: wrong section directory")
     require(file_len == len(data), f"{name}: header length mismatch")
     require(checksum_offset == len(data) - 4, f"{name}: checksum is not the four-byte trailer")
     expected_crc = struct.unpack_from("<I", data, checksum_offset)[0]
@@ -884,7 +894,7 @@ def validate_fixture(entry: dict[str, object]) -> None:
 
     sections: list[dict[str, object]] = []
     section_payloads: list[bytes] = []
-    previous_end = 288
+    previous_end = 608
     for index, section_name in enumerate(SECTION_NAMES):
         offset = 64 + index * SECTION.size
         kind, section_flags, item_count, start, length, section_reserved = SECTION.unpack_from(data, offset)
@@ -906,13 +916,23 @@ def validate_fixture(entry: dict[str, object]) -> None:
             }
         )
         section_payloads.append(data[start : start + length])
-    require(sections[0]["offset"] == 288, f"{name}: first content offset is not 288")
+    require(sections[0]["offset"] == 608, f"{name}: first content offset is not 608")
     require(not any(data[previous_end:checksum_offset]), f"{name}: trailing padding is nonzero")
     require(sections == entry.get("sections"), f"{name}: manifest section metadata is stale")
     require(
         instruction_count == sections[4]["item_count"],
         f"{name}: instruction section count disagrees with header",
     )
+    artifact_present = [bool(payload) for payload in section_payloads[7:]]
+    require(
+        all(artifact_present) or not any(artifact_present),
+        f"{name}: ProgramArtifact sections are only partially present",
+    )
+    for section, present in zip(sections[7:], artifact_present):
+        require(
+            section["item_count"] == int(present),
+            f"{name}: ProgramArtifact section item count does not describe presence",
+        )
 
     decoded_types = decode_types(
         section_payloads[0], int(sections[0]["item_count"]), name

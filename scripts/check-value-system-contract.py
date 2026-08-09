@@ -143,6 +143,11 @@ DESTINATIONS = {
     "rejected-legacy-form",
 }
 IMPLEMENTATION_GATES = {"C1", "C2", "C3", "C4", "D", "final-cutover"}
+C3_IMPLEMENTED_TARGETS = {
+    "matrix-construction-ir",
+    "index-all-selection-ir",
+    "source-empty-expression",
+}
 AMBIGUOUS_TARGET = re.compile(
     r"-or-|\beither\b|\bone-of\b|\b(?:tbd|unknown|unclassified|maybe)\b",
     re.IGNORECASE,
@@ -162,7 +167,8 @@ def expected_target_status(target: dict[str, Any]) -> dict[str, bool]:
     return {
         "inventoried": True,
         "semantics_frozen": True,
-        "implemented": target["implementation_gate"] in {"C1", "C2"},
+        "implemented": target["implementation_gate"] in {"C1", "C2"}
+        or target["id"] in C3_IMPLEMENTED_TARGETS,
         "artifact_migrated": False,
         "ports_migrated": False,
         "resident_storage_migrated": False,
@@ -2579,6 +2585,11 @@ def future_boundary_failures(root: Path) -> list[Failure]:
             relative.startswith("src/engine/")
             and ("artifact" in path.parts or path.stem == "artifact")
             and mentions_legacy
+            and relative
+            not in {
+                "src/engine/src/artifact/compiler.rs",
+                "src/engine/src/artifact/ir.rs",
+            }
         ):
             failures.append(
                 failure(

@@ -22,7 +22,7 @@ The file starts with this fixed 64-byte header:
 | 14 | 2 | `flags` | `0` |
 | 16 | 4 | `register_count` | Number of program registers |
 | 20 | 4 | `instruction_count` | Number of instructions |
-| 24 | 2 | `section_count` | `7` |
+| 24 | 2 | `section_count` | `17` |
 | 26 | 2 | `reserved0` | `0` |
 | 28 | 8 | `section_table_offset` | `64` |
 | 36 | 8 | `file_len` | Exact file length, including checksum |
@@ -36,8 +36,8 @@ ABI tuple.
 
 ## Section directory
 
-Seven 32-byte directory entries begin at byte 64, so content starts at byte
-288. Each entry is:
+Seventeen 32-byte directory entries begin at byte 64, so content starts at
+byte 608. Each entry is:
 
 | Offset | Width | Field |
 | ---: | ---: | --- |
@@ -59,6 +59,16 @@ The entries occur exactly once and in this order:
 | 5 | Instructions | Instructions |
 | 6 | Dictionary | Dictionary entries |
 | 7 | Application requirements | Requirements |
+| 8 | Artifact schemas | `1` when the artifact is present, otherwise `0` |
+| 9 | Artifact constants | `1` when the artifact is present, otherwise `0` |
+| 10 | Artifact inputs | `1` when the artifact is present, otherwise `0` |
+| 11 | Artifact slots | `1` when the artifact is present, otherwise `0` |
+| 12 | Artifact producers | `1` when the artifact is present, otherwise `0` |
+| 13 | Artifact nodes | `1` when the artifact is present, otherwise `0` |
+| 14 | Artifact bindings | `1` when the artifact is present, otherwise `0` |
+| 15 | Artifact outputs | `1` when the artifact is present, otherwise `0` |
+| 16 | Artifact integrity constraints | `1` when the artifact is present, otherwise `0` |
+| 17 | Artifact operations | `1` when the artifact is present, otherwise `0` |
 
 Every section offset is aligned to eight bytes. Sections are ordered,
 non-overlapping, and contained before the checksum. Inter-section and
@@ -308,6 +318,69 @@ must form a canonical valid execution request. Requirement flags are zero.
 Every application-requirement row must be referenced by at least one host or
 resource instruction; unreferenced requirement rows are noncanonical.
 
+## Semantic program artifact
+
+Sections 8 through 17 carry the finalized `ProgramArtifact` produced by the
+ordinary source compiler. They are a direct part of bytecode v1, not a legacy
+adapter and not a second bytecode version. Constructed runtime-only programs
+may leave all ten sections absent. Source compiler output includes all ten;
+partial presence is invalid.
+
+Each present section is a compact UTF-8 JSON array with no insignificant
+whitespace. The arrays use the field order below, decimal JSON integers, JSON
+strings, `null` for an absent optional value, and Serde's externally tagged
+form for sum types. Decoders first enforce the raw section and aggregate byte
+limits, count top-level array elements without constructing them, and only
+then allocate and decode typed values.
+
+| Section | Array element |
+| --- | --- |
+| Artifact schemas | Canonical C0 `SchemaDraft` (`dimension_parameters`, `body`) |
+| Artifact constants | Canonical C2 `ValueDraft` (`schema`, `shape_values`, `data`) |
+| Artifact inputs | `{input,name,slot,schema}` |
+| Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived |
+| Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
+| Artifact nodes | `{node,operation,input_start,input_end,output_start,output_end}` |
+| Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
+| Artifact outputs | `{output,name,source,schema}` |
+| Artifact integrity constraints | `{constraint,operation,inputs}` |
+| Artifact operations | `{module_path,operation_name}` |
+
+An artifact source is `{"Constant":id}` or `{"Slot":id}`. Schema and
+constant arrays are already in canonical ID order. Operation rows are sorted
+and deduplicated by module path and operation name; nodes and constraints
+refer to them by zero-based `operation`. The engine reconstructs
+`ProgramArtifactDraft`, validates all references and producer/binding
+bijections, recomputes `ProgramRevision`, and exposes only the finalized
+read-only artifact.
+
+The source compiler's in-memory sidecar supplies an exact schema kind for
+every semantic register, one role for every instruction, source-definition
+order, the return register, and explicit integrity-result registers. Artifact
+lowering is fail-closed: it does not infer an output schema from an input,
+discard unresolved ports or instructions, or invent fallback interface and
+operation names. External-input and output names retain their source symbol
+names; runtime, host, and resource operation paths retain their registered or
+declared segments. Legacy integrity marker instructions remain executable
+compatibility details and are omitted from artifact nodes; their Boolean
+results instead become `integrity/assert` declarations in the artifact
+integrity-constraint section. Register nodes retain a source constant as their
+state initializer when one exists. An executable effect whose bytecode
+destination is the compiler-only `Empty`, `Any`, or `None` pseudo-kind remains
+an artifact node with all inputs in order and has zero semantic outputs; the
+adapter never fabricates a schema for that non-value destination.
+Legacy atom, enum, or named-kind IDs do not contain a canonical declaration
+path. The source adapter therefore rejects them with a structured unresolved
+nominal error unless future compiler metadata supplies that exact path; it
+never embeds a synthetic `legacy/...` identity in an artifact.
+
+The constant representation is total for the C2 snapshot family. A reified
+schema carries its `SchemaKey`; a reified kind carries validated canonical
+closed-kind bytes and is reconstructed without a legacy kind value. Decoding
+rebuilds the closed semantic kind, runs the C1 canonical encoder, and requires
+the reencoded bytes to equal the supplied bytes exactly. Dynamic shape
+parameter values remain in `ValueDraft.shape_values`.
+
 ## Checksum and validation limits
 
 The final four bytes are the little-endian CRC32/IEEE of every byte in
@@ -326,6 +399,11 @@ Default read limits are:
 | Dictionary entries | 1,000,000 |
 | Dictionary bytes | 16,777,216 |
 | Application requirements | 10,000 |
+| One artifact section | 16,777,216 bytes |
+| All artifact sections | 67,108,864 bytes |
+| Artifact schemas | 100,000 |
+| Artifact constants, inputs, slots, nodes, bindings, outputs, constraints | 1,000,000 each |
+| Artifact operations | 1,000,000 |
 | Variadic or host-call arguments | 65,536 |
 | Type recursion | 256 |
 | Constant recursion | 256 |

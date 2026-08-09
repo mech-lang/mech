@@ -346,6 +346,14 @@
     "src/engine/src/activation/registers.rs",
     "src/engine/src/activation/registration.rs",
     "src/engine/src/activation/validation.rs",
+    "src/engine/src/artifact/bytecode.rs",
+    "src/engine/src/artifact/compiler.rs",
+    "src/engine/src/artifact/encoding.rs",
+    "src/engine/src/artifact/ir.rs",
+    "src/engine/src/artifact/mod.rs",
+    "src/engine/src/artifact/model.rs",
+    "src/engine/src/artifact/snapshot.rs",
+    "src/engine/src/artifact/validation.rs",
     "src/engine/src/expressions/comprehensions.rs",
     "src/engine/src/expressions/environment.rs",
     "src/engine/src/expressions/errors.rs",
@@ -1324,6 +1332,16 @@
             "src/engine/tests/program.rs"
           ],
           "root": "src/engine/tests/program.rs"
+        },
+        {
+          "kinds": [
+            "test"
+          ],
+          "name": "program_artifact_contract",
+          "reachable_rust_files": [
+            "src/engine/tests/program_artifact_contract.rs"
+          ],
+          "root": "src/engine/tests/program_artifact_contract.rs"
         },
         {
           "kinds": [
@@ -2596,6 +2614,14 @@
     "src/engine/src/activation/tests/rollback.rs",
     "src/engine/src/activation/tests/support.rs",
     "src/engine/src/activation/validation.rs",
+    "src/engine/src/artifact/bytecode.rs",
+    "src/engine/src/artifact/compiler.rs",
+    "src/engine/src/artifact/encoding.rs",
+    "src/engine/src/artifact/ir.rs",
+    "src/engine/src/artifact/mod.rs",
+    "src/engine/src/artifact/model.rs",
+    "src/engine/src/artifact/snapshot.rs",
+    "src/engine/src/artifact/validation.rs",
     "src/engine/src/expressions/comprehensions.rs",
     "src/engine/src/expressions/environment.rs",
     "src/engine/src/expressions/errors.rs",
@@ -2705,6 +2731,7 @@
     "src/engine/tests/native_linkage.rs",
     "src/engine/tests/op_assign_feature_gates.rs",
     "src/engine/tests/program.rs",
+    "src/engine/tests/program_artifact_contract.rs",
     "src/engine/tests/resident_ekf_contract.rs",
     "src/engine/tests/support/bytecode_compiler.rs",
     "src/engine/tests/support/catalog.rs",
@@ -5714,7 +5741,7 @@
           {
             "column": 21,
             "fingerprint": "8d1667e96ba3fd611f35d9b0a9cdbdfc26d21887adb48d29de7b3a80e0eec8c8",
-            "line": 1017
+            "line": 1021
           }
         ]
       },
@@ -5746,7 +5773,7 @@
           {
             "column": 25,
             "fingerprint": "6ad1b43cd65c763515b2b34f3b0eae60886ee92cd9ed1e64e54fdc80e8388276",
-            "line": 140
+            "line": 171
           }
         ]
       },
@@ -5794,27 +5821,27 @@
           {
             "column": 42,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 3022
+            "line": 3040
           },
           {
             "column": 42,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 3023
+            "line": 3041
           },
           {
             "column": 50,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 3025
+            "line": 3043
           },
           {
             "column": 39,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 3028
+            "line": 3046
           },
           {
             "column": 39,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 3078
+            "line": 3096
           }
         ]
       },
@@ -6789,12 +6816,12 @@
           {
             "column": 30,
             "fingerprint": "c9cab66815146e3e6462eeeaae13d40773a9c97f9a6d272837c03cdad113296c",
-            "line": 595
+            "line": 602
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 998
+            "line": 1021
           }
         ]
       },
@@ -6953,24 +6980,24 @@
             "line": 71
           },
           {
+            "column": 39,
+            "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
+            "line": 1395
+          },
+          {
             "column": 43,
             "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 1313
+            "line": 1429
           },
           {
-            "column": 47,
+            "column": 43,
             "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 1345
-          },
-          {
-            "column": 47,
-            "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 1350
+            "line": 1434
           },
           {
             "column": 22,
             "fingerprint": "7dd25d83d595389e1c93ec89c166006f1aca48b03ffa89ca3dc978e2f814ad8d",
-            "line": 1512
+            "line": 1602
           }
         ]
       },
@@ -7866,22 +7893,22 @@
           {
             "column": 24,
             "fingerprint": "5a7b2753ac66cb5082246ce989fb82735fc865502962a602ee206ed562c45227",
-            "line": 954
+            "line": 992
           },
           {
             "column": 24,
             "fingerprint": "5a7b2753ac66cb5082246ce989fb82735fc865502962a602ee206ed562c45227",
-            "line": 964
+            "line": 1002
           },
           {
             "column": 24,
             "fingerprint": "5a7b2753ac66cb5082246ce989fb82735fc865502962a602ee206ed562c45227",
-            "line": 976
+            "line": 1014
           },
           {
             "column": 24,
             "fingerprint": "5a7b2753ac66cb5082246ce989fb82735fc865502962a602ee206ed562c45227",
-            "line": 1026
+            "line": 1064
           }
         ]
       }
@@ -8800,12 +8827,12 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 292
+            "line": 310
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 357
+            "line": 375
           }
         ]
       },
@@ -9322,17 +9349,17 @@
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 151
+            "line": 154
           },
           {
             "column": 12,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 222
+            "line": 227
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 594
+            "line": 601
           }
         ]
       },
@@ -12079,7 +12106,7 @@
           {
             "column": 8,
             "fingerprint": "539a0175df8e8aaf575c532a2215f291bd11189ea93305893559bdc8911e0465",
-            "line": 1017
+            "line": 1021
           }
         ]
       },
@@ -12111,7 +12138,7 @@
           {
             "column": 12,
             "fingerprint": "1ab1a353ac6573d48322dc0249ce059c23e01654f39bb9e7e508ea1e093a1f44",
-            "line": 140
+            "line": 171
           }
         ]
       },
@@ -12154,27 +12181,27 @@
           {
             "column": 29,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 3022
+            "line": 3040
           },
           {
             "column": 29,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 3023
+            "line": 3041
           },
           {
             "column": 37,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 3025
+            "line": 3043
           },
           {
             "column": 26,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 3028
+            "line": 3046
           },
           {
             "column": 26,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 3078
+            "line": 3096
           }
         ]
       },
@@ -13093,12 +13120,12 @@
           {
             "column": 17,
             "fingerprint": "8b6a8606774c6ca947032a54f6a7682acf82be35f55455301c395fe5a87f5719",
-            "line": 595
+            "line": 602
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 998
+            "line": 1021
           }
         ]
       },
@@ -13257,24 +13284,24 @@
             "line": 71
           },
           {
+            "column": 26,
+            "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
+            "line": 1395
+          },
+          {
             "column": 30,
             "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 1313
+            "line": 1429
           },
           {
-            "column": 34,
+            "column": 30,
             "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 1345
-          },
-          {
-            "column": 34,
-            "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 1350
+            "line": 1434
           },
           {
             "column": 9,
             "fingerprint": "3a43ae59bda136fe665ba3ef9e11f6b20201cf5a2f5ed57fdcff7ba9fa2fc27d",
-            "line": 1512
+            "line": 1602
           }
         ]
       },
@@ -13571,7 +13598,7 @@
           {
             "column": 13,
             "fingerprint": "a7064e15b43e5a137c42bbf1c2e15d79f83f595bbfc64c3ef4706c68a583cca7",
-            "line": 1032
+            "line": 1036
           }
         ]
       },
@@ -13869,12 +13896,12 @@
           {
             "column": 10,
             "fingerprint": "99781254eea7c0b8c0b43555c26cb7e1b588aec2873d524c1124c8db7353fc13",
-            "line": 745
+            "line": 755
           },
           {
-            "column": 31,
+            "column": 27,
             "fingerprint": "99781254eea7c0b8c0b43555c26cb7e1b588aec2873d524c1124c8db7353fc13",
-            "line": 747
+            "line": 756
           }
         ]
       },
@@ -14699,22 +14726,22 @@
             {
               "column": 24,
               "fingerprint": "5a7b2753ac66cb5082246ce989fb82735fc865502962a602ee206ed562c45227",
-              "line": 954
+              "line": 992
             },
             {
               "column": 24,
               "fingerprint": "5a7b2753ac66cb5082246ce989fb82735fc865502962a602ee206ed562c45227",
-              "line": 964
+              "line": 1002
             },
             {
               "column": 24,
               "fingerprint": "5a7b2753ac66cb5082246ce989fb82735fc865502962a602ee206ed562c45227",
-              "line": 976
+              "line": 1014
             },
             {
               "column": 24,
               "fingerprint": "5a7b2753ac66cb5082246ce989fb82735fc865502962a602ee206ed562c45227",
-              "line": 1026
+              "line": 1064
             }
           ]
         }
@@ -15775,12 +15802,12 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 292
+              "line": 310
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 357
+              "line": 375
             }
           ]
         },
@@ -16297,17 +16324,17 @@
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 151
+              "line": 154
             },
             {
               "column": 12,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 222
+              "line": 227
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 594
+              "line": 601
             }
           ]
         },
@@ -18155,7 +18182,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 1050,
+      "line": 1054,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Atom"
     },
@@ -18428,7 +18455,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 816,
+      "line": 837,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Atom"
     },
@@ -18652,28 +18679,28 @@
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3366,
+      "line": 3384,
       "path": "src/core/src/stdlib.rs",
       "variant": "Bool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3371,
+      "line": 3389,
       "path": "src/core/src/stdlib.rs",
       "variant": "Bool"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 4900,
+      "line": 4918,
       "path": "src/core/src/stdlib.rs",
       "variant": "Bool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4905,
+      "line": 4923,
       "path": "src/core/src/stdlib.rs",
       "variant": "Bool"
     },
@@ -18965,9 +18992,9 @@
       "variant": "Bool"
     },
     {
-      "column": 33,
+      "column": 29,
       "enum": "LegacyValue",
-      "line": 1310,
+      "line": 1392,
       "path": "src/engine/src/program/instance.rs",
       "variant": "Bool"
     },
@@ -19742,6 +19769,13 @@
       "variant": "Empty"
     },
     {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 95,
+      "path": "src/engine/src/artifact/ir.rs",
+      "variant": "Empty"
+    },
+    {
       "column": 13,
       "enum": "LegacyValue",
       "line": 354,
@@ -19926,14 +19960,21 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 737,
+      "line": 746,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Empty"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 739,
+      "line": 748,
+      "path": "src/engine/src/intrinsics/define.rs",
+      "variant": "Empty"
+    },
+    {
+      "column": 26,
+      "enum": "LegacyValue",
+      "line": 749,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Empty"
     },
@@ -20185,28 +20226,28 @@
     {
       "column": 25,
       "enum": "LegacyValue",
-      "line": 1289,
+      "line": 1327,
       "path": "src/engine/src/program/instance.rs",
       "variant": "Empty"
     },
     {
-      "column": 21,
+      "column": 17,
       "enum": "LegacyValue",
-      "line": 1338,
+      "line": 1422,
       "path": "src/engine/src/program/instance.rs",
       "variant": "Empty"
     },
     {
-      "column": 32,
+      "column": 28,
       "enum": "LegacyValue",
-      "line": 1346,
+      "line": 1430,
       "path": "src/engine/src/program/instance.rs",
       "variant": "Empty"
     },
     {
-      "column": 32,
+      "column": 28,
       "enum": "LegacyValue",
-      "line": 1351,
+      "line": 1435,
       "path": "src/engine/src/program/instance.rs",
       "variant": "Empty"
     },
@@ -20472,7 +20513,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1028,
+      "line": 1032,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "EmptyKind"
     },
@@ -20696,14 +20737,14 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 753,
+      "line": 765,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "EmptyKind"
     },
     {
-      "column": 31,
+      "column": 27,
       "enum": "LegacyValue",
-      "line": 755,
+      "line": 766,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "EmptyKind"
     },
@@ -20780,7 +20821,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 1111,
+      "line": 1115,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Enum"
     },
@@ -21046,7 +21087,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 825,
+      "line": 847,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Enum"
     },
@@ -25477,180 +25518,173 @@
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3212,
+      "line": 3230,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3248,
+      "line": 3266,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 3248,
+      "line": 3266,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 3252,
+      "line": 3270,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 3483,
+      "line": 3501,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 3487,
+      "line": 3505,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 3491,
+      "line": 3509,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 3495,
+      "line": 3513,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 3499,
+      "line": 3517,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 3503,
+      "line": 3521,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3507,
+      "line": 3525,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3511,
+      "line": 3529,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3515,
+      "line": 3533,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3519,
+      "line": 3537,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3523,
+      "line": 3541,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3527,
+      "line": 3545,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3531,
+      "line": 3549,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3535,
+      "line": 3553,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3539,
+      "line": 3557,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3543,
+      "line": 3561,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3547,
+      "line": 3565,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3551,
+      "line": 3569,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3555,
+      "line": 3573,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3559,
+      "line": 3577,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 124,
-      "enum": "LegacyValue",
-      "line": 3563,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 75,
       "enum": "LegacyValue",
       "line": 3581,
       "path": "src/core/src/stdlib.rs",
@@ -25659,341 +25693,341 @@
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3585,
+      "line": 3599,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3589,
+      "line": 3603,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3593,
+      "line": 3607,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3597,
+      "line": 3611,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3601,
+      "line": 3615,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 75,
+      "enum": "LegacyValue",
+      "line": 3619,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3605,
+      "line": 3623,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3609,
+      "line": 3627,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3613,
+      "line": 3631,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3617,
+      "line": 3635,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3621,
+      "line": 3639,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3625,
+      "line": 3643,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3629,
+      "line": 3647,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3633,
+      "line": 3651,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3637,
+      "line": 3655,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3641,
+      "line": 3659,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3645,
+      "line": 3663,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3649,
+      "line": 3667,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3653,
+      "line": 3671,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3657,
+      "line": 3675,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3661,
+      "line": 3679,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4262,
+      "line": 4280,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4266,
+      "line": 4284,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4270,
+      "line": 4288,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4274,
+      "line": 4292,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4278,
+      "line": 4296,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4282,
+      "line": 4300,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4286,
+      "line": 4304,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4290,
+      "line": 4308,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4294,
+      "line": 4312,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4298,
+      "line": 4316,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4302,
+      "line": 4320,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4306,
+      "line": 4324,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4310,
+      "line": 4328,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4314,
+      "line": 4332,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4318,
+      "line": 4336,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4323,
+      "line": 4341,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4327,
+      "line": 4345,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4331,
+      "line": 4349,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4335,
+      "line": 4353,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4339,
+      "line": 4357,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4343,
+      "line": 4361,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4347,
+      "line": 4365,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4351,
+      "line": 4369,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4355,
+      "line": 4373,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4359,
+      "line": 4377,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4363,
+      "line": 4381,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4367,
+      "line": 4385,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 100,
-      "enum": "LegacyValue",
-      "line": 4371,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 76,
       "enum": "LegacyValue",
       "line": 4389,
       "path": "src/core/src/stdlib.rs",
@@ -26002,334 +26036,334 @@
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4393,
+      "line": 4407,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4397,
+      "line": 4411,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4401,
+      "line": 4415,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 76,
+      "enum": "LegacyValue",
+      "line": 4419,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 4405,
+      "line": 4423,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 4409,
+      "line": 4427,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4413,
+      "line": 4431,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4417,
+      "line": 4435,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4421,
+      "line": 4439,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4425,
+      "line": 4443,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4429,
+      "line": 4447,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4433,
+      "line": 4451,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4437,
+      "line": 4455,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4441,
+      "line": 4459,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4445,
+      "line": 4463,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4450,
+      "line": 4468,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4454,
+      "line": 4472,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4458,
+      "line": 4476,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4462,
+      "line": 4480,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4466,
+      "line": 4484,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4470,
+      "line": 4488,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4474,
+      "line": 4492,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4478,
+      "line": 4496,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4482,
+      "line": 4500,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4486,
+      "line": 4504,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4490,
+      "line": 4508,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4494,
+      "line": 4512,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4498,
+      "line": 4516,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4923,
+      "line": 4941,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4927,
+      "line": 4945,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4931,
+      "line": 4949,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4935,
+      "line": 4953,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4939,
+      "line": 4957,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4943,
+      "line": 4961,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4947,
+      "line": 4965,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4951,
+      "line": 4969,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4955,
+      "line": 4973,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4959,
+      "line": 4977,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4963,
+      "line": 4981,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4967,
+      "line": 4985,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4971,
+      "line": 4989,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4975,
+      "line": 4993,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4979,
+      "line": 4997,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4983,
+      "line": 5001,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4987,
+      "line": 5005,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4991,
+      "line": 5009,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4995,
+      "line": 5013,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 123,
-      "enum": "LegacyValue",
-      "line": 4999,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 75,
       "enum": "LegacyValue",
       "line": 5017,
       "path": "src/core/src/stdlib.rs",
@@ -26338,133 +26372,140 @@
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 5021,
+      "line": 5035,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 5025,
+      "line": 5039,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 5029,
+      "line": 5043,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 5033,
+      "line": 5047,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 75,
+      "enum": "LegacyValue",
+      "line": 5051,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5037,
+      "line": 5055,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5041,
+      "line": 5059,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5045,
+      "line": 5063,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5049,
+      "line": 5067,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5053,
+      "line": 5071,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5057,
+      "line": 5075,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5061,
+      "line": 5079,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5065,
+      "line": 5083,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5069,
+      "line": 5087,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5073,
+      "line": 5091,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5077,
+      "line": 5095,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5081,
+      "line": 5099,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5085,
+      "line": 5103,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5089,
+      "line": 5107,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 5093,
+      "line": 5111,
       "path": "src/core/src/stdlib.rs",
       "variant": "Index"
     },
@@ -27528,287 +27569,280 @@
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3230,
+      "line": 3248,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 121,
       "enum": "LegacyValue",
-      "line": 3389,
+      "line": 3407,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 121,
       "enum": "LegacyValue",
-      "line": 3393,
+      "line": 3411,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 121,
       "enum": "LegacyValue",
-      "line": 3397,
+      "line": 3415,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 121,
       "enum": "LegacyValue",
-      "line": 3401,
+      "line": 3419,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 121,
       "enum": "LegacyValue",
-      "line": 3405,
+      "line": 3423,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3409,
+      "line": 3427,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3413,
+      "line": 3431,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3417,
+      "line": 3435,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3421,
+      "line": 3439,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3425,
+      "line": 3443,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3429,
+      "line": 3447,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3433,
+      "line": 3451,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3437,
+      "line": 3455,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3441,
+      "line": 3459,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3445,
+      "line": 3463,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3449,
+      "line": 3467,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3453,
+      "line": 3471,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3457,
+      "line": 3475,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3461,
+      "line": 3479,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 3465,
+      "line": 3483,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 4168,
+      "line": 4186,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 4172,
+      "line": 4190,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 4176,
+      "line": 4194,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 4180,
+      "line": 4198,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 4184,
+      "line": 4202,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4188,
+      "line": 4206,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4192,
+      "line": 4210,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4196,
+      "line": 4214,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4200,
+      "line": 4218,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4204,
+      "line": 4222,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4208,
+      "line": 4226,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4212,
+      "line": 4230,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4216,
+      "line": 4234,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4220,
+      "line": 4238,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4224,
+      "line": 4242,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4228,
+      "line": 4246,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4232,
+      "line": 4250,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4236,
+      "line": 4254,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4240,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 76,
-      "enum": "LegacyValue",
-      "line": 4244,
+      "line": 4258,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
@@ -27822,194 +27856,194 @@
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4266,
+      "line": 4280,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4270,
+      "line": 4284,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4274,
+      "line": 4288,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 76,
+      "enum": "LegacyValue",
+      "line": 4292,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 4278,
+      "line": 4296,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 4282,
+      "line": 4300,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4286,
+      "line": 4304,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4290,
+      "line": 4308,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4294,
+      "line": 4312,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4298,
+      "line": 4316,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4302,
+      "line": 4320,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4306,
+      "line": 4324,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4310,
+      "line": 4328,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4314,
+      "line": 4332,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4318,
+      "line": 4336,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4323,
+      "line": 4341,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4327,
+      "line": 4345,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4331,
+      "line": 4349,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4335,
+      "line": 4353,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4339,
+      "line": 4357,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4343,
+      "line": 4361,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4347,
+      "line": 4365,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4351,
+      "line": 4369,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4355,
+      "line": 4373,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4359,
+      "line": 4377,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4363,
+      "line": 4381,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4367,
+      "line": 4385,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
-      "enum": "LegacyValue",
-      "line": 4371,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 100,
       "enum": "LegacyValue",
       "line": 4389,
       "path": "src/core/src/stdlib.rs",
@@ -28018,567 +28052,574 @@
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4393,
+      "line": 4407,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4397,
+      "line": 4411,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4401,
+      "line": 4415,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 100,
+      "enum": "LegacyValue",
+      "line": 4419,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4405,
+      "line": 4423,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4409,
+      "line": 4427,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4413,
+      "line": 4431,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4417,
+      "line": 4435,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4421,
+      "line": 4439,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4425,
+      "line": 4443,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4429,
+      "line": 4447,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4433,
+      "line": 4451,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4437,
+      "line": 4455,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4441,
+      "line": 4459,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4445,
+      "line": 4463,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4450,
+      "line": 4468,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4454,
+      "line": 4472,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4458,
+      "line": 4476,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4462,
+      "line": 4480,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4466,
+      "line": 4484,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4470,
+      "line": 4488,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4474,
+      "line": 4492,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4478,
+      "line": 4496,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4482,
+      "line": 4500,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4486,
+      "line": 4504,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4490,
+      "line": 4508,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4494,
+      "line": 4512,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4498,
+      "line": 4516,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4517,
+      "line": 4535,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4521,
+      "line": 4539,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4525,
+      "line": 4543,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4529,
+      "line": 4547,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 4533,
+      "line": 4551,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 4537,
+      "line": 4555,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4541,
+      "line": 4559,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4545,
+      "line": 4563,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4549,
+      "line": 4567,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4553,
+      "line": 4571,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4557,
+      "line": 4575,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4561,
+      "line": 4579,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4565,
+      "line": 4583,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4569,
+      "line": 4587,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4573,
+      "line": 4591,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4578,
+      "line": 4596,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4582,
+      "line": 4600,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4586,
+      "line": 4604,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4590,
+      "line": 4608,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4594,
+      "line": 4612,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4598,
+      "line": 4616,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4602,
+      "line": 4620,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4606,
+      "line": 4624,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 4610,
+      "line": 4628,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4614,
+      "line": 4632,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4618,
+      "line": 4636,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4622,
+      "line": 4640,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 4626,
+      "line": 4644,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 4630,
+      "line": 4648,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 4634,
+      "line": 4652,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4653,
+      "line": 4671,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4657,
+      "line": 4675,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4661,
+      "line": 4679,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4665,
+      "line": 4683,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4669,
+      "line": 4687,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4673,
+      "line": 4691,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4677,
+      "line": 4695,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4681,
+      "line": 4699,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4685,
+      "line": 4703,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4689,
+      "line": 4707,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 122,
       "enum": "LegacyValue",
-      "line": 4693,
+      "line": 4711,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 4697,
+      "line": 4715,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 4701,
+      "line": 4719,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 4705,
+      "line": 4723,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 4709,
+      "line": 4727,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4714,
+      "line": 4732,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4718,
+      "line": 4736,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4722,
+      "line": 4740,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4726,
+      "line": 4744,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 4730,
+      "line": 4748,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 4734,
+      "line": 4752,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4738,
+      "line": 4756,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 123,
       "enum": "LegacyValue",
-      "line": 4742,
+      "line": 4760,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
     {
       "column": 126,
       "enum": "LegacyValue",
-      "line": 4746,
+      "line": 4764,
       "path": "src/core/src/stdlib.rs",
       "variant": "IndexAll"
     },
@@ -28678,6 +28719,13 @@
       "enum": "LegacyValue",
       "line": 984,
       "path": "src/core/src/value_snapshot.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 96,
+      "path": "src/engine/src/artifact/ir.rs",
       "variant": "IndexAll"
     },
     {
@@ -29579,14 +29627,14 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 729,
+      "line": 736,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Kind"
     },
     {
-      "column": 31,
+      "column": 27,
       "enum": "LegacyValue",
-      "line": 731,
+      "line": 737,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Kind"
     },
@@ -29768,7 +29816,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 867,
+      "line": 871,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Map"
     },
@@ -30069,7 +30117,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 807,
+      "line": 827,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Map"
     },
@@ -30118,7 +30166,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1182,
+      "line": 1186,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixBool"
     },
@@ -30153,733 +30201,726 @@
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4517,
+      "line": 4535,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4521,
+      "line": 4539,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4525,
+      "line": 4543,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4529,
+      "line": 4547,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4533,
+      "line": 4551,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 4537,
+      "line": 4555,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4541,
+      "line": 4559,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4545,
+      "line": 4563,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4549,
+      "line": 4567,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4553,
+      "line": 4571,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4557,
+      "line": 4575,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4561,
+      "line": 4579,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4565,
+      "line": 4583,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4569,
+      "line": 4587,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4573,
+      "line": 4591,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4578,
+      "line": 4596,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4582,
+      "line": 4600,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4586,
+      "line": 4604,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4590,
+      "line": 4608,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4594,
+      "line": 4612,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 102,
       "enum": "LegacyValue",
-      "line": 4598,
+      "line": 4616,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4602,
+      "line": 4620,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4606,
+      "line": 4624,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4610,
+      "line": 4628,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4614,
+      "line": 4632,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4618,
+      "line": 4636,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 4622,
+      "line": 4640,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4626,
+      "line": 4644,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4630,
+      "line": 4648,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 103,
       "enum": "LegacyValue",
-      "line": 4634,
+      "line": 4652,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4653,
+      "line": 4671,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4657,
+      "line": 4675,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4661,
+      "line": 4679,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4665,
+      "line": 4683,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 4669,
+      "line": 4687,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 4673,
+      "line": 4691,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4677,
+      "line": 4695,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4681,
+      "line": 4699,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4685,
+      "line": 4703,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4689,
+      "line": 4707,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4693,
+      "line": 4711,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4697,
+      "line": 4715,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4701,
+      "line": 4719,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4705,
+      "line": 4723,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4709,
+      "line": 4727,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4714,
+      "line": 4732,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4718,
+      "line": 4736,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4722,
+      "line": 4740,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4726,
+      "line": 4744,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4730,
+      "line": 4748,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4734,
+      "line": 4752,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4738,
+      "line": 4756,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4742,
+      "line": 4760,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 4746,
+      "line": 4764,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4765,
+      "line": 4783,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4769,
+      "line": 4787,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4773,
+      "line": 4791,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4777,
+      "line": 4795,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 4781,
+      "line": 4799,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 4785,
+      "line": 4803,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4789,
+      "line": 4807,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4793,
+      "line": 4811,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4797,
+      "line": 4815,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4801,
+      "line": 4819,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4805,
+      "line": 4823,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4809,
+      "line": 4827,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4813,
+      "line": 4831,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4817,
+      "line": 4835,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4821,
+      "line": 4839,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4826,
+      "line": 4844,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4830,
+      "line": 4848,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4834,
+      "line": 4852,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4838,
+      "line": 4856,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4842,
+      "line": 4860,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 4846,
+      "line": 4864,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4850,
+      "line": 4868,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4854,
+      "line": 4872,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 4858,
+      "line": 4876,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4862,
+      "line": 4880,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4866,
+      "line": 4884,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 4870,
+      "line": 4888,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 4874,
+      "line": 4892,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 4878,
+      "line": 4896,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 4882,
+      "line": 4900,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 4923,
+      "line": 4941,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 4927,
+      "line": 4945,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 4931,
+      "line": 4949,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 4935,
+      "line": 4953,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 4939,
+      "line": 4957,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4943,
+      "line": 4961,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4947,
+      "line": 4965,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4951,
+      "line": 4969,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4955,
+      "line": 4973,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4959,
+      "line": 4977,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4963,
+      "line": 4981,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4967,
+      "line": 4985,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4971,
+      "line": 4989,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4975,
+      "line": 4993,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4979,
+      "line": 4997,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4983,
+      "line": 5001,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4987,
+      "line": 5005,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4991,
+      "line": 5009,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4995,
+      "line": 5013,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 76,
-      "enum": "LegacyValue",
-      "line": 4999,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "MatrixBool"
-    },
-    {
-      "column": 100,
       "enum": "LegacyValue",
       "line": 5017,
       "path": "src/core/src/stdlib.rs",
@@ -30888,721 +30929,728 @@
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 5021,
+      "line": 5035,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 5025,
+      "line": 5039,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 5029,
+      "line": 5043,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 5033,
+      "line": 5047,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "MatrixBool"
+    },
+    {
+      "column": 100,
+      "enum": "LegacyValue",
+      "line": 5051,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5037,
+      "line": 5055,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5041,
+      "line": 5059,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5045,
+      "line": 5063,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5049,
+      "line": 5067,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5053,
+      "line": 5071,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5057,
+      "line": 5075,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5061,
+      "line": 5079,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5065,
+      "line": 5083,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5069,
+      "line": 5087,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5073,
+      "line": 5091,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5077,
+      "line": 5095,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5081,
+      "line": 5099,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5085,
+      "line": 5103,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5089,
+      "line": 5107,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 5093,
+      "line": 5111,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5112,
+      "line": 5130,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5112,
+      "line": 5130,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 5116,
+      "line": 5134,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 127,
       "enum": "LegacyValue",
-      "line": 5116,
+      "line": 5134,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 5120,
+      "line": 5138,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 127,
       "enum": "LegacyValue",
-      "line": 5120,
+      "line": 5138,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 5124,
+      "line": 5142,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 127,
       "enum": "LegacyValue",
-      "line": 5124,
+      "line": 5142,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 5128,
+      "line": 5146,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 127,
       "enum": "LegacyValue",
-      "line": 5128,
+      "line": 5146,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5132,
+      "line": 5150,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5132,
+      "line": 5150,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5136,
+      "line": 5154,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5136,
+      "line": 5154,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5140,
+      "line": 5158,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5140,
+      "line": 5158,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5144,
+      "line": 5162,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5144,
+      "line": 5162,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5148,
+      "line": 5166,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5148,
+      "line": 5166,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5152,
+      "line": 5170,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5152,
+      "line": 5170,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5156,
+      "line": 5174,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5156,
+      "line": 5174,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 5160,
+      "line": 5178,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 126,
       "enum": "LegacyValue",
-      "line": 5160,
+      "line": 5178,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 5164,
+      "line": 5182,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 126,
       "enum": "LegacyValue",
-      "line": 5164,
+      "line": 5182,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5168,
+      "line": 5186,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5168,
+      "line": 5186,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5172,
+      "line": 5190,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5172,
+      "line": 5190,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5176,
+      "line": 5194,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5176,
+      "line": 5194,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5180,
+      "line": 5198,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5180,
+      "line": 5198,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5184,
+      "line": 5202,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5184,
+      "line": 5202,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5188,
+      "line": 5206,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5188,
+      "line": 5206,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5193,
+      "line": 5211,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5193,
+      "line": 5211,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 5197,
+      "line": 5215,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 127,
       "enum": "LegacyValue",
-      "line": 5197,
+      "line": 5215,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 5201,
+      "line": 5219,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 127,
       "enum": "LegacyValue",
-      "line": 5201,
+      "line": 5219,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 5205,
+      "line": 5223,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 127,
       "enum": "LegacyValue",
-      "line": 5205,
+      "line": 5223,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 80,
       "enum": "LegacyValue",
-      "line": 5209,
+      "line": 5227,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 127,
       "enum": "LegacyValue",
-      "line": 5209,
+      "line": 5227,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5213,
+      "line": 5231,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5213,
+      "line": 5231,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5217,
+      "line": 5235,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5217,
+      "line": 5235,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5221,
+      "line": 5239,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5221,
+      "line": 5239,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5225,
+      "line": 5243,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5225,
+      "line": 5243,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5229,
+      "line": 5247,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5229,
+      "line": 5247,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5233,
+      "line": 5251,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5233,
+      "line": 5251,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5237,
+      "line": 5255,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5237,
+      "line": 5255,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 5241,
+      "line": 5259,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 126,
       "enum": "LegacyValue",
-      "line": 5241,
+      "line": 5259,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 5245,
+      "line": 5263,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 126,
       "enum": "LegacyValue",
-      "line": 5245,
+      "line": 5263,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5249,
+      "line": 5267,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5249,
+      "line": 5267,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5253,
+      "line": 5271,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5253,
+      "line": 5271,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5257,
+      "line": 5275,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5257,
+      "line": 5275,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5261,
+      "line": 5279,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5261,
+      "line": 5279,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5265,
+      "line": 5283,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5265,
+      "line": 5283,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5269,
+      "line": 5287,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5269,
+      "line": 5287,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5288,
+      "line": 5306,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5293,
+      "line": 5311,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 5312,
+      "line": 5330,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 5317,
+      "line": 5335,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixBool"
     },
@@ -32204,7 +32252,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1305,
+      "line": 1309,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixC64"
     },
@@ -34157,7 +34205,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1267,
+      "line": 1271,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixF32"
     },
@@ -36257,7 +36305,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1272,
+      "line": 1276,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixF64"
     },
@@ -36600,7 +36648,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1262,
+      "line": 1266,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI128"
     },
@@ -36894,7 +36942,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1232,
+      "line": 1236,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI16"
     },
@@ -37188,7 +37236,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1242,
+      "line": 1246,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI32"
     },
@@ -37482,7 +37530,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1252,
+      "line": 1256,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI64"
     },
@@ -37776,7 +37824,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1222,
+      "line": 1226,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI8"
     },
@@ -38077,7 +38125,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1311,
+      "line": 1315,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixIndex"
     },
@@ -38112,292 +38160,285 @@
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3252,
+      "line": 3270,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3271,
+      "line": 3289,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3275,
+      "line": 3293,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3279,
+      "line": 3297,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3283,
+      "line": 3301,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3287,
+      "line": 3305,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3292,
+      "line": 3310,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3296,
+      "line": 3314,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3300,
+      "line": 3318,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3304,
+      "line": 3322,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3308,
+      "line": 3326,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3312,
+      "line": 3330,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3316,
+      "line": 3334,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3320,
+      "line": 3338,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3324,
+      "line": 3342,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3328,
+      "line": 3346,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3332,
+      "line": 3350,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3336,
+      "line": 3354,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3340,
+      "line": 3358,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3344,
+      "line": 3362,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3348,
+      "line": 3366,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3389,
+      "line": 3407,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3393,
+      "line": 3411,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3397,
+      "line": 3415,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3401,
+      "line": 3419,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3405,
+      "line": 3423,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3409,
+      "line": 3427,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3413,
+      "line": 3431,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3417,
+      "line": 3435,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3421,
+      "line": 3439,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3425,
+      "line": 3443,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3429,
+      "line": 3447,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3433,
+      "line": 3451,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3437,
+      "line": 3455,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3441,
+      "line": 3459,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3445,
+      "line": 3463,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3449,
+      "line": 3467,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3453,
+      "line": 3471,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3457,
+      "line": 3475,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3461,
+      "line": 3479,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
-      "enum": "LegacyValue",
-      "line": 3465,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 75,
       "enum": "LegacyValue",
       "line": 3483,
       "path": "src/core/src/stdlib.rs",
@@ -38406,145 +38447,145 @@
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3487,
+      "line": 3501,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3491,
+      "line": 3505,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3495,
+      "line": 3509,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3499,
+      "line": 3513,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 75,
       "enum": "LegacyValue",
-      "line": 3503,
+      "line": 3517,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 75,
+      "enum": "LegacyValue",
+      "line": 3521,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3507,
+      "line": 3525,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3511,
+      "line": 3529,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3515,
+      "line": 3533,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3519,
+      "line": 3537,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3523,
+      "line": 3541,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3527,
+      "line": 3545,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3531,
+      "line": 3549,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3535,
+      "line": 3553,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3539,
+      "line": 3557,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3543,
+      "line": 3561,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3547,
+      "line": 3565,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3551,
+      "line": 3569,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3555,
+      "line": 3573,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3559,
+      "line": 3577,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
-      "enum": "LegacyValue",
-      "line": 3563,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 100,
       "enum": "LegacyValue",
       "line": 3581,
       "path": "src/core/src/stdlib.rs",
@@ -38553,630 +38594,581 @@
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 3585,
+      "line": 3599,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 3589,
+      "line": 3603,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 3593,
+      "line": 3607,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 3597,
+      "line": 3611,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 100,
       "enum": "LegacyValue",
-      "line": 3601,
+      "line": 3615,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 100,
+      "enum": "LegacyValue",
+      "line": 3619,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3605,
+      "line": 3623,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3609,
+      "line": 3627,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3613,
+      "line": 3631,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3617,
+      "line": 3635,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3621,
+      "line": 3639,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3625,
+      "line": 3643,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3629,
+      "line": 3647,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3633,
+      "line": 3651,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3637,
+      "line": 3655,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3641,
+      "line": 3659,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3645,
+      "line": 3663,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3649,
+      "line": 3667,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3653,
+      "line": 3671,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3657,
+      "line": 3675,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 3661,
+      "line": 3679,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3728,
+      "line": 3746,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3728,
+      "line": 3746,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3732,
+      "line": 3750,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3732,
+      "line": 3750,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3736,
+      "line": 3754,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3736,
+      "line": 3754,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3740,
+      "line": 3758,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3740,
+      "line": 3758,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3744,
+      "line": 3762,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3744,
+      "line": 3762,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3748,
+      "line": 3766,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3748,
+      "line": 3766,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3752,
+      "line": 3770,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3752,
+      "line": 3770,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3756,
+      "line": 3774,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3756,
+      "line": 3774,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3760,
+      "line": 3778,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3760,
+      "line": 3778,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3764,
+      "line": 3782,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3764,
+      "line": 3782,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3768,
+      "line": 3786,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3768,
+      "line": 3786,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3772,
+      "line": 3790,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3772,
+      "line": 3790,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3776,
+      "line": 3794,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3776,
+      "line": 3794,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3780,
+      "line": 3798,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3780,
+      "line": 3798,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3784,
+      "line": 3802,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3784,
+      "line": 3802,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3788,
+      "line": 3806,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3788,
+      "line": 3806,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3792,
+      "line": 3810,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3792,
+      "line": 3810,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3796,
+      "line": 3814,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3796,
+      "line": 3814,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3800,
+      "line": 3818,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3800,
+      "line": 3818,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3804,
+      "line": 3822,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3804,
+      "line": 3822,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3808,
+      "line": 3826,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3808,
+      "line": 3826,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3812,
+      "line": 3830,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3812,
+      "line": 3830,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3816,
+      "line": 3834,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3816,
+      "line": 3834,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3820,
+      "line": 3838,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3820,
+      "line": 3838,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3824,
+      "line": 3842,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3824,
+      "line": 3842,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3829,
+      "line": 3847,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3829,
+      "line": 3847,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3833,
+      "line": 3851,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3833,
+      "line": 3851,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3837,
+      "line": 3855,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3837,
+      "line": 3855,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3841,
+      "line": 3859,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3841,
+      "line": 3859,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3845,
+      "line": 3863,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3845,
+      "line": 3863,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3849,
+      "line": 3867,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3849,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 76,
-      "enum": "LegacyValue",
-      "line": 3853,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 124,
-      "enum": "LegacyValue",
-      "line": 3853,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 76,
-      "enum": "LegacyValue",
-      "line": 3857,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 124,
-      "enum": "LegacyValue",
-      "line": 3857,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 76,
-      "enum": "LegacyValue",
-      "line": 3861,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 124,
-      "enum": "LegacyValue",
-      "line": 3861,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 76,
-      "enum": "LegacyValue",
-      "line": 3866,
-      "path": "src/core/src/stdlib.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 124,
-      "enum": "LegacyValue",
-      "line": 3866,
+      "line": 3867,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
@@ -39197,28 +39189,28 @@
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3876,
+      "line": 3875,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3876,
+      "line": 3875,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3880,
+      "line": 3879,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3880,
+      "line": 3879,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
@@ -39239,70 +39231,70 @@
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3888,
+      "line": 3889,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3888,
+      "line": 3889,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3892,
+      "line": 3894,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3892,
+      "line": 3894,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3896,
+      "line": 3898,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3896,
+      "line": 3898,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3900,
+      "line": 3902,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3900,
+      "line": 3902,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3905,
+      "line": 3906,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3905,
+      "line": 3906,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
@@ -39323,98 +39315,98 @@
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3915,
+      "line": 3914,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3915,
+      "line": 3914,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3920,
+      "line": 3918,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3920,
+      "line": 3918,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3925,
+      "line": 3923,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3925,
+      "line": 3923,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3930,
+      "line": 3928,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3930,
+      "line": 3928,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3935,
+      "line": 3933,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3935,
+      "line": 3933,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3940,
+      "line": 3938,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3940,
+      "line": 3938,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3944,
+      "line": 3943,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3944,
+      "line": 3943,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
@@ -39435,42 +39427,42 @@
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3952,
+      "line": 3953,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3952,
+      "line": 3953,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3956,
+      "line": 3958,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3956,
+      "line": 3958,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3961,
+      "line": 3962,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3961,
+      "line": 3962,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
@@ -39505,126 +39497,126 @@
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3975,
+      "line": 3974,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3975,
+      "line": 3974,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3980,
+      "line": 3979,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3980,
+      "line": 3979,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3985,
+      "line": 3984,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3985,
+      "line": 3984,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3990,
+      "line": 3988,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3990,
+      "line": 3988,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 3995,
+      "line": 3993,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 3995,
+      "line": 3993,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4000,
+      "line": 3998,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4000,
+      "line": 3998,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4005,
+      "line": 4003,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4005,
+      "line": 4003,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4010,
+      "line": 4008,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4010,
+      "line": 4008,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4014,
+      "line": 4013,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4014,
+      "line": 4013,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
@@ -39645,28 +39637,28 @@
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4022,
+      "line": 4023,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4022,
+      "line": 4023,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4027,
+      "line": 4028,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4027,
+      "line": 4028,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
@@ -39687,154 +39679,154 @@
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4037,
+      "line": 4036,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4037,
+      "line": 4036,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4042,
+      "line": 4040,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4042,
+      "line": 4040,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4047,
+      "line": 4045,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4047,
+      "line": 4045,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4052,
+      "line": 4050,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4052,
+      "line": 4050,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4057,
+      "line": 4055,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4057,
+      "line": 4055,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4062,
+      "line": 4060,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4062,
+      "line": 4060,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4067,
+      "line": 4065,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4067,
+      "line": 4065,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4072,
+      "line": 4070,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4072,
+      "line": 4070,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4077,
+      "line": 4075,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4077,
+      "line": 4075,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4082,
+      "line": 4080,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4082,
+      "line": 4080,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4086,
+      "line": 4085,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4086,
+      "line": 4085,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
@@ -39855,28 +39847,28 @@
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4094,
+      "line": 4095,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4094,
+      "line": 4095,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4099,
+      "line": 4100,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4099,
+      "line": 4100,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
@@ -39897,294 +39889,350 @@
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4109,
+      "line": 4108,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4109,
+      "line": 4108,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4114,
+      "line": 4112,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4114,
+      "line": 4112,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4119,
+      "line": 4117,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4119,
+      "line": 4117,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4124,
+      "line": 4122,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4124,
+      "line": 4122,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4129,
+      "line": 4127,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4129,
+      "line": 4127,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4134,
+      "line": 4132,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4134,
+      "line": 4132,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4139,
+      "line": 4137,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4139,
+      "line": 4137,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4144,
+      "line": 4142,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4144,
+      "line": 4142,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 76,
       "enum": "LegacyValue",
-      "line": 4149,
+      "line": 4147,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 4149,
+      "line": 4147,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 76,
+      "enum": "LegacyValue",
+      "line": 4152,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 124,
+      "enum": "LegacyValue",
+      "line": 4152,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 76,
+      "enum": "LegacyValue",
+      "line": 4157,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 124,
+      "enum": "LegacyValue",
+      "line": 4157,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 76,
+      "enum": "LegacyValue",
+      "line": 4162,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 124,
+      "enum": "LegacyValue",
+      "line": 4162,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 76,
+      "enum": "LegacyValue",
+      "line": 4167,
+      "path": "src/core/src/stdlib.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 124,
+      "enum": "LegacyValue",
+      "line": 4167,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 98,
       "enum": "LegacyValue",
-      "line": 4168,
+      "line": 4186,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 98,
       "enum": "LegacyValue",
-      "line": 4172,
+      "line": 4190,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 98,
       "enum": "LegacyValue",
-      "line": 4176,
+      "line": 4194,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 98,
       "enum": "LegacyValue",
-      "line": 4180,
+      "line": 4198,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 98,
       "enum": "LegacyValue",
-      "line": 4184,
+      "line": 4202,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4188,
+      "line": 4206,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4192,
+      "line": 4210,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4196,
+      "line": 4214,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4200,
+      "line": 4218,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4204,
+      "line": 4222,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4208,
+      "line": 4226,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4212,
+      "line": 4230,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4216,
+      "line": 4234,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4220,
+      "line": 4238,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4224,
+      "line": 4242,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4228,
+      "line": 4246,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4232,
+      "line": 4250,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4236,
+      "line": 4254,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4240,
+      "line": 4258,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 99,
       "enum": "LegacyValue",
-      "line": 4244,
+      "line": 4262,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5288,
+      "line": 5306,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 5293,
+      "line": 5311,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5312,
+      "line": 5330,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 5317,
+      "line": 5335,
       "path": "src/core/src/stdlib.rs",
       "variant": "MatrixIndex"
     },
@@ -40814,7 +40862,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1296,
+      "line": 1300,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixR64"
     },
@@ -41080,7 +41128,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1281,
+      "line": 1285,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixString"
     },
@@ -41374,7 +41422,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1212,
+      "line": 1216,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU128"
     },
@@ -41668,7 +41716,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1192,
+      "line": 1196,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU16"
     },
@@ -41962,7 +42010,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1197,
+      "line": 1201,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU32"
     },
@@ -42256,7 +42304,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1202,
+      "line": 1206,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU64"
     },
@@ -42557,7 +42605,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1187,
+      "line": 1191,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU8"
     },
@@ -43089,6 +43137,13 @@
     {
       "column": 9,
       "enum": "LegacyValue",
+      "line": 109,
+      "path": "src/engine/src/artifact/ir.rs",
+      "variant": "MatrixValue"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
       "line": 160,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixValue"
@@ -43194,14 +43249,14 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 762,
+      "line": 776,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MatrixValue"
     },
     {
-      "column": 31,
+      "column": 27,
       "enum": "LegacyValue",
-      "line": 764,
+      "line": 777,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MatrixValue"
     },
@@ -45098,7 +45153,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 1017,
+      "line": 1021,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MutableReference"
     },
@@ -45126,7 +45181,7 @@
     {
       "column": 12,
       "enum": "LegacyValue",
-      "line": 140,
+      "line": 171,
       "path": "src/core/src/program/compiler/api.rs",
       "variant": "MutableReference"
     },
@@ -45161,35 +45216,35 @@
     {
       "column": 29,
       "enum": "LegacyValue",
-      "line": 3022,
+      "line": 3040,
       "path": "src/core/src/stdlib.rs",
       "variant": "MutableReference"
     },
     {
       "column": 29,
       "enum": "LegacyValue",
-      "line": 3023,
+      "line": 3041,
       "path": "src/core/src/stdlib.rs",
       "variant": "MutableReference"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 3025,
+      "line": 3043,
       "path": "src/core/src/stdlib.rs",
       "variant": "MutableReference"
     },
     {
       "column": 26,
       "enum": "LegacyValue",
-      "line": 3028,
+      "line": 3046,
       "path": "src/core/src/stdlib.rs",
       "variant": "MutableReference"
     },
     {
       "column": 26,
       "enum": "LegacyValue",
-      "line": 3078,
+      "line": 3096,
       "path": "src/core/src/stdlib.rs",
       "variant": "MutableReference"
     },
@@ -46190,14 +46245,14 @@
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 595,
+      "line": 602,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 998,
+      "line": 1021,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MutableReference"
     },
@@ -46370,30 +46425,30 @@
       "variant": "MutableReference"
     },
     {
+      "column": 26,
+      "enum": "LegacyValue",
+      "line": 1395,
+      "path": "src/engine/src/program/instance.rs",
+      "variant": "MutableReference"
+    },
+    {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 1313,
+      "line": 1429,
       "path": "src/engine/src/program/instance.rs",
       "variant": "MutableReference"
     },
     {
-      "column": 34,
+      "column": 30,
       "enum": "LegacyValue",
-      "line": 1345,
-      "path": "src/engine/src/program/instance.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 34,
-      "enum": "LegacyValue",
-      "line": 1350,
+      "line": 1434,
       "path": "src/engine/src/program/instance.rs",
       "variant": "MutableReference"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 1512,
+      "line": 1602,
       "path": "src/engine/src/program/instance.rs",
       "variant": "MutableReference"
     },
@@ -46862,7 +46917,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 823,
+      "line": 827,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Record"
     },
@@ -47170,7 +47225,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 798,
+      "line": 817,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Record"
     },
@@ -47548,7 +47603,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 918,
+      "line": 922,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Set"
     },
@@ -47835,7 +47890,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 780,
+      "line": 797,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Set"
     },
@@ -48302,23 +48357,23 @@
       "variant": "String"
     },
     {
-      "column": 28,
+      "column": 24,
       "enum": "LegacyValue",
-      "line": 1314,
+      "line": 1398,
       "path": "src/engine/src/program/instance.rs",
       "variant": "String"
     },
     {
-      "column": 34,
+      "column": 30,
       "enum": "LegacyValue",
-      "line": 1315,
+      "line": 1399,
       "path": "src/engine/src/program/instance.rs",
       "variant": "String"
     },
     {
-      "column": 21,
+      "column": 17,
       "enum": "LegacyValue",
-      "line": 1340,
+      "line": 1424,
       "path": "src/engine/src/program/instance.rs",
       "variant": "String"
     },
@@ -48563,7 +48618,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 989,
+      "line": 993,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Table"
     },
@@ -48976,7 +49031,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 771,
+      "line": 787,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Table"
     },
@@ -49102,7 +49157,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 781,
+      "line": 785,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Tuple"
     },
@@ -49452,7 +49507,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 789,
+      "line": 807,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Tuple"
     },
@@ -49634,7 +49689,7 @@
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 1032,
+      "line": 1036,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Typed"
     },
@@ -49942,14 +49997,14 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 745,
+      "line": 755,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Typed"
     },
     {
-      "column": 31,
+      "column": 27,
       "enum": "LegacyValue",
-      "line": 747,
+      "line": 756,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Typed"
     },
@@ -52593,6 +52648,13 @@
       "variant": "Any"
     },
     {
+      "column": 28,
+      "enum": "ValueKind",
+      "line": 1037,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Any"
+    },
+    {
       "column": 70,
       "enum": "ValueKind",
       "line": 516,
@@ -53290,6 +53352,13 @@
       "enum": "ValueKind",
       "line": 2858,
       "path": "src/core/src/value.rs",
+      "variant": "Empty"
+    },
+    {
+      "column": 9,
+      "enum": "ValueKind",
+      "line": 1037,
+      "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Empty"
     },
     {
@@ -56548,6 +56617,20 @@
       "variant": "Kind"
     },
     {
+      "column": 9,
+      "enum": "ValueKind",
+      "line": 1026,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Kind"
+    },
+    {
+      "column": 14,
+      "enum": "ValueKind",
+      "line": 1028,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Kind"
+    },
+    {
       "column": 20,
       "enum": "ValueKind",
       "line": 53,
@@ -56657,6 +56740,27 @@
       "enum": "ValueKind",
       "line": 145,
       "path": "src/engine/src/activation/captures.rs",
+      "variant": "Map"
+    },
+    {
+      "column": 36,
+      "enum": "ValueKind",
+      "line": 336,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Map"
+    },
+    {
+      "column": 9,
+      "enum": "ValueKind",
+      "line": 983,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Map"
+    },
+    {
+      "column": 17,
+      "enum": "ValueKind",
+      "line": 987,
+      "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Map"
     },
     {
@@ -57021,6 +57125,27 @@
       "enum": "ValueKind",
       "line": 76,
       "path": "src/engine/src/activation/validation.rs",
+      "variant": "Matrix"
+    },
+    {
+      "column": 13,
+      "enum": "ValueKind",
+      "line": 334,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Matrix"
+    },
+    {
+      "column": 9,
+      "enum": "ValueKind",
+      "line": 964,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Matrix"
+    },
+    {
+      "column": 17,
+      "enum": "ValueKind",
+      "line": 967,
+      "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Matrix"
     },
     {
@@ -57409,6 +57534,13 @@
       "variant": "None"
     },
     {
+      "column": 45,
+      "enum": "ValueKind",
+      "line": 1037,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "None"
+    },
+    {
       "column": 13,
       "enum": "ValueKind",
       "line": 534,
@@ -57474,7 +57606,7 @@
     {
       "column": 23,
       "enum": "ValueKind",
-      "line": 1026,
+      "line": 1030,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Option"
     },
@@ -57602,6 +57734,20 @@
       "enum": "ValueKind",
       "line": 1711,
       "path": "src/core/src/value.rs",
+      "variant": "Option"
+    },
+    {
+      "column": 9,
+      "enum": "ValueKind",
+      "line": 1022,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Option"
+    },
+    {
+      "column": 14,
+      "enum": "ValueKind",
+      "line": 1024,
+      "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Option"
     },
     {
@@ -58067,6 +58213,20 @@
       "variant": "Record"
     },
     {
+      "column": 9,
+      "enum": "ValueKind",
+      "line": 971,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Record"
+    },
+    {
+      "column": 14,
+      "enum": "ValueKind",
+      "line": 981,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Record"
+    },
+    {
       "column": 43,
       "enum": "ValueKind",
       "line": 18,
@@ -58121,6 +58281,34 @@
       "line": 84,
       "path": "src/engine/src/structures.rs",
       "variant": "Record"
+    },
+    {
+      "column": 32,
+      "enum": "ValueKind",
+      "line": 143,
+      "path": "src/bytecode/src/context.rs",
+      "variant": "Reference"
+    },
+    {
+      "column": 22,
+      "enum": "ValueKind",
+      "line": 146,
+      "path": "src/bytecode/src/context.rs",
+      "variant": "Reference"
+    },
+    {
+      "column": 32,
+      "enum": "ValueKind",
+      "line": 432,
+      "path": "src/bytecode/src/context.rs",
+      "variant": "Reference"
+    },
+    {
+      "column": 39,
+      "enum": "ValueKind",
+      "line": 434,
+      "path": "src/bytecode/src/context.rs",
+      "variant": "Reference"
     },
     {
       "column": 20,
@@ -58239,6 +58427,20 @@
       "enum": "ValueKind",
       "line": 2854,
       "path": "src/core/src/value.rs",
+      "variant": "Reference"
+    },
+    {
+      "column": 9,
+      "enum": "ValueKind",
+      "line": 960,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Reference"
+    },
+    {
+      "column": 9,
+      "enum": "ValueKind",
+      "line": 1038,
+      "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Reference"
     },
     {
@@ -58449,6 +58651,27 @@
       "enum": "ValueKind",
       "line": 152,
       "path": "src/engine/src/activation/captures.rs",
+      "variant": "Set"
+    },
+    {
+      "column": 13,
+      "enum": "ValueKind",
+      "line": 336,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Set"
+    },
+    {
+      "column": 9,
+      "enum": "ValueKind",
+      "line": 1015,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Set"
+    },
+    {
+      "column": 17,
+      "enum": "ValueKind",
+      "line": 1018,
+      "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Set"
     },
     {
@@ -58837,6 +59060,27 @@
       "variant": "Table"
     },
     {
+      "column": 13,
+      "enum": "ValueKind",
+      "line": 335,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Table"
+    },
+    {
+      "column": 9,
+      "enum": "ValueKind",
+      "line": 991,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Table"
+    },
+    {
+      "column": 14,
+      "enum": "ValueKind",
+      "line": 1001,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Table"
+    },
+    {
       "column": 37,
       "enum": "ValueKind",
       "line": 527,
@@ -59051,6 +59295,20 @@
       "enum": "ValueKind",
       "line": 34,
       "path": "src/engine/src/activation/validation.rs",
+      "variant": "Tuple"
+    },
+    {
+      "column": 9,
+      "enum": "ValueKind",
+      "line": 1003,
+      "path": "src/engine/src/artifact/compiler.rs",
+      "variant": "Tuple"
+    },
+    {
+      "column": 14,
+      "enum": "ValueKind",
+      "line": 1013,
+      "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Tuple"
     },
     {
@@ -60732,7 +60990,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 896
+      "rust_file_count": 905
     },
     {
       "directory": "hosts/browser",
@@ -60804,7 +61062,7 @@
       "directory": "src/engine",
       "manifest": "src/engine/Cargo.toml",
       "name": "mech-engine",
-      "rust_file_count": 134
+      "rust_file_count": 143
     },
     {
       "directory": "src/runtime",
