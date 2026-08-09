@@ -296,15 +296,9 @@ pub(super) fn finalize_data(
             ensure_cardinality(path, expected, values.len())?;
             let mut finalized = Vec::with_capacity(values.len());
             for (index, draft) in values.into_vec().into_iter().enumerate() {
-                finalized.push(CanonicalKeyValue {
-                    data: finalize_data(
-                        element,
-                        draft,
-                        shape,
-                        context,
-                        &path.child(SnapshotPathSegment::SetElement(index as u64)),
-                    )?,
-                });
+                let element_path = path.child(SnapshotPathSegment::SetElement(index as u64));
+                let data = finalize_data(element, draft, shape, context, &element_path)?;
+                super::relations::insert_set_key(element, &mut finalized, data, &element_path)?;
             }
             Ok(ValueData::Set(SetValue {
                 elements: finalized.into_boxed_slice(),
@@ -344,10 +338,13 @@ pub(super) fn finalize_data(
                     context,
                     &path.child(SnapshotPathSegment::MapValue(index as u64)),
                 )?;
-                finalized.push(MapEntryValue {
-                    key: CanonicalKeyValue { data: key_data },
-                    value: value_data,
-                });
+                super::relations::insert_map_entry(
+                    key,
+                    &mut finalized,
+                    key_data,
+                    value_data,
+                    &path.child(SnapshotPathSegment::MapKey(index as u64)),
+                )?;
             }
             Ok(ValueData::Map(MapValue {
                 entries: finalized.into_boxed_slice(),

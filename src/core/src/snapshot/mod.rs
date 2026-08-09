@@ -1,6 +1,8 @@
 mod data;
 mod draft;
+mod encoding;
 mod error;
+mod relations;
 mod sequence;
 pub(crate) mod validation;
 
@@ -18,3 +20,4 @@ pub use self::error::{
 };
 pub use self::sequence::SequenceView;
 pub use self::validation::{SnapshotValidationContext, Value};
+pub use crate::{KeyHash, ValueHash};

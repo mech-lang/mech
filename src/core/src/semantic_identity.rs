@@ -47,6 +47,8 @@ macro_rules! opaque_hash_id {
 opaque_hash_id!(ProgramRevision);
 opaque_hash_id!(SchemaKey);
 opaque_hash_id!(NominalKey);
+opaque_hash_id!(ValueHash);
+opaque_hash_id!(KeyHash);
 
 opaque_u32_id!(KindId);
 opaque_u32_id!(KindParameterId);
