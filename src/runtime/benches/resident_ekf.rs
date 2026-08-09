@@ -18,13 +18,15 @@ use support::gate_b::contract::{
 use support::gate_b::full_write::{FullWriteEpochFixture, FullWriteProbe, buffer_hash};
 use support::gate_b::legacy_atomic::{LegacyEkfFixture, LegacyFullWriteFixture};
 use support::gate_b::raw_epoch::{EpochFixture, EpochProbe};
+use support::gate_b::raw_fused::FusedRustFixture;
 use support::gate_b::raw_kernel::KernelFixture;
 use support::gate_b::resident_kernel::{
-    ResidentFullWriteFixture, ResidentKernelFixture, ResidentKernelProbe,
+    ResidentFullWriteFixture, ResidentFusedFixture, ResidentKernelFixture, ResidentKernelProbe,
 };
 use support::gate_b::resident_turn::{
-    ResidentCompleteProbe, ResidentFullWriteTurnFixture, ResidentPreparedFixture,
-    ResidentScheduledFixture, ResidentTurnFixture,
+    ResidentCompleteProbe, ResidentCountOnlyScheduledFixture, ResidentDirectReceiptFixture,
+    ResidentFullWriteTurnFixture, ResidentPreparedFixture, ResidentScheduledFixture,
+    ResidentTurnFixture,
 };
 
 struct CountingAllocator;
@@ -353,6 +355,38 @@ fn rust_kernel(c: &mut Criterion) {
     group.finish();
 }
 
+fn rust_fused(c: &mut Criterion) {
+    let mut correctness = FusedRustFixture::new(1);
+    let trajectory_hash = correctness.run_and_validate_every_turn();
+    assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+    let mut group = c.benchmark_group("gate_b/rust-fused");
+    group.bench_function("1", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = FusedRustFixture::new(1);
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                fixture.validate_final();
+                black_box(fixture.state(0));
+                report(
+                    "rust-fused",
+                    1,
+                    allocations,
+                    StructuralProbe::default(),
+                    &trajectory_hash,
+                    None,
+                );
+            }
+            elapsed
+        });
+    });
+    group.finish();
+}
+
 fn rust_epoch(c: &mut Criterion) {
     let mut group = c.benchmark_group("gate_b/rust-epoch");
     for instances in SCALED_INSTANCES {
@@ -421,6 +455,38 @@ fn resident_kernel(c: &mut Criterion) {
     group.finish();
 }
 
+fn resident_fused(c: &mut Criterion) {
+    let mut correctness = ResidentFusedFixture::new(1);
+    let trajectory_hash = correctness.run_and_validate_every_turn();
+    assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+    let mut group = c.benchmark_group("gate_b/mech-resident-fused");
+    group.bench_function("1", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = ResidentFusedFixture::new(1);
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                fixture.validate_final();
+                black_box(fixture.state(0));
+                report(
+                    "mech-resident-fused",
+                    1,
+                    allocations,
+                    StructuralProbe::default(),
+                    &trajectory_hash,
+                    None,
+                );
+            }
+            elapsed
+        });
+    });
+    group.finish();
+}
+
 fn resident_scheduled(c: &mut Criterion) {
     let mut correctness = ResidentScheduledFixture::new(1);
     let trajectory_hash = correctness.run_and_validate_every_turn();
@@ -440,6 +506,44 @@ fn resident_scheduled(c: &mut Criterion) {
                 black_box(fixture.state(0));
                 report(
                     "mech-resident-scheduled",
+                    1,
+                    allocations,
+                    StructuralProbe {
+                        candidate_written_bytes: 96,
+                        publication_store_count: 1,
+                        dirty_node_count: 15,
+                        ..StructuralProbe::default()
+                    },
+                    &trajectory_hash,
+                    None,
+                );
+            }
+            elapsed
+        });
+    });
+    group.finish();
+}
+
+fn resident_scheduled_count_only(c: &mut Criterion) {
+    let mut correctness = ResidentCountOnlyScheduledFixture::new(1);
+    let trajectory_hash = correctness.run_and_validate_every_turn();
+    assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+    let mut group = c.benchmark_group("gate_b/mech-resident-scheduled-count-only");
+    group.bench_function("1", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = ResidentCountOnlyScheduledFixture::new(1);
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                fixture.validate_final();
+                black_box(fixture.state(0));
+                black_box(fixture.counts());
+                report(
+                    "mech-resident-scheduled-count-only",
                     1,
                     allocations,
                     StructuralProbe {
@@ -535,6 +639,40 @@ fn resident_turn(c: &mut Criterion) {
             });
         });
     }
+    group.finish();
+}
+
+fn resident_direct_receipt(c: &mut Criterion) {
+    let mut correctness = ResidentDirectReceiptFixture::new();
+    let trajectory_hash = correctness.run_and_validate_every_turn();
+    assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+    correctness.validate_final();
+
+    let mut group = c.benchmark_group("gate_b/mech-resident-direct-receipt");
+    group.bench_function("1", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = ResidentDirectReceiptFixture::new();
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                fixture.validate_final();
+                black_box(fixture.state());
+                report(
+                    "mech-resident-direct-receipt",
+                    1,
+                    allocations,
+                    fixture.probe().into(),
+                    &trajectory_hash,
+                    None,
+                );
+            }
+            elapsed
+        });
+    });
     group.finish();
 }
 
@@ -814,11 +952,15 @@ fn gate_b_controls(c: &mut Criterion) {
         return;
     }
     rust_kernel(c);
+    rust_fused(c);
     rust_epoch(c);
     resident_kernel(c);
+    resident_fused(c);
     resident_scheduled(c);
+    resident_scheduled_count_only(c);
     resident_prepared(c);
     resident_turn(c);
+    resident_direct_receipt(c);
     legacy_atomic(c);
     full_write(c);
 }

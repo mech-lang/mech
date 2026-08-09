@@ -272,6 +272,51 @@ pub(crate) fn execute(
     Ok(())
 }
 
+#[inline(always)]
+pub(crate) fn execute_fused(
+    input: &[f64; 4],
+    state: &[f64; 3],
+    covariance: &[f64; 9],
+    candidate_state: &mut [f64; 3],
+    candidate_covariance: &mut [f64; 9],
+    scratch: &mut EkfScratch,
+    constants: &EkfConstants,
+) -> Result<(), ResidentExecutionError> {
+    use super::super::EkfOp::*;
+
+    macro_rules! execute_step {
+        ($kernel:expr) => {
+            execute(
+                $kernel,
+                input,
+                state,
+                covariance,
+                candidate_state,
+                candidate_covariance,
+                scratch,
+                constants,
+            )?;
+        };
+    }
+
+    execute_step!(TrigonometricState);
+    execute_step!(MotionJacobian);
+    execute_step!(ControlJacobian);
+    execute_step!(PredictedState);
+    execute_step!(PredictedCovariance);
+    execute_step!(LandmarkDeltaAndRange);
+    execute_step!(PredictedMeasurement);
+    execute_step!(MeasurementJacobian);
+    execute_step!(InnovationCovariance);
+    execute_step!(Solve2x2);
+    execute_step!(KalmanGain);
+    execute_step!(Innovation);
+    execute_step!(CorrectedState);
+    execute_step!(JosephCovarianceUpdate);
+    execute_step!(CovarianceSymmetrization);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

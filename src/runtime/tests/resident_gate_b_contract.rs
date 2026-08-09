@@ -82,6 +82,35 @@ fn accepted_commit_is_invisible_until_one_publication_then_retains_owned_receipt
 }
 
 #[test]
+fn in_place_receipt_is_hidden_until_commit_and_retains_the_same_record() {
+    let mut resident = ResidentEkfBatch::new(1);
+    let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
+    let initial = resident.state(0);
+    let permit = recorder.take_admission_permit(0).unwrap();
+    let prepared = resident.prepare_scheduled_turn(INPUT).unwrap();
+    let summary = prepared.summary();
+
+    let commit = recorder.prepare_commit_in_place(permit, prepared).unwrap();
+    assert_eq!(commit.recorded_ledger_len(), 0);
+    assert_eq!(commit.published_epoch(), 0);
+    assert_eq!(commit.published_state(0), initial);
+
+    assert_eq!(commit.commit().get(), 1);
+    assert_eq!(resident.published_epoch(), 1);
+    assert_eq!(recorder.recorded_ledger_len(), 1);
+    let record = recorder.inspect_last().unwrap();
+    assert_eq!(record.sequence, 1);
+    assert_eq!(record.turn_id, 1);
+    assert!(record.accepted);
+    assert_eq!(record.body.before_epoch(), summary.before_epoch);
+    assert_eq!(record.body.after_epoch(), summary.after_epoch);
+    assert_eq!(record.body.state_hash(), summary.state_hash);
+    assert_eq!(record.body.touched_slots(), summary.touched_slots);
+    assert_eq!(record.body.changed_slots(), summary.changed_slots);
+    assert_eq!(record.body.dirty_nodes(), summary.dirty_nodes);
+}
+
+#[test]
 fn rejected_candidate_records_failure_without_publication_and_epoch_is_not_reused() {
     let mut resident = ResidentEkfBatch::new(1);
     let mut recorder = ResidentTurnRecorder::new(2, 0).unwrap();

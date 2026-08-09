@@ -98,7 +98,8 @@ pub mod __gate_b_resident {
     #[cfg(feature = "runtime_bench_probes")]
     pub use crate::resident::bench::ResidentTurnProbe;
     pub use crate::resident::bench::{
-        PreparedResidentTurn, ResidentEkfBatch, ResidentEkfState, ResidentTurnSummary,
+        FusedRustEkfBatch, PreparedResidentTurn, ResidentEkfBatch, ResidentEkfState,
+        ResidentTurnSummary,
     };
     pub use crate::resident::{
         FULL_WRITE_ELEMENTS, PreparedResidentFullWrite, ResidentExecutionError, ResidentFullWrite,

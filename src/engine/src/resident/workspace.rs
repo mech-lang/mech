@@ -33,6 +33,7 @@ pub(crate) struct TurnWorkspace {
     pub(crate) dirty_nodes: Vec<NodeIndex>,
     pub(crate) executed_nodes: Vec<NodeIndex>,
     pub(crate) linear_node_order: Box<[NodeIndex]>,
+    pub(crate) count_only_totals: [usize; 4],
 }
 
 impl TurnWorkspace {
@@ -50,6 +51,7 @@ impl TurnWorkspace {
             dirty_nodes: Vec::with_capacity(plan.nodes.len()),
             executed_nodes: Vec::with_capacity(plan.nodes.len()),
             linear_node_order: plan.topology.linear_node_order.clone(),
+            count_only_totals: [0; 4],
         }
     }
 
@@ -73,6 +75,16 @@ impl TurnWorkspace {
     }
 
     #[inline]
+    pub(crate) fn mark_dirty_count_only(&mut self, node: NodeIndex, epoch: InstanceEpoch) -> bool {
+        let mark = &mut self.dirty_node_marks[node.0 as usize];
+        if *mark == epoch {
+            return false;
+        }
+        *mark = epoch;
+        true
+    }
+
+    #[inline]
     pub(crate) fn seed_turn_roots(&mut self, roots: &[NodeIndex], epoch: InstanceEpoch) {
         for node in roots.iter().copied() {
             self.mark_dirty(node, epoch);
@@ -92,6 +104,16 @@ impl TurnWorkspace {
     }
 
     #[inline]
+    pub(crate) fn record_node_execution_count_only(
+        &mut self,
+        node: NodeIndex,
+        epoch: InstanceEpoch,
+    ) {
+        debug_assert_ne!(self.node_execution_marks[node.0 as usize], epoch);
+        self.node_execution_marks[node.0 as usize] = epoch;
+    }
+
+    #[inline]
     pub(crate) fn record_candidate_outputs(&mut self, instance: u32, epoch: InstanceEpoch) {
         for local in [slot::STATE, slot::COVARIANCE] {
             let index = slot::index(instance, local);
@@ -102,6 +124,24 @@ impl TurnWorkspace {
                 self.invalidated_slots.push(index);
             }
         }
+    }
+
+    #[inline]
+    pub(crate) fn record_candidate_outputs_count_only(
+        &mut self,
+        instance: u32,
+        epoch: InstanceEpoch,
+    ) -> usize {
+        let mut touched = 0;
+        for local in [slot::STATE, slot::COVARIANCE] {
+            let index = slot::index(instance, local);
+            let mark = &mut self.slot_epoch_marks[index.0 as usize];
+            if *mark != epoch {
+                *mark = epoch;
+                touched += 1;
+            }
+        }
+        touched
     }
 
     #[inline]

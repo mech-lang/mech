@@ -60,6 +60,77 @@ pub struct ResidentScheduledFixture {
     resident: ResidentEkfBatch,
 }
 
+pub struct ResidentCountOnlyScheduledFixture {
+    resident: ResidentEkfBatch,
+}
+
+impl ResidentCountOnlyScheduledFixture {
+    pub fn new(instances: usize) -> Self {
+        Self {
+            resident: ResidentEkfBatch::new(instances),
+        }
+    }
+
+    pub fn run_episode(&mut self) {
+        for input in trace().iter().copied() {
+            self.resident
+                .scheduled_count_only_turn(input_array(input))
+                .expect("count-only scheduled resident turn");
+        }
+    }
+
+    pub fn run_and_validate_every_turn(&mut self) -> String {
+        let mut trajectory = Vec::with_capacity(EPISODE_LENGTH);
+        for (turn, (input, expected)) in trace()
+            .iter()
+            .copied()
+            .zip(reference_trajectory().iter().copied())
+            .enumerate()
+        {
+            self.resident
+                .scheduled_count_only_turn(input_array(input))
+                .expect("count-only scheduled resident turn");
+            assert_eq!(self.resident.count_only_totals(), [2, 2, 15, 15]);
+            for instance in 0..self.resident.instances() {
+                assert_state_close(self.state(instance), expected, turn + 1);
+            }
+            trajectory.push(self.state(0));
+        }
+        quantized_trajectory_hash(&trajectory)
+    }
+
+    pub fn state(&self, instance: usize) -> EkfState {
+        let state = self.resident.state(instance);
+        EkfState {
+            state: state.state,
+            covariance: state.covariance,
+        }
+    }
+
+    pub fn counts(&self) -> [usize; 4] {
+        self.resident.count_only_totals()
+    }
+
+    pub fn validate_final(&self) {
+        for instance in 0..self.resident.instances() {
+            assert_state_close(
+                self.state(instance),
+                EkfState::REFERENCE_FINAL,
+                EPISODE_LENGTH,
+            );
+        }
+        assert_eq!(
+            self.counts(),
+            [
+                self.resident.instances() * 2,
+                self.resident.instances() * 2,
+                self.resident.instances() * 15,
+                self.resident.instances() * 15,
+            ]
+        );
+    }
+}
+
 impl ResidentScheduledFixture {
     pub fn new(instances: usize) -> Self {
         Self {
@@ -157,6 +228,87 @@ pub struct ResidentTurnFixture {
     recorder: ResidentTurnRecorder,
     instances: usize,
     retained_history: usize,
+}
+
+pub struct ResidentDirectReceiptFixture {
+    resident: ResidentEkfBatch,
+    recorder: ResidentTurnRecorder,
+}
+
+impl ResidentDirectReceiptFixture {
+    pub fn new() -> Self {
+        Self {
+            resident: ResidentEkfBatch::new(1),
+            recorder: ResidentTurnRecorder::new(EPISODE_LENGTH, 0)
+                .expect("resident direct-slot recorder setup"),
+        }
+    }
+
+    #[inline]
+    fn run_turn(&mut self, turn: usize, input: EkfInput) {
+        let permit = self
+            .recorder
+            .take_admission_permit(turn)
+            .expect("pre-reserved direct-slot admission");
+        let prepared = self
+            .resident
+            .prepare_scheduled_turn(input_array(input))
+            .expect("frozen direct-slot resident turn");
+        self.recorder
+            .prepare_commit_in_place(permit, prepared)
+            .expect("direct-slot resident receipt preparation")
+            .commit();
+    }
+
+    pub fn run_episode(&mut self) {
+        for (turn, input) in trace().iter().copied().enumerate() {
+            self.run_turn(turn, input);
+        }
+    }
+
+    pub fn run_and_validate_every_turn(&mut self) -> String {
+        let mut trajectory = Vec::with_capacity(EPISODE_LENGTH);
+        for (turn, (input, expected)) in trace()
+            .iter()
+            .copied()
+            .zip(reference_trajectory().iter().copied())
+            .enumerate()
+        {
+            self.run_turn(turn, input);
+            assert_state_close(self.state(), expected, turn + 1);
+            trajectory.push(self.state());
+        }
+        quantized_trajectory_hash(&trajectory)
+    }
+
+    pub fn state(&self) -> EkfState {
+        let state = self.resident.state(0);
+        EkfState {
+            state: state.state,
+            covariance: state.covariance,
+        }
+    }
+
+    pub fn validate_final(&self) {
+        assert_state_close(self.state(), EkfState::REFERENCE_FINAL, EPISODE_LENGTH);
+        assert_eq!(self.recorder.recorded_ledger_len(), EPISODE_LENGTH);
+    }
+
+    pub fn probe(&self) -> ResidentCompleteProbe {
+        ResidentCompleteProbe {
+            candidate_seed_bytes: 0,
+            candidate_written_bytes: 96,
+            published_buffer_copy_bytes: 0,
+            publication_store_count: 1,
+            receipt_bytes: GateBFixedReceipt::RETAINED_BYTES,
+            dirty_nodes: 15,
+            record_preparation_count: 1,
+            record_append_count: 1,
+            records_retained_before_timing: 0,
+            records_appended: EPISODE_LENGTH,
+            ledger_records_inspected: self.recorder.records_inspected(),
+        }
+    }
 }
 
 impl ResidentTurnFixture {

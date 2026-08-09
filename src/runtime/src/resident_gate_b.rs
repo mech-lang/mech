@@ -51,11 +51,25 @@ struct PreparedResidentAppend<'ledger> {
     record: ResidentTurnRecord,
 }
 
+struct PreparedResidentInPlaceAppend<'ledger> {
+    recorder: &'ledger mut ResidentTurnRecorder,
+    sequence: LedgerSequence,
+}
+
 impl PreparedResidentAppend<'_> {
     #[inline]
     fn append(self) -> LedgerSequence {
         debug_assert!(self.recorder.recorded_len < self.recorder.records.len());
         self.recorder.records[self.recorder.recorded_len] = (self.sequence, self.record);
+        self.recorder.recorded_len += 1;
+        self.sequence
+    }
+}
+
+impl PreparedResidentInPlaceAppend<'_> {
+    #[inline]
+    fn append(self) -> LedgerSequence {
+        debug_assert!(self.recorder.recorded_len < self.recorder.records.len());
         self.recorder.recorded_len += 1;
         self.sequence
     }
@@ -155,6 +169,25 @@ impl ResidentTurnRecorder {
         })
     }
 
+    fn prepare_accepted_append_in_place(
+        &mut self,
+        _permit: ResidentAdmissionPermit,
+        summary: ResidentTurnSummary,
+    ) -> MResult<PreparedResidentInPlaceAppend<'_>> {
+        let identity = self.take_turn_identity()?;
+        if core::mem::take(&mut self.fail_next_preparation) {
+            return Err(error("forced resident ledger preparation failure"));
+        }
+        let sequence = LedgerSequence::new(identity)
+            .ok_or_else(|| error("resident ledger sequence must be non-zero"))?;
+        debug_assert!(self.recorded_len < self.records.len());
+        self.records[self.recorded_len] = (sequence, accepted_record(identity, summary));
+        Ok(PreparedResidentInPlaceAppend {
+            recorder: self,
+            sequence,
+        })
+    }
+
     pub fn prepare_commit<'instance>(
         &mut self,
         permit: ResidentAdmissionPermit,
@@ -166,6 +199,22 @@ impl ResidentTurnRecorder {
                 turn: PreparedResidentPublication::Ekf(turn),
                 append,
             }),
+            Err(error) => {
+                turn.abort();
+                Err(error)
+            }
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn prepare_commit_in_place<'instance>(
+        &mut self,
+        permit: ResidentAdmissionPermit,
+        turn: PreparedResidentTurn<'instance>,
+    ) -> MResult<PreparedResidentInPlaceCommit<'instance, '_>> {
+        let summary = turn.summary();
+        match self.prepare_accepted_append_in_place(permit, summary) {
+            Ok(append) => Ok(PreparedResidentInPlaceCommit { turn, append }),
             Err(error) => {
                 turn.abort();
                 Err(error)
@@ -378,6 +427,38 @@ impl PreparedResidentPublication<'_> {
 }
 
 impl PreparedResidentCommit<'_, '_> {
+    #[inline]
+    pub fn commit(self) -> LedgerSequence {
+        self.turn.publish();
+        self.append.append()
+    }
+}
+
+#[must_use = "prepared resident commits must be committed"]
+pub struct PreparedResidentInPlaceCommit<'instance, 'ledger> {
+    turn: PreparedResidentTurn<'instance>,
+    append: PreparedResidentInPlaceAppend<'ledger>,
+}
+
+impl PreparedResidentInPlaceCommit<'_, '_> {
+    #[doc(hidden)]
+    pub fn recorded_ledger_len(&self) -> usize {
+        self.append.recorder.recorded_len
+    }
+
+    #[doc(hidden)]
+    pub fn published_epoch(&self) -> u64 {
+        self.turn.published_epoch()
+    }
+
+    #[doc(hidden)]
+    pub fn published_state(
+        &self,
+        index: usize,
+    ) -> mech_engine::__gate_b_resident::ResidentEkfState {
+        self.turn.published_state(index)
+    }
+
     #[inline]
     pub fn commit(self) -> LedgerSequence {
         self.turn.publish();

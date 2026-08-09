@@ -157,3 +157,83 @@ the integrity checks. This subtraction therefore does not identify the
 successful `Result` check itself as a material standalone cost. The resident
 prototype also uses enum dispatch rather than a virtual trait call, so virtual
 dispatch is not hidden in this 80.63 ns result.
+
+## Narrow diagnostic lanes
+
+Three benchmark-only prototypes were run serially from one optimized binary
+with the same 4,096-turn trace, 60 Criterion samples, three-second warmup, and
+five-second measurement window. Every lane produced the reference trajectory,
+performed zero timed allocations, and retained candidate validation.
+
+| Lane | Episode median | Per turn | Rate | Relevant delta |
+| --- | ---: | ---: | ---: | ---: |
+| Raw Rust control | 0.4682 ms | 114.31 ns | 8.75 MHz | - |
+| Resident candidate | 0.5317 ms | 129.81 ns | 7.70 MHz | - |
+| Fused resident candidate | 0.4119 ms | 100.56 ns | 9.94 MHz | -29.25 ns vs candidate |
+| Scheduled resident | 0.6709 ms | 163.80 ns | 6.10 MHz | - |
+| Scheduled, scalar counts only | 0.6293 ms | 153.63 ns | 6.51 MHz | -10.17 ns vs scheduled |
+| Prepared summary and fingerprint | 0.7156 ms | 174.69 ns | 5.72 MHz | - |
+| Complete retained receipt | 0.7913 ms | 193.19 ns | 5.18 MHz | - |
+| Complete, receipt prepared in slot | 0.7577 ms | 184.98 ns | 5.41 MHz | -8.21 ns vs complete |
+
+The count-only lane preserves epoch marks and scalar touched, changed, dirty,
+and executed totals, but does not populate the per-turn node and slot vectors.
+Those vectors account for 10.17 ns per turn, or 29.9% of the measured scheduler
+increment. Dirty checks and dependency propagation still cost about 23.82 ns
+per turn after list materialization is removed.
+
+The in-slot receipt prototype writes the accepted record into its reserved but
+invisible ledger slot during preparation. Candidate publication still occurs
+before advancing the visible ledger length. A contract test verifies that the
+slot remains invisible before commit and contains the same receipt afterward.
+This removes 8.21 ns per turn, 44.4% of the current receipt-layer increment.
+
+The fused lane replaces activated-plan traversal and fifteen runtime enum
+matches with fifteen explicit constant kernel calls. Candidate epoch selection,
+the two state buffers, integrity validation, node execution marks, output-slot
+tracking, and release-store publication remain. It saves 29.25 ns per turn and
+reaches 100.56 ns per turn. This is also 12.0% faster than the existing raw Rust
+control, but that control deliberately uses generic matrix helpers with runtime
+dimensions; it is not a maximally specialized Rust implementation. The relevant
+dispatch-fusion comparison is resident candidate versus fused resident candidate.
+
+These results support three implementation directions, in descending order:
+
+1. Compile dense activated regions into fixed straight-line kernel blocks.
+2. Keep scalar scheduler totals by default and materialize node and slot lists
+   only when an observer requests them.
+3. Prepare retained receipts directly in reserved invisible slots, exposing them
+   only after candidate publication.
+
+## Fixed-shape cross-runtime controls
+
+The earlier raw Rust control was portable and generic, so it was not a fair
+lower bound for the fused resident candidate. A new control now calls the exact
+same fixed EKF arithmetic as fused Mech, with the same two candidate buffers and
+integrity validation, while omitting the Mech-specific shell. The
+ordered 60-sample timeline independently warms every native lane for at least
+250 ms before measurement.
+
+| Lane | Per turn | Rate | Difference from fixed Rust |
+| --- | ---: | ---: | ---: |
+| Rust fixed fused | 69.47 ns | 14.40 MHz | - |
+| Mech resident fused | 100.57 ns | 9.94 MHz | +31.10 ns |
+| Rust generic matrix helpers | 112.17 ns | 8.92 MHz | +42.70 ns |
+| Julia fixed StaticArrays | 130.53 ns | 7.66 MHz | +61.07 ns |
+| Mech complete retained turn | 196.14 ns | 5.10 MHz | +126.67 ns |
+
+This corrects the misleading observation that fused Mech beat raw Rust. It
+beats the generic Rust helper control, but it is 44.8% slower than Rust around
+the identical shared kernel. That 31.10 ns is the fused Mech shell above the
+matched Rust work: epoch bookkeeping, reactive node/output marks, workspace
+coordination, and atomic release publication. Fixed-shape Julia is 29.8%
+slower than fused Mech.
+Keeping the full Mech retained transaction adds another 95.57 ns over the
+fused path and leaves it 50.3% slower than fixed-shape Julia.
+
+The other runtimes also retain their original generic controls alongside new
+preallocated fixed-shape controls. On this run, fixed-shape Julia improved
+48.2%, LuaJIT 57.8%, Lua 36.6%, and pure Python 21.5%. The distinction matters:
+these figures compare implementation strategies within each runtime, while
+the fixed Rust versus fused Mech pair isolates the Mech shell around identical
+arithmetic.

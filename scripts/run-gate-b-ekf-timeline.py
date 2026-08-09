@@ -171,6 +171,16 @@ def main() -> int:
     rows.extend(
         run_lines(
             [
+                python,
+                "benchmarks/runtime/gate-b/python/ekf_fixed.py",
+                "--samples",
+                str(args.samples),
+            ]
+        )
+    )
+    rows.extend(
+        run_lines(
+            [
                 lua,
                 "benchmarks/runtime/gate-b/lua/ekf_timeline.lua",
                 "--samples",
@@ -188,6 +198,17 @@ def main() -> int:
             ]
         )
     )
+    for runtime in (lua, luajit):
+        rows.extend(
+            run_lines(
+                [
+                    runtime,
+                    "benchmarks/runtime/gate-b/lua/ekf_fixed.lua",
+                    "--samples",
+                    str(args.samples),
+                ]
+            )
+        )
     rows.extend(
         run_lines(
             [
@@ -201,20 +222,57 @@ def main() -> int:
             ]
         )
     )
+    rows.extend(
+        run_lines(
+            [
+                julia,
+                "--startup-file=no",
+                f"--project={ROOT / 'benchmarks/runtime/gate-b/julia'}",
+                "benchmarks/runtime/gate-b/julia/ekf_fixed.jl",
+                "--samples",
+                str(args.samples),
+            ]
+        )
+    )
 
     expected = {
         "rust-raw",
+        "rust-fixed-fused",
+        "mech-resident-fused",
         "mech-resident-complete",
         "mech-current-atomic",
         "numpy-persistent",
         "python-scalar",
+        "python-fixed-preallocated",
         "lua-scalar",
+        "lua-fixed-preallocated",
         "luajit-scalar",
+        "luajit-fixed-preallocated",
         "julia-persistent",
+        "julia-staticarrays",
     }
     counts = {lane: sum(row["lane"] == lane for row in rows) for lane in expected}
     if any(count != args.samples for count in counts.values()):
         raise RuntimeError(f"incomplete timeline samples: {counts}")
+
+    optimization_classes = {
+        "rust-raw": "portable-generic-control",
+        "rust-fixed-fused": "fixed-shape-specialized-control",
+        "mech-resident-fused": "transactional-fused-prototype",
+        "mech-resident-complete": "transactional-resident-prototype",
+        "mech-current-atomic": "transactional-current-runtime",
+        "numpy-persistent": "preallocated-library-dispatch",
+        "python-scalar": "allocating-generic-scalar",
+        "python-fixed-preallocated": "preallocated-fixed-shape-scalar",
+        "lua-scalar": "allocating-generic-scalar",
+        "lua-fixed-preallocated": "preallocated-fixed-shape-scalar",
+        "luajit-scalar": "allocating-generic-jit",
+        "luajit-fixed-preallocated": "preallocated-fixed-shape-jit",
+        "julia-persistent": "preallocated-dynamic-array",
+        "julia-staticarrays": "preallocated-fixed-shape-specialized",
+    }
+    for row in rows:
+        row["optimization_class"] = optimization_classes[row["lane"]]
 
     payload = {
         "schema_version": 1,
@@ -242,6 +300,7 @@ def main() -> int:
                 "matlab": "not installed",
                 "mech-bytecode": "no current bytecode EKF execution path",
             },
+            "optimization_classes": optimization_classes,
         },
         "samples": rows,
     }

@@ -1,6 +1,8 @@
 use super::{
-    Candidate, NODES_PER_EKF, ReactiveInstance, ResidentExecutionError, execute_ekf_candidate,
-    execute_scheduled_ekf_candidate,
+    Candidate, EkfScratch, NODES_PER_EKF, ProgramArtifact, ReactiveInstance,
+    ResidentExecutionError, efficacy::ekf, execute_ekf_candidate, execute_fused_ekf_candidate,
+    execute_scheduled_count_only_ekf_candidate, execute_scheduled_ekf_candidate,
+    validate_candidate,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -20,6 +22,84 @@ pub struct ResidentTurnProbe {
 
 pub struct ResidentEkfBatch {
     instance: ReactiveInstance,
+}
+
+pub struct FusedRustEkfBatch {
+    states: [Box<[[f64; 3]]>; 2],
+    covariances: [Box<[[f64; 9]]>; 2],
+    scratch: Box<[EkfScratch]>,
+    constants: super::EkfConstants,
+    published: usize,
+}
+
+impl FusedRustEkfBatch {
+    pub fn new(instances: usize) -> Self {
+        assert!(instances > 0, "fused Rust EKF batch must not be empty");
+        let initial_state = [2.0, 1.0, 0.15];
+        let initial_covariance = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.05];
+        let artifact = ProgramArtifact::frozen_ekf_batch(instances);
+        Self {
+            states: [
+                vec![initial_state; instances].into_boxed_slice(),
+                vec![initial_state; instances].into_boxed_slice(),
+            ],
+            covariances: [
+                vec![initial_covariance; instances].into_boxed_slice(),
+                vec![initial_covariance; instances].into_boxed_slice(),
+            ],
+            scratch: vec![EkfScratch::default(); instances].into_boxed_slice(),
+            constants: artifact.constants,
+            published: 0,
+        }
+    }
+
+    #[inline]
+    pub fn turn(&mut self, input: [f64; 4]) -> Result<(), ResidentExecutionError> {
+        let published = self.published;
+        let candidate = 1 - published;
+        let (states, candidate_states) = if published == 0 {
+            let (published, candidate) = self.states.split_at_mut(1);
+            (&published[0], &mut candidate[0])
+        } else {
+            let (candidate, published) = self.states.split_at_mut(1);
+            (&published[0], &mut candidate[0])
+        };
+        let (covariances, candidate_covariances) = if published == 0 {
+            let (published, candidate) = self.covariances.split_at_mut(1);
+            (&published[0], &mut candidate[0])
+        } else {
+            let (candidate, published) = self.covariances.split_at_mut(1);
+            (&published[0], &mut candidate[0])
+        };
+        for instance in 0..states.len() {
+            ekf::execute_fused(
+                &input,
+                &states[instance],
+                &covariances[instance],
+                &mut candidate_states[instance],
+                &mut candidate_covariances[instance],
+                &mut self.scratch[instance],
+                &self.constants,
+            )?;
+            validate_candidate(
+                &candidate_states[instance],
+                &candidate_covariances[instance],
+            )?;
+        }
+        self.published = candidate;
+        Ok(())
+    }
+
+    pub fn state(&self, instance: usize) -> ResidentEkfState {
+        ResidentEkfState {
+            state: self.states[self.published][instance],
+            covariance: self.covariances[self.published][instance],
+        }
+    }
+
+    pub fn instances(&self) -> usize {
+        self.states[self.published].len()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -121,6 +201,38 @@ impl ResidentEkfBatch {
         }
         candidate.publish();
         Ok(())
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    pub fn scheduled_count_only_turn(
+        &mut self,
+        input: [f64; 4],
+    ) -> Result<(), ResidentExecutionError> {
+        let mut candidate = self.instance.begin_candidate(input)?;
+        if let Err(error) = execute_scheduled_count_only_ekf_candidate(&mut candidate) {
+            candidate.abort();
+            return Err(error);
+        }
+        candidate.publish();
+        Ok(())
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    pub fn fused_turn(&mut self, input: [f64; 4]) -> Result<(), ResidentExecutionError> {
+        let mut candidate = self.instance.begin_candidate(input)?;
+        if let Err(error) = execute_fused_ekf_candidate(&mut candidate) {
+            candidate.abort();
+            return Err(error);
+        }
+        candidate.publish();
+        Ok(())
+    }
+
+    #[doc(hidden)]
+    pub fn count_only_totals(&self) -> [usize; 4] {
+        self.instance.workspace.count_only_totals
     }
 
     pub fn prepare_scheduled_turn(

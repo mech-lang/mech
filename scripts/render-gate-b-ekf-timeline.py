@@ -11,14 +11,20 @@ from pathlib import Path
 
 
 LANES = (
-    ("rust-raw", "Raw Rust", "#55c2a5"),
+    ("rust-fixed-fused", "Rust fixed fused", "#34d399"),
+    ("mech-resident-fused", "Mech fused", "#22d3ee"),
+    ("rust-raw", "Rust generic", "#55c2a5"),
+    ("julia-staticarrays", "Julia fixed", "#c084fc"),
     ("mech-resident-complete", "Mech retained", "#ffb454"),
-    ("julia-persistent", "Julia", "#a78bfa"),
-    ("luajit-scalar", "LuaJIT", "#f472b6"),
+    ("julia-persistent", "Julia dynamic", "#a78bfa"),
+    ("luajit-fixed-preallocated", "LuaJIT fixed", "#ec4899"),
+    ("luajit-scalar", "LuaJIT generic", "#f472b6"),
     ("mech-current-atomic", "Mech atomic", "#60a5fa"),
+    ("lua-fixed-preallocated", "Lua fixed", "#f97316"),
     ("numpy-persistent", "NumPy", "#facc15"),
-    ("lua-scalar", "Lua", "#fb7185"),
-    ("python-scalar", "Python", "#94a3b8"),
+    ("lua-scalar", "Lua generic", "#fb7185"),
+    ("python-fixed-preallocated", "Python fixed", "#cbd5e1"),
+    ("python-scalar", "Python generic", "#94a3b8"),
 )
 
 
@@ -41,17 +47,21 @@ def percentile(values: list[float], fraction: float) -> float:
     return ordered[round((len(ordered) - 1) * fraction)]
 
 
-def shared_scale_svg(payload: dict, grouped: dict[str, list[dict]]) -> str:
+def shared_scale_svg(
+    payload: dict,
+    grouped: dict[str, list[dict]],
+    lanes: tuple[tuple[str, str, str], ...],
+) -> str:
     width = 1280
-    height = 620
+    height = 670
     left = 150
     right = 50
-    top = 190
+    top = 240
     plot_height = 330
     plot_width = width - left - right
     rates_by_lane = {
         lane: [1.0e9 * row["turns"] / row["elapsed_ns"] for row in grouped[lane]]
-        for lane, _, _ in LANES
+        for lane, _, _ in lanes
     }
     maximum = max(max(rates) for rates in rates_by_lane.values()) * 1.05
     samples = payload["protocol"]["samples"]
@@ -64,7 +74,7 @@ def shared_scale_svg(payload: dict, grouped: dict[str, list[dict]]) -> str:
         '<text class="sub" x="54" y="76">Every line uses the same EKF-turns-per-second axis across 245,760 cumulative EKF turns.</text>',
         f'<rect x="{left}" y="{top}" width="{plot_width}" height="{plot_height}" rx="3" fill="#0f1622" stroke="#263244"/>',
     ]
-    for index, (lane, label, color) in enumerate(LANES):
+    for index, (lane, label, color) in enumerate(lanes):
         column = index % 4
         row = index // 4
         x = 54 + column * 300
@@ -81,7 +91,7 @@ def shared_scale_svg(payload: dict, grouped: dict[str, list[dict]]) -> str:
         turns = round(samples * turns_per_sample * tick / 4)
         parts.append(f'<line class="grid" x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{top + plot_height}" opacity="0.45"/>')
         parts.append(f'<text class="axis" x="{x:.1f}" y="{top + plot_height + 24}" text-anchor="middle">{turns / 1_000:.0f}k</text>')
-    for lane, _, color in LANES:
+    for lane, _, color in lanes:
         points = []
         rates = rates_by_lane[lane]
         for index, rate in enumerate(rates):
@@ -122,27 +132,31 @@ def main() -> int:
     parser.add_argument("--shared-html-output", type=Path)
     args = parser.parse_args()
     payload = json.loads(args.input.read_text(encoding="utf-8"))
+    present = {row["lane"] for row in payload["samples"]}
+    lanes = tuple(lane for lane in LANES if lane[0] in present)
+    if not lanes:
+        parser.error("input contains none of the supported lanes")
     grouped = {
         lane: sorted(
             (row for row in payload["samples"] if row["lane"] == lane),
             key=lambda row: row["sample"],
         )
-        for lane, _, _ in LANES
+        for lane, _, _ in lanes
     }
 
     width = 1280
     left = 265
     right = 50
-    overview_top = 200
+    overview_top = 250
     overview_height = 230
-    top = 525
+    top = 575
     lane_height = 108
     plot_height = 62
-    height = top + lane_height * len(LANES) + 70
+    height = top + lane_height * len(lanes) + 70
     plot_width = width - left - right
     values_by_lane = {
         lane: [row["elapsed_ns"] / row["turns"] for row in grouped[lane]]
-        for lane, _, _ in LANES
+        for lane, _, _ in lanes
     }
     overview_max = max(max(values) for values in values_by_lane.values()) * 1.05
     parts = [
@@ -157,7 +171,7 @@ def main() -> int:
         f'<text class="stat" x="54" y="{overview_top + 46}">absolute time per turn</text>',
     ]
     samples = payload["protocol"]["samples"]
-    for index, (lane, label, color) in enumerate(LANES):
+    for index, (lane, label, color) in enumerate(lanes):
         column = index % 4
         row = index // 4
         x = 54 + column * 300
@@ -180,7 +194,7 @@ def main() -> int:
         parts.append(f'<line class="grid" x1="{x:.1f}" y1="{top - 16}" x2="{x:.1f}" y2="{height - 58}" opacity="0.45"/>')
         parts.append(f'<text class="axis" x="{x:.1f}" y="{height - 34}" text-anchor="middle">{turns / 1_000:.0f}k</text>')
 
-    for lane, _, color in LANES:
+    for lane, _, color in lanes:
         points = []
         for index, value in enumerate(values_by_lane[lane]):
             x = left + plot_width * index / max(1, len(values_by_lane[lane]) - 1)
@@ -192,7 +206,7 @@ def main() -> int:
     parts.append(f'<text class="axis" x="64" y="{top - 38}">Adaptive relative scale around each lane median</text>')
     parts.append(f'<circle cx="355" cy="{top - 42}" r="4" fill="#ef4444"/><text class="axis" x="366" y="{top - 38}">reported GC interval (none)</text><circle cx="560" cy="{top - 42}" r="3" fill="#f59e0b"/><text class="axis" x="570" y="{top - 38}">Lua heap drop (inferred collection)</text>')
 
-    for lane_index, (lane, label, color) in enumerate(LANES):
+    for lane_index, (lane, label, color) in enumerate(lanes):
         rows = grouped[lane]
         values = [row["elapsed_ns"] / row["turns"] for row in rows]
         median = statistics.median(values)
@@ -235,7 +249,7 @@ def main() -> int:
     if args.html_output:
         write_html_fragment(args.html_output, "gate-b-ekf-timeline", svg)
     if args.shared_output:
-        shared_svg = shared_scale_svg(payload, grouped)
+        shared_svg = shared_scale_svg(payload, grouped, lanes)
         args.shared_output.parent.mkdir(parents=True, exist_ok=True)
         args.shared_output.write_text(shared_svg, encoding="utf-8")
         if args.shared_html_output:

@@ -165,6 +165,13 @@ matrix loops avoid sending a long sequence of 2-by-2 and 3-by-3 operations
 through NumPy's Python/API dispatch boundary. Raw data is in
 `julia/RESULTS_APPLE_M1_2026-08-08.csv`.
 
+The timeline suite now also includes a `StaticArrays` Julia control and paired
+generic/fixed-shape controls for Rust, Python, Lua, and LuaJIT. These lanes keep
+the same trace, equations, Joseph covariance update, validation conditions, and
+normal GC policy. They are performance controls, not additional Gate B
+pass/fail lanes. Setup and the current Apple M1 results are documented in
+[`timeline/README.md`](timeline/README.md).
+
 The resident turn-shell follow-up, including before/after Time Profiler data,
 an annotated comparison, and layer subtraction, is recorded in
 [`profiles/PROFILE_APPLE_M1_2026-08-09.md`](profiles/PROFILE_APPLE_M1_2026-08-09.md).
@@ -178,8 +185,8 @@ fixture construction, state reset, and validation remain outside timing, while
 garbage collection remains enabled.
 
 The Apple M1 result, stacked relative-latency graph, protocol caveats, and
-reproduction command are in [`timeline/`](timeline/README.md). The measured
-lanes are raw Rust, retained Mech, current atomic Mech, NumPy, scalar Python,
-Lua, LuaJIT, and Julia. MATLAB is not reported because it is not installed, and
-no Mech bytecode number is reported because there is no current bytecode EKF
-execution path.
+reproduction command are in [`timeline/`](timeline/README.md). The report keeps
+generic and fixed-shape variants as separate named lanes rather than silently
+specializing only one runtime. MATLAB is not reported because it is not
+installed, and no Mech bytecode number is reported because there is no current
+bytecode EKF execution path.
