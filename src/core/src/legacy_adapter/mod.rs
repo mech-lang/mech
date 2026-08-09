@@ -1,8 +1,10 @@
 //! Explicit boundary adapters from the current mutable value model.
 
 mod kind;
+mod value;
 
 pub use self::kind::*;
+pub use self::value::*;
 
 use crate::{
     DimensionEnvironmentBuilder, DimensionExpr, DimensionParameterDeclaration, EnumVariantSchema,
