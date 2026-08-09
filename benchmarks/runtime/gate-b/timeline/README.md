@@ -48,4 +48,7 @@ No exact GC interval was reported by Python, NumPy, or Julia. Lua heap drops
 indicate 22 inferred standard-Lua and 38 inferred LuaJIT collection cycles, but
 they do not align with material pauses in this run. See
 [`ekf-latency-timeline-apple-m1.svg`](ekf-latency-timeline-apple-m1.svg) and
+the separate shared-scale-only
+[`ekf-latency-shared-scale-apple-m1.svg`](ekf-latency-shared-scale-apple-m1.svg).
+Raw samples are in
 [`RESULTS_APPLE_M1_2026-08-09.json`](RESULTS_APPLE_M1_2026-08-09.json).

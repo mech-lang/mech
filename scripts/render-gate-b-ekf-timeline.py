@@ -33,11 +33,85 @@ def percentile(values: list[float], fraction: float) -> float:
     return ordered[round((len(ordered) - 1) * fraction)]
 
 
+def shared_scale_svg(payload: dict, grouped: dict[str, list[dict]]) -> str:
+    width = 1280
+    height = 620
+    left = 150
+    right = 50
+    top = 190
+    plot_height = 330
+    plot_width = width - left - right
+    values_by_lane = {
+        lane: [row["elapsed_ns"] / row["turns"] for row in grouped[lane]]
+        for lane, _, _ in LANES
+    }
+    maximum = max(max(values) for values in values_by_lane.values()) * 1.05
+    samples = payload["protocol"]["samples"]
+    turns_per_sample = payload["protocol"]["turns_per_sample"]
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
+        '<rect width="100%" height="100%" fill="#090d14"/>',
+        '<style>text{font-family:Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:0}.title{fill:#f8fafc;font-size:28px;font-weight:700}.sub{fill:#94a3b8;font-size:14px}.legend{fill:#cbd5e1;font-size:12px}.axis{fill:#94a3b8;font-size:12px}.grid{stroke:#263244;stroke-width:1}.line{fill:none;stroke-width:2.25;stroke-linejoin:round;stroke-linecap:round}</style>',
+        '<text class="title" x="54" y="48">Gate B EKF latency on one shared linear scale</text>',
+        '<text class="sub" x="54" y="76">Every line uses the same nanoseconds-per-turn axis across 245,760 cumulative EKF turns.</text>',
+        f'<rect x="{left}" y="{top}" width="{plot_width}" height="{plot_height}" rx="3" fill="#0f1622" stroke="#263244"/>',
+    ]
+    for index, (lane, label, color) in enumerate(LANES):
+        column = index % 4
+        row = index // 4
+        x = 54 + column * 300
+        y = 116 + row * 27
+        median = statistics.median(values_by_lane[lane])
+        parts.append(f'<line x1="{x}" y1="{y - 4}" x2="{x + 22}" y2="{y - 4}" stroke="{color}" stroke-width="3"/>')
+        parts.append(f'<text class="legend" x="{x + 30}" y="{y}">{html.escape(label)} {fmt_ns(median)}/turn</text>')
+    for tick in range(0, 5):
+        value = maximum * tick / 4
+        y = top + plot_height * (1.0 - tick / 4)
+        parts.append(f'<line class="grid" x1="{left}" y1="{y:.1f}" x2="{left + plot_width}" y2="{y:.1f}"/>')
+        parts.append(f'<text class="axis" x="{left - 12}" y="{y + 4:.1f}" text-anchor="end">{value / 1_000:.0f} us</text>')
+        x = left + plot_width * tick / 4
+        turns = round(samples * turns_per_sample * tick / 4)
+        parts.append(f'<line class="grid" x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{top + plot_height}" opacity="0.45"/>')
+        parts.append(f'<text class="axis" x="{x:.1f}" y="{top + plot_height + 24}" text-anchor="middle">{turns / 1_000:.0f}k</text>')
+    for lane, _, color in LANES:
+        points = []
+        values = values_by_lane[lane]
+        for index, value in enumerate(values):
+            x = left + plot_width * index / max(1, len(values) - 1)
+            y = top + plot_height * (1.0 - value / maximum)
+            points.append(f"{x:.2f},{y:.2f}")
+        parts.append(f'<polyline class="line" stroke="{color}" points="{" ".join(points)}"/>')
+    parts.extend(
+        (
+            f'<text class="axis" x="{left + plot_width / 2}" y="{height - 26}" text-anchor="middle">cumulative EKF turns</text>',
+            f'<text class="axis" x="28" y="{top + plot_height / 2}" text-anchor="middle" transform="rotate(-90 28 {top + plot_height / 2})">time per EKF turn</text>',
+            '</svg>',
+        )
+    )
+    return "\n".join(parts) + "\n"
+
+
+def write_html_fragment(path: Path, root_id: str, svg: str) -> None:
+    fragment = (
+        f'<div id="{root_id}">\n'
+        '<style>\n'
+        f'#{root_id}{{width:100%;overflow-x:auto;color-scheme:dark}}\n'
+        f'#{root_id} svg{{display:block;width:100%;min-width:720px;height:auto}}\n'
+        '</style>\n'
+        f'{svg}'
+        '</div>\n'
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(fragment, encoding="utf-8")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--html-output", type=Path)
+    parser.add_argument("--shared-output", type=Path)
+    parser.add_argument("--shared-html-output", type=Path)
     args = parser.parse_args()
     payload = json.loads(args.input.read_text(encoding="utf-8"))
     grouped = {
@@ -151,17 +225,19 @@ def main() -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(svg, encoding="utf-8")
     if args.html_output:
-        fragment = (
-            '<div id="gate-b-ekf-timeline">\n'
-            '<style>\n'
-            '#gate-b-ekf-timeline{width:100%;overflow-x:auto;color-scheme:dark}\n'
-            '#gate-b-ekf-timeline svg{display:block;width:100%;min-width:720px;height:auto}\n'
-            '</style>\n'
-            f'{svg}'
-            '</div>\n'
-        )
-        args.html_output.parent.mkdir(parents=True, exist_ok=True)
-        args.html_output.write_text(fragment, encoding="utf-8")
+        write_html_fragment(args.html_output, "gate-b-ekf-timeline", svg)
+    if args.shared_output:
+        shared_svg = shared_scale_svg(payload, grouped)
+        args.shared_output.parent.mkdir(parents=True, exist_ok=True)
+        args.shared_output.write_text(shared_svg, encoding="utf-8")
+        if args.shared_html_output:
+            write_html_fragment(
+                args.shared_html_output,
+                "gate-b-ekf-shared-scale",
+                shared_svg,
+            )
+    elif args.shared_html_output:
+        parser.error("--shared-html-output requires --shared-output")
     print(args.output)
     return 0
 
