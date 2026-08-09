@@ -62,6 +62,18 @@ JULIA_DEPOT_PATH=/path/to/julia-depot julia --startup-file=no \
 
 Then use the same `JULIA_DEPOT_PATH` when running the collector.
 
+For a symbolized sustained profile of one matched native lane, build the timeline
+benchmark with `CARGO_PROFILE_BENCH_DEBUG=1`, then launch its executable with one
+of:
+
+```text
+--profile-lane rust-fixed-fused --profile-seconds 10
+--profile-lane mech-resident-fused --profile-seconds 10
+```
+
+The sustained mode emits no timeline rows and exists only to keep one hot call
+tree active for a sampling profiler.
+
 ## Apple M1 fair controls, 2026-08-09
 
 | Lane | Median per turn | Rate | p99 per turn | Maximum / median |

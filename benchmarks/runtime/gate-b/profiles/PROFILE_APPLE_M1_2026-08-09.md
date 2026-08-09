@@ -237,3 +237,70 @@ preallocated fixed-shape controls. On this run, fixed-shape Julia improved
 these figures compare implementation strategies within each runtime, while
 the fixed Rust versus fused Mech pair isolates the Mech shell around identical
 arithmetic.
+
+## Sustained fused-shell profile
+
+The matched fixed Rust and fused Mech lanes were captured independently with
+Apple Time Profiler at 1 kHz for ten sustained seconds. A benchmark-only mode
+keeps one lane hot per process; this avoids the one-millisecond hot closure that
+Criterion's profile mode produced for the custom-timed benchmark. Each corrected
+recording contains about 10,200 hot-loop samples.
+
+Distinct exclusive frames in the fused Mech recording:
+
+| Frame | Samples | Share of fused Mech |
+| --- | ---: | ---: |
+| Fused candidate executor, including inlined arithmetic and validation | 7,938 | 77.9% |
+| `atan2` | 927 | 9.1% |
+| `begin_candidate` | 326 | 3.2% |
+| `record_candidate_outputs` | 253 | 2.5% |
+| `sincos` | 144 | 1.4% |
+| Successful `Result` branch | 88 | 0.9% |
+| Remaining fused-turn shell | 80 | 0.8% |
+
+The inlined executor combines the common EKF arithmetic with node marks and the
+post-kernel integrity scan, so two narrower constant-specialized prototypes were
+measured in the ordinary optimized profile. Times below are medians from 60
+Criterion samples with three seconds of warmup and five seconds of measurement.
+
+| Lane | Episode | Per turn | Delta from fused Mech |
+| --- | ---: | ---: | ---: |
+| Fixed Rust, same buffering and validation | 0.29673 ms | 72.44 ns | -27.72 ns |
+| Fused Mech | 0.41024 ms | 100.16 ns | - |
+| Fused Mech, no internal node marks | 0.41042 ms | 100.20 ns | no measurable win |
+| Fused Mech, no reactive output tracking | 0.39904 ms | 97.42 ns | -2.74 ns |
+| Fused Mech fail-stop | 0.36401 ms | 88.87 ns | -11.29 ns |
+
+The fail-stop lane keeps candidate double buffering, epoch selection, the
+successful `Result` path, the two arithmetic-domain checks, and atomic release
+publication. It omits reactive node/output tracking and the post-kernel scan for
+finite values, positive covariance diagonal, and covariance symmetry. Correctness
+is still checked after the timed episode. This is a plausible compiler-selected
+performance policy, not a safe default.
+
+Removing output tracking accounts for 2.78 ns when comparing the two lanes that
+both omit node marks. Removing the integrity scan after that accounts for another
+8.55 ns. Internal node marks are dead or effectively free in this fixed fixture,
+so changing their representation cannot close the gap. The remaining
+fail-stop-to-Rust difference is 16.43 ns per turn and is concentrated in resident
+arena/epoch access and the differently optimized fused call site.
+
+Two attempted code-generation changes were rejected:
+
+- Moving arithmetic and validation into one shared out-of-line function widened
+  the gap: fixed Rust measured 71.7 ns and fused Mech measured 105.5 ns.
+- Explicitly unrolling the 3-by-3 multiply changed both lanes by about +0.2% and
+  did not improve the compiler's existing SIMD mix.
+
+Assembly inspection of the clean optimized Apple Silicon fused resident
+prototype found partial LLVM auto-vectorization: 40 `fmul.2d`, 45 `fadd.2d`, and
+3 `fsub.2d` instructions, each operating on two `f64` lanes. The same function
+still contains 264 scalar add, subtract, multiply, divide, and square-root
+instructions, in addition to scalar comparisons, absolute differences, and
+maximums. This SIMD comes from compiling eligible native Rust loops; interpreted
+and bytecode Mech do not currently perform graph-level vectorization.
+
+More useful SIMD requires a Mech-aware structure-of-arrays batch layout that
+vectorizes across independent EKF instances. That explicit lowering can preserve
+one transactional boundary around the packed pure kernel and reduce lane failures
+to a mask checked before publication.

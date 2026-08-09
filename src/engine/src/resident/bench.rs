@@ -1,6 +1,8 @@
 use super::{
     Candidate, EkfScratch, NODES_PER_EKF, ProgramArtifact, ReactiveInstance,
-    ResidentExecutionError, efficacy::ekf, execute_ekf_candidate, execute_fused_ekf_candidate,
+    ResidentExecutionError, efficacy::ekf, execute_ekf_candidate,
+    execute_fused_boundary_ekf_candidate, execute_fused_ekf_candidate,
+    execute_fused_failstop_ekf_candidate, execute_fused_untracked_ekf_candidate,
     execute_scheduled_count_only_ekf_candidate, execute_scheduled_ekf_candidate,
     validate_candidate,
 };
@@ -223,6 +225,42 @@ impl ResidentEkfBatch {
     pub fn fused_turn(&mut self, input: [f64; 4]) -> Result<(), ResidentExecutionError> {
         let mut candidate = self.instance.begin_candidate(input)?;
         if let Err(error) = execute_fused_ekf_candidate(&mut candidate) {
+            candidate.abort();
+            return Err(error);
+        }
+        candidate.publish();
+        Ok(())
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    pub fn fused_boundary_turn(&mut self, input: [f64; 4]) -> Result<(), ResidentExecutionError> {
+        let mut candidate = self.instance.begin_candidate(input)?;
+        if let Err(error) = execute_fused_boundary_ekf_candidate(&mut candidate) {
+            candidate.abort();
+            return Err(error);
+        }
+        candidate.publish();
+        Ok(())
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    pub fn fused_untracked_turn(&mut self, input: [f64; 4]) -> Result<(), ResidentExecutionError> {
+        let mut candidate = self.instance.begin_candidate(input)?;
+        if let Err(error) = execute_fused_untracked_ekf_candidate(&mut candidate) {
+            candidate.abort();
+            return Err(error);
+        }
+        candidate.publish();
+        Ok(())
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    pub fn fused_failstop_turn(&mut self, input: [f64; 4]) -> Result<(), ResidentExecutionError> {
+        let mut candidate = self.instance.begin_candidate(input)?;
+        if let Err(error) = execute_fused_failstop_ekf_candidate(&mut candidate) {
             candidate.abort();
             return Err(error);
         }

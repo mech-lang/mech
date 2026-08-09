@@ -79,7 +79,11 @@ pub(crate) fn execute_ekf_candidate(
     Ok(())
 }
 
-pub(crate) fn execute_fused_ekf_candidate(
+fn execute_fused_ekf_candidate_with_tracking<
+    const MARK_NODES: bool,
+    const TRACK_OUTPUTS: bool,
+    const VALIDATE: bool,
+>(
     candidate: &mut Candidate<'_>,
 ) -> Result<(), ResidentExecutionError> {
     let working_epoch = candidate.working_epoch;
@@ -102,22 +106,52 @@ pub(crate) fn execute_fused_ekf_candidate(
                 &mut resident.workspace.scratch[instance],
                 &plan.constants,
             )?;
-            let node_start = instance * NODES_PER_EKF;
-            resident.workspace.node_execution_marks[node_start..node_start + NODES_PER_EKF]
-                .fill(working_epoch);
-            validate_candidate(
-                &candidate_states[instance],
-                &candidate_covariances[instance],
-            )?;
+            if MARK_NODES {
+                let node_start = instance * NODES_PER_EKF;
+                resident.workspace.node_execution_marks[node_start..node_start + NODES_PER_EKF]
+                    .fill(working_epoch);
+            }
+            if VALIDATE {
+                validate_candidate(
+                    &candidate_states[instance],
+                    &candidate_covariances[instance],
+                )?;
+            }
         }
     }
-    for instance in 0..plan.instances as u32 {
-        resident
-            .workspace
-            .record_candidate_outputs(instance, working_epoch);
-        resident.workspace.record_changed_outputs(instance);
+    if TRACK_OUTPUTS {
+        for instance in 0..plan.instances as u32 {
+            resident
+                .workspace
+                .record_candidate_outputs(instance, working_epoch);
+            resident.workspace.record_changed_outputs(instance);
+        }
     }
     Ok(())
+}
+
+pub(crate) fn execute_fused_ekf_candidate(
+    candidate: &mut Candidate<'_>,
+) -> Result<(), ResidentExecutionError> {
+    execute_fused_ekf_candidate_with_tracking::<true, true, true>(candidate)
+}
+
+pub(crate) fn execute_fused_boundary_ekf_candidate(
+    candidate: &mut Candidate<'_>,
+) -> Result<(), ResidentExecutionError> {
+    execute_fused_ekf_candidate_with_tracking::<false, true, true>(candidate)
+}
+
+pub(crate) fn execute_fused_untracked_ekf_candidate(
+    candidate: &mut Candidate<'_>,
+) -> Result<(), ResidentExecutionError> {
+    execute_fused_ekf_candidate_with_tracking::<false, false, true>(candidate)
+}
+
+pub(crate) fn execute_fused_failstop_ekf_candidate(
+    candidate: &mut Candidate<'_>,
+) -> Result<(), ResidentExecutionError> {
+    execute_fused_ekf_candidate_with_tracking::<false, false, false>(candidate)
 }
 
 pub(crate) fn execute_scheduled_ekf_candidate(

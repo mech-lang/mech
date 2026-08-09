@@ -21,7 +21,9 @@ use support::gate_b::raw_epoch::{EpochFixture, EpochProbe};
 use support::gate_b::raw_fused::FusedRustFixture;
 use support::gate_b::raw_kernel::KernelFixture;
 use support::gate_b::resident_kernel::{
-    ResidentFullWriteFixture, ResidentFusedFixture, ResidentKernelFixture, ResidentKernelProbe,
+    ResidentFullWriteFixture, ResidentFusedBoundaryFixture, ResidentFusedFailstopFixture,
+    ResidentFusedFixture, ResidentFusedUntrackedFixture, ResidentKernelFixture,
+    ResidentKernelProbe,
 };
 use support::gate_b::resident_turn::{
     ResidentCompleteProbe, ResidentCountOnlyScheduledFixture, ResidentDirectReceiptFixture,
@@ -478,6 +480,102 @@ fn resident_fused(c: &mut Criterion) {
                     allocations,
                     StructuralProbe::default(),
                     &trajectory_hash,
+                    None,
+                );
+            }
+            elapsed
+        });
+    });
+    group.finish();
+}
+
+fn resident_fused_boundary(c: &mut Criterion) {
+    let mut correctness = ResidentFusedBoundaryFixture::new(1);
+    correctness.run_episode();
+    correctness.validate_final();
+    let mut group = c.benchmark_group("gate_b/mech-resident-fused-boundary");
+    group.bench_function("1", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = ResidentFusedBoundaryFixture::new(1);
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                fixture.validate_final();
+                black_box(fixture.state(0));
+                report(
+                    "mech-resident-fused-boundary",
+                    1,
+                    allocations,
+                    StructuralProbe::default(),
+                    REFERENCE_TRAJECTORY_SHA256,
+                    None,
+                );
+            }
+            elapsed
+        });
+    });
+    group.finish();
+}
+
+fn resident_fused_untracked(c: &mut Criterion) {
+    let mut correctness = ResidentFusedUntrackedFixture::new(1);
+    correctness.run_episode();
+    correctness.validate_final();
+    let mut group = c.benchmark_group("gate_b/mech-resident-fused-untracked");
+    group.bench_function("1", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = ResidentFusedUntrackedFixture::new(1);
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                fixture.validate_final();
+                black_box(fixture.state(0));
+                report(
+                    "mech-resident-fused-untracked",
+                    1,
+                    allocations,
+                    StructuralProbe::default(),
+                    REFERENCE_TRAJECTORY_SHA256,
+                    None,
+                );
+            }
+            elapsed
+        });
+    });
+    group.finish();
+}
+
+fn resident_fused_failstop(c: &mut Criterion) {
+    let mut correctness = ResidentFusedFailstopFixture::new(1);
+    correctness.run_episode();
+    correctness.validate_final();
+    let mut group = c.benchmark_group("gate_b/mech-resident-fused-failstop");
+    group.bench_function("1", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = ResidentFusedFailstopFixture::new(1);
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                fixture.validate_final();
+                black_box(fixture.state(0));
+                report(
+                    "mech-resident-fused-failstop",
+                    1,
+                    allocations,
+                    StructuralProbe::default(),
+                    REFERENCE_TRAJECTORY_SHA256,
                     None,
                 );
             }
@@ -956,6 +1054,9 @@ fn gate_b_controls(c: &mut Criterion) {
     rust_epoch(c);
     resident_kernel(c);
     resident_fused(c);
+    resident_fused_boundary(c);
+    resident_fused_untracked(c);
+    resident_fused_failstop(c);
     resident_scheduled(c);
     resident_scheduled_count_only(c);
     resident_prepared(c);

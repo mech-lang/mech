@@ -37,6 +37,18 @@ pub struct ResidentFusedFixture {
     resident: ResidentEkfBatch,
 }
 
+pub struct ResidentFusedBoundaryFixture {
+    resident: ResidentEkfBatch,
+}
+
+pub struct ResidentFusedUntrackedFixture {
+    resident: ResidentEkfBatch,
+}
+
+pub struct ResidentFusedFailstopFixture {
+    resident: ResidentEkfBatch,
+}
+
 impl ResidentFusedFixture {
     pub fn new(instances: usize) -> Self {
         Self {
@@ -74,6 +86,111 @@ impl ResidentFusedFixture {
             trajectory.push(self.state(0));
         }
         quantized_trajectory_hash(&trajectory)
+    }
+
+    pub fn state(&self, index: usize) -> EkfState {
+        let state = self.resident.state(index);
+        EkfState {
+            state: state.state,
+            covariance: state.covariance,
+        }
+    }
+
+    pub fn validate_final(&self) {
+        for index in 0..self.resident.instances() {
+            assert_state_close(self.state(index), EkfState::REFERENCE_FINAL, EPISODE_LENGTH);
+        }
+    }
+}
+
+impl ResidentFusedBoundaryFixture {
+    pub fn new(instances: usize) -> Self {
+        Self {
+            resident: ResidentEkfBatch::new(instances),
+        }
+    }
+
+    pub fn run_episode(&mut self) {
+        for input in trace() {
+            self.resident
+                .fused_boundary_turn([
+                    input.velocity,
+                    input.angular_velocity,
+                    input.measured_range,
+                    input.measured_bearing,
+                ])
+                .expect("boundary-tracked fused resident EKF turn");
+        }
+    }
+
+    pub fn state(&self, index: usize) -> EkfState {
+        let state = self.resident.state(index);
+        EkfState {
+            state: state.state,
+            covariance: state.covariance,
+        }
+    }
+
+    pub fn validate_final(&self) {
+        for index in 0..self.resident.instances() {
+            assert_state_close(self.state(index), EkfState::REFERENCE_FINAL, EPISODE_LENGTH);
+        }
+    }
+}
+
+impl ResidentFusedUntrackedFixture {
+    pub fn new(instances: usize) -> Self {
+        Self {
+            resident: ResidentEkfBatch::new(instances),
+        }
+    }
+
+    pub fn run_episode(&mut self) {
+        for input in trace() {
+            self.resident
+                .fused_untracked_turn([
+                    input.velocity,
+                    input.angular_velocity,
+                    input.measured_range,
+                    input.measured_bearing,
+                ])
+                .expect("untracked fused resident EKF turn");
+        }
+    }
+
+    pub fn state(&self, index: usize) -> EkfState {
+        let state = self.resident.state(index);
+        EkfState {
+            state: state.state,
+            covariance: state.covariance,
+        }
+    }
+
+    pub fn validate_final(&self) {
+        for index in 0..self.resident.instances() {
+            assert_state_close(self.state(index), EkfState::REFERENCE_FINAL, EPISODE_LENGTH);
+        }
+    }
+}
+
+impl ResidentFusedFailstopFixture {
+    pub fn new(instances: usize) -> Self {
+        Self {
+            resident: ResidentEkfBatch::new(instances),
+        }
+    }
+
+    pub fn run_episode(&mut self) {
+        for input in trace() {
+            self.resident
+                .fused_failstop_turn([
+                    input.velocity,
+                    input.angular_velocity,
+                    input.measured_range,
+                    input.measured_bearing,
+                ])
+                .expect("fail-stop fused resident EKF turn");
+        }
     }
 
     pub fn state(&self, index: usize) -> EkfState {

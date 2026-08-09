@@ -13,6 +13,12 @@ use support::gate_b::resident_turn::ResidentTurnFixture;
 
 const DEFAULT_SAMPLES: usize = 60;
 const WARMUP_DURATION: Duration = Duration::from_millis(250);
+const DEFAULT_PROFILE_SECONDS: u64 = 10;
+
+enum Mode {
+    Samples(usize),
+    Profile { lane: String, duration: Duration },
+}
 
 fn warm_up(mut operation: impl FnMut()) {
     let started = Instant::now();
@@ -23,9 +29,11 @@ fn warm_up(mut operation: impl FnMut()) {
     }
 }
 
-fn samples_from_args() -> usize {
+fn mode_from_args() -> Mode {
     let arguments = env::args().skip(1).collect::<Vec<_>>();
     let mut samples = DEFAULT_SAMPLES;
+    let mut profile_lane = None;
+    let mut profile_seconds = DEFAULT_PROFILE_SECONDS;
     let mut index = 0;
     while index < arguments.len() {
         match arguments[index].as_str() {
@@ -38,12 +46,36 @@ fn samples_from_args() -> usize {
                     .parse()
                     .expect("--samples must be a positive integer");
             }
+            "--profile-lane" => {
+                index += 1;
+                profile_lane = Some(
+                    arguments
+                        .get(index)
+                        .expect("--profile-lane requires a value")
+                        .clone(),
+                );
+            }
+            "--profile-seconds" => {
+                index += 1;
+                profile_seconds = arguments
+                    .get(index)
+                    .expect("--profile-seconds requires a value")
+                    .parse()
+                    .expect("--profile-seconds must be a positive integer");
+            }
             argument => panic!("unknown argument: {argument}"),
         }
         index += 1;
     }
     assert!(samples > 0, "--samples must be positive");
-    samples
+    assert!(profile_seconds > 0, "--profile-seconds must be positive");
+    match profile_lane {
+        Some(lane) => Mode::Profile {
+            lane,
+            duration: Duration::from_secs(profile_seconds),
+        },
+        None => Mode::Samples(samples),
+    }
 }
 
 fn emit(lane: &str, sample: usize, elapsed_ns: u128) {
@@ -142,14 +174,66 @@ fn measure_atomic(samples: usize) {
     }
 }
 
-fn main() {
-    let samples = samples_from_args();
+#[inline(never)]
+fn profile_rust_fused(duration: Duration) {
+    let mut correctness = FusedRustFixture::new(1);
+    correctness.run_episode();
+    correctness.validate_final();
+    warm_up(|| {
+        let mut fixture = FusedRustFixture::new(1);
+        fixture.run_episode();
+        black_box(fixture.state(0));
+    });
+    let started = Instant::now();
+    while started.elapsed() < duration {
+        let mut fixture = FusedRustFixture::new(1);
+        fixture.run_episode();
+        black_box(fixture.state(0));
+    }
+}
+
+#[inline(never)]
+fn profile_mech_resident_fused(duration: Duration) {
+    let mut correctness = ResidentFusedFixture::new(1);
+    correctness.run_episode();
+    correctness.validate_final();
+    warm_up(|| {
+        let mut fixture = ResidentFusedFixture::new(1);
+        fixture.run_episode();
+        black_box(fixture.state(0));
+    });
+    let started = Instant::now();
+    while started.elapsed() < duration {
+        let mut fixture = ResidentFusedFixture::new(1);
+        fixture.run_episode();
+        black_box(fixture.state(0));
+    }
+}
+
+fn profile_lane(lane: &str, duration: Duration) {
     eprintln!(
-        "Gate B EKF timeline: {samples} ordered samples, {EPISODE_LENGTH} turns/sample, setup excluded"
+        "Gate B EKF sustained profile: lane={lane}, duration={}s",
+        duration.as_secs()
     );
-    measure_raw(samples);
-    measure_rust_fused(samples);
-    measure_resident_fused(samples);
-    measure_resident(samples);
-    measure_atomic(samples);
+    match lane {
+        "rust-fixed-fused" => profile_rust_fused(duration),
+        "mech-resident-fused" => profile_mech_resident_fused(duration),
+        _ => panic!("unsupported profile lane: {lane}"),
+    }
+}
+
+fn main() {
+    match mode_from_args() {
+        Mode::Samples(samples) => {
+            eprintln!(
+                "Gate B EKF timeline: {samples} ordered samples, {EPISODE_LENGTH} turns/sample, setup excluded"
+            );
+            measure_raw(samples);
+            measure_rust_fused(samples);
+            measure_resident_fused(samples);
+            measure_resident(samples);
+            measure_atomic(samples);
+        }
+        Mode::Profile { lane, duration } => profile_lane(&lane, duration),
+    }
 }
