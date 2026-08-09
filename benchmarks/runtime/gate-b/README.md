@@ -168,3 +168,18 @@ through NumPy's Python/API dispatch boundary. Raw data is in
 The resident turn-shell follow-up, including before/after Time Profiler data,
 an annotated comparison, and layer subtraction, is recorded in
 [`profiles/PROFILE_APPLE_M1_2026-08-09.md`](profiles/PROFILE_APPLE_M1_2026-08-09.md).
+
+## Latency over time
+
+The ordered-sample control preserves 60 consecutive episode durations per lane
+instead of reducing them to one aggregate. This makes warmup, allocator, GC,
+and scheduling pauses visible. Each point is one 4,096-turn episode; activation,
+fixture construction, state reset, and validation remain outside timing, while
+garbage collection remains enabled.
+
+The Apple M1 result, stacked relative-latency graph, protocol caveats, and
+reproduction command are in [`timeline/`](timeline/README.md). The measured
+lanes are raw Rust, retained Mech, current atomic Mech, NumPy, scalar Python,
+Lua, LuaJIT, and Julia. MATLAB is not reported because it is not installed, and
+no Mech bytecode number is reported because there is no current bytecode EKF
+execution path.

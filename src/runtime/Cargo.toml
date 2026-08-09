@@ -346,3 +346,8 @@ required-features = ["runtime_default", "runtime_bench_probes"]
 name = "resident_ekf"
 harness = false
 required-features = ["source_default", "runtime_bench_gate_b"]
+
+[[bench]]
+name = "ekf_timeline"
+harness = false
+required-features = ["source_default", "runtime_bench_gate_b"]

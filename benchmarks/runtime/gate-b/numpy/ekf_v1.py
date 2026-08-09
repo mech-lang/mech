@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import gc
 import hashlib
 import importlib.util
 import io
@@ -349,17 +350,36 @@ def benchmark(instances: int, samples: int) -> dict[str, Any]:
     workspace.reset()
     workspace.run_episode()
     durations: list[int] = []
-    for _ in range(samples):
-        workspace.reset()
-        started = time.perf_counter_ns()
-        workspace.run_episode()
-        durations.append(time.perf_counter_ns() - started)
+    gc_durations: list[int] = []
+    gc_started_ns = 0
+    gc_total_ns = 0
+
+    def gc_event(phase: str, _info: dict[str, int]) -> None:
+        nonlocal gc_started_ns, gc_total_ns
+        if phase == "start":
+            gc_started_ns = time.perf_counter_ns()
+        elif gc_started_ns:
+            gc_total_ns += time.perf_counter_ns() - gc_started_ns
+            gc_started_ns = 0
+
+    gc.callbacks.append(gc_event)
+    try:
+        for _ in range(samples):
+            workspace.reset()
+            gc_before = gc_total_ns
+            started = time.perf_counter_ns()
+            workspace.run_episode()
+            durations.append(time.perf_counter_ns() - started)
+            gc_durations.append(gc_total_ns - gc_before)
+    finally:
+        gc.callbacks.remove(gc_event)
     return {
         "type": "benchmark-result",
         "lane": "numpy-persistent",
         "instances": instances,
         "turns": EPISODE_LENGTH,
         "samples_ns": durations,
+        "gc_samples_ns": gc_durations,
         "allocation_count": None,
         "allocated_bytes": None,
         "correctness": True,

@@ -185,6 +185,23 @@ function step!(ws::Workspace, instance::Int, turn::Int)
         for column in 1:3, row in 1:3
             covariance[row, column] = ws.corrected_covariance[row, column]
         end
+        for row in 1:3
+            isfinite(ws.state[row, instance]) || error("non-finite state")
+        end
+        for column in 1:3, row in 1:3
+            isfinite(covariance[row, column]) || error("non-finite covariance")
+        end
+        for diagonal in 1:3
+            covariance[diagonal, diagonal] > 0.0 || error("covariance diagonal")
+        end
+        symmetry_error = 0.0
+        for column in 1:3, row in 1:3
+            symmetry_error = max(
+                symmetry_error,
+                abs(covariance[row, column] - covariance[column, row]),
+            )
+        end
+        symmetry_error <= 1.0e-10 || error("covariance symmetry")
     end
 end
 
@@ -230,7 +247,7 @@ function validate!()
     actual_hash
 end
 
-function benchmark(instances::Int, samples::Int)
+function benchmark(instances::Int, samples::Int; timeline::Bool=false)
     ws = Workspace(instances)
     reset!(ws)
     run_episode!(ws)
@@ -243,6 +260,17 @@ function benchmark(instances::Int, samples::Int)
         push!(durations, result.time)
         push!(allocated, result.bytes)
         push!(gc_seconds, result.gctime)
+    end
+    if timeline
+        for sample in eachindex(durations)
+            println(
+                "{\"lane\":\"julia-persistent\",\"sample\":$(sample - 1)," *
+                "\"turns\":$EPISODE_LENGTH,\"elapsed_ns\":$(round(Int, durations[sample] * 1.0e9))," *
+                "\"gc_ns\":$(round(Int, gc_seconds[sample] * 1.0e9))," *
+                "\"allocated_bytes\":$(allocated[sample])}"
+            )
+        end
+        return
     end
     order = sortperm(durations)
     middle = order[(samples + 1) ÷ 2]
@@ -258,6 +286,7 @@ end
 function main(arguments)
     samples = 9
     instances = collect(SCALED_INSTANCES)
+    timeline = false
     index = 1
     while index <= length(arguments)
         if arguments[index] == "--samples"
@@ -266,6 +295,8 @@ function main(arguments)
         elseif arguments[index] == "--instances"
             index += 1
             instances = [parse(Int, arguments[index])]
+        elseif arguments[index] == "--timeline"
+            timeline = true
         elseif arguments[index] == "--self-test"
             println("julia_hash=$(validate!()) reference_hash=$REFERENCE_HASH")
             return
@@ -275,10 +306,10 @@ function main(arguments)
         index += 1
     end
     samples > 0 || error("samples must be positive")
-    println("runtime,instances,samples,median_ms,min_ms,max_ms,allocated_bytes,gc_ms")
+    timeline || println("runtime,instances,samples,median_ms,min_ms,max_ms,allocated_bytes,gc_ms")
     diagnostic_hash = validate!()
     for count in instances
-        benchmark(count, samples)
+        benchmark(count, samples; timeline=timeline)
     end
     println(stderr, "validated trajectory $diagnostic_hash (reference $REFERENCE_HASH) on Julia $(VERSION), threads=$(Threads.nthreads())")
 end
