@@ -105,7 +105,7 @@
       "additionalProperties": false,
       "properties": {
         "artifact_migrated": { "const": false },
-        "implemented": { "const": false },
+        "implemented": { "type": "boolean" },
         "inventoried": { "const": true },
         "legacy_removed": { "const": false },
         "ports_migrated": { "const": false },

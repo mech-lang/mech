@@ -137,15 +137,6 @@ DESTINATIONS = {
     "legacy-dispatch",
     "rejected-legacy-form",
 }
-STATUS_EXPECTED = {
-    "inventoried": True,
-    "semantics_frozen": True,
-    "implemented": False,
-    "artifact_migrated": False,
-    "ports_migrated": False,
-    "resident_storage_migrated": False,
-    "legacy_removed": False,
-}
 IMPLEMENTATION_GATES = {"C1", "C2", "C3", "C4", "D", "final-cutover"}
 AMBIGUOUS_TARGET = re.compile(
     r"-or-|\beither\b|\bone-of\b|\b(?:tbd|unknown|unclassified|maybe)\b",
@@ -160,6 +151,18 @@ TARGET_PROJECTION_FIELDS = (
     "key_semantics",
     "runtime_storage",
 )
+
+
+def expected_target_status(target: dict[str, Any]) -> dict[str, bool]:
+    return {
+        "inventoried": True,
+        "semantics_frozen": True,
+        "implemented": target["implementation_gate"] == "C1",
+        "artifact_migrated": False,
+        "ports_migrated": False,
+        "resident_storage_migrated": False,
+        "legacy_removed": False,
+    }
 
 
 @dataclass(frozen=True)
@@ -436,13 +439,14 @@ def family_contract_failures(
                         f"{migration_path}:families[{identifier}].targets",
                     )
                 )
-            if target.get("status") != STATUS_EXPECTED:
+            expected_status = expected_target_status(target)
+            if target.get("status") != expected_status:
                 failures.append(
                     failure(
                         "C0-TARGET-STATUS",
                         target_id,
                         str(migration_path),
-                        repr(STATUS_EXPECTED),
+                        repr(expected_status),
                         repr(target.get("status")),
                         f"{migration_path}:families[{identifier}].targets",
                     )

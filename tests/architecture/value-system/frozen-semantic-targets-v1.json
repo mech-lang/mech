@@ -14,6 +14,18 @@
     },
     {
       "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 70
+        }
+      ],
+      "target": "kind-wildcard",
+      "variant": "Any"
+    },
+    {
+      "enum": "Kind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -75,6 +87,18 @@
         {
           "column": 13,
           "line": 46
+        }
+      ],
+      "target": "atom-kind-expression",
+      "variant": "Atom"
+    },
+    {
+      "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 76
         }
       ],
       "target": "atom-kind-expression",
@@ -154,6 +178,18 @@
     },
     {
       "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 72
+        }
+      ],
+      "target": "kind-hole",
+      "variant": "Empty"
+    },
+    {
+      "enum": "Kind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -222,6 +258,18 @@
     },
     {
       "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 84
+        }
+      ],
+      "target": "enum-kind-expression",
+      "variant": "Enum"
+    },
+    {
+      "enum": "Kind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -275,6 +323,18 @@
         {
           "column": 13,
           "line": 48
+        }
+      ],
+      "target": "id-kind-expression",
+      "variant": "Id"
+    },
+    {
+      "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 74
         }
       ],
       "target": "id-kind-expression",
@@ -338,6 +398,18 @@
     },
     {
       "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 75
+        }
+      ],
+      "target": "index-kind-expression",
+      "variant": "Index"
+    },
+    {
+      "enum": "Kind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -387,6 +459,18 @@
         {
           "column": 13,
           "line": 39
+        }
+      ],
+      "target": "type-of-kind-expression",
+      "variant": "Kind"
+    },
+    {
+      "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 199
         }
       ],
       "target": "type-of-kind-expression",
@@ -466,6 +550,18 @@
     },
     {
       "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 176
+        }
+      ],
+      "target": "map-kind-expression",
+      "variant": "Map"
+    },
+    {
+      "enum": "Kind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -531,6 +627,18 @@
         {
           "column": 13,
           "line": 55
+        }
+      ],
+      "target": "matrix-kind-expression",
+      "variant": "Matrix"
+    },
+    {
+      "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 92
         }
       ],
       "target": "matrix-kind-expression",
@@ -610,6 +718,18 @@
     },
     {
       "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 71
+        }
+      ],
+      "target": "kind-never",
+      "variant": "None"
+    },
+    {
+      "enum": "Kind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -671,6 +791,18 @@
         {
           "column": 13,
           "line": 59
+        }
+      ],
+      "target": "option-kind-expression",
+      "variant": "Option"
+    },
+    {
+      "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 110
         }
       ],
       "target": "option-kind-expression",
@@ -750,6 +882,18 @@
     },
     {
       "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 129
+        }
+      ],
+      "target": "record-kind-expression",
+      "variant": "Record"
+    },
+    {
+      "enum": "Kind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -822,6 +966,18 @@
     },
     {
       "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 196
+        }
+      ],
+      "target": "reference-binding-contract",
+      "variant": "Reference"
+    },
+    {
+      "enum": "Kind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -875,6 +1031,18 @@
         {
           "column": 13,
           "line": 74
+        }
+      ],
+      "target": "named-kind-expression",
+      "variant": "Scalar"
+    },
+    {
+      "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 73
         }
       ],
       "target": "named-kind-expression",
@@ -947,6 +1115,18 @@
         {
           "column": 13,
           "line": 81
+        }
+      ],
+      "target": "set-kind-expression",
+      "variant": "Set"
+    },
+    {
+      "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 157
         }
       ],
       "target": "set-kind-expression",
@@ -1030,6 +1210,18 @@
     },
     {
       "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 136
+        }
+      ],
+      "target": "table-kind-expression",
+      "variant": "Table"
+    },
+    {
+      "enum": "Kind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -1095,6 +1287,18 @@
         {
           "column": 13,
           "line": 92
+        }
+      ],
+      "target": "tuple-kind-expression",
+      "variant": "Tuple"
+    },
+    {
+      "enum": "Kind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 115
         }
       ],
       "target": "tuple-kind-expression",
@@ -28970,6 +29174,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 28,
+          "line": 254
+        },
+        {
+          "column": 9,
+          "line": 492
+        }
+      ],
+      "target": "kind-wildcard",
+      "variant": "Any"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -29158,6 +29378,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 314
+        },
+        {
+          "column": 9,
+          "line": 498
+        }
+      ],
+      "target": "atom-schema",
+      "variant": "Atom"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -29263,6 +29499,22 @@
       ],
       "target": "atom-schema",
       "variant": "Atom"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 251
+        },
+        {
+          "column": 9,
+          "line": 488
+        }
+      ],
+      "target": "bool-schema",
+      "variant": "Bool"
     },
     {
       "enum": "ValueKind",
@@ -29439,6 +29691,22 @@
       ],
       "target": "bool-schema",
       "variant": "Bool"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 248
+        },
+        {
+          "column": 9,
+          "line": 485
+        }
+      ],
+      "target": "complex-schema",
+      "variant": "C64"
     },
     {
       "enum": "ValueKind",
@@ -29670,6 +29938,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 254
+        },
+        {
+          "column": 9,
+          "line": 491
+        }
+      ],
+      "target": "value-kind-hole",
+      "variant": "Empty"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -29887,6 +30171,22 @@
         {
           "column": 40,
           "line": 47
+        }
+      ],
+      "target": "enum-schema",
+      "variant": "Enum"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 277
+        },
+        {
+          "column": 9,
+          "line": 495
         }
       ],
       "target": "enum-schema",
@@ -30115,6 +30415,22 @@
       ],
       "target": "enum-schema",
       "variant": "Enum"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 246
+        },
+        {
+          "column": 9,
+          "line": 483
+        }
+      ],
+      "target": "floating-point-schema",
+      "variant": "F32"
     },
     {
       "enum": "ValueKind",
@@ -30407,6 +30723,22 @@
       ],
       "target": "floating-point-schema",
       "variant": "F32"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 247
+        },
+        {
+          "column": 9,
+          "line": 484
+        }
+      ],
+      "target": "floating-point-schema",
+      "variant": "F64"
     },
     {
       "enum": "ValueKind",
@@ -30730,6 +31062,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 245
+        },
+        {
+          "column": 9,
+          "line": 482
+        }
+      ],
+      "target": "signed-integer-schema",
+      "variant": "I128"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -30967,6 +31315,22 @@
       ],
       "target": "signed-integer-schema",
       "variant": "I128"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 242
+        },
+        {
+          "column": 9,
+          "line": 479
+        }
+      ],
+      "target": "signed-integer-schema",
+      "variant": "I16"
     },
     {
       "enum": "ValueKind",
@@ -31210,6 +31574,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 243
+        },
+        {
+          "column": 9,
+          "line": 480
+        }
+      ],
+      "target": "signed-integer-schema",
+      "variant": "I32"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -31450,6 +31830,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 244
+        },
+        {
+          "column": 9,
+          "line": 481
+        }
+      ],
+      "target": "signed-integer-schema",
+      "variant": "I64"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -31687,6 +32083,22 @@
       ],
       "target": "signed-integer-schema",
       "variant": "I64"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 241
+        },
+        {
+          "column": 9,
+          "line": 478
+        }
+      ],
+      "target": "signed-integer-schema",
+      "variant": "I8"
     },
     {
       "enum": "ValueKind",
@@ -31942,6 +32354,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 252
+        },
+        {
+          "column": 9,
+          "line": 489
+        }
+      ],
+      "target": "id-schema",
+      "variant": "Id"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -32019,6 +32447,22 @@
         {
           "column": 31,
           "line": 49
+        }
+      ],
+      "target": "index-schema",
+      "variant": "Index"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 253
+        },
+        {
+          "column": 9,
+          "line": 490
         }
       ],
       "target": "index-schema",
@@ -32238,6 +32682,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 381
+        },
+        {
+          "column": 9,
+          "line": 504
+        }
+      ],
+      "target": "reified-type-schema",
+      "variant": "Kind"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -32299,6 +32759,22 @@
         {
           "column": 20,
           "line": 53
+        }
+      ],
+      "target": "map-schema",
+      "variant": "Map"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 294
+        },
+        {
+          "column": 9,
+          "line": 497
         }
       ],
       "target": "map-schema",
@@ -32451,6 +32927,22 @@
         {
           "column": 20,
           "line": 57
+        }
+      ],
+      "target": "matrix-schema",
+      "variant": "Matrix"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 259
+        },
+        {
+          "column": 9,
+          "line": 494
         }
       ],
       "target": "matrix-schema",
@@ -32962,6 +33454,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 45,
+          "line": 254
+        },
+        {
+          "column": 9,
+          "line": 493
+        }
+      ],
+      "target": "kind-never",
+      "variant": "None"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -33043,6 +33551,22 @@
         {
           "column": 20,
           "line": 61
+        }
+      ],
+      "target": "option-schema",
+      "variant": "Option"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 376
+        },
+        {
+          "column": 9,
+          "line": 503
         }
       ],
       "target": "option-schema",
@@ -33342,6 +33866,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 249
+        },
+        {
+          "column": 9,
+          "line": 486
+        }
+      ],
+      "target": "rational-schema",
+      "variant": "R64"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -33503,6 +34043,22 @@
         {
           "column": 20,
           "line": 68
+        }
+      ],
+      "target": "record-schema",
+      "variant": "Record"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 287
+        },
+        {
+          "column": 9,
+          "line": 496
         }
       ],
       "target": "record-schema",
@@ -33683,6 +34239,22 @@
         {
           "column": 20,
           "line": 72
+        }
+      ],
+      "target": "reference-binding-contract",
+      "variant": "Reference"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 63,
+          "line": 254
+        },
+        {
+          "column": 9,
+          "line": 501
         }
       ],
       "target": "reference-binding-contract",
@@ -33890,6 +34462,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 357
+        },
+        {
+          "column": 9,
+          "line": 502
+        }
+      ],
+      "target": "set-schema",
+      "variant": "Set"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -34023,6 +34611,22 @@
       ],
       "target": "set-schema",
       "variant": "Set"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 250
+        },
+        {
+          "column": 9,
+          "line": 487
+        }
+      ],
+      "target": "string-schema",
+      "variant": "String"
     },
     {
       "enum": "ValueKind",
@@ -34274,6 +34878,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 322
+        },
+        {
+          "column": 9,
+          "line": 499
+        }
+      ],
+      "target": "table-schema",
+      "variant": "Table"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -34478,6 +35098,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 343
+        },
+        {
+          "column": 9,
+          "line": 500
+        }
+      ],
+      "target": "tuple-schema",
+      "variant": "Tuple"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -34659,6 +35295,22 @@
       ],
       "target": "tuple-schema",
       "variant": "Tuple"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 240
+        },
+        {
+          "column": 9,
+          "line": 477
+        }
+      ],
+      "target": "unsigned-integer-schema",
+      "variant": "U128"
     },
     {
       "enum": "ValueKind",
@@ -34914,6 +35566,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 237
+        },
+        {
+          "column": 9,
+          "line": 474
+        }
+      ],
+      "target": "unsigned-integer-schema",
+      "variant": "U16"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -35163,6 +35831,22 @@
       ],
       "target": "unsigned-integer-schema",
       "variant": "U16"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 238
+        },
+        {
+          "column": 9,
+          "line": 475
+        }
+      ],
+      "target": "unsigned-integer-schema",
+      "variant": "U32"
     },
     {
       "enum": "ValueKind",
@@ -35418,6 +36102,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 239
+        },
+        {
+          "column": 9,
+          "line": 476
+        }
+      ],
+      "target": "unsigned-integer-schema",
+      "variant": "U64"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/program/bytecode/constants/kind.rs",
       "sites": [
         {
@@ -35667,6 +36367,22 @@
       ],
       "target": "unsigned-integer-schema",
       "variant": "U64"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 236
+        },
+        {
+          "column": 9,
+          "line": 473
+        }
+      ],
+      "target": "unsigned-integer-schema",
+      "variant": "U8"
     },
     {
       "enum": "ValueKind",

@@ -109,25 +109,18 @@ use tabled::{
     settings::{Alignment, Modify, Panel, Span, Style, object::Rows},
 };
 
-pub mod dimension;
 pub mod element;
 pub mod error;
 pub mod execution;
 #[cfg(feature = "functions")]
 pub mod function;
 pub mod kind;
-pub mod kind_expr;
-pub mod kind_scheme;
 pub mod nodes;
-pub mod nominal;
 #[cfg(feature = "functions")]
 pub mod reactive_transaction;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub mod resident_execution;
-pub mod schema;
-pub mod semantic_error;
-pub mod semantic_identity;
 pub mod state_journal;
 pub mod structures;
 pub mod value;
@@ -142,19 +135,15 @@ pub mod program;
 pub mod stdlib;
 pub mod types;
 
-pub use self::dimension::*;
 pub use self::element::*;
 pub use self::error::*;
 pub use self::execution::*;
 #[cfg(feature = "functions")]
 pub use self::function::*;
 pub use self::kind::*;
-pub use self::kind_expr::*;
-pub use self::kind_scheme::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
 pub use self::nodes::*;
-pub use self::nominal::*;
 pub use self::program::*;
 #[cfg(feature = "functions")]
 pub use self::reactive_transaction::*;
@@ -169,6 +158,21 @@ pub use self::stdlib::*;
 pub use self::structures::*;
 pub use self::types::*;
 pub use self::value::*;
+
+pub mod dimension;
+pub mod kind_expr;
+pub mod kind_scheme;
+pub mod legacy_adapter;
+pub mod nominal;
+pub mod schema;
+pub mod semantic_error;
+pub mod semantic_identity;
+
+pub use self::dimension::*;
+pub use self::kind_expr::*;
+pub use self::kind_scheme::*;
+pub use self::legacy_adapter::*;
+pub use self::nominal::*;
 
 // Mech Source Code
 // ---------------------------------------------------------------------------
