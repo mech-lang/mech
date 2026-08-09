@@ -23,8 +23,8 @@ use support::gate_b::resident_kernel::{
     ResidentFullWriteFixture, ResidentKernelFixture, ResidentKernelProbe,
 };
 use support::gate_b::resident_turn::{
-    ResidentCompleteProbe, ResidentFullWriteTurnFixture, ResidentScheduledFixture,
-    ResidentTurnFixture,
+    ResidentCompleteProbe, ResidentFullWriteTurnFixture, ResidentPreparedFixture,
+    ResidentScheduledFixture, ResidentTurnFixture,
 };
 
 struct CountingAllocator;
@@ -458,6 +458,43 @@ fn resident_scheduled(c: &mut Criterion) {
     group.finish();
 }
 
+fn resident_prepared(c: &mut Criterion) {
+    let mut correctness = ResidentPreparedFixture::new(1);
+    correctness.run_episode();
+    correctness.validate_final();
+    let mut group = c.benchmark_group("gate_b/mech-resident-prepared");
+    group.bench_function("1", |benchmark| {
+        benchmark.iter_custom(|iterations| {
+            let mut elapsed = Duration::ZERO;
+            for _ in 0..iterations {
+                let mut fixture = ResidentPreparedFixture::new(1);
+                reset_allocations();
+                let started = Instant::now();
+                fixture.run_episode();
+                elapsed += started.elapsed();
+                let allocations = allocation_snapshot();
+                fixture.validate_final();
+                black_box(fixture.state(0));
+                report(
+                    "mech-resident-prepared",
+                    1,
+                    allocations,
+                    StructuralProbe {
+                        candidate_written_bytes: 96,
+                        publication_store_count: 1,
+                        dirty_node_count: 15,
+                        ..StructuralProbe::default()
+                    },
+                    REFERENCE_TRAJECTORY_SHA256,
+                    None,
+                );
+            }
+            elapsed
+        });
+    });
+    group.finish();
+}
+
 fn resident_turn(c: &mut Criterion) {
     let mut correctness = ResidentTurnFixture::new(1, 0, 1);
     let trajectory_hash = correctness.run_and_validate_every_turn();
@@ -780,6 +817,7 @@ fn gate_b_controls(c: &mut Criterion) {
     rust_epoch(c);
     resident_kernel(c);
     resident_scheduled(c);
+    resident_prepared(c);
     resident_turn(c);
     legacy_atomic(c);
     full_write(c);

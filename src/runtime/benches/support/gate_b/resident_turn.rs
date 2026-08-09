@@ -111,6 +111,45 @@ impl ResidentScheduledFixture {
     }
 }
 
+pub struct ResidentPreparedFixture {
+    resident: ResidentEkfBatch,
+}
+
+impl ResidentPreparedFixture {
+    pub fn new(instances: usize) -> Self {
+        Self {
+            resident: ResidentEkfBatch::new(instances),
+        }
+    }
+
+    pub fn run_episode(&mut self) {
+        for input in trace().iter().copied() {
+            self.resident
+                .prepare_scheduled_turn(input_array(input))
+                .expect("frozen prepared resident turn")
+                .publish();
+        }
+    }
+
+    pub fn state(&self, instance: usize) -> EkfState {
+        let state = self.resident.state(instance);
+        EkfState {
+            state: state.state,
+            covariance: state.covariance,
+        }
+    }
+
+    pub fn validate_final(&self) {
+        for instance in 0..self.resident.instances() {
+            assert_state_close(
+                self.state(instance),
+                EkfState::REFERENCE_FINAL,
+                EPISODE_LENGTH,
+            );
+        }
+    }
+}
+
 pub struct ResidentTurnFixture {
     resident: ResidentEkfBatch,
     recorder: ResidentTurnRecorder,
