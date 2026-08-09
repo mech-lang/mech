@@ -115,3 +115,45 @@ dominates the hot turn, the byte-wise hash is gone, and the specialized
 single-writer receipt path no longer enters the generic capacity mutex.
 
 ![Annotated before and after resident EKF profile](resident-ekf-turn-before-after-apple-m1.svg)
+
+## Same-run Rust-to-Mech gap accounting
+
+The five exact one-instance lanes were rerun serially from the same optimized
+binary with 60 Criterion samples per lane. Median episode estimates are divided
+by 4,096 turns. This removes the thermal and harness mismatch between the raw
+Rust timeline result and the earlier resident layer table.
+
+| Cumulative layer | Episode | Per turn | Increment | Share of 80.63 ns gap |
+| --- | ---: | ---: | ---: | ---: |
+| Raw Rust EKF | 0.4676 ms | 114.16 ns | - | - |
+| Resident candidate/evaluator/publish | 0.5309 ms | 129.62 ns | 15.46 ns | 19.2% |
+| Scheduled dirty tracking | 0.6781 ms | 165.54 ns | 35.92 ns | 44.5% |
+| Summary and state fingerprint | 0.7248 ms | 176.96 ns | 11.41 ns | 14.2% |
+| Complete retained receipt | 0.7979 ms | 194.79 ns | 17.84 ns | 22.1% |
+
+The cumulative subtraction has no unexplained residual: the four increments
+sum to the measured 80.63 ns difference. The dominant cost is scheduler dirty
+tracking: root seeding, per-node dirty checks, downstream propagation, execution
+marks, and the dirty/executed node vectors. Summary hashing and receipt retention
+together account for 29.25 ns, or 36.3% of the gap.
+
+A fail-stop performance lane that bypasses dirty scheduling, summary hashing,
+and receipt retention would target the 129.62 ns resident-candidate result:
+7.71 MHz, 13.5% slower than raw Rust's 8.76 MHz. Keeping the scheduler while
+dropping only hashing and receipts targets 165.54 ns, or 6.04 MHz.
+
+Two increments are still composite and require narrower diagnostic lanes before
+changing implementation:
+
+- The first 15.46 ns combines activated-plan traversal and fifteen enum kernel
+  dispatches with candidate epoch selection, double-buffer access, output-slot
+  bookkeeping, and the release-store publication.
+- The last 17.84 ns combines admission-permit consumption, fixed receipt
+  construction, prepare-before-publish ordering, and the infallible receipt-slot
+  append.
+
+The raw Rust and resident lanes both return successful `Result` values and run
+the integrity checks. This subtraction therefore does not identify the
+successful `Result` check itself as a material standalone cost. The resident
+prototype also uses enum dispatch rather than a virtual trait call, so virtual
+dispatch is not hidden in this 80.63 ns result.
