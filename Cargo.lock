@@ -2194,7 +2194,6 @@ dependencies = [
 name = "mech-engine"
 version = "0.3.5"
 dependencies = [
- "bincode",
  "byteorder",
  "criterion",
  "grapheme",
@@ -2208,6 +2207,7 @@ dependencies = [
  "num-traits",
  "paste",
  "serde",
+ "serde_json",
  "sha2 0.10.9",
  "web-time",
 ]

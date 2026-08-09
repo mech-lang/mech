@@ -10,6 +10,8 @@ pub struct BytecodeReadLimits {
     pub max_dictionary_bytes: usize,
     pub max_requirements: u32,
     pub max_variadic_arguments: u32,
+    pub max_artifact_section_bytes: usize,
+    pub max_artifact_bytes: usize,
 }
 
 impl Default for BytecodeReadLimits {
@@ -25,6 +27,8 @@ impl Default for BytecodeReadLimits {
             max_dictionary_bytes: 16_777_216,
             max_requirements: 10_000,
             max_variadic_arguments: 65_536,
+            max_artifact_section_bytes: 16_777_216,
+            max_artifact_bytes: 67_108_864,
         }
     }
 }

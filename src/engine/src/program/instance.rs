@@ -41,7 +41,7 @@ use mech_core::{
 };
 
 #[cfg(feature = "compiler")]
-use mech_bytecode::CompileCtx;
+use mech_bytecode::{CompileCtx, CompiledBytecode, CompiledNodeKind};
 
 use crate::{Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint};
 #[cfg(feature = "source")]
@@ -156,6 +156,44 @@ struct PreparedProgramCellBatch {
 pub struct ProgramSolveOutcome {
     pub value: LegacyValue,
     pub plan_len: usize,
+}
+
+#[cfg(feature = "compiler")]
+pub struct ProgramCompilationProduct {
+    artifact: ProgramArtifact,
+    bytecode: Vec<u8>,
+}
+
+#[cfg(feature = "compiler")]
+impl ProgramCompilationProduct {
+    pub const fn artifact(&self) -> &ProgramArtifact {
+        &self.artifact
+    }
+
+    pub fn bytecode(&self) -> &[u8] {
+        &self.bytecode
+    }
+
+    pub fn into_parts(self) -> (ProgramArtifact, Vec<u8>) {
+        (self.artifact, self.bytecode)
+    }
+}
+
+#[cfg(feature = "compiler")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProgramArtifactCompilationError {
+    pub reason: String,
+}
+
+#[cfg(feature = "compiler")]
+impl MechErrorKind for ProgramArtifactCompilationError {
+    fn name(&self) -> &str {
+        "ProgramArtifactCompilationError"
+    }
+
+    fn message(&self) -> String {
+        self.reason.clone()
+    }
 }
 
 pub struct MechProgram {
@@ -1297,69 +1335,121 @@ impl MechProgram {
 
     #[cfg(feature = "compiler")]
     pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
-        let state = self.interpreter.state.borrow();
-        let plan = state.plan.borrow();
-        let mut context = CompileCtx::new();
+        Ok(self.compile_program_product()?.into_parts().1)
+    }
 
-        for step in plan.iter() {
-            step.compile(&mut context)?;
-        }
+    #[cfg(feature = "compiler")]
+    pub fn compile_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
+        let compiled = compile_bytecode(self)?;
+        let artifact = compile_executable_program_artifact(
+            &compiled,
+            self.interpreter.function_catalog().as_ref(),
+        )
+        .map_err(|error| {
+            MechError::new(
+                ProgramArtifactCompilationError {
+                    reason: format!("unable to finalize source ProgramArtifact: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let sections = encode_program_artifact_sections(&artifact).map_err(|error| {
+            MechError::new(
+                ProgramArtifactCompilationError {
+                    reason: format!("unable to encode source ProgramArtifact: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let bytecode = write_bytecode_with_artifact(&compiled.program, &sections)?;
+        Ok(ProgramCompilationProduct { artifact, bytecode })
+    }
+}
 
-        #[cfg(feature = "invariant_define")]
-        if !state.integrity_constraints.is_empty() {
-            let marker_output = LegacyValue::Bool(Ref::new(false));
-            let marker_register = context.resolve_value_register(&marker_output)?;
-            for constraint in state.integrity_constraints.values() {
-                let result = LegacyValue::MutableReference(constraint.result.clone());
-                let name = LegacyValue::String(Ref::new(constraint.name.clone()));
-                let expression = LegacyValue::String(Ref::new(constraint.expression.clone()));
-                let operator = match &constraint.operator {
-                    Some(FormulaOperator::Comparison(ComparisonOp::Equal)) => "eq",
-                    Some(FormulaOperator::Comparison(ComparisonOp::NotEqual)) => "neq",
-                    Some(FormulaOperator::Comparison(ComparisonOp::LessThan)) => "lt",
-                    Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual)) => "lte",
-                    Some(FormulaOperator::Comparison(ComparisonOp::GreaterThan)) => "gt",
-                    Some(FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual)) => "gte",
-                    Some(other) => {
-                        return Err(MechError::new(
-                            BytecodeValidationError {
-                                reason: format!(
-                                    "integrity constraint {:?} has unsupported operator {other:?}",
-                                    constraint.name
-                                ),
-                            },
-                            None,
-                        )
-                        .with_compiler_loc());
-                    }
-                    None => "",
-                };
-                let operator = if operator.is_empty() {
-                    LegacyValue::Empty
-                } else {
-                    LegacyValue::String(Ref::new(operator.to_owned()))
-                };
-                let lhs = constraint
-                    .lhs
-                    .as_ref()
-                    .map(|value| LegacyValue::MutableReference(value.clone()))
-                    .unwrap_or(LegacyValue::Empty);
-                let rhs = constraint
-                    .rhs
-                    .as_ref()
-                    .map(|value| LegacyValue::MutableReference(value.clone()))
-                    .unwrap_or(LegacyValue::Empty);
-                let metadata = [result, name, expression, operator, lhs, rhs]
+/// Builds the executable compiler product before the C3 semantic artifact is
+/// finalized. Keeping this boundary separate makes the adapter's legacy input
+/// explicit without exposing it through `ProgramArtifact`.
+#[cfg(feature = "compiler")]
+fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
+    let state = program.interpreter.state.borrow();
+    let plan = state.plan.borrow();
+    let mut context = CompileCtx::new();
+
+    for step in plan.iter() {
+        context.begin_plan_node(match step.reactive_node_kind() {
+            ReactiveNodeKind::Combinational => CompiledNodeKind::Combinational,
+            ReactiveNodeKind::Register => CompiledNodeKind::Register,
+        })?;
+        let compile_result = step.compile(&mut context);
+        context.end_plan_node();
+        compile_result?;
+    }
+
+    #[cfg(feature = "invariant_define")]
+    if !state.integrity_constraints.is_empty() {
+        let marker_output = LegacyValue::Bool(Ref::new(false));
+        let marker_register = context.resolve_value_register(&marker_output)?;
+        for constraint in state.integrity_constraints.values() {
+            let result = LegacyValue::MutableReference(constraint.result.clone());
+            let result_register = context.resolve_value_register(&result)?;
+            context.record_integrity_constraint(result_register)?;
+            let name = LegacyValue::String(Ref::new(constraint.name.clone()));
+            let expression = LegacyValue::String(Ref::new(constraint.expression.clone()));
+            let operator = match &constraint.operator {
+                Some(FormulaOperator::Comparison(ComparisonOp::Equal)) => "eq",
+                Some(FormulaOperator::Comparison(ComparisonOp::NotEqual)) => "neq",
+                Some(FormulaOperator::Comparison(ComparisonOp::LessThan)) => "lt",
+                Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual)) => "lte",
+                Some(FormulaOperator::Comparison(ComparisonOp::GreaterThan)) => "gt",
+                Some(FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual)) => "gte",
+                Some(other) => {
+                    return Err(MechError::new(
+                        BytecodeValidationError {
+                            reason: format!(
+                                "integrity constraint {:?} has unsupported operator {other:?}",
+                                constraint.name
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+                None => "",
+            };
+            let operator = if operator.is_empty() {
+                LegacyValue::Empty
+            } else {
+                LegacyValue::String(Ref::new(operator.to_owned()))
+            };
+            let lhs = constraint
+                .lhs
+                .as_ref()
+                .map(|value| LegacyValue::MutableReference(value.clone()))
+                .unwrap_or(LegacyValue::Empty);
+            let rhs = constraint
+                .rhs
+                .as_ref()
+                .map(|value| LegacyValue::MutableReference(value.clone()))
+                .unwrap_or(LegacyValue::Empty);
+            let mut metadata = vec![result_register];
+            metadata.extend(
+                [name, expression, operator, lhs, rhs]
                     .iter()
                     .map(|value| context.resolve_value_register(value))
-                    .collect::<MResult<Vec<_>>>()?;
-                context.emit_varop(hash_str("integrity/constraint"), marker_register, metadata);
-            }
+                    .collect::<MResult<Vec<_>>>()?,
+            );
+            context.emit_integrity_marker(
+                hash_str("integrity/constraint"),
+                marker_register,
+                metadata,
+            );
         }
-
-        let return_register = context.resolve_value_register(&self.interpreter.out)?;
-        context.finish(return_register)
     }
+
+    let return_register = context.resolve_value_register(&program.interpreter.out)?;
+    context.finish_program(return_register)
 }
 
 fn with_interpreter_mut<T>(

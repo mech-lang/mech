@@ -75,7 +75,6 @@ use std::time::Duration;
 
 #[cfg(all(feature = "source", feature = "functions", feature = "symbol_table"))]
 pub mod activation;
-pub mod artifact;
 #[cfg(feature = "source")]
 pub mod expressions;
 #[cfg(feature = "functions")]
@@ -153,7 +152,6 @@ pub mod __mech_native {
 
 pub use mech_core::*;
 
-pub use crate::artifact::*;
 #[cfg(feature = "source")]
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
@@ -288,3 +286,6 @@ macro_rules! print_plan {
         println!("{:#?}", $intrp.plan());
     };
 }
+
+pub mod artifact;
+pub use crate::artifact::*;

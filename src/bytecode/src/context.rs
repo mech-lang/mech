@@ -4,9 +4,55 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
     BytecodeRegisterIdentity, BytecodeValidationError, EncodedConstant, LegacyValue, MResult,
-    MechError, ParsedProgram, Register, compare_application_requirements, compile_value_register,
-    hash_str, write_bytecode,
+    MechError, ParsedProgram, Register, ValueKind, compare_application_requirements,
+    compile_value_register, hash_str, value_kind_from_runtime_type, write_bytecode,
 };
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CompiledNodeKind {
+    Combinational,
+    Register,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CompiledInstructionRole {
+    Node(CompiledNodeKind),
+    /// The legacy runtime instruction used to retain current invariant
+    /// behavior. It must not become a `ProgramArtifact` node.
+    IntegrityMarker,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompiledSymbolDefinition {
+    pub id: u64,
+    pub name: String,
+    pub register: Register,
+    pub mutable: bool,
+    /// Source/compiler definition order, assigned densely.
+    pub ordinal: u32,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CompiledIntegrityConstraint {
+    pub result_register: Register,
+}
+
+#[derive(Clone, Debug)]
+pub struct CompiledBytecode {
+    pub program: BytecodeProgram,
+    /// Parallel to `program.instructions`.
+    pub instruction_roles: Vec<Option<CompiledInstructionRole>>,
+    /// Dense and parallel to the register space. `None` is permitted only for
+    /// registers that never participate in semantic artifact data.
+    pub register_kinds: Vec<Option<ValueKind>>,
+    /// Exact current cardinality for map/set registers. Dense and parallel to
+    /// the register space; other register families carry `None`.
+    pub register_collection_cardinalities: Vec<Option<usize>>,
+    /// Exact first-definition order, unlike the canonically sorted symbol map.
+    pub symbol_definitions: Vec<CompiledSymbolDefinition>,
+    pub return_register: Register,
+    pub integrity_constraints: Vec<CompiledIntegrityConstraint>,
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct CanonicalRequirement(ApplicationRequirement);
@@ -23,7 +69,7 @@ impl PartialOrd for CanonicalRequirement {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct CompileCtx {
     reg_map: HashMap<BytecodeRegisterIdentity, Register>,
     symbols: BTreeMap<u64, Register>,
@@ -34,7 +80,38 @@ pub struct CompileCtx {
     requirements: BTreeSet<CanonicalRequirement>,
     pending_requirements: Vec<ApplicationRequirement>,
     instructions: Vec<BytecodeInstruction>,
+    instruction_roles: Vec<Option<CompiledInstructionRole>>,
+    register_kinds: BTreeMap<Register, ValueKind>,
+    register_collection_cardinalities: BTreeMap<Register, usize>,
+    next_register_kind_override: Option<ValueKind>,
+    symbol_definitions: Vec<CompiledSymbolDefinition>,
+    current_node_kind: Option<CompiledNodeKind>,
+    integrity_constraints: Vec<CompiledIntegrityConstraint>,
     next_register: Register,
+}
+
+impl Default for CompileCtx {
+    fn default() -> Self {
+        Self {
+            reg_map: HashMap::new(),
+            symbols: BTreeMap::new(),
+            symbol_ptrs: BTreeMap::new(),
+            dictionary: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            pending_constants: Vec::new(),
+            requirements: BTreeSet::new(),
+            pending_requirements: Vec::new(),
+            instructions: Vec::new(),
+            instruction_roles: Vec::new(),
+            register_kinds: BTreeMap::new(),
+            register_collection_cardinalities: BTreeMap::new(),
+            next_register_kind_override: None,
+            symbol_definitions: Vec::new(),
+            current_node_kind: None,
+            integrity_constraints: Vec::new(),
+            next_register: 0,
+        }
+    }
 }
 
 impl CompileCtx {
@@ -53,14 +130,87 @@ impl CompileCtx {
     /// exactly once so `Return` still represents the source block's result.
     pub fn resolve_value_register(&mut self, value: &LegacyValue) -> MResult<Register> {
         let fallback = std::ptr::from_ref(value).addr();
-        compile_value_register(value, fallback, self)
+        let register = compile_value_register(value, fallback, self)?;
+        let kind = value.kind();
+        self.record_register_kind_exact(register, kind)?;
+        Ok(register)
     }
 
-    pub fn finish(&mut self, return_register: Register) -> MResult<Vec<u8>> {
+    fn record_register_kind_exact(&mut self, register: Register, kind: ValueKind) -> MResult<()> {
+        if let Some(existing) = self.register_kinds.get(&register).cloned() {
+            if existing != kind {
+                match (&existing, &kind) {
+                    (existing, ValueKind::Reference(incoming)) if existing == incoming.as_ref() => {
+                        self.register_kinds.insert(register, kind);
+                    }
+                    (ValueKind::Reference(existing), incoming) if existing.as_ref() == incoming => {
+                    }
+                    _ => {
+                        return invalid(format!(
+                            "register {register} has existing ValueKind {existing:?}, incoming ValueKind {kind:?}",
+                        ));
+                    }
+                }
+            }
+        } else {
+            self.register_kinds.insert(register, kind);
+        }
+        Ok(())
+    }
+
+    pub fn begin_plan_node(&mut self, kind: CompiledNodeKind) -> MResult<()> {
+        if self.current_node_kind.is_some() {
+            return invalid("cannot begin a bytecode plan node while another node is active");
+        }
+        self.current_node_kind = Some(kind);
+        Ok(())
+    }
+
+    pub fn end_plan_node(&mut self) {
+        self.current_node_kind = None;
+    }
+
+    pub fn record_integrity_constraint(&mut self, result_register: Register) -> MResult<()> {
+        if result_register >= self.next_register {
+            return invalid(format!(
+                "integrity result register {result_register} is outside register count {}",
+                self.next_register,
+            ));
+        }
+        self.integrity_constraints
+            .push(CompiledIntegrityConstraint { result_register });
+        Ok(())
+    }
+
+    pub fn emit_integrity_marker(
+        &mut self,
+        function: u64,
+        destination: Register,
+        arguments: Vec<Register>,
+    ) {
+        self.instructions
+            .push(BytecodeInstruction::RuntimeVariadic {
+                function,
+                dst: destination,
+                arguments,
+            });
+        self.instruction_roles
+            .push(Some(CompiledInstructionRole::IntegrityMarker));
+    }
+
+    pub fn finish_program(&mut self, return_register: Register) -> MResult<CompiledBytecode> {
         if return_register >= self.next_register {
             return invalid(format!(
                 "return register {return_register} is outside register count {}",
                 self.next_register,
+            ));
+        }
+
+        if self.instruction_roles.len() != self.instructions.len() {
+            return invalid(format!(
+                "instruction role count {} does not match instruction count {}",
+                self.instruction_roles.len(),
+                self.instructions.len(),
             ));
         }
 
@@ -92,17 +242,56 @@ impl CompileCtx {
         instructions.push(BytecodeInstruction::Return {
             src: return_register,
         });
+        let mut instruction_roles = self.instruction_roles.clone();
+        instruction_roles.push(None);
 
-        let program = BytecodeProgram {
-            register_count: self.next_register,
-            constants: self.pending_constants.clone(),
-            symbols: self.symbols.clone(),
-            mutable_symbols: self.mutable_symbols.clone(),
-            instructions,
-            dictionary: self.dictionary.clone(),
-            requirements,
-        };
-        let bytes = write_bytecode(&program)?;
+        let mut register_kinds = vec![None; self.next_register as usize];
+        for (register, kind) in &self.register_kinds {
+            let target = register_kinds.get_mut(*register as usize).ok_or_else(|| {
+                invalid::<()>(format!(
+                    "recorded register kind {register} is outside register count {}",
+                    self.next_register,
+                ))
+                .unwrap_err()
+            })?;
+            *target = Some(kind.clone());
+        }
+        let mut register_collection_cardinalities = vec![None; self.next_register as usize];
+        for (register, cardinality) in &self.register_collection_cardinalities {
+            let target = register_collection_cardinalities
+                .get_mut(*register as usize)
+                .ok_or_else(|| {
+                    invalid::<()>(format!(
+                        "recorded collection cardinality {register} is outside register count {}",
+                        self.next_register,
+                    ))
+                    .unwrap_err()
+                })?;
+            *target = Some(*cardinality);
+        }
+
+        Ok(CompiledBytecode {
+            program: BytecodeProgram {
+                register_count: self.next_register,
+                constants: self.pending_constants.clone(),
+                symbols: self.symbols.clone(),
+                mutable_symbols: self.mutable_symbols.clone(),
+                instructions,
+                dictionary: self.dictionary.clone(),
+                requirements,
+            },
+            instruction_roles,
+            register_kinds,
+            register_collection_cardinalities,
+            symbol_definitions: self.symbol_definitions.clone(),
+            return_register,
+            integrity_constraints: self.integrity_constraints.clone(),
+        })
+    }
+
+    pub fn finish(&mut self, return_register: Register) -> MResult<Vec<u8>> {
+        let compiled = self.finish_program(return_register)?;
+        let bytes = write_bytecode(&compiled.program)?;
         ParsedProgram::from_bytes(&bytes)?;
         Ok(bytes)
     }
@@ -131,6 +320,59 @@ impl BytecodeCompilerContext for CompileCtx {
         identity: &BytecodeRegisterIdentity,
     ) -> (Register, bool) {
         self.register_for_identity(identity.clone())
+    }
+
+    fn record_register_kind(&mut self, register: Register, kind: ValueKind) -> MResult<()> {
+        let kind = self.next_register_kind_override.take().unwrap_or(kind);
+        self.record_register_kind_exact(register, kind)
+    }
+
+    fn record_register_constant_metadata(
+        &mut self,
+        register: Register,
+        constant: u32,
+    ) -> MResult<()> {
+        let encoded = self
+            .pending_constants
+            .get(constant as usize)
+            .ok_or_else(|| {
+                invalid::<()>(format!("constant index {constant} is out of range")).unwrap_err()
+            })?;
+        let Some(cardinality) =
+            encoded_collection_cardinality(&encoded.runtime_type, &encoded.bytes)?
+        else {
+            return Ok(());
+        };
+        if let Some(existing) = self.register_collection_cardinalities.get(&register) {
+            if *existing != cardinality {
+                return invalid(format!(
+                    "register {register} has existing collection cardinality {existing}, incoming cardinality {cardinality}",
+                ));
+            }
+        } else {
+            self.register_collection_cardinalities
+                .insert(register, cardinality);
+        }
+        Ok(())
+    }
+
+    fn override_next_register_kind(&mut self, kind: ValueKind) -> MResult<()> {
+        if self.next_register_kind_override.is_none() {
+            self.next_register_kind_override = Some(kind);
+        }
+        Ok(())
+    }
+
+    fn record_register_constant_kind(&mut self, register: Register, constant: u32) -> MResult<()> {
+        let encoded = self
+            .pending_constants
+            .get(constant as usize)
+            .ok_or_else(|| {
+                invalid::<()>(format!("constant index {constant} is out of range")).unwrap_err()
+            })?;
+        let kind = value_kind_from_runtime_type(&encoded.runtime_type)?;
+        self.record_register_kind_exact(register, kind)?;
+        self.record_register_constant_metadata(register, constant)
     }
 
     fn intern_constant(&mut self, constant: EncodedConstant) -> MResult<u32> {
@@ -186,9 +428,24 @@ impl BytecodeCompilerContext for CompileCtx {
         self.symbols.insert(symbol_id, register);
         self.symbol_ptrs.insert(symbol_id, pointer);
         self.dictionary.insert(symbol_id, name.to_owned());
+        if let Some(kind) = self.register_kinds.get(&register).cloned() {
+            if !matches!(kind, ValueKind::Reference(_)) {
+                self.register_kinds
+                    .insert(register, ValueKind::Reference(Box::new(kind)));
+            }
+        }
         if mutable {
             self.mutable_symbols.insert(symbol_id);
         }
+        let ordinal = u32::try_from(self.symbol_definitions.len())
+            .map_err(|_| invalid::<()>("symbol definition ordinal exceeds u32").unwrap_err())?;
+        self.symbol_definitions.push(CompiledSymbolDefinition {
+            id: symbol_id,
+            name: name.to_owned(),
+            register,
+            mutable,
+            ordinal,
+        });
         Ok(())
     }
 
@@ -214,6 +471,7 @@ impl BytecodeCompilerContext for CompileCtx {
             dst: destination,
             constant,
         });
+        self.instruction_roles.push(None);
     }
 
     fn emit_composite_pack(
@@ -227,6 +485,10 @@ impl BytecodeCompilerContext for CompileCtx {
             template,
             children,
         });
+        self.instruction_roles.push(
+            self.current_node_kind
+                .map(|_| CompiledInstructionRole::Node(CompiledNodeKind::Combinational)),
+        );
     }
 
     fn emit_nullop(&mut self, function: u64, destination: Register) {
@@ -234,6 +496,8 @@ impl BytecodeCompilerContext for CompileCtx {
             function,
             dst: destination,
         });
+        self.instruction_roles
+            .push(self.current_node_kind.map(CompiledInstructionRole::Node));
     }
 
     fn emit_unop(&mut self, function: u64, destination: Register, source: Register) {
@@ -242,6 +506,8 @@ impl BytecodeCompilerContext for CompileCtx {
             dst: destination,
             src: source,
         });
+        self.instruction_roles
+            .push(self.current_node_kind.map(CompiledInstructionRole::Node));
     }
 
     fn emit_binop(&mut self, function: u64, destination: Register, lhs: Register, rhs: Register) {
@@ -251,6 +517,8 @@ impl BytecodeCompilerContext for CompileCtx {
             lhs,
             rhs,
         });
+        self.instruction_roles
+            .push(self.current_node_kind.map(CompiledInstructionRole::Node));
     }
 
     fn emit_ternop(
@@ -268,6 +536,8 @@ impl BytecodeCompilerContext for CompileCtx {
             b,
             c,
         });
+        self.instruction_roles
+            .push(self.current_node_kind.map(CompiledInstructionRole::Node));
     }
 
     fn emit_quadop(
@@ -288,6 +558,8 @@ impl BytecodeCompilerContext for CompileCtx {
                 c,
                 d,
             });
+        self.instruction_roles
+            .push(self.current_node_kind.map(CompiledInstructionRole::Node));
     }
 
     fn emit_varop(&mut self, function: u64, destination: Register, arguments: Vec<Register>) {
@@ -297,6 +569,8 @@ impl BytecodeCompilerContext for CompileCtx {
                 dst: destination,
                 arguments,
             });
+        self.instruction_roles
+            .push(self.current_node_kind.map(CompiledInstructionRole::Node));
     }
 
     fn emit_host_call(
@@ -310,6 +584,8 @@ impl BytecodeCompilerContext for CompileCtx {
             dst: destination,
             arguments,
         });
+        self.instruction_roles
+            .push(self.current_node_kind.map(CompiledInstructionRole::Node));
     }
 
     fn emit_resource_read(&mut self, requirement: u32, destination: Register) {
@@ -317,6 +593,8 @@ impl BytecodeCompilerContext for CompileCtx {
             requirement,
             dst: destination,
         });
+        self.instruction_roles
+            .push(self.current_node_kind.map(CompiledInstructionRole::Node));
     }
 
     fn emit_resource_write(&mut self, requirement: u32, destination: Register, source: Register) {
@@ -325,6 +603,8 @@ impl BytecodeCompilerContext for CompileCtx {
             dst: destination,
             src: source,
         });
+        self.instruction_roles
+            .push(self.current_node_kind.map(CompiledInstructionRole::Node));
     }
 
     fn emit_resource_send(&mut self, requirement: u32, destination: Register, source: Register) {
@@ -333,6 +613,40 @@ impl BytecodeCompilerContext for CompileCtx {
             dst: destination,
             src: source,
         });
+        self.instruction_roles
+            .push(self.current_node_kind.map(CompiledInstructionRole::Node));
+    }
+}
+
+fn encoded_collection_cardinality(
+    runtime_type: &mech_core::RuntimeType,
+    bytes: &[u8],
+) -> MResult<Option<usize>> {
+    match runtime_type {
+        mech_core::RuntimeType::Map { .. } | mech_core::RuntimeType::Set { .. } => {
+            let count = bytes.get(..4).ok_or_else(|| {
+                invalid::<()>("collection constant is missing its element count").unwrap_err()
+            })?;
+            let count = u32::from_le_bytes(count.try_into().expect("four-byte slice"));
+            Ok(Some(count as usize))
+        }
+        mech_core::RuntimeType::Option(inner) if bytes.first() == Some(&1) => {
+            let length = bytes.get(1..5).ok_or_else(|| {
+                invalid::<()>("option constant is missing its child length").unwrap_err()
+            })?;
+            let length = u32::from_le_bytes(length.try_into().expect("four-byte slice")) as usize;
+            let child = bytes
+                .get(
+                    5..5_usize.checked_add(length).ok_or_else(|| {
+                        invalid::<()>("option constant child length overflow").unwrap_err()
+                    })?,
+                )
+                .ok_or_else(|| {
+                    invalid::<()>("option constant child payload is truncated").unwrap_err()
+                })?;
+            encoded_collection_cardinality(inner, child)
+        }
+        _ => Ok(None),
     }
 }
 
@@ -558,6 +872,27 @@ mod tests {
     }
 
     #[test]
+    fn conflicting_register_kinds_report_both_exact_kinds() {
+        let mut context = CompileCtx::new();
+        let register = allocate_registers(&mut context, 1)[0];
+        context
+            .record_register_kind(register, ValueKind::F64)
+            .unwrap();
+
+        let error = context
+            .record_register_kind(register, ValueKind::Bool)
+            .unwrap_err();
+        let message = format!("{error:?}");
+
+        assert!(
+            message.contains(&format!("register {register}")),
+            "{message}"
+        );
+        assert!(message.contains("existing ValueKind F64"), "{message}");
+        assert!(message.contains("incoming ValueKind Bool"), "{message}");
+    }
+
+    #[test]
     fn composite_values_are_lowered_from_child_registers() {
         let scalar = mech_core::Ref::new(7.0);
         let bare = LegacyValue::F64(scalar.clone());
@@ -581,6 +916,26 @@ mod tests {
             instruction,
             BytecodeInstruction::ConstLoad { dst, .. } if *dst == tuple_register
         )));
+    }
+
+    #[test]
+    fn composite_helpers_inside_register_steps_are_combinational() {
+        let mut context = CompileCtx::new();
+        let registers = allocate_registers(&mut context, 2);
+        context.begin_plan_node(CompiledNodeKind::Register).unwrap();
+        context.emit_composite_pack(registers[0], 0, vec![registers[1]]);
+        context.emit_unop(1, registers[0], registers[1]);
+        context.end_plan_node();
+
+        assert_eq!(
+            context.instruction_roles,
+            vec![
+                Some(CompiledInstructionRole::Node(
+                    CompiledNodeKind::Combinational
+                )),
+                Some(CompiledInstructionRole::Node(CompiledNodeKind::Register)),
+            ]
+        );
     }
 
     #[test]

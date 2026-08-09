@@ -195,6 +195,70 @@ impl ProgramArtifactDraft {
 
 #[derive(Debug)]
 pub enum ArtifactBuildError {
+    CompiledMetadataLengthMismatch {
+        table: &'static str,
+        expected: usize,
+        actual: usize,
+    },
+    MissingInstructionRole {
+        instruction: u32,
+    },
+    UnexpectedInstructionRole {
+        instruction: u32,
+        role: &'static str,
+    },
+    MissingRegisterKind {
+        instruction: u32,
+        register: u32,
+    },
+    MissingRegisterSource {
+        instruction: u32,
+        register: u32,
+        role: &'static str,
+    },
+    UnknownRuntimeFunction {
+        function: u64,
+    },
+    UnknownApplicationRequirement {
+        requirement: u32,
+    },
+    ApplicationRequirementKindMismatch {
+        requirement: u32,
+        expected: &'static str,
+    },
+    InvalidCompiledOperationName {
+        namespace: &'static str,
+        name: String,
+    },
+    MissingInputInterfaceName {
+        register: u32,
+    },
+    AmbiguousRegisterRole {
+        register: u32,
+    },
+    MissingRegisterCollectionCardinality {
+        register: u32,
+    },
+    CompiledReturnCount {
+        found: usize,
+    },
+    NonTerminalCompiledReturn {
+        instruction: u32,
+    },
+    CompiledReturnRegisterMismatch {
+        instruction: u32,
+        expected: u32,
+        found: u32,
+    },
+    IntegrityConstraintMetadataMismatch {
+        constraint: u32,
+        marker_register: Option<u32>,
+        declared_register: Option<u32>,
+    },
+    IntegrityConstraintSchemaMismatch {
+        constraint: u32,
+        schema: SchemaId,
+    },
     InvalidOperationReference {
         operation: OperationReference,
     },
@@ -260,6 +324,13 @@ pub enum ArtifactBuildError {
     InterfaceSlotMismatch {
         interface: &'static str,
         slot: CellSlotId,
+    },
+    ArtifactIdentityExhausted {
+        identity: &'static str,
+    },
+    SourceGraphReferenceOutOfRange {
+        reference: &'static str,
+        index: u32,
     },
     CombinationalCycle,
     Snapshot(SnapshotValueError),

@@ -754,6 +754,10 @@ fn runtime_type_to_value_kind(ty: &RuntimeType) -> MResult<crate::ValueKind> {
     })
 }
 
+pub fn value_kind_from_runtime_type(ty: &RuntimeType) -> MResult<crate::ValueKind> {
+    runtime_type_to_value_kind(ty)
+}
+
 #[cfg(feature = "tuple")]
 fn decode_tuple_constant(
     types: &[RuntimeType],

@@ -231,6 +231,11 @@ impl FunctionCatalog {
         self.runtime_factories.get(&id)
     }
 
+    pub fn runtime_entry_by_raw(&self, raw: u64) -> Option<&RuntimeFunctionEntry> {
+        let function = RuntimeFunctionId::from_raw(raw);
+        self.runtime_entry(function)
+    }
+
     pub fn runtime_entries(&self) -> impl ExactSizeIterator<Item = &RuntimeFunctionEntry> + '_ {
         self.runtime_factories.values()
     }
@@ -1969,6 +1974,11 @@ mod tests {
             catalog.runtime_entry(runtime_id).unwrap().name,
             "AddSS<f64>"
         );
+        assert!(std::ptr::eq(
+            catalog.runtime_entry_by_raw(runtime_id.raw()).unwrap(),
+            catalog.runtime_entry(runtime_id).unwrap(),
+        ));
+        assert!(catalog.runtime_entry_by_raw(u64::MAX).is_none());
         assert_eq!(
             catalog.specializer(operation).unwrap().canonical_name,
             "math/add"

@@ -23,7 +23,14 @@ pub struct BytecodeProgram {
 }
 
 pub fn write_bytecode(program: &BytecodeProgram) -> MResult<Vec<u8>> {
-    let output = encode_bytecode(program)?;
+    write_bytecode_with_artifact(program, &BytecodeArtifactSections::default())
+}
+
+pub fn write_bytecode_with_artifact(
+    program: &BytecodeProgram,
+    artifact: &BytecodeArtifactSections,
+) -> MResult<Vec<u8>> {
+    let output = encode_bytecode(program, artifact)?;
     ParsedProgram::from_bytes(&output)?;
     Ok(output)
 }
@@ -32,10 +39,13 @@ pub fn write_bytecode(program: &BytecodeProgram) -> MResult<Vec<u8>> {
 pub(crate) fn write_bytecode_without_reader_validation(
     program: &BytecodeProgram,
 ) -> MResult<Vec<u8>> {
-    encode_bytecode(program)
+    encode_bytecode(program, &BytecodeArtifactSections::default())
 }
 
-fn encode_bytecode(program: &BytecodeProgram) -> MResult<Vec<u8>> {
+fn encode_bytecode(
+    program: &BytecodeProgram,
+    artifact: &BytecodeArtifactSections,
+) -> MResult<Vec<u8>> {
     validate_writer_program(program)?;
     let (types, type_ids) = finalize_runtime_types(
         program
@@ -50,7 +60,7 @@ fn encode_bytecode(program: &BytecodeProgram) -> MResult<Vec<u8>> {
     let instruction_bytes = encode_instructions(&program.instructions)?;
     let dictionary_bytes = encode_dictionary(&program.dictionary)?;
     let requirement_bytes = encode_requirements(&program.requirements)?;
-    let contents = [
+    let mut contents = vec![
         types_bytes,
         constant_table_bytes,
         constant_blob_bytes,
@@ -59,7 +69,8 @@ fn encode_bytecode(program: &BytecodeProgram) -> MResult<Vec<u8>> {
         dictionary_bytes,
         requirement_bytes,
     ];
-    let counts = [
+    contents.extend(artifact.ordered().into_iter().map(<[u8]>::to_vec));
+    let mut counts = vec![
         count_u32(types.len(), "runtime types")?,
         count_u32(program.constants.len(), "constants")?,
         0,
@@ -68,6 +79,11 @@ fn encode_bytecode(program: &BytecodeProgram) -> MResult<Vec<u8>> {
         count_u32(program.dictionary.len(), "dictionary entries")?,
         count_u32(program.requirements.len(), "application requirements")?,
     ];
+    counts.extend(
+        artifact
+            .ordered()
+            .map(|section| if section.is_empty() { 0 } else { 1 }),
+    );
 
     let mut sections = Vec::with_capacity(BYTECODE_SECTION_COUNT);
     let mut offset = BYTECODE_CONTENT_OFFSET;
