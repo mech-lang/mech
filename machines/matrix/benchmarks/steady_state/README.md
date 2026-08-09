@@ -1,9 +1,10 @@
 # Matrix steady-state benchmark
 
 This benchmark compares persistent, warmed matrix multiplication and linear
-solve execution across Mech, raw Rust/nalgebra, Python, NumPy, Lua, and LuaJIT.
-Parsing, specialization, process startup, input generation, and correctness
-validation are outside the timed regions.
+solve execution across Mech, raw Rust/nalgebra, Python, NumPy, Lua, LuaJIT, and
+Julia. The Julia runner additionally reports scale plus a materialized
+transpose. Parsing, specialization, process startup, input generation, and
+correctness validation are outside the timed regions.
 
 Mech is reported in two modes:
 
@@ -78,6 +79,10 @@ python3 machines/matrix/benchmarks/steady_state/rectangular_numpy_benchmark.py \
 
 lua machines/matrix/benchmarks/steady_state/lua_benchmark.lua \
   lua 64 128 256
+
+JULIA_NUM_THREADS=1 julia --startup-file=no \
+  machines/matrix/benchmarks/steady_state/julia_benchmark.jl \
+  64 128 256 512
 ```
 
 Set `VECLIB_MAXIMUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1`, and

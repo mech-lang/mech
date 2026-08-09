@@ -1,0 +1,167 @@
++> math
+
+@pulse := bench://nbody-runtime{:read(pulse)}
+pulse := @pulse/pulse
+
+dt := 0.01
+m0 := 39.478417604357432
+m1 := 0.037693674870389493
+m2 := 0.011286326131968767
+m3 := 0.0017237240570597112
+m4 := 0.0020336868699246304
+
+~x0 := 0.0
+~y0 := 0.0
+~z0 := 0.0
+~vx0 := -0.00038766340719874267
+~vy0 := -0.0032753590371765707
+~vz0 := 0.000023935734080002999
+
+~x1 := 4.84143144246472090
+~y1 := -1.16032004402742839
+~z1 := -0.103622044471123109
+~vx1 := 0.60632639299583202
+~vy1 := 2.8119868449162602
+~vz1 := -0.025218361659887629
+
+~x2 := 8.34336671824457987
+~y2 := 4.12479856412430479
+~z2 := -0.403523417114321381
+~vx2 := -1.0107743461787924
+~vy2 := 1.8256623712304119
+~vz2 := 0.0084157613765841535
+
+~x3 := 12.8943695621391310
+~y3 := -15.1111514016986312
+~z3 := -0.223307578892655734
+~vx3 := 1.0827910064415354
+~vy3 := 0.86871301816960822
+~vz3 := -0.010832637401363636
+
+~x4 := 15.3796971148509165
+~y4 := -25.9193146099879641
+~z4 := 0.179258772950371181
+~vx4 := 0.97909073224389798
+~vy4 := 0.59469899864767617
+~vz4 := -0.034755955504078104
+
+~> pulse {
+  dx01 := x0 - x1
+  dy01 := y0 - y1
+  dz01 := z0 - z1
+  mag01 := dt * (dx01 * dx01 + dy01 * dy01 + dz01 * dz01) ^ -1.5
+
+  dx02 := x0 - x2
+  dy02 := y0 - y2
+  dz02 := z0 - z2
+  mag02 := dt * (dx02 * dx02 + dy02 * dy02 + dz02 * dz02) ^ -1.5
+
+  dx03 := x0 - x3
+  dy03 := y0 - y3
+  dz03 := z0 - z3
+  mag03 := dt * (dx03 * dx03 + dy03 * dy03 + dz03 * dz03) ^ -1.5
+
+  dx04 := x0 - x4
+  dy04 := y0 - y4
+  dz04 := z0 - z4
+  mag04 := dt * (dx04 * dx04 + dy04 * dy04 + dz04 * dz04) ^ -1.5
+
+  dx12 := x1 - x2
+  dy12 := y1 - y2
+  dz12 := z1 - z2
+  mag12 := dt * (dx12 * dx12 + dy12 * dy12 + dz12 * dz12) ^ -1.5
+
+  dx13 := x1 - x3
+  dy13 := y1 - y3
+  dz13 := z1 - z3
+  mag13 := dt * (dx13 * dx13 + dy13 * dy13 + dz13 * dz13) ^ -1.5
+
+  dx14 := x1 - x4
+  dy14 := y1 - y4
+  dz14 := z1 - z4
+  mag14 := dt * (dx14 * dx14 + dy14 * dy14 + dz14 * dz14) ^ -1.5
+
+  dx23 := x2 - x3
+  dy23 := y2 - y3
+  dz23 := z2 - z3
+  mag23 := dt * (dx23 * dx23 + dy23 * dy23 + dz23 * dz23) ^ -1.5
+
+  dx24 := x2 - x4
+  dy24 := y2 - y4
+  dz24 := z2 - z4
+  mag24 := dt * (dx24 * dx24 + dy24 * dy24 + dz24 * dz24) ^ -1.5
+
+  dx34 := x3 - x4
+  dy34 := y3 - y4
+  dz34 := z3 - z4
+  mag34 := dt * (dx34 * dx34 + dy34 * dy34 + dz34 * dz34) ^ -1.5
+
+  next-vx0 := vx0 - dx01 * m1 * mag01 - dx02 * m2 * mag02 - dx03 * m3 * mag03 - dx04 * m4 * mag04
+  next-vy0 := vy0 - dy01 * m1 * mag01 - dy02 * m2 * mag02 - dy03 * m3 * mag03 - dy04 * m4 * mag04
+  next-vz0 := vz0 - dz01 * m1 * mag01 - dz02 * m2 * mag02 - dz03 * m3 * mag03 - dz04 * m4 * mag04
+
+  next-vx1 := vx1 + dx01 * m0 * mag01 - dx12 * m2 * mag12 - dx13 * m3 * mag13 - dx14 * m4 * mag14
+  next-vy1 := vy1 + dy01 * m0 * mag01 - dy12 * m2 * mag12 - dy13 * m3 * mag13 - dy14 * m4 * mag14
+  next-vz1 := vz1 + dz01 * m0 * mag01 - dz12 * m2 * mag12 - dz13 * m3 * mag13 - dz14 * m4 * mag14
+
+  next-vx2 := vx2 + dx02 * m0 * mag02 + dx12 * m1 * mag12 - dx23 * m3 * mag23 - dx24 * m4 * mag24
+  next-vy2 := vy2 + dy02 * m0 * mag02 + dy12 * m1 * mag12 - dy23 * m3 * mag23 - dy24 * m4 * mag24
+  next-vz2 := vz2 + dz02 * m0 * mag02 + dz12 * m1 * mag12 - dz23 * m3 * mag23 - dz24 * m4 * mag24
+
+  next-vx3 := vx3 + dx03 * m0 * mag03 + dx13 * m1 * mag13 + dx23 * m2 * mag23 - dx34 * m4 * mag34
+  next-vy3 := vy3 + dy03 * m0 * mag03 + dy13 * m1 * mag13 + dy23 * m2 * mag23 - dy34 * m4 * mag34
+  next-vz3 := vz3 + dz03 * m0 * mag03 + dz13 * m1 * mag13 + dz23 * m2 * mag23 - dz34 * m4 * mag34
+
+  next-vx4 := vx4 + dx04 * m0 * mag04 + dx14 * m1 * mag14 + dx24 * m2 * mag24 + dx34 * m3 * mag34
+  next-vy4 := vy4 + dy04 * m0 * mag04 + dy14 * m1 * mag14 + dy24 * m2 * mag24 + dy34 * m3 * mag34
+  next-vz4 := vz4 + dz04 * m0 * mag04 + dz14 * m1 * mag14 + dz24 * m2 * mag24 + dz34 * m3 * mag34
+
+  next-x0 := x0 + next-vx0 * dt
+  next-y0 := y0 + next-vy0 * dt
+  next-z0 := z0 + next-vz0 * dt
+  next-x1 := x1 + next-vx1 * dt
+  next-y1 := y1 + next-vy1 * dt
+  next-z1 := z1 + next-vz1 * dt
+  next-x2 := x2 + next-vx2 * dt
+  next-y2 := y2 + next-vy2 * dt
+  next-z2 := z2 + next-vz2 * dt
+  next-x3 := x3 + next-vx3 * dt
+  next-y3 := y3 + next-vy3 * dt
+  next-z3 := z3 + next-vz3 * dt
+  next-x4 := x4 + next-vx4 * dt
+  next-y4 := y4 + next-vy4 * dt
+  next-z4 := z4 + next-vz4 * dt
+
+  x0 = next-x0
+  y0 = next-y0
+  z0 = next-z0
+  vx0 = next-vx0
+  vy0 = next-vy0
+  vz0 = next-vz0
+  x1 = next-x1
+  y1 = next-y1
+  z1 = next-z1
+  vx1 = next-vx1
+  vy1 = next-vy1
+  vz1 = next-vz1
+  x2 = next-x2
+  y2 = next-y2
+  z2 = next-z2
+  vx2 = next-vx2
+  vy2 = next-vy2
+  vz2 = next-vz2
+  x3 = next-x3
+  y3 = next-y3
+  z3 = next-z3
+  vx3 = next-vx3
+  vy3 = next-vy3
+  vz3 = next-vz3
+  x4 = next-x4
+  y4 = next-y4
+  z4 = next-z4
+  vx4 = next-vx4
+  vy4 = next-vy4
+  vz4 = next-vz4
+}
+
+x0

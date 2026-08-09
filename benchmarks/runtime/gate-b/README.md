@@ -83,6 +83,10 @@ platform-dependent transcendental results.
   BLIS, OpenBLAS, MKL, or Accelerate),
   Fortran-contiguous `float64` state, trace loaded once, preallocated scratch,
   and internal `perf_counter_ns` timing.
+- `julia-persistent`: an informational Julia 1.12 control using the same frozen
+  trace and equations, one Julia thread, preallocated column-major scratch, and
+  garbage collection left enabled. It is not used by the frozen Gate B
+  pass/fail calculation.
 - `mech-legacy-atomic`: source activated once, one four-update host-input
   packet per turn, the same EKF kernel hosted as a transaction-journaled Mech
   function output, and the ordinary atomic reactive-turn path.
@@ -129,3 +133,34 @@ T_mech-legacy-atomic - T_rust-epoch > 0
 
 A non-positive denominator is a hard B0 stop. It is not repaired by beginning
 resident implementation or changing the Gate A feature boundary.
+
+## Julia comparison
+
+Run the standalone Julia control with:
+
+```sh
+JULIA_NUM_THREADS=1 julia --startup-file=no \
+  benchmarks/runtime/gate-b/julia/ekf_v1.jl --samples 9
+```
+
+The timed region contains only retained EKF episodes. Workspace construction,
+trace loading, reset, compilation warmup, and validation are outside timing.
+The runner reports bytes allocated and GC time for the median sample. It checks
+the final state and covariance against the manifest tolerance and freezes a
+diagnostic Julia trajectory hash. As with NumPy, the hash can differ from the
+scalar oracle because sub-tolerance floating-point ordering can cross a
+`1e-10` quantization boundary.
+
+Apple M1 results from 2026-08-08 using Julia 1.12.6:
+
+| Instances | Episode median | Per turn | Allocated | GC time |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 1.016 ms | 248 ns | 0 bytes | 0 ms |
+| 8 | 8.139 ms | 1.987 us | 0 bytes | 0 ms |
+| 64 | 65.086 ms | 15.890 us | 0 bytes | 0 ms |
+
+The committed B0 NumPy control measured 20.868 us per turn at one instance on
+the same hardware. Julia is about 84x faster here because its compiled small
+matrix loops avoid sending a long sequence of 2-by-2 and 3-by-3 operations
+through NumPy's Python/API dispatch boundary. Raw data is in
+`julia/RESULTS_APPLE_M1_2026-08-08.csv`.

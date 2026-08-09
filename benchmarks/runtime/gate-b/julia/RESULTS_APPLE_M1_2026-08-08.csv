@@ -1,0 +1,4 @@
+runtime,instances,samples,median_ms,min_ms,max_ms,allocated_bytes,gc_ms
+julia-persistent,1,9,1.016042,1.009208,1.024542,0,0.0
+julia-persistent,8,9,8.138625,8.114375,8.169375,0,0.0
+julia-persistent,64,9,65.085584,64.930709,65.275542,0,0.0
