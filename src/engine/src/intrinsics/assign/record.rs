@@ -24,14 +24,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -47,121 +47,121 @@ where
 }
 
 fn impl_set_record_column_fxn(
-    sink: Value,
-    source: Value,
-    key: Value,
+    sink: LegacyValue,
+    source: LegacyValue,
+    key: LegacyValue,
 ) -> MResult<Box<dyn MechFunction>> {
     match (&sink, &source, &key) {
-        (Value::Record(rcrd), source, Value::Id(k)) => {
+        (LegacyValue::Record(rcrd), source, LegacyValue::Id(k)) => {
             let rcrd_brrw = rcrd.borrow();
             match (rcrd_brrw.data.get(k), source) {
                 #[cfg(all(feature = "bool", feature = "record"))]
-                (Some(Value::Bool(sink)), Value::Bool(source)) => {
+                (Some(LegacyValue::Bool(sink)), LegacyValue::Bool(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "i8", feature = "record"))]
-                (Some(Value::I8(sink)), Value::I8(source)) => {
+                (Some(LegacyValue::I8(sink)), LegacyValue::I8(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "i16", feature = "record"))]
-                (Some(Value::I16(sink)), Value::I16(source)) => {
+                (Some(LegacyValue::I16(sink)), LegacyValue::I16(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "i32", feature = "record"))]
-                (Some(Value::I32(sink)), Value::I32(source)) => {
+                (Some(LegacyValue::I32(sink)), LegacyValue::I32(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "i64", feature = "record"))]
-                (Some(Value::I64(sink)), Value::I64(source)) => {
+                (Some(LegacyValue::I64(sink)), LegacyValue::I64(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "i128", feature = "record"))]
-                (Some(Value::I128(sink)), Value::I128(source)) => {
+                (Some(LegacyValue::I128(sink)), LegacyValue::I128(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "u8", feature = "record"))]
-                (Some(Value::U8(sink)), Value::U8(source)) => {
+                (Some(LegacyValue::U8(sink)), LegacyValue::U8(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "u16", feature = "record"))]
-                (Some(Value::U16(sink)), Value::U16(source)) => {
+                (Some(LegacyValue::U16(sink)), LegacyValue::U16(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "u32", feature = "record"))]
-                (Some(Value::U32(sink)), Value::U32(source)) => {
+                (Some(LegacyValue::U32(sink)), LegacyValue::U32(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "u64", feature = "record"))]
-                (Some(Value::U64(sink)), Value::U64(source)) => {
+                (Some(LegacyValue::U64(sink)), LegacyValue::U64(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "u128", feature = "record"))]
-                (Some(Value::U128(sink)), Value::U128(source)) => {
+                (Some(LegacyValue::U128(sink)), LegacyValue::U128(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "f32", feature = "record"))]
-                (Some(Value::F32(sink)), Value::F32(source)) => {
+                (Some(LegacyValue::F32(sink)), LegacyValue::F32(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "f64", feature = "record"))]
-                (Some(Value::F64(sink)), Value::F64(source)) => {
+                (Some(LegacyValue::F64(sink)), LegacyValue::F64(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "string", feature = "record"))]
-                (Some(Value::String(sink)), Value::String(source)) => {
+                (Some(LegacyValue::String(sink)), LegacyValue::String(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "complex", feature = "record"))]
-                (Some(Value::C64(sink)), Value::C64(source)) => {
+                (Some(LegacyValue::C64(sink)), LegacyValue::C64(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
                     }));
                 }
                 #[cfg(all(feature = "rational", feature = "record"))]
-                (Some(Value::R64(sink)), Value::R64(source)) => {
+                (Some(LegacyValue::R64(sink)), LegacyValue::R64(source)) => {
                     return Ok(Box::new(RecordAssign {
                         sink: sink.clone(),
                         source: source.clone(),
@@ -190,7 +190,7 @@ fn impl_set_record_column_fxn(
 
 pub struct AssignRecordField {}
 impl FunctionSpecializer for AssignRecordField {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -207,7 +207,7 @@ impl FunctionSpecializer for AssignRecordField {
         match impl_set_record_column_fxn(sink.clone(), source.clone(), key.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (&sink, &source, &key) {
-                (Value::MutableReference(sink), _, _) => {
+                (LegacyValue::MutableReference(sink), _, _) => {
                     impl_set_record_column_fxn(sink.borrow().clone(), source.clone(), key.clone())
                 }
                 x => Err(MechError::new(

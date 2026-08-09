@@ -49,14 +49,14 @@ impl MechFunctionImpl for SetSizeFxn {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::U64(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::U64(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -71,9 +71,9 @@ impl MechFunctionCompiler for SetSizeFxn {
 }
 
 #[cfg(feature = "source")]
-fn set_size_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
+fn set_size_fxn(input: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match input {
-        Value::Set(s) => Ok(Box::new(SetSizeFxn {
+        LegacyValue::Set(s) => Ok(Box::new(SetSizeFxn {
             input: s.clone(),
             out: Ref::new(0u64),
         })),
@@ -92,7 +92,7 @@ fn set_size_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
 pub struct SetSize {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for SetSize {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -107,7 +107,7 @@ impl FunctionSpecializer for SetSize {
         match set_size_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match input {
-                Value::MutableReference(r) => set_size_fxn(r.borrow().clone()),
+                LegacyValue::MutableReference(r) => set_size_fxn(r.borrow().clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: arguments[0].kind(),

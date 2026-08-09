@@ -5,21 +5,21 @@ use crate::intrinsics::*;
 
 #[derive(Debug)]
 pub struct RecordAccessField {
-    pub source: Value,
+    pub source: LegacyValue,
 }
 impl MechFunctionImpl for RecordAccessField {
     fn solve_result(&self) -> MResult<()> {
         ();
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.source.clone()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -36,9 +36,12 @@ impl MechFunctionCompiler for RecordAccessField {
     }
 }
 
-pub fn impl_access_record_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
+pub fn impl_access_record_fxn(
+    source: LegacyValue,
+    key: LegacyValue,
+) -> MResult<Box<dyn MechFunction>> {
     match (source, key) {
-        (Value::Record(rcd), Value::Id(id)) => {
+        (LegacyValue::Record(rcd), LegacyValue::Id(id)) => {
             let k = id;
             match rcd.borrow().get(&k) {
                 Some(value) => Ok(Box::new(RecordAccessField {
@@ -65,7 +68,7 @@ pub fn impl_access_record_fxn(source: Value, key: Value) -> MResult<Box<dyn Mech
 
 pub struct RecordAccess {}
 impl FunctionSpecializer for RecordAccess {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -81,7 +84,7 @@ impl FunctionSpecializer for RecordAccess {
         match impl_access_record_fxn(src.clone(), key.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match src {
-                Value::MutableReference(rcrd) => {
+                LegacyValue::MutableReference(rcrd) => {
                     impl_access_record_fxn(rcrd.borrow().clone(), key.clone())
                 }
                 x => Err(MechError::new(
@@ -99,7 +102,7 @@ impl FunctionSpecializer for RecordAccess {
 
 #[derive(Debug)]
 pub struct RecordAccessSwizzle {
-    pub source: Value,
+    pub source: LegacyValue,
 }
 
 impl MechFunctionImpl for RecordAccessSwizzle {
@@ -107,14 +110,14 @@ impl MechFunctionImpl for RecordAccessSwizzle {
         ();
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.source.clone()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }

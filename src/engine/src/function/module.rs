@@ -432,7 +432,7 @@ struct DynamicOverloadedSpecializer {
 
 #[cfg(feature = "dynamic-modules")]
 impl FunctionSpecializer for DynamicOverloadedSpecializer {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         let mut last_error = None;
 
         for specializer in &self.specializers {
@@ -538,7 +538,7 @@ struct DynamicBinaryF64F64ToF64Specializer {
 
 #[cfg(feature = "dynamic-modules")]
 impl FunctionSpecializer for DynamicBinaryF64F64ToF64Specializer {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -591,7 +591,7 @@ struct DynamicUnaryF64ToF64Specializer {
 
 #[cfg(feature = "dynamic-modules")]
 impl FunctionSpecializer for DynamicUnaryF64ToF64Specializer {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -624,7 +624,7 @@ struct DynamicUnaryF64ViewToF64ViewSpecializer {
 
 #[cfg(feature = "dynamic-modules")]
 impl FunctionSpecializer for DynamicUnaryF64ViewToF64ViewSpecializer {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -653,13 +653,13 @@ impl FunctionSpecializer for DynamicUnaryF64ViewToF64ViewSpecializer {
 }
 
 #[cfg(feature = "dynamic-modules")]
-fn dynamic_arg_as_f64_ref(value: &Value, fxn_name: &str) -> MResult<Ref<f64>> {
+fn dynamic_arg_as_f64_ref(value: &LegacyValue, fxn_name: &str) -> MResult<Ref<f64>> {
     match value {
-        Value::F64(v) => Ok(v.clone()),
-        Value::MutableReference(v) => {
+        LegacyValue::F64(v) => Ok(v.clone()),
+        LegacyValue::MutableReference(v) => {
             let borrowed = v.borrow();
             match &*borrowed {
-                Value::F64(inner) => Ok(inner.clone()),
+                LegacyValue::F64(inner) => Ok(inner.clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),
@@ -682,22 +682,25 @@ fn dynamic_arg_as_f64_ref(value: &Value, fxn_name: &str) -> MResult<Ref<f64>> {
 }
 
 #[cfg(feature = "dynamic-modules")]
-fn dynamic_arg_as_f64_scalar_or_matrix(value: &Value, fxn_name: &str) -> MResult<DynamicF64Arg> {
+fn dynamic_arg_as_f64_scalar_or_matrix(
+    value: &LegacyValue,
+    fxn_name: &str,
+) -> MResult<DynamicF64Arg> {
     match value {
         #[cfg(feature = "f64")]
-        Value::F64(v) => Ok(DynamicF64Arg::Scalar(v.clone())),
+        LegacyValue::F64(v) => Ok(DynamicF64Arg::Scalar(v.clone())),
 
         #[cfg(all(feature = "matrix", feature = "f64"))]
-        Value::MatrixF64(matrix) => Ok(DynamicF64Arg::Matrix(matrix.clone())),
+        LegacyValue::MatrixF64(matrix) => Ok(DynamicF64Arg::Matrix(matrix.clone())),
 
-        Value::MutableReference(v) => {
+        LegacyValue::MutableReference(v) => {
             let borrowed = v.borrow();
             match &*borrowed {
                 #[cfg(feature = "f64")]
-                Value::F64(inner) => Ok(DynamicF64Arg::Scalar(inner.clone())),
+                LegacyValue::F64(inner) => Ok(DynamicF64Arg::Scalar(inner.clone())),
 
                 #[cfg(all(feature = "matrix", feature = "f64"))]
-                Value::MatrixF64(matrix) => Ok(DynamicF64Arg::Matrix(matrix.clone())),
+                LegacyValue::MatrixF64(matrix) => Ok(DynamicF64Arg::Matrix(matrix.clone())),
 
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
@@ -897,15 +900,15 @@ fn dynamic_binary_broadcast_plan(
 }
 
 #[cfg(feature = "dynamic-modules")]
-fn dynamic_arg_as_f64_matrix(value: &Value, fxn_name: &str) -> MResult<Matrix<f64>> {
+fn dynamic_arg_as_f64_matrix(value: &LegacyValue, fxn_name: &str) -> MResult<Matrix<f64>> {
     match value {
         #[cfg(all(feature = "matrix", feature = "f64"))]
-        Value::MatrixF64(matrix) => Ok(matrix.clone()),
-        Value::MutableReference(v) => {
+        LegacyValue::MatrixF64(matrix) => Ok(matrix.clone()),
+        LegacyValue::MutableReference(v) => {
             let borrowed = v.borrow();
             match &*borrowed {
                 #[cfg(all(feature = "matrix", feature = "f64"))]
-                Value::MatrixF64(matrix) => Ok(matrix.clone()),
+                LegacyValue::MatrixF64(matrix) => Ok(matrix.clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),
@@ -958,7 +961,7 @@ impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
         solve_dynamic_binary_scalar(&self.n, &self.k, &self.out, self.kernel, &self.name)
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
 
@@ -966,7 +969,7 @@ impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
         format!("dynamic {}", self.name)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1028,15 +1031,15 @@ impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
         solve_dynamic_binary_broadcast(&self.lhs, &self.rhs, &self.out, self.kernel, &self.name)
     }
 
-    fn out(&self) -> Value {
-        Value::MatrixF64(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::MatrixF64(self.out.clone())
     }
 
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1086,7 +1089,7 @@ impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
         solve_dynamic_unary_scalar(&self.input, &self.out, self.kernel, &self.name)
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
 
@@ -1094,7 +1097,7 @@ impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
         format!("dynamic {}", self.name)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1173,15 +1176,15 @@ impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
         solve_dynamic_unary_view(&self.input, &self.out, self.kernel, &self.name)
     }
 
-    fn out(&self) -> Value {
-        Value::MatrixF64(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::MatrixF64(self.out.clone())
     }
 
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1595,7 +1598,7 @@ mod static_catalog_module_tests {
     struct TestSpecializer;
 
     impl FunctionSpecializer for TestSpecializer {
-        fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             unreachable!("module visibility tests do not specialize functions")
         }
     }

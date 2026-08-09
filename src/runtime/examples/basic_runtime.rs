@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use mech_core::{MResult, Value};
+use mech_core::{LegacyValue, MResult};
 use mech_runtime::{
     BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
     CapabilityId, DeterministicHostFunction, HostCall, InMemoryHostRegistry,
@@ -16,8 +16,8 @@ fn main() -> MResult<()> {
     let mut host_registry = InMemoryHostRegistry::new();
     host_registry.insert(DeterministicHostFunction::new(
         "host.empty",
-        |_context, _args| Ok(Value::Empty),
-        |_context, _args| Ok(Value::Empty),
+        |_context, _args| Ok(LegacyValue::Empty),
+        |_context, _args| Ok(LegacyValue::Empty),
     ))?;
 
     let mut runtime = support::source_runtime_builder()

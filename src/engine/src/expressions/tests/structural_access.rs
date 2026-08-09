@@ -1,6 +1,6 @@
-use crate::{Interpreter, Plan, Value, hash_str};
+use crate::{Interpreter, LegacyValue, Plan, hash_str};
 
-fn symbol(interpreter: &Interpreter, name: &str) -> Value {
+fn symbol(interpreter: &Interpreter, name: &str) -> LegacyValue {
     interpreter
         .symbols()
         .borrow()
@@ -20,7 +20,7 @@ fn alias_node(plan: &Plan, name: &str) -> usize {
         .unwrap_or_else(|| panic!("missing {name} node"))
 }
 
-fn assert_alias_node(plan: &Plan, name: &str, output: &Value, container: &Value) {
+fn assert_alias_node(plan: &Plan, name: &str, output: &LegacyValue, container: &LegacyValue) {
     let output_cell = output.reactive_root_cell_ids()[0];
     let container_cell = container.reactive_root_cell_ids()[0];
     let node_id = alias_node(plan, name);
@@ -90,7 +90,7 @@ fn record_field_consumer_depends_on_member_cell() {
     let record = symbol(&interpreter, "record");
     let record_cell = record.reactive_root_cell_ids()[0];
     let field_cell = {
-        let Value::Record(record) = record else {
+        let LegacyValue::Record(record) = record else {
             panic!("expected record")
         };
         record

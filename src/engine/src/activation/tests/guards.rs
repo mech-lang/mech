@@ -1,6 +1,6 @@
 use super::support::{
-    ActivationPatternGuardMustBePure, Arc, AtomicUsize, EagerGuardTestSpecializer, Ordering,
-    Pattern, ReactiveDependencyKind, Ref, Value, arm_pulse_generation, assert_dispatch_turn,
+    ActivationPatternGuardMustBePure, Arc, AtomicUsize, EagerGuardTestSpecializer, LegacyValue,
+    Ordering, Pattern, ReactiveDependencyKind, Ref, arm_pulse_generation, assert_dispatch_turn,
     body_output_f64, committed_capture_value, hash_str, install_function_extension, interpret,
     interpret_more, plan_snapshot, proposed_capture_value, registration, root_cell,
     selected_arm_index, set_atom_tuple_event, set_f64_matrix_event, symbol, turn_changed_nodes,
@@ -31,7 +31,7 @@ event := 0.0
     assert!(activation.arms[1].guard.is_some());
     assert!(activation.arms[2].guard.is_none());
 
-    let Value::F64(event) = symbol(&i, "event") else {
+    let LegacyValue::F64(event) = symbol(&i, "event") else {
         panic!("event is not f64")
     };
     *event.borrow_mut() = 20.0;
@@ -47,29 +47,44 @@ event := 0.0
     }
     assert_eq!(
         committed_capture_value(&i, 0, 0),
-        Value::F64(Ref::new(20.0))
+        LegacyValue::F64(Ref::new(20.0))
     );
-    assert_eq!(committed_capture_value(&i, 1, 0), Value::F64(Ref::new(0.0)));
+    assert_eq!(
+        committed_capture_value(&i, 1, 0),
+        LegacyValue::F64(Ref::new(0.0))
+    );
 
     *event.borrow_mut() = 5.0;
     let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &outcome, 1, 205.0);
     assert_eq!(
         committed_capture_value(&i, 0, 0),
-        Value::F64(Ref::new(20.0))
+        LegacyValue::F64(Ref::new(20.0))
     );
-    assert_eq!(committed_capture_value(&i, 1, 0), Value::F64(Ref::new(5.0)));
+    assert_eq!(
+        committed_capture_value(&i, 1, 0),
+        LegacyValue::F64(Ref::new(5.0))
+    );
 
     *event.borrow_mut() = -5.0;
     let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &outcome, 2, -1.0);
-    assert_eq!(proposed_capture_value(&i, 0, 0), Value::F64(Ref::new(-5.0)));
-    assert_eq!(proposed_capture_value(&i, 1, 0), Value::F64(Ref::new(-5.0)));
+    assert_eq!(
+        proposed_capture_value(&i, 0, 0),
+        LegacyValue::F64(Ref::new(-5.0))
+    );
+    assert_eq!(
+        proposed_capture_value(&i, 1, 0),
+        LegacyValue::F64(Ref::new(-5.0))
+    );
     assert_eq!(
         committed_capture_value(&i, 0, 0),
-        Value::F64(Ref::new(20.0))
+        LegacyValue::F64(Ref::new(20.0))
     );
-    assert_eq!(committed_capture_value(&i, 1, 0), Value::F64(Ref::new(5.0)));
+    assert_eq!(
+        committed_capture_value(&i, 1, 0),
+        LegacyValue::F64(Ref::new(5.0))
+    );
 }
 
 #[test]
@@ -92,7 +107,7 @@ threshold := 10.0
     let topology = plan_snapshot(&i);
     let activation = registration(&i);
     let guard = activation.arms[0].guard.as_ref().unwrap();
-    let Value::F64(threshold) = symbol(&i, "threshold") else {
+    let LegacyValue::F64(threshold) = symbol(&i, "threshold") else {
         panic!("threshold is not f64")
     };
     *threshold.borrow_mut() = 3.0;
@@ -151,7 +166,7 @@ threshold := 5.0
     let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &outcome, 1, -1.0);
 
-    let Value::F64(threshold) = symbol(&i, "threshold") else {
+    let LegacyValue::F64(threshold) = symbol(&i, "threshold") else {
         panic!("threshold is not f64")
     };
     *threshold.borrow_mut() = 3.0;
@@ -180,10 +195,22 @@ event := 5.0
 "#,
     );
 
-    assert_eq!(proposed_capture_value(&i, 0, 0), Value::F64(Ref::new(5.0)));
-    assert_eq!(proposed_capture_value(&i, 1, 0), Value::F64(Ref::new(5.0)));
-    assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(0.0)));
-    assert_eq!(committed_capture_value(&i, 1, 0), Value::F64(Ref::new(5.0)));
+    assert_eq!(
+        proposed_capture_value(&i, 0, 0),
+        LegacyValue::F64(Ref::new(5.0))
+    );
+    assert_eq!(
+        proposed_capture_value(&i, 1, 0),
+        LegacyValue::F64(Ref::new(5.0))
+    );
+    assert_eq!(
+        committed_capture_value(&i, 0, 0),
+        LegacyValue::F64(Ref::new(0.0))
+    );
+    assert_eq!(
+        committed_capture_value(&i, 1, 0),
+        LegacyValue::F64(Ref::new(5.0))
+    );
     assert_eq!(body_output_f64(&i, 1), 205.0);
     for arm in 0..3 {
         assert_eq!(arm_pulse_generation(&i, arm), 0);
@@ -365,9 +392,15 @@ event := [1.0 10.0]
     let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
 
     assert_dispatch_turn(&i, &topology, &outcome, 0, 1.0);
-    assert_eq!(symbol(&i, "x"), Value::F64(Ref::new(9.0)));
-    assert_eq!(proposed_capture_value(&i, 0, 0), Value::F64(Ref::new(1.0)));
-    assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(1.0)));
+    assert_eq!(symbol(&i, "x"), LegacyValue::F64(Ref::new(9.0)));
+    assert_eq!(
+        proposed_capture_value(&i, 0, 0),
+        LegacyValue::F64(Ref::new(1.0))
+    );
+    assert_eq!(
+        committed_capture_value(&i, 0, 0),
+        LegacyValue::F64(Ref::new(1.0))
+    );
 }
 
 #[cfg(all(feature = "matrix", feature = "f64"))]
@@ -399,7 +432,7 @@ event := [1.0 2.0 3.0]
     set_f64_matrix_event(&i, vec![7.0, 6.0, 5.0]);
     let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &outcome, 1, -1.0);
-    let Value::MatrixF64(proposed_rest) = proposed_capture_value(&i, 0, 1) else {
+    let LegacyValue::MatrixF64(proposed_rest) = proposed_capture_value(&i, 0, 1) else {
         panic!("proposed rest is not an f64 matrix")
     };
     assert_eq!(proposed_rest.as_vec(), vec![6.0, 5.0]);

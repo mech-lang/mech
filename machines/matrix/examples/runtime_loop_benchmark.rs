@@ -1,6 +1,6 @@
 use mech_core::matrix::Matrix as ValueMatrix;
 use mech_core::{
-    FunctionCatalog, FunctionCatalogBuilder, GenericError, MResult, MechError, Ref, Value,
+    FunctionCatalog, FunctionCatalogBuilder, GenericError, MResult, MechError, Ref, LegacyValue,
 };
 use mech_runtime::{
     MechRuntime, ResourcePathCapability, RuntimeBuilder, RuntimeConfig, RuntimeContext,
@@ -172,17 +172,17 @@ impl MatrixInputProvider {
         }
     }
 
-    fn value(&self, path: &str) -> MResult<Value> {
+    fn value(&self, path: &str) -> MResult<LegacyValue> {
         match path {
-            "pulse" => Ok(Value::F64(Ref::new(1.0))),
-            "lhs" => Ok(Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(
+            "pulse" => Ok(LegacyValue::F64(Ref::new(1.0))),
+            "lhs" => Ok(LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(
                 self.lhs.clone(),
             )))),
             "rhs" => match (&self.rhs_matrix, &self.rhs_vector) {
-                (Some(rhs), None) => Ok(Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(
+                (Some(rhs), None) => Ok(LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(
                     rhs.clone(),
                 )))),
-                (None, Some(rhs)) => Ok(Value::MatrixF64(ValueMatrix::DVector(Ref::new(
+                (None, Some(rhs)) => Ok(LegacyValue::MatrixF64(ValueMatrix::DVector(Ref::new(
                     rhs.clone(),
                 )))),
                 _ => unreachable!("provider has exactly one right-hand side"),
@@ -206,11 +206,11 @@ impl RuntimeResourceProvider for MatrixInputProvider {
         vec![BASE_URI.to_string()]
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         self.value(&request.path)
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         self.value(&request.path)
     }
 }
@@ -329,7 +329,7 @@ impl RuntimeFixture {
         black_box(outcome.turn);
     }
 
-    fn result(&self) -> Value {
+    fn result(&self) -> LegacyValue {
         self.runtime
             .root_symbol_value("result")
             .unwrap()
@@ -338,7 +338,7 @@ impl RuntimeFixture {
 }
 
 fn validate_matmul(size: usize, fixture: &RuntimeFixture) -> f64 {
-    let Value::MatrixF64(ValueMatrix::DMatrix(output)) = fixture.result() else {
+    let LegacyValue::MatrixF64(ValueMatrix::DMatrix(output)) = fixture.result() else {
         panic!("matrix runtime benchmark result is not a dynamic matrix");
     };
     let (lhs, rhs) = multiply_inputs(size);
@@ -352,7 +352,7 @@ fn validate_matmul(size: usize, fixture: &RuntimeFixture) -> f64 {
 }
 
 fn validate_solve(size: usize, fixture: &RuntimeFixture) -> f64 {
-    let Value::MatrixF64(ValueMatrix::DVector(output)) = fixture.result() else {
+    let LegacyValue::MatrixF64(ValueMatrix::DVector(output)) = fixture.result() else {
         panic!("solve runtime benchmark result is not a dynamic vector");
     };
     let (matrix, rhs) = solve_inputs(size);

@@ -4,7 +4,7 @@ use std::rc::Rc;
 use std::thread;
 use std::time::Duration;
 
-use mech_core::{FunctionCatalogBuilder, MResult, MechError, MechErrorKind, Ref, Value};
+use mech_core::{FunctionCatalogBuilder, LegacyValue, MResult, MechError, MechErrorKind, Ref};
 
 use super::super::{MechRuntime, RuntimeBuilder};
 use crate::{
@@ -68,7 +68,7 @@ impl RuntimeAfterCommitEffect for TestAfterCommitEffect {
 
 #[derive(Debug, Default)]
 pub(crate) struct TestResourceProvider {
-    values: BTreeMap<String, BTreeMap<String, Value>>,
+    values: BTreeMap<String, BTreeMap<String, LegacyValue>>,
 }
 
 impl TestResourceProvider {
@@ -76,7 +76,7 @@ impl TestResourceProvider {
         Self::default()
     }
 
-    pub(crate) fn with_value(mut self, base_uri: &str, path: &str, value: Value) -> Self {
+    pub(crate) fn with_value(mut self, base_uri: &str, path: &str, value: LegacyValue) -> Self {
         assert!(
             base_uri.starts_with("test://"),
             "test fixture resource must use test://",
@@ -99,17 +99,17 @@ impl RuntimeResourceProvider for TestResourceProvider {
         self.values.keys().cloned().collect()
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         self.planned_value(request)
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         self.planned_value(request)
     }
 }
 
 impl TestResourceProvider {
-    fn planned_value(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn planned_value(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         self.values
             .get(&request.base_uri)
             .and_then(|paths| paths.get(&request.path))
@@ -157,7 +157,7 @@ impl RuntimeResourceProvider for TestOutputProvider {
         vec![TEST_OUTPUT_BASE_URI.to_string()]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         Err(MechError::new(
             TestFixtureError(format!(
                 "test output is write-only: {} / {}",
@@ -227,7 +227,7 @@ impl MechErrorKind for DeliberateHostCallError {
 }
 
 pub(crate) fn test_provider_with(base_uri: &str, path: &str, value: f64) -> TestResourceProvider {
-    TestResourceProvider::new().with_value(base_uri, path, Value::F64(Ref::new(value)))
+    TestResourceProvider::new().with_value(base_uri, path, LegacyValue::F64(Ref::new(value)))
 }
 
 #[derive(Debug, Default)]
@@ -328,9 +328,9 @@ pub(crate) fn sleep_host(name: &str) -> RegisteredHostFunction {
 
             let argument = args.first().map(RuntimeValueSnapshot::to_value);
             let value = match argument {
-                Some(Value::F64(value)) => Value::F64(Ref::new(*value.borrow())),
-                Some(Value::MutableReference(value)) => match &*value.borrow() {
-                    Value::F64(value) => Value::F64(Ref::new(*value.borrow())),
+                Some(LegacyValue::F64(value)) => LegacyValue::F64(Ref::new(*value.borrow())),
+                Some(LegacyValue::MutableReference(value)) => match &*value.borrow() {
+                    LegacyValue::F64(value) => LegacyValue::F64(Ref::new(*value.borrow())),
                     other => panic!("expected f64 mutable reference, got {other:?}"),
                 },
                 other => panic!("expected f64 argument, got {other:?}"),

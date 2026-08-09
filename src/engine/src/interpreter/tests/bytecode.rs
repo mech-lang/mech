@@ -9,10 +9,10 @@ mod bytecode_dependency_tests {
     use super::super::super::{
         BytecodeInstruction, BytecodeProgram, EncodedConstant, FunctionArgs, FunctionArgumentRole,
         FunctionCatalogBuilder, FunctionRuntimeType, FunctionValueRepresentation, Interpreter,
-        MResult, MatrixStorage, MechError, MechFunction, MechFunctionFactory, MechFunctionImpl,
-        NoMechExecutionServices, ProgramState, ReactiveCellId, ReactiveDependencyKind, Ref,
-        RuntimeFunctionContract, RuntimeFunctionId, RuntimeFunctionSignature,
-        RuntimeOutputAliasPolicy, RuntimeType, ToValue, Value, hash_str,
+        LegacyValue, MResult, MatrixStorage, MechError, MechFunction, MechFunctionFactory,
+        MechFunctionImpl, NoMechExecutionServices, ProgramState, ReactiveCellId,
+        ReactiveDependencyKind, Ref, RuntimeFunctionContract, RuntimeFunctionId,
+        RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, ToValue, hash_str,
         register_bytecode_function, write_bytecode,
     };
     use std::collections::{BTreeMap, BTreeSet};
@@ -22,7 +22,7 @@ mod bytecode_dependency_tests {
     use super::super::super::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 
     struct BytecodeDependencyTestFunction {
-        output: Value,
+        output: LegacyValue,
     }
 
     impl MechFunctionImpl for BytecodeDependencyTestFunction {
@@ -30,7 +30,7 @@ mod bytecode_dependency_tests {
             Ok(())
         }
 
-        fn out(&self) -> Value {
+        fn out(&self) -> LegacyValue {
             self.output.clone()
         }
 
@@ -38,7 +38,7 @@ mod bytecode_dependency_tests {
             "bytecode-dependency-test".to_string()
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
     }
@@ -73,7 +73,7 @@ mod bytecode_dependency_tests {
             Ok(())
         }
 
-        fn out(&self) -> Value {
+        fn out(&self) -> LegacyValue {
             self.output.to_value()
         }
 
@@ -81,7 +81,7 @@ mod bytecode_dependency_tests {
             "ExactF64Nullary".into()
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
     }
@@ -176,7 +176,7 @@ mod bytecode_dependency_tests {
     fn register_dependency_test_function(
         state: &ProgramState,
         args: FunctionArgs,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         let mut builder = FunctionCatalogBuilder::new();
         let contract =
             RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias);
@@ -219,10 +219,10 @@ mod bytecode_dependency_tests {
         register_bytecode_function(state, entry, args)
     }
 
-    fn scalar(value: f64) -> (Value, ReactiveCellId) {
+    fn scalar(value: f64) -> (LegacyValue, ReactiveCellId) {
         let cell = Ref::new(value);
         let id = ReactiveCellId::new(cell.id());
-        (Value::F64(cell), id)
+        (LegacyValue::F64(cell), id)
     }
 
     #[test]
@@ -381,8 +381,8 @@ mod bytecode_dependency_tests {
         let mut interpreter =
             Interpreter::with_function_catalog(7, 100, Arc::new(catalog.build().unwrap()));
 
-        let prior_register = Value::F64(Ref::new(17.0));
-        let prior_constant = Value::F64(Ref::new(23.0));
+        let prior_register = LegacyValue::F64(Ref::new(17.0));
+        let prior_constant = LegacyValue::F64(Ref::new(23.0));
         interpreter.ip = 9;
         interpreter.bytecode_registers = super::super::super::BytecodeRegisterFile::new(1);
         interpreter
@@ -390,18 +390,19 @@ mod bytecode_dependency_tests {
             .load(0, prior_register.clone())
             .unwrap();
         interpreter.constants = vec![prior_constant.clone()];
-        interpreter.out = Value::F64(Ref::new(31.0));
+        interpreter.out = LegacyValue::F64(Ref::new(31.0));
         let prior_output = interpreter.out.clone();
         register_dependency_test_function(
             &interpreter.state.borrow(),
-            FunctionArgs::Nullary(Value::F64(Ref::new(41.0))),
+            FunctionArgs::Nullary(LegacyValue::F64(Ref::new(41.0))),
         )
         .unwrap();
         let symbol_id = hash_str("prior");
-        interpreter
-            .symbols()
-            .borrow_mut()
-            .insert(symbol_id, Value::F64(Ref::new(47.0)), false);
+        interpreter.symbols().borrow_mut().insert(
+            symbol_id,
+            LegacyValue::F64(Ref::new(47.0)),
+            false,
+        );
         interpreter
             .dictionary()
             .borrow_mut()
@@ -476,10 +477,10 @@ mod hashed_composite_pack_tests {
     use super::super::super::{
         BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram, EncodedConstant,
         FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, FunctionRuntimeType,
-        Interpreter, MResult, MechError, MechFunction, MechFunctionCompiler, MechFunctionFactory,
-        MechFunctionImpl, ParsedProgram, Ref, Register, RuntimeFunctionContract, RuntimeFunctionId,
-        RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, ToValue, Value,
-        write_bytecode,
+        Interpreter, LegacyValue, MResult, MechError, MechFunction, MechFunctionCompiler,
+        MechFunctionFactory, MechFunctionImpl, ParsedProgram, Ref, Register,
+        RuntimeFunctionContract, RuntimeFunctionId, RuntimeFunctionSignature,
+        RuntimeOutputAliasPolicy, RuntimeType, ToValue, write_bytecode,
     };
     use std::collections::{BTreeMap, BTreeSet};
     use std::sync::Arc;
@@ -518,11 +519,11 @@ mod hashed_composite_pack_tests {
             Ok(())
         }
 
-        fn out(&self) -> Value {
+        fn out(&self) -> LegacyValue {
             self.output.to_value()
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
 
@@ -568,11 +569,11 @@ mod hashed_composite_pack_tests {
             Ok(())
         }
 
-        fn out(&self) -> Value {
+        fn out(&self) -> LegacyValue {
             self.output.to_value()
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
 
@@ -600,7 +601,7 @@ mod hashed_composite_pack_tests {
         bytes.extend_from_slice(payload);
     }
 
-    fn run_interpreter(program: BytecodeProgram) -> MResult<(Interpreter, Value)> {
+    fn run_interpreter(program: BytecodeProgram) -> MResult<(Interpreter, LegacyValue)> {
         let mut catalog = FunctionCatalogBuilder::new();
         catalog
             .insert_runtime_factory::<ComputedU8>(
@@ -621,11 +622,11 @@ mod hashed_composite_pack_tests {
         Ok((interpreter, output))
     }
 
-    fn run_result(program: BytecodeProgram) -> MResult<Value> {
+    fn run_result(program: BytecodeProgram) -> MResult<LegacyValue> {
         run_interpreter(program).map(|(_, output)| output)
     }
 
-    fn run(program: BytecodeProgram) -> Value {
+    fn run(program: BytecodeProgram) -> LegacyValue {
         run_result(program).unwrap()
     }
 
@@ -674,12 +675,20 @@ mod hashed_composite_pack_tests {
             requirements: Vec::new(),
         });
 
-        let Value::Map(output) = output else {
+        let LegacyValue::Map(output) = output else {
             panic!("expected map output");
         };
-        let key = Value::U8(Ref::new(7));
-        assert_eq!(output.borrow().map.get(&key), Some(&Value::U8(Ref::new(9))));
-        assert!(!output.borrow().map.contains_key(&Value::U8(Ref::new(1))));
+        let key = LegacyValue::U8(Ref::new(7));
+        assert_eq!(
+            output.borrow().map.get(&key),
+            Some(&LegacyValue::U8(Ref::new(9)))
+        );
+        assert!(
+            !output
+                .borrow()
+                .map
+                .contains_key(&LegacyValue::U8(Ref::new(1)))
+        );
     }
 
     #[test]
@@ -728,17 +737,20 @@ mod hashed_composite_pack_tests {
         })
         .unwrap();
 
-        let Value::Map(output) = output else {
+        let LegacyValue::Map(output) = output else {
             panic!("expected map output");
         };
-        let key = Value::U8(Ref::new(1));
+        let key = LegacyValue::U8(Ref::new(1));
         let captured = output.borrow().map.get(&key).unwrap().clone();
-        assert_eq!(captured, Value::U8(Ref::new(3)));
+        assert_eq!(captured, LegacyValue::U8(Ref::new(3)));
 
         interpreter.solve_plan().unwrap();
 
-        assert_eq!(captured, Value::U8(Ref::new(4)));
-        assert_eq!(output.borrow().map.get(&key), Some(&Value::U8(Ref::new(4))));
+        assert_eq!(captured, LegacyValue::U8(Ref::new(4)));
+        assert_eq!(
+            output.borrow().map.get(&key),
+            Some(&LegacyValue::U8(Ref::new(4)))
+        );
     }
 
     #[test]
@@ -780,11 +792,11 @@ mod hashed_composite_pack_tests {
             requirements: Vec::new(),
         });
 
-        let Value::Set(output) = output else {
+        let LegacyValue::Set(output) = output else {
             panic!("expected set output");
         };
-        assert!(output.borrow().set.contains(&Value::U8(Ref::new(7))));
-        assert!(!output.borrow().set.contains(&Value::U8(Ref::new(1))));
+        assert!(output.borrow().set.contains(&LegacyValue::U8(Ref::new(7))));
+        assert!(!output.borrow().set.contains(&LegacyValue::U8(Ref::new(1))));
     }
 
     #[test]
@@ -871,12 +883,12 @@ mod external_bytecode_tests {
         EncodedConstant, ExecutionHostFunctionRequest, ExecutionResourceRequest,
         ExternalHostCallFunction, ExternalResourceReadFunction, ExternalResourceWriteFunction,
         FunctionArgs, FunctionArgumentRole, FunctionCatalog, FunctionCatalogBuilder,
-        FunctionRuntimeType, InitialSolvePolicy, MResult, MechError, MechExecutionServices,
-        MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl, MechProgram,
-        MechProgramConfig, ParsedProgram, ReactiveCellId, Ref, Register, ResourceDelivery,
-        ResourceIntent, RuntimeFunctionContract, RuntimeFunctionId, RuntimeFunctionSignature,
-        RuntimeOutputAliasPolicy, RuntimeType, ToValue, ValRef, Value, apply_stable_value_update,
-        hash_str, write_bytecode,
+        FunctionRuntimeType, InitialSolvePolicy, LegacyValue, MResult, MechError,
+        MechExecutionServices, MechFunction, MechFunctionCompiler, MechFunctionFactory,
+        MechFunctionImpl, MechProgram, MechProgramConfig, ParsedProgram, ReactiveCellId, Ref,
+        Register, ResourceDelivery, ResourceIntent, RuntimeFunctionContract, RuntimeFunctionId,
+        RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, ToValue, ValRef,
+        apply_stable_value_update, hash_str, write_bytecode,
     };
     use std::collections::{BTreeMap, BTreeSet};
     use std::sync::Arc;
@@ -916,11 +928,11 @@ mod external_bytecode_tests {
             Ok(())
         }
 
-        fn out(&self) -> Value {
+        fn out(&self) -> LegacyValue {
             self.output.to_value()
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
 
@@ -949,46 +961,46 @@ mod external_bytecode_tests {
     #[derive(Default)]
     struct RecordingExternalServices {
         host_requests: Vec<ExecutionHostFunctionRequest>,
-        host_arguments: Vec<Vec<Value>>,
+        host_arguments: Vec<Vec<LegacyValue>>,
         read_requests: Vec<ExecutionResourceRequest>,
-        writes: Vec<(ExecutionResourceRequest, Value)>,
+        writes: Vec<(ExecutionResourceRequest, LegacyValue)>,
         bindings: Vec<(u64, ExecutionResourceRequest, usize)>,
         binding_targets: Vec<ValRef>,
-        host_result: Option<Value>,
-        read_result: Option<Value>,
+        host_result: Option<LegacyValue>,
+        read_result: Option<LegacyValue>,
     }
 
     impl MechExecutionServices for RecordingExternalServices {
         fn invoke_host_function(
             &mut self,
             request: &ExecutionHostFunctionRequest,
-            arguments: &[Value],
-        ) -> MResult<Value> {
+            arguments: &[LegacyValue],
+        ) -> MResult<LegacyValue> {
             self.host_requests.push(request.clone());
             self.host_arguments.push(
                 arguments
                     .iter()
-                    .map(Value::try_deep_snapshot)
+                    .map(LegacyValue::try_deep_snapshot)
                     .collect::<MResult<Vec<_>>>()?,
             );
             Ok(self
                 .host_result
                 .clone()
-                .unwrap_or_else(|| Value::F64(Ref::new(9.0))))
+                .unwrap_or_else(|| LegacyValue::F64(Ref::new(9.0))))
         }
 
-        fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+        fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
             self.read_requests.push(request.clone());
             Ok(self
                 .read_result
                 .clone()
-                .unwrap_or_else(|| Value::F64(Ref::new(8.0))))
+                .unwrap_or_else(|| LegacyValue::F64(Ref::new(8.0))))
         }
 
         fn write_resource(
             &mut self,
             request: &ExecutionResourceRequest,
-            value: &Value,
+            value: &LegacyValue,
         ) -> MResult<()> {
             self.writes
                 .push((request.clone(), value.try_deep_snapshot()?));
@@ -1065,13 +1077,13 @@ mod external_bytecode_tests {
         }
     }
 
-    fn string_value(value: &str) -> Value {
-        Value::String(Ref::new(value.to_owned()))
+    fn string_value(value: &str) -> LegacyValue {
+        LegacyValue::String(Ref::new(value.to_owned()))
     }
 
-    fn assert_string(value: &Value, expected: &str) {
+    fn assert_string(value: &LegacyValue, expected: &str) {
         assert!(
-            matches!(value, Value::String(value) if value.borrow().as_str() == expected),
+            matches!(value, LegacyValue::String(value) if value.borrow().as_str() == expected),
             "expected String({expected:?}), found {value:?}",
         );
     }
@@ -1145,7 +1157,7 @@ mod external_bytecode_tests {
     fn external_source_plan_compiles_and_reconstructs_equivalent_executable_nodes() {
         let mut source = MechProgram::new(MechProgramConfig::default());
         let plan = source.interpreter().plan();
-        let host_argument = Value::F64(Ref::new(3.0));
+        let host_argument = LegacyValue::F64(Ref::new(3.0));
         let host_request = ExecutionHostFunctionRequest {
             name: "test/host".into(),
         };
@@ -1153,7 +1165,7 @@ mod external_bytecode_tests {
         let assign_request = request(ResourceIntent::Assign, ResourceDelivery::Snapshot);
         let send_request = request(ResourceIntent::Send, ResourceDelivery::Snapshot);
 
-        let host_output = Ref::new(Value::F64(Ref::new(1.0)));
+        let host_output = Ref::new(LegacyValue::F64(Ref::new(1.0)));
         plan.register_function(
             Box::new(ExternalHostCallFunction {
                 request: host_request.clone(),
@@ -1164,7 +1176,7 @@ mod external_bytecode_tests {
             &[host_argument.clone()],
         )
         .unwrap();
-        let read_output = Ref::new(Value::F64(Ref::new(2.0)));
+        let read_output = Ref::new(LegacyValue::F64(Ref::new(2.0)));
         plan.register_function(
             Box::new(ExternalResourceReadFunction {
                 interpreter_id: source.interpreter().id,
@@ -1180,7 +1192,7 @@ mod external_bytecode_tests {
             Box::new(ExternalResourceWriteFunction {
                 request: assign_request.clone(),
                 input: assigned.clone(),
-                output: Ref::new(Value::Empty),
+                output: Ref::new(LegacyValue::Empty),
                 initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
             }),
             &[assigned],
@@ -1191,7 +1203,7 @@ mod external_bytecode_tests {
             Box::new(ExternalResourceWriteFunction {
                 request: send_request.clone(),
                 input: sent.clone(),
-                output: Ref::new(Value::Empty),
+                output: Ref::new(LegacyValue::Empty),
                 initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
             }),
             &[sent],
@@ -1233,19 +1245,19 @@ mod external_bytecode_tests {
             .run_bytecode_program_with_services(&parsed, &mut services)
             .unwrap();
 
-        assert_eq!(result, Value::Empty);
+        assert_eq!(result, LegacyValue::Empty);
         assert_eq!(services.host_requests, vec![host_request]);
         assert!(matches!(
             services.host_arguments.as_slice(),
             [arguments]
-                if matches!(arguments.as_slice(), [Value::F64(value)] if *value.borrow() == 3.0)
+                if matches!(arguments.as_slice(), [LegacyValue::F64(value)] if *value.borrow() == 3.0)
         ));
         assert_eq!(services.read_requests, vec![read_request.clone()]);
         assert_eq!(services.writes.len(), 2);
         assert_eq!(services.writes[0].0, assign_request);
         assert_eq!(services.writes[1].0, send_request);
-        assert!(matches!(&services.writes[0].1, Value::F64(value) if *value.borrow() == 9.0));
-        assert!(matches!(&services.writes[1].1, Value::F64(value) if *value.borrow() == 8.0));
+        assert!(matches!(&services.writes[0].1, LegacyValue::F64(value) if *value.borrow() == 9.0));
+        assert!(matches!(&services.writes[1].1, LegacyValue::F64(value) if *value.borrow() == 8.0));
         assert_eq!(services.bindings.len(), 1);
         assert_eq!(services.bindings[0].0, loaded_interpreter_id);
         assert_eq!(services.bindings[0].1, read_request);
@@ -1270,8 +1282,8 @@ mod external_bytecode_tests {
             .unwrap();
         assert_eq!(services.bindings.len(), 2);
         assert_eq!(services.bindings[1].2, live_target);
-        assert!(matches!(&services.writes[2].1, Value::F64(value) if *value.borrow() == 9.0));
-        assert!(matches!(&services.writes[3].1, Value::F64(value) if *value.borrow() == 8.0));
+        assert!(matches!(&services.writes[2].1, LegacyValue::F64(value) if *value.borrow() == 9.0));
+        assert!(matches!(&services.writes[3].1, LegacyValue::F64(value) if *value.borrow() == 8.0));
     }
 
     #[test]
@@ -1547,7 +1559,7 @@ mod external_bytecode_tests {
         let prior_symbol = symbol_cell(&program, "prior");
         assert!(prior_symbol.same_handle(&prior_register));
         let mut services = RecordingExternalServices {
-            host_result: Some(Value::F64(Ref::new(9.0))),
+            host_result: Some(LegacyValue::F64(Ref::new(9.0))),
             ..Default::default()
         };
 

@@ -1,5 +1,5 @@
 use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
-use mech_core::{GenericError, MResult, MechError, Ref, Value, hash_str};
+use mech_core::{GenericError, LegacyValue, MResult, MechError, Ref, hash_str};
 use mech_engine::Interpreter;
 use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
 use mech_runtime::{
@@ -50,9 +50,9 @@ impl RuntimeResourceProvider for BenchInputProvider {
         vec![INPUT_BASE_URI.to_string()]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri == INPUT_BASE_URI && request.path == INPUT_PATH {
-            return Ok(Value::F64(Ref::new(1.0)));
+            return Ok(LegacyValue::F64(Ref::new(1.0)));
         }
         Err(MechError::new(
             GenericError {
@@ -65,9 +65,9 @@ impl RuntimeResourceProvider for BenchInputProvider {
         ))
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri == INPUT_BASE_URI && request.path == INPUT_PATH {
-            return Ok(Value::F64(Ref::new(0.0)));
+            return Ok(LegacyValue::F64(Ref::new(0.0)));
         }
         Err(MechError::new(
             GenericError {
@@ -203,19 +203,19 @@ fn register_source(count: usize) -> String {
     source
 }
 
-fn copied_host_f64(arguments: &[impl HostArgumentValue]) -> Value {
+fn copied_host_f64(arguments: &[impl HostArgumentValue]) -> LegacyValue {
     let value = match arguments
         .first()
         .map(HostArgumentValue::host_argument_value)
     {
-        Some(Value::F64(value)) => *value.borrow(),
-        Some(Value::MutableReference(value)) => match &*value.borrow() {
-            Value::F64(value) => *value.borrow(),
+        Some(LegacyValue::F64(value)) => *value.borrow(),
+        Some(LegacyValue::MutableReference(value)) => match &*value.borrow() {
+            LegacyValue::F64(value) => *value.borrow(),
             other => panic!("expected f64 benchmark host input, got {other:?}",),
         },
         other => panic!("expected f64 benchmark host argument, got {other:?}",),
     };
-    Value::F64(Ref::new(value))
+    LegacyValue::F64(Ref::new(value))
 }
 
 fn copied_host_snapshot(arguments: &[impl HostArgumentValue]) -> RuntimeValueSnapshot {
@@ -389,7 +389,7 @@ fn two_interpreter_fixture() -> TwoInterpreterFixture {
                 interpreter_id,
                 symbol_id: hash_str("input"),
             },
-            value: Value::F64(Ref::new(2.0)),
+            value: LegacyValue::F64(Ref::new(2.0)),
         });
     }
     TwoInterpreterFixture { program, updates }

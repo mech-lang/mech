@@ -9,11 +9,11 @@ use crate::{
     PlannedRuntimeManagedHostFunction, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeCallContext, RuntimeExecutionMode, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
-use mech_core::{FunctionSpecializer, Ref, Value};
+use mech_core::{FunctionSpecializer, LegacyValue, Ref};
 
 use super::support::CountingAfterCommitEffect;
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
+fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -25,11 +25,11 @@ fn executed_pure_host_outputs_survive_implicit_and_explicit_transactions() {
         .host_function(PlannedPureHostFunction::new(
             "demo/pure",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::F64(Ref::new(1.0))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(snapshot(Value::F64(Ref::new(42.0))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(42.0))))
             },
         ))
         .unwrap();
@@ -47,11 +47,11 @@ fn executed_pure_host_outputs_survive_implicit_and_explicit_transactions() {
     assert_eq!(calls.load(Ordering::SeqCst), 2);
     assert_eq!(
         runtime.program.root_symbol_value("implicit").unwrap(),
-        Value::F64(Ref::new(42.0)),
+        LegacyValue::F64(Ref::new(42.0)),
     );
     assert_eq!(
         runtime.program.root_symbol_value("explicit").unwrap(),
-        Value::F64(Ref::new(42.0)),
+        LegacyValue::F64(Ref::new(42.0)),
     );
 }
 
@@ -81,7 +81,7 @@ fn planning_never_invokes_a_host_callback() {
         .unwrap();
 
     assert_eq!(invocations.load(Ordering::SeqCst), 0);
-    assert_eq!(value.to_value(), Value::Empty);
+    assert_eq!(value.to_value(), LegacyValue::Empty);
 }
 
 #[test]
@@ -98,12 +98,12 @@ fn planning_runtime_calls_host_plan_without_preparing_or_delivering_an_effect() 
             "demo/planning-staged",
             move |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
                 plan_count.fetch_add(1, Ordering::SeqCst);
-                Ok(snapshot(Value::F64(Ref::new(0.0))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(0.0))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 prepare_count.fetch_add(1, Ordering::SeqCst);
                 Ok(RuntimePreparedHostCall {
-                    value: snapshot(Value::F64(Ref::new(7.0))),
+                    value: snapshot(LegacyValue::F64(Ref::new(7.0))),
                     effect: PreparedRuntimeEffect::AfterCommit(Box::new(
                         CountingAfterCommitEffect {
                             deliveries: Arc::clone(&effect_deliveries),
@@ -121,7 +121,7 @@ fn planning_runtime_calls_host_plan_without_preparing_or_delivering_an_effect() 
         .call_host(HostCall::new("demo/planning-staged", Vec::new()))
         .unwrap();
 
-    assert_eq!(value.to_value(), Value::F64(Ref::new(0.0)));
+    assert_eq!(value.to_value(), LegacyValue::F64(Ref::new(0.0)));
     assert_eq!(plans.load(Ordering::SeqCst), 1);
     assert_eq!(prepares.load(Ordering::SeqCst), 0);
     assert_eq!(deliveries.load(Ordering::SeqCst), 0);
@@ -136,13 +136,15 @@ fn runtime_managed_source_planning_does_not_stage_mutation() {
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "demo/runtime-managed",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::String(Ref::new("planned".to_string()))))
+                Ok(snapshot(LegacyValue::String(Ref::new(
+                    "planned".to_string(),
+                ))))
             },
             move |services, _context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 let id = services.allocate_object_id()?;
                 callback_ids.lock().unwrap().push(id);
                 services.put_object(ObjectRecord::text(id, "preview-test", "value"))?;
-                Ok(snapshot(Value::String(Ref::new(id.to_string()))))
+                Ok(snapshot(LegacyValue::String(Ref::new(id.to_string()))))
             },
         ))
         .unwrap()
@@ -157,7 +159,7 @@ fn runtime_managed_source_planning_does_not_stage_mutation() {
     assert!(observed_ids.lock().unwrap().is_empty());
     assert_eq!(
         runtime.program.root_symbol_value("result").unwrap(),
-        Value::String(Ref::new("planned".to_string())),
+        LegacyValue::String(Ref::new("planned".to_string())),
     );
 }
 

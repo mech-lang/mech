@@ -1,4 +1,4 @@
-use mech_core::{Ref, Value};
+use mech_core::{LegacyValue, Ref};
 
 use super::scheduling::apply_f64_input;
 use crate::runtime::test_support::{
@@ -68,11 +68,11 @@ fn canonical_host_input_updates_live_context_read() {
 #[test]
 fn partial_snapshot_updates_bound_fields_and_ignores_unbound_fields() {
     let provider = TestResourceProvider::new()
-        .with_value(TEST_TIMER_BASE_URI, "tick", Value::F64(Ref::new(1.0)))
+        .with_value(TEST_TIMER_BASE_URI, "tick", LegacyValue::F64(Ref::new(1.0)))
         .with_value(
             TEST_TIMER_BASE_URI,
             "delta-seconds",
-            Value::F64(Ref::new(0.1)),
+            LegacyValue::F64(Ref::new(0.1)),
         );
     let mut runtime = test_runtime(provider);
     grant_read(&mut runtime, "test://timer/state", "tick");
@@ -175,7 +175,7 @@ fn patterned_activation_send_preserves_custom_live_authority() {
     let provider = TestResourceProvider::new().with_value(
         "test://render/timer",
         "tick",
-        Value::F64(Ref::new(0.0)),
+        LegacyValue::F64(Ref::new(0.0)),
     );
     let (mut runtime, output) = test_runtime_with_output(provider);
     let default_subject = runtime.runtime_context().unwrap().subject;

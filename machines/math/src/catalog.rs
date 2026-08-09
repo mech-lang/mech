@@ -80,11 +80,11 @@ fn validate_op_assign_slice(args: &FunctionArgs) -> MResult<()> {
             Ok(())
         };
         match input_value {
-            mech_core::Value::Index(index) => validate_indices(vec![*index.borrow()])?,
-            mech_core::Value::MatrixIndex(indices) => validate_indices(indices.as_vec())?,
-            mech_core::Value::MutableReference(reference) => match &*reference.borrow() {
-                mech_core::Value::Index(index) => validate_indices(vec![*index.borrow()])?,
-                mech_core::Value::MatrixIndex(indices) => validate_indices(indices.as_vec())?,
+            mech_core::LegacyValue::Index(index) => validate_indices(vec![*index.borrow()])?,
+            mech_core::LegacyValue::MatrixIndex(indices) => validate_indices(indices.as_vec())?,
+            mech_core::LegacyValue::MutableReference(reference) => match &*reference.borrow() {
+                mech_core::LegacyValue::Index(index) => validate_indices(vec![*index.borrow()])?,
+                mech_core::LegacyValue::MatrixIndex(indices) => validate_indices(indices.as_vec())?,
                 _ => {}
             },
             _ => {}
@@ -2207,11 +2207,11 @@ mod tests {
     fn op_assign_contract_rejects_zero_and_out_of_range_index_payloads() {
         for indices in [vec![0usize], vec![3usize]] {
             let args = FunctionArgs::Binary(
-                mech_core::Value::MatrixU8(mech_core::matrix::Matrix::DVector(mech_core::Ref::new(
+                mech_core::LegacyValue::MatrixU8(mech_core::matrix::Matrix::DVector(mech_core::Ref::new(
                     DVector::from_vec(vec![1u8, 2]),
                 ))),
-                mech_core::Value::U8(mech_core::Ref::new(1)),
-                mech_core::Value::MatrixIndex(mech_core::matrix::Matrix::DVector(mech_core::Ref::new(
+                mech_core::LegacyValue::U8(mech_core::Ref::new(1)),
+                mech_core::LegacyValue::MatrixIndex(mech_core::matrix::Matrix::DVector(mech_core::Ref::new(
                     DVector::from_vec(indices),
                 ))),
             );

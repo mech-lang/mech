@@ -123,7 +123,11 @@ pub mod reactive_transaction;
 pub mod resident_execution;
 pub mod state_journal;
 pub mod structures;
-pub mod value;
+// The physical path remains value.rs during migration so the frozen
+// legacy-site inventory retains stable source paths. Final cutover
+// deletes this file.
+#[path = "value.rs"]
+pub mod legacy_value;
 mod value_snapshot;
 pub use self::value_snapshot::{
     ValueSnapshotBorrowConflict, ValueSnapshotCollectionCollision, ValueSnapshotCycleUnsupported,
@@ -141,6 +145,7 @@ pub use self::execution::*;
 #[cfg(feature = "functions")]
 pub use self::function::*;
 pub use self::kind::*;
+pub use self::legacy_value::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
 pub use self::nodes::*;
@@ -157,7 +162,6 @@ pub use self::state_journal::*;
 pub use self::stdlib::*;
 pub use self::structures::*;
 pub use self::types::*;
-pub use self::value::*;
 
 pub mod dimension;
 pub mod kind_expr;

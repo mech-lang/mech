@@ -8,7 +8,7 @@ use mech_browser::{
 };
 #[cfg(feature = "web_host")]
 use mech_browser::{BrowserDomBackend, BrowserResourceProvider};
-use mech_core::{MResult, Value};
+use mech_core::{LegacyValue, MResult};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, HostManifestConfig, MechRuntime, RunResourceGrantConfig,
     RuntimeBuilder, RuntimeEventKind, RuntimeHostFactory, RuntimeHostInstallation,
@@ -172,7 +172,7 @@ fn run_resource_grant_authorizes_cli_env_legacy_alias() {
         .unwrap();
 
     match result.into_value() {
-        Value::String(value) => assert_eq!(value.borrow().as_str(), "/test/home"),
+        LegacyValue::String(value) => assert_eq!(value.borrow().as_str(), "/test/home"),
         value => panic!("expected string HOME value, got {value:?}"),
     }
 }

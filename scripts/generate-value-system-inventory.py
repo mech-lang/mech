@@ -20,7 +20,7 @@ from typing import Iterable, Sequence
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 if str(SCRIPT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIRECTORY))
-import value_system_legacy_scanner_v1 as LEGACY_SCANNER
+import value_system_legacy_scanner_v2 as LEGACY_SCANNER
 
 Token = LEGACY_SCANNER.Token
 mask_non_code = LEGACY_SCANNER.mask_non_code
@@ -38,14 +38,14 @@ DEFAULT_LEGACY_BASELINE_OUTPUT = (
 )
 REFERENCE_COMMIT = "d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10"
 LEGACY_SCANNER_CONTRACT = {
-    "version": "c0-legacy-growth-v1",
-    "module": "scripts/value_system_legacy_scanner_v1.py",
+    "version": "c2-legacy-growth-v2",
+    "module": "scripts/value_system_legacy_scanner_v2.py",
     "identifier_comparison": "canonical-identifier-v1",
     "ref_alias_resolution": "transitive-generic-identity-wrapper-v1",
     "baseline_policy": "checked-in-archived-source-oracle-may-only-shrink-v1",
-    "implementation_sha256": "9624eb89c01085cc5e412506b30671f442ba53b057c228b3fbcd113cc77ad834",
+    "implementation_sha256": "8211e9b71af90bca7dd8da33b6caaca83c3ab5569fd2739ae35423b7795fad5b",
 }
-AUDITED_ENUMS = ("Value", "ValueKind", "Kind")
+AUDITED_ENUMS = ("LegacyValue", "ValueKind", "Kind")
 EXCLUDED_SOURCE_DIRECTORIES = {
     ".git",
     "target",
@@ -67,11 +67,17 @@ SYNTAX_KIND_PATHS = {
 }
 SEMANTIC_VALUE_PATHS = {
     ("Value",),
+    ("LegacyValue",),
     ("crate", "Value"),
+    ("crate", "LegacyValue"),
     ("crate", "value", "Value"),
+    ("crate", "legacy_value", "LegacyValue"),
     ("mech_core", "Value"),
+    ("mech_core", "LegacyValue"),
     ("mech_core", "value", "Value"),
+    ("mech_core", "legacy_value", "LegacyValue"),
     ("super", "Value"),
+    ("super", "LegacyValue"),
 }
 SEMANTIC_VALUE_KIND_PATHS = {
     ("ValueKind",),
@@ -1135,7 +1141,7 @@ def kind_path_classification(path: tuple[str, ...]) -> str | None:
 
 def audited_enum_path(path: tuple[str, ...]) -> str | None:
     if path in SEMANTIC_VALUE_PATHS:
-        return "Value"
+        return "LegacyValue"
     if path in SEMANTIC_VALUE_KIND_PATHS:
         return "ValueKind"
     if kind_path_classification(path) == "semantic":
@@ -1263,6 +1269,8 @@ def variant_uses(
         if index in imports or tokens[index + 1].value != "::":
             continue
         enum_name = canonical_identifier(tokens[index].value)
+        if enum_name == "Value" and "LegacyValue" in variants_by_enum:
+            enum_name = "LegacyValue"
         variant = canonical_identifier(tokens[index + 2].value)
         if enum_name not in variants_by_enum or variant not in variants_by_enum[enum_name]:
             continue
@@ -1292,7 +1300,12 @@ def audited_path_name(
     path = list(tokens)
     if "as" in [token.value for token in path]:
         path = path[: next(index for index, token in enumerate(path) if token.value == "as")]
-    if not path or canonical_identifier(path[-1].value) not in variants_by_enum:
+    if not path:
+        return None
+    terminal = canonical_identifier(path[-1].value)
+    if terminal == "Value" and "LegacyValue" in variants_by_enum:
+        terminal = "LegacyValue"
+    if terminal not in variants_by_enum:
         return None
     for index, token in enumerate(path):
         if index % 2 == 0:
@@ -1300,7 +1313,7 @@ def audited_path_name(
                 return None
         elif token.value != "::":
             return None
-    return canonical_identifier(path[-1].value)
+    return terminal
 
 
 def impl_ranges(
@@ -1455,11 +1468,13 @@ def qualification_violations(
         )
         if enum_index is None:
             continue
-        enum_name = binding.path[enum_index]
+        declared_enum_name = binding.path[enum_index]
+        enum_name = audited_enum_path(binding.path[: enum_index + 1])
+        assert enum_name is not None
         suffix = binding.path[enum_index + 1 :]
         kind = None
         variant = None
-        if not suffix and binding.local != enum_name:
+        if not suffix and binding.local != declared_enum_name:
             kind = "enum-alias"
         elif suffix and suffix[0] == "*":
             kind = "glob-import"
@@ -1531,6 +1546,8 @@ def qualification_violations(
         enum_spelling = tokens[index].value
         variant_spelling = tokens[index + 2].value
         enum_name = canonical_identifier(enum_spelling)
+        if enum_name == "Value" and "LegacyValue" in variants_by_enum:
+            enum_name = "LegacyValue"
         variant = canonical_identifier(variant_spelling)
         if (
             enum_name in variants_by_enum
@@ -1571,6 +1588,8 @@ def qualification_violations(
     # Reject generic/turbofish qualifiers between an audited enum and variant.
     for index, token in enumerate(tokens):
         receiver = canonical_identifier(token.value)
+        if receiver == "Value" and "LegacyValue" in variants_by_enum:
+            receiver = "LegacyValue"
         if (
             receiver not in variants_by_enum
             or index + 2 >= len(tokens)
@@ -1874,11 +1893,16 @@ def generate(
         raise ValueError("src/core/src/value.rs and src/core/src/kind.rs are required")
     value_source = value_path.read_text(encoding="utf-8")
     kind_source = kind_path.read_text(encoding="utf-8")
-    value_variants = parse_enum(value_source, "Value", value=True)
+    legacy_enum_spelling = (
+        "LegacyValue"
+        if re.search(r"\benum\s+LegacyValue\b", mask_non_code(value_source))
+        else "Value"
+    )
+    value_variants = parse_enum(value_source, legacy_enum_spelling, value=True)
     value_kind_variants = parse_enum(value_source, "ValueKind", value=False)
     kind_variants = parse_enum(kind_source, "Kind", value=False)
     enum_records = {
-        "Value": {
+        "LegacyValue": {
             "source": "src/core/src/value.rs",
             "variants": value_variants,
         },
@@ -1954,7 +1978,7 @@ def generate(
     )
     legacy_aliases, compatibility_aliases = aliases(corpus)
     return {
-        "schema_version": 5,
+        "schema_version": 6,
         "reference_commit": reference_commit,
         "workspace_packages": workspace_packages,
         "enumerated_rust_files": [
@@ -1964,6 +1988,12 @@ def generate(
             path.relative_to(root).as_posix() for path in production
         ],
         "enums": enum_records,
+        "snapshot_types": {
+            "Value": {
+                "source": "src/core/src/snapshot/mod.rs",
+                "category": "immutable-snapshot",
+            }
+        },
         "variant_uses": uses,
         "type_contract_sources": type_contract_sources(root),
         "auxiliary_rust_fixtures": auxiliary_fixtures,
@@ -1995,7 +2025,7 @@ def display_path(path: Path, root: Path) -> str:
 
 def legacy_baseline(inventory: dict[str, object], reference: str) -> dict[str, object]:
     return {
-        "schema_version": 3,
+        "schema_version": 4,
         "reference_commit": reference,
         "scanner_contract": LEGACY_SCANNER_CONTRACT,
         "legacy_aliases": inventory["legacy_aliases"],

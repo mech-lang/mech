@@ -5,34 +5,34 @@ mod dynamic_matrix_factory;
 
 use mech_core::matrix::Matrix;
 use mech_core::{
-    BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult,
-    MechExecutionServices, ParsedProgram, Ref, RuntimeType, ValRef, Value, ValueKind, hash_str,
+    BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue,
+    MResult, MechExecutionServices, ParsedProgram, Ref, RuntimeType, ValRef, ValueKind, hash_str,
 };
 use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
 use nalgebra::DMatrix;
 
 #[derive(Default)]
 struct RecordingExecutionServices {
-    writes: Vec<Value>,
+    writes: Vec<LegacyValue>,
 }
 
 impl MechExecutionServices for RecordingExecutionServices {
     fn invoke_host_function(
         &mut self,
         _request: &ExecutionHostFunctionRequest,
-        _arguments: &[Value],
-    ) -> MResult<Value> {
+        _arguments: &[LegacyValue],
+    ) -> MResult<LegacyValue> {
         panic!("mixed-program test did not expect a host call")
     }
 
-    fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<Value> {
+    fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
         panic!("mixed-program test did not expect a resource read")
     }
 
     fn write_resource(
         &mut self,
         _request: &ExecutionResourceRequest,
-        value: &Value,
+        value: &LegacyValue,
     ) -> MResult<()> {
         self.writes.push(value.clone());
         Ok(())
@@ -58,7 +58,7 @@ fn compile_source(source: &str) -> MResult<Vec<u8>> {
     program.compile_bytecode()
 }
 
-fn run_compiled_source(source: &str) -> MResult<(ParsedProgram, Value)> {
+fn run_compiled_source(source: &str) -> MResult<(ParsedProgram, LegacyValue)> {
     let bytecode = compile_source(source)?;
     let parsed = ParsedProgram::from_bytes(&bytecode)?;
     let value = standard_program().run_bytecode_program(&parsed)?;
@@ -87,7 +87,7 @@ fn final_binary_register(program: &ParsedProgram) -> u32 {
 #[test]
 fn literal_only_source_returns_its_literal_register() -> MResult<()> {
     let (parsed, value) = run_compiled_source("10")?;
-    assert_eq!(value, Value::F64(Ref::new(10.0)));
+    assert_eq!(value, LegacyValue::F64(Ref::new(10.0)));
     assert_eq!(
         parsed
             .instructions
@@ -106,7 +106,7 @@ fn literal_only_source_returns_its_literal_register() -> MResult<()> {
 #[test]
 fn scalar_add_returns_the_final_function_register() -> MResult<()> {
     let (parsed, value) = run_compiled_source("1 + 2")?;
-    assert_eq!(value, Value::F64(Ref::new(3.0)));
+    assert_eq!(value, LegacyValue::F64(Ref::new(3.0)));
     assert!(
         parsed
             .instructions
@@ -123,7 +123,7 @@ fn scalar_add_returns_the_final_function_register() -> MResult<()> {
 #[test]
 fn dynamic_strict_equality_round_trips_through_bytecode() -> MResult<()> {
     let (parsed, value) = run_compiled_source("x := 1 + [4 5 6]\nx === [5 6 7]")?;
-    assert_eq!(value, Value::Bool(Ref::new(true)));
+    assert_eq!(value, LegacyValue::Bool(Ref::new(true)));
     assert!(parsed.instructions.iter().any(|instruction| matches!(
         instruction,
         BytecodeInstruction::RuntimeBinary { function, .. }
@@ -135,7 +135,7 @@ fn dynamic_strict_equality_round_trips_through_bytecode() -> MResult<()> {
 #[test]
 fn dynamic_strict_inequality_round_trips_through_bytecode() -> MResult<()> {
     let (parsed, value) = run_compiled_source("x := 1 + [4 5 6]\nx !== [5 6 8]")?;
-    assert_eq!(value, Value::Bool(Ref::new(true)));
+    assert_eq!(value, LegacyValue::Bool(Ref::new(true)));
     assert!(parsed.instructions.iter().any(|instruction| matches!(
         instruction,
         BytecodeInstruction::RuntimeBinary { function, .. }
@@ -157,23 +157,28 @@ fn ordinary_set_elements_round_trip_through_bytecode() -> MResult<()> {
                     if *function == hash_str("SetInsertFxn")
             ))
     );
-    let Value::Set(inserted) = inserted else {
+    let LegacyValue::Set(inserted) = inserted else {
         panic!("set/insert must return a set");
     };
     assert_eq!(inserted.borrow().kind, ValueKind::F64);
-    assert!(inserted.borrow().set.contains(&Value::F64(Ref::new(3.0))));
+    assert!(
+        inserted
+            .borrow()
+            .set
+            .contains(&LegacyValue::F64(Ref::new(3.0)))
+    );
 
     let (_, removed) = run_compiled_source("set/remove({1}, 1)")?;
-    let Value::Set(removed) = removed else {
+    let LegacyValue::Set(removed) = removed else {
         panic!("set/remove must return a set");
     };
     assert!(removed.borrow().set.is_empty());
     assert_eq!(removed.borrow().kind, ValueKind::F64);
 
     let (_, member) = run_compiled_source("2 ∈ {1, 2, 3}")?;
-    assert_eq!(member, Value::Bool(Ref::new(true)));
+    assert_eq!(member, LegacyValue::Bool(Ref::new(true)));
     let (_, not_member) = run_compiled_source("4 ∉ {1, 2, 3}")?;
-    assert_eq!(not_member, Value::Bool(Ref::new(true)));
+    assert_eq!(not_member, LegacyValue::Bool(Ref::new(true)));
     Ok(())
 }
 
@@ -184,7 +189,7 @@ fn compiled_set_membership_retains_reactive_element_cells() -> MResult<()> {
     let mut compiled = standard_program();
     assert_eq!(
         compiled.run_bytecode_program(&parsed)?,
-        Value::Bool(Ref::new(true))
+        LegacyValue::Bool(Ref::new(true))
     );
 
     compiled.update_inputs_and_advance_turn(&[ProgramInputUpdate {
@@ -192,11 +197,11 @@ fn compiled_set_membership_retains_reactive_element_cells() -> MResult<()> {
             interpreter_id: compiled.interpreter().id,
             symbol_id: hash_str("x"),
         },
-        value: Value::F64(Ref::new(4.0)),
+        value: LegacyValue::F64(Ref::new(4.0)),
     }])?;
     assert_eq!(
         compiled.root_symbol_value("member")?,
-        Value::Bool(Ref::new(false))
+        LegacyValue::Bool(Ref::new(false))
     );
     Ok(())
 }
@@ -247,14 +252,17 @@ fn compiled_integrity_constraints_are_reconstructed_and_enforced() -> MResult<()
                 interpreter_id: compiled.interpreter().id,
                 symbol_id: hash_str("x"),
             },
-            value: Value::F64(Ref::new(3.0)),
+            value: LegacyValue::F64(Ref::new(3.0)),
         }])
         .unwrap_err();
     assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
-    assert_eq!(compiled.root_symbol_value("x")?, Value::F64(Ref::new(1.0)));
+    assert_eq!(
+        compiled.root_symbol_value("x")?,
+        LegacyValue::F64(Ref::new(1.0))
+    );
     assert_eq!(
         compiled.root_symbol_value("safe!")?,
-        Value::Bool(Ref::new(true)),
+        LegacyValue::Bool(Ref::new(true)),
     );
     Ok(())
 }
@@ -312,7 +320,7 @@ fn compiled_integrity_constraints_preserve_absent_operands() -> MResult<()> {
 #[test]
 fn mixed_program_returns_trailing_literal_after_planned_work() -> MResult<()> {
     let (parsed, value) = run_compiled_source("x := 1.0 + 2.0\n42.0")?;
-    assert_eq!(value, Value::F64(Ref::new(42.0)));
+    assert_eq!(value, LegacyValue::F64(Ref::new(42.0)));
     assert_ne!(return_register(&parsed), final_binary_register(&parsed));
     Ok(())
 }
@@ -320,7 +328,7 @@ fn mixed_program_returns_trailing_literal_after_planned_work() -> MResult<()> {
 #[test]
 fn mixed_program_reuses_trailing_symbol_producer_register() -> MResult<()> {
     let (parsed, value) = run_compiled_source("x := 1.0 + 2.0\nx")?;
-    assert_eq!(value, Value::F64(Ref::new(3.0)));
+    assert_eq!(value, LegacyValue::F64(Ref::new(3.0)));
     assert_eq!(return_register(&parsed), final_binary_register(&parsed));
     Ok(())
 }
@@ -328,8 +336,8 @@ fn mixed_program_reuses_trailing_symbol_producer_register() -> MResult<()> {
 #[test]
 fn mixed_program_returns_literal_after_external_send() -> MResult<()> {
     let source = "@out/line <- \"message\"\n\"final\"";
-    let message = Value::String(Ref::new("message".to_string()));
-    let final_value = Value::String(Ref::new("final".to_string()));
+    let message = LegacyValue::String(Ref::new("message".to_string()));
+    let final_value = LegacyValue::String(Ref::new("final".to_string()));
 
     let mut source_program = standard_program();
     source_program.run_string("@out := test://effects/output{:write(line)}")?;
@@ -358,10 +366,10 @@ fn mixed_program_returns_literal_after_external_send() -> MResult<()> {
 #[test]
 fn scalar_constants_round_trip_through_source_compilation() -> MResult<()> {
     for (source, expected) in [
-        ("true", Value::Bool(Ref::new(true))),
+        ("true", LegacyValue::Bool(Ref::new(true))),
         (
             r#""bytecode-v1""#,
-            Value::String(Ref::new("bytecode-v1".to_string())),
+            LegacyValue::String(Ref::new("bytecode-v1".to_string())),
         ),
     ] {
         let (_, value) = run_compiled_source(source)?;
@@ -375,7 +383,7 @@ fn dynamic_f64_matrix_add_round_trips() -> MResult<()> {
     let (_, value) = run_compiled_source("[1 2; 3 4] + [5 6; 7 8]")?;
     assert_eq!(
         value,
-        Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_vec(
+        LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_vec(
             2,
             2,
             vec![6.0, 10.0, 8.0, 12.0],
@@ -389,7 +397,7 @@ fn variadic_f64_matrix_construction_round_trips() -> MResult<()> {
     let (parsed, value) = run_compiled_source("[1 2 3]")?;
     assert_eq!(
         value,
-        Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0], 1, 3)),
+        LegacyValue::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0], 1, 3)),
     );
     assert!(
         parsed

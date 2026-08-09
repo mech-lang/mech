@@ -1,8 +1,8 @@
 #[cfg(feature = "variable_assign")]
 use super::{AddressedAssignmentUnsupported, NotMutableError, UndefinedVariableError};
+use crate::LegacyValue;
 #[cfg(all(feature = "subscript", feature = "assign", feature = "map"))]
 use crate::MapAssignScalar;
-use crate::Value;
 #[cfg(all(feature = "subscript", feature = "assign", feature = "subscript_range"))]
 use crate::subscript_range;
 #[cfg(all(feature = "subscript", feature = "assign"))]
@@ -32,9 +32,9 @@ use crate::{TupleAssignScalar, real};
 ))]
 use crate::{subscript_formula, subscript_formula_ix};
 
-pub(super) fn assignment_registration_operand(value: &Value) -> Value {
+pub(super) fn assignment_registration_operand(value: &LegacyValue) -> LegacyValue {
     match value {
-        Value::MutableReference(reference) => {
+        LegacyValue::MutableReference(reference) => {
             let inner = reference.borrow();
             assignment_registration_operand(&inner)
         }
@@ -46,7 +46,7 @@ pub(super) fn assignment_registration_operand(value: &Value) -> Value {
 fn catalog_assignment_function(
     p: &InterpreterExecution<'_>,
     canonical_name: &str,
-    arguments: &[Value],
+    arguments: &[LegacyValue],
 ) -> MResult<Box<dyn MechFunction>> {
     p.specialize_visible_operation_named(
         OperationId::from_name(canonical_name),
@@ -60,7 +60,7 @@ pub fn variable_assign(
     var_assgn: &VariableAssign,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let mut source = expression(&var_assgn.expression, env, p)?;
     let slc = &var_assgn.target;
     if slc.context.is_some() {
@@ -122,17 +122,18 @@ pub fn variable_assign(
 #[cfg(all(feature = "subscript", feature = "assign"))]
 pub fn subscript_ref(
     sbscrpt: &Subscript,
-    sink: &Value,
-    source: &Value,
+    sink: &LegacyValue,
+    source: &LegacyValue,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let plan = p.plan();
     let symbols = p.symbols();
     match sbscrpt {
         Subscript::Dot(x) => {
             let key = x.hash();
-            let fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), Value::Id(key)];
+            let fxn_input: Vec<LegacyValue> =
+                vec![sink.clone(), source.clone(), LegacyValue::Id(key)];
             let new_fxn = catalog_assignment_function(p, "assign/column", &fxn_input)?;
             new_fxn.solve_result()?;
             let res = new_fxn.out();
@@ -142,7 +143,7 @@ pub fn subscript_ref(
         #[cfg(feature = "tuple")]
         Subscript::DotInt(x) => {
             let ix = real(x, p)?.as_index()?;
-            let mut fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), ix.clone()];
+            let mut fxn_input: Vec<LegacyValue> = vec![sink.clone(), source.clone(), ix.clone()];
             let new_fxn = catalog_assignment_function(p, "assign", &fxn_input)?;
             new_fxn.solve_result()?;
             let res = new_fxn.out();
@@ -199,7 +200,7 @@ pub fn subscript_ref(
                 #[cfg(all(feature = "matrix", feature = "subscript_range"))]
                 [Subscript::All] => {
                     fxn_input.push(source.clone());
-                    fxn_input.push(Value::IndexAll);
+                    fxn_input.push(LegacyValue::IndexAll);
                     plan.borrow_mut()
                         .push(catalog_assignment_function(p, "assign", &fxn_input)?);
                 }
@@ -250,7 +251,7 @@ pub fn subscript_ref(
                 #[cfg(all(feature = "matrix", feature = "subscript_formula"))]
                 [Subscript::All, Subscript::Formula(ix2)] => {
                     fxn_input.push(source.clone());
-                    fxn_input.push(Value::IndexAll);
+                    fxn_input.push(LegacyValue::IndexAll);
                     let ix = subscript_formula_ix(&subs[1], env, p)?;
                     let shape = ix.shape();
                     fxn_input.push(ix);
@@ -279,7 +280,7 @@ pub fn subscript_ref(
                     let ix = subscript_formula_ix(&subs[0], env, p)?;
                     let shape = ix.shape();
                     fxn_input.push(ix);
-                    fxn_input.push(Value::IndexAll);
+                    fxn_input.push(LegacyValue::IndexAll);
                     match shape[..] {
                         #[cfg(feature = "matrix")]
                         [1, 1] => {
@@ -356,7 +357,7 @@ pub fn subscript_ref(
                 #[cfg(all(feature = "matrix", feature = "subscript_range"))]
                 [Subscript::All, Subscript::Range(ix2)] => {
                     fxn_input.push(source.clone());
-                    fxn_input.push(Value::IndexAll);
+                    fxn_input.push(LegacyValue::IndexAll);
                     let result = subscript_range(&subs[1], env, p)?;
                     fxn_input.push(result);
                     plan.borrow_mut()
@@ -367,7 +368,7 @@ pub fn subscript_ref(
                     fxn_input.push(source.clone());
                     let result = subscript_range(&subs[0], env, p)?;
                     fxn_input.push(result);
-                    fxn_input.push(Value::IndexAll);
+                    fxn_input.push(LegacyValue::IndexAll);
                     plan.borrow_mut()
                         .push(catalog_assignment_function(p, "assign", &fxn_input)?);
                 }

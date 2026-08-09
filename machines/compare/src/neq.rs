@@ -150,14 +150,14 @@ impl MechFunctionImpl for AtomNeq {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -215,14 +215,14 @@ impl MechFunctionImpl for TableNeq {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -236,10 +236,10 @@ impl MechFunctionCompiler for TableNeq {
 }
 
 #[cfg(feature = "source")]
-fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_neq_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (&lhs_value, &rhs_value) {
         #[cfg(all(feature = "table"))]
-        (Value::Table(lhs), Value::Table(rhs)) => {
+        (LegacyValue::Table(lhs), LegacyValue::Table(rhs)) => {
             return Ok(Box::new(TableNeq {
                 lhs: lhs.clone(),
                 rhs: rhs.clone(),
@@ -247,7 +247,7 @@ fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
             }));
         }
         #[cfg(feature = "atom")]
-        (Value::Atom(lhs), Value::Atom(rhs)) => {
+        (LegacyValue::Atom(lhs), LegacyValue::Atom(rhs)) => {
             return Ok(Box::new(AtomNeq {
                 lhs: lhs.clone(),
                 rhs: rhs.clone(),

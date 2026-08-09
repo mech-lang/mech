@@ -1,5 +1,5 @@
 use super::support::{record_value, scalar, scalar_value};
-use crate::{MechMap, MechSet, Ref, Value, ValueStateBorrowConflict, ValueStateJournal};
+use crate::{LegacyValue, MechMap, MechSet, Ref, ValueStateBorrowConflict, ValueStateJournal};
 use core::any::type_name;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
@@ -144,10 +144,10 @@ fn state_journal_replay_preflight_is_atomic() {
 fn state_journal_map_key_borrow_conflict_is_structured_and_atomic() {
     let key = Ref::new(1.0);
     let map = Ref::new(MechMap::from_vec(vec![(
-        Value::F64(key.clone()),
-        Value::Id(1),
+        LegacyValue::F64(key.clone()),
+        LegacyValue::Id(1),
     )]));
-    let root = Value::Map(map);
+    let root = LegacyValue::Map(map);
     let held = key.borrow_mut();
     let mut journal = ValueStateJournal::new();
 
@@ -170,8 +170,8 @@ fn state_journal_map_key_borrow_conflict_is_structured_and_atomic() {
 #[test]
 fn state_journal_set_element_borrow_conflict_is_structured_and_atomic() {
     let element = Ref::new(1.0);
-    let set = Ref::new(MechSet::from_vec(vec![Value::F64(element.clone())]));
-    let root = Value::Set(set);
+    let set = Ref::new(MechSet::from_vec(vec![LegacyValue::F64(element.clone())]));
+    let root = LegacyValue::Set(set);
     let held = element.borrow_mut();
     let mut journal = ValueStateJournal::new();
 
@@ -196,10 +196,10 @@ fn state_journal_map_key_record_after_conflict_is_retryable() {
     let key = Ref::new(1.0);
     let value = Ref::new(10.0);
     let map = Ref::new(MechMap::from_vec(vec![(
-        Value::F64(key.clone()),
-        Value::F64(value.clone()),
+        LegacyValue::F64(key.clone()),
+        LegacyValue::F64(value.clone()),
     )]));
-    let root = Value::Map(map);
+    let root = LegacyValue::Map(map);
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();
     *value.borrow_mut() = 20.0;

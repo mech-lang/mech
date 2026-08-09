@@ -1,4 +1,4 @@
-use super::super::{MechRuntime, RuntimeConfig, Value, hash_str};
+use super::super::{LegacyValue, MechRuntime, RuntimeConfig, hash_str};
 use mech_core::Ref;
 
 #[test]
@@ -10,7 +10,7 @@ fn runtime_has_interpreter_finds_root_interpreter() {
 #[test]
 fn runtime_bind_ans_for_interpreter_binds_ans() {
     let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
-    let value = Value::U64(Ref::new(42));
+    let value = LegacyValue::U64(Ref::new(42));
     runtime.bind_ans_for_interpreter(0, &value).unwrap();
     let ans_id = hash_str("ans");
     let bound = runtime

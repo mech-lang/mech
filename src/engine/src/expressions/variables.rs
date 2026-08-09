@@ -1,15 +1,17 @@
 use super::{Environment, UndefinedVariableError};
 #[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
 use crate::{FeatureNotEnabledError, MechError};
-use crate::{Identifier, InterpreterExecution, MResult, MutableReference, Value, Var, hash_str};
+use crate::{
+    Identifier, InterpreterExecution, LegacyValue, MResult, MutableReference, Var, hash_str,
+};
 #[cfg(all(feature = "kind_annotation", feature = "convert"))]
 use crate::{execute_catalog_operation, kind_annotation};
 
 fn maybe_cast_variable_to_kind(
     variable: &Var,
-    value: Value,
+    value: LegacyValue,
     interpreter: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let Some(annotation) = &variable.kind else {
         return Ok(value);
     };
@@ -25,7 +27,7 @@ fn maybe_cast_variable_to_kind(
             interpreter,
             &interpreter.plan(),
             "convert/kind",
-            vec![value, Value::Kind(target_kind)],
+            vec![value, LegacyValue::Kind(target_kind)],
         );
     }
 
@@ -53,7 +55,11 @@ pub(super) fn addressed_identifier_hash(name: &Identifier, context: &Option<Iden
 }
 
 #[cfg(feature = "symbol_table")]
-pub fn var(v: &Var, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn var(
+    v: &Var,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
     let id = addressed_identifier_hash(&v.name, &v.context);
     let name = addressed_identifier_name(&v.name, &v.context);
     let mark_if_live_symbol = |value: &MutableReference| {
@@ -88,7 +94,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> 
                 match symbol_value {
                     Some(value) => {
                         mark_if_live_symbol(&value);
-                        maybe_cast_variable_to_kind(v, Value::MutableReference(value), p)
+                        maybe_cast_variable_to_kind(v, LegacyValue::MutableReference(value), p)
                     }
                     None => Err(crate::MechError::new(
                         UndefinedVariableError {
@@ -111,7 +117,7 @@ pub fn var(v: &Var, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> 
             match symbol_value {
                 Some(value) => {
                     mark_if_live_symbol(&value);
-                    maybe_cast_variable_to_kind(v, Value::MutableReference(value), p)
+                    maybe_cast_variable_to_kind(v, LegacyValue::MutableReference(value), p)
                 }
                 None => Err(crate::MechError::new(
                     UndefinedVariableError {

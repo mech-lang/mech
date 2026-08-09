@@ -3,7 +3,7 @@ use crate::*;
 // Literals
 // ----------------------------------------------------------------------------
 
-pub fn literal(ltrl: &Literal, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn literal(ltrl: &Literal, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     match &ltrl {
         Literal::Empty(_) => Ok(empty()),
         #[cfg(feature = "bool")]
@@ -22,9 +22,11 @@ pub fn literal(ltrl: &Literal, p: &InterpreterExecution<'_>) -> MResult<Value> {
 }
 
 #[cfg(feature = "kind_annotation")]
-pub fn kind_value(knd: &NodeKind, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn kind_value(knd: &NodeKind, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     let kind = kind_annotation(knd, p)?;
-    Ok(Value::Kind(kind.to_value_kind(&p.state.borrow().kinds)?))
+    Ok(LegacyValue::Kind(
+        kind.to_value_kind(&p.state.borrow().kinds)?,
+    ))
 }
 
 pub fn kind_annotation(knd: &NodeKind, p: &InterpreterExecution<'_>) -> MResult<Kind> {
@@ -71,7 +73,7 @@ pub fn kind_annotation(knd: &NodeKind, p: &InterpreterExecution<'_>) -> MResult<
             for dim in size {
                 let dim_val = literal(dim, p)?;
                 match dim_val {
-                    Value::Empty => {
+                    LegacyValue::Empty => {
                         dims.push(0);
                     }
                     _ => match dim_val.as_usize() {
@@ -97,7 +99,7 @@ pub fn kind_annotation(knd: &NodeKind, p: &InterpreterExecution<'_>) -> MResult<
             }
             let size_val = literal(size, p)?;
             let size_val = match size_val {
-                Value::Empty => 0,
+                LegacyValue::Empty => 0,
                 _ => match size_val.as_usize() {
                     Ok(size_val) => size_val,
                     Err(_) => {
@@ -112,7 +114,7 @@ pub fn kind_annotation(knd: &NodeKind, p: &InterpreterExecution<'_>) -> MResult<
             let knda = kind_annotation(knd, p)?;
             let size_val = match size {
                 Some(size) => literal(size, p)?,
-                None => Value::Empty,
+                None => LegacyValue::Empty,
             };
             match size_val.as_usize() {
                 Ok(size_val) => Ok(Kind::Set(Box::new(knda.clone()), Some(size_val))),
@@ -127,7 +129,7 @@ pub fn typed_literal(
     ltrl: &Literal,
     knd_attn: &KindAnnotation,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let value = literal(ltrl, p)?;
     let kind = kind_annotation(&knd_attn.kind, p)?;
     let args = vec![value, kind.to_value(&p.state.borrow().kinds)?];
@@ -136,7 +138,7 @@ pub fn typed_literal(
 }
 
 #[cfg(feature = "atom")]
-pub fn atom(atm: &Atom, p: &InterpreterExecution<'_>) -> Value {
+pub fn atom(atm: &Atom, p: &InterpreterExecution<'_>) -> LegacyValue {
     let id = atm.name.hash();
     let state = p.state.borrow();
     let dictionary = state.dictionary.clone();
@@ -144,10 +146,10 @@ pub fn atom(atm: &Atom, p: &InterpreterExecution<'_>) -> Value {
         let mut dictionary_brrw = dictionary.borrow_mut();
         dictionary_brrw.insert(id, atm.name.to_string());
     }
-    Value::Atom(Ref::new(MechAtom((id, dictionary))))
+    LegacyValue::Atom(Ref::new(MechAtom((id, dictionary))))
 }
 
-pub fn number(num: &Number, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn number(num: &Number, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     match num {
         Number::Real(num) => real(num, p),
         #[cfg(feature = "complex")]
@@ -157,7 +159,7 @@ pub fn number(num: &Number, p: &InterpreterExecution<'_>) -> MResult<Value> {
 }
 
 #[cfg(feature = "complex")]
-fn complex(num: &C64Node, p: &InterpreterExecution<'_>) -> MResult<Value> {
+fn complex(num: &C64Node, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     let im: f64 = match real(&num.imaginary.number, p)?.as_f64() {
         Ok(val) => *val.borrow(),
         Err(_) => 0.0,
@@ -168,14 +170,14 @@ fn complex(num: &C64Node, p: &InterpreterExecution<'_>) -> MResult<Value> {
                 Ok(val) => *val.borrow(),
                 Err(_) => 0.0,
             };
-            Value::C64(Ref::new(C64::new(re, im)))
+            LegacyValue::C64(Ref::new(C64::new(re, im)))
         }
-        None => Value::C64(Ref::new(C64::new(0.0, im))),
+        None => LegacyValue::C64(Ref::new(C64::new(0.0, im))),
     };
     Ok(result)
 }
 
-pub fn real(rl: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn real(rl: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     let result = match rl {
         #[cfg(feature = "math_neg")]
         RealNumber::Negated(num) => negated(num, p)?,
@@ -206,23 +208,23 @@ pub fn real(rl: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<Value> {
 }
 
 #[cfg(feature = "math_neg")]
-pub fn negated(num: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn negated(num: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     let num_val = real(&num, p)?;
     let result = match num_val {
         #[cfg(feature = "i8")]
-        Value::I8(val) => Value::I8(Ref::new(-*val.borrow())),
+        LegacyValue::I8(val) => LegacyValue::I8(Ref::new(-*val.borrow())),
         #[cfg(feature = "i16")]
-        Value::I16(val) => Value::I16(Ref::new(-*val.borrow())),
+        LegacyValue::I16(val) => LegacyValue::I16(Ref::new(-*val.borrow())),
         #[cfg(feature = "i32")]
-        Value::I32(val) => Value::I32(Ref::new(-*val.borrow())),
+        LegacyValue::I32(val) => LegacyValue::I32(Ref::new(-*val.borrow())),
         #[cfg(feature = "i64")]
-        Value::I64(val) => Value::I64(Ref::new(-*val.borrow())),
+        LegacyValue::I64(val) => LegacyValue::I64(Ref::new(-*val.borrow())),
         #[cfg(feature = "i128")]
-        Value::I128(val) => Value::I128(Ref::new(-*val.borrow())),
+        LegacyValue::I128(val) => LegacyValue::I128(Ref::new(-*val.borrow())),
         #[cfg(feature = "f64")]
-        Value::F64(val) => Value::F64(Ref::new(-(*val.borrow()))),
+        LegacyValue::F64(val) => LegacyValue::F64(Ref::new(-(*val.borrow()))),
         #[cfg(feature = "f32")]
-        Value::F32(val) => Value::F32(Ref::new(-(*val.borrow()))),
+        LegacyValue::F32(val) => LegacyValue::F32(Ref::new(-(*val.borrow()))),
         x => panic!(
             "Negation is only supported for integer and float types, got {:?}",
             x
@@ -232,7 +234,7 @@ pub fn negated(num: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<Value>
 }
 
 #[cfg(feature = "rational")]
-pub fn rational(rat: &(Token, Token)) -> Value {
+pub fn rational(rat: &(Token, Token)) -> LegacyValue {
     let (num, denom) = rat;
     let num = num.chars.iter().collect::<String>().parse::<i64>().unwrap();
     let denom = denom
@@ -245,39 +247,39 @@ pub fn rational(rat: &(Token, Token)) -> Value {
         panic!("Denominator cannot be zero in a rational number");
     }
     let rat_num = R64::new(num, denom);
-    Value::R64(Ref::new(rat_num))
+    LegacyValue::R64(Ref::new(rat_num))
 }
 
 #[cfg(feature = "i64")]
-pub fn dec(bnry: &Token) -> Value {
+pub fn dec(bnry: &Token) -> LegacyValue {
     let binary_str: String = bnry.chars.iter().collect();
     let num = i64::from_str_radix(&binary_str, 10).unwrap();
-    Value::I64(Ref::new(num))
+    LegacyValue::I64(Ref::new(num))
 }
 
 #[cfg(feature = "i64")]
-pub fn binary(bnry: &Token) -> Value {
+pub fn binary(bnry: &Token) -> LegacyValue {
     let binary_str: String = bnry.chars.iter().collect();
     let num = i64::from_str_radix(&binary_str, 2).unwrap();
-    Value::I64(Ref::new(num))
+    LegacyValue::I64(Ref::new(num))
 }
 
 #[cfg(feature = "i64")]
-pub fn oct(octl: &Token) -> Value {
+pub fn oct(octl: &Token) -> LegacyValue {
     let hex_str: String = octl.chars.iter().collect();
     let num = i64::from_str_radix(&hex_str, 8).unwrap();
-    Value::I64(Ref::new(num))
+    LegacyValue::I64(Ref::new(num))
 }
 
 #[cfg(feature = "i64")]
-pub fn hex(hxdcml: &Token) -> Value {
+pub fn hex(hxdcml: &Token) -> LegacyValue {
     let hex_str: String = hxdcml.chars.iter().collect();
     let num = i64::from_str_radix(&hex_str, 16).unwrap();
-    Value::I64(Ref::new(num))
+    LegacyValue::I64(Ref::new(num))
 }
 
 #[cfg(feature = "f64")]
-pub fn scientific(sci: &(Base, Exponent)) -> Value {
+pub fn scientific(sci: &(Base, Exponent)) -> LegacyValue {
     let (base, exp): &(Base, Exponent) = sci;
     let (whole, part): &(Whole, Part) = base;
     let (sign, exp_whole, exp_part): &(Sign, Whole, Part) = exp;
@@ -292,41 +294,41 @@ pub fn scientific(sci: &(Base, Exponent)) -> Value {
         exp_f64 = -exp_f64;
     }
     let num = num_f64 * 10f64.powf(exp_f64);
-    Value::F64(Ref::new(num))
+    LegacyValue::F64(Ref::new(num))
 }
 
 #[cfg(feature = "floats")]
-pub fn float(flt: &(Token, Token)) -> Value {
+pub fn float(flt: &(Token, Token)) -> LegacyValue {
     let a = flt.0.chars.iter().collect::<String>();
     let b = flt.1.chars.iter().collect::<String>();
     let num: f64 = format!("{}.{}", a, b).parse::<f64>().unwrap();
-    Value::F64(Ref::new(num))
+    LegacyValue::F64(Ref::new(num))
 }
 
 #[cfg(feature = "f64")]
-pub fn integer(int: &Token) -> Value {
+pub fn integer(int: &Token) -> LegacyValue {
     let num: f64 = int.chars.iter().collect::<String>().parse::<f64>().unwrap();
-    Value::F64(Ref::new(num))
+    LegacyValue::F64(Ref::new(num))
 }
 
 #[cfg(feature = "string")]
-pub fn string(tkn: &MechString) -> Value {
+pub fn string(tkn: &MechString) -> LegacyValue {
     let strng: String = tkn.text.chars.iter().collect::<String>();
-    Value::String(Ref::new(strng))
+    LegacyValue::String(Ref::new(strng))
 }
 
-pub fn empty() -> Value {
-    Value::Empty
+pub fn empty() -> LegacyValue {
+    LegacyValue::Empty
 }
 
 #[cfg(feature = "bool")]
-pub fn boolean(tkn: &Token) -> Value {
+pub fn boolean(tkn: &Token) -> LegacyValue {
     let val = match tkn.kind {
         TokenKind::True => true,
         TokenKind::False => false,
         _ => unreachable!(),
     };
-    Value::Bool(Ref::new(val))
+    LegacyValue::Bool(Ref::new(val))
 }
 
 #[derive(Debug, Clone)]

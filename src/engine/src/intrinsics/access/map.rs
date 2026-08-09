@@ -3,7 +3,7 @@ use crate::intrinsics::*;
 
 #[derive(Debug)]
 pub struct MapAccessField {
-    pub out: Value,
+    pub out: LegacyValue,
     pub source: Ref<MechMap>,
 }
 
@@ -12,14 +12,14 @@ impl MechFunctionImpl for MapAccessField {
         ();
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.clone()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -34,9 +34,12 @@ impl MechFunctionCompiler for MapAccessField {
     }
 }
 
-pub fn impl_access_map_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
+pub fn impl_access_map_fxn(
+    source: LegacyValue,
+    key: LegacyValue,
+) -> MResult<Box<dyn MechFunction>> {
     match (source, key) {
-        (Value::Map(map), key) => {
+        (LegacyValue::Map(map), key) => {
             let map_ref = map.borrow();
 
             match map_ref.map.get(&key) {
@@ -68,7 +71,7 @@ pub fn impl_access_map_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFun
 pub struct MapAccess {}
 
 impl FunctionSpecializer for MapAccess {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -104,7 +107,7 @@ impl FunctionSpecializer for MapAccess {
         match impl_access_map_fxn(src.clone(), key.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match src {
-                Value::MutableReference(map) => {
+                LegacyValue::MutableReference(map) => {
                     impl_access_map_fxn(map.borrow().clone(), key.clone())
                 }
                 _ => Err(MechError::new(

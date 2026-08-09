@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use mech_build::standard_planning_host_factory;
-use mech_core::{Ref, Value};
+use mech_core::{LegacyValue, Ref};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, PlannedPureHostFunction, RunResourceGrantConfig,
     RuntimeBuilder, RuntimeValueSnapshot,
@@ -227,7 +227,7 @@ fn actor_case(
             .host_function(PlannedPureHostFunction::new(
                 name,
                 |_context, _arguments| {
-                    RuntimeValueSnapshot::try_capture(&Value::String(Ref::new(String::new())))
+                    RuntimeValueSnapshot::try_capture(&LegacyValue::String(Ref::new(String::new())))
                 },
                 move |_context, _arguments| panic!("{name} executed while planning"),
             ))

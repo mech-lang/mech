@@ -42,23 +42,23 @@ impl ConstantCodecContext {
         result
     }
 
-    fn encode_child(&mut self, value: &Value) -> MResult<EncodedConstant> {
+    fn encode_child(&mut self, value: &LegacyValue) -> MResult<EncodedConstant> {
         self.nested(|context| encode_constant_value(value, context))
     }
 }
 
 #[cfg(feature = "compiler")]
 fn encode_annotated_child(
-    value: &Value,
+    value: &LegacyValue,
     declared: &RuntimeType,
     context: &mut ConstantCodecContext,
 ) -> MResult<AnnotatedChild> {
     if let RuntimeType::Option(declared_inner) = declared {
         let explicit_option = match value {
-            Value::Empty => None,
-            Value::EmptyKind(ValueKind::Option(inner)) => Some(inner.as_ref()),
-            Value::Typed(inner, ValueKind::Option(option))
-                if matches!(inner.as_ref(), Value::Empty) =>
+            LegacyValue::Empty => None,
+            LegacyValue::EmptyKind(ValueKind::Option(inner)) => Some(inner.as_ref()),
+            LegacyValue::Typed(inner, ValueKind::Option(option))
+                if matches!(inner.as_ref(), LegacyValue::Empty) =>
             {
                 Some(option.as_ref())
             }
@@ -548,97 +548,97 @@ fn encoded_constant(runtime_type: RuntimeType, alignment: u8, bytes: Vec<u8>) ->
 
 #[cfg(feature = "compiler")]
 fn encode_constant_value(
-    value: &Value,
+    value: &LegacyValue,
     context: &mut ConstantCodecContext,
 ) -> MResult<EncodedConstant> {
     let _ = context;
     match value {
         #[cfg(any(feature = "bool", feature = "variable_define"))]
-        Value::Bool(value) => Ok(encoded_constant(
+        LegacyValue::Bool(value) => Ok(encoded_constant(
             RuntimeType::Bool,
             1,
             vec![if *value.borrow() { 1 } else { 0 }],
         )),
         #[cfg(any(feature = "string", feature = "variable_define"))]
-        Value::String(value) => Ok(encoded_constant(
+        LegacyValue::String(value) => Ok(encoded_constant(
             RuntimeType::String,
             1,
             value.borrow().as_bytes().to_vec(),
         )),
         #[cfg(feature = "u8")]
-        Value::U8(value) => Ok(encoded_constant(
+        LegacyValue::U8(value) => Ok(encoded_constant(
             RuntimeType::U8,
             1,
             value.borrow().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "u16")]
-        Value::U16(value) => Ok(encoded_constant(
+        LegacyValue::U16(value) => Ok(encoded_constant(
             RuntimeType::U16,
             2,
             value.borrow().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "u32")]
-        Value::U32(value) => Ok(encoded_constant(
+        LegacyValue::U32(value) => Ok(encoded_constant(
             RuntimeType::U32,
             4,
             value.borrow().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "u64")]
-        Value::U64(value) => Ok(encoded_constant(
+        LegacyValue::U64(value) => Ok(encoded_constant(
             RuntimeType::U64,
             8,
             value.borrow().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "u128")]
-        Value::U128(value) => Ok(encoded_constant(
+        LegacyValue::U128(value) => Ok(encoded_constant(
             RuntimeType::U128,
             16,
             value.borrow().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "i8")]
-        Value::I8(value) => Ok(encoded_constant(
+        LegacyValue::I8(value) => Ok(encoded_constant(
             RuntimeType::I8,
             1,
             value.borrow().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "i16")]
-        Value::I16(value) => Ok(encoded_constant(
+        LegacyValue::I16(value) => Ok(encoded_constant(
             RuntimeType::I16,
             2,
             value.borrow().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "i32")]
-        Value::I32(value) => Ok(encoded_constant(
+        LegacyValue::I32(value) => Ok(encoded_constant(
             RuntimeType::I32,
             4,
             value.borrow().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "i64")]
-        Value::I64(value) => Ok(encoded_constant(
+        LegacyValue::I64(value) => Ok(encoded_constant(
             RuntimeType::I64,
             8,
             value.borrow().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "i128")]
-        Value::I128(value) => Ok(encoded_constant(
+        LegacyValue::I128(value) => Ok(encoded_constant(
             RuntimeType::I128,
             16,
             value.borrow().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "f32")]
-        Value::F32(value) => Ok(encoded_constant(
+        LegacyValue::F32(value) => Ok(encoded_constant(
             RuntimeType::F32,
             4,
             value.borrow().to_bits().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "f64")]
-        Value::F64(value) => Ok(encoded_constant(
+        LegacyValue::F64(value) => Ok(encoded_constant(
             RuntimeType::F64,
             8,
             value.borrow().to_bits().to_le_bytes().to_vec(),
         )),
         #[cfg(feature = "complex")]
-        Value::C64(value) => Ok(encoded_constant(
+        LegacyValue::C64(value) => Ok(encoded_constant(
             RuntimeType::C64,
             8,
             [
@@ -648,7 +648,7 @@ fn encode_constant_value(
             .concat(),
         )),
         #[cfg(feature = "rational")]
-        Value::R64(value) => Ok(encoded_constant(
+        LegacyValue::R64(value) => Ok(encoded_constant(
             RuntimeType::R64,
             8,
             [
@@ -657,12 +657,12 @@ fn encode_constant_value(
             ]
             .concat(),
         )),
-        Value::Id(value) => Ok(encoded_constant(
+        LegacyValue::Id(value) => Ok(encoded_constant(
             RuntimeType::Id,
             8,
             value.to_le_bytes().to_vec(),
         )),
-        Value::Index(value) => {
+        LegacyValue::Index(value) => {
             let index = u64::try_from(*value.borrow()).map_err(|_| {
                 unsupported_constant(
                     RuntimeType::Index,
@@ -676,70 +676,70 @@ fn encode_constant_value(
                 index.to_le_bytes().to_vec(),
             ))
         }
-        Value::Empty => Ok(encoded_constant(RuntimeType::Empty, 1, Vec::new())),
+        LegacyValue::Empty => Ok(encoded_constant(RuntimeType::Empty, 1, Vec::new())),
         #[cfg(all(feature = "matrix", feature = "f64"))]
-        Value::MatrixF64(value) => capture_constant(value),
+        LegacyValue::MatrixF64(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "f32"))]
-        Value::MatrixF32(value) => capture_constant(value),
+        LegacyValue::MatrixF32(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "u8"))]
-        Value::MatrixU8(value) => capture_constant(value),
+        LegacyValue::MatrixU8(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "u16"))]
-        Value::MatrixU16(value) => capture_constant(value),
+        LegacyValue::MatrixU16(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "u32"))]
-        Value::MatrixU32(value) => capture_constant(value),
+        LegacyValue::MatrixU32(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "u64"))]
-        Value::MatrixU64(value) => capture_constant(value),
+        LegacyValue::MatrixU64(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "u128"))]
-        Value::MatrixU128(value) => capture_constant(value),
+        LegacyValue::MatrixU128(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "i8"))]
-        Value::MatrixI8(value) => capture_constant(value),
+        LegacyValue::MatrixI8(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "i16"))]
-        Value::MatrixI16(value) => capture_constant(value),
+        LegacyValue::MatrixI16(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "i32"))]
-        Value::MatrixI32(value) => capture_constant(value),
+        LegacyValue::MatrixI32(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "i64"))]
-        Value::MatrixI64(value) => capture_constant(value),
+        LegacyValue::MatrixI64(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "i128"))]
-        Value::MatrixI128(value) => capture_constant(value),
+        LegacyValue::MatrixI128(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "bool"))]
-        Value::MatrixBool(value) => capture_constant(value),
+        LegacyValue::MatrixBool(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "rational"))]
-        Value::MatrixR64(value) => capture_constant(value),
+        LegacyValue::MatrixR64(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "complex"))]
-        Value::MatrixC64(value) => capture_constant(value),
+        LegacyValue::MatrixC64(value) => capture_constant(value),
         #[cfg(all(feature = "matrix", feature = "string"))]
-        Value::MatrixString(value) => capture_constant(value),
+        LegacyValue::MatrixString(value) => capture_constant(value),
         #[cfg(feature = "matrix")]
-        Value::MatrixIndex(value) => capture_constant(value),
+        LegacyValue::MatrixIndex(value) => capture_constant(value),
         #[cfg(feature = "matrix")]
-        Value::MatrixValue(_) => Err(unsupported_constant(
+        LegacyValue::MatrixValue(_) => Err(unsupported_constant(
             RuntimeType::Any,
             ValueKind::Any,
             "MatrixValue constants do not have a bytecode-v1 encoding",
         )),
         #[cfg(feature = "tuple")]
-        Value::Tuple(value) => encode_tuple_constant(&value.borrow(), context),
+        LegacyValue::Tuple(value) => encode_tuple_constant(&value.borrow(), context),
         #[cfg(feature = "record")]
-        Value::Record(value) => encode_record_constant(&value.borrow(), context),
+        LegacyValue::Record(value) => encode_record_constant(&value.borrow(), context),
         #[cfg(feature = "map")]
-        Value::Map(value) => encode_map_constant(&value.borrow(), context),
+        LegacyValue::Map(value) => encode_map_constant(&value.borrow(), context),
         #[cfg(feature = "set")]
-        Value::Set(value) => encode_set_constant(&value.borrow(), context),
+        LegacyValue::Set(value) => encode_set_constant(&value.borrow(), context),
         #[cfg(feature = "table")]
-        Value::Table(value) => encode_table_constant(&value.borrow(), context),
+        LegacyValue::Table(value) => encode_table_constant(&value.borrow(), context),
         #[cfg(feature = "atom")]
-        Value::Atom(value) => encode_atom_constant(&value.borrow()),
+        LegacyValue::Atom(value) => encode_atom_constant(&value.borrow()),
         #[cfg(feature = "enum")]
-        Value::Enum(value) => encode_enum_constant(&value.borrow(), context),
-        Value::MutableReference(value) => encode_reference_constant(value, context),
-        Value::Typed(value, kind) => encode_typed_constant(value, kind, context),
-        Value::EmptyKind(kind) => encode_empty_kind_constant(kind),
-        Value::Kind(kind) => Ok(encoded_constant(
+        LegacyValue::Enum(value) => encode_enum_constant(&value.borrow(), context),
+        LegacyValue::MutableReference(value) => encode_reference_constant(value, context),
+        LegacyValue::Typed(value, kind) => encode_typed_constant(value, kind, context),
+        LegacyValue::EmptyKind(kind) => encode_empty_kind_constant(kind),
+        LegacyValue::Kind(kind) => Ok(encoded_constant(
             RuntimeType::Kind(semantic_kind_from_value_kind(kind)?),
             1,
             Vec::new(),
         )),
-        Value::IndexAll => Err(unsupported_constant(
+        LegacyValue::IndexAll => Err(unsupported_constant(
             RuntimeType::Any,
             ValueKind::Empty,
             "IndexAll constants do not have a bytecode-v1 encoding",
@@ -1271,7 +1271,7 @@ fn encode_empty_kind_constant(kind: &ValueKind) -> MResult<EncodedConstant> {
 
 #[cfg(feature = "compiler")]
 fn encode_typed_constant(
-    value: &Value,
+    value: &LegacyValue,
     kind: &ValueKind,
     context: &mut ConstantCodecContext,
 ) -> MResult<EncodedConstant> {
@@ -1284,7 +1284,7 @@ fn encode_typed_constant(
     };
     let declared_inner_type = runtime_type_from_value_kind(inner)?;
     let declared_runtime_type = RuntimeType::Option(Box::new(declared_inner_type.clone()));
-    if matches!(value, Value::Empty) {
+    if matches!(value, LegacyValue::Empty) {
         return Ok(encoded_constant(declared_runtime_type, 1, vec![0]));
     }
     let child = context.encode_child(value)?;
@@ -1302,7 +1302,7 @@ fn encode_typed_constant(
 }
 
 #[cfg(feature = "compiler")]
-impl CompileConst for Value {
+impl CompileConst for LegacyValue {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         let mut codec = ConstantCodecContext::new();
         ctx.intern_constant(encode_constant_value(self, &mut codec)?)
@@ -1640,7 +1640,7 @@ impl MatrixConstantElement for usize {
 }
 
 #[cfg(all(feature = "matrix", feature = "compiler"))]
-impl MatrixConstantElement for Value {
+impl MatrixConstantElement for LegacyValue {
     fn runtime_type() -> Option<RuntimeType> {
         None
     }
@@ -1976,48 +1976,48 @@ where
 #[cfg(all(feature = "record", feature = "compiler"))]
 impl CompileConst for MechRecord {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        Value::Record(Ref::new(self.clone())).compile_const(ctx)
+        LegacyValue::Record(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "enum", feature = "compiler"))]
 impl CompileConst for MechEnum {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        Value::Enum(Ref::new(self.clone())).compile_const(ctx)
+        LegacyValue::Enum(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "atom", feature = "compiler"))]
 impl CompileConst for MechAtom {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        Value::Atom(Ref::new(self.clone())).compile_const(ctx)
+        LegacyValue::Atom(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "set", feature = "compiler"))]
 impl CompileConst for MechSet {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        Value::Set(Ref::new(self.clone())).compile_const(ctx)
+        LegacyValue::Set(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "tuple", feature = "compiler"))]
 impl CompileConst for MechTuple {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        Value::Tuple(Ref::new(self.clone())).compile_const(ctx)
+        LegacyValue::Tuple(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "table", feature = "compiler"))]
 impl CompileConst for MechTable {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        Value::Table(Ref::new(self.clone())).compile_const(ctx)
+        LegacyValue::Table(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
 #[cfg(all(feature = "map", feature = "compiler"))]
 impl CompileConst for MechMap {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
-        Value::Map(Ref::new(self.clone())).compile_const(ctx)
+        LegacyValue::Map(Ref::new(self.clone())).compile_const(ctx)
     }
 }

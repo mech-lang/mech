@@ -197,13 +197,22 @@ class ValueSystemInventoryGeneratorTests(unittest.TestCase):
             }
         )
         names = {(row["enum"], row["variant"]) for row in self.generate(root)["variant_uses"]}
-        self.assertTrue({("Value", "Empty"), ("ValueKind", "Any"), ("Kind", "Reference")} <= names)
+        self.assertTrue(
+            {
+                ("LegacyValue", "Empty"),
+                ("ValueKind", "Any"),
+                ("Kind", "Reference"),
+            }
+            <= names
+        )
 
     def test_same_variant_twice_on_one_line_has_distinct_columns(self):
         root = self.repository(
             {"src/core/src/live.rs": "fn live() { let _ = (Value::Empty, Value::Empty); }\n"}
         )
-        rows = self.uses(self.generate(root), "src/core/src/live.rs", "Value", "Empty")
+        rows = self.uses(
+            self.generate(root), "src/core/src/live.rs", "LegacyValue", "Empty"
+        )
         self.assertEqual(len(rows), 2)
         self.assertEqual(len({row["column"] for row in rows}), 2)
 
@@ -217,7 +226,10 @@ class ValueSystemInventoryGeneratorTests(unittest.TestCase):
             }
         )
         rows = self.uses(self.generate(root), "src/core/src/live.rs")
-        self.assertEqual({(row["enum"], row["variant"]) for row in rows}, {("Value", "Empty"), ("Kind", "Reference")})
+        self.assertEqual(
+            {(row["enum"], row["variant"]) for row in rows},
+            {("LegacyValue", "Empty"), ("Kind", "Reference")},
+        )
 
     def qualification(self, statement):
         source = statement + "\nfn live() {}\n"
@@ -269,7 +281,7 @@ class ValueSystemInventoryGeneratorTests(unittest.TestCase):
         )
         self.assertEqual(
             [row["enum"] for row in violations if row["kind"] == "type-alias"],
-            ["Value", "Value"],
+            ["LegacyValue", "LegacyValue"],
         )
 
     def test_container_type_alias_passes(self):

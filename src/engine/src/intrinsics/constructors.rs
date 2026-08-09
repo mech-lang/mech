@@ -2,9 +2,9 @@
 use crate::intrinsics::*;
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
-fn detach_comprehension_value(value: &Value) -> Value {
+fn detach_comprehension_value(value: &LegacyValue) -> LegacyValue {
     match value {
-        Value::MutableReference(reference) => reference.borrow().clone(),
+        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
         _ => value.clone(),
     }
 }
@@ -24,8 +24,8 @@ impl MechFunctionImpl for ValueSet {
         Ok(())
     }
 
-    fn out(&self) -> Value {
-        Value::Set(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Set(self.out.clone())
     }
 
     fn reactive_dependency_scopes(
@@ -39,7 +39,7 @@ impl MechFunctionImpl for ValueSet {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -100,7 +100,7 @@ impl MechErrorKind for SetComprehensionOutputKindMismatchError {
 #[cfg(feature = "set_comprehensions")]
 #[derive(Debug)]
 pub struct ValueSetComprehension {
-    pub arguments: Vec<Value>,
+    pub arguments: Vec<LegacyValue>,
     pub out: Ref<MechSet>,
 }
 
@@ -111,20 +111,20 @@ impl MechFunctionImpl for ValueSetComprehension {
             .arguments
             .iter()
             .map(detach_comprehension_value)
-            .collect::<Vec<Value>>();
+            .collect::<Vec<LegacyValue>>();
         *self.out.borrow_mut() = MechSet::from_vec(args);
         Ok(())
     }
 
-    fn out(&self) -> Value {
-        Value::Set(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Set(self.out.clone())
     }
 
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -138,7 +138,7 @@ impl MechFunctionFactory for ValueSetComprehension {
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Variadic(Value::Set(out), arguments) => {
+            FunctionArgs::Variadic(LegacyValue::Set(out), arguments) => {
                 Ok(Box::new(ValueSetComprehension { arguments, out }))
             }
             FunctionArgs::Variadic(out, _) => Err(MechError::new(
@@ -161,7 +161,7 @@ impl MechFunctionFactory for ValueSetComprehension {
 #[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
 impl MechFunctionCompiler for ValueSetComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let output = Value::Set(self.out.clone());
+        let output = LegacyValue::Set(self.out.clone());
         let destination = compile_value_register(&output, self.out.addr(), ctx)?;
         let arguments = self
             .arguments
@@ -181,8 +181,8 @@ impl MechFunctionCompiler for ValueSetComprehension {
 #[cfg(feature = "matrix_comprehensions")]
 #[derive(Debug)]
 pub struct ValueMatrixComprehension {
-    pub arguments: Vec<Value>,
-    pub out: Ref<Value>,
+    pub arguments: Vec<LegacyValue>,
+    pub out: Ref<LegacyValue>,
 }
 
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
@@ -192,9 +192,9 @@ impl MechFunctionImpl for ValueMatrixComprehension {
             .arguments
             .iter()
             .map(detach_comprehension_value)
-            .collect::<Vec<Value>>();
+            .collect::<Vec<LegacyValue>>();
         let out = if args.is_empty() {
-            Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
+            LegacyValue::MatrixValue(Matrix::from_vec(vec![], 0, 0))
         } else {
             let fxn = crate::intrinsics::horzcat::impl_horzcat_fxn(&args)?;
             fxn.solve_result()?;
@@ -204,12 +204,12 @@ impl MechFunctionImpl for ValueMatrixComprehension {
         Ok(())
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.borrow().clone()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(vec![Value::MutableReference(self.out.clone())])
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(vec![LegacyValue::MutableReference(self.out.clone())])
     }
 
     fn to_string(&self) -> String {

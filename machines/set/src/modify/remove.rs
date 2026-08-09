@@ -8,7 +8,7 @@ use mech_core::set::MechSet;
 #[derive(Debug)]
 pub(crate) struct SetRemoveFxn {
     arg1: Ref<MechSet>,
-    arg2: Value,
+    arg2: LegacyValue,
     out: Ref<MechSet>,
 }
 impl MechFunctionFactory for SetRemoveFxn {
@@ -61,14 +61,14 @@ impl MechFunctionImpl for SetRemoveFxn {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Set(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Set(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -88,9 +88,9 @@ impl MechFunctionCompiler for SetRemoveFxn {
 }
 
 #[cfg(feature = "source")]
-fn set_remove_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
+fn set_remove_fxn(arg1: LegacyValue, arg2: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (arg1, arg2) {
-        (Value::Set(arg1), arg2) => Ok(Box::new(SetRemoveFxn {
+        (LegacyValue::Set(arg1), arg2) => Ok(Box::new(SetRemoveFxn {
             arg1: arg1.clone(),
             arg2: normalize_set_element(arg2),
             out: Ref::new(MechSet::new(
@@ -113,7 +113,7 @@ fn set_remove_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
 pub struct SetRemove {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for SetRemove {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -129,13 +129,13 @@ impl FunctionSpecializer for SetRemove {
         match set_remove_fxn(arg1.clone(), arg2.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (arg1, arg2) {
-                (Value::MutableReference(arg1), Value::MutableReference(arg2)) => {
+                (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2)) => {
                     set_remove_fxn(arg1.borrow().clone(), arg2.borrow().clone())
                 }
-                (arg1, Value::MutableReference(arg2)) => {
+                (arg1, LegacyValue::MutableReference(arg2)) => {
                     set_remove_fxn(arg1.clone(), arg2.borrow().clone())
                 }
-                (Value::MutableReference(arg1), arg2) => {
+                (LegacyValue::MutableReference(arg1), arg2) => {
                     set_remove_fxn(arg1.borrow().clone(), arg2.clone())
                 }
                 x => Err(MechError::new(

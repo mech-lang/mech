@@ -8,7 +8,7 @@ use mech_browser::{
     BrowserDomProperty, BrowserDomScope, BrowserOperation, BrowserResource,
 };
 use mech_browser::{BrowserDomBackend, BrowserResourceProvider};
-use mech_core::Value;
+use mech_core::LegacyValue;
 use mech_runtime::{
     MechRuntime, ResourcePathCapability, RuntimeBuilder, RuntimeCapabilityOperation,
     RuntimeValueSnapshot,
@@ -275,7 +275,11 @@ fn runtime_writes_configured_browser_dom_path() {
     );
     grant_runtime_context_write(&mut runtime, "body/title");
     runtime
-        .write_bound_resource("browser", "body/title", &Value::from("Hello".to_string()))
+        .write_bound_resource(
+            "browser",
+            "body/title",
+            &LegacyValue::from("Hello".to_string()),
+        )
         .unwrap();
 }
 
@@ -304,7 +308,11 @@ fn runtime_denies_browser_dom_write_without_write_grant() {
     );
     assert!(
         runtime
-            .write_bound_resource("browser", "body/title", &Value::from("Hello".to_string()))
+            .write_bound_resource(
+                "browser",
+                "body/title",
+                &LegacyValue::from("Hello".to_string())
+            )
             .is_err()
     );
 }
@@ -636,7 +644,11 @@ fn runtime_scopes_dom_operations_to_manifest_entry_path() {
     assert!(runtime.read_bound_resource("browser", "panel/text").is_ok());
     assert!(
         runtime
-            .write_bound_resource("browser", "panel/text", &Value::from("blocked".to_string()))
+            .write_bound_resource(
+                "browser",
+                "panel/text",
+                &LegacyValue::from("blocked".to_string())
+            )
             .is_err()
     );
     assert!(
@@ -644,7 +656,7 @@ fn runtime_scopes_dom_operations_to_manifest_entry_path() {
             .write_bound_resource(
                 "browser",
                 "panel/value",
-                &Value::from("writable".to_string())
+                &LegacyValue::from("writable".to_string())
             )
             .is_ok()
     );

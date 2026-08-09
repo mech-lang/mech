@@ -49,7 +49,7 @@ impl_math_unop!(MathSqrt, f32, sqrtf);
 impl_math_unop!(MathSqrt, f64, sqrt);
 
 #[cfg(feature = "source")]
-fn impl_sqrt_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_sqrt_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathSqrt,
       (lhs_value),
@@ -63,7 +63,7 @@ pub struct MathSqrt {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathSqrt {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -78,7 +78,7 @@ impl FunctionSpecializer for MathSqrt {
         match impl_sqrt_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (input) {
-                (Value::MutableReference(input)) => impl_sqrt_fxn(input.borrow().clone()),
+                (LegacyValue::MutableReference(input)) => impl_sqrt_fxn(input.borrow().clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),

@@ -282,14 +282,14 @@ macro_rules! impl_binop {
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -347,14 +347,14 @@ macro_rules! impl_unop {
                 $op!(arg_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -2531,245 +2531,245 @@ macro_rules! impl_binop_match_arms {
           $(
             // Scalar Scalar
             #[cfg(all(feature = $value_string))]
-            (Value::$lhs_type(lhs), Value::$lhs_type(rhs)) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib SS>]{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
             },
             // Scalar Matrix
             #[cfg(all(feature = $value_string, feature = "matrix1"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix1(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix1(rhs))) => {
               Ok(Box::new([<$lib SM1>]{lhs, rhs, out: Ref::new(Matrix1::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => {
               Ok(Box::new([<$lib SM2>]{lhs, rhs, out: Ref::new(Matrix2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => {
               Ok(Box::new([<$lib SM3>]{lhs, rhs, out: Ref::new(Matrix3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => {
               Ok(Box::new([<$lib SM4>]{lhs, rhs, out: Ref::new(Matrix4::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => {
               Ok(Box::new([<$lib SM2x3>]{lhs, rhs, out: Ref::new(Matrix2x3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => {
               Ok(Box::new([<$lib SM3x2>]{lhs, rhs, out: Ref::new(Matrix3x2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::DMatrix(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::DMatrix(rhs))) => {
               let (rows,cols) = {rhs.borrow().shape()};
               Ok(Box::new([<$lib SMD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
             },
             // Scalar Row
             #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => {
               Ok(Box::new([<$lib SR2>]{lhs, rhs, out: Ref::new(RowVector2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => {
               Ok(Box::new([<$lib SR3>]{lhs, rhs, out: Ref::new(RowVector3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::RowVector4(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector4(rhs))) => {
               Ok(Box::new([<$lib SR4>]{lhs, rhs, out: Ref::new(RowVector4::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::RowDVector(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::RowDVector(rhs))) => {
               Ok(Box::new([<$lib SRD>]{lhs, rhs: rhs.clone(), out: Ref::new(RowDVector::from_element(rhs.borrow().len(),$target_type::default()))}))
             },
             // Scalar Vector
             #[cfg(all(feature = $value_string, feature = "vector2"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => {
               Ok(Box::new([<$lib SV2>]{lhs, rhs, out: Ref::new(Vector2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "vector3"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => {
               Ok(Box::new([<$lib SV3>]{lhs, rhs, out: Ref::new(Vector3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "vector4"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Vector4(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::Vector4(rhs))) => {
               Ok(Box::new([<$lib SV4>]{lhs, rhs, out: Ref::new(Vector4::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "vectord"))]
-            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::DVector(rhs))) => {
+            (LegacyValue::$lhs_type(lhs), LegacyValue::[<Matrix $lhs_type>](Matrix::DVector(rhs))) => {
               Ok(Box::new([<$lib SVD>]{lhs, rhs: rhs.clone(), out: Ref::new(DVector::from_element(rhs.borrow().len(),$target_type::default()))}))
             },
             // Matrix Scalar
             #[cfg(all(feature = $value_string, feature = "matrix1"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix1(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix1(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib M1S>]{lhs, rhs, out: Ref::new(Matrix1::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib M2S>]{lhs, rhs, out: Ref::new(Matrix2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib M3S>]{lhs, rhs, out: Ref::new(Matrix3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib M4S>]{lhs, rhs, out: Ref::new(Matrix4::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib M2x3S>]{lhs, rhs, out: Ref::new(Matrix2x3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib M3x2S>]{lhs, rhs, out: Ref::new(Matrix3x2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::[<Matrix $lhs_type>](Matrix::DMatrix(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::DMatrix(lhs)),LegacyValue::$lhs_type(rhs)) => {
               let (rows,cols) = {lhs.borrow().shape()};
               Ok(Box::new([<$lib MDS>]{lhs: lhs.clone(), rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
             },
             // Row Scalar
             #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib R2S>]{lhs, rhs, out: Ref::new(RowVector2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib R3S>]{lhs, rhs, out: Ref::new(RowVector3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector4(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector4(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib R4S>]{lhs, rhs, out: Ref::new(RowVector4::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowDVector(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowDVector(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib RDS>]{lhs: lhs.clone(), rhs, out: Ref::new(RowDVector::from_element(lhs.borrow().len(),$target_type::default()))}))
             },
             // Vector Scalar
             #[cfg(all(feature = $value_string, feature = "vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector2(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector2(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib V2S>]{lhs, rhs, out: Ref::new(Vector2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector3(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector3(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib V3S>]{lhs, rhs, out: Ref::new(Vector3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "vector4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector4(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector4(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib V4S>]{lhs, rhs, out: Ref::new(Vector4::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "vectord"))]
-            (Value::[<Matrix $lhs_type>](Matrix::DVector(lhs)),Value::$lhs_type(rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::DVector(lhs)),LegacyValue::$lhs_type(rhs)) => {
               Ok(Box::new([<$lib VDS>]{lhs: lhs.clone(), rhs, out: Ref::new(DVector::from_element(lhs.borrow().len(),$target_type::default()))}))
             },
             // Matrix Matrix
             #[cfg(all(feature = $value_string, feature = "matrix1"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix1(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix1(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix1(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix1(rhs))) => {
               Ok(Box::new([<$lib M1M1>]{lhs, rhs, out: Ref::new(Matrix1::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => {
               Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: Ref::new(Matrix2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => {
               Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: Ref::new(Matrix3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => {
               Ok(Box::new([<$lib M4M4>]{lhs, rhs, out: Ref::new(Matrix4::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => {
               Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: Ref::new(Matrix2x3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => {
               Ok(Box::new([<$lib M3x2M3x2>]{lhs, rhs, out: Ref::new(Matrix3x2::from_element($target_type::default()))}))
             },
               #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::[<Matrix $lhs_type>](Matrix::DMatrix(lhs)), Value::[<Matrix $lhs_type>](Matrix::DMatrix(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::DMatrix(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::DMatrix(rhs))) => {
               let (rows,cols) = {lhs.borrow().shape()};
               Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
             },
             // Row Row
             #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => {
               Ok(Box::new([<$lib R2R2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(RowVector2::from_element($target_type::default())) }))
             },
             #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => {
               Ok(Box::new([<$lib R3R3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(RowVector3::from_element($target_type::default())) }))
             },
             #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector4(lhs)), Value::[<Matrix $lhs_type>](Matrix::RowVector4(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector4(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector4(rhs))) => {
               Ok(Box::new([<$lib R4R4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(RowVector4::from_element($target_type::default())) }))
             },
             #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowDVector(lhs)), Value::[<Matrix $lhs_type>](Matrix::RowDVector(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowDVector(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::RowDVector(rhs))) => {
               Ok(Box::new([<$lib RDRD>]{lhs: lhs.clone(), rhs, out: Ref::new(RowDVector::from_element(lhs.borrow().len(),$target_type::default())) }))
             },
             // Vector Vector
             #[cfg(all(feature = $value_string, feature = "vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector2(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => {
               Ok(Box::new([<$lib V2V2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Vector2::from_element($target_type::default())) }))
             },
             #[cfg(all(feature = $value_string, feature = "vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector3(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => {
               Ok(Box::new([<$lib V3V3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Vector3::from_element($target_type::default())) }))
             },
             #[cfg(all(feature = $value_string, feature = "vector4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector4(lhs)), Value::[<Matrix $lhs_type>](Matrix::Vector4(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector4(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Vector4(rhs))) => {
               Ok(Box::new([<$lib V4V4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Vector4::from_element($target_type::default())) }))
             },
             #[cfg(all(feature = $value_string, feature = "vectord"))]
-            (Value::[<Matrix $lhs_type>](Matrix::DVector(lhs)), Value::[<Matrix $lhs_type>](Matrix::DVector(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::DVector(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::DVector(rhs))) => {
               Ok(Box::new([<$lib VDVD>]{lhs: lhs.clone(), rhs, out: Ref::new(DVector::from_element(lhs.borrow().len(),$target_type::default())) }))
             },
             // Matrix Vector
             #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)),Value::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)),LegacyValue::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => {
               Ok(Box::new([<$lib M2V2>]{lhs, rhs, out: Ref::new(Matrix2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3", feature = "vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)),Value::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)),LegacyValue::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => {
               Ok(Box::new([<$lib M3V3>]{lhs, rhs, out: Ref::new(Matrix3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)),Value::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)),LegacyValue::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => {
               Ok(Box::new([<$lib M2x3V2>]{lhs, rhs, out: Ref::new(Matrix2x3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)),Value::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)),LegacyValue::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => {
               Ok(Box::new([<$lib M3x2V3>]{lhs, rhs, out: Ref::new(Matrix3x2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix4", feature = "vector4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)),Value::[<Matrix $lhs_type>](Matrix::Vector4(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)),LegacyValue::[<Matrix $lhs_type>](Matrix::Vector4(rhs))) => {
               Ok(Box::new([<$lib M4V4>]{lhs, rhs, out: Ref::new(Matrix4::from_element($target_type::default()))}))
             },
             // Vector Matrix
             #[cfg(all(feature = $value_string, feature = "matrix2", feature = "row_vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)),Value::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)),LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => {
               Ok(Box::new([<$lib M2R2>]{lhs, rhs, out: Ref::new(Matrix2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3", feature = "row_vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)),Value::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)),LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => {
               Ok(Box::new([<$lib M3R3>]{lhs, rhs, out: Ref::new(Matrix3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "row_vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)),Value::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)),LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => {
               Ok(Box::new([<$lib M2x3R3>]{lhs, rhs, out: Ref::new(Matrix2x3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "row_vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)),Value::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)),LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => {
               Ok(Box::new([<$lib M3x2R2>]{lhs, rhs, out: Ref::new(Matrix3x2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix4", feature = "row_vector4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)),Value::[<Matrix $lhs_type>](Matrix::RowVector4(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)),LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector4(rhs))) => {
               Ok(Box::new([<$lib M4R4>]{lhs, rhs, out: Ref::new(Matrix4::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::[<Matrix $lhs_type>](Matrix::DMatrix(lhs)),Value::[<Matrix $lhs_type>](rhs)) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::DMatrix(lhs)),LegacyValue::[<Matrix $lhs_type>](rhs)) => {
               let (rows,cols) = {lhs.borrow().shape()};
               let rhs_shape = rhs.shape();
               match (rows,cols,rhs_shape[0],rhs_shape[1]) {
@@ -2832,48 +2832,48 @@ macro_rules! impl_binop_match_arms {
             },
             // Vector Matrix
             #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector2(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => {
               Ok(Box::new([<$lib V2M2>]{lhs, rhs, out: Ref::new(Matrix2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3", feature = "vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector3(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => {
               Ok(Box::new([<$lib V3M3>]{lhs, rhs, out: Ref::new(Matrix3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector2(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => {
               Ok(Box::new([<$lib V2M2x3>]{lhs, rhs, out: Ref::new(Matrix2x3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector3(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => {
               Ok(Box::new([<$lib V3M3x2>]{lhs, rhs, out: Ref::new(Matrix3x2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrix4", feature = "vector4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector4(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector4(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => {
               Ok(Box::new([<$lib V4M4>]{lhs, rhs, out: Ref::new(Matrix4::from_element($target_type::default()))}))
             },
             // Row Matrix
             #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => {
               Ok(Box::new([<$lib R2M2>]{lhs, rhs, out: Ref::new(Matrix2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => {
               Ok(Box::new([<$lib R3M3>]{lhs, rhs, out: Ref::new(Matrix3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix2x3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => {
               Ok(Box::new([<$lib R3M2x3>]{lhs, rhs, out: Ref::new(Matrix2x3::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix3x2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => {
               Ok(Box::new([<$lib R2M3x2>]{lhs, rhs, out: Ref::new(Matrix3x2::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector4(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector4(lhs)), LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => {
               Ok(Box::new([<$lib R4M4>]{lhs, rhs, out: Ref::new(Matrix4::from_element($target_type::default()))}))
             },
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::[<Matrix $lhs_type>](lhs),Value::[<Matrix $lhs_type>](Matrix::DMatrix(rhs))) => {
+            (LegacyValue::[<Matrix $lhs_type>](lhs),LegacyValue::[<Matrix $lhs_type>](Matrix::DMatrix(rhs))) => {
               let (rows,cols) = {rhs.borrow().shape()};
               let lhs_shape = lhs.shape();
               match (lhs_shape[0],lhs_shape[1],rows,cols) {
@@ -2953,37 +2953,37 @@ macro_rules! impl_urnop_match_arms {
         $(
           $(
             #[cfg(feature = $value_string)]
-            (Value::$lhs_type(arg)) => Ok(Box::new([<$lib S>]{arg: arg.clone(), out: Ref::new($target_type::default()), _marker: PhantomData::default() })),
+            (LegacyValue::$lhs_type(arg)) => Ok(Box::new([<$lib S>]{arg: arg.clone(), out: Ref::new($target_type::default()), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "matrix1"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix1(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix1::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix1(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix1::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix2(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix2::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix2::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix3(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix3::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix3::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix4(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix4::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix4(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix4::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix2x3::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix2x3(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix2x3::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix3x2::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix3x2(arg))) => Ok(Box::new([<$lib V>]{arg, out: Ref::new(Matrix3x2::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector2(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(RowVector2::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector2(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(RowVector2::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector3(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(RowVector3::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector3(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(RowVector3::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowVector4(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(RowVector4::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowVector4(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(RowVector4::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-            (Value::[<Matrix $lhs_type>](Matrix::RowDVector(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(RowDVector::from_element(arg.borrow().len(),$target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::RowDVector(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(RowDVector::from_element(arg.borrow().len(),$target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "vector2"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector2(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(Vector2::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector2(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(Vector2::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "vector3"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector3(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(Vector3::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector3(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(Vector3::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "vector4"))]
-            (Value::[<Matrix $lhs_type>](Matrix::Vector4(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(Vector4::from_element($target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::Vector4(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(Vector4::from_element($target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "vectord"))]
-            (Value::[<Matrix $lhs_type>](Matrix::DVector(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().len(),$target_type::default())), _marker: PhantomData::default() })),
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::DVector(arg))) => Ok(Box::new([<$lib V>]{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().len(),$target_type::default())), _marker: PhantomData::default() })),
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::[<Matrix $lhs_type>](Matrix::DMatrix(arg))) => {
+            (LegacyValue::[<Matrix $lhs_type>](Matrix::DMatrix(arg))) => {
               let (rows,cols) = {arg.borrow().shape()};
               Ok(Box::new([<$lib V>]{arg, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default())), _marker: PhantomData::default() }))},
           )+
@@ -3002,7 +3002,7 @@ macro_rules! impl_mech_binop_fxn {
     ($fxn_name:ident, $gen_fxn:tt, $fxn_string:tt) => {
         pub struct $fxn_name {}
         impl FunctionSpecializer for $fxn_name {
-            fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
                 if arguments.len() != 2 {
                     return Err(MechError::new(
                         IncorrectNumberOfArguments {
@@ -3018,13 +3018,14 @@ macro_rules! impl_mech_binop_fxn {
                 match $gen_fxn(lhs_value.clone(), rhs_value.clone()) {
                     Ok(fxn) => Ok(fxn),
                     Err(_) => match (lhs_value, rhs_value) {
-                        (Value::MutableReference(lhs), Value::MutableReference(rhs)) => {
-                            $gen_fxn(lhs.borrow().clone(), rhs.borrow().clone())
-                        }
-                        (lhs_value, Value::MutableReference(rhs)) => {
+                        (
+                            LegacyValue::MutableReference(lhs),
+                            LegacyValue::MutableReference(rhs),
+                        ) => $gen_fxn(lhs.borrow().clone(), rhs.borrow().clone()),
+                        (lhs_value, LegacyValue::MutableReference(rhs)) => {
                             $gen_fxn(lhs_value.clone(), rhs.borrow().clone())
                         }
-                        (Value::MutableReference(lhs), rhs_value) => {
+                        (LegacyValue::MutableReference(lhs), rhs_value) => {
                             $gen_fxn(lhs.borrow().clone(), rhs_value.clone())
                         }
                         (lhs, rhs) => {
@@ -3059,7 +3060,7 @@ macro_rules! impl_mech_urnop_fxn {
     ($fxn_name:ident, $gen_fxn:tt, $fxn_string:tt) => {
         pub struct $fxn_name {}
         impl FunctionSpecializer for $fxn_name {
-            fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
                 if arguments.len() != 1 {
                     return Err(MechError::new(
                         IncorrectNumberOfArguments {
@@ -3074,7 +3075,7 @@ macro_rules! impl_mech_urnop_fxn {
                 match $gen_fxn(input.clone()) {
                     Ok(fxn) => Ok(fxn),
                     Err(_) => match (input) {
-                        (Value::MutableReference(input)) => $gen_fxn(input.borrow().clone()),
+                        (LegacyValue::MutableReference(input)) => $gen_fxn(input.borrow().clone()),
                         x => Err(MechError::new(
                             UnhandledFunctionArgumentKind1 {
                                 arg: x.kind(),
@@ -3208,7 +3209,7 @@ macro_rules! impl_assign_scalar_arms {
       match $arg {
         // Scalar source
         #[cfg(all(feature = $value_string))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         (sink, ixes, source) => Err(MechError::new(
@@ -3226,7 +3227,7 @@ macro_rules! impl_assign_all_arms {
     paste! {
       match $arg {
         #[cfg(feature = $value_string)]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         (sink, ixes, source) => Err(MechError::new(
@@ -3244,11 +3245,11 @@ macro_rules! impl_assign_scalar_scalar_arms {
     paste! {
       match $arg {
         #[cfg(feature = $value_string)]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", not(feature = "matrix1")))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::DMatrix(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::DMatrix(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name MD>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         (sink, ixes, source) => Err(MechError::new(
@@ -3267,84 +3268,84 @@ macro_rules! impl_set_range_arms {
       match $arg {
         // Scalar source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Matrix1(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Matrix1(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Vector2(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Vector2(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Vector3(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Vector3(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Vector4(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         // Vector source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -3362,12 +3363,12 @@ macro_rules! impl_assign_all_arms_b {
     paste! {
       match $arg {
         #[cfg(all(feature = $value_string, feature = "bool"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Bool(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Bool(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         // Vector source, must have equal size to output
         #[cfg(all(feature = $value_string, feature = "bool"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Bool(ix)], Value::[<Matrix $value_kind:camel>](Matrix::$shape(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Bool(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         (sink, ixes, source) => Err(MechError::new(
@@ -3385,83 +3386,83 @@ macro_rules! impl_set_range_all_arms {
     paste! {
       match $arg {
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Matrix1(ix)),Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Matrix1(ix)),LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Vector2(ix)),Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Vector2(ix)),LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Vector3(ix)),Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Vector3(ix)),LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Vector4(ix)),Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Vector4(ix)),LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::DVector(ix)),LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix)),Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix)),LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -3479,87 +3480,87 @@ macro_rules! impl_assign_range_scalar_arms {
     paste! {
       match $arg {
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Vector2(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Vector3(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::Vector4(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::DMatrix(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::DMatrix(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -3577,87 +3578,87 @@ macro_rules! impl_assign_scalar_range_arms {
     paste! {
       match $arg {
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", not(feature = "matrix1")))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::MatrixIndex(Matrix::DMatrix(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DMatrix(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) if ix2.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) if ix2.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) if ix2.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) if ix2.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix2.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix2.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if ix2.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if ix2.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix2.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix2.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         (sink, ixes, source) => Err(MechError::new(
@@ -3724,428 +3725,428 @@ macro_rules! impl_assign_range_range_arms {
       match $arg {
         // Scalar source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         // Vector source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector2", feature = "matrix2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Matrix1(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Matrix1(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "matrix1", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "matrix1", feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector3", feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector3", feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector3", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector3", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector4", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector4", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector4", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vectord", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vectord", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vectord", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector2(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector2(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "matrix1", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "matrix1", feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector2", feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector2", feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector2", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector2", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vectord", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector4", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector4", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector4", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vectord", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vectord", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vectord", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector3(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "matrix1", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "matrix1", feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "matrix1", feature = "matrix2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector2", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector2", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector2", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector3", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector3", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector3", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector4(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::Vector4(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "matrix1", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "matrix1", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "matrix1", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector2", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector2", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector2", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector3", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector3", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector3", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector4", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector4", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector4", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           check_index_lengths(&ix1, &ix2, &source)?;
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
@@ -4164,83 +4165,83 @@ macro_rules! impl_assign_all_range_arms {
     paste! {
       match $arg {
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::IndexAll, Value::MatrixIndex(Matrix::Matrix1(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Matrix1(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::IndexAll, Value::MatrixIndex(Matrix::Vector2(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector2(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::IndexAll, Value::MatrixIndex(Matrix::Vector3(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector3(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::IndexAll, Value::MatrixIndex(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector4(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::Matrix1(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Matrix1(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::Vector2(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector2(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::Vector3(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector3(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::Vector2(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector2(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::Vector3(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector3(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::MatrixIndex(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -4258,116 +4259,116 @@ macro_rules! impl_assign_all_scalar_arms {
     paste! {
       match $arg {
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)),[LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         // Vector source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "matrix2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if sink.borrow().nrows() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if sink.borrow().nrows() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if sink.borrow().nrows() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::IndexAll, LegacyValue::Index(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if sink.borrow().nrows() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -4385,116 +4386,116 @@ macro_rules! impl_assign_scalar_all_arms {
     paste! {
       match $arg {
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)),[Value::Index(ix), Value::IndexAll], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)),[LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         // Vector source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "matrix2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if sink.borrow().ncols() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if sink.borrow().ncols() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::Index(ix), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if sink.borrow().ncols() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::Index(ix), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if sink.borrow().ncols() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -4513,124 +4514,124 @@ macro_rules! impl_set_all_range_arms_b {
       match $arg {
         // Scalar source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::Matrix1(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Matrix1(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::Vector2(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector2(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::Vector3(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector3(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) if sink.borrow().len() == ix.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) if sink.borrow().len() == ix.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::Vector2(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector2(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::Vector3(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector3(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)),[Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) if sink.borrow().len() == ix.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)),[LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) if sink.borrow().len() == ix.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         // Vector source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Matrix1(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Matrix1(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector2(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector2(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector3(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector3(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector3(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector3(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector2(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector2(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == source.borrow().ncols() && sink.borrow().nrows() == source.borrow().nrows() && ix.borrow().len() == source.borrow().ncols() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == source.borrow().ncols() && sink.borrow().nrows() == source.borrow().nrows() && ix.borrow().len() == source.borrow().ncols() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if sink.borrow().len() == source.borrow().len() && sink.borrow().len() == ix.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if sink.borrow().len() == source.borrow().len() && sink.borrow().len() == ix.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if sink.borrow().len() == source.borrow().len() && sink.borrow().len() == ix.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if sink.borrow().len() == source.borrow().len() && sink.borrow().len() == ix.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector2(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector2(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector3(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector3(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector2(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector2(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector3(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector3(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), [Value::IndexAll, Value::MatrixBool(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -4649,100 +4650,100 @@ macro_rules! impl_set_range_all_arms_b {
       match $arg {
         // Scalar source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)),[Value::MatrixBool(Matrix::Matrix1(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)),[LegacyValue::MatrixBool(Matrix::Matrix1(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[Value::MatrixBool(Matrix::Vector2(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[LegacyValue::MatrixBool(Matrix::Vector2(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)),[Value::MatrixBool(Matrix::Vector3(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)),[LegacyValue::MatrixBool(Matrix::Vector3(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)),[Value::MatrixBool(Matrix::Vector4(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)),[LegacyValue::MatrixBool(Matrix::Vector4(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)),[Value::MatrixBool(Matrix::Vector2(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)),[LegacyValue::MatrixBool(Matrix::Vector2(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)),[Value::MatrixBool(Matrix::Vector3(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)),[LegacyValue::MatrixBool(Matrix::Vector3(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)),[Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)),[LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)),[Value::MatrixBool(Matrix::Vector2(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)),[LegacyValue::MatrixBool(Matrix::Vector2(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)),[Value::MatrixBool(Matrix::Vector3(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)),[LegacyValue::MatrixBool(Matrix::Vector3(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)),[Value::MatrixBool(Matrix::Vector4(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)),[LegacyValue::MatrixBool(Matrix::Vector4(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)),[Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if sink.borrow().len() == ix.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)),[LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if sink.borrow().len() == ix.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)),[Value::MatrixBool(Matrix::Vector2(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)),[LegacyValue::MatrixBool(Matrix::Vector2(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)),[Value::MatrixBool(Matrix::Vector3(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)),[LegacyValue::MatrixBool(Matrix::Vector3(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)),[Value::MatrixBool(Matrix::Vector4(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)),[LegacyValue::MatrixBool(Matrix::Vector4(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)),[Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll], Value::[<$value_kind:camel>](source)) if sink.borrow().len() == ix.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)),[LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll], LegacyValue::[<$value_kind:camel>](source)) if sink.borrow().len() == ix.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         // Vector source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [Value::MatrixBool(Matrix::Matrix1(ix)), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix)), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::MatrixBool(Matrix::Vector2(ix)), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix)), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [Value::MatrixBool(Matrix::Vector3(ix)), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix)), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [Value::MatrixBool(Matrix::Vector4(ix)), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix)), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [Value::MatrixBool(Matrix::Vector2(ix)), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix)), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [Value::MatrixBool(Matrix::Vector3(ix)), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) if ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix)), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) if ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == source.borrow().ncols() && sink.borrow().nrows() == source.borrow().nrows() && ix.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == source.borrow().ncols() && sink.borrow().nrows() == source.borrow().nrows() && ix.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if sink.borrow().len() == source.borrow().len() && sink.borrow().len() == ix.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if sink.borrow().len() == source.borrow().len() && sink.borrow().len() == ix.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if sink.borrow().len() == source.borrow().len() && sink.borrow().len() == ix.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix)), LegacyValue::IndexAll], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if sink.borrow().len() == source.borrow().len() && sink.borrow().len() == ix.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -4761,124 +4762,124 @@ macro_rules! impl_set_range_arms_b {
       match $arg {
         // Scalar source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)),[Value::MatrixBool(Matrix::Matrix1(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)),[LegacyValue::MatrixBool(Matrix::Matrix1(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[Value::MatrixBool(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)),[LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)),[LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)),[LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)),[LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)),[LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)),[Value::MatrixBool(Matrix::Vector2(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)),[LegacyValue::MatrixBool(Matrix::Vector2(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)),[Value::MatrixBool(Matrix::Vector3(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)),[LegacyValue::MatrixBool(Matrix::Vector3(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)),[Value::MatrixBool(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)),[LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)),[LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)),[Value::MatrixBool(Matrix::Vector2(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)),[LegacyValue::MatrixBool(Matrix::Vector2(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)),[Value::MatrixBool(Matrix::Vector3(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)),[LegacyValue::MatrixBool(Matrix::Vector3(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)),[Value::MatrixBool(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)),[LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)),[LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         // Vector source, must have equal size to output
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [Value::MatrixBool(Matrix::Matrix1(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::MatrixBool(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [Value::MatrixBool(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [Value::MatrixBool(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [Value::MatrixBool(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [Value::MatrixBool(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [Value::MatrixBool(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [Value::MatrixBool(Matrix::DVector(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), [Value::MatrixBool(Matrix::Vector2(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), [Value::MatrixBool(Matrix::Vector3(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), [Value::MatrixBool(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), [Value::MatrixBool(Matrix::Vector2(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), [Value::MatrixBool(Matrix::Vector3(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), [Value::MatrixBool(Matrix::Vector4(ix))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -4896,12 +4897,12 @@ macro_rules! impl_assign_scalar_arms_b {
     paste! {
       match $arg {
         #[cfg(all(feature = $value_string, feature = "bool"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Bool(ix)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Bool(ix)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))
         },
         // Vector source, must have equal size to output
         #[cfg(all(feature = $value_string, feature = "bool"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Bool(ix)], Value::[<Matrix $value_kind:camel>](Matrix::$shape(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Bool(ix)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -4919,83 +4920,83 @@ macro_rules! impl_assign_range_scalar_arms_b {
     paste! {
       match $arg {
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixBool(Matrix::Matrix1(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixBool(Matrix::Vector2(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixBool(Matrix::Vector2(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixBool(Matrix::Vector3(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixBool(Matrix::Vector3(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixBool(Matrix::Vector4(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixBool(Matrix::Vector4(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix1.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::Index(ix2)], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix1.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(),ix2.clone()), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -5013,83 +5014,83 @@ macro_rules! impl_assign_scalar_range_arms_b {
     paste! {
       match $arg {
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Vector3(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) if ix2.borrow().len() == sink.borrow().ncols() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<$value_kind:camel>](source)) if ix2.borrow().len() == sink.borrow().ncols() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) if ix2.borrow().len() == source.borrow().len() && ix2.borrow().len() == sink.borrow().ncols() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) if ix2.borrow().len() == source.borrow().len() && ix2.borrow().len() == sink.borrow().ncols() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) if ix2.borrow().len() == source.borrow().len() && ix2.borrow().len() == sink.borrow().ncols() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) if ix2.borrow().len() == source.borrow().len() && ix2.borrow().len() == sink.borrow().ncols() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) if ix2.borrow().len() == source.borrow().len() && ix2.borrow().len() == sink.borrow().ncols() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) if ix2.borrow().len() == source.borrow().len() && ix2.borrow().len() == sink.borrow().ncols() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) if ix2.borrow().len() == source.borrow().len() && ix2.borrow().len() == sink.borrow().ncols() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) if ix2.borrow().len() == source.borrow().len() && ix2.borrow().len() == sink.borrow().ncols() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if ix2.borrow().len() == sink.borrow().ncols() && ix2.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if ix2.borrow().len() == sink.borrow().ncols() && ix2.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix2.borrow().len() == sink.borrow().ncols() && ix2.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix2.borrow().len() == sink.borrow().ncols() && ix2.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix2.borrow().len() == sink.borrow().ncols() && ix2.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [LegacyValue::Index(ix1), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix2.borrow().len() == sink.borrow().ncols() && ix2.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -5108,164 +5109,164 @@ macro_rules! impl_assign_range_range_arms_b {
       match $arg {
         // Scalar source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix1", feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix1", feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::MatrixBool(Matrix::Vector3(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix1", feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrix1", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) if ix2.borrow().len() == sink.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<$value_kind:camel>](source)) if ix2.borrow().len() == sink.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector2", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix1)), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector3", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix1)), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector4", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix1)), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vectord", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) if ix1.borrow().len() == sink.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<$value_kind:camel>](source)) if ix1.borrow().len() == sink.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix1)), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix1)), LegacyValue::MatrixBool(Matrix::Vector3(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix1)), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "vector3", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix1)), LegacyValue::MatrixBool(Matrix::Vector3(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "vector2", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix1)), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector4", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) if sink.borrow().nrows() == 4 && sink.borrow().ncols() == 2 => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix1)), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) if sink.borrow().nrows() == 4 && sink.borrow().ncols() == 2 => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) if sink.borrow().nrows() == 2 && sink.borrow().ncols() == 4 => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix1)), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<$value_kind:camel>](source)) if sink.borrow().nrows() == 2 && sink.borrow().ncols() == 4 => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) if sink.borrow().ncols() == 2 && ix1.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<$value_kind:camel>](source)) if sink.borrow().ncols() == 2 && ix1.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) if sink.borrow().ncols() == 3 && ix1.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::Vector3(ix2))], LegacyValue::[<$value_kind:camel>](source)) if sink.borrow().ncols() == 3 && ix1.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) if sink.borrow().ncols() == 4 && ix1.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<$value_kind:camel>](source)) if sink.borrow().ncols() == 4 && ix1.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) if ix1.borrow().len() == sink.borrow().nrows() && ix2.borrow().len() == sink.borrow().ncols() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<$value_kind:camel>](source)) if ix1.borrow().len() == sink.borrow().nrows() && ix2.borrow().len() == sink.borrow().ncols() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         // Vector source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix1", feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix1", feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::MatrixBool(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix1", feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrix1", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix2.borrow().len() == sink.borrow().len() && ix2.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [LegacyValue::MatrixBool(Matrix::Matrix1(ix1)), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix2.borrow().len() == sink.borrow().len() && ix2.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector2", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix1)), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector3", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix1)), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector4", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix1)), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "vectord", feature = "vectord", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if ix1.borrow().len() == sink.borrow().len() && ix2.borrow().len() == source.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::Matrix1(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if ix1.borrow().len() == sink.borrow().len() && ix2.borrow().len() == source.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix1)), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix1)), LegacyValue::MatrixBool(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix4", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix1)), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "vector3", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix1)), LegacyValue::MatrixBool(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "vector2", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [LegacyValue::MatrixBool(Matrix::Vector3(ix1)), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector4", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().nrows() == 4 && sink.borrow().ncols() == 2 && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::Vector4(ix1)), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().nrows() == 4 && sink.borrow().ncols() == 2 && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().nrows() == 2 && sink.borrow().ncols() == 4 && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::Vector2(ix1)), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().nrows() == 2 && sink.borrow().ncols() == 4 && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == 2 && ix1.borrow().len() == sink.borrow().nrows() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::Vector2(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == 2 && ix1.borrow().len() == sink.borrow().nrows() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == 3 && ix1.borrow().len() == sink.borrow().nrows() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::Vector3(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == 3 && ix1.borrow().len() == sink.borrow().nrows() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == 4 && ix1.borrow().len() == sink.borrow().nrows() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::Vector4(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == 4 && ix1.borrow().len() == sink.borrow().nrows() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix1.borrow().len() == sink.borrow().nrows() && ix2.borrow().len() == sink.borrow().ncols() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix1.borrow().len() == sink.borrow().nrows() && ix2.borrow().len() == sink.borrow().ncols() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -5284,12 +5285,12 @@ macro_rules! impl_assign_range_range_arms_bu {
       match $arg {
         // Scalar source
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) if ix1.borrow().len() == sink.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<$value_kind:camel>](source)) if ix1.borrow().len() == sink.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name BU>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         // Vector source
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix1.borrow().len() == sink.borrow().nrows() && ix1.borrow().len() == source.borrow().nrows() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixBool(Matrix::DVector(ix1)), LegacyValue::MatrixIndex(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix1.borrow().len() == sink.borrow().nrows() && ix1.borrow().len() == source.borrow().nrows() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VBU>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(
@@ -5308,12 +5309,12 @@ macro_rules! impl_assign_range_range_arms_ub {
       match $arg {
         // Scalar-per-column source (UB)
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) if ix2.borrow().len() == sink.borrow().ncols() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<$value_kind:camel>](source)) if ix2.borrow().len() == sink.borrow().ncols() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name UB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         // Vector-per-column source (VUB)
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix2.borrow().len() == sink.borrow().ncols() && ix2.borrow().len() == source.borrow().ncols() => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [LegacyValue::MatrixIndex(Matrix::DVector(ix1)), LegacyValue::MatrixBool(Matrix::DVector(ix2))], LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix2.borrow().len() == sink.borrow().ncols() && ix2.borrow().len() == source.borrow().ncols() => {
           box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         (source, ixes, sink) => Err(MechError::new(

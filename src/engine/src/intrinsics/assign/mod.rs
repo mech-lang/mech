@@ -135,7 +135,7 @@ where
         )))
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.to_value()
     }
 
@@ -147,7 +147,7 @@ where
         format!("{self:#?}")
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -176,19 +176,20 @@ where
 /// would leave those downstream aliases attached to stale values.
 #[derive(Debug)]
 struct AssignStructuredComposite {
-    sink: Value,
-    source: Value,
+    sink: LegacyValue,
+    source: LegacyValue,
 }
 
 fn collect_structured_assignments(
-    sink: Value,
-    source: Value,
+    sink: LegacyValue,
+    source: LegacyValue,
     assignments: &mut Vec<Box<dyn MechFunction>>,
 ) -> MResult<()> {
     match (&sink, &source) {
-        (Value::Typed(sink, sink_annotation), Value::Typed(source, source_annotation))
-            if sink_annotation == source_annotation =>
-        {
+        (
+            LegacyValue::Typed(sink, sink_annotation),
+            LegacyValue::Typed(source, source_annotation),
+        ) if sink_annotation == source_annotation => {
             return collect_structured_assignments(
                 sink.as_ref().clone(),
                 source.as_ref().clone(),
@@ -196,7 +197,7 @@ fn collect_structured_assignments(
             );
         }
         #[cfg(feature = "record")]
-        (Value::Record(sink), Value::Record(source)) => {
+        (LegacyValue::Record(sink), LegacyValue::Record(source)) => {
             let pairs = {
                 let sink = sink.borrow();
                 let source = source.borrow();
@@ -228,7 +229,7 @@ fn collect_structured_assignments(
             return Ok(());
         }
         #[cfg(feature = "map")]
-        (Value::Map(sink), Value::Map(source)) => {
+        (LegacyValue::Map(sink), LegacyValue::Map(source)) => {
             let pairs = {
                 let sink = sink.borrow();
                 let source = source.borrow();
@@ -258,7 +259,7 @@ fn collect_structured_assignments(
             return Ok(());
         }
         #[cfg(feature = "table")]
-        (Value::Table(sink), Value::Table(source)) => {
+        (LegacyValue::Table(sink), LegacyValue::Table(source)) => {
             let pairs = {
                 let sink = sink.borrow();
                 let source = source.borrow();
@@ -291,7 +292,7 @@ fn collect_structured_assignments(
             return Ok(());
         }
         #[cfg(feature = "tuple")]
-        (Value::Tuple(sink), Value::Tuple(source)) => {
+        (LegacyValue::Tuple(sink), LegacyValue::Tuple(source)) => {
             let pairs = {
                 let sink = sink.borrow();
                 let source = source.borrow();
@@ -360,7 +361,7 @@ impl MechFunctionImpl for AssignStructuredComposite {
         )))
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.clone()
     }
 
@@ -372,7 +373,7 @@ impl MechFunctionImpl for AssignStructuredComposite {
         format!("{self:#?}")
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -475,8 +476,8 @@ fn assign_index_matrix_fxn(
         (sink, source) => Err(MechError::new(
             UnhandledFunctionArgumentKind2 {
                 arg: (
-                    Value::MatrixIndex(sink).kind(),
-                    Value::MatrixIndex(source).kind(),
+                    LegacyValue::MatrixIndex(sink).kind(),
+                    LegacyValue::MatrixIndex(source).kind(),
                 ),
                 fxn_name: "assign".to_owned(),
             },
@@ -541,7 +542,7 @@ where
             output_cells,
         )))
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.to_value()
     }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
@@ -551,7 +552,7 @@ where
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -588,8 +589,8 @@ impl MechFunctionImpl for AssignEmpty {
             self.reactive_output_cell_ids(),
         )))
     }
-    fn out(&self) -> Value {
-        Value::Empty
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Empty
     }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
         ReactiveNodeKind::Register
@@ -598,7 +599,7 @@ impl MechFunctionImpl for AssignEmpty {
         "AssignEmpty".to_string()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -616,37 +617,37 @@ macro_rules! impl_assign_value_match_arms {
       match $arg {
         $(
           #[cfg(feature = $feature)]
-          (Value::$value_kind(sink), Value::$value_kind(source)) => Ok(Box::new(Assign{ sink: sink.clone(), source: source.clone() })),
+          (LegacyValue::$value_kind(sink), LegacyValue::$value_kind(source)) => Ok(Box::new(Assign{ sink: sink.clone(), source: source.clone() })),
           #[cfg(all(feature = $feature, feature = "matrix1"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix1(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "matrix2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "matrix2x3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "matrix3x2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "matrix3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "matrix4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix4(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "matrixd"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "vector2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector2(sink)), Value::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "vector3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector3(sink)), Value::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "vector4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)), Value::[<Matrix $value_kind>](Matrix::Vector4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector4(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Vector4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "vectord"))]
-          (Value::[<Matrix $value_kind>](Matrix::DVector(sink)), Value::[<Matrix $value_kind>](Matrix::DVector(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::DVector(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::DVector(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "row_vector2"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector2(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowVector2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "row_vector3"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector3(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowVector3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "row_vector4"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector4(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowVector4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
           #[cfg(all(feature = $feature, feature = "row_vectord"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowDVector(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
         )+
         (sink, source) => Err(MechError::new(
             UnhandledFunctionArgumentKind2 {arg: (sink.kind(), source.kind()), fxn_name: "assign".to_string() },
@@ -658,71 +659,71 @@ macro_rules! impl_assign_value_match_arms {
   };
 }
 
-fn assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
+fn assign_value_fxn(sink: LegacyValue, source: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (&sink, &source) {
         (
-            Value::Typed(sink_inner, sink_annotation),
-            Value::Typed(source_inner, source_annotation),
+            LegacyValue::Typed(sink_inner, sink_annotation),
+            LegacyValue::Typed(source_inner, source_annotation),
         ) if sink_annotation == source_annotation => {
             return assign_value_fxn(sink_inner.as_ref().clone(), source_inner.as_ref().clone());
         }
-        (Value::Empty, Value::Empty) => {
+        (LegacyValue::Empty, LegacyValue::Empty) => {
             return Ok(Box::new(AssignEmpty));
         }
-        (Value::Index(sink), Value::Index(source)) => {
+        (LegacyValue::Index(sink), LegacyValue::Index(source)) => {
             return Ok(Box::new(Assign {
                 sink: sink.clone(),
                 source: source.clone(),
             }));
         }
         #[cfg(feature = "matrix")]
-        (Value::MatrixIndex(sink), Value::MatrixIndex(source)) => {
+        (LegacyValue::MatrixIndex(sink), LegacyValue::MatrixIndex(source)) => {
             return assign_index_matrix_fxn(sink.clone(), source.clone());
         }
         #[cfg(feature = "record")]
-        (Value::Record(sink), Value::Record(source)) => {
+        (LegacyValue::Record(sink), LegacyValue::Record(source)) => {
             return Ok(Box::new(AssignStructuredComposite {
-                sink: Value::Record(sink.clone()),
-                source: Value::Record(source.clone()),
+                sink: LegacyValue::Record(sink.clone()),
+                source: LegacyValue::Record(source.clone()),
             }));
         }
         #[cfg(feature = "map")]
-        (Value::Map(sink), Value::Map(source)) => {
+        (LegacyValue::Map(sink), LegacyValue::Map(source)) => {
             return Ok(Box::new(AssignStructuredComposite {
-                sink: Value::Map(sink.clone()),
-                source: Value::Map(source.clone()),
+                sink: LegacyValue::Map(sink.clone()),
+                source: LegacyValue::Map(source.clone()),
             }));
         }
         #[cfg(feature = "set")]
-        (Value::Set(sink), Value::Set(source)) => {
+        (LegacyValue::Set(sink), LegacyValue::Set(source)) => {
             return Ok(Box::new(AssignComposite {
                 sink: sink.clone(),
                 source: source.clone(),
             }));
         }
         #[cfg(feature = "table")]
-        (Value::Table(sink), Value::Table(source)) => {
+        (LegacyValue::Table(sink), LegacyValue::Table(source)) => {
             return Ok(Box::new(AssignStructuredComposite {
-                sink: Value::Table(sink.clone()),
-                source: Value::Table(source.clone()),
+                sink: LegacyValue::Table(sink.clone()),
+                source: LegacyValue::Table(source.clone()),
             }));
         }
         #[cfg(feature = "tuple")]
-        (Value::Tuple(sink), Value::Tuple(source)) => {
+        (LegacyValue::Tuple(sink), LegacyValue::Tuple(source)) => {
             return Ok(Box::new(AssignStructuredComposite {
-                sink: Value::Tuple(sink.clone()),
-                source: Value::Tuple(source.clone()),
+                sink: LegacyValue::Tuple(sink.clone()),
+                source: LegacyValue::Tuple(source.clone()),
             }));
         }
         #[cfg(feature = "atom")]
-        (Value::Atom(sink), Value::Atom(source)) => {
+        (LegacyValue::Atom(sink), LegacyValue::Atom(source)) => {
             return Ok(Box::new(AssignComposite {
                 sink: sink.clone(),
                 source: source.clone(),
             }));
         }
         #[cfg(feature = "enum")]
-        (Value::Enum(sink), Value::Enum(source)) => {
+        (LegacyValue::Enum(sink), LegacyValue::Enum(source)) => {
             return Ok(Box::new(AssignComposite {
                 sink: sink.clone(),
                 source: source.clone(),
@@ -762,18 +763,18 @@ enum AssignmentIndexKind {
 }
 
 #[cfg(feature = "matrix")]
-fn assignment_index_kind(value: &Value) -> AssignmentIndexKind {
+fn assignment_index_kind(value: &LegacyValue) -> AssignmentIndexKind {
     match value {
-        Value::IndexAll => AssignmentIndexKind::All,
-        Value::Index(_) => AssignmentIndexKind::Scalar,
-        Value::MatrixIndex(_) => AssignmentIndexKind::Range,
+        LegacyValue::IndexAll => AssignmentIndexKind::All,
+        LegacyValue::Index(_) => AssignmentIndexKind::Scalar,
+        LegacyValue::MatrixIndex(_) => AssignmentIndexKind::Range,
         _ if value.shape() == [1, 1] => AssignmentIndexKind::Scalar,
         _ => AssignmentIndexKind::Range,
     }
 }
 
 #[cfg(feature = "matrix")]
-fn compile_matrix_assignment(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+fn compile_matrix_assignment(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
     match arguments {
         [_, _, index] => match assignment_index_kind(index) {
             AssignmentIndexKind::Scalar => MatrixAssignScalar {}.specialize(arguments),
@@ -825,7 +826,7 @@ fn compile_matrix_assignment(arguments: &[Value]) -> MResult<Box<dyn MechFunctio
 }
 
 impl FunctionSpecializer for AssignValue {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -858,13 +859,13 @@ impl FunctionSpecializer for AssignValue {
         match assign_value_fxn(sink.clone(), source.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (sink, source) {
-                (Value::MutableReference(sink), Value::MutableReference(source)) => {
+                (LegacyValue::MutableReference(sink), LegacyValue::MutableReference(source)) => {
                     assign_value_fxn(sink.borrow().clone(), source.borrow().clone())
                 }
-                (sink, Value::MutableReference(source)) => {
+                (sink, LegacyValue::MutableReference(source)) => {
                     assign_value_fxn(sink.clone(), source.borrow().clone())
                 }
-                (Value::MutableReference(sink), source) => {
+                (LegacyValue::MutableReference(sink), source) => {
                     assign_value_fxn(sink.borrow().clone(), source.clone())
                 }
                 (sink, source) => Err(MechError::new(
@@ -882,7 +883,7 @@ impl FunctionSpecializer for AssignValue {
 
 pub struct AssignColumn {}
 impl FunctionSpecializer for AssignColumn {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -913,10 +914,13 @@ impl FunctionSpecializer for AssignColumn {
 
 // x += y ----------------------------------------------------------------------
 
-pub fn add_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
+pub fn add_assign_value_fxn(
+    sink: LegacyValue,
+    source: LegacyValue,
+) -> MResult<Box<dyn MechFunction>> {
     match sink {
         #[cfg(feature = "table")]
-        Value::Table(_) => add_assign_table_fxn(sink, source),
+        LegacyValue::Table(_) => add_assign_table_fxn(sink, source),
         _ => Err(MechError::new(
             UnhandledFunctionArgumentKind2 {
                 arg: (sink.kind(), source.kind()),
@@ -930,7 +934,7 @@ pub fn add_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechF
 
 pub struct AddAssignValue {}
 impl FunctionSpecializer for AddAssignValue {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -946,13 +950,13 @@ impl FunctionSpecializer for AddAssignValue {
         match add_assign_value_fxn(sink.clone(), source.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (sink, source) {
-                (Value::MutableReference(sink), Value::MutableReference(source)) => {
+                (LegacyValue::MutableReference(sink), LegacyValue::MutableReference(source)) => {
                     add_assign_value_fxn(sink.borrow().clone(), source.borrow().clone())
                 }
-                (sink, Value::MutableReference(source)) => {
+                (sink, LegacyValue::MutableReference(source)) => {
                     add_assign_value_fxn(sink.clone(), source.borrow().clone())
                 }
-                (Value::MutableReference(sink), source) => {
+                (LegacyValue::MutableReference(sink), source) => {
                     add_assign_value_fxn(sink.borrow().clone(), source.clone())
                 }
                 (sink, source) => Err(MechError::new(

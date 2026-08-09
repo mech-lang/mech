@@ -49,7 +49,7 @@ impl_math_unop!(MathAcos, f32, acosf);
 impl_math_unop!(MathAcos, f64, acos);
 
 #[cfg(feature = "source")]
-fn impl_acos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_acos_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathAcos,
       (lhs_value),
@@ -63,7 +63,7 @@ pub struct MathAcos {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathAcos {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -78,7 +78,7 @@ impl FunctionSpecializer for MathAcos {
         match impl_acos_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (input) {
-                (Value::MutableReference(input)) => impl_acos_fxn(input.borrow().clone()),
+                (LegacyValue::MutableReference(input)) => impl_acos_fxn(input.borrow().clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),

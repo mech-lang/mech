@@ -1,7 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
-use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
+use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 use mech_engine::ProgramInputTurnOutcome;
 
 pub const DEFAULT_HOST_INPUT_CAPACITY: usize = 1024;
@@ -27,108 +27,108 @@ pub enum RuntimeHostInputValue {
 }
 
 impl RuntimeHostInputValue {
-    pub fn into_mech_value(self) -> MResult<Value> {
+    pub fn into_mech_value(self) -> MResult<LegacyValue> {
         match self {
-            RuntimeHostInputValue::Empty => Ok(Value::Empty),
+            RuntimeHostInputValue::Empty => Ok(LegacyValue::Empty),
             #[cfg(feature = "bool")]
-            RuntimeHostInputValue::Bool(value) => Ok(Value::Bool(Ref::new(value))),
+            RuntimeHostInputValue::Bool(value) => Ok(LegacyValue::Bool(Ref::new(value))),
             #[cfg(not(feature = "bool"))]
             RuntimeHostInputValue::Bool(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "bool host input values require the `bool` feature",
             )),
             #[cfg(feature = "string")]
-            RuntimeHostInputValue::String(value) => Ok(Value::String(Ref::new(value))),
+            RuntimeHostInputValue::String(value) => Ok(LegacyValue::String(Ref::new(value))),
             #[cfg(not(feature = "string"))]
             RuntimeHostInputValue::String(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "string host input values require the `string` feature",
             )),
             #[cfg(feature = "u8")]
-            RuntimeHostInputValue::U8(value) => Ok(Value::U8(Ref::new(value))),
+            RuntimeHostInputValue::U8(value) => Ok(LegacyValue::U8(Ref::new(value))),
             #[cfg(not(feature = "u8"))]
             RuntimeHostInputValue::U8(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "u8 host input values require the `u8` feature",
             )),
             #[cfg(feature = "u16")]
-            RuntimeHostInputValue::U16(value) => Ok(Value::U16(Ref::new(value))),
+            RuntimeHostInputValue::U16(value) => Ok(LegacyValue::U16(Ref::new(value))),
             #[cfg(not(feature = "u16"))]
             RuntimeHostInputValue::U16(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "u16 host input values require the `u16` feature",
             )),
             #[cfg(feature = "u32")]
-            RuntimeHostInputValue::U32(value) => Ok(Value::U32(Ref::new(value))),
+            RuntimeHostInputValue::U32(value) => Ok(LegacyValue::U32(Ref::new(value))),
             #[cfg(not(feature = "u32"))]
             RuntimeHostInputValue::U32(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "u32 host input values require the `u32` feature",
             )),
             #[cfg(feature = "u64")]
-            RuntimeHostInputValue::U64(value) => Ok(Value::U64(Ref::new(value))),
+            RuntimeHostInputValue::U64(value) => Ok(LegacyValue::U64(Ref::new(value))),
             #[cfg(not(feature = "u64"))]
             RuntimeHostInputValue::U64(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "u64 host input values require the `u64` feature",
             )),
             #[cfg(feature = "u128")]
-            RuntimeHostInputValue::U128(value) => Ok(Value::U128(Ref::new(value))),
+            RuntimeHostInputValue::U128(value) => Ok(LegacyValue::U128(Ref::new(value))),
             #[cfg(not(feature = "u128"))]
             RuntimeHostInputValue::U128(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "u128 host input values require the `u128` feature",
             )),
             #[cfg(feature = "i8")]
-            RuntimeHostInputValue::I8(value) => Ok(Value::I8(Ref::new(value))),
+            RuntimeHostInputValue::I8(value) => Ok(LegacyValue::I8(Ref::new(value))),
             #[cfg(not(feature = "i8"))]
             RuntimeHostInputValue::I8(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "i8 host input values require the `i8` feature",
             )),
             #[cfg(feature = "i16")]
-            RuntimeHostInputValue::I16(value) => Ok(Value::I16(Ref::new(value))),
+            RuntimeHostInputValue::I16(value) => Ok(LegacyValue::I16(Ref::new(value))),
             #[cfg(not(feature = "i16"))]
             RuntimeHostInputValue::I16(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "i16 host input values require the `i16` feature",
             )),
             #[cfg(feature = "i32")]
-            RuntimeHostInputValue::I32(value) => Ok(Value::I32(Ref::new(value))),
+            RuntimeHostInputValue::I32(value) => Ok(LegacyValue::I32(Ref::new(value))),
             #[cfg(not(feature = "i32"))]
             RuntimeHostInputValue::I32(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "i32 host input values require the `i32` feature",
             )),
             #[cfg(feature = "i64")]
-            RuntimeHostInputValue::I64(value) => Ok(Value::I64(Ref::new(value))),
+            RuntimeHostInputValue::I64(value) => Ok(LegacyValue::I64(Ref::new(value))),
             #[cfg(not(feature = "i64"))]
             RuntimeHostInputValue::I64(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "i64 host input values require the `i64` feature",
             )),
             #[cfg(feature = "i128")]
-            RuntimeHostInputValue::I128(value) => Ok(Value::I128(Ref::new(value))),
+            RuntimeHostInputValue::I128(value) => Ok(LegacyValue::I128(Ref::new(value))),
             #[cfg(not(feature = "i128"))]
             RuntimeHostInputValue::I128(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "i128 host input values require the `i128` feature",
             )),
             #[cfg(feature = "f32")]
-            RuntimeHostInputValue::F32(value) => Ok(Value::F32(Ref::new(value))),
+            RuntimeHostInputValue::F32(value) => Ok(LegacyValue::F32(Ref::new(value))),
             #[cfg(not(feature = "f32"))]
             RuntimeHostInputValue::F32(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "f32 host input values require the `f32` feature",
             )),
             #[cfg(feature = "f64")]
-            RuntimeHostInputValue::F64(value) => Ok(Value::F64(Ref::new(value))),
+            RuntimeHostInputValue::F64(value) => Ok(LegacyValue::F64(Ref::new(value))),
             #[cfg(not(feature = "f64"))]
             RuntimeHostInputValue::F64(_) => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
                 "f64 host input values require the `f64` feature",
             )),
-            RuntimeHostInputValue::Index(value) => Ok(Value::Index(Ref::new(value))),
+            RuntimeHostInputValue::Index(value) => Ok(LegacyValue::Index(Ref::new(value))),
         }
     }
 }

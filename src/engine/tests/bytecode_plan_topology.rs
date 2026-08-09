@@ -1,7 +1,7 @@
 use mech_core::{
-    BytecodeInstruction, FunctionCatalogBuilder, MResult, ParsedProgram, Plan, ReactiveCellId,
-    ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState, RuntimeType,
-    Value, hash_str,
+    BytecodeInstruction, FunctionCatalogBuilder, LegacyValue, MResult, ParsedProgram, Plan,
+    ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState,
+    RuntimeType, hash_str,
 };
 use mech_engine::Interpreter;
 use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
@@ -26,7 +26,7 @@ fn runtime_program() -> MechProgram {
     )
 }
 
-fn symbol(interpreter: &Interpreter, name: &str) -> Value {
+fn symbol(interpreter: &Interpreter, name: &str) -> LegacyValue {
     interpreter
         .symbols()
         .borrow()
@@ -36,7 +36,7 @@ fn symbol(interpreter: &Interpreter, name: &str) -> Value {
         .clone()
 }
 
-fn root_cell(value: &Value) -> ReactiveCellId {
+fn root_cell(value: &LegacyValue) -> ReactiveCellId {
     let cells = value.reactive_root_cell_ids();
     assert_eq!(cells.len(), 1);
     cells[0]
@@ -52,7 +52,7 @@ fn alias_node(plan: &Plan, name: &str) -> ReactiveNodeId {
         .unwrap_or_else(|| panic!("missing {name} node"))
 }
 
-fn assert_alias_node(plan: &Plan, name: &str, output: &Value) {
+fn assert_alias_node(plan: &Plan, name: &str, output: &LegacyValue) {
     let node_id = alias_node(plan, name);
     let plan = plan.borrow();
     let node = plan.node(node_id).unwrap();
@@ -119,9 +119,12 @@ fn distinct_assignment_graph_shape(
     }
 }
 
-fn decoded_assignment_graph_shape(interpreter: &Interpreter, output: &Value) -> RegisterGraphShape {
+fn decoded_assignment_graph_shape(
+    interpreter: &Interpreter,
+    output: &LegacyValue,
+) -> RegisterGraphShape {
     let resolved_output = match output {
-        Value::MutableReference(reference) => reference.borrow().clone(),
+        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
         other => other.clone(),
     };
     let output_cell = root_cell(&resolved_output);
@@ -212,19 +215,19 @@ fn assert_matrix_literal_chain(plan: &Plan) {
     assert!(!vertical.outputs.is_empty());
 }
 
-fn set_members(value: &Value) -> Vec<ReactiveCellId> {
+fn set_members(value: &LegacyValue) -> Vec<ReactiveCellId> {
     match value {
-        Value::Set(set) => set
+        LegacyValue::Set(set) => set
             .borrow()
             .set
             .iter()
-            .flat_map(Value::reactive_root_cell_ids)
+            .flat_map(LegacyValue::reactive_root_cell_ids)
             .collect(),
         other => panic!("expected set, found {other:?}"),
     }
 }
 
-fn assert_structural_set_node(plan: &Plan, output: &Value) {
+fn assert_structural_set_node(plan: &Plan, output: &LegacyValue) {
     let output_cell = output.reactive_root_cell_ids()[0];
     let member_cells = set_members(output);
     let plan = plan.borrow();
@@ -479,7 +482,7 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
 
     for output in [&source_output, &decoded_output] {
         match output {
-            Value::MatrixF64(matrix) => {
+            LegacyValue::MatrixF64(matrix) => {
                 assert_eq!(matrix.shape(), vec![2, 2]);
                 assert_eq!(matrix.as_vec(), vec![1.0, 3.0, 2.0, 4.0]);
             }
@@ -504,10 +507,10 @@ fn decoded_matrix_comprehension_publishes_reactive_results() -> MResult<()> {
             interpreter_id: decoded.interpreter().id,
             symbol_id: hash_str("x"),
         },
-        value: Value::from(3.0f64),
+        value: LegacyValue::from(3.0f64),
     }])?;
 
-    let Value::MatrixF64(payload) = decoded.root_symbol_value("payload")? else {
+    let LegacyValue::MatrixF64(payload) = decoded.root_symbol_value("payload")? else {
         panic!("expected decoded matrix payload")
     };
     assert_eq!(payload.as_vec(), vec![3.0, 2.0]);

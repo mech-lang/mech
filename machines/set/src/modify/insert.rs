@@ -8,7 +8,7 @@ use mech_core::set::MechSet;
 #[derive(Debug)]
 pub(crate) struct SetInsertFxn {
     arg1: Ref<MechSet>,
-    arg2: Value,
+    arg2: LegacyValue,
     out: Ref<MechSet>,
 }
 impl MechFunctionFactory for SetInsertFxn {
@@ -84,14 +84,14 @@ impl MechFunctionImpl for SetInsertFxn {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Set(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Set(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -111,9 +111,9 @@ impl MechFunctionCompiler for SetInsertFxn {
 }
 
 #[cfg(feature = "source")]
-fn set_insert_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
+fn set_insert_fxn(arg1: LegacyValue, arg2: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (arg1, arg2) {
-        (Value::Set(arg1), arg2) => Ok(Box::new(SetInsertFxn {
+        (LegacyValue::Set(arg1), arg2) => Ok(Box::new(SetInsertFxn {
             arg1: arg1.clone(),
             arg2: normalize_set_element(arg2),
             out: Ref::new(MechSet::new(
@@ -136,7 +136,7 @@ fn set_insert_fxn(arg1: Value, arg2: Value) -> MResult<Box<dyn MechFunction>> {
 pub struct SetInsert {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for SetInsert {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -152,13 +152,13 @@ impl FunctionSpecializer for SetInsert {
         match set_insert_fxn(arg1.clone(), arg2.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (arg1, arg2) {
-                (Value::MutableReference(arg1), Value::MutableReference(arg2)) => {
+                (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2)) => {
                     set_insert_fxn(arg1.borrow().clone(), arg2.borrow().clone())
                 }
-                (arg1, Value::MutableReference(arg2)) => {
+                (arg1, LegacyValue::MutableReference(arg2)) => {
                     set_insert_fxn(arg1.clone(), arg2.borrow().clone())
                 }
-                (Value::MutableReference(arg1), arg2) => {
+                (LegacyValue::MutableReference(arg1), arg2) => {
                     set_insert_fxn(arg1.borrow().clone(), arg2.clone())
                 }
                 x => Err(MechError::new(

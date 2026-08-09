@@ -1,6 +1,6 @@
 use crate::RuntimeValueSnapshot;
 use crate::runtime::{MechRuntime, RuntimeInvalidOperationError, RuntimeProgramBusy};
-use mech_core::{MResult, MechError, MechSourceCode, Program, SectionElement, Value};
+use mech_core::{LegacyValue, MResult, MechError, MechSourceCode, Program, SectionElement};
 
 impl MechRuntime {
     #[cfg(feature = "invariant_define")]
@@ -101,7 +101,11 @@ impl MechRuntime {
             .collect::<MResult<Vec<_>>>()
     }
 
-    pub fn bind_ans_for_interpreter(&mut self, interpreter_id: u64, value: &Value) -> MResult<()> {
+    pub fn bind_ans_for_interpreter(
+        &mut self,
+        interpreter_id: u64,
+        value: &LegacyValue,
+    ) -> MResult<()> {
         if let Some(owner) = self.program_transaction_owner {
             return Err(MechError::new(
                 RuntimeProgramBusy {

@@ -5,7 +5,7 @@ use crate::resolver::SourceScope;
 use crate::runtime::RuntimeProgramBusy;
 use crate::runtime::{MechRuntime, RuntimeInvalidOperationError};
 use crate::{ResourceBudgetExceededError, RuntimeContext, RuntimeValueSnapshot};
-use mech_core::{MResult, MechError, MechSourceCode, Value};
+use mech_core::{LegacyValue, MResult, MechError, MechSourceCode};
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
@@ -19,12 +19,12 @@ impl MechRuntime {
         tree: &mech_core::Program,
         scope_hint: Option<&SourceScope>,
         render_document_presentation: bool,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         let direct_document_run = render_document_presentation;
         let execution_scope = scope_hint.unwrap_or(&SourceScope::Program);
         let skip_non_context_imports = scope_hint.is_some();
         let registry = self.direct_context_registry_for_scope(tree, execution_scope)?;
-        let mut result = Value::Empty;
+        let mut result = LegacyValue::Empty;
         let mut pending = Vec::new();
         let mut document_inline_nodes = Vec::new();
 
@@ -96,7 +96,7 @@ impl MechRuntime {
         // Inline presentation evaluation produces output records, not the source
         // operation result. Keep it separate so trailing prose cannot replace the
         // final value from executable Mech source.
-        let mut inline_result = Value::Empty;
+        let mut inline_result = LegacyValue::Empty;
         self.flush_direct_execution(
             context,
             target,
@@ -125,7 +125,7 @@ impl MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         source: &str,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         self.run_string_with_context_map(context, source, Ok)
     }
 
@@ -133,7 +133,7 @@ impl MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         source: &str,
-        finish: impl FnOnce(Value) -> MResult<T>,
+        finish: impl FnOnce(LegacyValue) -> MResult<T>,
     ) -> MResult<T> {
         let turn_started = Instant::now();
         let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
@@ -168,7 +168,7 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         source: &str,
         turn_started: Instant,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         self.validate_context_for_runtime(context)?;
         context.charge_step()?;
         let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
@@ -247,7 +247,7 @@ impl MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         source: &MechSourceCode,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         self.run_source_with_context_map(context, source, Ok)
     }
 
@@ -255,7 +255,7 @@ impl MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         source: &MechSourceCode,
-        finish: impl FnOnce(Value) -> MResult<T>,
+        finish: impl FnOnce(LegacyValue) -> MResult<T>,
     ) -> MResult<T> {
         let turn_started = Instant::now();
         if let MechSourceCode::ByteCode(bytes) = source {
@@ -283,7 +283,7 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         source: &MechSourceCode,
         turn_started: Instant,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         match source {
             MechSourceCode::String(source) => {
                 self.run_string_operation(context, source, turn_started)
@@ -293,7 +293,7 @@ impl MechRuntime {
                 self.evaluate_bytecode_once_with_context_inner_map(context, bytes, turn_started, Ok)
             }
             MechSourceCode::Program(sources) => {
-                let mut value = Value::Empty;
+                let mut value = LegacyValue::Empty;
                 for source in sources {
                     value = self.run_source_operation(context, source, turn_started)?;
                 }
@@ -328,7 +328,7 @@ impl MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         tree: &mech_core::Program,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         self.run_tree_with_context_map(context, tree, Ok)
     }
 
@@ -336,7 +336,7 @@ impl MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         tree: &mech_core::Program,
-        finish: impl FnOnce(Value) -> MResult<T>,
+        finish: impl FnOnce(LegacyValue) -> MResult<T>,
     ) -> MResult<T> {
         let turn_started = Instant::now();
         let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
@@ -359,7 +359,7 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         tree: &mech_core::Program,
         turn_started: Instant,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         self.validate_context_for_runtime(context)?;
         context.charge_step()?;
         let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);

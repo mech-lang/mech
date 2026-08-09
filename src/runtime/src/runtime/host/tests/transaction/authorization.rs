@@ -8,11 +8,11 @@ use crate::{
     PlannedRuntimeManagedHostFunction, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeCallContext, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
-use mech_core::{Ref, Value};
+use mech_core::{LegacyValue, Ref};
 
 use super::support::{CountingAfterCommitEffect, PreviewUnsupportedCapability};
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
+fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -24,11 +24,11 @@ fn pure_host_source_execution_consumes_single_use_capability() {
         .host_function(PlannedPureHostFunction::new(
             "demo/pure-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::F64(Ref::new(1.0))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(snapshot(Value::F64(Ref::new(1.0))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
             },
         ))
         .unwrap()
@@ -56,11 +56,11 @@ fn runtime_managed_source_execution_consumes_single_use_capability() {
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "demo/managed-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::F64(Ref::new(1.0))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
             },
             move |_services, _context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(snapshot(Value::F64(Ref::new(1.0))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
             },
         ))
         .unwrap()
@@ -90,13 +90,13 @@ fn staged_source_execution_consumes_single_use_capability() {
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged-limited",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::F64(Ref::new(1.0))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 callback_calls.fetch_add(1, Ordering::SeqCst);
                 let delivered = delivered.clone();
                 Ok(RuntimePreparedHostCall {
-                    value: snapshot(Value::F64(Ref::new(1.0))),
+                    value: snapshot(LegacyValue::F64(Ref::new(1.0))),
                     effect: PreparedRuntimeEffect::AfterCommit(Box::new(
                         CountingAfterCommitEffect {
                             deliveries: delivered,

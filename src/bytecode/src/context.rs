@@ -3,8 +3,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
-    BytecodeRegisterIdentity, BytecodeValidationError, EncodedConstant, MResult, MechError,
-    ParsedProgram, Register, Value, compare_application_requirements, compile_value_register,
+    BytecodeRegisterIdentity, BytecodeValidationError, EncodedConstant, LegacyValue, MResult,
+    MechError, ParsedProgram, Register, compare_application_requirements, compile_value_register,
     hash_str, write_bytecode,
 };
 
@@ -51,7 +51,7 @@ impl CompileCtx {
     /// Planned outputs reuse their producer register. A final value that was
     /// not part of the plan (for example, a trailing literal) is materialized
     /// exactly once so `Return` still represents the source block's result.
-    pub fn resolve_value_register(&mut self, value: &Value) -> MResult<Register> {
+    pub fn resolve_value_register(&mut self, value: &LegacyValue) -> MResult<Register> {
         let fallback = std::ptr::from_ref(value).addr();
         compile_value_register(value, fallback, self)
     }
@@ -438,9 +438,9 @@ mod tests {
     fn typed_wrappers_do_not_share_registers_with_bare_values() {
         for typed_first in [false, true] {
             let scalar = mech_core::Ref::new(7.0);
-            let bare = Value::F64(scalar.clone());
-            let typed = Value::Typed(
-                Box::new(Value::F64(scalar)),
+            let bare = LegacyValue::F64(scalar.clone());
+            let typed = LegacyValue::Typed(
+                Box::new(LegacyValue::F64(scalar)),
                 mech_core::ValueKind::Option(Box::new(mech_core::ValueKind::F64)),
             );
             let typed_clone = typed.clone();
@@ -534,8 +534,9 @@ mod tests {
     fn mutable_references_reuse_their_producer_register() {
         for mutable_first in [false, true] {
             let scalar = mech_core::Ref::new(7.0);
-            let bare = Value::F64(scalar.clone());
-            let mutable = Value::MutableReference(mech_core::Ref::new(Value::F64(scalar)));
+            let bare = LegacyValue::F64(scalar.clone());
+            let mutable =
+                LegacyValue::MutableReference(mech_core::Ref::new(LegacyValue::F64(scalar)));
             let mut context = CompileCtx::new();
 
             let (first, second) = if mutable_first {
@@ -559,10 +560,10 @@ mod tests {
     #[test]
     fn composite_values_are_lowered_from_child_registers() {
         let scalar = mech_core::Ref::new(7.0);
-        let bare = Value::F64(scalar.clone());
-        let tuple = Value::Tuple(mech_core::Ref::new(mech_core::MechTuple::from_vec(vec![
-            Value::F64(scalar.clone()),
-            Value::F64(scalar),
+        let bare = LegacyValue::F64(scalar.clone());
+        let tuple = LegacyValue::Tuple(mech_core::Ref::new(mech_core::MechTuple::from_vec(vec![
+            LegacyValue::F64(scalar.clone()),
+            LegacyValue::F64(scalar),
         ])));
         let mut context = CompileCtx::new();
 

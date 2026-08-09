@@ -3,9 +3,9 @@ use crate::{
     CapabilityId, HostCall, MechRuntime, PlannedPureHostFunction, RuntimeConfig, RuntimeEventKind,
     RuntimeHealth, RuntimeValueSnapshot,
 };
-use mech_core::{Ref, Value};
+use mech_core::{LegacyValue, Ref};
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
+fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -14,8 +14,8 @@ fn host_session_events_use_shared_monotonic_sequence() {
     let mut runtime = MechRuntime::builder()
         .host_function(PlannedPureHostFunction::new(
             "demo/event-sequence",
-            |_context, _arguments| Ok(snapshot(Value::F64(Ref::new(1.0)))),
-            |_context, _arguments| Ok(snapshot(Value::F64(Ref::new(1.0)))),
+            |_context, _arguments| Ok(snapshot(LegacyValue::F64(Ref::new(1.0)))),
+            |_context, _arguments| Ok(snapshot(LegacyValue::F64(Ref::new(1.0)))),
         ))
         .unwrap()
         .build()

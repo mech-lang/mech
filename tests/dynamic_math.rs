@@ -3,7 +3,7 @@ extern crate mech_core;
 #[path = "support/intrinsic_catalog.rs"]
 mod intrinsic_catalog;
 
-use mech_core::{Value, structures::matrix::Matrix};
+use mech_core::{LegacyValue, structures::matrix::Matrix};
 
 fn run(source: &str) -> bool {
     let mut program = intrinsic_catalog::program();
@@ -16,13 +16,13 @@ fn run_matrix_round(source: &str) {
     let result = program.run_string(source).unwrap();
 
     let detached = match result {
-        Value::MutableReference(v) => v.borrow().clone(),
+        LegacyValue::MutableReference(v) => v.borrow().clone(),
         value => value,
     };
 
     assert_eq!(
         detached,
-        Value::MatrixF64(Matrix::from_vec(vec![1.0, 5.0], 1, 2))
+        LegacyValue::MatrixF64(Matrix::from_vec(vec![1.0, 5.0], 1, 2))
     );
 }
 
@@ -32,12 +32,12 @@ fn run_scalar_f64(source: &str, expected: f64) {
     let result = program.run_string(source).unwrap();
 
     let detached = match result {
-        Value::MutableReference(v) => v.borrow().clone(),
+        LegacyValue::MutableReference(v) => v.borrow().clone(),
         value => value,
     };
 
     match detached {
-        Value::F64(value) => assert_eq!(*value.borrow(), expected),
+        LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
         value => panic!("expected f64 result, got {:?}", value),
     }
 }
@@ -48,13 +48,13 @@ fn run_matrix_f64(source: &str, expected: Vec<f64>, rows: usize, cols: usize) {
     let result = program.run_string(source).unwrap();
 
     let detached = match result {
-        Value::MutableReference(v) => v.borrow().clone(),
+        LegacyValue::MutableReference(v) => v.borrow().clone(),
         value => value,
     };
 
     assert_eq!(
         detached,
-        Value::MatrixF64(Matrix::from_vec(expected, rows, cols))
+        LegacyValue::MatrixF64(Matrix::from_vec(expected, rows, cols))
     );
 }
 

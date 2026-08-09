@@ -230,7 +230,7 @@ macro_rules! declare_set_runtime_factory {
     };
 }
 
-fn set_element_kind(value: &mech_core::Value) -> Option<ValueKind> {
+fn set_element_kind(value: &mech_core::LegacyValue) -> Option<ValueKind> {
     match value.deref_kind() {
         ValueKind::Set(element, _) => Some(*element),
         _ => None,
@@ -569,10 +569,10 @@ mod tests {
 ))]
 mod runtime_schema_contract_tests {
     use super::*;
-    use mech_core::{set::MechSet, Ref, Value};
+    use mech_core::{set::MechSet, Ref, LegacyValue};
 
-    fn set(kind: ValueKind) -> Value {
-        Value::Set(Ref::new(MechSet::new(kind, 0)))
+    fn set(kind: ValueKind) -> LegacyValue {
+        LegacyValue::Set(Ref::new(MechSet::new(kind, 0)))
     }
 
     #[test]
@@ -604,14 +604,14 @@ mod runtime_schema_contract_tests {
         );
 
         let matching_element = FunctionArgs::Binary(
-            Value::Bool(Ref::new(false)),
-            Value::U8(Ref::new(1)),
+            LegacyValue::Bool(Ref::new(false)),
+            LegacyValue::U8(Ref::new(1)),
             set(ValueKind::U8),
         );
         validate_set_element_contract(&matching_element).unwrap();
         let mismatched_element = FunctionArgs::Binary(
-            Value::Bool(Ref::new(false)),
-            Value::Bool(Ref::new(true)),
+            LegacyValue::Bool(Ref::new(false)),
+            LegacyValue::Bool(Ref::new(true)),
             set(ValueKind::U8),
         );
         assert!(validate_set_element_contract(&mismatched_element).is_err());
@@ -619,13 +619,13 @@ mod runtime_schema_contract_tests {
         let matching_mutation = FunctionArgs::Binary(
             set(ValueKind::U8),
             set(ValueKind::U8),
-            Value::U8(Ref::new(1)),
+            LegacyValue::U8(Ref::new(1)),
         );
         validate_set_mutation_contract(&matching_mutation).unwrap();
         let mismatched_mutation = FunctionArgs::Binary(
             set(ValueKind::U8),
             set(ValueKind::U8),
-            Value::Bool(Ref::new(true)),
+            LegacyValue::Bool(Ref::new(true)),
         );
         assert!(validate_set_mutation_contract(&mismatched_mutation).is_err());
     }

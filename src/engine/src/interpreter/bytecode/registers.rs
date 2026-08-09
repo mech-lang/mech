@@ -1,4 +1,4 @@
-use mech_core::{MResult, MechError, MechErrorKind, ValRef, Value, ValueStateJournal};
+use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, ValRef, ValueStateJournal};
 
 #[derive(Clone)]
 pub(crate) struct BytecodeRegisterFile {
@@ -9,12 +9,12 @@ impl BytecodeRegisterFile {
     pub fn new(register_count: usize) -> Self {
         Self {
             cells: (0..register_count)
-                .map(|_| mech_core::Ref::new(Value::Empty))
+                .map(|_| mech_core::Ref::new(LegacyValue::Empty))
                 .collect(),
         }
     }
 
-    pub fn load(&self, register: u32, value: Value) -> MResult<()> {
+    pub fn load(&self, register: u32, value: LegacyValue) -> MResult<()> {
         let cell = self.cell(register)?;
         let mut current = cell.try_borrow_mut().map_err(|_| {
             register_error(
@@ -34,7 +34,7 @@ impl BytecodeRegisterFile {
             .ok_or_else(|| register_error(register, self.cells.len(), "register is out of range"))
     }
 
-    pub fn value(&self, register: u32) -> MResult<Value> {
+    pub fn value(&self, register: u32) -> MResult<LegacyValue> {
         let cell = self.cell(register)?;
         cell.try_borrow().map(|value| value.clone()).map_err(|_| {
             register_error(
@@ -45,12 +45,12 @@ impl BytecodeRegisterFile {
         })
     }
 
-    pub fn function_argument(&self, register: u32) -> MResult<Value> {
+    pub fn function_argument(&self, register: u32) -> MResult<LegacyValue> {
         self.value(register)
     }
 
-    pub fn external_input(&self, register: u32) -> MResult<Value> {
-        Ok(Value::MutableReference(self.cell(register)?))
+    pub fn external_input(&self, register: u32) -> MResult<LegacyValue> {
+        Ok(LegacyValue::MutableReference(self.cell(register)?))
     }
 
     pub(crate) fn len(&self) -> usize {
@@ -123,17 +123,17 @@ mod tests {
         let cell = registers.cell(0).unwrap();
 
         registers
-            .load(0, Value::Index(mech_core::Ref::new(1)))
+            .load(0, LegacyValue::Index(mech_core::Ref::new(1)))
             .unwrap();
 
         assert!(cell.same_handle(&registers.cell(0).unwrap()));
         assert_eq!(
             registers.value(0).unwrap(),
-            Value::Index(mech_core::Ref::new(1))
+            LegacyValue::Index(mech_core::Ref::new(1))
         );
         assert!(matches!(
             registers.external_input(0).unwrap(),
-            Value::MutableReference(reference) if reference.same_handle(&cell)
+            LegacyValue::MutableReference(reference) if reference.same_handle(&cell)
         ));
     }
 

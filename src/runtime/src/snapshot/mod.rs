@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 use std::fmt::{Debug, Display, Formatter};
 
-use mech_core::{MResult, MechError, Value, ValueKind};
+use mech_core::{LegacyValue, MResult, MechError, ValueKind};
 
 use crate::{CapabilityId, ModuleVersionId};
 
@@ -22,11 +22,11 @@ mod tests;
 /// Cyclic values are rejected by `try_capture`.
 #[derive(PartialEq)]
 pub struct RuntimeValueSnapshot {
-    value: Value,
+    value: LegacyValue,
 }
 
 impl RuntimeValueSnapshot {
-    pub fn try_capture(value: &Value) -> MResult<Self> {
+    pub fn try_capture(value: &LegacyValue) -> MResult<Self> {
         Ok(Self {
             value: value.try_deep_snapshot()?,
         })
@@ -34,11 +34,11 @@ impl RuntimeValueSnapshot {
 
     pub fn empty() -> Self {
         Self {
-            value: Value::Empty,
+            value: LegacyValue::Empty,
         }
     }
 
-    /// Returns `true` exactly when the detached value is [`Value::Empty`].
+    /// Returns `true` exactly when the detached value is [`LegacyValue::Empty`].
     ///
     /// ```
     /// use mech_runtime::RuntimeValueSnapshot;
@@ -46,20 +46,20 @@ impl RuntimeValueSnapshot {
     /// assert!(RuntimeValueSnapshot::empty().is_empty());
     /// ```
     pub fn is_empty(&self) -> bool {
-        matches!(&self.value, Value::Empty)
+        matches!(&self.value, LegacyValue::Empty)
     }
 
     pub fn kind(&self) -> ValueKind {
         self.value.kind()
     }
 
-    pub fn to_value(&self) -> Value {
+    pub fn to_value(&self) -> LegacyValue {
         self.value
             .try_deep_snapshot()
             .expect("RuntimeValueSnapshot invariant violated: stored value must remain acyclic")
     }
 
-    pub fn into_value(self) -> Value {
+    pub fn into_value(self) -> LegacyValue {
         self.value
     }
 }
@@ -75,18 +75,18 @@ impl Clone for RuntimeValueSnapshot {
     }
 }
 
-impl TryFrom<Value> for RuntimeValueSnapshot {
+impl TryFrom<LegacyValue> for RuntimeValueSnapshot {
     type Error = MechError;
 
-    fn try_from(value: Value) -> MResult<Self> {
+    fn try_from(value: LegacyValue) -> MResult<Self> {
         Self::try_capture(&value)
     }
 }
 
-impl TryFrom<&Value> for RuntimeValueSnapshot {
+impl TryFrom<&LegacyValue> for RuntimeValueSnapshot {
     type Error = MechError;
 
-    fn try_from(value: &Value) -> MResult<Self> {
+    fn try_from(value: &LegacyValue) -> MResult<Self> {
         Self::try_capture(value)
     }
 }
@@ -101,7 +101,7 @@ impl TryIntoRuntimeValueSnapshot for RuntimeValueSnapshot {
     }
 }
 
-impl TryIntoRuntimeValueSnapshot for Value {
+impl TryIntoRuntimeValueSnapshot for LegacyValue {
     fn try_into_runtime_value_snapshot(self) -> MResult<RuntimeValueSnapshot> {
         RuntimeValueSnapshot::try_capture(&self)
     }

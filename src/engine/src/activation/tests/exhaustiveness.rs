@@ -1,5 +1,5 @@
 use super::support::{
-    ActivationPatternArmsNonExhaustive, ActivationPatternWildcardMustBeLast, Ref, Value,
+    ActivationPatternArmsNonExhaustive, ActivationPatternWildcardMustBeLast, LegacyValue, Ref,
     arm_register_nodes, assert_dispatch_turn, committed_capture_value, f64_symbol, interpret,
     interpret_more, plan_snapshot, registration, root_cell, selected_arm_index,
     set_f64_matrix_event, set_f64_symbol, set_tuple_event,
@@ -59,7 +59,7 @@ gravity := 4.0
     );
     assert_eq!(
         committed_capture_value(&interpreter, 1, 0),
-        Value::F64(Ref::new(0.25)),
+        LegacyValue::F64(Ref::new(0.25)),
     );
     assert_eq!(plan_snapshot(&interpreter), topology);
 
@@ -76,7 +76,7 @@ gravity := 4.0
     );
     assert_eq!(
         committed_capture_value(&interpreter, 0, 0),
-        Value::F64(Ref::new(0.25)),
+        LegacyValue::F64(Ref::new(0.25)),
     );
     assert_eq!(plan_snapshot(&interpreter), topology);
 }
@@ -118,7 +118,10 @@ event := (1.0, 2.0)
     let topology = plan_snapshot(&interpreter);
     set_tuple_event(
         &interpreter,
-        vec![Value::F64(Ref::new(3.0)), Value::F64(Ref::new(4.0))],
+        vec![
+            LegacyValue::F64(Ref::new(3.0)),
+            LegacyValue::F64(Ref::new(4.0)),
+        ],
     );
     let outcome = interpreter.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&interpreter, &topology, &outcome, 0, 34.0);

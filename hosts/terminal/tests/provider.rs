@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
+use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 use mech_runtime::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
@@ -52,8 +52,8 @@ impl MechErrorKind for FakeCliBackendError {
     }
 }
 
-fn str_value(text: &str) -> Value {
-    Value::String(Ref::new(text.to_string()))
+fn str_value(text: &str) -> LegacyValue {
+    LegacyValue::String(Ref::new(text.to_string()))
 }
 
 fn execute_write(

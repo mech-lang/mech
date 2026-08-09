@@ -7,7 +7,7 @@ use crate::{
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
     RuntimeValueSnapshot, TransactionId,
 };
-use mech_core::{MResult, MechError, MechErrorKind, Value};
+use mech_core::{LegacyValue, MResult, MechError, MechErrorKind};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -182,7 +182,7 @@ impl MechRuntime {
         &mut self,
         binding: &str,
         child_path: &str,
-        value: &Value,
+        value: &LegacyValue,
     ) -> MResult<()> {
         let (base_uri, path) = self.resolve_bound_resource_parts(binding, child_path)?;
         self.write_resource(RuntimeResourceWriteRequest {
@@ -398,7 +398,7 @@ impl MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         mut request: RuntimeResourceReadRequest,
-        finish: impl FnOnce(Value) -> MResult<T>,
+        finish: impl FnOnce(LegacyValue) -> MResult<T>,
     ) -> MResult<T> {
         self.validate_context_for_runtime(context)?;
         let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;

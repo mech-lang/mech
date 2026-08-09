@@ -11,7 +11,7 @@ use std::fs;
 #[cfg(not(feature = "no_std"))]
 use std::path::Path;
 
-use crate::{MResult, MechError, Value, hash_str};
+use crate::{LegacyValue, MResult, MechError, hash_str};
 
 use super::*;
 
@@ -38,7 +38,7 @@ impl ParsedProgram {
         parse_program(bytes, &limits)
     }
 
-    pub fn decode_constants(&self) -> MResult<Vec<Value>> {
+    pub fn decode_constants(&self) -> MResult<Vec<LegacyValue>> {
         decode_constants(&self.types, &self.constants, &self.constant_blob)
     }
 
@@ -236,7 +236,7 @@ fn validate_composite_packs(
         return Ok(());
     }
     let values = decode_constants(types, constants, blob)?;
-    let mut registers = vec![None::<Value>; register_count];
+    let mut registers = vec![None::<LegacyValue>; register_count];
     for instruction in instructions {
         match instruction {
             BytecodeInstruction::ConstLoad { dst, constant } => {

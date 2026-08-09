@@ -4,9 +4,9 @@ use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::V
 use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    FunctionArgs, FunctionValueRepresentation, GuardFunctionSafety, MResult, MechError,
-    MechErrorKind, MechFunction, MechFunctionFactory, NativeValueFeature, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, Value, hash_str,
+    FunctionArgs, FunctionValueRepresentation, GuardFunctionSafety, LegacyValue, MResult,
+    MechError, MechErrorKind, MechFunction, MechFunctionFactory, NativeValueFeature,
+    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, hash_str,
 };
 
 #[repr(transparent)]
@@ -93,7 +93,7 @@ impl NativeFunctionLinkage {
 }
 
 pub trait FunctionSpecializer: Send + Sync {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>>;
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>>;
 
     fn guard_safety(&self) -> GuardFunctionSafety {
         GuardFunctionSafety::Unsupported
@@ -1335,7 +1335,7 @@ mod tests {
     struct TestSpecializer;
 
     impl FunctionSpecializer for TestSpecializer {
-        fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             unreachable!("catalog tests do not run specializers")
         }
     }
@@ -1467,7 +1467,7 @@ mod tests {
             .unwrap();
 
         let error = entry
-            .instantiate(FunctionArgs::Nullary(Value::Empty))
+            .instantiate(FunctionArgs::Nullary(LegacyValue::Empty))
             .err()
             .expect("rejecting factory must fail");
         assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");

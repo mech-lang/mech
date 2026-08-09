@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::sync::Arc;
 
-use mech_core::{MResult, MechMatrix as Matrix, ToMatrix, Value};
+use mech_core::{LegacyValue, MResult, MechMatrix as Matrix, ToMatrix};
 
 use mech_runtime::{
     BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
@@ -21,8 +21,8 @@ fn short(id: impl Display) -> String {
     short_text(&id.to_string())
 }
 
-fn matrix_f64(elements: Vec<f64>, rows: usize, cols: usize) -> Value {
-    Value::MatrixF64(<f64 as ToMatrix>::to_matrix(elements, rows, cols))
+fn matrix_f64(elements: Vec<f64>, rows: usize, cols: usize) -> LegacyValue {
+    LegacyValue::MatrixF64(<f64 as ToMatrix>::to_matrix(elements, rows, cols))
 }
 
 fn matrix_scalar_f64(matrix: &Matrix<f64>) -> Option<f64> {

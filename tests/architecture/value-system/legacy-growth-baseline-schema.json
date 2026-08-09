@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://mech-lang.org/schemas/value-system-legacy-growth-baseline-v3.json",
+  "$id": "https://mech-lang.org/schemas/value-system-legacy-growth-baseline-v4.json",
   "additionalProperties": false,
   "properties": {
     "legacy_aliases": {
@@ -24,13 +24,13 @@
       "const": {
         "baseline_policy": "checked-in-archived-source-oracle-may-only-shrink-v1",
         "identifier_comparison": "canonical-identifier-v1",
-        "implementation_sha256": "9624eb89c01085cc5e412506b30671f442ba53b057c228b3fbcd113cc77ad834",
+        "implementation_sha256": "8211e9b71af90bca7dd8da33b6caaca83c3ab5569fd2739ae35423b7795fad5b",
         "ref_alias_resolution": "transitive-generic-identity-wrapper-v1",
-        "module": "scripts/value_system_legacy_scanner_v1.py",
-        "version": "c0-legacy-growth-v1"
+        "module": "scripts/value_system_legacy_scanner_v2.py",
+        "version": "c2-legacy-growth-v2"
       }
     },
-    "schema_version": { "const": 3 }
+    "schema_version": { "const": 4 }
   },
   "required": [
     "schema_version",

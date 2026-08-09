@@ -31,7 +31,7 @@
     "scripts/check-gate-b-contract.py",
     "scripts/generate-gate-b-ekf-trace.py",
       "scripts/generate-value-system-inventory.py",
-      "scripts/value_system_legacy_scanner_v1.py",
+      "scripts/value_system_legacy_scanner_v2.py",
       "scripts/tests/canonical_encoding_v1_reference.py",
       "benchmarks/runtime/gate-b/result-schema.json",
       "benchmarks/runtime/gate-b/ekf-v1.json",

@@ -9,7 +9,7 @@ pub struct MechMap {
     pub key_kind: ValueKind,
     pub value_kind: ValueKind,
     pub num_elements: usize,
-    pub map: IndexMap<Value, Value>,
+    pub map: IndexMap<LegacyValue, LegacyValue>,
 }
 
 #[cfg(feature = "map")]
@@ -46,7 +46,7 @@ impl MechMap {
             .sum()
     }
 
-    pub fn from_vec(vec: Vec<(Value, Value)>) -> MechMap {
+    pub fn from_vec(vec: Vec<(LegacyValue, LegacyValue)>) -> MechMap {
         let mut map = IndexMap::new();
         for (k, v) in vec {
             map.insert(k, v);
@@ -65,7 +65,7 @@ impl MechMap {
         key_kind: ValueKind,
         value_kind: ValueKind,
         num_elements: usize,
-        entries: Vec<(Value, Value)>,
+        entries: Vec<(LegacyValue, LegacyValue)>,
     ) -> MechMap {
         let mut map = IndexMap::with_capacity(entries.len());
         for (key, value) in entries {

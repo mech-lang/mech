@@ -61,7 +61,7 @@ impl StringAccessElement {
         match &self.source {
             StringAccessSource::Direct(s) => Ok(s.borrow().clone()),
             StringAccessSource::Mutable(r) => match &*r.borrow() {
-                Value::String(s) => Ok(s.borrow().clone()),
+                LegacyValue::String(s) => Ok(s.borrow().clone()),
                 other => Err(MechError::new(
                     UnhandledFunctionArgumentKind2 {
                         arg: (other.kind(), self.index_value_for_error().kind()),
@@ -80,7 +80,7 @@ impl StringAccessElement {
             StringAccessIndex::Mutable(r) => {
                 let current = r.borrow();
                 match current.as_index()? {
-                    Value::Index(ix) => Ok(*ix.borrow()),
+                    LegacyValue::Index(ix) => Ok(*ix.borrow()),
                     other => Err(MechError::new(
                         UnhandledFunctionArgumentKind2 {
                             arg: (
@@ -99,10 +99,10 @@ impl StringAccessElement {
         }
     }
 
-    fn index_value_for_error(&self) -> Value {
+    fn index_value_for_error(&self) -> LegacyValue {
         match &self.index {
-            StringAccessIndex::Direct(ix) => Value::Index(ix.clone()),
-            StringAccessIndex::Mutable(r) => Value::MutableReference(r.clone()),
+            StringAccessIndex::Direct(ix) => LegacyValue::Index(ix.clone()),
+            StringAccessIndex::Mutable(r) => LegacyValue::MutableReference(r.clone()),
         }
     }
 }
@@ -115,14 +115,14 @@ impl MechFunctionImpl for StringAccessElement {
         *self.out.borrow_mut() = grapheme;
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::String(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::String(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -131,7 +131,7 @@ impl MechFunctionCompiler for StringAccessElement {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         match self.compile_mode {
       StringAccessCompileMode::Constant => {
-        let reg = compile_register!(Value::String(self.out.clone()), ctx);
+        let reg = compile_register!(LegacyValue::String(self.out.clone()), ctx);
         Ok(reg)
       }
       StringAccessCompileMode::LiveDirect => Err(MechError::new(
@@ -152,7 +152,7 @@ impl MechFunctionCompiler for StringAccessElement {
 
 pub struct StringAccessScalar {}
 impl FunctionSpecializer for StringAccessScalar {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -172,7 +172,7 @@ impl FunctionSpecializer for StringAccessScalar {
             take_next_string_access_compile_mode().unwrap_or(StringAccessCompileMode::Constant)
         }
         match (src.clone(), ix1.clone()) {
-            (Value::String(s), Value::Index(ix)) => {
+            (LegacyValue::String(s), LegacyValue::Index(ix)) => {
                 let grapheme = access_grapheme(&s.borrow(), *ix.borrow())?;
                 let compile_mode = direct_compile_mode(&s, &ix);
                 let new_fxn = StringAccessElement {
@@ -183,9 +183,9 @@ impl FunctionSpecializer for StringAccessScalar {
                 };
                 Ok(Box::new(new_fxn))
             }
-            (Value::String(s), Value::MutableReference(ix_ref)) => {
+            (LegacyValue::String(s), LegacyValue::MutableReference(ix_ref)) => {
                 let ix = match ix_ref.borrow().as_index()? {
-                    Value::Index(ix) => *ix.borrow(),
+                    LegacyValue::Index(ix) => *ix.borrow(),
                     other => {
                         return Err(MechError::new(
                             UnhandledFunctionArgumentKind2 {
@@ -206,8 +206,8 @@ impl FunctionSpecializer for StringAccessScalar {
                 };
                 Ok(Box::new(new_fxn))
             }
-            (Value::MutableReference(r), Value::Index(ix)) => match &*r.borrow() {
-                Value::String(s) => {
+            (LegacyValue::MutableReference(r), LegacyValue::Index(ix)) => match &*r.borrow() {
+                LegacyValue::String(s) => {
                     let grapheme = access_grapheme(&s.borrow(), *ix.borrow())?;
                     let new_fxn = StringAccessElement {
                         source: StringAccessSource::Mutable(r.clone()),
@@ -226,9 +226,9 @@ impl FunctionSpecializer for StringAccessScalar {
                 )
                 .with_compiler_loc()),
             },
-            (Value::MutableReference(r), Value::MutableReference(ix_ref)) => {
+            (LegacyValue::MutableReference(r), LegacyValue::MutableReference(ix_ref)) => {
                 let ix = match ix_ref.borrow().as_index()? {
-                    Value::Index(ix) => *ix.borrow(),
+                    LegacyValue::Index(ix) => *ix.borrow(),
                     other => {
                         return Err(MechError::new(
                             UnhandledFunctionArgumentKind2 {
@@ -241,7 +241,7 @@ impl FunctionSpecializer for StringAccessScalar {
                     }
                 };
                 match &*r.borrow() {
-                    Value::String(s) => {
+                    LegacyValue::String(s) => {
                         let grapheme = access_grapheme(&s.borrow(), ix)?;
                         let new_fxn = StringAccessElement {
                             source: StringAccessSource::Mutable(r.clone()),

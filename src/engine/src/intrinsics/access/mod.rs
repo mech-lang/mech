@@ -41,7 +41,7 @@ macro_rules! declare_structural_access_alias {
     ) => {
         #[derive(Debug)]
         struct $factory {
-            out: Value,
+            out: LegacyValue,
         }
 
         impl MechFunctionFactory for $factory {
@@ -68,7 +68,7 @@ macro_rules! declare_structural_access_alias {
                 Ok(())
             }
 
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.clone()
             }
 
@@ -76,7 +76,7 @@ macro_rules! declare_structural_access_alias {
                 format!("{self:#?}")
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -148,26 +148,26 @@ pub(crate) fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResu
 }
 
 #[cfg(feature = "matrix")]
-fn matrix_access_index_is_scalar(index: &Value) -> bool {
+fn matrix_access_index_is_scalar(index: &LegacyValue) -> bool {
     index.shape().as_slice() == [1, 1]
 }
 
 #[cfg(feature = "matrix")]
-fn compile_matrix_access(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+fn compile_matrix_access(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
     match arguments.get(1..).unwrap_or_default() {
-        [Value::IndexAll] => MatrixAccessAll {}.specialize(arguments),
+        [LegacyValue::IndexAll] => MatrixAccessAll {}.specialize(arguments),
         [index] if matrix_access_index_is_scalar(index) => {
             MatrixAccessScalar {}.specialize(arguments)
         }
         [_] => MatrixAccessRange {}.specialize(arguments),
-        [Value::IndexAll, index] if matrix_access_index_is_scalar(index) => {
+        [LegacyValue::IndexAll, index] if matrix_access_index_is_scalar(index) => {
             MatrixAccessAllScalar {}.specialize(arguments)
         }
-        [Value::IndexAll, _] => MatrixAccessAllRange {}.specialize(arguments),
-        [index, Value::IndexAll] if matrix_access_index_is_scalar(index) => {
+        [LegacyValue::IndexAll, _] => MatrixAccessAllRange {}.specialize(arguments),
+        [index, LegacyValue::IndexAll] if matrix_access_index_is_scalar(index) => {
             MatrixAccessScalarAll {}.specialize(arguments)
         }
-        [_, Value::IndexAll] => MatrixAccessRangeAll {}.specialize(arguments),
+        [_, LegacyValue::IndexAll] => MatrixAccessRangeAll {}.specialize(arguments),
         [left, right]
             if matrix_access_index_is_scalar(left) && matrix_access_index_is_scalar(right) =>
         {
@@ -193,7 +193,7 @@ fn compile_matrix_access(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> 
 
 pub struct AccessScalar {}
 impl FunctionSpecializer for AccessScalar {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if !(2..=3).contains(&arguments.len()) {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -231,7 +231,7 @@ impl FunctionSpecializer for AccessScalar {
 
 pub struct AccessRange {}
 impl FunctionSpecializer for AccessRange {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if !(2..=3).contains(&arguments.len()) {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -263,7 +263,7 @@ impl FunctionSpecializer for AccessRange {
 
 pub struct AccessSwizzle {}
 impl FunctionSpecializer for AccessSwizzle {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -278,7 +278,7 @@ impl FunctionSpecializer for AccessSwizzle {
         let src = &arguments[0];
         match src {
             #[cfg(feature = "record")]
-            Value::Record(rcrd) => {
+            LegacyValue::Record(rcrd) => {
                 let mut values = vec![];
                 for key in keys {
                     let k = key.as_u64().unwrap().borrow().clone();
@@ -294,15 +294,15 @@ impl FunctionSpecializer for AccessSwizzle {
                     }
                 }
                 Ok(Box::new(RecordAccessSwizzle {
-                    source: Value::Tuple(Ref::new(MechTuple::from_vec(values))),
+                    source: LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values))),
                 }))
             }
             #[cfg(feature = "table")]
-            Value::Table(tbl) => {
+            LegacyValue::Table(tbl) => {
                 let mut elements = vec![];
                 for k in keys {
                     match k {
-                        Value::Id(k) => match tbl.borrow().get(&k) {
+                        LegacyValue::Id(k) => match tbl.borrow().get(&k) {
                             Some((kind, mat_values)) => {
                                 elements.push(Box::new(mat_values.to_value()));
                             }
@@ -327,12 +327,12 @@ impl FunctionSpecializer for AccessSwizzle {
                     }
                 }
                 todo!("Table swizzle needs to be fixed.");
-                let tuple = Value::Tuple(Ref::new(MechTuple { elements }));
+                let tuple = LegacyValue::Tuple(Ref::new(MechTuple { elements }));
                 Ok(Box::new(TableAccessSwizzle { out: tuple }))
             }
-            Value::MutableReference(r) => match &*r.borrow() {
+            LegacyValue::MutableReference(r) => match &*r.borrow() {
                 #[cfg(feature = "record")]
-                Value::Record(rcrd) => {
+                LegacyValue::Record(rcrd) => {
                     let mut values = vec![];
                     for key in keys {
                         let k = key.as_u64().unwrap().borrow().clone();
@@ -348,11 +348,11 @@ impl FunctionSpecializer for AccessSwizzle {
                         }
                     }
                     Ok(Box::new(RecordAccessSwizzle {
-                        source: Value::Tuple(Ref::new(MechTuple::from_vec(values))),
+                        source: LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values))),
                     }))
                 }
                 #[cfg(feature = "table")]
-                Value::Table(tbl) => {
+                LegacyValue::Table(tbl) => {
                     let mut elements = vec![];
                     for key in keys {
                         let k = key.as_u64().unwrap().borrow().clone();
@@ -369,7 +369,7 @@ impl FunctionSpecializer for AccessSwizzle {
                             }
                         }
                     }
-                    let tuple = Value::Tuple(Ref::new(MechTuple { elements }));
+                    let tuple = LegacyValue::Tuple(Ref::new(MechTuple { elements }));
                     Ok(Box::new(TableAccessSwizzle { out: tuple }))
                 }
                 _ => todo!(),
@@ -383,7 +383,10 @@ impl FunctionSpecializer for AccessSwizzle {
 
 // Access Column
 
-pub fn impl_access_column_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
+pub fn impl_access_column_fxn(
+    source: LegacyValue,
+    key: LegacyValue,
+) -> MResult<Box<dyn MechFunction>> {
     match source.kind().deref_kind() {
         #[cfg(feature = "record")]
         ValueKind::Record(_) => RecordAccess {}.specialize(&vec![source, key]),
@@ -404,7 +407,7 @@ pub fn impl_access_column_fxn(source: Value, key: Value) -> MResult<Box<dyn Mech
 
 pub struct AccessColumn {}
 impl FunctionSpecializer for AccessColumn {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -420,7 +423,7 @@ impl FunctionSpecializer for AccessColumn {
         match impl_access_column_fxn(src.clone(), key.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (src.clone(), &key.clone()) {
-                (Value::MutableReference(src), _) => {
+                (LegacyValue::MutableReference(src), _) => {
                     impl_access_column_fxn(src.borrow().clone(), key.clone())
                 }
                 _ => Err(MechError::new(

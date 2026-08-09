@@ -206,7 +206,7 @@ impl ToUsize for R64 {
 }
 
 impl ToValue for R64 {
-    fn to_value(&self) -> Value {
-        Value::R64(Ref::new(*self))
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::R64(Ref::new(*self))
     }
 }

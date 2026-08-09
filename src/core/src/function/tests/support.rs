@@ -8,12 +8,14 @@ use super::super::{
 use crate::MechSet;
 #[cfg(feature = "compiler")]
 use crate::{BytecodeCompilerContext, Register};
-use crate::{GenericError, MResult, MechError, ReactiveCellId, Ref, ToValue, Value, ValueKind};
+use crate::{
+    GenericError, LegacyValue, MResult, MechError, ReactiveCellId, Ref, ToValue, ValueKind,
+};
 use std::{cell::RefCell, rc::Rc};
 
 pub(super) struct TestFunction {
     name: &'static str,
-    output: Value,
+    output: LegacyValue,
     dependency_kinds: Option<Vec<ReactiveDependencyKind>>,
     dependency_scopes: Option<Vec<ReactiveDependencyScope>>,
     node_kind: ReactiveNodeKind,
@@ -23,7 +25,7 @@ impl TestFunction {
     pub(super) fn new(name: &'static str) -> Self {
         Self {
             name,
-            output: Value::Empty,
+            output: LegacyValue::Empty,
             dependency_kinds: None,
             dependency_scopes: None,
             node_kind: ReactiveNodeKind::Combinational,
@@ -31,7 +33,7 @@ impl TestFunction {
     }
 
     #[cfg(feature = "f64")]
-    pub(super) fn with_output(name: &'static str, output: Value) -> Self {
+    pub(super) fn with_output(name: &'static str, output: LegacyValue) -> Self {
         Self {
             name,
             output,
@@ -68,7 +70,7 @@ impl MechFunctionImpl for TestFunction {
         Ok(())
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.output.clone()
     }
 
@@ -94,7 +96,7 @@ impl MechFunctionImpl for TestFunction {
         self.name.to_string()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -107,12 +109,12 @@ impl MechFunctionCompiler for TestFunction {
 }
 
 #[cfg(all(feature = "set", feature = "f64"))]
-pub(super) fn set_output() -> (Value, ReactiveCellId, ReactiveCellId, ReactiveCellId) {
+pub(super) fn set_output() -> (LegacyValue, ReactiveCellId, ReactiveCellId, ReactiveCellId) {
     let first = Ref::new(1.0);
     let second = Ref::new(2.0);
     let mut members = indexmap::IndexSet::new();
-    members.insert(Value::F64(first.clone()));
-    members.insert(Value::F64(second.clone()));
+    members.insert(LegacyValue::F64(first.clone()));
+    members.insert(LegacyValue::F64(second.clone()));
     let set = Ref::new(MechSet {
         kind: ValueKind::F64,
         max_elements: Some(2),
@@ -121,7 +123,7 @@ pub(super) fn set_output() -> (Value, ReactiveCellId, ReactiveCellId, ReactiveCe
     });
 
     (
-        Value::Set(set.clone()),
+        LegacyValue::Set(set.clone()),
         ReactiveCellId::new(set.id()),
         ReactiveCellId::new(first.id()),
         ReactiveCellId::new(second.id()),
@@ -129,10 +131,10 @@ pub(super) fn set_output() -> (Value, ReactiveCellId, ReactiveCellId, ReactiveCe
 }
 
 #[cfg(feature = "f64")]
-pub(super) fn scalar(value: f64) -> (Value, ReactiveCellId) {
+pub(super) fn scalar(value: f64) -> (LegacyValue, ReactiveCellId) {
     let reference = Ref::new(value);
     let cell = ReactiveCellId::new(reference.id());
-    (Value::F64(reference), cell)
+    (LegacyValue::F64(reference), cell)
 }
 
 #[cfg(feature = "f64")]
@@ -169,7 +171,7 @@ impl MechFunctionImpl for TestRegister {
         *self.solve.borrow_mut() += 1;
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.to_value()
     }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
@@ -196,7 +198,7 @@ impl MechFunctionImpl for TestRegister {
         "test register".into()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }

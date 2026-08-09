@@ -255,7 +255,7 @@ fn bind_single_mock_input(runtime: &mut MechRuntime) {
         vec![crate::RuntimeLiveResourceBinding {
             interpreter_id: 1,
             source,
-            target: mech_core::Ref::new(mech_core::Value::F64(mech_core::Ref::new(0.0))),
+            target: mech_core::Ref::new(mech_core::LegacyValue::F64(mech_core::Ref::new(0.0))),
         }],
     );
 }

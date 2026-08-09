@@ -1,7 +1,7 @@
 use super::support::{
     ActivationPatternRegisterWriteUnsupported, ActivationScopeTriggerWriteUnsupported,
-    CompiledPattern, Finalize, GuardFinalize, Interpreter, Matcher, MechFunctionImpl,
-    ReactiveDependencyKind, Ref, Select, UnmatchedFinalize, Value, arm_register_nodes, f64_symbol,
+    CompiledPattern, Finalize, GuardFinalize, Interpreter, LegacyValue, Matcher, MechFunctionImpl,
+    ReactiveDependencyKind, Ref, Select, UnmatchedFinalize, arm_register_nodes, f64_symbol,
     hash_str, interpret, interpret_more, plan_snapshot, registration, root_cell,
     selected_arm_index, set_f64_symbol, symbol,
 };
@@ -9,21 +9,21 @@ use super::support::{
 #[cfg(any(feature = "bool", feature = "variable_define"))]
 #[test]
 fn activation_transaction_state_exposes_hidden_mutable_cells() {
-    fn contains_bool(values: &[Value], target: &Ref<bool>) -> bool {
+    fn contains_bool(values: &[LegacyValue], target: &Ref<bool>) -> bool {
         values
             .iter()
-            .any(|value| matches!(value, Value::Bool(cell) if cell.addr() == target.addr()))
+            .any(|value| matches!(value, LegacyValue::Bool(cell) if cell.addr() == target.addr()))
     }
-    fn contains_index(values: &[Value], target: &Ref<usize>) -> bool {
+    fn contains_index(values: &[LegacyValue], target: &Ref<usize>) -> bool {
         values
             .iter()
-            .any(|value| matches!(value, Value::Index(cell) if cell.addr() == target.addr()))
+            .any(|value| matches!(value, LegacyValue::Index(cell) if cell.addr() == target.addr()))
     }
 
     let matched = Ref::new(false);
     let matcher = Matcher {
         pattern: CompiledPattern::Wildcard,
-        trigger: Value::Empty,
+        trigger: LegacyValue::Empty,
         expression_values: Vec::new(),
         captures: Vec::new(),
         matched: matched.clone(),
@@ -202,7 +202,7 @@ fn activation_arm_alias_of_live_input_remains_sampled_until_trigger() {
     {
         let symbols = interpreter.symbols();
         let mut symbols = symbols.borrow_mut();
-        symbols.insert(outer_id, Value::F64(Ref::new(1.0)), true);
+        symbols.insert(outer_id, LegacyValue::F64(Ref::new(1.0)), true);
         symbols
             .dictionary
             .borrow_mut()

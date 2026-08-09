@@ -1,5 +1,5 @@
 use super::support::{
-    ReactiveDependencyKind, Ref, Value, arm_pulse_generation, arm_register_nodes,
+    LegacyValue, ReactiveDependencyKind, Ref, arm_pulse_generation, arm_register_nodes,
     committed_capture_value, f64_symbol, interpret, plan_snapshot, registration, root_cell,
     selected_arm_index, set_f64_symbol,
 };
@@ -115,7 +115,7 @@ event := 0.0
     );
     assert_eq!(
         committed_capture_value(&interpreter, 1, 0),
-        Value::F64(Ref::new(5.0))
+        LegacyValue::F64(Ref::new(5.0))
     );
     for register in arm_registers[0].iter().chain(&arm_registers[2]) {
         assert!(

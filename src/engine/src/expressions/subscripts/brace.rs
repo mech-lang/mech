@@ -1,13 +1,13 @@
 use super::super::environment::expression_solves_deferred;
 use super::{Environment, catalog_access_function, subscript_formula, subscript_range};
-use crate::{InterpreterExecution, MResult, Subscript, Value};
+use crate::{InterpreterExecution, LegacyValue, MResult, Subscript};
 
 pub(super) fn access(
     sbscrpt: &Subscript,
-    val: &Value,
+    val: &LegacyValue,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let plan = p.plan();
     match sbscrpt {
         Subscript::Brace(subs) => {
@@ -53,7 +53,7 @@ pub(super) fn access(
                         .push(catalog_access_function(p, "access/range", &fxn_input)?);
                 }
                 /*[Subscript::All] => {
-                  fxn_input.push(Value::IndexAll);
+                  fxn_input.push(LegacyValue::IndexAll);
                   #[cfg(feature = "matrix")]
                   plan.borrow_mut().push(MapAccessAll{}.specialize(&fxn_input)?);
                 },*/

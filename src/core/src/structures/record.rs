@@ -8,7 +8,7 @@ use indexmap::map::*;
 pub struct MechRecord {
     pub cols: usize,
     pub kinds: Vec<ValueKind>,
-    pub data: IndexMap<u64, Value>,
+    pub data: IndexMap<u64, LegacyValue>,
     pub field_names: HashMap<u64, String>,
 }
 
@@ -18,7 +18,7 @@ impl MechRecord {
     pub fn from_parts(
         cols: usize,
         kinds: Vec<ValueKind>,
-        fields: Vec<(u64, String, Value)>,
+        fields: Vec<(u64, String, LegacyValue)>,
     ) -> MechRecord {
         let mut data = IndexMap::with_capacity(fields.len());
         let mut field_names = HashMap::with_capacity(fields.len());
@@ -118,11 +118,11 @@ impl MechRecord {
         )
     }
 
-    pub fn get(&self, key: &u64) -> Option<&Value> {
+    pub fn get(&self, key: &u64) -> Option<&LegacyValue> {
         self.data.get(key)
     }
 
-    pub fn new(vec: Vec<(&str, Value)>) -> MechRecord {
+    pub fn new(vec: Vec<(&str, LegacyValue)>) -> MechRecord {
         let mut data = IndexMap::new();
         let mut field_names = HashMap::new();
 
@@ -143,7 +143,7 @@ impl MechRecord {
         }
     }
 
-    pub fn from_vec(vec: Vec<((u64, String), Value)>) -> MechRecord {
+    pub fn from_vec(vec: Vec<((u64, String), LegacyValue)>) -> MechRecord {
         let mut data = IndexMap::new();
         let mut field_names = HashMap::new();
         for ((k, s), v) in vec {
@@ -165,7 +165,7 @@ impl MechRecord {
         for (name, knd) in fields {
             let col_id = hash_str(name);
             field_names.insert(col_id, name.to_string());
-            data.insert(col_id, Value::from_kind(knd));
+            data.insert(col_id, LegacyValue::from_kind(knd));
         }
         let kinds = data.iter().map(|(_, v)| v.kind()).collect();
         Ok(MechRecord {
@@ -176,7 +176,7 @@ impl MechRecord {
         })
     }
 
-    pub fn insert_field(&mut self, key: u64, value: Value) {
+    pub fn insert_field(&mut self, key: u64, value: LegacyValue) {
         self.cols += 1;
         self.kinds.push(value.kind());
         self.data.insert(key, value);

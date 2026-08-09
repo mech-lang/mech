@@ -1,6 +1,6 @@
 use criterion::{BatchSize, Criterion, Throughput, criterion_group, criterion_main};
 use mech_core::{
-    MResult, MechFunctionImpl, MechMap, MechRecord, MechSet, MechTuple, Ref, ToMatrix, Value,
+    LegacyValue, MResult, MechFunctionImpl, MechMap, MechRecord, MechSet, MechTuple, Ref, ToMatrix,
     hash_str,
 };
 use mech_engine::Interpreter;
@@ -18,14 +18,14 @@ impl MechFunctionImpl for BenchNode {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::F64(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::F64(self.out.clone())
     }
     fn to_string(&self) -> String {
         "ProgramCheckpointBenchNode".to_string()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -40,7 +40,7 @@ impl mech_core::MechFunctionCompiler for BenchNode {
     }
 }
 
-fn insert_symbol(interpreter: &Interpreter, name: &str, value: Value) {
+fn insert_symbol(interpreter: &Interpreter, name: &str, value: LegacyValue) {
     let id = hash_str(name);
     let symbols = interpreter.symbols();
     {
@@ -96,36 +96,36 @@ fn plan_1000_program() -> MechProgram {
 fn nested_containers_program() -> MechProgram {
     let program = empty_program();
     let shared = Ref::new(1.0);
-    let map = Value::Map(Ref::new(MechMap::from_vec(vec![
-        (Value::Id(1), Value::F64(shared.clone())),
-        (Value::Id(2), Value::F64(Ref::new(2.0))),
+    let map = LegacyValue::Map(Ref::new(MechMap::from_vec(vec![
+        (LegacyValue::Id(1), LegacyValue::F64(shared.clone())),
+        (LegacyValue::Id(2), LegacyValue::F64(Ref::new(2.0))),
     ])));
-    let set = Value::Set(Ref::new(MechSet::from_vec(vec![
-        Value::Id(10),
-        Value::Id(20),
-        Value::Id(30),
+    let set = LegacyValue::Set(Ref::new(MechSet::from_vec(vec![
+        LegacyValue::Id(10),
+        LegacyValue::Id(20),
+        LegacyValue::Id(30),
     ])));
-    let tuple = Value::Tuple(Ref::new(MechTuple::from_vec(vec![
-        Value::F64(shared.clone()),
+    let tuple = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
+        LegacyValue::F64(shared.clone()),
         map,
         set,
     ])));
     let matrix_elements = (0..NESTED_MATRIX_SIDE * NESTED_MATRIX_SIDE)
         .map(|index| {
             if index % 8 == 0 {
-                Value::F64(shared.clone())
+                LegacyValue::F64(shared.clone())
             } else {
-                Value::F64(Ref::new(index as f64))
+                LegacyValue::F64(Ref::new(index as f64))
             }
         })
         .collect();
-    let value_matrix = Value::MatrixValue(<Value as ToMatrix>::to_matrixd(
+    let value_matrix = LegacyValue::MatrixValue(<LegacyValue as ToMatrix>::to_matrixd(
         matrix_elements,
         NESTED_MATRIX_SIDE,
         NESTED_MATRIX_SIDE,
     ));
-    let root = Value::Record(Ref::new(MechRecord::new(vec![
-        ("shared", Value::F64(shared)),
+    let root = LegacyValue::Record(Ref::new(MechRecord::new(vec![
+        ("shared", LegacyValue::F64(shared)),
         ("tuple", tuple),
         ("matrix", value_matrix),
     ])));
@@ -138,8 +138,12 @@ fn recursive_interpreters_program() -> MechProgram {
     let child = Interpreter::new(101, 10_000);
     let grandchild = Interpreter::new(202, 10_000);
 
-    insert_symbol(&child, "child_value", Value::F64(Ref::new(101.0)));
-    insert_symbol(&grandchild, "grandchild_value", Value::F64(Ref::new(202.0)));
+    insert_symbol(&child, "child_value", LegacyValue::F64(Ref::new(101.0)));
+    insert_symbol(
+        &grandchild,
+        "grandchild_value",
+        LegacyValue::F64(Ref::new(202.0)),
+    );
     append_plan_nodes(&child, 8);
     append_plan_nodes(&grandchild, 8);
 
@@ -158,7 +162,11 @@ fn recursive_interpreters_program() -> MechProgram {
 fn structural_additions_program() -> MechProgram {
     let program = empty_program();
     append_plan_nodes(program.interpreter(), 16);
-    insert_symbol(program.interpreter(), "retained", Value::F64(Ref::new(1.0)));
+    insert_symbol(
+        program.interpreter(),
+        "retained",
+        LegacyValue::F64(Ref::new(1.0)),
+    );
     program
 }
 
@@ -167,12 +175,12 @@ fn scalar_matrix_program() -> MechProgram {
     insert_symbol(
         program.interpreter(),
         "checkpoint_scalar",
-        Value::F64(Ref::new(1.0)),
+        LegacyValue::F64(Ref::new(1.0)),
     );
     insert_symbol(
         program.interpreter(),
         "checkpoint_matrix",
-        Value::MatrixF64(<f64 as ToMatrix>::to_matrixd(
+        LegacyValue::MatrixF64(<f64 as ToMatrix>::to_matrixd(
             vec![1.0; MUTATION_MATRIX_SIDE * MUTATION_MATRIX_SIDE],
             MUTATION_MATRIX_SIDE,
             MUTATION_MATRIX_SIDE,
@@ -188,13 +196,12 @@ fn add_structures(program: &mut MechProgram) {
     insert_symbol(
         program.interpreter(),
         "temporary",
-        Value::F64(Ref::new(99.0)),
+        LegacyValue::F64(Ref::new(99.0)),
     );
-    program
-        .interpreter()
-        .out_values
-        .borrow_mut()
-        .insert(hash_str("temporary-output"), Value::F64(Ref::new(100.0)));
+    program.interpreter().out_values.borrow_mut().insert(
+        hash_str("temporary-output"),
+        LegacyValue::F64(Ref::new(100.0)),
+    );
     let child = Interpreter::new(303, 10_000);
     program
         .interpreter()
@@ -218,11 +225,11 @@ fn mutate_scalar_and_matrix(program: &mut MechProgram) {
         .clone();
 
     match &*scalar.borrow() {
-        Value::F64(value) => *value.borrow_mut() = 10_000.0,
+        LegacyValue::F64(value) => *value.borrow_mut() = 10_000.0,
         other => panic!("expected scalar benchmark value, got {other:?}"),
     }
     match &*matrix.borrow() {
-        Value::MatrixF64(value) => {
+        LegacyValue::MatrixF64(value) => {
             value.set(vec![10_000.0; MUTATION_MATRIX_SIDE * MUTATION_MATRIX_SIDE]);
         }
         other => panic!("expected matrix benchmark value, got {other:?}"),

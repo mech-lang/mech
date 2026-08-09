@@ -5,8 +5,8 @@ use std::{format, string::String, vec, vec::Vec};
 
 use crate::{
     ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest, FunctionArgs,
-    FunctionCatalog, FunctionMatrixElement, FunctionValueRepresentation, MResult, MechError,
-    MechErrorKind, ResourceIntent, RuntimeFunctionId, Value,
+    FunctionCatalog, FunctionMatrixElement, FunctionValueRepresentation, LegacyValue, MResult,
+    MechError, MechErrorKind, ResourceIntent, RuntimeFunctionId,
 };
 
 use super::{BytecodeInstruction, ParsedProgram};
@@ -73,30 +73,33 @@ fn violation_with_source(
 pub struct BytecodeHostCallContract<'a> {
     pub instruction: u32,
     pub request: &'a ExecutionHostFunctionRequest,
-    pub output_seed: &'a Value,
-    pub arguments: &'a [Value],
+    pub output_seed: &'a LegacyValue,
+    pub arguments: &'a [LegacyValue],
 }
 
 pub struct BytecodeResourceReadContract<'a> {
     pub instruction: u32,
     pub request: &'a ExecutionResourceRequest,
-    pub output_seed: &'a Value,
+    pub output_seed: &'a LegacyValue,
 }
 
 pub struct BytecodeResourceWriteContract<'a> {
     pub instruction: u32,
     pub request: &'a ExecutionResourceRequest,
-    pub output_seed: &'a Value,
-    pub source: &'a Value,
+    pub output_seed: &'a LegacyValue,
+    pub source: &'a LegacyValue,
 }
 
 pub trait BytecodeExternalContractResolver {
-    fn validate_host_call(&mut self, contract: BytecodeHostCallContract<'_>) -> MResult<Value>;
+    fn validate_host_call(
+        &mut self,
+        contract: BytecodeHostCallContract<'_>,
+    ) -> MResult<LegacyValue>;
 
     fn validate_resource_read(
         &mut self,
         contract: BytecodeResourceReadContract<'_>,
-    ) -> MResult<Value>;
+    ) -> MResult<LegacyValue>;
 
     fn validate_resource_write(
         &mut self,
@@ -107,14 +110,17 @@ pub trait BytecodeExternalContractResolver {
 pub struct StructuralExternalContractResolver;
 
 impl BytecodeExternalContractResolver for StructuralExternalContractResolver {
-    fn validate_host_call(&mut self, contract: BytecodeHostCallContract<'_>) -> MResult<Value> {
+    fn validate_host_call(
+        &mut self,
+        contract: BytecodeHostCallContract<'_>,
+    ) -> MResult<LegacyValue> {
         Ok(contract.output_seed.clone())
     }
 
     fn validate_resource_read(
         &mut self,
         contract: BytecodeResourceReadContract<'_>,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         Ok(contract.output_seed.clone())
     }
 
@@ -122,7 +128,7 @@ impl BytecodeExternalContractResolver for StructuralExternalContractResolver {
         &mut self,
         contract: BytecodeResourceWriteContract<'_>,
     ) -> MResult<()> {
-        if contract.output_seed == &Value::Empty {
+        if contract.output_seed == &LegacyValue::Empty {
             return Ok(());
         }
         Err(violation(
@@ -158,8 +164,8 @@ impl MechErrorKind for StableValueUpdateContractViolation {
 }
 
 fn stable_update_violation(
-    current: &Value,
-    incoming: &Value,
+    current: &LegacyValue,
+    incoming: &LegacyValue,
     reason: impl Into<String>,
 ) -> MechError {
     MechError::new(
@@ -173,14 +179,14 @@ fn stable_update_violation(
     .with_compiler_loc()
 }
 
-fn composite_schema_matches(current: &Value, incoming: &Value) -> bool {
+fn composite_schema_matches(current: &LegacyValue, incoming: &LegacyValue) -> bool {
     match (current, incoming) {
         #[cfg(feature = "record")]
-        (Value::Record(current), Value::Record(incoming)) => {
+        (LegacyValue::Record(current), LegacyValue::Record(incoming)) => {
             current.borrow().kind() == incoming.borrow().kind()
         }
         #[cfg(feature = "map")]
-        (Value::Map(current), Value::Map(incoming)) => {
+        (LegacyValue::Map(current), LegacyValue::Map(incoming)) => {
             let current = current.borrow();
             let incoming = incoming.borrow();
             current.key_kind == incoming.key_kind
@@ -190,13 +196,13 @@ fn composite_schema_matches(current: &Value, incoming: &Value) -> bool {
                 && current.map.keys().all(|key| incoming.map.contains_key(key))
         }
         #[cfg(feature = "set")]
-        (Value::Set(current), Value::Set(incoming)) => {
+        (LegacyValue::Set(current), LegacyValue::Set(incoming)) => {
             let current = current.borrow();
             let incoming = incoming.borrow();
             current.kind == incoming.kind && current.max_elements == incoming.max_elements
         }
         #[cfg(feature = "table")]
-        (Value::Table(current), Value::Table(incoming)) => {
+        (LegacyValue::Table(current), LegacyValue::Table(incoming)) => {
             let current = current.borrow();
             let incoming = incoming.borrow();
             current.rows == incoming.rows
@@ -212,17 +218,17 @@ fn composite_schema_matches(current: &Value, incoming: &Value) -> bool {
                 )
         }
         #[cfg(feature = "tuple")]
-        (Value::Tuple(current), Value::Tuple(incoming)) => {
+        (LegacyValue::Tuple(current), LegacyValue::Tuple(incoming)) => {
             current.borrow().kind() == incoming.borrow().kind()
         }
         _ => false,
     }
 }
 
-pub fn validate_stable_value_update(current: &Value, incoming: &Value) -> MResult<()> {
+pub fn validate_stable_value_update(current: &LegacyValue, incoming: &LegacyValue) -> MResult<()> {
     if let (
-        Value::Typed(current_inner, current_annotation),
-        Value::Typed(incoming_inner, incoming_annotation),
+        LegacyValue::Typed(current_inner, current_annotation),
+        LegacyValue::Typed(incoming_inner, incoming_annotation),
     ) = (current, incoming)
     {
         if current_annotation != incoming_annotation {
@@ -234,15 +240,15 @@ pub fn validate_stable_value_update(current: &Value, incoming: &Value) -> MResul
         }
         return validate_stable_value_update(current_inner, incoming_inner);
     }
-    if matches!(current, Value::Typed(_, _)) || matches!(incoming, Value::Typed(_, _)) {
+    if matches!(current, LegacyValue::Typed(_, _)) || matches!(incoming, LegacyValue::Typed(_, _)) {
         return Err(stable_update_violation(
             current,
             incoming,
             "typed values are not implicitly unwrapped",
         ));
     }
-    if matches!(current, Value::MutableReference(_))
-        || matches!(incoming, Value::MutableReference(_))
+    if matches!(current, LegacyValue::MutableReference(_))
+        || matches!(incoming, LegacyValue::MutableReference(_))
     {
         return Err(stable_update_violation(
             current,
@@ -250,10 +256,13 @@ pub fn validate_stable_value_update(current: &Value, incoming: &Value) -> MResul
             "mutable references are not implicitly unwrapped",
         ));
     }
-    if matches!((current, incoming), (Value::Empty, Value::Empty)) {
+    if matches!(
+        (current, incoming),
+        (LegacyValue::Empty, LegacyValue::Empty)
+    ) {
         return Ok(());
     }
-    if matches!(current, Value::IndexAll) || matches!(incoming, Value::IndexAll) {
+    if matches!(current, LegacyValue::IndexAll) || matches!(incoming, LegacyValue::IndexAll) {
         return Err(stable_update_violation(
             current,
             incoming,
@@ -356,7 +365,7 @@ impl ParsedProgram {
         let constants = self
             .decode_constants()
             .map_err(|error| violation_with_source(0, None, None, error))?;
-        let mut registers = vec![None::<Value>; self.header.register_count as usize];
+        let mut registers = vec![None::<LegacyValue>; self.header.register_count as usize];
 
         for (instruction_index, instruction) in self.instructions.iter().enumerate() {
             if let BytecodeInstruction::ConstLoad { dst, constant } = instruction {
@@ -421,7 +430,7 @@ impl ParsedProgram {
                 continue;
             }
 
-            let register = |index: u32| -> MResult<Value> {
+            let register = |index: u32| -> MResult<LegacyValue> {
                 registers
                     .get(index as usize)
                     .and_then(Option::as_ref)
@@ -716,7 +725,7 @@ mod tests {
             Ok(())
         }
 
-        fn out(&self) -> Value {
+        fn out(&self) -> LegacyValue {
             self.out.to_value()
         }
 
@@ -724,7 +733,7 @@ mod tests {
             "ExactF64Binary".into()
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
     }
@@ -1176,8 +1185,9 @@ mod tests {
         use crate::structures::matrix::Matrix as ValueMatrix;
         use nalgebra::{DMatrix, Matrix2};
 
-        let fixed = Value::MatrixF64(ValueMatrix::Matrix2(Ref::new(Matrix2::identity())));
-        let dynamic = Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
+        let fixed = LegacyValue::MatrixF64(ValueMatrix::Matrix2(Ref::new(Matrix2::identity())));
+        let dynamic =
+            LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
 
         let error = validate_stable_value_update(&fixed, &dynamic).unwrap_err();
         assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
@@ -1190,8 +1200,8 @@ mod tests {
         use crate::structures::matrix::Matrix as ValueMatrix;
         use nalgebra::DMatrix;
 
-        let current = Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(2, 3))));
-        let incoming = Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(5, 7))));
+        let current = LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(2, 3))));
+        let incoming = LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(5, 7))));
 
         let error = validate_stable_value_update(&current, &incoming).unwrap_err();
         assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
@@ -1202,13 +1212,13 @@ mod tests {
     #[test]
     fn stable_updates_reject_map_key_topology_changes() {
         let map = |key: &str| {
-            Value::Map(Ref::new(crate::MechMap::from_typed_vec(
+            LegacyValue::Map(Ref::new(crate::MechMap::from_typed_vec(
                 crate::ValueKind::String,
                 crate::ValueKind::F64,
                 1,
                 vec![(
-                    Value::String(Ref::new(key.to_owned())),
-                    Value::F64(Ref::new(1.0)),
+                    LegacyValue::String(Ref::new(key.to_owned())),
+                    LegacyValue::F64(Ref::new(1.0)),
                 )],
             )))
         };
@@ -1220,8 +1230,11 @@ mod tests {
 
     #[test]
     fn stable_updates_do_not_implicitly_unwrap_typed_values() {
-        let typed = Value::Typed(Box::new(Value::F64(Ref::new(1.0))), crate::ValueKind::F64);
-        let untyped = Value::F64(Ref::new(2.0));
+        let typed = LegacyValue::Typed(
+            Box::new(LegacyValue::F64(Ref::new(1.0))),
+            crate::ValueKind::F64,
+        );
+        let untyped = LegacyValue::F64(Ref::new(2.0));
 
         let error = validate_stable_value_update(&typed, &untyped).unwrap_err();
         assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
@@ -1239,15 +1252,15 @@ mod tests {
             fn validate_host_call(
                 &mut self,
                 contract: BytecodeHostCallContract<'_>,
-            ) -> MResult<Value> {
+            ) -> MResult<LegacyValue> {
                 Ok(contract.output_seed.clone())
             }
 
             fn validate_resource_read(
                 &mut self,
                 _contract: BytecodeResourceReadContract<'_>,
-            ) -> MResult<Value> {
-                Ok(Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(
+            ) -> MResult<LegacyValue> {
+                Ok(LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(
                     DMatrix::identity(2, 2),
                 ))))
             }
@@ -1334,13 +1347,13 @@ mod tests {
             fn solve_result(&self) -> MResult<()> {
                 Ok(())
             }
-            fn out(&self) -> Value {
-                Value::MatrixF64(ValueMatrix::Matrix2(self.out.clone()))
+            fn out(&self) -> LegacyValue {
+                LegacyValue::MatrixF64(ValueMatrix::Matrix2(self.out.clone()))
             }
             fn to_string(&self) -> String {
                 "ExactMatrix2Binary".into()
             }
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }

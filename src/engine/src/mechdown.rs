@@ -5,9 +5,9 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 // ----------------------------------------------------------------------------
 
 #[cfg(feature = "symbol_table")]
-fn update_ans_symbol(value: &Value, p: &InterpreterExecution<'_>) {
+fn update_ans_symbol(value: &LegacyValue, p: &InterpreterExecution<'_>) {
     let resolved_value = match value {
-        Value::MutableReference(reference) => reference.borrow().clone(),
+        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
         _ => value.clone(),
     };
     let ans_id = hash_str("ans");
@@ -23,29 +23,32 @@ fn update_ans_symbol(value: &Value, p: &InterpreterExecution<'_>) {
         .insert(ans_id, "ans".to_string());
 }
 
-pub fn program(program: &Program, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn program(program: &Program, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     body(&program.body, p)
 }
 
-pub fn body(body: &Body, p: &InterpreterExecution<'_>) -> MResult<Value> {
-    let mut result = Ok(Value::Empty);
+pub fn body(body: &Body, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+    let mut result = Ok(LegacyValue::Empty);
     for sec in &body.sections {
         result = Ok(section(&sec, p)?);
     }
     result
 }
 
-pub fn section(section: &Section, p: &InterpreterExecution<'_>) -> MResult<Value> {
-    let mut result = Ok(Value::Empty);
+pub fn section(section: &Section, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+    let mut result = Ok(LegacyValue::Empty);
     for el in &section.elements {
         result = Ok(section_element(&el, p)?);
     }
     result
 }
 
-pub fn section_element(element: &SectionElement, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn section_element(
+    element: &SectionElement,
+    p: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
     let mut hasher = DefaultHasher::new();
-    let mut out = Value::Empty;
+    let mut out = LegacyValue::Empty;
     match element {
         SectionElement::Prompt(x) => x.hash(&mut hasher),
         SectionElement::InfoBlock(x) => x.hash(&mut hasher),
@@ -78,7 +81,7 @@ pub fn section_element(element: &SectionElement, p: &InterpreterExecution<'_>) -
         #[cfg(feature = "functions")]
         SectionElement::FencedMechCode(block) => {
             if block.config.disabled == true {
-                return Ok(Value::Empty);
+                return Ok(LegacyValue::Empty);
             }
             let code_id = block.config.namespace;
             if code_id == 0 {
@@ -120,7 +123,7 @@ pub fn section_element(element: &SectionElement, p: &InterpreterExecution<'_>) -
                 };
                 p.out_values.borrow_mut().insert(code_id, value.clone());
             }
-            return Ok(Value::Empty);
+            return Ok(LegacyValue::Empty);
         }
         SectionElement::Footnote(x) => x.hash(&mut hasher),
         SectionElement::Paragraph(x) => {
@@ -149,7 +152,7 @@ pub fn section_element(element: &SectionElement, p: &InterpreterExecution<'_>) -
         }
         SectionElement::QuoteBlock(x) => x.hash(&mut hasher),
         SectionElement::ThematicBreak => {
-            return Ok(Value::Empty);
+            return Ok(LegacyValue::Empty);
         }
         SectionElement::List(x) => x.hash(&mut hasher),
         SectionElement::SuccessBlock(x) => x.hash(&mut hasher),
@@ -187,7 +190,9 @@ pub fn section_element(element: &SectionElement, p: &InterpreterExecution<'_>) -
                     section(&mika_section.elements, execution)
                 })?;
             }
-            return Ok(Value::Atom(Ref::new(MechAtom::from_name(&m.to_string()))));
+            return Ok(LegacyValue::Atom(Ref::new(MechAtom::from_name(
+                &m.to_string(),
+            ))));
         }
         x => {
             return Err(MechError::new(
@@ -199,7 +204,7 @@ pub fn section_element(element: &SectionElement, p: &InterpreterExecution<'_>) -
         }
     };
     let hash = hasher.finish();
-    Ok(Value::Id(hash))
+    Ok(LegacyValue::Id(hash))
 }
 
 #[cfg(feature = "functions")]
@@ -207,15 +212,15 @@ fn eval_fenced_code_block(
     code: &Vec<(MechCode, Option<Comment>)>,
     interpreter: &InterpreterExecution<'_>,
     isolate_errors: bool,
-) -> MResult<Value> {
-    let mut out = Value::Empty;
+) -> MResult<LegacyValue> {
+    let mut out = LegacyValue::Empty;
     for (c, cmmnt) in code {
         match mech_code(c, interpreter) {
             Ok(value) => out = value,
             Err(err) => {
                 #[cfg(feature = "string")]
                 if isolate_errors {
-                    return Ok(Value::String(Ref::new(err.full_chain_message())));
+                    return Ok(LegacyValue::String(Ref::new(err.full_chain_message())));
                 }
                 return Err(err);
             }
@@ -226,7 +231,7 @@ fn eval_fenced_code_block(
                 Err(err) => {
                     #[cfg(feature = "string")]
                     if isolate_errors {
-                        return Ok(Value::String(Ref::new(err.full_chain_message())));
+                        return Ok(LegacyValue::String(Ref::new(err.full_chain_message())));
                     }
                     return Err(err);
                 }
@@ -258,13 +263,13 @@ fn mika_interpreter_id(parent_id: u64, mika: &Mika, section: &Option<MikaSection
 pub fn paragraph_element(
     element: &ParagraphElement,
     p: &InterpreterExecution<'_>,
-) -> MResult<(u64, Value)> {
+) -> MResult<(u64, LegacyValue)> {
     let result = match element {
         ParagraphElement::EvalInlineMechCode(expr) => {
             let code_id = inline_eval_id(p);
             match expression(&expr, None, p) {
                 Ok(val) => (code_id, val),
-                Err(e) => (code_id, Value::Empty), // the expression failed perhaps because the value isn't defined yet.
+                Err(e) => (code_id, LegacyValue::Empty), // the expression failed perhaps because the value isn't defined yet.
                 _ => todo!(), // What do we do in the case when it really is an error though?
                               // What we really need to do is just defer the execution of this thing to the very end
             }
@@ -278,7 +283,7 @@ pub fn paragraph_element(
     Ok(result)
 }
 
-pub fn comment(cmmt: &Comment, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn comment(cmmt: &Comment, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     let par = &cmmt.paragraph;
     for el in par.elements.iter() {
         let (code_id, value) = match paragraph_element(&el, p) {
@@ -287,7 +292,7 @@ pub fn comment(cmmt: &Comment, p: &InterpreterExecution<'_>) -> MResult<Value> {
         };
         p.out_values.borrow_mut().insert(code_id, value.clone());
     }
-    Ok(Value::Empty)
+    Ok(LegacyValue::Empty)
 }
 
 #[cfg(feature = "functions")]
@@ -315,7 +320,7 @@ fn is_context_export(p: &InterpreterExecution<'_>, module: &str, item: &str) -> 
 pub fn module_import_runtime(
     import: &ModuleImport,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let module = import.module.to_string();
     match import.kind {
         ModuleImportKind::Module => {
@@ -329,7 +334,7 @@ pub fn module_import_runtime(
                 .with_compiler_loc());
             }
             load_module(p, &module)?;
-            Ok(Value::Empty)
+            Ok(LegacyValue::Empty)
         }
         ModuleImportKind::Item => {
             let item = import.item.as_ref().ok_or_else(|| {
@@ -359,7 +364,7 @@ pub fn module_import_runtime(
                     p.bind_context_export(alias, &module, &item)?;
                 }
             }
-            Ok(Value::Empty)
+            Ok(LegacyValue::Empty)
         }
         ModuleImportKind::Glob => {
             if import.alias.is_some() {
@@ -387,7 +392,7 @@ pub fn module_import_runtime(
         ).with_compiler_loc());
             }
             import_module_glob(p, &module)?;
-            Ok(Value::Empty)
+            Ok(LegacyValue::Empty)
         }
         ModuleImportKind::Group => {
             let group_items = import.group_items.as_ref().ok_or_else(|| {
@@ -413,12 +418,12 @@ pub fn module_import_runtime(
                 }
             }
             import_module_group(p, &module, &items)?;
-            Ok(Value::Empty)
+            Ok(LegacyValue::Empty)
         }
     }
 }
 
-pub fn mech_code(code: &MechCode, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn mech_code(code: &MechCode, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     let out = match &code {
         MechCode::ActivationScope(scope) => activation_scope(scope, p),
         MechCode::Expression(expr) => expression(&expr, None, p),
@@ -432,19 +437,19 @@ pub fn mech_code(code: &MechCode, p: &InterpreterExecution<'_>) -> MResult<Value
         #[cfg(feature = "state_machines")]
         MechCode::FsmSpecification(fsm_spec) => {
             crate::state_machines::register_fsm_specification(fsm_spec, p)?;
-            Ok(Value::Empty)
+            Ok(LegacyValue::Empty)
         }
         #[cfg(not(feature = "state_machines"))]
-        MechCode::FsmSpecification(_) => Ok(Value::Empty),
+        MechCode::FsmSpecification(_) => Ok(LegacyValue::Empty),
         #[cfg(feature = "state_machines")]
         MechCode::FsmImplementation(fsm_impl) => {
             crate::state_machines::register_fsm_implementation(fsm_impl, p)?;
-            Ok(Value::Empty)
+            Ok(LegacyValue::Empty)
         }
         #[cfg(feature = "functions")]
         MechCode::FunctionDefine(fxn_def) => {
             function_define(&fxn_def, p)?;
-            Ok(Value::Empty)
+            Ok(LegacyValue::Empty)
         }
         MechCode::Comment(cmmt) => comment(&cmmt, p),
         x => Err(MechError::new(FeatureNotEnabledError, None)
@@ -610,7 +615,7 @@ fn elaborate_activation_scope(
     scope: &ActivationScope,
     p: &InterpreterExecution<'_>,
     trigger_cells: Vec<ReactiveCellId>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     match &scope.body {
         ActivationBody::Block(body) => {
             let plan = p.plan();
@@ -623,11 +628,11 @@ fn elaborate_activation_scope(
                 trigger_cells,
                 crate::activation::activation_scope_entry_cells(p),
             );
-            let result = (|| -> MResult<Value> {
+            let result = (|| -> MResult<LegacyValue> {
                 for (code, _) in body {
                     mech_code(code, p)?;
                 }
-                Ok(Value::Empty)
+                Ok(LegacyValue::Empty)
             })();
             plan.pop_activation_registration_scope();
             match result {
@@ -670,11 +675,11 @@ fn elaborate_activation_scope(
     scope: &ActivationScope,
     _p: &InterpreterExecution<'_>,
     _trigger_cells: Vec<ReactiveCellId>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     Err(MechError::new(ActivationScopeRegistrationUnsupported, None).with_tokens(scope.tokens()))
 }
 
-fn activation_scope(scope: &ActivationScope, p: &InterpreterExecution<'_>) -> MResult<Value> {
+fn activation_scope(scope: &ActivationScope, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     let var = match &scope.trigger {
         Expression::Var(var) => var,
         _ => {

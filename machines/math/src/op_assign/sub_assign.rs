@@ -55,7 +55,7 @@ impl_assign_vector_vector!(Sub, checked_sub_assign);
 impl_assign_vector_scalar!(Sub, checked_sub_assign);
 
 #[cfg(feature = "source")]
-fn sub_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
+fn sub_assign_value_fxn(sink: LegacyValue, source: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_op_assign_value_match_arms!(
       Sub,
       (sink, source),
@@ -80,7 +80,7 @@ fn sub_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunct
 pub struct SubAssignValue {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for SubAssignValue {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -96,13 +96,13 @@ impl FunctionSpecializer for SubAssignValue {
         match sub_assign_value_fxn(sink.clone(), source.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (sink, source) {
-                (Value::MutableReference(sink), Value::MutableReference(source)) => {
+                (LegacyValue::MutableReference(sink), LegacyValue::MutableReference(source)) => {
                     sub_assign_value_fxn(sink.borrow().clone(), source.borrow().clone())
                 }
-                (sink, Value::MutableReference(source)) => {
+                (sink, LegacyValue::MutableReference(source)) => {
                     sub_assign_value_fxn(sink.clone(), source.borrow().clone())
                 }
-                (Value::MutableReference(sink), source) => {
+                (LegacyValue::MutableReference(sink), source) => {
                     sub_assign_value_fxn(sink.borrow().clone(), source.clone())
                 }
                 (arg1, arg2) => Err(MechError::new(
@@ -190,7 +190,7 @@ op_assign_range_fxn!(sub_assign_range_fxn, SubAssign1DR);
 pub struct SubAssignRange {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for SubAssignRange {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -201,23 +201,23 @@ impl FunctionSpecializer for SubAssignRange {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match sub_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (&sink, &ixes, &source) {
-                (Value::MutableReference(sink), ixes, Value::MutableReference(source)) => {
+                (LegacyValue::MutableReference(sink), ixes, LegacyValue::MutableReference(source)) => {
                     sub_assign_range_fxn(
                         sink.borrow().clone(),
                         source.borrow().clone(),
                         ixes.clone(),
                     )
                 }
-                (sink, ixes, Value::MutableReference(source)) => {
+                (sink, ixes, LegacyValue::MutableReference(source)) => {
                     sub_assign_range_fxn(sink.clone(), source.borrow().clone(), ixes.clone())
                 }
-                (Value::MutableReference(sink), ixes, source) => {
+                (LegacyValue::MutableReference(sink), ixes, source) => {
                     sub_assign_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
                 x => Err(MechError::new(
@@ -325,7 +325,7 @@ op_assign_range_all_fxn!(sub_assign_range_all_fxn, SubAssign2DRA);
 pub struct SubAssignRangeAll {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for SubAssignRangeAll {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -336,23 +336,23 @@ impl FunctionSpecializer for SubAssignRangeAll {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match sub_assign_range_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (&sink, &ixes, &source) {
-                (Value::MutableReference(sink), ixes, Value::MutableReference(source)) => {
+                (LegacyValue::MutableReference(sink), ixes, LegacyValue::MutableReference(source)) => {
                     sub_assign_range_all_fxn(
                         sink.borrow().clone(),
                         source.borrow().clone(),
                         ixes.clone(),
                     )
                 }
-                (sink, ixes, Value::MutableReference(source)) => {
+                (sink, ixes, LegacyValue::MutableReference(source)) => {
                     sub_assign_range_all_fxn(sink.clone(), source.borrow().clone(), ixes.clone())
                 }
-                (Value::MutableReference(sink), ixes, source) => {
+                (LegacyValue::MutableReference(sink), ixes, source) => {
                     sub_assign_range_all_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
                 x => Err(MechError::new(

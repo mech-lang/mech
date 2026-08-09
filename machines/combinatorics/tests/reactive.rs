@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use mech_core::{
     BytecodeCompilerContext, FunctionCatalog, FunctionCatalogBuilder, MResult, MechError,
-    MechErrorKind, MechFunctionCompiler, MechFunctionImpl, Ref, Register, Value, hash_str,
+    MechErrorKind, MechFunctionCompiler, MechFunctionImpl, Ref, Register, LegacyValue, hash_str,
     structures::matrix::Matrix,
 };
 use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
@@ -25,15 +25,15 @@ fn owner_source_catalog() -> Arc<FunctionCatalog> {
     Arc::new(builder.build().unwrap())
 }
 
-fn unwrap_value(value: Value) -> Value {
+fn unwrap_value(value: LegacyValue) -> LegacyValue {
     match value {
-        Value::MutableReference(reference) => unwrap_value(reference.borrow().clone()),
-        Value::Typed(value, _) => unwrap_value(*value),
+        LegacyValue::MutableReference(reference) => unwrap_value(reference.borrow().clone()),
+        LegacyValue::Typed(value, _) => unwrap_value(*value),
         value => value,
     }
 }
 
-fn symbol_value(program: &MechProgram, name: &str) -> Value {
+fn symbol_value(program: &MechProgram, name: &str) -> LegacyValue {
     let symbols = program.interpreter().symbols();
     let value = symbols
         .borrow()
@@ -42,21 +42,21 @@ fn symbol_value(program: &MechProgram, name: &str) -> Value {
     value.borrow().clone()
 }
 
-fn f64_value(value: Value) -> f64 {
-    let Value::F64(value) = unwrap_value(value) else {
+fn f64_value(value: LegacyValue) -> f64 {
+    let LegacyValue::F64(value) = unwrap_value(value) else {
         panic!("expected f64 value");
     };
     *value.borrow()
 }
 
-fn dynamic_f64_matrix(value: Value) -> Ref<DMatrix<f64>> {
-    let Value::MatrixF64(Matrix::DMatrix(matrix)) = unwrap_value(value) else {
+fn dynamic_f64_matrix(value: LegacyValue) -> Ref<DMatrix<f64>> {
+    let LegacyValue::MatrixF64(Matrix::DMatrix(matrix)) = unwrap_value(value) else {
         panic!("expected a dynamic f64 matrix");
     };
     matrix
 }
 
-fn ensure_input(program: &mut MechProgram, name: &str, value: Value) -> ProgramInputId {
+fn ensure_input(program: &mut MechProgram, name: &str, value: LegacyValue) -> ProgramInputId {
     program
         .ensure_input(program.interpreter().id, hash_str(name), name, value)
         .unwrap()
@@ -66,7 +66,7 @@ fn update_k(program: &mut MechProgram, input: ProgramInputId, value: f64) -> MRe
     program
         .update_inputs_and_advance_turn(&[ProgramInputUpdate {
             input,
-            value: Value::F64(Ref::new(value)),
+            value: LegacyValue::F64(Ref::new(value)),
         }])
         .map(|_| ())
 }
@@ -85,13 +85,13 @@ fn reactive_program() -> (MechProgram, ProgramInputId) {
     ensure_input(
         &mut program,
         "n",
-        Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_vec(
+        LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_vec(
             1,
             3,
             vec![1.0, 2.0, 3.0],
         )))),
     );
-    let k = ensure_input(&mut program, "k", Value::F64(Ref::new(1.0)));
+    let k = ensure_input(&mut program, "k", LegacyValue::F64(Ref::new(1.0)));
     program
         .run_string(
             "+> combinatorics/n-choose-k\n\
@@ -112,13 +112,13 @@ fn invalid_initial_n_choose_k_selection_is_reported() {
         ensure_input(
             &mut program,
             "n",
-            Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_vec(
+            LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_vec(
                 1,
                 3,
                 vec![1.0, 2.0, 3.0],
             )))),
         );
-        ensure_input(&mut program, "k", Value::F64(Ref::new(invalid)));
+        ensure_input(&mut program, "k", LegacyValue::F64(Ref::new(invalid)));
 
         let error = program
             .run_string(
@@ -213,11 +213,11 @@ impl MechFunctionImpl for MatrixDependent {
         }
     }
 
-    fn out(&self) -> Value {
-        Value::F64(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::F64(self.out.clone())
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 
@@ -249,7 +249,7 @@ fn register_matrix_dependent(
                 solves,
                 fail,
             }),
-            &[Value::MatrixF64(Matrix::DMatrix(input.clone()))],
+            &[LegacyValue::MatrixF64(Matrix::DMatrix(input.clone()))],
         )
         .unwrap();
 }

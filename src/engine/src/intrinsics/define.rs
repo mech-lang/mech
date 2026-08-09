@@ -9,8 +9,8 @@ use crate::intrinsics::*;
 #[cfg(feature = "invariant_define")]
 #[derive(Debug)]
 pub struct BytecodeIntegrityConstraintMarker {
-    out: Value,
-    arguments: Vec<Value>,
+    out: LegacyValue,
+    arguments: Vec<LegacyValue>,
 }
 
 #[cfg(feature = "invariant_define")]
@@ -43,7 +43,7 @@ impl MechFunctionImpl for BytecodeIntegrityConstraintMarker {
         Ok(())
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.clone()
     }
 
@@ -58,7 +58,7 @@ impl MechFunctionImpl for BytecodeIntegrityConstraintMarker {
         "integrity/constraint".to_string()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(Vec::new())
     }
 }
@@ -141,14 +141,14 @@ where
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.var.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -216,10 +216,10 @@ macro_rules! impl_variable_define_fxn {
         fn solve_result(&self) -> MResult<()> {
             Ok(())
         }
-        fn out(&self) -> Value { self.var.to_value() }
+        fn out(&self) -> LegacyValue { self.var.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
           Ok(self.reactive_output_values())
         }
       }
@@ -536,7 +536,7 @@ pub struct VariableDefineEmpty {
     id: u64,
     name: Ref<String>,
     mutable: Ref<bool>,
-    var: Ref<Value>,
+    var: Ref<LegacyValue>,
 }
 
 impl MechFunctionFactory for VariableDefineEmpty {
@@ -549,7 +549,7 @@ impl MechFunctionFactory for VariableDefineEmpty {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Binary(var, arg1, arg2) => {
-                let var: Ref<Value> = var.try_function_ref(FunctionArgumentRole::Output)?;
+                let var: Ref<LegacyValue> = var.try_function_ref(FunctionArgumentRole::Output)?;
                 let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
                 let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
                 let id = hash_str(&name.borrow());
@@ -588,11 +588,11 @@ impl MechFunctionImpl for VariableDefineEmpty {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.var.borrow().clone()
     }
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(vec![Value::MutableReference(self.var.clone())])
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(vec![LegacyValue::MutableReference(self.var.clone())])
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
@@ -622,7 +622,7 @@ mod empty_transaction_state_tests {
 
     #[test]
     fn variable_define_empty_exposes_original_outer_value_cell() {
-        let var = Ref::new(Value::Empty);
+        let var = Ref::new(LegacyValue::Empty);
         let function = VariableDefineEmpty {
             id: 1,
             name: Ref::new("value".to_string()),
@@ -632,7 +632,7 @@ mod empty_transaction_state_tests {
         let values = function.transaction_state_values().unwrap();
         assert_eq!(values.len(), 1);
         match &values[0] {
-            Value::MutableReference(value) => assert_eq!(value.addr(), var.addr()),
+            LegacyValue::MutableReference(value) => assert_eq!(value.addr(), var.addr()),
             value => panic!("expected mutable-reference transaction state, got {value:?}"),
         }
     }
@@ -644,68 +644,68 @@ macro_rules! impl_variable_define_match_arms {
     paste::paste! {
       match $arg {
         #[cfg(feature = $feature)]
-        (Value::[<$value_kind:camel>](sink), name, mutable, id) => box_mech_fxn(Ok(Box::new([<VariableDefine $value_kind:camel>]{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id } ))),
+        (LegacyValue::[<$value_kind:camel>](sink), name, mutable, id) => box_mech_fxn(Ok(Box::new([<VariableDefine $value_kind:camel>]{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id } ))),
         #[cfg(all(
           feature = $feature,
           any(feature = "matrix1", feature = "variable_define_matrix1")
         ))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix2x3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix3x2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrixd"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), name, mutable, id) => {
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), name, mutable, id) => {
           box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
         },
         (sink, name, mutable, id) => Err(MechError::new(
@@ -719,56 +719,56 @@ macro_rules! impl_variable_define_match_arms {
 }
 
 fn impl_var_define_fxn(
-    var: Value,
-    name: Value,
-    mutable: Value,
+    var: LegacyValue,
+    name: LegacyValue,
+    mutable: LegacyValue,
     id: u64,
 ) -> MResult<Box<dyn MechFunction>> {
     let arg = (var.clone(), name.clone(), mutable.clone(), id);
     match arg {
-        (Value::Kind(kind), name, mutable, id) => {
+        (LegacyValue::Kind(kind), name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
-                var: Ref::new(Value::Kind(kind)),
+                var: Ref::new(LegacyValue::Kind(kind)),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
                 id,
             })));
         }
-        (Value::Empty, name, mutable, id) => {
+        (LegacyValue::Empty, name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
-                var: Ref::new(Value::Empty),
+                var: Ref::new(LegacyValue::Empty),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
                 id,
             })));
         }
-        (Value::Typed(value, kind), name, mutable, id) => {
+        (LegacyValue::Typed(value, kind), name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
-                var: Ref::new(Value::Typed(value.clone(), kind.clone())),
+                var: Ref::new(LegacyValue::Typed(value.clone(), kind.clone())),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
                 id,
             })));
         }
-        (Value::EmptyKind(kind), name, mutable, id) => {
+        (LegacyValue::EmptyKind(kind), name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
-                var: Ref::new(Value::EmptyKind(kind.clone())),
+                var: Ref::new(LegacyValue::EmptyKind(kind.clone())),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
                 id,
             })));
         }
         #[cfg(feature = "matrix")]
-        (Value::MatrixValue(sink), name, mutable, id) => {
+        (LegacyValue::MatrixValue(sink), name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
-                var: Ref::new(Value::MatrixValue(sink.clone())),
+                var: Ref::new(LegacyValue::MatrixValue(sink.clone())),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
                 id,
             })));
         }
         #[cfg(feature = "table")]
-        (Value::Table(sink), name, mutable, id) => {
+        (LegacyValue::Table(sink), name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechTable {
                 var: sink.clone(),
                 name: name.as_string()?,
@@ -777,7 +777,7 @@ fn impl_var_define_fxn(
             })));
         }
         #[cfg(feature = "set")]
-        (Value::Set(sink), name, mutable, id) => {
+        (LegacyValue::Set(sink), name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechSet {
                 var: sink.clone(),
                 name: name.as_string()?,
@@ -786,7 +786,7 @@ fn impl_var_define_fxn(
             })));
         }
         #[cfg(feature = "tuple")]
-        (Value::Tuple(sink), name, mutable, id) => {
+        (LegacyValue::Tuple(sink), name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechTuple {
                 var: sink.clone(),
                 name: name.as_string()?,
@@ -795,7 +795,7 @@ fn impl_var_define_fxn(
             })));
         }
         #[cfg(feature = "record")]
-        (Value::Record(sink), name, mutable, id) => {
+        (LegacyValue::Record(sink), name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechRecord {
                 var: sink.clone(),
                 name: name.as_string()?,
@@ -804,7 +804,7 @@ fn impl_var_define_fxn(
             })));
         }
         #[cfg(feature = "map")]
-        (Value::Map(sink), name, mutable, id) => {
+        (LegacyValue::Map(sink), name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechMap {
                 var: sink.clone(),
                 name: name.as_string()?,
@@ -813,7 +813,7 @@ fn impl_var_define_fxn(
             })));
         }
         #[cfg(feature = "atom")]
-        (Value::Atom(sink), name, mutable, id) => {
+        (LegacyValue::Atom(sink), name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechAtom {
                 var: sink.clone(),
                 name: name.as_string()?,
@@ -822,7 +822,7 @@ fn impl_var_define_fxn(
             })));
         }
         #[cfg(feature = "enum")]
-        (Value::Enum(sink), name, mutable, id) => {
+        (LegacyValue::Enum(sink), name, mutable, id) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechEnum {
                 var: sink.clone(),
                 name: name.as_string()?,
@@ -975,7 +975,7 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 
 pub struct VarDefine {}
 impl FunctionSpecializer for VarDefine {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -995,7 +995,7 @@ impl FunctionSpecializer for VarDefine {
         match impl_var_define_fxn(var.clone(), name.clone(), mutable.clone(), id) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (var) {
-                (Value::MutableReference(input)) => {
+                (LegacyValue::MutableReference(input)) => {
                     impl_var_define_fxn(input.borrow().clone(), name.clone(), mutable.clone(), id)
                 }
                 _ => Err(MechError::new(

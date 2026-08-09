@@ -1,4 +1,4 @@
-use crate::{ApplicationRequirement, EncodedConstant, MResult, Value, ValueKind};
+use crate::{ApplicationRequirement, EncodedConstant, LegacyValue, MResult, ValueKind};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, vec::Vec};
@@ -29,12 +29,15 @@ impl BytecodeRegisterIdentity {
     }
 }
 
-pub fn bytecode_register_identity(value: &Value, fallback: usize) -> BytecodeRegisterIdentity {
+pub fn bytecode_register_identity(
+    value: &LegacyValue,
+    fallback: usize,
+) -> BytecodeRegisterIdentity {
     match value {
-        Value::MutableReference(reference) => {
+        LegacyValue::MutableReference(reference) => {
             bytecode_register_identity(&reference.borrow(), reference.addr())
         }
-        Value::Typed(value, annotation) => BytecodeRegisterIdentity::Typed {
+        LegacyValue::Typed(value, annotation) => BytecodeRegisterIdentity::Typed {
             inner: Box::new(bytecode_register_identity(value, fallback)),
             annotation: annotation.clone(),
         },
@@ -61,7 +64,7 @@ pub trait BytecodeCompilerContext {
 
     fn register_for_value_with_initialization_status(
         &mut self,
-        value: &Value,
+        value: &LegacyValue,
         fallback: usize,
     ) -> (Register, bool) {
         self.register_for_identity_with_initialization_status(&bytecode_register_identity(
@@ -130,11 +133,11 @@ pub trait BytecodeCompilerContext {
 /// value. Composite values are reconstructed from child registers so their
 /// reactive topology is never replaced by a planning-time constant snapshot.
 pub fn compile_value_register(
-    value: &Value,
+    value: &LegacyValue,
     fallback: usize,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
-    if let Value::MutableReference(reference) = value {
+    if let LegacyValue::MutableReference(reference) = value {
         return compile_value_register(&reference.borrow(), reference.addr(), context);
     }
 

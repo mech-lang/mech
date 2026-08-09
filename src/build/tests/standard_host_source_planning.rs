@@ -9,7 +9,7 @@ use mech_build::{
     standard_planning_host_factory,
 };
 use mech_core::{
-    ApplicationRequirement, BytecodeInstruction, ParsedProgram, Ref, ResourceIntent, Value,
+    ApplicationRequirement, BytecodeInstruction, LegacyValue, ParsedProgram, Ref, ResourceIntent,
     hash_str,
 };
 use mech_runtime::{
@@ -347,7 +347,7 @@ fn every_trusted_actor_function_plans_source_to_bytecode() {
             .host_function(PlannedPureHostFunction::new(
                 *name,
                 move |_context, _arguments| {
-                    RuntimeValueSnapshot::try_capture(&Value::String(Ref::new(String::new())))
+                    RuntimeValueSnapshot::try_capture(&LegacyValue::String(Ref::new(String::new())))
                 },
                 move |_context, _arguments| panic!("{planned_name} executed while source planning"),
             ))

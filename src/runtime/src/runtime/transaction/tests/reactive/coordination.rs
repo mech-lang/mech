@@ -8,10 +8,10 @@ use crate::{
     CapabilityId, MechRuntime, ObjectId, ObjectRecord, PlannedRuntimeManagedHostFunction,
     RuntimeValueSnapshot,
 };
-use mech_core::{Ref, Value};
+use mech_core::{LegacyValue, Ref};
 use std::sync::Arc;
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
+fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -99,7 +99,7 @@ fn reactive_host_callback_uses_scoped_transaction_services() {
     let mut runtime = test_runtime_builder()
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "demo/reactive-reenter",
-            |_context, _args| Ok(snapshot(Value::F64(Ref::new(1.0)))),
+            |_context, _args| Ok(snapshot(LegacyValue::F64(Ref::new(1.0)))),
             move |services, _context, _args| {
                 let object = ObjectRecord::text(ObjectId(922), "note", "reactive staging");
                 if services.get_object(object.id)?.is_some() {
@@ -107,7 +107,7 @@ fn reactive_host_callback_uses_scoped_transaction_services() {
                 } else {
                     services.put_object(object)?;
                 }
-                Ok(snapshot(Value::F64(Ref::new(1.0))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(1.0))))
             },
         ))
         .unwrap()

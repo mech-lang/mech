@@ -1,6 +1,6 @@
 use super::support::{as_scalar, map_get_scalar, scalar, scalar_value, set_contains_scalar};
 use crate::{
-    MechMap, MechSet, Ref, Value, ValueKind, ValueStateCollectionCollision, ValueStateJournal,
+    LegacyValue, MechMap, MechSet, Ref, ValueKind, ValueStateCollectionCollision, ValueStateJournal,
 };
 
 #[test]
@@ -14,7 +14,9 @@ fn state_journal_set_collision_is_atomic_and_retryable() {
     ]));
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&scalar_value(&safe)).unwrap();
-    journal.capture_value(&Value::Set(set.clone())).unwrap();
+    journal
+        .capture_value(&LegacyValue::Set(set.clone()))
+        .unwrap();
     assert_eq!(journal.cell_count(), 4);
 
     *safe.borrow_mut() = 11.0;
@@ -73,7 +75,9 @@ fn state_journal_collection_collision_uses_payload_equality_not_hash_match() {
         scalar_value(&right),
     ]));
     let mut journal = ValueStateJournal::new();
-    journal.capture_value(&Value::Set(set.clone())).unwrap();
+    journal
+        .capture_value(&LegacyValue::Set(set.clone()))
+        .unwrap();
 
     *right.borrow_mut() = 0.0;
     let error = journal.record_after().unwrap_err();
@@ -105,7 +109,9 @@ fn state_journal_map_collision_is_atomic_and_retryable() {
     ]));
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&scalar_value(&safe)).unwrap();
-    journal.capture_value(&Value::Map(map.clone())).unwrap();
+    journal
+        .capture_value(&LegacyValue::Map(map.clone()))
+        .unwrap();
     assert_eq!(journal.cell_count(), 6);
 
     *safe.borrow_mut() = 11.0;

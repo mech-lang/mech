@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::sync::Arc;
 
-use mech_core::{MResult, Ref, Value};
+use mech_core::{LegacyValue, MResult, Ref};
 
 use mech_runtime::{
     BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
@@ -24,9 +24,9 @@ fn short(id: impl Display) -> String {
     short_text(&id.to_string())
 }
 
-fn fmt_value(value: &Value) -> String {
+fn fmt_value(value: &LegacyValue) -> String {
     match value {
-        Value::String(text) => {
+        LegacyValue::String(text) => {
             format!("String({:?})", short_text(&text.borrow()))
         }
         other => format!("{:?}", other),
@@ -38,19 +38,25 @@ fn main() -> MResult<()> {
         .capability_kernel(BasicCapabilityKernel::new())
         .host_function(DeterministicHostFunction::new(
             "demo/echo",
-            |_context, _args| Ok(Value::String(Ref::new(String::new()))),
+            |_context, _args| Ok(LegacyValue::String(Ref::new(String::new()))),
             |_context, args| {
                 let text = host_arg_string("demo/echo", &args, 0)?;
-                Ok(Value::String(Ref::new(format!("rust echoed: {}", text,))))
+                Ok(LegacyValue::String(Ref::new(format!(
+                    "rust echoed: {}",
+                    text,
+                ))))
             },
         ))?
         .host_function(DeterministicHostFunction::new(
             "demo/join",
-            |_context, _args| Ok(Value::String(Ref::new(String::new()))),
+            |_context, _args| Ok(LegacyValue::String(Ref::new(String::new()))),
             |_context, args| {
                 let left = host_arg_string("demo/join", &args, 0)?;
                 let right = host_arg_string("demo/join", &args, 1)?;
-                Ok(Value::String(Ref::new(format!("{} + {}", left, right,))))
+                Ok(LegacyValue::String(Ref::new(format!(
+                    "{} + {}",
+                    left, right,
+                ))))
             },
         ))?
         .build()?;
@@ -82,7 +88,7 @@ fn main() -> MResult<()> {
     println!("echo result: {}", fmt_value(&value.to_value()));
 
     match value.into_value() {
-        Value::String(text) => {
+        LegacyValue::String(text) => {
             assert_eq!(&*text.borrow(), "rust echoed: in rust");
         }
         other => {
@@ -104,7 +110,7 @@ fn main() -> MResult<()> {
     println!("join result: {}", fmt_value(&value.to_value()));
 
     match value.into_value() {
-        Value::String(text) => {
+        LegacyValue::String(text) => {
             assert_eq!(&*text.borrow(), "left + right");
         }
         other => {

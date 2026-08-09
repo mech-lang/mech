@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use mech_core::{
     ApplicationRequirement, ExecutionResourceRequest, FunctionSpecializer, GuardFunctionSafety,
-    InitialSolvePolicy, MResult, MechError, MechErrorKind, Ref, ResourceIntent, Value,
+    InitialSolvePolicy, LegacyValue, MResult, MechError, MechErrorKind, Ref, ResourceIntent,
     ValueSnapshotRecreator,
 };
 use mech_engine::{ExternalResourceReadFunction, ExternalResourceWriteFunction};
@@ -18,13 +18,13 @@ pub(crate) struct ExecutedResourceValue {
 }
 
 impl ExecutedResourceValue {
-    pub(crate) fn capture(value: &Value) -> MResult<Self> {
+    pub(crate) fn capture(value: &LegacyValue) -> MResult<Self> {
         Ok(Self {
             recreate: ValueSnapshotRecreator::capture(value)?,
         })
     }
 
-    fn to_value(&self) -> Value {
+    fn to_value(&self) -> LegacyValue {
         self.recreate.to_value()
     }
 }
@@ -33,15 +33,15 @@ impl ExecutedResourceValue {
 pub(crate) struct RuntimeResourceInitialValue(ExecutedResourceValue);
 
 impl RuntimeResourceInitialValue {
-    pub(crate) fn executed(value: &Value) -> MResult<Self> {
+    pub(crate) fn executed(value: &LegacyValue) -> MResult<Self> {
         Ok(Self(ExecutedResourceValue::capture(value)?))
     }
 
-    pub(crate) fn planned(value: &Value) -> MResult<Self> {
+    pub(crate) fn planned(value: &LegacyValue) -> MResult<Self> {
         Ok(Self(ExecutedResourceValue::capture(value)?))
     }
 
-    fn to_value(&self) -> Value {
+    fn to_value(&self) -> LegacyValue {
         self.0.to_value()
     }
 }
@@ -63,7 +63,7 @@ impl FunctionSpecializer for RuntimeResourceReadSpecializer {
         GuardFunctionSafety::Unsupported
     }
 
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn mech_core::MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn mech_core::MechFunction>> {
         require_external_arity(arguments, 0)?;
         Ok(Box::new(ExternalResourceReadFunction {
             interpreter_id: self.interpreter_id,
@@ -84,18 +84,18 @@ impl FunctionSpecializer for RuntimeResourceWriteSpecializer {
         GuardFunctionSafety::Unsupported
     }
 
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn mech_core::MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn mech_core::MechFunction>> {
         require_external_arity(arguments, 1)?;
         Ok(Box::new(ExternalResourceWriteFunction {
             request: self.request.clone(),
             input: arguments[0].clone(),
-            output: Ref::new(Value::Empty),
+            output: Ref::new(LegacyValue::Empty),
             initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
         }))
     }
 }
 
-fn require_external_arity(arguments: &[Value], expected: usize) -> MResult<()> {
+fn require_external_arity(arguments: &[LegacyValue], expected: usize) -> MResult<()> {
     if arguments.len() == expected {
         return Ok(());
     }
@@ -266,7 +266,8 @@ impl MechErrorKind for ExternalRequirementCanonicalizationOverflow {
 mod tests {
     use mech_core::{
         ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest,
-        FunctionSpecializer, InitialSolvePolicy, Ref, ResourceDelivery, ResourceIntent, Value,
+        FunctionSpecializer, InitialSolvePolicy, LegacyValue, Ref, ResourceDelivery,
+        ResourceIntent,
     };
 
     use super::{
@@ -274,7 +275,7 @@ mod tests {
         hidden_external_operation_name,
     };
 
-    fn assert_resource_snapshot_round_trip(value: Value) {
+    fn assert_resource_snapshot_round_trip(value: LegacyValue) {
         let expected = value.try_deep_snapshot().unwrap();
         for captured in [
             RuntimeResourceInitialValue::executed(&value).unwrap(),
@@ -289,13 +290,11 @@ mod tests {
     #[cfg(all(feature = "u64", feature = "matrix", feature = "f64"))]
     #[test]
     fn planned_resource_snapshots_cover_numeric_and_matrix_values() {
-        assert_resource_snapshot_round_trip(Value::U64(Ref::new(42)));
-        assert_resource_snapshot_round_trip(Value::Index(Ref::new(7)));
-        assert_resource_snapshot_round_trip(Value::MatrixF64(mech_core::matrix::Matrix::from_vec(
-            vec![1.0, 2.0, 3.0, 4.0],
-            2,
-            2,
-        )));
+        assert_resource_snapshot_round_trip(LegacyValue::U64(Ref::new(42)));
+        assert_resource_snapshot_round_trip(LegacyValue::Index(Ref::new(7)));
+        assert_resource_snapshot_round_trip(LegacyValue::MatrixF64(
+            mech_core::matrix::Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 2, 2),
+        ));
     }
 
     #[cfg(all(
@@ -318,66 +317,69 @@ mod tests {
             (mech_core::hash_str("status"), "status".to_owned()),
             (mech_core::hash_str("ready"), "ready".to_owned()),
         ]));
-        let enumeration = Value::Enum(Ref::new(mech_core::MechEnum {
+        let enumeration = LegacyValue::Enum(Ref::new(mech_core::MechEnum {
             id: mech_core::hash_str("status"),
-            variants: vec![(mech_core::hash_str("ready"), Some(Value::U64(Ref::new(9))))],
+            variants: vec![(
+                mech_core::hash_str("ready"),
+                Some(LegacyValue::U64(Ref::new(9))),
+            )],
             names,
         }));
         let table_column = mech_core::hash_str("samples");
-        let table = Value::Table(Ref::new(mech_core::MechTable::from_parts(
+        let table = LegacyValue::Table(Ref::new(mech_core::MechTable::from_parts(
             2,
             1,
             vec![(
                 table_column,
                 mech_core::ValueKind::U8,
                 mech_core::matrix::Matrix::from_vec(
-                    vec![Value::U8(Ref::new(1)), Value::U8(Ref::new(2))],
+                    vec![LegacyValue::U8(Ref::new(1)), LegacyValue::U8(Ref::new(2))],
                     2,
                     1,
                 ),
             )],
             vec![(table_column, "samples".to_owned())],
         )));
-        let value = Value::Record(Ref::new(mech_core::MechRecord::new(vec![
+        let value = LegacyValue::Record(Ref::new(mech_core::MechRecord::new(vec![
             (
                 "tuple",
-                Value::Tuple(Ref::new(mech_core::MechTuple::from_vec(vec![
-                    Value::String(Ref::new("value".to_owned())),
-                    Value::MutableReference(Ref::new(Value::F64(Ref::new(3.5)))),
+                LegacyValue::Tuple(Ref::new(mech_core::MechTuple::from_vec(vec![
+                    LegacyValue::String(Ref::new("value".to_owned())),
+                    LegacyValue::MutableReference(Ref::new(LegacyValue::F64(Ref::new(3.5)))),
                 ]))),
             ),
             (
                 "map",
-                Value::Map(Ref::new(mech_core::MechMap::from_vec(vec![(
-                    Value::String(Ref::new("key".to_owned())),
-                    Value::U64(Ref::new(5)),
+                LegacyValue::Map(Ref::new(mech_core::MechMap::from_vec(vec![(
+                    LegacyValue::String(Ref::new("key".to_owned())),
+                    LegacyValue::U64(Ref::new(5)),
                 )]))),
             ),
             (
                 "set",
-                Value::Set(Ref::new(mech_core::MechSet::from_vec(vec![
-                    Value::U8(Ref::new(6)),
-                    Value::U8(Ref::new(7)),
+                LegacyValue::Set(Ref::new(mech_core::MechSet::from_vec(vec![
+                    LegacyValue::U8(Ref::new(6)),
+                    LegacyValue::U8(Ref::new(7)),
                 ]))),
             ),
             ("table", table),
             ("enum", enumeration),
             (
                 "atom",
-                Value::Atom(Ref::new(mech_core::MechAtom::from_name("ready"))),
+                LegacyValue::Atom(Ref::new(mech_core::MechAtom::from_name("ready"))),
             ),
             (
                 "matrix-value",
-                Value::MatrixValue(mech_core::matrix::Matrix::from_vec(
-                    vec![Value::U8(Ref::new(8)), Value::U8(Ref::new(9))],
+                LegacyValue::MatrixValue(mech_core::matrix::Matrix::from_vec(
+                    vec![LegacyValue::U8(Ref::new(8)), LegacyValue::U8(Ref::new(9))],
                     2,
                     1,
                 )),
             ),
             (
                 "typed",
-                Value::Typed(
-                    Box::new(Value::U64(Ref::new(10))),
+                LegacyValue::Typed(
+                    Box::new(LegacyValue::U64(Ref::new(10))),
                     mech_core::ValueKind::Option(Box::new(mech_core::ValueKind::U64)),
                 ),
             ),
@@ -460,7 +462,7 @@ mod tests {
             unreachable!("test helper always returns a resource requirement");
         };
         let function = RuntimeResourceWriteSpecializer { request }
-            .specialize(&[Value::Empty])
+            .specialize(&[LegacyValue::Empty])
             .unwrap();
 
         assert_eq!(

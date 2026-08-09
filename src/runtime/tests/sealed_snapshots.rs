@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 #[cfg(feature = "compiler")]
 use mech_core::Ref;
-use mech_core::{FunctionCatalogBuilder, Value};
+use mech_core::{FunctionCatalogBuilder, LegacyValue};
 #[cfg(feature = "compiler")]
 use mech_runtime::{
     BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId,
@@ -20,16 +20,16 @@ thread_local! {
     const { RefCell::new(None) };
 }
 
-fn f64_value(value: &Value) -> f64 {
+fn f64_value(value: &LegacyValue) -> f64 {
     match value {
-        Value::F64(value) => *value.borrow(),
+        LegacyValue::F64(value) => *value.borrow(),
         other => panic!("expected f64 snapshot, got {other:?}"),
     }
 }
 
-fn mutate_f64(value: &Value, next: f64) {
+fn mutate_f64(value: &LegacyValue, next: f64) {
     match value {
-        Value::F64(value) => *value.borrow_mut() = next,
+        LegacyValue::F64(value) => *value.borrow_mut() = next,
         other => panic!("expected mutable f64 snapshot, got {other:?}"),
     }
 }
@@ -106,13 +106,13 @@ fn retained_host_snapshots_cannot_mutate_program_inputs_or_outputs() {
     let function = PlannedPureHostFunction::new(
         "sealed/snapshot",
         |_context: &RuntimeCallContext, _arguments: &[RuntimeValueSnapshot]| {
-            RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(4.0)))
+            RuntimeValueSnapshot::try_capture(&LegacyValue::F64(Ref::new(4.0)))
         },
         |_context: &RuntimeCallContext, arguments: Vec<RuntimeValueSnapshot>| {
             RETAINED_HOST_ARGUMENT.with(|slot| {
                 *slot.borrow_mut() = arguments.first().cloned();
             });
-            let result = RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(5.0)))?;
+            let result = RuntimeValueSnapshot::try_capture(&LegacyValue::F64(Ref::new(5.0)))?;
             RETAINED_HOST_RESULT.with(|slot| {
                 *slot.borrow_mut() = Some(result.clone());
             });

@@ -5,7 +5,7 @@ use crate::intrinsics::*;
 
 #[derive(Debug)]
 struct TupleAccessElement {
-    out: Value,
+    out: LegacyValue,
 }
 
 impl MechFunctionImpl for TupleAccessElement {
@@ -13,14 +13,14 @@ impl MechFunctionImpl for TupleAccessElement {
         ();
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.clone()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -71,7 +71,7 @@ impl MechFunctionCompiler for TupleAccessElement {
 
 pub struct TupleAccess {}
 impl FunctionSpecializer for TupleAccess {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -85,7 +85,7 @@ impl FunctionSpecializer for TupleAccess {
         let ix1 = &arguments[1];
         let src = &arguments[0];
         match (src.clone(), ix1.clone()) {
-            (Value::Tuple(tpl), Value::Index(ix)) => {
+            (LegacyValue::Tuple(tpl), LegacyValue::Index(ix)) => {
                 let tpl_brrw = tpl.borrow();
                 let ix_brrw = ix.borrow();
                 if *ix_brrw > tpl_brrw.elements.len() || *ix_brrw < 1 {
@@ -102,8 +102,8 @@ impl FunctionSpecializer for TupleAccess {
                 let new_fxn = TupleAccessElement { out: *element };
                 Ok(Box::new(new_fxn))
             }
-            (Value::MutableReference(tpl), Value::Index(ix)) => match &*tpl.borrow() {
-                Value::Tuple(tpl) => {
+            (LegacyValue::MutableReference(tpl), LegacyValue::Index(ix)) => match &*tpl.borrow() {
+                LegacyValue::Tuple(tpl) => {
                     let ix_brrw = ix.borrow();
                     let tpl_brrw = tpl.borrow();
                     if *ix_brrw > tpl_brrw.elements.len() || *ix_brrw < 1 {

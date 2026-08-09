@@ -11,9 +11,10 @@ use std::{
 
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, FunctionArgs, FunctionCatalog,
-    FunctionCatalogBuilder, FunctionRuntimeType, MResult, MechError, MechErrorKind, MechFunction,
-    MechFunctionFactory, MechFunctionImpl, ParsedProgram, Ref, ResourceDelivery, ResourceIntent,
-    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, Value, hash_str,
+    FunctionCatalogBuilder, FunctionRuntimeType, LegacyValue, MResult, MechError, MechErrorKind,
+    MechFunction, MechFunctionFactory, MechFunctionImpl, ParsedProgram, Ref, ResourceDelivery,
+    ResourceIntent, RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
+    hash_str,
 };
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
@@ -71,11 +72,11 @@ impl MechFunctionImpl for ControlledAdd {
         Ok(())
     }
 
-    fn out(&self) -> Value {
-        Value::F64(self.output.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::F64(self.output.clone())
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 
@@ -102,7 +103,9 @@ impl MechFunctionFactory for ControlledAdd {
         let FunctionArgs::Binary(output, lhs, rhs) = arguments else {
             return Err(MechError::new(ControlledAddInvalidArguments, None));
         };
-        let (Value::F64(output), Value::F64(lhs), Value::F64(rhs)) = (output, lhs, rhs) else {
+        let (LegacyValue::F64(output), LegacyValue::F64(lhs), LegacyValue::F64(rhs)) =
+            (output, lhs, rhs)
+        else {
             return Err(MechError::new(ControlledAddInvalidArguments, None));
         };
         ADD_OBSERVATION.with(|observation| {
@@ -226,7 +229,7 @@ fn reset_controlled_add() {
 }
 
 fn snapshot_tuple(snapshot: RuntimeValueSnapshot) -> Vec<f64> {
-    let Value::Tuple(tuple) = snapshot.into_value() else {
+    let LegacyValue::Tuple(tuple) = snapshot.into_value() else {
         panic!("expected tuple snapshot");
     };
     tuple
@@ -234,7 +237,7 @@ fn snapshot_tuple(snapshot: RuntimeValueSnapshot) -> Vec<f64> {
         .elements
         .iter()
         .map(|value| match value.as_ref() {
-            Value::F64(value) => *value.borrow(),
+            LegacyValue::F64(value) => *value.borrow(),
             other => panic!("expected F64 tuple element, got {other:?}"),
         })
         .collect()

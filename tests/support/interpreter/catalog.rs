@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use mech::{MechProgram, MechProgramConfig};
 use mech_core::{
-    FunctionCatalogBuilder, FunctionSpecializer, MResult, MechFunction, OperationId, Value,
+    FunctionCatalogBuilder, FunctionSpecializer, LegacyValue, MResult, MechFunction, OperationId,
     hash_str,
 };
 
@@ -15,7 +15,7 @@ fn standard_program() -> MechProgram {
 struct UnreachableSpecializer;
 
 impl FunctionSpecializer for UnreachableSpecializer {
-    fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         panic!("non-visible catalog operation was specialized")
     }
 }
@@ -30,17 +30,17 @@ fn assert_math_add_is_catalog_owned(program: &MechProgram) {
     );
 }
 
-fn dereference(value: Value) -> Value {
+fn dereference(value: LegacyValue) -> LegacyValue {
     match value {
-        Value::MutableReference(reference) => dereference(reference.borrow().clone()),
-        Value::Typed(value, _) => dereference(*value),
+        LegacyValue::MutableReference(reference) => dereference(reference.borrow().clone()),
+        LegacyValue::Typed(value, _) => dereference(*value),
         value => value,
     }
 }
 
-fn assert_f64(value: Value, expected: f64) {
+fn assert_f64(value: LegacyValue, expected: f64) {
     let value = dereference(value);
-    let Value::F64(actual) = value else {
+    let LegacyValue::F64(actual) = value else {
         panic!("expected f64 {expected}, got {value:?}");
     };
     assert_eq!(*actual.borrow(), expected);

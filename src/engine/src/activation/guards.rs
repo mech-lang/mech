@@ -4,8 +4,8 @@ use super::{
     ActivationPatternGuardMustBePure, activation_scope_entry_cells,
 };
 use crate::{
-    Expression, InterpreterExecution, MResult, MechError, MechFunctionImpl, ReactiveNodeId,
-    ReactiveNodeKind, ReactiveSolveStatus, Ref, Value,
+    Expression, InterpreterExecution, LegacyValue, MResult, MechError, MechFunctionImpl,
+    ReactiveNodeId, ReactiveNodeKind, ReactiveSolveStatus, Ref,
 };
 
 pub(super) struct GuardFinalize {
@@ -22,10 +22,10 @@ impl MechFunctionImpl for GuardFinalize {
         *self.out.borrow_mut() += 1;
         Ok(ReactiveSolveStatus::Changed)
     }
-    fn out(&self) -> Value {
-        Value::Index(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Index(self.out.clone())
     }
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         let mut values = self.reactive_output_values();
         values.push(transaction_bool_state(&self.eligible)?);
         Ok(values)
@@ -44,7 +44,7 @@ pub(super) struct ElaboratedPatternGuard {
 pub(super) fn elaborate_patterned_arm_guard(
     guard: &Expression,
     captures: &[ActivationPatternCapture],
-    pulse: &Value,
+    pulse: &LegacyValue,
     eligible: &Ref<bool>,
     completion: Ref<usize>,
     interpreter: &InterpreterExecution<'_>,

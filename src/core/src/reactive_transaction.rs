@@ -1,4 +1,6 @@
-use crate::{MResult, MechError, MechErrorKind, MechFunction, ValRef, Value, ValueStateJournal};
+use crate::{
+    LegacyValue, MResult, MechError, MechErrorKind, MechFunction, ValRef, ValueStateJournal,
+};
 use std::cell::Cell;
 
 /// The value-state portion of one ephemeral reactive turn.
@@ -16,7 +18,7 @@ impl ReactiveTurnJournal {
         }
     }
 
-    pub(crate) fn capture_value(&mut self, value: &Value) -> MResult<()> {
+    pub(crate) fn capture_value(&mut self, value: &LegacyValue) -> MResult<()> {
         self.values.capture_value(value)
     }
 
@@ -74,7 +76,7 @@ pub struct ReactiveJournalParticipant<'journal> {
 }
 
 impl ReactiveJournalParticipant<'_> {
-    pub fn capture_value(&mut self, value: &Value) -> MResult<()> {
+    pub fn capture_value(&mut self, value: &LegacyValue) -> MResult<()> {
         self.journal.capture_value(value)
     }
 
@@ -215,7 +217,7 @@ mod tests {
         let value = Ref::new(1usize);
 
         let error = with_reactive_journal_participant::<()>(|mut participant| {
-            participant.capture_value(&Value::Index(value.clone()))?;
+            participant.capture_value(&LegacyValue::Index(value.clone()))?;
             *value.borrow_mut() = 2;
             Err(deliberate_journal_error("deliberate pending journal error"))
         })
@@ -235,7 +237,7 @@ mod tests {
         let value = Ref::new(1usize);
 
         let error = with_reactive_journal_participant(|mut participant| {
-            participant.capture_value(&Value::Index(value.clone()))?;
+            participant.capture_value(&LegacyValue::Index(value.clone()))?;
             *value.borrow_mut() = 2;
             Ok(())
         })
@@ -250,7 +252,7 @@ mod tests {
         let value = Ref::new(1usize);
 
         with_reactive_journal_participant(|mut participant| {
-            participant.capture_value(&Value::Index(value.clone()))?;
+            participant.capture_value(&LegacyValue::Index(value.clone()))?;
             *value.borrow_mut() = 2;
             participant.commit();
             Ok(())
@@ -265,7 +267,7 @@ mod tests {
         let value = Ref::new(1usize);
 
         let error = with_reactive_journal_participant::<()>(|mut participant| {
-            participant.capture_value(&Value::Index(value.clone()))?;
+            participant.capture_value(&LegacyValue::Index(value.clone()))?;
             *value.borrow_mut() = 2;
             participant.commit();
             Err(deliberate_journal_error(
@@ -288,7 +290,7 @@ mod tests {
         let value = Ref::new(1usize);
 
         let error = with_reactive_journal_participant::<()>(|mut participant| {
-            participant.capture_value(&Value::Index(value.clone()))?;
+            participant.capture_value(&LegacyValue::Index(value.clone()))?;
             *value.borrow_mut() = 2;
             participant.preflight_restore_before()?;
             participant.apply_restore_before();
@@ -355,11 +357,11 @@ mod tests {
             Ok(ReactiveSolveStatus::Changed)
         }
 
-        fn out(&self) -> Value {
-            Value::Index(self.output.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Index(self.output.clone())
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             self.events
                 .borrow_mut()
                 .push(format!("capture {}", self.name));
@@ -373,8 +375,8 @@ mod tests {
                 ));
             }
             Ok(vec![
-                Value::Index(self.output.clone()),
-                Value::Index(self.retained.clone()),
+                LegacyValue::Index(self.output.clone()),
+                LegacyValue::Index(self.retained.clone()),
             ])
         }
 
@@ -450,17 +452,17 @@ mod tests {
             Ok(())
         }
 
-        fn out(&self) -> Value {
-            Value::Index(self.sink.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Index(self.sink.clone())
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             self.events
                 .borrow_mut()
                 .push(format!("capture {}", self.name));
             Ok(vec![
-                Value::Index(self.sink.clone()),
-                Value::Index(self.retained.clone()),
+                LegacyValue::Index(self.sink.clone()),
+                LegacyValue::Index(self.retained.clone()),
             ])
         }
 
@@ -513,7 +515,7 @@ mod tests {
                 Ref::new(0),
                 events.clone(),
             )),
-            &[Value::Index(scheduled_input.clone())],
+            &[LegacyValue::Index(scheduled_input.clone())],
         )
         .unwrap();
         plan.register(
@@ -523,13 +525,13 @@ mod tests {
                 Ref::new(0),
                 events.clone(),
             )),
-            &[Value::Index(unrelated_input)],
+            &[LegacyValue::Index(unrelated_input)],
         )
         .unwrap();
 
         let mut journal = ReactiveTurnJournal::new();
         plan.solve_dirty_cells_with_journal(
-            &Value::Index(scheduled_input).reactive_root_cell_ids(),
+            &LegacyValue::Index(scheduled_input).reactive_root_cell_ids(),
             &mut journal,
         )
         .unwrap();
@@ -547,13 +549,13 @@ mod tests {
         let mut function = journal_function("sampled", Ref::new(0), Ref::new(0), events.clone());
         function.sampled = true;
         let mut plan = ReactivePlan::new();
-        plan.register(Box::new(function), &[Value::Index(input.clone())])
+        plan.register(Box::new(function), &[LegacyValue::Index(input.clone())])
             .unwrap();
 
         let mut journal = ReactiveTurnJournal::new();
         let outcome = plan
             .solve_dirty_cells_with_journal(
-                &Value::Index(input).reactive_root_cell_ids(),
+                &LegacyValue::Index(input).reactive_root_cell_ids(),
                 &mut journal,
             )
             .unwrap();
@@ -577,13 +579,13 @@ mod tests {
                 retained.clone(),
                 events.clone(),
             )),
-            &[Value::Index(input.clone())],
+            &[LegacyValue::Index(input.clone())],
         )
         .unwrap();
 
         let mut journal = ReactiveTurnJournal::new();
         plan.solve_dirty_cells_with_journal(
-            &Value::Index(input).reactive_root_cell_ids(),
+            &LegacyValue::Index(input).reactive_root_cell_ids(),
             &mut journal,
         )
         .unwrap();
@@ -601,12 +603,12 @@ mod tests {
             journal_function("unsupported", Ref::new(0), Ref::new(0), events.clone());
         function.capture_error = true;
         let mut plan = ReactivePlan::new();
-        plan.register(Box::new(function), &[Value::Index(input.clone())])
+        plan.register(Box::new(function), &[LegacyValue::Index(input.clone())])
             .unwrap();
 
         let error = plan
             .solve_dirty_cells_with_journal(
-                &Value::Index(input).reactive_root_cell_ids(),
+                &LegacyValue::Index(input).reactive_root_cell_ids(),
                 &mut ReactiveTurnJournal::new(),
             )
             .unwrap_err();
@@ -621,9 +623,9 @@ mod tests {
         let mut journal = ReactiveTurnJournal::new();
 
         journal
-            .capture_value(&Value::Index(shared.clone()))
+            .capture_value(&LegacyValue::Index(shared.clone()))
             .unwrap();
-        journal.capture_value(&Value::Index(shared)).unwrap();
+        journal.capture_value(&LegacyValue::Index(shared)).unwrap();
 
         assert_eq!(journal.cell_count(), 1);
     }
@@ -631,16 +633,16 @@ mod tests {
     #[test]
     fn reactive_transaction_restores_nested_cell_identity() {
         let inner = Ref::new(3usize);
-        let outer = Ref::new(Value::Index(inner.clone()));
+        let outer = Ref::new(LegacyValue::Index(inner.clone()));
         let mut journal = ReactiveTurnJournal::new();
         journal.capture_val_ref(&outer).unwrap();
         *inner.borrow_mut() = 9;
-        *outer.borrow_mut() = Value::Index(Ref::new(10));
+        *outer.borrow_mut() = LegacyValue::Index(Ref::new(10));
 
         journal.restore_before().unwrap();
 
         let restored = outer.borrow();
-        let Value::Index(restored_inner) = &*restored else {
+        let LegacyValue::Index(restored_inner) = &*restored else {
             panic!("expected restored nested index")
         };
         assert!(restored_inner.same_handle(&inner));
@@ -790,7 +792,7 @@ mod tests {
                 events: register_events,
                 fail_stage: false,
             }),
-            &[Value::Index(source.clone())],
+            &[LegacyValue::Index(source.clone())],
         )
         .unwrap();
         let mut failing = journal_function(
@@ -800,13 +802,13 @@ mod tests {
             Rc::new(RefCell::new(Vec::new())),
         );
         failing.solve_error = true;
-        plan.register(Box::new(failing), &[Value::Index(sink.clone())])
+        plan.register(Box::new(failing), &[LegacyValue::Index(sink.clone())])
             .unwrap();
         let mut journal = ReactiveTurnJournal::new();
 
         plan.advance_reactive_turn_with_journal(
             &mut ReactiveTurnState::default(),
-            &Value::Index(source).reactive_root_cell_ids(),
+            &LegacyValue::Index(source).reactive_root_cell_ids(),
             &mut journal,
         )
         .unwrap_err();
@@ -827,13 +829,13 @@ mod tests {
                 Ref::new(0),
                 Rc::new(RefCell::new(Vec::new())),
             )),
-            &[Value::Index(input.clone())],
+            &[LegacyValue::Index(input.clone())],
         )
         .unwrap();
         let mut journal = ReactiveTurnJournal::new();
 
         plan.solve_dirty_cells_with_journal(
-            &Value::Index(input).reactive_root_cell_ids(),
+            &LegacyValue::Index(input).reactive_root_cell_ids(),
             &mut journal,
         )
         .unwrap();

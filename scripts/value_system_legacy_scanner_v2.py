@@ -1,4 +1,4 @@
-"""Immutable C0 V1 scanner for legacy value, alias, identity, and journal uses.
+"""Immutable C2 V2 scanner for legacy value, alias, identity, and journal uses.
 
 This complete module is the scanner implementation freeze.  Its normalized
 UTF-8 file bytes, including the final newline, are hashed by the C0 contract.
@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 
-SCANNER_VERSION = "c0-legacy-growth-v1"
+SCANNER_VERSION = "c2-legacy-growth-v2"
 RAW_STRING_START = re.compile(r'(?:br|r)(?P<hashes>#{0,255})"')
 TOKEN_PATTERN = re.compile(
     r"r#[A-Za-z_][A-Za-z0-9_]*|::|->|[A-Za-z_][A-Za-z0-9_]*|"
@@ -22,7 +22,7 @@ TOKEN_PATTERN = re.compile(
 IDENTIFIER = re.compile(r"(?:r#)?[A-Za-z_][A-Za-z0-9_]*\Z")
 
 RESOLUTIONS = {
-    "Value",
+    "LegacyValue",
     "ValueKind",
     "SemanticKind",
     "SyntaxKind",
@@ -33,8 +33,8 @@ RESOLUTIONS = {
 }
 
 LEGACY_ALIAS_SPECS = {
-    ("src/core/src/types/mod.rs", "MutableReference"): "Ref<Value>",
-    ("src/core/src/types/mod.rs", "ValRef"): "Ref<Value>",
+    ("src/core/src/types/mod.rs", "MutableReference"): "Ref<LegacyValue>",
+    ("src/core/src/types/mod.rs", "ValRef"): "Ref<LegacyValue>",
 }
 COMPATIBILITY_ALIAS_SPECS = {
     ("src/core/src/program/symbol_table.rs", "SymbolTableRef"): {
@@ -63,8 +63,8 @@ REF_BACKED_ALIAS_NAMES = {
 }
 
 HIGH_RISK_PATTERNS = {
-    "value-mutable-reference": "Value :: MutableReference",
-    "value-typed-wrapper": "Value :: Typed",
+    "value-mutable-reference": "LegacyValue :: MutableReference",
+    "value-typed-wrapper": "LegacyValue :: Typed",
     "valref-alias": "ValRef",
     "mutable-reference-alias": "MutableReference",
     "reactive-cell-id": "ReactiveCellId",
@@ -469,8 +469,16 @@ class TransparentTypeResolver:
             or path in {("mech_core", "Kind"), ("crate", "Kind")}
         ):
             return "SemanticKind"
-        if terminal == "Value":
-            return "Value" if len(path) == 1 or path[-2] in {"value", "crate", "self", "super", "mech_core"} else "Ambiguous"
+        if terminal in {"Value", "LegacyValue"}:
+            if terminal == "Value" and "snapshot" in path[:-1]:
+                return "Other"
+            return (
+                "LegacyValue"
+                if len(path) == 1
+                or path[-2]
+                in {"value", "legacy_value", "crate", "self", "super", "mech_core"}
+                else "Ambiguous"
+            )
         if terminal == "ValueKind":
             return "ValueKind" if len(path) == 1 or path[-2] in {"value", "crate", "self", "super", "mech_core"} else "Ambiguous"
         if terminal == "Ref":
@@ -513,7 +521,7 @@ class TransparentTypeResolver:
             return direct
         if len(path) == 1 and terminal in self.local_declarations:
             return "SyntaxKind" if terminal == "Kind" else "Other"
-        if terminal in {"Value", "ValueKind", "Kind", "Ref"}:
+        if terminal in {"Value", "LegacyValue", "ValueKind", "Kind", "Ref"}:
             return "Ambiguous"
         return "Other"
 
@@ -610,12 +618,13 @@ def audited_type_alias_violations(
         else:
             enum_name = {
                 "SemanticKind": "Kind",
-                "Value": "Value",
+                "LegacyValue": "LegacyValue",
                 "ValueKind": "ValueKind",
             }[resolution]
             raw = any(
                 token.value.startswith("r#")
-                and canonical_identifier(token.value) in {"Value", "ValueKind", "Kind"}
+                and canonical_identifier(token.value)
+                in {"Value", "LegacyValue", "ValueKind", "Kind"}
                 for token in alias.rhs
             )
             kind = "raw-audited-alias" if raw else "semantic-kind-alias" if enum_name == "Kind" else "type-alias"
@@ -652,10 +661,13 @@ def alias_records(
     ]
 
     def base_record(relative: str, alias: TypeAlias) -> dict[str, object]:
+        target = canonical_token_text(alias.rhs)
+        if alias.name in {"MutableReference", "ValRef"}:
+            target = target.replace("Ref<Value>", "Ref<LegacyValue>")
         return {
             "name": alias.name,
             "raw_name": alias.raw_name,
-            "target": canonical_token_text(alias.rhs),
+            "target": target,
             "path": relative,
             "line": alias.token.line,
             "column": alias.token.column,
@@ -715,10 +727,12 @@ def occurrence_fingerprint(tokens: Sequence[Token], target: int) -> str:
     """Identify an occurrence by stable nearby Rust tokens, not formatting."""
     start = max(0, target - 12)
     end = min(len(tokens), target + 13)
-    marked = [
-        ("@" if index == target else "") + canonical_identifier(tokens[index].value)
-        for index in range(start, end)
-    ]
+    marked = []
+    for index in range(start, end):
+        identifier = canonical_identifier(tokens[index].value)
+        if identifier in {"Value", "LegacyValue"}:
+            identifier = "LegacyValue"
+        marked.append(("@" if index == target else "") + identifier)
     normalized: list[str] = []
     offset = 0
     while offset < len(marked):
@@ -1033,8 +1047,14 @@ def high_risk_uses(
     corpus: Sequence[tuple[str, str, str, list[Token]]], identifier: str
 ) -> list[dict[str, object]]:
     sequences = {
-        "value-mutable-reference": ("Value", "::", "MutableReference"),
-        "value-typed-wrapper": ("Value", "::", "Typed"),
+        "value-mutable-reference": (
+            ("Value", "::", "MutableReference"),
+            ("LegacyValue", "::", "MutableReference"),
+        ),
+        "value-typed-wrapper": (
+            ("Value", "::", "Typed"),
+            ("LegacyValue", "::", "Typed"),
+        ),
     }
     identifiers = {
         "valref-alias": "ValRef",
@@ -1057,7 +1077,17 @@ def high_risk_uses(
         "ref-id-ufcs": "id",
     }
     if identifier in sequences:
-        return exact_sequence_uses(corpus, sequences[identifier])
+        accepted = {tuple(sequence) for sequence in sequences[identifier]}
+        return grouped_uses(
+            use_at(relative, tokens, index)
+            for relative, _source, _searchable, tokens in corpus
+            for index in range(len(tokens) - 2)
+            if tuple(
+                canonical_identifier(token.value)
+                for token in tokens[index : index + 3]
+            )
+            in accepted
+        )
     if identifier in identifiers:
         return exact_identifier_uses(corpus, identifiers[identifier])
     if identifier in definitions:

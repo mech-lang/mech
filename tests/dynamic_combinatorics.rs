@@ -3,7 +3,7 @@ extern crate mech_core;
 #[path = "support/intrinsic_catalog.rs"]
 mod intrinsic_catalog;
 
-use mech_core::{Value, structures::matrix::Matrix};
+use mech_core::{LegacyValue, structures::matrix::Matrix};
 
 fn run(source: &str) -> bool {
     let mut program = intrinsic_catalog::program();
@@ -16,11 +16,14 @@ fn run_matrix_n_choose_k(source: &str, expected: Vec<f64>) {
     let result = program.run_string(source).unwrap();
 
     let detached = match result {
-        Value::MutableReference(v) => v.borrow().clone(),
+        LegacyValue::MutableReference(v) => v.borrow().clone(),
         value => value,
     };
 
-    assert_eq!(detached, Value::MatrixF64(Matrix::from_vec(expected, 1, 2)));
+    assert_eq!(
+        detached,
+        LegacyValue::MatrixF64(Matrix::from_vec(expected, 1, 2))
+    );
 }
 
 #[cfg(feature = "dynamic-modules")]

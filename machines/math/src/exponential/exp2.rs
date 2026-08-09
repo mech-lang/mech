@@ -49,7 +49,7 @@ impl_math_unop!(MathExp2, f64, exp2);
 impl_math_unop!(MathExp2, f32, exp2f);
 
 #[cfg(feature = "source")]
-fn impl_exp2_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_exp2_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathExp2,
       lhs_value,
@@ -63,7 +63,7 @@ pub struct MathExp2 {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathExp2 {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -78,7 +78,7 @@ impl FunctionSpecializer for MathExp2 {
         match impl_exp2_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match input {
-                Value::MutableReference(input) => impl_exp2_fxn(input.borrow().clone()),
+                LegacyValue::MutableReference(input) => impl_exp2_fxn(input.borrow().clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),

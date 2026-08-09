@@ -354,15 +354,15 @@ fn format_operand(operand: Option<&ValRef>) -> Option<String> {
         .map(|resolved| resolved.formatted)
 }
 
-fn resolve_value(value: &Value) -> Result<ResolvedIntegrityValue, ()> {
+fn resolve_value(value: &LegacyValue) -> Result<ResolvedIntegrityValue, ()> {
     match value {
-        Value::MutableReference(reference) => {
+        LegacyValue::MutableReference(reference) => {
             let value = reference.try_borrow().map_err(|_| ())?;
             resolve_value(&value)
         }
-        Value::Typed(value, _) => resolve_value(value),
+        LegacyValue::Typed(value, _) => resolve_value(value),
         #[cfg(any(feature = "bool", feature = "variable_define"))]
-        Value::Bool(value) => {
+        LegacyValue::Bool(value) => {
             let value = *value.try_borrow().map_err(|_| ())?;
             Ok(ResolvedIntegrityValue {
                 kind: ValueKind::Bool,
@@ -378,40 +378,40 @@ fn resolve_value(value: &Value) -> Result<ResolvedIntegrityValue, ()> {
     }
 }
 
-fn stable_value_string(value: &Value) -> Result<String, ()> {
+fn stable_value_string(value: &LegacyValue) -> Result<String, ()> {
     match value {
         #[cfg(feature = "u8")]
-        Value::U8(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::U8(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "u16")]
-        Value::U16(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::U16(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "u32")]
-        Value::U32(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::U32(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "u64")]
-        Value::U64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::U64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "u128")]
-        Value::U128(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::U128(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "i8")]
-        Value::I8(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::I8(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "i16")]
-        Value::I16(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::I16(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "i32")]
-        Value::I32(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::I32(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "i64")]
-        Value::I64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::I64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "i128")]
-        Value::I128(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::I128(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "f32")]
-        Value::F32(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::F32(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "f64")]
-        Value::F64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::F64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(any(feature = "string", feature = "variable_define"))]
-        Value::String(value) => Ok(format!("\"{}\"", value.try_borrow().map_err(|_| ())?)),
+        LegacyValue::String(value) => Ok(format!("\"{}\"", value.try_borrow().map_err(|_| ())?)),
         #[cfg(feature = "complex")]
-        Value::C64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::C64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "rational")]
-        Value::R64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::R64(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
         #[cfg(feature = "atom")]
-        Value::Atom(value) => {
+        LegacyValue::Atom(value) => {
             let atom = value.try_borrow().map_err(|_| ())?;
             let dictionary = atom.0.1.try_borrow().map_err(|_| ())?;
             let name = dictionary
@@ -420,52 +420,52 @@ fn stable_value_string(value: &Value) -> Result<String, ()> {
                 .unwrap_or_else(|| atom.0.0.to_string());
             Ok(format!(":{name}"))
         }
-        Value::Id(value) => Ok(value.to_string()),
-        Value::Index(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
-        Value::Empty => Ok("_".to_string()),
-        Value::EmptyKind(kind) => Ok(format!("<{}>", kind)),
-        Value::Kind(kind) => Ok(format!("<{}>", kind)),
-        Value::IndexAll => Ok(":".to_string()),
+        LegacyValue::Id(value) => Ok(value.to_string()),
+        LegacyValue::Index(value) => Ok(value.try_borrow().map_err(|_| ())?.to_string()),
+        LegacyValue::Empty => Ok("_".to_string()),
+        LegacyValue::EmptyKind(kind) => Ok(format!("<{}>", kind)),
+        LegacyValue::Kind(kind) => Ok(format!("<{}>", kind)),
+        LegacyValue::IndexAll => Ok(":".to_string()),
         _ => Ok(format!("<{}>", stable_value_kind(value)?)),
     }
 }
 
-fn stable_value_kind(value: &Value) -> Result<ValueKind, ()> {
+fn stable_value_kind(value: &LegacyValue) -> Result<ValueKind, ()> {
     match value {
         #[cfg(feature = "complex")]
-        Value::C64(_) => Ok(ValueKind::C64),
+        LegacyValue::C64(_) => Ok(ValueKind::C64),
         #[cfg(feature = "rational")]
-        Value::R64(_) => Ok(ValueKind::R64),
+        LegacyValue::R64(_) => Ok(ValueKind::R64),
         #[cfg(feature = "u8")]
-        Value::U8(_) => Ok(ValueKind::U8),
+        LegacyValue::U8(_) => Ok(ValueKind::U8),
         #[cfg(feature = "u16")]
-        Value::U16(_) => Ok(ValueKind::U16),
+        LegacyValue::U16(_) => Ok(ValueKind::U16),
         #[cfg(feature = "u32")]
-        Value::U32(_) => Ok(ValueKind::U32),
+        LegacyValue::U32(_) => Ok(ValueKind::U32),
         #[cfg(feature = "u64")]
-        Value::U64(_) => Ok(ValueKind::U64),
+        LegacyValue::U64(_) => Ok(ValueKind::U64),
         #[cfg(feature = "u128")]
-        Value::U128(_) => Ok(ValueKind::U128),
+        LegacyValue::U128(_) => Ok(ValueKind::U128),
         #[cfg(feature = "i8")]
-        Value::I8(_) => Ok(ValueKind::I8),
+        LegacyValue::I8(_) => Ok(ValueKind::I8),
         #[cfg(feature = "i16")]
-        Value::I16(_) => Ok(ValueKind::I16),
+        LegacyValue::I16(_) => Ok(ValueKind::I16),
         #[cfg(feature = "i32")]
-        Value::I32(_) => Ok(ValueKind::I32),
+        LegacyValue::I32(_) => Ok(ValueKind::I32),
         #[cfg(feature = "i64")]
-        Value::I64(_) => Ok(ValueKind::I64),
+        LegacyValue::I64(_) => Ok(ValueKind::I64),
         #[cfg(feature = "i128")]
-        Value::I128(_) => Ok(ValueKind::I128),
+        LegacyValue::I128(_) => Ok(ValueKind::I128),
         #[cfg(feature = "f32")]
-        Value::F32(_) => Ok(ValueKind::F32),
+        LegacyValue::F32(_) => Ok(ValueKind::F32),
         #[cfg(feature = "f64")]
-        Value::F64(_) => Ok(ValueKind::F64),
+        LegacyValue::F64(_) => Ok(ValueKind::F64),
         #[cfg(any(feature = "string", feature = "variable_define"))]
-        Value::String(_) => Ok(ValueKind::String),
+        LegacyValue::String(_) => Ok(ValueKind::String),
         #[cfg(any(feature = "bool", feature = "variable_define"))]
-        Value::Bool(_) => Ok(ValueKind::Bool),
+        LegacyValue::Bool(_) => Ok(ValueKind::Bool),
         #[cfg(feature = "atom")]
-        Value::Atom(value) => {
+        LegacyValue::Atom(value) => {
             let atom = value.try_borrow().map_err(|_| ())?;
             let dictionary = atom.0.1.try_borrow().map_err(|_| ())?;
             let name = dictionary
@@ -475,56 +475,60 @@ fn stable_value_kind(value: &Value) -> Result<ValueKind, ()> {
             Ok(ValueKind::Atom(atom.0.0, name))
         }
         #[cfg(feature = "matrix")]
-        Value::MatrixIndex(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::Index), Vec::new())),
+        LegacyValue::MatrixIndex(_) => {
+            Ok(ValueKind::Matrix(Box::new(ValueKind::Index), Vec::new()))
+        }
         #[cfg(all(feature = "matrix", feature = "bool"))]
-        Value::MatrixBool(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::Bool), Vec::new())),
+        LegacyValue::MatrixBool(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::Bool), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "u8"))]
-        Value::MatrixU8(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U8), Vec::new())),
+        LegacyValue::MatrixU8(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U8), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "u16"))]
-        Value::MatrixU16(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U16), Vec::new())),
+        LegacyValue::MatrixU16(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U16), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "u32"))]
-        Value::MatrixU32(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U32), Vec::new())),
+        LegacyValue::MatrixU32(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U32), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "u64"))]
-        Value::MatrixU64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U64), Vec::new())),
+        LegacyValue::MatrixU64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U64), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "u128"))]
-        Value::MatrixU128(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U128), Vec::new())),
+        LegacyValue::MatrixU128(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U128), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "i8"))]
-        Value::MatrixI8(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I8), Vec::new())),
+        LegacyValue::MatrixI8(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I8), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "i16"))]
-        Value::MatrixI16(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I16), Vec::new())),
+        LegacyValue::MatrixI16(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I16), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "i32"))]
-        Value::MatrixI32(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I32), Vec::new())),
+        LegacyValue::MatrixI32(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I32), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "i64"))]
-        Value::MatrixI64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I64), Vec::new())),
+        LegacyValue::MatrixI64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I64), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "i128"))]
-        Value::MatrixI128(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I128), Vec::new())),
+        LegacyValue::MatrixI128(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I128), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "f32"))]
-        Value::MatrixF32(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::F32), Vec::new())),
+        LegacyValue::MatrixF32(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::F32), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "f64"))]
-        Value::MatrixF64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::F64), Vec::new())),
+        LegacyValue::MatrixF64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::F64), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "string"))]
-        Value::MatrixString(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::String), Vec::new())),
+        LegacyValue::MatrixString(_) => {
+            Ok(ValueKind::Matrix(Box::new(ValueKind::String), Vec::new()))
+        }
         #[cfg(all(feature = "matrix", feature = "rational"))]
-        Value::MatrixR64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::R64), Vec::new())),
+        LegacyValue::MatrixR64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::R64), Vec::new())),
         #[cfg(all(feature = "matrix", feature = "complex"))]
-        Value::MatrixC64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::C64), Vec::new())),
+        LegacyValue::MatrixC64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::C64), Vec::new())),
         #[cfg(feature = "matrix")]
-        Value::MatrixValue(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::Any), Vec::new())),
+        LegacyValue::MatrixValue(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::Any), Vec::new())),
         #[cfg(feature = "set")]
-        Value::Set(_) => Ok(ValueKind::Set(Box::new(ValueKind::Any), None)),
+        LegacyValue::Set(_) => Ok(ValueKind::Set(Box::new(ValueKind::Any), None)),
         #[cfg(feature = "map")]
-        Value::Map(_) => Ok(ValueKind::Map(
+        LegacyValue::Map(_) => Ok(ValueKind::Map(
             Box::new(ValueKind::Any),
             Box::new(ValueKind::Any),
         )),
         #[cfg(feature = "record")]
-        Value::Record(_) => Ok(ValueKind::Record(Vec::new())),
+        LegacyValue::Record(_) => Ok(ValueKind::Record(Vec::new())),
         #[cfg(feature = "table")]
-        Value::Table(_) => Ok(ValueKind::Table(Vec::new(), 0)),
+        LegacyValue::Table(_) => Ok(ValueKind::Table(Vec::new(), 0)),
         #[cfg(feature = "tuple")]
-        Value::Tuple(_) => Ok(ValueKind::Tuple(Vec::new())),
+        LegacyValue::Tuple(_) => Ok(ValueKind::Tuple(Vec::new())),
         #[cfg(feature = "enum")]
-        Value::Enum(value) => {
+        LegacyValue::Enum(value) => {
             let enum_value = value.try_borrow().map_err(|_| ())?;
             let dictionary = enum_value.names.try_borrow().map_err(|_| ())?;
             let name = dictionary
@@ -533,13 +537,13 @@ fn stable_value_kind(value: &Value) -> Result<ValueKind, ()> {
                 .unwrap_or_else(|| enum_value.id.to_string());
             Ok(ValueKind::Enum(enum_value.id, name))
         }
-        Value::Id(_) => Ok(ValueKind::Id),
-        Value::Index(_) => Ok(ValueKind::Index),
-        Value::Empty => Ok(ValueKind::Empty),
-        Value::EmptyKind(kind) | Value::Kind(kind) => Ok(kind.clone()),
-        Value::IndexAll => Ok(ValueKind::Empty),
-        Value::Typed(_, kind) => Ok(kind.clone()),
-        Value::MutableReference(reference) => {
+        LegacyValue::Id(_) => Ok(ValueKind::Id),
+        LegacyValue::Index(_) => Ok(ValueKind::Index),
+        LegacyValue::Empty => Ok(ValueKind::Empty),
+        LegacyValue::EmptyKind(kind) | LegacyValue::Kind(kind) => Ok(kind.clone()),
+        LegacyValue::IndexAll => Ok(ValueKind::Empty),
+        LegacyValue::Typed(_, kind) => Ok(kind.clone()),
+        LegacyValue::MutableReference(reference) => {
             let value = reference.try_borrow().map_err(|_| ())?;
             stable_value_kind(&value)
         }
@@ -562,7 +566,7 @@ mod tests {
         program
     }
 
-    fn set_constraint_result(program: &MechProgram, name: &str, result: Value) {
+    fn set_constraint_result(program: &MechProgram, name: &str, result: LegacyValue) {
         program
             .interpreter()
             .state
@@ -586,7 +590,7 @@ mod tests {
                     id,
                     name: name.to_string(),
                     expression: name.to_string(),
-                    result: Ref::new(Value::Bool(result)),
+                    result: Ref::new(LegacyValue::Bool(result)),
                     lhs: None,
                     operator: None,
                     rhs: None,
@@ -658,19 +662,22 @@ mod tests {
     fn typed_and_mutable_reference_results_are_resolved() {
         for (wrapped, passes) in [
             (
-                Value::Typed(Box::new(Value::Bool(Ref::new(true))), ValueKind::Bool),
+                LegacyValue::Typed(Box::new(LegacyValue::Bool(Ref::new(true))), ValueKind::Bool),
                 true,
             ),
             (
-                Value::Typed(Box::new(Value::Bool(Ref::new(false))), ValueKind::Bool),
+                LegacyValue::Typed(
+                    Box::new(LegacyValue::Bool(Ref::new(false))),
+                    ValueKind::Bool,
+                ),
                 false,
             ),
             (
-                Value::MutableReference(Ref::new(Value::Bool(Ref::new(true)))),
+                LegacyValue::MutableReference(Ref::new(LegacyValue::Bool(Ref::new(true)))),
                 true,
             ),
             (
-                Value::MutableReference(Ref::new(Value::Bool(Ref::new(false)))),
+                LegacyValue::MutableReference(Ref::new(LegacyValue::Bool(Ref::new(false)))),
                 false,
             ),
         ] {
@@ -895,15 +902,15 @@ mod tests {
             Ok(())
         }
 
-        fn out(&self) -> Value {
-            Value::Bool(self.result.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Bool(self.result.clone())
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(vec![
-                Value::Bool(self.result.clone()),
-                Value::Index(self.output.clone()),
-                Value::Index(self.hidden.clone()),
+                LegacyValue::Bool(self.result.clone()),
+                LegacyValue::Index(self.output.clone()),
+                LegacyValue::Index(self.hidden.clone()),
             ])
         }
 
@@ -996,11 +1003,11 @@ mod tests {
                     output.clone(),
                     hidden.clone(),
                 )),
-                &[Value::Index(trigger.clone())],
+                &[LegacyValue::Index(trigger.clone())],
             )
             .unwrap();
         install_constraint_result(&program, "advance-safe!", result.clone());
-        let dirty_cells = Value::Index(trigger).reactive_root_cell_ids();
+        let dirty_cells = LegacyValue::Index(trigger).reactive_root_cell_ids();
 
         let error = program
             .advance_reactive_turn(interpreter_id, &dirty_cells)
@@ -1034,7 +1041,7 @@ mod tests {
                 interpreter_id,
                 hash_str("input"),
                 "input",
-                Value::F64(Ref::new(1.0)),
+                LegacyValue::F64(Ref::new(1.0)),
             )
             .unwrap();
         program
@@ -1044,7 +1051,7 @@ mod tests {
         let error = program
             .update_inputs_and_advance_turn(&[ProgramInputUpdate {
                 input,
-                value: Value::F64(Ref::new(6.0)),
+                value: LegacyValue::F64(Ref::new(6.0)),
             }])
             .unwrap_err();
         assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
@@ -1079,7 +1086,7 @@ mod tests {
         program
             .update_inputs_and_advance_turn(&[ProgramInputUpdate {
                 input,
-                value: Value::F64(Ref::new(4.0)),
+                value: LegacyValue::F64(Ref::new(4.0)),
             }])
             .unwrap();
         program.validate_integrity_constraints().unwrap();

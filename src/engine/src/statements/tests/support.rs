@@ -1,9 +1,9 @@
 use crate::{
-    Interpreter, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, Value,
-    hash_str,
+    Interpreter, LegacyValue, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId,
+    ReactiveNodeKind, hash_str,
 };
 
-pub(super) fn symbol(interpreter: &Interpreter, name: &str) -> Value {
+pub(super) fn symbol(interpreter: &Interpreter, name: &str) -> LegacyValue {
     interpreter
         .symbols()
         .borrow()
@@ -13,7 +13,7 @@ pub(super) fn symbol(interpreter: &Interpreter, name: &str) -> Value {
         .clone()
 }
 
-pub(super) fn root_cell(value: &Value) -> ReactiveCellId {
+pub(super) fn root_cell(value: &LegacyValue) -> ReactiveCellId {
     let cells = value.reactive_root_cell_ids();
     assert_eq!(cells.len(), 1);
     cells[0]
@@ -80,10 +80,10 @@ pub(super) fn distinct_assignment_graph_shape(
 
 pub(super) fn decoded_assignment_graph_shape(
     interpreter: &Interpreter,
-    output: &Value,
+    output: &LegacyValue,
 ) -> RegisterGraphShape {
     let resolved_output = match output {
-        Value::MutableReference(reference) => reference.borrow().clone(),
+        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
         other => other.clone(),
     };
     let output_cell = root_cell(&resolved_output);

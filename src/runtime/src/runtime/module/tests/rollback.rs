@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use mech_core::Value;
+use mech_core::LegacyValue;
 
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::{
@@ -14,7 +14,7 @@ use super::support::{
     staged_test_capability, test_module_options,
 };
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
+fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -110,10 +110,10 @@ fn failed_root_does_not_deliver_dependency_after_commit_effect() {
     ])
     .host_function(PlannedStagedHostFunction::new(
         "dependency/after_commit",
-        |_context, _args| Ok(snapshot(Value::F64(mech_core::Ref::new(1.0)))),
+        |_context, _args| Ok(snapshot(LegacyValue::F64(mech_core::Ref::new(1.0)))),
         move |_context, _args| {
             Ok(RuntimePreparedHostCall {
-                value: snapshot(Value::F64(mech_core::Ref::new(1.0))),
+                value: snapshot(LegacyValue::F64(mech_core::Ref::new(1.0))),
                 effect: PreparedRuntimeEffect::AfterCommit(Box::new(counting_after_commit_effect(
                     deliveries_for_host.clone(),
                 ))),

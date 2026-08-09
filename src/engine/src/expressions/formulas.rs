@@ -9,15 +9,15 @@ use super::{
     mark_string_access_value_live, string_access_input_is_live,
 };
 use crate::{
-    AddSubOp, ComparisonOp, Factor, FormulaOperator, InterpreterExecution, LogicOp, MResult,
-    MechError, MechFunction, MulDivOp, OperationId, PowerOp, ProgramState, Ref, SetOp, TableOp,
-    Term, Value, ValueKind, VecOp, detach_value,
+    AddSubOp, ComparisonOp, Factor, FormulaOperator, InterpreterExecution, LegacyValue, LogicOp,
+    MResult, MechError, MechFunction, MulDivOp, OperationId, PowerOp, ProgramState, Ref, SetOp,
+    TableOp, Term, ValueKind, VecOp, detach_value,
 };
 
 fn specialize_formula_operation(
     p: &InterpreterExecution<'_>,
     canonical_name: &str,
-    arguments: &[Value],
+    arguments: &[LegacyValue],
 ) -> MResult<Box<dyn MechFunction>> {
     p.specialize_visible_operation_named(
         OperationId::from_name(canonical_name),
@@ -30,7 +30,7 @@ pub fn factor(
     fctr: &Factor,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     match fctr {
         Factor::Term(trm) => {
             let result = term(trm, env, p)?;
@@ -93,10 +93,14 @@ pub fn factor(
     }
 }
 
-pub fn term(trm: &Term, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn term(
+    trm: &Term,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
     let plan = p.plan();
     let mut lhs = factor(&trm.lhs, env, p)?;
-    let mut term_plan: Vec<(Box<dyn MechFunction>, Vec<Value>)> = Vec::new();
+    let mut term_plan: Vec<(Box<dyn MechFunction>, Vec<LegacyValue>)> = Vec::new();
     for (op, rhs) in &trm.rhs {
         let rhs = factor(&rhs, env, p)?;
         let dependency_arguments = vec![lhs.clone(), rhs.clone()];
@@ -267,8 +271,8 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &InterpreterExecution<'_>)
             #[cfg(feature = "set_element_of")]
             FormulaOperator::Set(SetOp::ElementOf) => {
                 #[cfg(feature = "kind_annotation")]
-                if let Value::Kind(kind) = &rhs {
-                    lhs = Value::Bool(Ref::new(value_in_kind(&lhs, kind, p)));
+                if let LegacyValue::Kind(kind) = &rhs {
+                    lhs = LegacyValue::Bool(Ref::new(value_in_kind(&lhs, kind, p)));
                     continue;
                 }
                 specialize_formula_operation(p, "set/element-of", &[lhs, rhs])?
@@ -276,8 +280,8 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &InterpreterExecution<'_>)
             #[cfg(feature = "set_not_element_of")]
             FormulaOperator::Set(SetOp::NotElementOf) => {
                 #[cfg(feature = "kind_annotation")]
-                if let Value::Kind(kind) = &rhs {
-                    lhs = Value::Bool(Ref::new(!value_in_kind(&lhs, kind, p)));
+                if let LegacyValue::Kind(kind) = &rhs {
+                    lhs = LegacyValue::Bool(Ref::new(!value_in_kind(&lhs, kind, p)));
                     continue;
                 }
                 specialize_formula_operation(p, "set/not-element-of", &[lhs, rhs])?
@@ -310,7 +314,7 @@ pub fn term(trm: &Term, env: Option<&Environment>, p: &InterpreterExecution<'_>)
 }
 
 #[cfg(all(feature = "kind_annotation", feature = "enum", feature = "atom"))]
-fn enum_value_matches_kind(value: &Value, enum_id: u64, state: &ProgramState) -> bool {
+fn enum_value_matches_kind(value: &LegacyValue, enum_id: u64, state: &ProgramState) -> bool {
     let enum_def = match state.enums.get(&enum_id) {
         Some(enm) => enm,
         None => return false,
@@ -329,7 +333,7 @@ fn enum_value_matches_kind(value: &Value, enum_id: u64, state: &ProgramState) ->
         short_variant == short_atom
     };
     match value {
-        Value::Enum(enum_value) => {
+        LegacyValue::Enum(enum_value) => {
             let enum_value_brrw = enum_value.borrow();
             if enum_value_brrw.id != enum_id {
                 return false;
@@ -348,19 +352,21 @@ fn enum_value_matches_kind(value: &Value, enum_id: u64, state: &ProgramState) ->
             };
             match (payload, declared_payload_kind) {
                 (None, None) => true,
-                (Some(payload_value), Some(Value::Kind(expected_kind))) => match expected_kind {
-                    ValueKind::Enum(inner_enum_id, _) => {
-                        enum_value_matches_kind(payload_value, *inner_enum_id, state)
+                (Some(payload_value), Some(LegacyValue::Kind(expected_kind))) => {
+                    match expected_kind {
+                        ValueKind::Enum(inner_enum_id, _) => {
+                            enum_value_matches_kind(payload_value, *inner_enum_id, state)
+                        }
+                        _ => {
+                            payload_value.kind() == expected_kind.clone()
+                                || payload_value.convert_to(expected_kind).is_some()
+                        }
                     }
-                    _ => {
-                        payload_value.kind() == expected_kind.clone()
-                            || payload_value.convert_to(expected_kind).is_some()
-                    }
-                },
+                }
                 _ => false,
             }
         }
-        Value::Atom(atom) => {
+        LegacyValue::Atom(atom) => {
             let atom_brrw = atom.borrow();
             let variant_id = atom_brrw.id();
             let atom_name = atom_brrw.name();
@@ -373,13 +379,13 @@ fn enum_value_matches_kind(value: &Value, enum_id: u64, state: &ProgramState) ->
                 })
         }
         #[cfg(feature = "tuple")]
-        Value::Tuple(tuple_val) => {
+        LegacyValue::Tuple(tuple_val) => {
             let tuple_brrw = tuple_val.borrow();
             if tuple_brrw.elements.len() != 2 {
                 return false;
             }
             let (tag, tag_name) = match tuple_brrw.elements[0].as_ref() {
-                Value::Atom(atom) => {
+                LegacyValue::Atom(atom) => {
                     let atom_brrw = atom.borrow();
                     (atom_brrw.id(), atom_brrw.name())
                 }
@@ -395,7 +401,7 @@ fn enum_value_matches_kind(value: &Value, enum_id: u64, state: &ProgramState) ->
                 None => return false,
             };
             match declared_payload_kind {
-                Some(Value::Kind(expected_kind)) => match expected_kind {
+                Some(LegacyValue::Kind(expected_kind)) => match expected_kind {
                     ValueKind::Enum(inner_enum_id, _) => {
                         enum_value_matches_kind(payload, *inner_enum_id, state)
                     }
@@ -412,7 +418,7 @@ fn enum_value_matches_kind(value: &Value, enum_id: u64, state: &ProgramState) ->
 }
 
 #[cfg(feature = "kind_annotation")]
-fn value_in_kind(value: &Value, kind: &ValueKind, p: &InterpreterExecution<'_>) -> bool {
+fn value_in_kind(value: &LegacyValue, kind: &ValueKind, p: &InterpreterExecution<'_>) -> bool {
     let detached = detach_value(value);
     #[cfg(all(feature = "enum", feature = "atom"))]
     if let ValueKind::Enum(enum_id, _) = kind {

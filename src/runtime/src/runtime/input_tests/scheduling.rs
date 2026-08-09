@@ -1,6 +1,6 @@
 use mech_core::{
-    ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveTurnOutcome,
-    Ref, Value,
+    LegacyValue, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind,
+    ReactiveTurnOutcome, Ref,
 };
 
 use super::super::MechRuntime;
@@ -23,7 +23,7 @@ use crate::{
 const TEST_CLOCK_BASE_URI: &str = "test://clock/ticks";
 const TEST_SIGNALS_BASE_URI: &str = "test://signals/inputs";
 
-fn snapshot_value(value: Value) -> RuntimeValueSnapshot {
+fn snapshot_value(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -31,12 +31,12 @@ fn plus_one_host() -> PlannedPureHostFunction {
     PlannedPureHostFunction::new(
         "test/plus-one",
         |_context, arguments| {
-            Ok(snapshot_value(Value::F64(Ref::new(
+            Ok(snapshot_value(LegacyValue::F64(Ref::new(
                 host_f64_argument(&arguments[0]) + 1.0,
             ))))
         },
         |_context, arguments| {
-            Ok(snapshot_value(Value::F64(Ref::new(
+            Ok(snapshot_value(LegacyValue::F64(Ref::new(
                 host_f64_argument(&arguments[0]) + 1.0,
             ))))
         },
@@ -47,12 +47,12 @@ fn sum_host() -> PlannedPureHostFunction {
     PlannedPureHostFunction::new(
         "test/sum",
         |_context, arguments| {
-            Ok(snapshot_value(Value::F64(Ref::new(
+            Ok(snapshot_value(LegacyValue::F64(Ref::new(
                 host_f64_argument(&arguments[0]) + host_f64_argument(&arguments[1]),
             ))))
         },
         |_context, arguments| {
-            Ok(snapshot_value(Value::F64(Ref::new(
+            Ok(snapshot_value(LegacyValue::F64(Ref::new(
                 host_f64_argument(&arguments[0]) + host_f64_argument(&arguments[1]),
             ))))
         },
@@ -62,8 +62,8 @@ fn sum_host() -> PlannedPureHostFunction {
 #[test]
 fn runtime_reactive_host_input_batches_bound_updates_into_one_turn() {
     let provider = TestResourceProvider::new()
-        .with_value(TEST_CLOCK_BASE_URI, "a", Value::F64(Ref::new(1.0)))
-        .with_value(TEST_CLOCK_BASE_URI, "b", Value::F64(Ref::new(2.0)));
+        .with_value(TEST_CLOCK_BASE_URI, "a", LegacyValue::F64(Ref::new(1.0)))
+        .with_value(TEST_CLOCK_BASE_URI, "b", LegacyValue::F64(Ref::new(2.0)));
     let mut runtime = test_runtime_with_host(provider, sum_host());
     grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "a");
     grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "b");
@@ -260,11 +260,15 @@ fn runtime_reactive_host_input_preserves_deferred_registers_across_packets() {
 #[test]
 fn top_level_send_repeats_only_when_its_reactive_input_changes() {
     let provider = TestResourceProvider::new()
-        .with_value(TEST_SIGNALS_BASE_URI, "sent", Value::F64(Ref::new(1.0)))
+        .with_value(
+            TEST_SIGNALS_BASE_URI,
+            "sent",
+            LegacyValue::F64(Ref::new(1.0)),
+        )
         .with_value(
             TEST_SIGNALS_BASE_URI,
             "unrelated",
-            Value::F64(Ref::new(10.0)),
+            LegacyValue::F64(Ref::new(10.0)),
         );
     let (mut runtime, output) = test_runtime_with_output(provider);
     grant_read(&mut runtime, TEST_SIGNALS_BASE_URI, "sent");
@@ -403,7 +407,7 @@ fn activation_send_snapshots_fixed_payloads_before_same_trigger_register_commit(
     let provider = TestResourceProvider::new().with_value(
         "test://render/timer",
         "tick",
-        Value::F64(Ref::new(0.0)),
+        LegacyValue::F64(Ref::new(0.0)),
     );
     let (mut runtime, output) = test_runtime_with_output_host(provider, plus_one_host());
     grant_read(&mut runtime, "test://render/timer", "tick");
@@ -457,7 +461,7 @@ fn patterned_activation_sends_only_from_the_selected_arm() {
     let provider = TestResourceProvider::new().with_value(
         "test://render/timer",
         "tick",
-        Value::F64(Ref::new(0.0)),
+        LegacyValue::F64(Ref::new(0.0)),
     );
     let (mut runtime, output) = test_runtime_with_output(provider);
     grant_read(&mut runtime, "test://render/timer", "tick");
@@ -502,8 +506,16 @@ render-tick := @tick/tick
 #[test]
 fn patterned_activation_samples_outer_effect_values_only_on_its_trigger() {
     let provider = TestResourceProvider::new()
-        .with_value("test://render/timer", "tick", Value::F64(Ref::new(0.0)))
-        .with_value(TEST_SIGNALS_BASE_URI, "value", Value::F64(Ref::new(1.0)));
+        .with_value(
+            "test://render/timer",
+            "tick",
+            LegacyValue::F64(Ref::new(0.0)),
+        )
+        .with_value(
+            TEST_SIGNALS_BASE_URI,
+            "value",
+            LegacyValue::F64(Ref::new(1.0)),
+        );
     let (mut runtime, output) = test_runtime_with_output(provider);
     grant_read(&mut runtime, "test://render/timer", "tick");
     grant_read(&mut runtime, TEST_SIGNALS_BASE_URI, "value");
@@ -558,8 +570,16 @@ scene := @signals/value
 #[test]
 fn activation_two_clock_physics_render_acceptance() {
     let provider = TestResourceProvider::new()
-        .with_value("test://physics/timer", "tick", Value::F64(Ref::new(0.0)))
-        .with_value("test://render/timer", "tick", Value::F64(Ref::new(0.0)));
+        .with_value(
+            "test://physics/timer",
+            "tick",
+            LegacyValue::F64(Ref::new(0.0)),
+        )
+        .with_value(
+            "test://render/timer",
+            "tick",
+            LegacyValue::F64(Ref::new(0.0)),
+        );
     let (mut runtime, output) = test_runtime_with_output_host(provider, plus_one_host());
     grant_read(&mut runtime, "test://physics/timer", "tick");
     grant_read(&mut runtime, "test://render/timer", "tick");
@@ -633,9 +653,21 @@ x = next-x
 fn activation_send_samples_latest_value_and_ignores_other_updates() {
     let (mut r, o) = test_runtime_with_output_host(
         TestResourceProvider::new()
-            .with_value("test://render/timer", "tick", Value::F64(Ref::new(0.0)))
-            .with_value("test://other/timer", "tick", Value::F64(Ref::new(0.0)))
-            .with_value(TEST_SIGNALS_BASE_URI, "value", Value::F64(Ref::new(1.0))),
+            .with_value(
+                "test://render/timer",
+                "tick",
+                LegacyValue::F64(Ref::new(0.0)),
+            )
+            .with_value(
+                "test://other/timer",
+                "tick",
+                LegacyValue::F64(Ref::new(0.0)),
+            )
+            .with_value(
+                TEST_SIGNALS_BASE_URI,
+                "value",
+                LegacyValue::F64(Ref::new(1.0)),
+            ),
         plus_one_host(),
     );
     for (b, p) in [

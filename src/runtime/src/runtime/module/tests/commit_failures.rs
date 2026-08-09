@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use mech_core::{MResult, MechError, Value};
+use mech_core::{LegacyValue, MResult, MechError};
 
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::runtime::test_support::ids::ScriptedEventIdGenerator;
@@ -18,7 +18,7 @@ use super::support::{
     runtime_with_sources, staged_test_capability, test_module_options,
 };
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
+fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -149,14 +149,14 @@ fn implicit_store_failure_rolls_back_root_and_stays_healthy() {
     )])
     .host_function(PlannedRuntimeManagedHostFunction::new(
         "module/stage_invalid_store_update",
-        |_context, _args| Ok(snapshot(Value::F64(mech_core::Ref::new(42.0)))),
+        |_context, _args| Ok(snapshot(LegacyValue::F64(mech_core::Ref::new(42.0)))),
         move |services, _context, _args| {
             services.update_object(ObjectRecord::text(
                 ObjectId(912),
                 "missing",
                 "invalid update",
             ))?;
-            Ok(snapshot(Value::F64(mech_core::Ref::new(42.0))))
+            Ok(snapshot(LegacyValue::F64(mech_core::Ref::new(42.0))))
         },
     ))
     .unwrap()

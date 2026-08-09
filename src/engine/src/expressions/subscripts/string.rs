@@ -1,7 +1,7 @@
 use super::super::variables::addressed_identifier_hash;
 use super::{Environment, factor};
 use crate::{
-    Expression, Factor, InterpreterExecution, MResult, MutableReference, Subscript, Value,
+    Expression, Factor, InterpreterExecution, LegacyValue, MResult, MutableReference, Subscript,
     ValueKind,
 };
 
@@ -28,46 +28,46 @@ pub(crate) fn mark_current_string_access_expression_live(p: &InterpreterExecutio
 }
 
 #[cfg(feature = "subscript_formula")]
-fn string_access_scalar_addr(value: &Value) -> Option<usize> {
+fn string_access_scalar_addr(value: &LegacyValue) -> Option<usize> {
     match value {
-        Value::MutableReference(reference) => string_access_scalar_addr(&reference.borrow()),
-        Value::Typed(value, _) => string_access_scalar_addr(value),
-        Value::String(value) => Some(value.addr()),
-        Value::Index(value) => Some(value.addr()),
+        LegacyValue::MutableReference(reference) => string_access_scalar_addr(&reference.borrow()),
+        LegacyValue::Typed(value, _) => string_access_scalar_addr(value),
+        LegacyValue::String(value) => Some(value.addr()),
+        LegacyValue::Index(value) => Some(value.addr()),
 
         #[cfg(feature = "u8")]
-        Value::U8(value) => Some(value.addr()),
+        LegacyValue::U8(value) => Some(value.addr()),
         #[cfg(feature = "u16")]
-        Value::U16(value) => Some(value.addr()),
+        LegacyValue::U16(value) => Some(value.addr()),
         #[cfg(feature = "u32")]
-        Value::U32(value) => Some(value.addr()),
+        LegacyValue::U32(value) => Some(value.addr()),
         #[cfg(feature = "u64")]
-        Value::U64(value) => Some(value.addr()),
+        LegacyValue::U64(value) => Some(value.addr()),
         #[cfg(feature = "u128")]
-        Value::U128(value) => Some(value.addr()),
+        LegacyValue::U128(value) => Some(value.addr()),
 
         #[cfg(feature = "i8")]
-        Value::I8(value) => Some(value.addr()),
+        LegacyValue::I8(value) => Some(value.addr()),
         #[cfg(feature = "i16")]
-        Value::I16(value) => Some(value.addr()),
+        LegacyValue::I16(value) => Some(value.addr()),
         #[cfg(feature = "i32")]
-        Value::I32(value) => Some(value.addr()),
+        LegacyValue::I32(value) => Some(value.addr()),
         #[cfg(feature = "i64")]
-        Value::I64(value) => Some(value.addr()),
+        LegacyValue::I64(value) => Some(value.addr()),
         #[cfg(feature = "i128")]
-        Value::I128(value) => Some(value.addr()),
+        LegacyValue::I128(value) => Some(value.addr()),
 
         #[cfg(feature = "f32")]
-        Value::F32(value) => Some(value.addr()),
+        LegacyValue::F32(value) => Some(value.addr()),
         #[cfg(feature = "f64")]
-        Value::F64(value) => Some(value.addr()),
+        LegacyValue::F64(value) => Some(value.addr()),
 
         _ => None,
     }
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn mark_string_access_value_live(p: &InterpreterExecution<'_>, value: &Value) {
+pub(crate) fn mark_string_access_value_live(p: &InterpreterExecution<'_>, value: &LegacyValue) {
     if let Some(addr) = string_access_scalar_addr(value) {
         p.string_access_live_values.borrow_mut().insert(addr);
     }
@@ -76,7 +76,7 @@ pub(crate) fn mark_string_access_value_live(p: &InterpreterExecution<'_>, value:
 #[cfg(feature = "subscript_formula")]
 pub(crate) fn string_access_value_is_marked_live(
     p: &InterpreterExecution<'_>,
-    value: &Value,
+    value: &LegacyValue,
 ) -> bool {
     string_access_scalar_addr(value)
         .map(|addr| p.string_access_live_values.borrow().contains(&addr))
@@ -121,9 +121,11 @@ fn mutable_reference_is_mutable_symbol(
 }
 
 #[cfg(feature = "subscript_formula")]
-fn value_is_mutable_symbol_reference(value: &Value, p: &InterpreterExecution<'_>) -> bool {
+fn value_is_mutable_symbol_reference(value: &LegacyValue, p: &InterpreterExecution<'_>) -> bool {
     match value {
-        Value::MutableReference(reference) => mutable_reference_is_mutable_symbol(reference, p),
+        LegacyValue::MutableReference(reference) => {
+            mutable_reference_is_mutable_symbol(reference, p)
+        }
         _ => false,
     }
 }
@@ -138,19 +140,28 @@ fn mutable_reference_is_live_plan_output(
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(super) fn string_access_argument_is_live(value: &Value, p: &InterpreterExecution<'_>) -> bool {
+pub(super) fn string_access_argument_is_live(
+    value: &LegacyValue,
+    p: &InterpreterExecution<'_>,
+) -> bool {
     string_access_value_is_marked_live(p, value)
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(crate) fn string_access_input_is_live(value: &Value, p: &InterpreterExecution<'_>) -> bool {
+pub(crate) fn string_access_input_is_live(
+    value: &LegacyValue,
+    p: &InterpreterExecution<'_>,
+) -> bool {
     value_is_mutable_symbol_reference(value, p) || string_access_argument_is_live(value, p)
 }
 
 #[cfg(feature = "subscript_formula")]
-pub(super) fn string_access_source_argument(value: &Value, p: &InterpreterExecution<'_>) -> Value {
+pub(super) fn string_access_source_argument(
+    value: &LegacyValue,
+    p: &InterpreterExecution<'_>,
+) -> LegacyValue {
     match value {
-        Value::MutableReference(reference)
+        LegacyValue::MutableReference(reference)
             if matches!(value.deref_kind(), ValueKind::String)
                 && !mutable_reference_is_mutable_symbol(reference, p)
                 && !mutable_reference_is_live_plan_output(reference, p) =>
@@ -163,13 +174,13 @@ pub(super) fn string_access_source_argument(value: &Value, p: &InterpreterExecut
 
 #[cfg(feature = "subscript_formula")]
 pub(super) fn string_access_index_argument(
-    raw_index: Value,
+    raw_index: LegacyValue,
     sbscrpt: &Subscript,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     match &raw_index {
-        Value::MutableReference(reference)
+        LegacyValue::MutableReference(reference)
             if subscript_formula_is_mutable_symbol(sbscrpt, env, p)
                 || mutable_reference_is_live_plan_output(reference, p) =>
         {

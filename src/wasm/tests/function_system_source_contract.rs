@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use mech_core::{OperationId, RuntimeFunctionId, Value};
+use mech_core::{LegacyValue, OperationId, RuntimeFunctionId};
 use mech_runtime::{RuntimeBuilder, RuntimeValueSnapshot};
 use mech_stdlib::source_catalog;
 use mech_wasm as _;
@@ -61,10 +61,10 @@ fn corpus() -> SourceCorpus {
     corpus
 }
 
-fn dereference(value: Value) -> Value {
+fn dereference(value: LegacyValue) -> LegacyValue {
     match value {
-        Value::MutableReference(reference) => dereference(reference.borrow().clone()),
-        Value::Typed(value, _) => dereference(*value),
+        LegacyValue::MutableReference(reference) => dereference(reference.borrow().clone()),
+        LegacyValue::Typed(value, _) => dereference(*value),
         value => value,
     }
 }
@@ -77,7 +77,7 @@ fn assert_expected(case: &SourceCase, snapshot: RuntimeValueSnapshot) {
                 value: expected,
                 tolerance,
             },
-            Value::F64(actual),
+            LegacyValue::F64(actual),
         ) => {
             let actual = *actual.borrow();
             let tolerance = tolerance.unwrap_or(0.0);
@@ -87,7 +87,7 @@ fn assert_expected(case: &SourceCase, snapshot: RuntimeValueSnapshot) {
                 case.name
             );
         }
-        (ExpectedValue::Bool { value: expected }, Value::Bool(actual)) => {
+        (ExpectedValue::Bool { value: expected }, LegacyValue::Bool(actual)) => {
             assert_eq!(
                 *actual.borrow(),
                 *expected,
@@ -95,7 +95,7 @@ fn assert_expected(case: &SourceCase, snapshot: RuntimeValueSnapshot) {
                 case.name
             );
         }
-        (ExpectedValue::String { value: expected }, Value::String(actual)) => {
+        (ExpectedValue::String { value: expected }, LegacyValue::String(actual)) => {
             assert_eq!(
                 &*actual.borrow(),
                 expected,
@@ -112,7 +112,7 @@ fn assert_expected(case: &SourceCase, snapshot: RuntimeValueSnapshot) {
 
 fn assert_f64_snapshot(snapshot: RuntimeValueSnapshot, expected: f64) {
     let actual = dereference(snapshot.into_value());
-    let Value::F64(actual) = actual else {
+    let LegacyValue::F64(actual) = actual else {
         panic!("expected f64 {expected}, got {actual:?}");
     };
     assert_eq!(*actual.borrow(), expected);

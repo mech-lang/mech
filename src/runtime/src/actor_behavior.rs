@@ -11,7 +11,7 @@
 
 #[cfg(feature = "string")]
 use mech_core::Ref;
-use mech_core::{MResult, Value};
+use mech_core::{LegacyValue, MResult};
 
 use crate::actor::ActorTurn;
 use crate::context::RuntimeContext;
@@ -26,7 +26,7 @@ pub trait ActorBehaviorRuntime {
         &mut self,
         context: &mut RuntimeContext,
         call: HostCall,
-    ) -> MResult<Value>;
+    ) -> MResult<LegacyValue>;
 }
 
 // -----------------------------------------------------------------------------
@@ -146,7 +146,7 @@ impl ActorBehaviorDriver for HostCallActorBehaviorDriver {
                 context,
                 HostCall::new(
                     "actor/state/put",
-                    vec![Value::String(Ref::new(self.new_state.clone()))],
+                    vec![LegacyValue::String(Ref::new(self.new_state.clone()))],
                 ),
             )?;
         }

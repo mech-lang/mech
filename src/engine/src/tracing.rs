@@ -88,7 +88,7 @@ pub(crate) fn format_trace(scope: &str, message: String) -> String {
     format!("[trace][{scope}] {message}")
 }
 
-pub(crate) fn format_trace_args(values: &Vec<Value>) -> String {
+pub(crate) fn format_trace_args(values: &Vec<LegacyValue>) -> String {
     values
         .iter()
         .map(summarize_function_value)
@@ -96,39 +96,41 @@ pub(crate) fn format_trace_args(values: &Vec<Value>) -> String {
         .join(", ")
 }
 
-pub(crate) fn summarize_function_value(value: &Value) -> String {
+pub(crate) fn summarize_function_value(value: &LegacyValue) -> String {
     const MAX_TRACE_CHARS: usize = 96;
     let rendered = trace_single_line_text(&summarize_function_value_compact(value, 0));
     trace_truncate(&rendered, MAX_TRACE_CHARS)
 }
 
-fn summarize_function_value_compact(value: &Value, depth: usize) -> String {
+fn summarize_function_value_compact(value: &LegacyValue, depth: usize) -> String {
     if depth > 2 {
         return format!("{}(..)", value.kind().to_string());
     }
     match value {
         #[cfg(feature = "u64")]
-        Value::U64(x) => format!("u64(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow()),
+        LegacyValue::U64(x) => format!("u64(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow()),
         #[cfg(feature = "i64")]
-        Value::I64(x) => format!("i64(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow()),
+        LegacyValue::I64(x) => format!("i64(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow()),
         #[cfg(feature = "f64")]
-        Value::F64(x) => format!("f64(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow()),
+        LegacyValue::F64(x) => format!("f64(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow()),
         #[cfg(feature = "bool")]
-        Value::Bool(x) => format!("bool(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow()),
+        LegacyValue::Bool(x) => {
+            format!("bool(@{:04x}:{})", trace_short_addr(x.addr()), *x.borrow())
+        }
         #[cfg(feature = "string")]
-        Value::String(x) => format!(
+        LegacyValue::String(x) => format!(
             "str(@{:04x}:\"{}\")",
             trace_short_addr(x.addr()),
             x.borrow()
         ),
         #[cfg(feature = "atom")]
-        Value::Atom(x) => format!(
+        LegacyValue::Atom(x) => format!(
             "{}(@{:04x})",
             x.borrow().to_string(),
             trace_short_addr(x.addr())
         ),
         #[cfg(feature = "tuple")]
-        Value::Tuple(tuple_ref) => summarize_function_tuple_value(tuple_ref, depth),
+        LegacyValue::Tuple(tuple_ref) => summarize_function_tuple_value(tuple_ref, depth),
         _ => format!(
             "{}({})",
             value.kind().to_string(),
@@ -159,7 +161,7 @@ fn trace_short_addr(addr: usize) -> u16 {
     (addr & 0xffff) as u16
 }
 
-pub(crate) fn summarize_values_with_kinds(values: &Vec<Value>) -> String {
+pub(crate) fn summarize_values_with_kinds(values: &Vec<LegacyValue>) -> String {
     values
         .iter()
         .enumerate()
@@ -215,32 +217,34 @@ fn trace_single_line_text(text: &str) -> String {
 }
 
 #[cfg(feature = "state_machines")]
-pub fn summarize_value(value: &Value) -> String {
+pub fn summarize_value(value: &LegacyValue) -> String {
     const MAX_TRACE_CHARS: usize = 1000;
     let rendered = trace_single_line_text(&summarize_value_compact(value, 0));
     truncate_for_trace(&rendered, MAX_TRACE_CHARS)
 }
 
 #[cfg(feature = "state_machines")]
-fn summarize_value_compact(value: &Value, depth: usize) -> String {
+fn summarize_value_compact(value: &LegacyValue, depth: usize) -> String {
     if depth > 2 {
         return format!("{}(..)", value.kind().to_string());
     }
     match value {
         #[cfg(feature = "u64")]
-        Value::U64(x) => format!("u64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        LegacyValue::U64(x) => format!("u64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
         #[cfg(feature = "i64")]
-        Value::I64(x) => format!("i64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        LegacyValue::I64(x) => format!("i64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
         #[cfg(feature = "f64")]
-        Value::F64(x) => format!("f64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        LegacyValue::F64(x) => format!("f64(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
         #[cfg(feature = "bool")]
-        Value::Bool(x) => format!("bool(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
+        LegacyValue::Bool(x) => format!("bool(@{:04x}:{})", short_addr(x.addr()), *x.borrow()),
         #[cfg(feature = "string")]
-        Value::String(x) => format!("str(@{:04x}:\"{}\")", short_addr(x.addr()), x.borrow()),
+        LegacyValue::String(x) => format!("str(@{:04x}:\"{}\")", short_addr(x.addr()), x.borrow()),
         #[cfg(feature = "atom")]
-        Value::Atom(x) => format!("{}(@{:04x})", x.borrow().to_string(), short_addr(x.addr())),
+        LegacyValue::Atom(x) => {
+            format!("{}(@{:04x})", x.borrow().to_string(), short_addr(x.addr()))
+        }
         #[cfg(feature = "tuple")]
-        Value::Tuple(tuple_ref) => summarize_tuple_value(tuple_ref, depth),
+        LegacyValue::Tuple(tuple_ref) => summarize_tuple_value(tuple_ref, depth),
         _ => format!(
             "{}({})",
             value.kind().to_string(),
@@ -253,7 +257,7 @@ fn summarize_value_compact(value: &Value, depth: usize) -> String {
 fn summarize_tuple_value(tuple_ref: &Ref<MechTuple>, depth: usize) -> String {
     let tuple = tuple_ref.borrow();
     if let Some(first) = tuple.elements.first() {
-        if let Value::Atom(tag) = first.as_ref() {
+        if let LegacyValue::Atom(tag) = first.as_ref() {
             let mut parts = Vec::new();
             for element in tuple.elements.iter().skip(1).take(3) {
                 parts.push(summarize_value_compact(element, depth + 1));

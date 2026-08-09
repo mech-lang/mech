@@ -1,9 +1,8 @@
 use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
 use mech_core::{
-    BytecodeCompilerContext, GenericError, MResult, MechError, MechFunctionCompiler,
+    BytecodeCompilerContext, GenericError, LegacyValue, MResult, MechError, MechFunctionCompiler,
     MechFunctionImpl, NoMechExecutionServices, ReactiveCellId, ReactiveNodeKind,
-    ReactiveRegisterCommit, ReactiveRegisterWrite, ReactiveSolveStatus, Ref, Register, Value,
-    hash_str,
+    ReactiveRegisterCommit, ReactiveRegisterWrite, ReactiveSolveStatus, Ref, Register, hash_str,
 };
 use mech_engine::Interpreter;
 use mech_engine::{
@@ -32,14 +31,14 @@ impl MechFunctionImpl for BenchCombinational {
     fn solve_result(&self) -> MResult<()> {
         self.solve_reactive().map(|_| ())
     }
-    fn out(&self) -> Value {
-        Value::F64(self.output.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::F64(self.output.clone())
     }
     fn to_string(&self) -> String {
         "ReactiveTurnRollbackBenchCombinational".into()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -59,8 +58,8 @@ impl MechFunctionImpl for BenchRegister {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::F64(self.sink.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::F64(self.sink.clone())
     }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
         ReactiveNodeKind::Register
@@ -76,7 +75,7 @@ impl MechFunctionImpl for BenchRegister {
         "ReactiveTurnRollbackBenchRegister".into()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -90,7 +89,7 @@ impl MechFunctionCompiler for BenchRegister {
 fn update(input: ProgramInputId, value: f64) -> ProgramInputUpdate {
     ProgramInputUpdate {
         input,
-        value: Value::F64(Ref::new(value)),
+        value: LegacyValue::F64(Ref::new(value)),
     }
 }
 
@@ -101,12 +100,12 @@ fn root_input(program: &mut MechProgram, name: &str, value: f64) -> (ProgramInpu
             program.interpreter().id,
             id,
             name,
-            Value::F64(Ref::new(value)),
+            LegacyValue::F64(Ref::new(value)),
         )
         .unwrap();
     let outer = program.interpreter().symbols().borrow().get(id).unwrap();
     let inner = match &*outer.borrow() {
-        Value::F64(value) => value.clone(),
+        LegacyValue::F64(value) => value.clone(),
         other => panic!("expected benchmark f64 input, got {other:?}"),
     };
     (input, inner)
@@ -119,7 +118,7 @@ fn add_combinational(interpreter: &Interpreter, input: Ref<f64>, output: Ref<f64
         .borrow_mut()
         .register(
             Box::new(BenchCombinational { output, fail }),
-            &[Value::F64(input)],
+            &[LegacyValue::F64(input)],
         )
         .unwrap();
 }
@@ -167,7 +166,7 @@ fn register_fixture(count: usize) -> (MechProgram, ProgramInputId) {
                     source: source.clone(),
                     sink: Ref::new(0.0),
                 }),
-                &[Value::F64(source.clone())],
+                &[LegacyValue::F64(source.clone())],
             )
             .unwrap();
     }
@@ -185,7 +184,12 @@ fn two_interpreter_fixture() -> (MechProgram, Vec<ProgramInputUpdate>) {
             .borrow_mut()
             .insert(id, Ref::new(Box::new(child)));
         let input = program
-            .ensure_input(id, hash_str("input"), "input", Value::F64(Ref::new(1.0)))
+            .ensure_input(
+                id,
+                hash_str("input"),
+                "input",
+                LegacyValue::F64(Ref::new(1.0)),
+            )
             .unwrap();
         let child = {
             let children = program.interpreter().sub_interpreters.borrow();
@@ -195,7 +199,7 @@ fn two_interpreter_fixture() -> (MechProgram, Vec<ProgramInputUpdate>) {
             let child = child.borrow();
             let outer = child.symbols().borrow().get(hash_str("input")).unwrap();
             let source = match &*outer.borrow() {
-                Value::F64(value) => value.clone(),
+                LegacyValue::F64(value) => value.clone(),
                 other => panic!("expected child benchmark input, got {other:?}"),
             };
             source

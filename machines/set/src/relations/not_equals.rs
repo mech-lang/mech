@@ -54,14 +54,14 @@ impl MechFunctionImpl for SetNotEqualsFxn {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Bool(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Bool(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -76,9 +76,9 @@ impl MechFunctionCompiler for SetNotEqualsFxn {
 }
 
 #[cfg(feature = "source")]
-fn set_not_equals_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
+fn set_not_equals_fxn(lhs: LegacyValue, rhs: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
-        (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetNotEqualsFxn {
+        (LegacyValue::Set(lhs), LegacyValue::Set(rhs)) => Ok(Box::new(SetNotEqualsFxn {
             lhs: lhs.clone(),
             rhs: rhs.clone(),
             out: Ref::new(false),
@@ -98,7 +98,7 @@ fn set_not_equals_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> 
 pub struct SetNotEquals {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for SetNotEquals {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -114,13 +114,13 @@ impl FunctionSpecializer for SetNotEquals {
         match set_not_equals_fxn(lhs.clone(), rhs.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (lhs, rhs) {
-                (Value::MutableReference(lhs), Value::MutableReference(rhs)) => {
+                (LegacyValue::MutableReference(lhs), LegacyValue::MutableReference(rhs)) => {
                     set_not_equals_fxn(lhs.borrow().clone(), rhs.borrow().clone())
                 }
-                (lhs, Value::MutableReference(rhs)) => {
+                (lhs, LegacyValue::MutableReference(rhs)) => {
                     set_not_equals_fxn(lhs.clone(), rhs.borrow().clone())
                 }
-                (Value::MutableReference(lhs), rhs) => {
+                (LegacyValue::MutableReference(lhs), rhs) => {
                     set_not_equals_fxn(lhs.borrow().clone(), rhs.clone())
                 }
                 x => Err(MechError::new(

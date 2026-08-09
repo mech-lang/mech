@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use mech_core::{
-    MResult, MechMap, Ref, ValRef, Value, ValueSnapshotBorrowConflict,
+    LegacyValue, MResult, MechMap, Ref, ValRef, ValueSnapshotBorrowConflict,
     ValueSnapshotCollectionCollision, hash_str,
 };
 
@@ -35,23 +35,25 @@ thread_local! {
 }
 
 fn cyclic_node() -> ValRef {
-    let node = Ref::new(Value::Empty);
-    *node.borrow_mut() = Value::MutableReference(node.clone());
+    let node = Ref::new(LegacyValue::Empty);
+    *node.borrow_mut() = LegacyValue::MutableReference(node.clone());
     node
 }
 
-fn thread_local_cycle(slot: &'static std::thread::LocalKey<RefCell<Option<ValRef>>>) -> Value {
+fn thread_local_cycle(
+    slot: &'static std::thread::LocalKey<RefCell<Option<ValRef>>>,
+) -> LegacyValue {
     let node = cyclic_node();
     slot.with(|stored| {
         *stored.borrow_mut() = Some(node.clone());
     });
-    Value::MutableReference(node)
+    LegacyValue::MutableReference(node)
 }
 
 fn clear_thread_local_cycle(slot: &'static std::thread::LocalKey<RefCell<Option<ValRef>>>) {
     slot.with(|stored| {
         if let Some(node) = stored.borrow_mut().take() {
-            *node.borrow_mut() = Value::Empty;
+            *node.borrow_mut() = LegacyValue::Empty;
         }
     });
 }
@@ -157,11 +159,11 @@ impl RuntimeResourceProvider for SnapshotBoundaryProvider {
         vec![SNAPSHOT_RESOURCE.to_string()]
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if self.cycle_reads.swap(false, Ordering::SeqCst) {
-            Ok(Value::MutableReference(self.cycle.clone()))
+            Ok(LegacyValue::MutableReference(self.cycle.clone()))
         } else {
-            Ok(Value::F64(Ref::new(41.0)))
+            Ok(LegacyValue::F64(Ref::new(41.0)))
         }
     }
 
@@ -227,11 +229,11 @@ fn cyclic_resource_write_is_rejected_before_effect_staging() {
             path: SNAPSHOT_PATH.to_string(),
             context_name: "snapshot".to_string(),
             operation: RuntimeCapabilityOperation::Write,
-            value: Value::MutableReference(cycle.clone()),
+            value: LegacyValue::MutableReference(cycle.clone()),
             intent: RuntimeResourceWriteIntent::Assign,
         })
         .unwrap_err();
-    *cycle.borrow_mut() = Value::Empty;
+    *cycle.borrow_mut() = LegacyValue::Empty;
 
     assert_cycle_error(&error);
     assert_eq!(prepare_calls.load(Ordering::SeqCst), 0);
@@ -270,7 +272,7 @@ fn borrowed_resource_write_is_rejected_before_provider_prepare() {
     let prepare_calls = Arc::new(AtomicUsize::new(0));
     let provider = SnapshotBoundaryProvider {
         cycle_reads: Arc::new(AtomicBool::new(false)),
-        cycle: Ref::new(Value::Empty),
+        cycle: Ref::new(LegacyValue::Empty),
         preflight_calls: preflight_calls.clone(),
         prepare_calls: prepare_calls.clone(),
     };
@@ -302,7 +304,7 @@ fn borrowed_resource_write_is_rejected_before_provider_prepare() {
             path: SNAPSHOT_PATH.to_string(),
             context_name: "snapshot".to_string(),
             operation: RuntimeCapabilityOperation::Write,
-            value: Value::F64(cell.clone()),
+            value: LegacyValue::F64(cell.clone()),
             intent: RuntimeResourceWriteIntent::Assign,
         })
         .unwrap_err();
@@ -369,7 +371,7 @@ fn cyclic_resource_read_is_rejected_before_implicit_commit() {
     let capability_uses_before = capability_uses.committed_uses();
 
     let error = runtime.read_resource(resource_read_request()).unwrap_err();
-    *cycle.borrow_mut() = Value::Empty;
+    *cycle.borrow_mut() = LegacyValue::Empty;
 
     assert_cycle_error(&error);
     assert_eq!(store_commits.calls(), store_commits_before);
@@ -395,7 +397,7 @@ fn cyclic_resource_read_is_rejected_before_implicit_commit() {
         .read_resource(resource_read_request())
         .unwrap()
         .into_value();
-    let Value::F64(recovered) = recovered else {
+    let LegacyValue::F64(recovered) = recovered else {
         panic!("expected recovered scalar resource");
     };
     assert_eq!(*recovered.borrow(), 41.0);
@@ -406,10 +408,10 @@ fn cyclic_resource_read_is_rejected_before_implicit_commit() {
 fn cyclic_host_result_is_rejected_before_host_completion() {
     let function = DeterministicHostFunction::new(
         "snapshot/cyclic-result",
-        move |_context, _arguments| -> MResult<Value> {
+        move |_context, _arguments| -> MResult<LegacyValue> {
             Ok(thread_local_cycle(&HOST_RESULT_CYCLE))
         },
-        move |_context, _arguments| -> MResult<Value> {
+        move |_context, _arguments| -> MResult<LegacyValue> {
             Ok(thread_local_cycle(&HOST_RESULT_CYCLE))
         },
     );
@@ -480,8 +482,11 @@ fn stale_map_key_collision_is_rejected_before_host_invocation() {
     let left_key = Ref::new(1.0);
     let right_key = Ref::new(2.0);
     let map = Ref::new(MechMap::from_vec(vec![
-        (Value::F64(left_key), Value::F64(Ref::new(10.0))),
-        (Value::F64(right_key.clone()), Value::F64(Ref::new(20.0))),
+        (LegacyValue::F64(left_key), LegacyValue::F64(Ref::new(10.0))),
+        (
+            LegacyValue::F64(right_key.clone()),
+            LegacyValue::F64(Ref::new(20.0)),
+        ),
     ]));
     *right_key.borrow_mut() = 1.0;
 
@@ -492,13 +497,13 @@ fn stale_map_key_collision_is_rejected_before_host_invocation() {
     let invocation_count = invocation_calls.clone();
     let function = DeterministicHostFunction::new(
         "snapshot/stale-map-collision",
-        move |_context, _arguments| -> MResult<Value> {
+        move |_context, _arguments| -> MResult<LegacyValue> {
             plan_count.fetch_add(1, Ordering::SeqCst);
-            Ok(Value::Empty)
+            Ok(LegacyValue::Empty)
         },
-        move |_context, _arguments| -> MResult<Value> {
+        move |_context, _arguments| -> MResult<LegacyValue> {
             invocation_count.fetch_add(1, Ordering::SeqCst);
-            Ok(Value::Empty)
+            Ok(LegacyValue::Empty)
         },
     );
     let (store, store_commits) = StoreCommitProbe::new();
@@ -526,7 +531,7 @@ fn stale_map_key_collision_is_rejected_before_host_invocation() {
     let error = runtime
         .call_host(HostCall::new(
             "snapshot/stale-map-collision",
-            vec![Value::Map(map.clone())],
+            vec![LegacyValue::Map(map.clone())],
         ))
         .unwrap_err();
 
@@ -585,20 +590,22 @@ fn cyclic_root_symbol_query_returns_structured_snapshot_error() {
     let cycle = cyclic_node();
     let cyclic_id = hash_str("cyclic");
     let symbols = runtime.program.interpreter().symbols();
-    symbols
-        .borrow_mut()
-        .insert(cyclic_id, Value::MutableReference(cycle.clone()), false);
+    symbols.borrow_mut().insert(
+        cyclic_id,
+        LegacyValue::MutableReference(cycle.clone()),
+        false,
+    );
 
     let error = runtime.root_symbol_value("cyclic").unwrap_err();
 
     assert_cycle_error(&error);
     assert_eq!(runtime.runtime_health(), health_before);
     let safe = runtime.root_symbol_value("safe").unwrap().into_value();
-    let Value::F64(safe) = safe else {
+    let LegacyValue::F64(safe) = safe else {
         panic!("expected safe scalar query");
     };
     assert_eq!(*safe.borrow(), 41.0);
-    *cycle.borrow_mut() = Value::Empty;
+    *cycle.borrow_mut() = LegacyValue::Empty;
     assert!(!runtime.is_poisoned());
 }
 
@@ -607,10 +614,10 @@ fn cyclic_host_plan_rolls_back_source_operation() {
     let mut runtime = test_runtime_builder()
         .host_function(DeterministicHostFunction::new(
             "snapshot/source-cycle",
-            move |_context, _arguments| -> MResult<Value> {
+            move |_context, _arguments| -> MResult<LegacyValue> {
                 Ok(thread_local_cycle(&SOURCE_PLAN_CYCLE))
             },
-            move |_context, _arguments| -> MResult<Value> {
+            move |_context, _arguments| -> MResult<LegacyValue> {
                 Ok(thread_local_cycle(&SOURCE_PLAN_CYCLE))
             },
         ))
@@ -656,10 +663,10 @@ fn cyclic_module_host_plan_rolls_back_module_graph() {
         .source_resolver(resolver)
         .host_function(DeterministicHostFunction::new(
             "snapshot/module-cycle",
-            move |_context, _arguments| -> MResult<Value> {
+            move |_context, _arguments| -> MResult<LegacyValue> {
                 Ok(thread_local_cycle(&MODULE_PLAN_CYCLE))
             },
-            move |_context, _arguments| -> MResult<Value> {
+            move |_context, _arguments| -> MResult<LegacyValue> {
                 Ok(thread_local_cycle(&MODULE_PLAN_CYCLE))
             },
         ))

@@ -1,8 +1,8 @@
 use super::support::{
     ActivationPatternCapture, ActivationPatternCaptureKindUnsupported, FLAT_TUPLE_ACTIVATION, Gate,
-    HashMap, Interpreter, Matrix, MechAtom, MechEnum, MechFunctionImpl, MechMap, MechRecord,
-    MechSet, MechTable, MechTuple, PatternBinding, PatternBindingSink, PatternMatch,
-    ReactiveBindingSink, ReactiveDependencyKind, Ref, Value, ValueKind, arm_register_nodes,
+    HashMap, Interpreter, LegacyValue, Matrix, MechAtom, MechEnum, MechFunctionImpl, MechMap,
+    MechRecord, MechSet, MechTable, MechTuple, PatternBinding, PatternBindingSink, PatternMatch,
+    ReactiveBindingSink, ReactiveDependencyKind, Ref, ValueKind, arm_register_nodes,
     assert_dispatch_turn, body_output, commit_capture_slot, committed_capture_value,
     create_capture_slot_for_kind, detached, f64_symbol, hash_str, interpret, interpret_more,
     load_enum_activation, plan_snapshot, proposed_capture_value, registration, root_cell,
@@ -29,11 +29,11 @@ fn activation_capture_slot_preserves_identity_across_updates() {
     let interpreter = Interpreter::new(0, 10_000);
     let slot = create_capture_slot_for_kind(&ValueKind::String, &interpreter).unwrap();
     let cells = slot.reactive_root_cell_ids();
-    commit_capture_slot(&slot, &Value::String(Ref::new("first".to_string()))).unwrap();
-    assert_eq!(slot, Value::String(Ref::new("first".to_string())));
+    commit_capture_slot(&slot, &LegacyValue::String(Ref::new("first".to_string()))).unwrap();
+    assert_eq!(slot, LegacyValue::String(Ref::new("first".to_string())));
     assert_eq!(slot.reactive_root_cell_ids(), cells);
-    commit_capture_slot(&slot, &Value::String(Ref::new("second".to_string()))).unwrap();
-    assert_eq!(slot, Value::String(Ref::new("second".to_string())));
+    commit_capture_slot(&slot, &LegacyValue::String(Ref::new("second".to_string()))).unwrap();
+    assert_eq!(slot, LegacyValue::String(Ref::new("second".to_string())));
     assert_eq!(slot.reactive_root_cell_ids(), cells);
 }
 
@@ -57,30 +57,33 @@ fn activation_capture_slots_support_enabled_composite_value_kinds() {
         (variant_id, "payload".to_string()),
     ]));
     let cases = vec![
-        Value::Tuple(Ref::new(MechTuple::from_vec(vec![
-            Value::F64(Ref::new(1.0)),
-            Value::String(Ref::new("tuple".to_string())),
+        LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
+            LegacyValue::F64(Ref::new(1.0)),
+            LegacyValue::String(Ref::new("tuple".to_string())),
         ]))),
-        Value::Enum(Ref::new(MechEnum {
+        LegacyValue::Enum(Ref::new(MechEnum {
             id: enum_id,
-            variants: vec![(variant_id, Some(Value::F64(Ref::new(2.0))))],
+            variants: vec![(variant_id, Some(LegacyValue::F64(Ref::new(2.0))))],
             names,
         })),
-        Value::Record(Ref::new(MechRecord::new(vec![(
+        LegacyValue::Record(Ref::new(MechRecord::new(vec![(
             "field",
-            Value::F64(Ref::new(3.0)),
+            LegacyValue::F64(Ref::new(3.0)),
         )]))),
-        Value::Map(Ref::new(MechMap::from_vec(vec![(
-            Value::String(Ref::new("key".to_string())),
-            Value::F64(Ref::new(4.0)),
+        LegacyValue::Map(Ref::new(MechMap::from_vec(vec![(
+            LegacyValue::String(Ref::new("key".to_string())),
+            LegacyValue::F64(Ref::new(4.0)),
         )]))),
-        Value::Set(Ref::new(MechSet::from_vec(vec![Value::String(Ref::new(
-            "member".to_string(),
-        ))]))),
-        Value::Table(Ref::new(MechTable::new_table(
+        LegacyValue::Set(Ref::new(MechSet::from_vec(vec![LegacyValue::String(
+            Ref::new("member".to_string()),
+        )]))),
+        LegacyValue::Table(Ref::new(MechTable::new_table(
             vec!["column".to_string()],
             vec![ValueKind::F64],
-            vec![vec![Value::F64(Ref::new(5.0)), Value::F64(Ref::new(6.0))]],
+            vec![vec![
+                LegacyValue::F64(Ref::new(5.0)),
+                LegacyValue::F64(Ref::new(6.0)),
+            ]],
         ))),
     ];
 
@@ -122,14 +125,14 @@ fn activation_capture_commit_validates_every_binding_before_mutation() {
                 id: hash_str("number"),
                 name: "number".to_string(),
                 kind: ValueKind::F64,
-                value: Value::F64(Ref::new(9.0)),
+                value: LegacyValue::F64(Ref::new(9.0)),
             },
             PatternBinding {
                 index: 1,
                 id: hash_str("text"),
                 name: "text".to_string(),
                 kind: ValueKind::F64,
-                value: Value::F64(Ref::new(10.0)),
+                value: LegacyValue::F64(Ref::new(10.0)),
             },
         ],
     };
@@ -140,12 +143,15 @@ fn activation_capture_commit_validates_every_binding_before_mutation() {
     .commit(&attempted)
     .unwrap_err();
     assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
-    assert_eq!(captures[0].proposed, Value::F64(Ref::new(0.0)));
-    assert_eq!(captures[1].proposed, Value::String(Ref::new(String::new())));
-    assert_eq!(captures[0].committed, Value::F64(Ref::new(0.0)));
+    assert_eq!(captures[0].proposed, LegacyValue::F64(Ref::new(0.0)));
+    assert_eq!(
+        captures[1].proposed,
+        LegacyValue::String(Ref::new(String::new()))
+    );
+    assert_eq!(captures[0].committed, LegacyValue::F64(Ref::new(0.0)));
     assert_eq!(
         captures[1].committed,
-        Value::String(Ref::new(String::new()))
+        LegacyValue::String(Ref::new(String::new()))
     );
 }
 
@@ -157,15 +163,15 @@ fn activation_capture_gate_validates_entire_commit_before_mutation_or_pulse() {
             id: hash_str("number"),
             name: "number".to_string(),
             kind: ValueKind::F64,
-            proposed: Value::F64(Ref::new(9.0)),
-            committed: Value::F64(Ref::new(1.0)),
+            proposed: LegacyValue::F64(Ref::new(9.0)),
+            committed: LegacyValue::F64(Ref::new(1.0)),
         },
         ActivationPatternCapture {
             id: hash_str("text"),
             name: "text".to_string(),
             kind: ValueKind::String,
-            proposed: Value::F64(Ref::new(10.0)),
-            committed: Value::String(Ref::new("before".to_string())),
+            proposed: LegacyValue::F64(Ref::new(10.0)),
+            committed: LegacyValue::String(Ref::new("before".to_string())),
         },
     ];
     let selected = Ref::new(0);
@@ -179,10 +185,10 @@ fn activation_capture_gate_validates_entire_commit_before_mutation_or_pulse() {
 
     let error = gate.solve_reactive().unwrap_err();
     assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
-    assert_eq!(captures[0].committed, Value::F64(Ref::new(1.0)));
+    assert_eq!(captures[0].committed, LegacyValue::F64(Ref::new(1.0)));
     assert_eq!(
         captures[1].committed,
-        Value::String(Ref::new("before".to_string()))
+        LegacyValue::String(Ref::new("before".to_string()))
     );
     assert_eq!(
         *pulse.borrow(),
@@ -209,7 +215,7 @@ event := :first
     let trigger = root_cell(&interpreter, "event");
     let topology = plan_snapshot(&interpreter);
     let registration = registration(&interpreter);
-    let Value::Atom(event) = symbol(&interpreter, "event") else {
+    let LegacyValue::Atom(event) = symbol(&interpreter, "event") else {
         panic!("event is not an atom")
     };
     *event.borrow_mut() = MechAtom::from_name("second");
@@ -223,7 +229,7 @@ event := :first
             .rev()
             .find_map(
                 |node| match detached(&plan.node(node).unwrap().function.out()) {
-                    Value::Atom(atom) => Some(atom.borrow().id()),
+                    LegacyValue::Atom(atom) => Some(atom.borrow().id()),
                     _ => None,
                 },
             )
@@ -238,8 +244,8 @@ event := :first
 fn activation_capture_slot_rejects_kind_mismatch() {
     let interpreter = Interpreter::new(0, 10_000);
     let slot = create_capture_slot_for_kind(&ValueKind::F64, &interpreter).unwrap();
-    let error =
-        commit_capture_slot(&slot, &Value::String(Ref::new("wrong".to_string()))).unwrap_err();
+    let error = commit_capture_slot(&slot, &LegacyValue::String(Ref::new("wrong".to_string())))
+        .unwrap_err();
     assert_eq!(error.kind_name(), "ActivationPatternCaptureKindUnsupported");
 }
 
@@ -306,7 +312,7 @@ event := 1.0
         assert!(body_inputs.contains(&committed_cell));
         assert!(!body_inputs.contains(&proposed_cell));
     }
-    let Value::F64(event) = symbol(&i, "event") else {
+    let LegacyValue::F64(event) = symbol(&i, "event") else {
         panic!("event is not f64")
     };
     *event.borrow_mut() = 5.0;
@@ -314,8 +320,14 @@ event := 1.0
     let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
 
     assert_eq!(selected_arm_index(&activation, &outcome), 0);
-    assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(5.0)));
-    assert_eq!(proposed_capture_value(&i, 1, 0), Value::F64(Ref::new(5.0)));
+    assert_eq!(
+        committed_capture_value(&i, 0, 0),
+        LegacyValue::F64(Ref::new(5.0))
+    );
+    assert_eq!(
+        proposed_capture_value(&i, 1, 0),
+        LegacyValue::F64(Ref::new(5.0))
+    );
     assert_eq!(committed_capture_value(&i, 1, 0), later_before);
     let executed = turn_executed_nodes(&outcome);
     for node in activation.arms[1].body_node_start..activation.arms[1].body_node_end {
@@ -343,7 +355,10 @@ event := (1.0, 1.0)
     let committed_before = committed_capture_value(&i, 0, 0);
     set_tuple_event(
         &i,
-        vec![Value::F64(Ref::new(2.0)), Value::F64(Ref::new(3.0))],
+        vec![
+            LegacyValue::F64(Ref::new(2.0)),
+            LegacyValue::F64(Ref::new(3.0)),
+        ],
     );
 
     let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
@@ -379,7 +394,10 @@ event := (0.0, 1.0)
     let committed_before = committed_capture_value(&i, 1, 0);
     set_tuple_event(
         &i,
-        vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(10.0))],
+        vec![
+            LegacyValue::F64(Ref::new(1.0)),
+            LegacyValue::F64(Ref::new(10.0)),
+        ],
     );
 
     let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
@@ -388,9 +406,9 @@ event := (0.0, 1.0)
     assert_eq!(committed_capture_value(&i, 1, 0), committed_before);
     assert_eq!(
         proposed_capture_value(&i, 1, 0),
-        Value::Tuple(Ref::new(MechTuple::from_vec(vec![
-            Value::F64(Ref::new(1.0)),
-            Value::F64(Ref::new(10.0)),
+        LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
+            LegacyValue::F64(Ref::new(1.0)),
+            LegacyValue::F64(Ref::new(10.0)),
         ])))
     );
     let executed = turn_executed_nodes(&outcome);
@@ -452,9 +470,15 @@ event := [1.0 10.0]
     let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
 
     assert_dispatch_turn(&i, &topology, &outcome, 0, 1.0);
-    assert_eq!(symbol(&i, "x"), Value::F64(Ref::new(9.0)));
-    assert_eq!(proposed_capture_value(&i, 0, 0), Value::F64(Ref::new(1.0)));
-    assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(1.0)));
+    assert_eq!(symbol(&i, "x"), LegacyValue::F64(Ref::new(9.0)));
+    assert_eq!(
+        proposed_capture_value(&i, 0, 0),
+        LegacyValue::F64(Ref::new(1.0))
+    );
+    assert_eq!(
+        committed_capture_value(&i, 0, 0),
+        LegacyValue::F64(Ref::new(1.0))
+    );
     assert_eq!(
         proposed_capture_value(&i, 0, 0).reactive_root_cell_ids()[0],
         proposed_cell
@@ -483,7 +507,7 @@ threshold := 2.0
     let topology = plan_snapshot(&i);
     let registration = registration(&i);
 
-    let Value::F64(threshold) = symbol(&i, "threshold") else {
+    let LegacyValue::F64(threshold) = symbol(&i, "threshold") else {
         panic!("threshold is not f64")
     };
     *threshold.borrow_mut() = 3.0;
@@ -530,7 +554,7 @@ threshold := 2.0
     let topology = plan_snapshot(&i);
     let activation = registration(&i);
 
-    let Value::F64(threshold) = symbol(&i, "threshold") else {
+    let LegacyValue::F64(threshold) = symbol(&i, "threshold") else {
         panic!("threshold is not f64")
     };
     *threshold.borrow_mut() = 3.0;
@@ -587,17 +611,17 @@ event := (1.0, 2.0)
             &i,
             values
                 .into_iter()
-                .map(|value| Value::F64(Ref::new(value)))
+                .map(|value| LegacyValue::F64(Ref::new(value)))
                 .collect(),
         );
         let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
         assert_eq!(selected_arm_index(&activation, &outcome), 0);
         assert_eq!(
             body_output(&i, 0),
-            Value::Tuple(Ref::new(MechTuple::from_vec(
+            LegacyValue::Tuple(Ref::new(MechTuple::from_vec(
                 values
                     .into_iter()
-                    .map(|value| Value::F64(Ref::new(value)))
+                    .map(|value| LegacyValue::F64(Ref::new(value)))
                     .collect(),
             )))
         );
@@ -627,7 +651,7 @@ event := (1.0, 2.0)
             &i,
             values
                 .into_iter()
-                .map(|value| Value::F64(Ref::new(value)))
+                .map(|value| LegacyValue::F64(Ref::new(value)))
                 .collect(),
         );
         let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
@@ -667,7 +691,7 @@ event := [1.0 2.0 3.0 4.0 5.0]
                 .any(|dependency| dependency.cell == rest_capture.cell))
     );
     let topology = plan_snapshot(&i);
-    let Value::MatrixF64(event) = symbol(&i, "event") else {
+    let LegacyValue::MatrixF64(event) = symbol(&i, "event") else {
         panic!("event is not an f64 matrix")
     };
     for values in [
@@ -678,7 +702,7 @@ event := [1.0 2.0 3.0 4.0 5.0]
         assert!(event.replace_payload_from(&source));
         let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
         assert_eq!(selected_arm_index(&activation, &outcome), 0);
-        let Value::MatrixF64(rest) = body_output(&i, 0) else {
+        let LegacyValue::MatrixF64(rest) = body_output(&i, 0) else {
             panic!("rest output is not an f64 matrix")
         };
         assert_eq!(rest.shape(), vec![1, values.len() - 1]);
@@ -694,7 +718,13 @@ fn activation_pattern_capture_does_not_leak() {
     for name in ["x", "y", "selected"] {
         assert!(!i.symbols().borrow().contains(hash_str(name)));
     }
-    set_tuple_event(&i, vec![Value::F64(Ref::new(3.)), Value::F64(Ref::new(4.))]);
+    set_tuple_event(
+        &i,
+        vec![
+            LegacyValue::F64(Ref::new(3.)),
+            LegacyValue::F64(Ref::new(4.)),
+        ],
+    );
     let o = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &o, 0, 34.);
 }
@@ -719,7 +749,13 @@ fn activation_pattern_capture_shadows_and_restores_outer_symbol() {
     assert!(!i.symbols().borrow().contains(hash_str("selected")));
     let topology = plan_snapshot(&i);
     let trigger = root_cell(&i, "event");
-    set_tuple_event(&i, vec![Value::F64(Ref::new(3.)), Value::F64(Ref::new(4.))]);
+    set_tuple_event(
+        &i,
+        vec![
+            LegacyValue::F64(Ref::new(3.)),
+            LegacyValue::F64(Ref::new(4.)),
+        ],
+    );
     let o = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &o, 0, 7.);
 }

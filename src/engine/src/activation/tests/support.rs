@@ -11,11 +11,11 @@ pub(super) use crate::patterns::PatternBindingSink;
 pub(super) use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 pub(super) use crate::{
     C64, CompiledPattern, Dictionary, FunctionExtensionEntry, FunctionSpecializer, GenericError,
-    Interpreter, MResult, Matrix, MechAtom, MechEnum, MechError, MechErrorKind, MechFunction,
-    MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable, MechTuple, Pattern,
+    Interpreter, LegacyValue, MResult, Matrix, MechAtom, MechEnum, MechError, MechErrorKind,
+    MechFunction, MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable, MechTuple, Pattern,
     PatternActivationRegistration, PatternBinding, PatternMatch, R64, ReactiveCellId,
     ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveRegisterCommit,
-    ReactiveTurnOutcome, Ref, SymbolTableSnapshot, ValRef, Value, ValueKind, hash_str,
+    ReactiveTurnOutcome, Ref, SymbolTableSnapshot, ValRef, ValueKind, hash_str,
 };
 pub(super) use std::collections::HashMap;
 pub(super) use std::sync::{
@@ -28,7 +28,7 @@ pub(super) struct EagerGuardTestSpecializer {
 }
 
 impl FunctionSpecializer for EagerGuardTestSpecializer {
-    fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, _arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         self.compile_calls.fetch_add(1, Ordering::SeqCst);
         panic!("unsupported guard specializer must not run during preflight")
     }
@@ -60,8 +60,8 @@ impl MechFunctionImpl for FailingPatternRegister {
         self.stage_calls.fetch_add(1, Ordering::SeqCst);
         Err(MechError::new(PatternRegisterStageFailure, None))
     }
-    fn out(&self) -> Value {
-        Value::F64(self.sink.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::F64(self.sink.clone())
     }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
         ReactiveNodeKind::Register
@@ -70,7 +70,7 @@ impl MechFunctionImpl for FailingPatternRegister {
         "FailingPatternRegister".to_string()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -86,7 +86,7 @@ pub(super) struct FailingPatternRegisterSpecializer {
     pub(super) stage_calls: Arc<AtomicUsize>,
 }
 impl FunctionSpecializer for FailingPatternRegisterSpecializer {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         let argument = arguments.first().ok_or_else(|| {
             MechError::new(
                 GenericError {
@@ -119,50 +119,53 @@ pub(super) fn install_function_extension(
         .unwrap();
 }
 
-pub(super) fn scalar_capture_cases() -> Vec<(ValueKind, Value)> {
+pub(super) fn scalar_capture_cases() -> Vec<(ValueKind, LegacyValue)> {
     let mut cases = Vec::new();
     #[cfg(feature = "u8")]
-    cases.push((ValueKind::U8, Value::U8(Ref::new(8))));
+    cases.push((ValueKind::U8, LegacyValue::U8(Ref::new(8))));
     #[cfg(feature = "u16")]
-    cases.push((ValueKind::U16, Value::U16(Ref::new(16))));
+    cases.push((ValueKind::U16, LegacyValue::U16(Ref::new(16))));
     #[cfg(feature = "u32")]
-    cases.push((ValueKind::U32, Value::U32(Ref::new(32))));
+    cases.push((ValueKind::U32, LegacyValue::U32(Ref::new(32))));
     #[cfg(feature = "u64")]
-    cases.push((ValueKind::U64, Value::U64(Ref::new(64))));
+    cases.push((ValueKind::U64, LegacyValue::U64(Ref::new(64))));
     #[cfg(feature = "u128")]
-    cases.push((ValueKind::U128, Value::U128(Ref::new(128))));
+    cases.push((ValueKind::U128, LegacyValue::U128(Ref::new(128))));
     #[cfg(feature = "i8")]
-    cases.push((ValueKind::I8, Value::I8(Ref::new(-8))));
+    cases.push((ValueKind::I8, LegacyValue::I8(Ref::new(-8))));
     #[cfg(feature = "i16")]
-    cases.push((ValueKind::I16, Value::I16(Ref::new(-16))));
+    cases.push((ValueKind::I16, LegacyValue::I16(Ref::new(-16))));
     #[cfg(feature = "i32")]
-    cases.push((ValueKind::I32, Value::I32(Ref::new(-32))));
+    cases.push((ValueKind::I32, LegacyValue::I32(Ref::new(-32))));
     #[cfg(feature = "i64")]
-    cases.push((ValueKind::I64, Value::I64(Ref::new(-64))));
+    cases.push((ValueKind::I64, LegacyValue::I64(Ref::new(-64))));
     #[cfg(feature = "i128")]
-    cases.push((ValueKind::I128, Value::I128(Ref::new(-128))));
+    cases.push((ValueKind::I128, LegacyValue::I128(Ref::new(-128))));
     #[cfg(feature = "f32")]
-    cases.push((ValueKind::F32, Value::F32(Ref::new(3.25))));
+    cases.push((ValueKind::F32, LegacyValue::F32(Ref::new(3.25))));
     #[cfg(feature = "f64")]
-    cases.push((ValueKind::F64, Value::F64(Ref::new(6.5))));
+    cases.push((ValueKind::F64, LegacyValue::F64(Ref::new(6.5))));
     #[cfg(feature = "complex")]
-    cases.push((ValueKind::C64, Value::C64(Ref::new(C64::new(3.0, 4.0)))));
+    cases.push((
+        ValueKind::C64,
+        LegacyValue::C64(Ref::new(C64::new(3.0, 4.0))),
+    ));
     #[cfg(feature = "rational")]
-    cases.push((ValueKind::R64, Value::R64(Ref::new(R64::new(3, 4)))));
+    cases.push((ValueKind::R64, LegacyValue::R64(Ref::new(R64::new(3, 4)))));
     #[cfg(any(feature = "bool", feature = "variable_define"))]
-    cases.push((ValueKind::Bool, Value::Bool(Ref::new(true))));
+    cases.push((ValueKind::Bool, LegacyValue::Bool(Ref::new(true))));
     #[cfg(any(feature = "string", feature = "variable_define"))]
     cases.push((
         ValueKind::String,
-        Value::String(Ref::new("captured".to_string())),
+        LegacyValue::String(Ref::new("captured".to_string())),
     ));
-    cases.push((ValueKind::Index, Value::Index(Ref::new(42))));
+    cases.push((ValueKind::Index, LegacyValue::Index(Ref::new(42))));
     #[cfg(feature = "atom")]
     {
         let atom = MechAtom::from_name("captured");
         cases.push((
             ValueKind::Atom(atom.id(), atom.name()),
-            Value::Atom(Ref::new(atom)),
+            LegacyValue::Atom(Ref::new(atom)),
         ));
     }
     cases
@@ -194,7 +197,7 @@ pub(super) fn interpret(source: &str) -> Interpreter {
     interpreter
 }
 
-pub(super) fn interpret_more(interpreter: &mut Interpreter, source: &str) -> MResult<Value> {
+pub(super) fn interpret_more(interpreter: &mut Interpreter, source: &str) -> MResult<LegacyValue> {
     let tree = mech_syntax::parser::parse(source.trim_start()).unwrap();
     interpreter.interpret(&tree)
 }
@@ -206,7 +209,7 @@ pub(super) fn symbol_ref(interpreter: &Interpreter, name: &str) -> ValRef {
         .get(hash_str(name))
         .unwrap_or_else(|| panic!("missing symbol `{name}`"))
 }
-pub(super) fn symbol(interpreter: &Interpreter, name: &str) -> Value {
+pub(super) fn symbol(interpreter: &Interpreter, name: &str) -> LegacyValue {
     symbol_ref(interpreter, name).borrow().clone()
 }
 pub(super) fn root_cell(interpreter: &Interpreter, name: &str) -> ReactiveCellId {
@@ -234,7 +237,7 @@ pub(super) fn node_output_for_cell(
     interpreter: &Interpreter,
     node: ReactiveNodeId,
     cell: ReactiveCellId,
-) -> Value {
+) -> LegacyValue {
     let plan = interpreter.plan();
     let plan = plan.borrow();
     plan.node(node)
@@ -249,7 +252,7 @@ pub(super) fn committed_capture_value(
     interpreter: &Interpreter,
     arm: usize,
     capture: usize,
-) -> Value {
+) -> LegacyValue {
     let registration = registration(interpreter);
     let arm = &registration.arms[arm];
     node_output_for_cell(interpreter, arm.gate_node, arm.captures[capture].cell)
@@ -258,7 +261,7 @@ pub(super) fn proposed_capture_value(
     interpreter: &Interpreter,
     arm: usize,
     capture: usize,
-) -> Value {
+) -> LegacyValue {
     let registration = registration(interpreter);
     let arm = &registration.arms[arm];
     arm.captures
@@ -278,7 +281,8 @@ pub(super) fn proposed_capture_value(
 pub(super) fn arm_pulse_generation(interpreter: &Interpreter, arm: usize) -> usize {
     let registration = registration(interpreter);
     let arm = &registration.arms[arm];
-    let Value::Index(generation) = node_output_for_cell(interpreter, arm.gate_node, arm.pulse_cell)
+    let LegacyValue::Index(generation) =
+        node_output_for_cell(interpreter, arm.gate_node, arm.pulse_cell)
     else {
         panic!("activation arm pulse is not an index")
     };
@@ -379,7 +383,7 @@ pub(super) fn body_output_f64(interpreter: &Interpreter, arm_index: usize) -> f6
     }
     panic!("no f64 output")
 }
-pub(super) fn body_output(interpreter: &Interpreter, arm_index: usize) -> Value {
+pub(super) fn body_output(interpreter: &Interpreter, arm_index: usize) -> LegacyValue {
     let registration = registration(interpreter);
     let arm = &registration.arms[arm_index];
     let plan = interpreter.plan();
@@ -393,7 +397,7 @@ pub(super) fn body_output(interpreter: &Interpreter, arm_index: usize) -> Value 
     )
 }
 pub(super) fn set_enum_event(interpreter: &Interpreter, variant: &str, payload: f64) {
-    let Value::Enum(event) = symbol(interpreter, "event") else {
+    let LegacyValue::Enum(event) = symbol(interpreter, "event") else {
         panic!("event is not an enum");
     };
     let enum_id = event.borrow().id;
@@ -407,17 +411,17 @@ pub(super) fn set_enum_event(interpreter: &Interpreter, variant: &str, payload: 
         .clone();
     *event.borrow_mut() = MechEnum {
         id: enum_id,
-        variants: vec![(hash_str(variant), Some(Value::F64(Ref::new(payload))))],
+        variants: vec![(hash_str(variant), Some(LegacyValue::F64(Ref::new(payload))))],
         names,
     };
 }
 pub(super) fn set_unit_enum_event(interpreter: &Interpreter, variant: &str) {
     let event_value = symbol(interpreter, "event");
-    if let Value::Atom(event) = &event_value {
+    if let LegacyValue::Atom(event) = &event_value {
         *event.borrow_mut() = MechAtom::from_name(variant);
         return;
     }
-    let Value::Enum(event) = event_value else {
+    let LegacyValue::Enum(event) = event_value else {
         panic!("event is neither an atom nor an enum");
     };
     let enum_id = event.borrow().id;
@@ -436,23 +440,23 @@ pub(super) fn set_unit_enum_event(interpreter: &Interpreter, variant: &str) {
     };
 }
 pub(super) fn set_atom_tuple_event(interpreter: &Interpreter, tag: &str, payload: f64) {
-    let Value::Tuple(event) = symbol(interpreter, "event") else {
+    let LegacyValue::Tuple(event) = symbol(interpreter, "event") else {
         panic!("event is not tuple")
     };
     *event.borrow_mut() = MechTuple::from_vec(vec![
-        Value::Atom(Ref::new(MechAtom::from_name(tag))),
-        Value::F64(Ref::new(payload)),
+        LegacyValue::Atom(Ref::new(MechAtom::from_name(tag))),
+        LegacyValue::F64(Ref::new(payload)),
     ]);
 }
-pub(super) fn set_tuple_event(interpreter: &Interpreter, values: Vec<Value>) {
-    let Value::Tuple(event) = symbol(interpreter, "event") else {
+pub(super) fn set_tuple_event(interpreter: &Interpreter, values: Vec<LegacyValue>) {
+    let LegacyValue::Tuple(event) = symbol(interpreter, "event") else {
         panic!("event is not tuple")
     };
     *event.borrow_mut() = MechTuple::from_vec(values);
 }
 #[cfg(all(feature = "matrix", feature = "f64"))]
 pub(super) fn set_f64_matrix_event(interpreter: &Interpreter, values: Vec<f64>) {
-    let Value::MatrixF64(event) = symbol(interpreter, "event") else {
+    let LegacyValue::MatrixF64(event) = symbol(interpreter, "event") else {
         panic!("event is not an f64 matrix")
     };
     event.set(values);
@@ -542,9 +546,12 @@ pub(super) fn load_enum_activation() -> (
     PlanSnapshot,
 ) {
     let interpreter = interpret(ENUM_ACTIVATION);
-    assert!(matches!(symbol(&interpreter, "event"), Value::Enum(_)));
+    assert!(matches!(
+        symbol(&interpreter, "event"),
+        LegacyValue::Enum(_)
+    ));
     let enum_id = match symbol(&interpreter, "event") {
-        Value::Enum(event) => event.borrow().id,
+        LegacyValue::Enum(event) => event.borrow().id,
         value => panic!("expected enum event, found {:?}", value.kind()),
     };
     let enum_definition = interpreter

@@ -7,7 +7,7 @@ use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
-use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
+use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 use mech_runtime::{
     ConfigValue, HostContextManifest, HostManifestConfig, MaterializedHostInterface,
     PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
@@ -268,7 +268,7 @@ struct TestLiveResourceProvider {
 }
 
 impl TestLiveResourceProvider {
-    fn planned_value(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn planned_value(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri != TEST_LIVE_BASE_URI
             || request.path != TEST_LIVE_PATH
             || request.context_name != TEST_LIVE_CONTEXT
@@ -281,7 +281,7 @@ impl TestLiveResourceProvider {
                 ),
             ));
         }
-        Ok(Value::F64(Ref::new(0.0)))
+        Ok(LegacyValue::F64(Ref::new(0.0)))
     }
 }
 
@@ -297,11 +297,11 @@ impl RuntimeResourceProvider for TestLiveResourceProvider {
         ]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         self.planned_value(request)
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         self.planned_value(request)
     }
 
@@ -349,12 +349,12 @@ impl RuntimeResourceProvider for TestLiveResourceProvider {
     }
 }
 
-fn observe_value(value: &Value) -> ObservedResourceValue {
+fn observe_value(value: &LegacyValue) -> ObservedResourceValue {
     match value {
-        Value::MutableReference(value) => observe_value(&value.borrow()),
-        Value::Typed(value, _) => observe_value(value),
-        Value::F64(value) => ObservedResourceValue::F64(*value.borrow()),
-        Value::Tuple(value) => ObservedResourceValue::Tuple(
+        LegacyValue::MutableReference(value) => observe_value(&value.borrow()),
+        LegacyValue::Typed(value, _) => observe_value(value),
+        LegacyValue::F64(value) => ObservedResourceValue::F64(*value.borrow()),
+        LegacyValue::Tuple(value) => ObservedResourceValue::Tuple(
             value
                 .borrow()
                 .elements
@@ -362,7 +362,7 @@ fn observe_value(value: &Value) -> ObservedResourceValue {
                 .map(|value| observe_value(value))
                 .collect(),
         ),
-        Value::Record(value) => {
+        LegacyValue::Record(value) => {
             let value = value.borrow();
             ObservedResourceValue::Record(
                 value

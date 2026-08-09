@@ -3,7 +3,7 @@
 use core::any::{Any, TypeId};
 use core::fmt::Debug;
 
-use crate::{MResult, MechError, MechErrorKind, Ref, ValRef, Value};
+use crate::{LegacyValue, MResult, MechError, MechErrorKind, Ref, ValRef};
 
 #[cfg(feature = "enum")]
 use crate::MechEnum;
@@ -206,18 +206,18 @@ impl ValueSnapshotCycleDetector {
         result
     }
 
-    fn validate_value(&mut self, value: &Value) -> MResult<()> {
+    fn validate_value(&mut self, value: &LegacyValue) -> MResult<()> {
         match value {
-            Value::MutableReference(value) => {
+            LegacyValue::MutableReference(value) => {
                 let key = ValueSnapshotKey::of_ref(value);
                 self.visit_recursive_node(key, "mutable-reference", |detector| {
                     let value = try_clone_ref(value, "validate", "mutable-reference")?;
                     detector.validate_value(&value)
                 })
             }
-            Value::Typed(value, _) => self.validate_value(value),
+            LegacyValue::Typed(value, _) => self.validate_value(value),
             #[cfg(feature = "set")]
-            Value::Set(value) => {
+            LegacyValue::Set(value) => {
                 let key = ValueSnapshotKey::of_ref(value);
                 self.visit_recursive_node(key, "set", |detector| {
                     let set = try_clone_ref(value, "validate", "set")?;
@@ -228,7 +228,7 @@ impl ValueSnapshotCycleDetector {
                 })
             }
             #[cfg(feature = "map")]
-            Value::Map(value) => {
+            LegacyValue::Map(value) => {
                 let key = ValueSnapshotKey::of_ref(value);
                 self.visit_recursive_node(key, "map", |detector| {
                     let map = try_clone_ref(value, "validate", "map")?;
@@ -240,7 +240,7 @@ impl ValueSnapshotCycleDetector {
                 })
             }
             #[cfg(feature = "record")]
-            Value::Record(value) => {
+            LegacyValue::Record(value) => {
                 let key = ValueSnapshotKey::of_ref(value);
                 self.visit_recursive_node(key, "record", |detector| {
                     let record = try_clone_ref(value, "validate", "record")?;
@@ -251,7 +251,7 @@ impl ValueSnapshotCycleDetector {
                 })
             }
             #[cfg(feature = "table")]
-            Value::Table(value) => {
+            LegacyValue::Table(value) => {
                 let key = ValueSnapshotKey::of_ref(value);
                 self.visit_recursive_node(key, "table", |detector| {
                     let table = try_clone_ref(value, "validate", "table")?;
@@ -262,7 +262,7 @@ impl ValueSnapshotCycleDetector {
                 })
             }
             #[cfg(feature = "tuple")]
-            Value::Tuple(value) => {
+            LegacyValue::Tuple(value) => {
                 let key = ValueSnapshotKey::of_ref(value);
                 self.visit_recursive_node(key, "tuple", |detector| {
                     let tuple = try_clone_ref(value, "validate", "tuple")?;
@@ -273,7 +273,7 @@ impl ValueSnapshotCycleDetector {
                 })
             }
             #[cfg(feature = "enum")]
-            Value::Enum(value) => {
+            LegacyValue::Enum(value) => {
                 let key = ValueSnapshotKey::of_ref(value);
                 self.visit_recursive_node(key, "enum", |detector| {
                     let value = try_clone_ref(value, "validate", "enum")?;
@@ -286,18 +286,18 @@ impl ValueSnapshotCycleDetector {
                 })
             }
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(value) => self.validate_value_matrix(value),
+            LegacyValue::MatrixValue(value) => self.validate_value_matrix(value),
             _ => Ok(()),
         }
     }
 
     #[cfg(feature = "matrix")]
-    fn validate_value_matrix(&mut self, value: &Matrix<Value>) -> MResult<()> {
+    fn validate_value_matrix(&mut self, value: &Matrix<LegacyValue>) -> MResult<()> {
         let key = ValueSnapshotKey::of_matrix(value);
         self.visit_recursive_node(key, "matrix", |detector| {
-            let (values, _, _) = value
-                .try_clone_parts()
-                .map_err(|_| snapshot_borrow_conflict::<Matrix<Value>>("validate", "matrix"))?;
+            let (values, _, _) = value.try_clone_parts().map_err(|_| {
+                snapshot_borrow_conflict::<Matrix<LegacyValue>>("validate", "matrix")
+            })?;
             for value in values {
                 detector.validate_value(&value)?;
             }
@@ -400,7 +400,10 @@ impl ValueSnapshotCloneContext {
     }
 
     #[cfg(feature = "matrix")]
-    fn snapshot_value_matrix(&mut self, source: &Matrix<Value>) -> MResult<Matrix<Value>> {
+    fn snapshot_value_matrix(
+        &mut self,
+        source: &Matrix<LegacyValue>,
+    ) -> MResult<Matrix<LegacyValue>> {
         let key = ValueSnapshotKey::of_matrix(source);
         if let Some(snapshot) = self.memoized(key) {
             return Ok(snapshot);
@@ -408,7 +411,7 @@ impl ValueSnapshotCloneContext {
 
         let (values, rows, cols) = source
             .try_clone_parts()
-            .map_err(|_| snapshot_borrow_conflict::<Matrix<Value>>("clone", "matrix"))?;
+            .map_err(|_| snapshot_borrow_conflict::<Matrix<LegacyValue>>("clone", "matrix"))?;
         let mut detached_values = Vec::new();
         for value in values {
             detached_values.push(self.snapshot_value(&value)?);
@@ -418,9 +421,9 @@ impl ValueSnapshotCloneContext {
         Ok(snapshot)
     }
 
-    fn snapshot_mutable_reference(&mut self, source: &ValRef) -> MResult<Value> {
+    fn snapshot_mutable_reference(&mut self, source: &ValRef) -> MResult<LegacyValue> {
         let key = ValueSnapshotKey::of_ref(source);
-        if let Some(snapshot) = self.memoized::<Value>(key) {
+        if let Some(snapshot) = self.memoized::<LegacyValue>(key) {
             return Ok(snapshot);
         }
 
@@ -430,80 +433,114 @@ impl ValueSnapshotCloneContext {
         Ok(snapshot)
     }
 
-    fn snapshot_value(&mut self, source: &Value) -> MResult<Value> {
+    fn snapshot_value(&mut self, source: &LegacyValue) -> MResult<LegacyValue> {
         match source {
             #[cfg(feature = "u8")]
-            Value::U8(value) => Ok(Value::U8(self.snapshot_leaf(value, "u8")?)),
+            LegacyValue::U8(value) => Ok(LegacyValue::U8(self.snapshot_leaf(value, "u8")?)),
             #[cfg(feature = "u16")]
-            Value::U16(value) => Ok(Value::U16(self.snapshot_leaf(value, "u16")?)),
+            LegacyValue::U16(value) => Ok(LegacyValue::U16(self.snapshot_leaf(value, "u16")?)),
             #[cfg(feature = "u32")]
-            Value::U32(value) => Ok(Value::U32(self.snapshot_leaf(value, "u32")?)),
+            LegacyValue::U32(value) => Ok(LegacyValue::U32(self.snapshot_leaf(value, "u32")?)),
             #[cfg(feature = "u64")]
-            Value::U64(value) => Ok(Value::U64(self.snapshot_leaf(value, "u64")?)),
+            LegacyValue::U64(value) => Ok(LegacyValue::U64(self.snapshot_leaf(value, "u64")?)),
             #[cfg(feature = "u128")]
-            Value::U128(value) => Ok(Value::U128(self.snapshot_leaf(value, "u128")?)),
+            LegacyValue::U128(value) => Ok(LegacyValue::U128(self.snapshot_leaf(value, "u128")?)),
             #[cfg(feature = "i8")]
-            Value::I8(value) => Ok(Value::I8(self.snapshot_leaf(value, "i8")?)),
+            LegacyValue::I8(value) => Ok(LegacyValue::I8(self.snapshot_leaf(value, "i8")?)),
             #[cfg(feature = "i16")]
-            Value::I16(value) => Ok(Value::I16(self.snapshot_leaf(value, "i16")?)),
+            LegacyValue::I16(value) => Ok(LegacyValue::I16(self.snapshot_leaf(value, "i16")?)),
             #[cfg(feature = "i32")]
-            Value::I32(value) => Ok(Value::I32(self.snapshot_leaf(value, "i32")?)),
+            LegacyValue::I32(value) => Ok(LegacyValue::I32(self.snapshot_leaf(value, "i32")?)),
             #[cfg(feature = "i64")]
-            Value::I64(value) => Ok(Value::I64(self.snapshot_leaf(value, "i64")?)),
+            LegacyValue::I64(value) => Ok(LegacyValue::I64(self.snapshot_leaf(value, "i64")?)),
             #[cfg(feature = "i128")]
-            Value::I128(value) => Ok(Value::I128(self.snapshot_leaf(value, "i128")?)),
+            LegacyValue::I128(value) => Ok(LegacyValue::I128(self.snapshot_leaf(value, "i128")?)),
             #[cfg(feature = "f32")]
-            Value::F32(value) => Ok(Value::F32(self.snapshot_leaf(value, "f32")?)),
+            LegacyValue::F32(value) => Ok(LegacyValue::F32(self.snapshot_leaf(value, "f32")?)),
             #[cfg(feature = "f64")]
-            Value::F64(value) => Ok(Value::F64(self.snapshot_leaf(value, "f64")?)),
+            LegacyValue::F64(value) => Ok(LegacyValue::F64(self.snapshot_leaf(value, "f64")?)),
             #[cfg(feature = "complex")]
-            Value::C64(value) => Ok(Value::C64(self.snapshot_leaf(value, "c64")?)),
+            LegacyValue::C64(value) => Ok(LegacyValue::C64(self.snapshot_leaf(value, "c64")?)),
             #[cfg(feature = "rational")]
-            Value::R64(value) => Ok(Value::R64(self.snapshot_leaf(value, "r64")?)),
+            LegacyValue::R64(value) => Ok(LegacyValue::R64(self.snapshot_leaf(value, "r64")?)),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(value) => Ok(Value::String(self.snapshot_leaf(value, "string")?)),
+            LegacyValue::String(value) => {
+                Ok(LegacyValue::String(self.snapshot_leaf(value, "string")?))
+            }
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(value) => Ok(Value::Bool(self.snapshot_leaf(value, "bool")?)),
+            LegacyValue::Bool(value) => Ok(LegacyValue::Bool(self.snapshot_leaf(value, "bool")?)),
             #[cfg(feature = "atom")]
-            Value::Atom(value) => Ok(Value::Atom(self.snapshot_atom(value)?)),
+            LegacyValue::Atom(value) => Ok(LegacyValue::Atom(self.snapshot_atom(value)?)),
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(value) => Ok(Value::MatrixIndex(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixIndex(value) => {
+                Ok(LegacyValue::MatrixIndex(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(value) => Ok(Value::MatrixBool(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixBool(value) => {
+                Ok(LegacyValue::MatrixBool(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(value) => Ok(Value::MatrixU8(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixU8(value) => Ok(LegacyValue::MatrixU8(self.snapshot_matrix(value)?)),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(value) => Ok(Value::MatrixU16(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixU16(value) => {
+                Ok(LegacyValue::MatrixU16(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(value) => Ok(Value::MatrixU32(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixU32(value) => {
+                Ok(LegacyValue::MatrixU32(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(value) => Ok(Value::MatrixU64(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixU64(value) => {
+                Ok(LegacyValue::MatrixU64(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(value) => Ok(Value::MatrixU128(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixU128(value) => {
+                Ok(LegacyValue::MatrixU128(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(value) => Ok(Value::MatrixI8(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixI8(value) => Ok(LegacyValue::MatrixI8(self.snapshot_matrix(value)?)),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(value) => Ok(Value::MatrixI16(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixI16(value) => {
+                Ok(LegacyValue::MatrixI16(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(value) => Ok(Value::MatrixI32(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixI32(value) => {
+                Ok(LegacyValue::MatrixI32(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(value) => Ok(Value::MatrixI64(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixI64(value) => {
+                Ok(LegacyValue::MatrixI64(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(value) => Ok(Value::MatrixI128(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixI128(value) => {
+                Ok(LegacyValue::MatrixI128(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(value) => Ok(Value::MatrixF32(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixF32(value) => {
+                Ok(LegacyValue::MatrixF32(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(value) => Ok(Value::MatrixF64(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixF64(value) => {
+                Ok(LegacyValue::MatrixF64(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(value) => Ok(Value::MatrixString(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixString(value) => {
+                Ok(LegacyValue::MatrixString(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(value) => Ok(Value::MatrixR64(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixR64(value) => {
+                Ok(LegacyValue::MatrixR64(self.snapshot_matrix(value)?))
+            }
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(value) => Ok(Value::MatrixC64(self.snapshot_matrix(value)?)),
+            LegacyValue::MatrixC64(value) => {
+                Ok(LegacyValue::MatrixC64(self.snapshot_matrix(value)?))
+            }
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(value) => Ok(Value::MatrixValue(self.snapshot_value_matrix(value)?)),
+            LegacyValue::MatrixValue(value) => {
+                Ok(LegacyValue::MatrixValue(self.snapshot_value_matrix(value)?))
+            }
             #[cfg(feature = "set")]
-            Value::Set(value) => {
+            LegacyValue::Set(value) => {
                 let snapshot = self.snapshot_recursive_ref(value, "set", |context, mut set| {
                     let mut detached = IndexSet::with_capacity(set.set.len());
                     for (second_index, value) in set.set.into_iter().enumerate() {
@@ -522,10 +559,10 @@ impl ValueSnapshotCloneContext {
                     set.set = detached;
                     Ok(set)
                 })?;
-                Ok(Value::Set(snapshot))
+                Ok(LegacyValue::Set(snapshot))
             }
             #[cfg(feature = "map")]
-            Value::Map(value) => {
+            LegacyValue::Map(value) => {
                 let snapshot = self.snapshot_recursive_ref(value, "map", |context, mut map| {
                     let mut detached = IndexMap::with_capacity(map.map.len());
                     for (second_index, (source_key, source_value)) in
@@ -547,10 +584,10 @@ impl ValueSnapshotCloneContext {
                     map.map = detached;
                     Ok(map)
                 })?;
-                Ok(Value::Map(snapshot))
+                Ok(LegacyValue::Map(snapshot))
             }
             #[cfg(feature = "record")]
-            Value::Record(value) => {
+            LegacyValue::Record(value) => {
                 let snapshot =
                     self.snapshot_recursive_ref(value, "record", |context, mut record| {
                         let mut detached = IndexMap::new();
@@ -560,10 +597,10 @@ impl ValueSnapshotCloneContext {
                         record.data = detached;
                         Ok(record)
                     })?;
-                Ok(Value::Record(snapshot))
+                Ok(LegacyValue::Record(snapshot))
             }
             #[cfg(feature = "table")]
-            Value::Table(value) => {
+            LegacyValue::Table(value) => {
                 let snapshot =
                     self.snapshot_recursive_ref(value, "table", |context, mut table| {
                         let mut detached = IndexMap::new();
@@ -573,10 +610,10 @@ impl ValueSnapshotCloneContext {
                         table.data = detached;
                         Ok(table)
                     })?;
-                Ok(Value::Table(snapshot))
+                Ok(LegacyValue::Table(snapshot))
             }
             #[cfg(feature = "tuple")]
-            Value::Tuple(value) => {
+            LegacyValue::Tuple(value) => {
                 let snapshot = self.snapshot_recursive_ref(value, "tuple", |context, tuple| {
                     let mut detached = Vec::new();
                     for value in tuple.elements {
@@ -584,10 +621,10 @@ impl ValueSnapshotCloneContext {
                     }
                     Ok(MechTuple::from_vec(detached))
                 })?;
-                Ok(Value::Tuple(snapshot))
+                Ok(LegacyValue::Tuple(snapshot))
             }
             #[cfg(feature = "enum")]
-            Value::Enum(value) => {
+            LegacyValue::Enum(value) => {
                 let snapshot =
                     self.snapshot_recursive_ref(value, "enum", |context, mut value| {
                         value.names = context.snapshot_leaf(&value.names, "enum-dictionary")?;
@@ -604,24 +641,26 @@ impl ValueSnapshotCloneContext {
                         value.variants = detached;
                         Ok(value)
                     })?;
-                Ok(Value::Enum(snapshot))
+                Ok(LegacyValue::Enum(snapshot))
             }
-            Value::Id(value) => Ok(Value::Id(*value)),
-            Value::Index(value) => Ok(Value::Index(self.snapshot_leaf(value, "index")?)),
-            Value::MutableReference(value) => self.snapshot_mutable_reference(value),
-            Value::Typed(value, kind) => Ok(Value::Typed(
+            LegacyValue::Id(value) => Ok(LegacyValue::Id(*value)),
+            LegacyValue::Index(value) => {
+                Ok(LegacyValue::Index(self.snapshot_leaf(value, "index")?))
+            }
+            LegacyValue::MutableReference(value) => self.snapshot_mutable_reference(value),
+            LegacyValue::Typed(value, kind) => Ok(LegacyValue::Typed(
                 Box::new(self.snapshot_value(value)?),
                 kind.clone(),
             )),
-            Value::Kind(kind) => Ok(Value::Kind(kind.clone())),
-            Value::IndexAll => Ok(Value::IndexAll),
-            Value::EmptyKind(kind) => Ok(Value::EmptyKind(kind.clone())),
-            Value::Empty => Ok(Value::Empty),
+            LegacyValue::Kind(kind) => Ok(LegacyValue::Kind(kind.clone())),
+            LegacyValue::IndexAll => Ok(LegacyValue::IndexAll),
+            LegacyValue::EmptyKind(kind) => Ok(LegacyValue::EmptyKind(kind.clone())),
+            LegacyValue::Empty => Ok(LegacyValue::Empty),
         }
     }
 }
 
-pub(crate) fn try_deep_snapshot(source: &Value) -> MResult<Value> {
+pub(crate) fn try_deep_snapshot(source: &LegacyValue) -> MResult<LegacyValue> {
     ValueSnapshotCycleDetector::default().validate_value(source)?;
     ValueSnapshotCloneContext::default().snapshot_value(source)
 }
@@ -635,113 +674,151 @@ pub(crate) fn try_deep_snapshot(source: &Value) -> MResult<Value> {
 /// another crate's match incomplete.
 #[derive(Clone)]
 pub struct ValueSnapshotRecreator {
-    recreate: Arc<dyn Fn() -> Value + Send + Sync>,
+    recreate: Arc<dyn Fn() -> LegacyValue + Send + Sync>,
 }
 
 impl ValueSnapshotRecreator {
-    fn new(recreate: impl Fn() -> Value + Send + Sync + 'static) -> Self {
+    fn new(recreate: impl Fn() -> LegacyValue + Send + Sync + 'static) -> Self {
         Self {
             recreate: Arc::new(recreate),
         }
     }
 
-    pub fn capture(value: &Value) -> MResult<Self> {
+    pub fn capture(value: &LegacyValue) -> MResult<Self> {
         Self::capture_detached(value.try_deep_snapshot()?)
     }
 
-    fn capture_detached(value: Value) -> MResult<Self> {
+    fn capture_detached(value: LegacyValue) -> MResult<Self> {
         macro_rules! scalar {
             ($value:expr, $variant:ident) => {{
                 let value = $value.borrow().clone();
-                Ok(Self::new(move || Value::$variant(Ref::new(value.clone()))))
+                Ok(Self::new(move || {
+                    LegacyValue::$variant(Ref::new(value.clone()))
+                }))
             }};
         }
 
         match value {
             #[cfg(feature = "u8")]
-            Value::U8(value) => scalar!(value, U8),
+            LegacyValue::U8(value) => scalar!(value, U8),
             #[cfg(feature = "u16")]
-            Value::U16(value) => scalar!(value, U16),
+            LegacyValue::U16(value) => scalar!(value, U16),
             #[cfg(feature = "u32")]
-            Value::U32(value) => scalar!(value, U32),
+            LegacyValue::U32(value) => scalar!(value, U32),
             #[cfg(feature = "u64")]
-            Value::U64(value) => scalar!(value, U64),
+            LegacyValue::U64(value) => scalar!(value, U64),
             #[cfg(feature = "u128")]
-            Value::U128(value) => scalar!(value, U128),
+            LegacyValue::U128(value) => scalar!(value, U128),
             #[cfg(feature = "i8")]
-            Value::I8(value) => scalar!(value, I8),
+            LegacyValue::I8(value) => scalar!(value, I8),
             #[cfg(feature = "i16")]
-            Value::I16(value) => scalar!(value, I16),
+            LegacyValue::I16(value) => scalar!(value, I16),
             #[cfg(feature = "i32")]
-            Value::I32(value) => scalar!(value, I32),
+            LegacyValue::I32(value) => scalar!(value, I32),
             #[cfg(feature = "i64")]
-            Value::I64(value) => scalar!(value, I64),
+            LegacyValue::I64(value) => scalar!(value, I64),
             #[cfg(feature = "i128")]
-            Value::I128(value) => scalar!(value, I128),
+            LegacyValue::I128(value) => scalar!(value, I128),
             #[cfg(feature = "f32")]
-            Value::F32(value) => scalar!(value, F32),
+            LegacyValue::F32(value) => scalar!(value, F32),
             #[cfg(feature = "f64")]
-            Value::F64(value) => scalar!(value, F64),
+            LegacyValue::F64(value) => scalar!(value, F64),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(value) => scalar!(value, String),
+            LegacyValue::String(value) => scalar!(value, String),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(value) => scalar!(value, Bool),
+            LegacyValue::Bool(value) => scalar!(value, Bool),
             #[cfg(feature = "complex")]
-            Value::C64(value) => scalar!(value, C64),
+            LegacyValue::C64(value) => scalar!(value, C64),
             #[cfg(feature = "rational")]
-            Value::R64(value) => scalar!(value, R64),
-            Value::Index(value) => scalar!(value, Index),
-            Value::Id(value) => Ok(Self::new(move || Value::Id(value))),
+            LegacyValue::R64(value) => scalar!(value, R64),
+            LegacyValue::Index(value) => scalar!(value, Index),
+            LegacyValue::Id(value) => Ok(Self::new(move || LegacyValue::Id(value))),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(value) => Ok(capture_snapshot_matrix(value, Value::MatrixBool)),
+            LegacyValue::MatrixBool(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixBool))
+            }
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(value) => Ok(capture_snapshot_matrix(value, Value::MatrixIndex)),
+            LegacyValue::MatrixIndex(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixIndex))
+            }
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(value) => Ok(capture_snapshot_matrix(value, Value::MatrixU8)),
+            LegacyValue::MatrixU8(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixU8))
+            }
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(value) => Ok(capture_snapshot_matrix(value, Value::MatrixU16)),
+            LegacyValue::MatrixU16(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixU16))
+            }
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(value) => Ok(capture_snapshot_matrix(value, Value::MatrixU32)),
+            LegacyValue::MatrixU32(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixU32))
+            }
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(value) => Ok(capture_snapshot_matrix(value, Value::MatrixU64)),
+            LegacyValue::MatrixU64(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixU64))
+            }
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(value) => Ok(capture_snapshot_matrix(value, Value::MatrixU128)),
+            LegacyValue::MatrixU128(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixU128))
+            }
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(value) => Ok(capture_snapshot_matrix(value, Value::MatrixI8)),
+            LegacyValue::MatrixI8(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixI8))
+            }
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(value) => Ok(capture_snapshot_matrix(value, Value::MatrixI16)),
+            LegacyValue::MatrixI16(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixI16))
+            }
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(value) => Ok(capture_snapshot_matrix(value, Value::MatrixI32)),
+            LegacyValue::MatrixI32(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixI32))
+            }
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(value) => Ok(capture_snapshot_matrix(value, Value::MatrixI64)),
+            LegacyValue::MatrixI64(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixI64))
+            }
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(value) => Ok(capture_snapshot_matrix(value, Value::MatrixI128)),
+            LegacyValue::MatrixI128(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixI128))
+            }
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(value) => Ok(capture_snapshot_matrix(value, Value::MatrixF32)),
+            LegacyValue::MatrixF32(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixF32))
+            }
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(value) => Ok(capture_snapshot_matrix(value, Value::MatrixF64)),
+            LegacyValue::MatrixF64(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixF64))
+            }
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(value) => Ok(capture_snapshot_matrix(value, Value::MatrixString)),
+            LegacyValue::MatrixString(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixString))
+            }
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(value) => Ok(capture_snapshot_matrix(value, Value::MatrixR64)),
+            LegacyValue::MatrixR64(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixR64))
+            }
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(value) => Ok(capture_snapshot_matrix(value, Value::MatrixC64)),
+            LegacyValue::MatrixC64(value) => {
+                Ok(capture_snapshot_matrix(value, LegacyValue::MatrixC64))
+            }
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(value) => {
+            LegacyValue::MatrixValue(value) => {
                 let matrix = ValueSnapshotRecreatorMatrix::capture(value)?;
-                Ok(Self::new(move || Value::MatrixValue(matrix.to_matrix())))
+                Ok(Self::new(move || {
+                    LegacyValue::MatrixValue(matrix.to_matrix())
+                }))
             }
             #[cfg(feature = "atom")]
-            Value::Atom(value) => {
+            LegacyValue::Atom(value) => {
                 let value = value.borrow();
                 let id = value.id();
                 let dictionary = value.dictionary().borrow().clone();
                 Ok(Self::new(move || {
-                    Value::Atom(Ref::new(MechAtom((id, Ref::new(dictionary.clone())))))
+                    LegacyValue::Atom(Ref::new(MechAtom((id, Ref::new(dictionary.clone())))))
                 }))
             }
             #[cfg(feature = "set")]
-            Value::Set(value) => {
+            LegacyValue::Set(value) => {
                 let value = value.borrow();
                 let kind = value.kind.clone();
                 let max_elements = value.max_elements;
@@ -757,11 +834,11 @@ impl ValueSnapshotRecreator {
                     value.kind = kind.clone();
                     value.max_elements = max_elements;
                     value.num_elements = num_elements;
-                    Value::Set(Ref::new(value))
+                    LegacyValue::Set(Ref::new(value))
                 }))
             }
             #[cfg(feature = "map")]
-            Value::Map(value) => {
+            LegacyValue::Map(value) => {
                 let value = value.borrow();
                 let key_kind = value.key_kind.clone();
                 let value_kind = value.value_kind.clone();
@@ -777,7 +854,7 @@ impl ValueSnapshotRecreator {
                     })
                     .collect::<MResult<Vec<_>>>()?;
                 Ok(Self::new(move || {
-                    Value::Map(Ref::new(MechMap::from_typed_vec(
+                    LegacyValue::Map(Ref::new(MechMap::from_typed_vec(
                         key_kind.clone(),
                         value_kind.clone(),
                         num_elements,
@@ -789,7 +866,7 @@ impl ValueSnapshotRecreator {
                 }))
             }
             #[cfg(feature = "record")]
-            Value::Record(value) => {
+            LegacyValue::Record(value) => {
                 let value = value.borrow();
                 let cols = value.cols;
                 let kinds = value.kinds.clone();
@@ -805,7 +882,7 @@ impl ValueSnapshotRecreator {
                     })
                     .collect::<MResult<Vec<_>>>()?;
                 Ok(Self::new(move || {
-                    Value::Record(Ref::new(MechRecord::from_parts(
+                    LegacyValue::Record(Ref::new(MechRecord::from_parts(
                         cols,
                         kinds.clone(),
                         fields
@@ -816,7 +893,7 @@ impl ValueSnapshotRecreator {
                 }))
             }
             #[cfg(feature = "table")]
-            Value::Table(value) => {
+            LegacyValue::Table(value) => {
                 let value = value.borrow();
                 let rows = value.rows;
                 let cols = value.cols;
@@ -837,7 +914,7 @@ impl ValueSnapshotRecreator {
                     .map(|(id, name)| (*id, name.clone()))
                     .collect::<Vec<_>>();
                 Ok(Self::new(move || {
-                    Value::Table(Ref::new(MechTable::from_parts(
+                    LegacyValue::Table(Ref::new(MechTable::from_parts(
                         rows,
                         cols,
                         columns
@@ -849,7 +926,7 @@ impl ValueSnapshotRecreator {
                 }))
             }
             #[cfg(feature = "tuple")]
-            Value::Tuple(value) => {
+            LegacyValue::Tuple(value) => {
                 let elements = value
                     .borrow()
                     .elements
@@ -857,13 +934,13 @@ impl ValueSnapshotRecreator {
                     .map(|value| Self::capture_detached((**value).clone()))
                     .collect::<MResult<Vec<_>>>()?;
                 Ok(Self::new(move || {
-                    Value::Tuple(Ref::new(MechTuple::from_vec(
+                    LegacyValue::Tuple(Ref::new(MechTuple::from_vec(
                         elements.iter().map(Self::to_value).collect(),
                     )))
                 }))
             }
             #[cfg(feature = "enum")]
-            Value::Enum(value) => {
+            LegacyValue::Enum(value) => {
                 let value = value.borrow();
                 let id = value.id;
                 let variants = value
@@ -881,7 +958,7 @@ impl ValueSnapshotRecreator {
                     .collect::<MResult<Vec<_>>>()?;
                 let names = value.names.borrow().clone();
                 Ok(Self::new(move || {
-                    Value::Enum(Ref::new(MechEnum {
+                    LegacyValue::Enum(Ref::new(MechEnum {
                         id,
                         variants: variants
                             .iter()
@@ -891,26 +968,28 @@ impl ValueSnapshotRecreator {
                     }))
                 }))
             }
-            Value::MutableReference(value) => {
+            LegacyValue::MutableReference(value) => {
                 let inner = Self::capture_detached(value.borrow().clone())?;
                 Ok(Self::new(move || {
-                    Value::MutableReference(Ref::new(inner.to_value()))
+                    LegacyValue::MutableReference(Ref::new(inner.to_value()))
                 }))
             }
-            Value::Typed(value, kind) => {
+            LegacyValue::Typed(value, kind) => {
                 let inner = Self::capture_detached(*value)?;
                 Ok(Self::new(move || {
-                    Value::Typed(Box::new(inner.to_value()), kind.clone())
+                    LegacyValue::Typed(Box::new(inner.to_value()), kind.clone())
                 }))
             }
-            Value::Kind(kind) => Ok(Self::new(move || Value::Kind(kind.clone()))),
-            Value::IndexAll => Ok(Self::new(|| Value::IndexAll)),
-            Value::EmptyKind(kind) => Ok(Self::new(move || Value::EmptyKind(kind.clone()))),
-            Value::Empty => Ok(Self::new(|| Value::Empty)),
+            LegacyValue::Kind(kind) => Ok(Self::new(move || LegacyValue::Kind(kind.clone()))),
+            LegacyValue::IndexAll => Ok(Self::new(|| LegacyValue::IndexAll)),
+            LegacyValue::EmptyKind(kind) => {
+                Ok(Self::new(move || LegacyValue::EmptyKind(kind.clone())))
+            }
+            LegacyValue::Empty => Ok(Self::new(|| LegacyValue::Empty)),
         }
     }
 
-    pub fn to_value(&self) -> Value {
+    pub fn to_value(&self) -> LegacyValue {
         (self.recreate)()
     }
 }
@@ -926,7 +1005,7 @@ struct ValueSnapshotRecreatorMatrix {
 
 #[cfg(feature = "matrix")]
 impl ValueSnapshotRecreatorMatrix {
-    fn capture(matrix: Matrix<Value>) -> MResult<Self> {
+    fn capture(matrix: Matrix<LegacyValue>) -> MResult<Self> {
         let storage = matrix.storage_form();
         let rows = matrix.rows();
         let cols = matrix.cols();
@@ -943,7 +1022,7 @@ impl ValueSnapshotRecreatorMatrix {
         })
     }
 
-    fn to_matrix(&self) -> Matrix<Value> {
+    fn to_matrix(&self) -> Matrix<LegacyValue> {
         Matrix::from_storage_form(
             self.storage,
             self.elements
@@ -959,7 +1038,7 @@ impl ValueSnapshotRecreatorMatrix {
 #[cfg(feature = "matrix")]
 fn capture_snapshot_matrix<T>(
     matrix: Matrix<T>,
-    wrap: fn(Matrix<T>) -> Value,
+    wrap: fn(Matrix<T>) -> LegacyValue,
 ) -> ValueSnapshotRecreator
 where
     T: Clone + Send + Sync + 'static,

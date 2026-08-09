@@ -1,8 +1,8 @@
 use crate::{
     ContextBase, ContextDeclaration, ContextSend, ExecutionResourceRequest,
-    ExternalResourceWriteFunction, GenericError, InitialSolvePolicy, InterpreterExecution, MResult,
-    MechError, Ref, ResourceDelivery, ResourceIntent, Value, execute_specialized_function,
-    expression,
+    ExternalResourceWriteFunction, GenericError, InitialSolvePolicy, InterpreterExecution,
+    LegacyValue, MResult, MechError, Ref, ResourceDelivery, ResourceIntent,
+    execute_specialized_function, expression,
 };
 
 // Interpreter-local context bindings are for direct interpreter execution.
@@ -10,16 +10,16 @@ use crate::{
 pub fn context_declaration(
     ctx: &ContextDeclaration,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     match &ctx.base {
         ContextBase::ResourceUri(uri) => {
             p.bind_context(&ctx.name, uri.chars.iter().collect::<String>());
-            Ok(Value::Empty)
+            Ok(LegacyValue::Empty)
         }
         ContextBase::Context(base) => match p.context_binding(base) {
             Some(binding) => {
                 p.bind_context_with_name(&ctx.name, binding.context_name, binding.base_uri);
-                Ok(Value::Empty)
+                Ok(LegacyValue::Empty)
             }
             None => Err(MechError::new(
                 GenericError {
@@ -36,7 +36,7 @@ pub fn context_declaration(
 /// Lower a direct source send into the same external resource node used by
 /// decoded bytecode. Runtime capability admission remains outside the engine;
 /// this path only resolves an interpreter-local context binding.
-pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     let context = send.target.context.as_ref().ok_or_else(|| {
         MechError::new(
             GenericError {
@@ -72,7 +72,7 @@ pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult
             delivery: ResourceDelivery::Snapshot,
         },
         input,
-        output: Ref::new(Value::Empty),
+        output: Ref::new(LegacyValue::Empty),
         initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
     };
     execute_specialized_function(Box::new(function), &arguments, p)

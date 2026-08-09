@@ -1,6 +1,7 @@
 use crate::{
-    ActivationArm, ActivationArmBody, Expression, Interpreter, InterpreterExecution, MResult,
-    MechError, MechFunctionImpl, ReactiveCellId, ReactiveSolveStatus, Ref, SliceRef, Token, Value,
+    ActivationArm, ActivationArmBody, Expression, Interpreter, InterpreterExecution, LegacyValue,
+    MResult, MechError, MechFunctionImpl, ReactiveCellId, ReactiveSolveStatus, Ref, SliceRef,
+    Token,
 };
 #[cfg(feature = "compiler")]
 use crate::{BytecodeCompilerContext, GenericError, MechFunctionCompiler, Register};
@@ -55,7 +56,7 @@ pub(super) fn validate_patterned_register_write(
 pub(super) fn elaborate_patterned_arm_body(
     arm: &ActivationArm,
     captures: &[ActivationPatternCapture],
-    pulse: &Value,
+    pulse: &LegacyValue,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<(usize, usize)> {
     let symbols = interpreter.symbols();
@@ -137,11 +138,11 @@ impl MechFunctionImpl for Gate {
         }
     }
 
-    fn out(&self) -> Value {
-        Value::Index(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Index(self.out.clone())
     }
 
-    fn reactive_output_values(&self) -> Vec<Value> {
+    fn reactive_output_values(&self) -> Vec<LegacyValue> {
         let mut outputs = vec![self.out()];
         outputs.extend(
             self.captures
@@ -151,7 +152,7 @@ impl MechFunctionImpl for Gate {
         outputs
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 

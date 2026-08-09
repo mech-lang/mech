@@ -119,14 +119,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -201,7 +201,7 @@ macro_rules! impl_range_increment_inclusive_match_arms {
       match ($arg1, $arg2, $arg3) {
         $(
           #[cfg(feature = $feat)]
-          (Value::[<$ty:camel>](from), Value::[<$ty:camel>](step), Value::[<$ty:camel>](to))  => {
+          (LegacyValue::[<$ty:camel>](from), LegacyValue::[<$ty:camel>](step), LegacyValue::[<$ty:camel>](to))  => {
             let from_val = *from.borrow();
             let step_val = *step.borrow();
             let to_val = *to.borrow();
@@ -270,9 +270,9 @@ macro_rules! impl_range_increment_inclusive_match_arms {
 
 #[cfg(feature = "source")]
 fn impl_range_increment_inclusive_fxn(
-    arg1_value: Value,
-    arg2_value: Value,
-    arg3_value: Value,
+    arg1_value: LegacyValue,
+    arg2_value: LegacyValue,
+    arg3_value: LegacyValue,
 ) -> MResult<Box<dyn MechFunction>> {
     impl_range_increment_inclusive_match_arms!(RangeIncrementInclusiveScalar, arg1_value, arg2_value, arg3_value,
       f32, "f32";
@@ -295,7 +295,7 @@ pub struct RangeIncrementInclusive {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for RangeIncrementInclusive {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -313,46 +313,46 @@ impl FunctionSpecializer for RangeIncrementInclusive {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (arg1, arg2, arg3) {
                 (
-                    Value::MutableReference(arg1),
-                    Value::MutableReference(arg2),
-                    Value::MutableReference(arg3),
+                    LegacyValue::MutableReference(arg1),
+                    LegacyValue::MutableReference(arg2),
+                    LegacyValue::MutableReference(arg3),
                 ) => impl_range_increment_inclusive_fxn(
                     arg1.borrow().clone(),
                     arg2.borrow().clone(),
                     arg3.borrow().clone(),
                 ),
-                (Value::MutableReference(arg1), Value::MutableReference(arg2), arg3) => {
+                (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2), arg3) => {
                     impl_range_increment_inclusive_fxn(
                         arg1.borrow().clone(),
                         arg2.borrow().clone(),
                         arg3.clone(),
                     )
                 }
-                (Value::MutableReference(arg1), arg2, Value::MutableReference(arg3)) => {
+                (LegacyValue::MutableReference(arg1), arg2, LegacyValue::MutableReference(arg3)) => {
                     impl_range_increment_inclusive_fxn(
                         arg1.borrow().clone(),
                         arg2.clone(),
                         arg3.borrow().clone(),
                     )
                 }
-                (Value::MutableReference(arg1), arg2, arg3) => impl_range_increment_inclusive_fxn(
+                (LegacyValue::MutableReference(arg1), arg2, arg3) => impl_range_increment_inclusive_fxn(
                     arg1.borrow().clone(),
                     arg2.clone(),
                     arg3.clone(),
                 ),
-                (arg1, Value::MutableReference(arg2), Value::MutableReference(arg3)) => {
+                (arg1, LegacyValue::MutableReference(arg2), LegacyValue::MutableReference(arg3)) => {
                     impl_range_increment_inclusive_fxn(
                         arg1.clone(),
                         arg2.borrow().clone(),
                         arg3.borrow().clone(),
                     )
                 }
-                (arg1, Value::MutableReference(arg2), arg3) => impl_range_increment_inclusive_fxn(
+                (arg1, LegacyValue::MutableReference(arg2), arg3) => impl_range_increment_inclusive_fxn(
                     arg1.clone(),
                     arg2.borrow().clone(),
                     arg3.clone(),
                 ),
-                (arg1, arg2, Value::MutableReference(arg3)) => impl_range_increment_inclusive_fxn(
+                (arg1, arg2, LegacyValue::MutableReference(arg3)) => impl_range_increment_inclusive_fxn(
                     arg1.clone(),
                     arg2.clone(),
                     arg3.borrow().clone(),

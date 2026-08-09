@@ -1,8 +1,8 @@
 use crate::apply_stable_value_update;
 use mech_core::{
-    ExecutionHostFunctionRequest, InitialSolvePolicy, MResult, MechExecutionServices,
+    ExecutionHostFunctionRequest, InitialSolvePolicy, LegacyValue, MResult, MechExecutionServices,
     MechFunctionImpl, NoMechExecutionServices, ReactiveDependencyScope, ReactiveSolveStatus,
-    ValRef, Value,
+    ValRef,
 };
 
 #[cfg(feature = "compiler")]
@@ -11,7 +11,7 @@ use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCom
 #[derive(Clone, Debug)]
 pub struct ExternalHostCallFunction {
     pub request: ExecutionHostFunctionRequest,
-    pub arguments: Vec<Value>,
+    pub arguments: Vec<LegacyValue>,
     pub output: ValRef,
     pub initial_solve_policy: InitialSolvePolicy,
 }
@@ -23,7 +23,7 @@ impl ExternalHostCallFunction {
         let arguments = self
             .arguments
             .iter()
-            .map(Value::try_deep_snapshot)
+            .map(LegacyValue::try_deep_snapshot)
             .collect::<MResult<Vec<_>>>()?;
         let result = services.invoke_host_function(&self.request, &arguments)?;
         apply_stable_value_update(self.output.clone(), result)?;
@@ -64,12 +64,12 @@ impl MechFunctionImpl for ExternalHostCallFunction {
         Some(vec![ReactiveDependencyScope::Logical; argument_count])
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.output.borrow().clone()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(vec![Value::MutableReference(self.output.clone())])
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(vec![LegacyValue::MutableReference(self.output.clone())])
     }
 
     fn to_string(&self) -> String {

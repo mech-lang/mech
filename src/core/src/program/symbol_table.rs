@@ -87,7 +87,7 @@ impl SymbolTable {
         self.symbols.contains_key(&key)
     }
 
-    pub fn insert(&mut self, key: u64, value: Value, mutable: bool) -> ValRef {
+    pub fn insert(&mut self, key: u64, value: LegacyValue, mutable: bool) -> ValRef {
         self.insert_cell(key, Ref::new(value), mutable)
     }
 
@@ -110,7 +110,7 @@ mod snapshot_tests {
         let mut table = SymbolTable::new();
         let outer = hash_str("outer");
         let temporary = hash_str("temporary");
-        let outer_ref = table.insert(outer, Value::Index(Ref::new(1)), true);
+        let outer_ref = table.insert(outer, LegacyValue::Index(Ref::new(1)), true);
         table
             .dictionary
             .borrow_mut()
@@ -119,8 +119,8 @@ mod snapshot_tests {
         let dictionary_addr = table.dictionary.addr();
         let original_snapshot = table.snapshot();
 
-        table.insert(outer, Value::Index(Ref::new(2)), false);
-        table.insert(temporary, Value::Index(Ref::new(3)), false);
+        table.insert(outer, LegacyValue::Index(Ref::new(2)), false);
+        table.insert(temporary, LegacyValue::Index(Ref::new(3)), false);
         table
             .dictionary
             .borrow_mut()

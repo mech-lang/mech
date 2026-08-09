@@ -2,7 +2,7 @@
 use super::super::ValueMatrixComprehension;
 #[cfg(feature = "set_comprehensions")]
 use super::super::ValueSetComprehension;
-use crate::{FunctionArgs, MechFunctionFactory, MechFunctionImpl, MechSet, Ref, Value};
+use crate::{FunctionArgs, LegacyValue, MechFunctionFactory, MechFunctionImpl, MechSet, Ref};
 #[cfg(feature = "compiler")]
 use mech_bytecode::CompileCtx;
 #[cfg(feature = "compiler")]
@@ -13,7 +13,7 @@ use nalgebra::DMatrix;
 #[cfg(feature = "matrix_comprehensions")]
 #[test]
 fn transaction_state_retains_matrix_comprehension_outer_output_ref() {
-    let out = Ref::new(Value::Empty);
+    let out = Ref::new(LegacyValue::Empty);
     let function = ValueMatrixComprehension {
         arguments: Vec::new(),
         out: out.clone(),
@@ -22,7 +22,7 @@ fn transaction_state_retains_matrix_comprehension_outer_output_ref() {
     let values = function.transaction_state_values().unwrap();
     assert_eq!(values.len(), 1);
     match &values[0] {
-        Value::MutableReference(root) => assert_eq!(root.addr(), out.addr()),
+        LegacyValue::MutableReference(root) => assert_eq!(root.addr(), out.addr()),
         other => panic!("expected mutable-reference transaction root, got {other:?}"),
     }
 }
@@ -30,15 +30,15 @@ fn transaction_state_retains_matrix_comprehension_outer_output_ref() {
 #[cfg(feature = "matrix_comprehensions")]
 #[test]
 fn matrix_comprehension_factory_reconstructs_variadic_inputs() {
-    let first = Value::from(1.0f64);
-    let second = Value::from(2.0f64);
+    let first = LegacyValue::from(1.0f64);
+    let second = LegacyValue::from(2.0f64);
     let function = ValueMatrixComprehension::new(FunctionArgs::Variadic(
-        Value::MatrixF64(crate::Matrix::DMatrix(Ref::new(DMatrix::zeros(1, 2)))),
+        LegacyValue::MatrixF64(crate::Matrix::DMatrix(Ref::new(DMatrix::zeros(1, 2)))),
         vec![first, second],
     ))
     .unwrap();
     function.solve_result().unwrap();
-    let Value::MatrixF64(matrix) = function.out() else {
+    let LegacyValue::MatrixF64(matrix) = function.out() else {
         panic!("expected matrix comprehension output")
     };
     assert_eq!(matrix.as_vec(), vec![1.0, 2.0]);
@@ -49,12 +49,12 @@ fn matrix_comprehension_factory_reconstructs_variadic_inputs() {
 fn set_comprehension_factory_preserves_checked_set_output() {
     let output = Ref::new(MechSet::from_vec(Vec::new()));
     let function = ValueSetComprehension::new(FunctionArgs::Variadic(
-        Value::Set(output.clone()),
-        vec![Value::from(7u8)],
+        LegacyValue::Set(output.clone()),
+        vec![LegacyValue::from(7u8)],
     ))
     .unwrap();
     function.solve_result().unwrap();
-    let Value::Set(actual) = function.out() else {
+    let LegacyValue::Set(actual) = function.out() else {
         panic!("expected set comprehension output")
     };
     assert_eq!(actual.addr(), output.addr());
@@ -64,7 +64,7 @@ fn set_comprehension_factory_preserves_checked_set_output() {
 #[cfg(feature = "set_comprehensions")]
 #[test]
 fn set_comprehension_factory_rejects_non_set_output() {
-    let result = ValueSetComprehension::new(FunctionArgs::Variadic(Value::Empty, Vec::new()));
+    let result = ValueSetComprehension::new(FunctionArgs::Variadic(LegacyValue::Empty, Vec::new()));
     let error = match result {
         Ok(_) => panic!("non-set bytecode output should be rejected"),
         Err(error) => error,
@@ -78,8 +78,8 @@ fn set_comprehension_factory_rejects_non_set_output() {
 #[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
 #[test]
 fn set_comprehension_bytecode_encodes_ordered_child_registers() {
-    let first = Value::from(1u8);
-    let second = Value::from(2u8);
+    let first = LegacyValue::from(1u8);
+    let second = LegacyValue::from(2u8);
     let function = ValueSetComprehension {
         arguments: vec![first, second],
         out: Ref::new(MechSet::from_vec(Vec::new())),
@@ -99,10 +99,10 @@ fn set_comprehension_bytecode_encodes_ordered_child_registers() {
 #[cfg(all(feature = "matrix_comprehensions", feature = "compiler"))]
 #[test]
 fn matrix_comprehension_bytecode_reuses_repeated_child_registers() {
-    let repeated = Value::from(3.0f64);
+    let repeated = LegacyValue::from(3.0f64);
     let function = ValueMatrixComprehension {
         arguments: vec![repeated.clone(), repeated],
-        out: Ref::new(Value::MatrixF64(crate::Matrix::DMatrix(Ref::new(
+        out: Ref::new(LegacyValue::MatrixF64(crate::Matrix::DMatrix(Ref::new(
             DMatrix::zeros(1, 2),
         )))),
     };

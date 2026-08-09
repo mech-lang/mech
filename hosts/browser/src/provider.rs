@@ -2,7 +2,7 @@ use crate::{
     BROWSER_DOM_PROVIDER_URI, BrowserAuthority, BrowserDomManifestEntry, BrowserDomPath,
     BrowserHostConfig, BrowserHostRuntimeConfig, BrowserOperation, browser_capability_error,
 };
-use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
+use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use mech_runtime::{
@@ -113,7 +113,7 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
         ]]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if !self.matches_dom_base(&request.base_uri) {
             return Err(browser_resource_provider_error(
                 &request.base_uri,
@@ -136,7 +136,7 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
         self.authority
             .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Read)
             .map_err(browser_capability_error)?;
-        Ok(Value::String(Ref::new(
+        Ok(LegacyValue::String(Ref::new(
             self.backend
                 .lock()
                 .map_err(|_| {
@@ -203,7 +203,7 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
                 )
             })?;
         let value = match request.value {
-            Value::String(value) => value.borrow().as_str().to_string(),
+            LegacyValue::String(value) => value.borrow().as_str().to_string(),
             value => value.format_value_inline(),
         };
         Ok(PreparedRuntimeEffect::AfterCommit(Box::new(

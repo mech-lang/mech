@@ -3,7 +3,9 @@ use crate::{
     RuntimeEffectMetadata, RuntimeEffectSource, RuntimeInvalidOperationError,
     RuntimeTransactionalEffect,
 };
-use mech_core::{ExecutionHostFunctionRequest, MResult, MechError, MechExecutionServices, Value};
+use mech_core::{
+    ExecutionHostFunctionRequest, LegacyValue, MResult, MechError, MechExecutionServices,
+};
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug)]
@@ -39,7 +41,7 @@ pub(super) fn invoke_host_callback(
     runtime: &mut MechRuntime,
     context: &mut RuntimeContext,
     name: &str,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     runtime.with_runtime_execution_session(context, |services| {
         services.invoke_host_function(
             &ExecutionHostFunctionRequest {

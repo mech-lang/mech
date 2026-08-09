@@ -1,4 +1,4 @@
-use crate::Value;
+use crate::LegacyValue;
 #[cfg(feature = "enum")]
 use crate::{EnumDefine, InterpreterExecution, MResult, MechEnum, Ref, kind_annotation};
 #[cfg(all(feature = "enum", feature = "atom"))]
@@ -7,7 +7,7 @@ use crate::{OperationId, ValueKind};
 #[cfg(feature = "enum")]
 pub fn enum_define(enm_def: &EnumDefine, p: &InterpreterExecution<'_>) -> MResult<()> {
     let id = enm_def.name.hash();
-    let mut variants: Vec<(u64, Option<Value>)> = Vec::new();
+    let mut variants: Vec<(u64, Option<LegacyValue>)> = Vec::new();
     {
         let mut state_brrw = p.state.borrow_mut();
         for v in &enm_def.variants {
@@ -15,7 +15,7 @@ pub fn enum_define(enm_def: &EnumDefine, p: &InterpreterExecution<'_>) -> MResul
                 Some(kind_annotation_node) => {
                     let knd = kind_annotation(&kind_annotation_node.kind, p)?;
                     let vk = knd.to_value_kind(&mut state_brrw.kinds)?;
-                    Some(Value::Kind(vk))
+                    Some(LegacyValue::Kind(vk))
                 }
                 None => None,
             };
@@ -37,7 +37,7 @@ pub fn enum_define(enm_def: &EnumDefine, p: &InterpreterExecution<'_>) -> MResul
         variants,
         names: dictionary,
     };
-    let val = Value::Enum(Ref::new(enm.clone()));
+    let val = LegacyValue::Enum(Ref::new(enm.clone()));
     state_brrw.enums.insert(id, enm.clone());
     state_brrw.kinds.insert(id, val.kind());
     Ok(())
@@ -45,7 +45,7 @@ pub fn enum_define(enm_def: &EnumDefine, p: &InterpreterExecution<'_>) -> MResul
 
 #[cfg(all(feature = "enum", feature = "atom"))]
 pub(super) fn value_matches_enum_variant(
-    value: &Value,
+    value: &LegacyValue,
     enum_id: u64,
     p: &InterpreterExecution<'_>,
 ) -> bool {
@@ -67,7 +67,7 @@ pub(super) fn value_matches_enum_variant(
         short_variant == short_atom
     };
     match value {
-        Value::Enum(enum_value) => {
+        LegacyValue::Enum(enum_value) => {
             let enum_value_brrw = enum_value.borrow();
             if enum_value_brrw.id != enum_id {
                 return false;
@@ -86,24 +86,29 @@ pub(super) fn value_matches_enum_variant(
             };
             match (payload, declared_payload_kind) {
                 (None, None) => true,
-                (Some(payload_value), Some(Value::Kind(expected_kind))) => match expected_kind {
-                    ValueKind::Enum(inner_enum_id, _) => {
-                        value_matches_enum_variant(payload_value, *inner_enum_id, p)
+                (Some(payload_value), Some(LegacyValue::Kind(expected_kind))) => {
+                    match expected_kind {
+                        ValueKind::Enum(inner_enum_id, _) => {
+                            value_matches_enum_variant(payload_value, *inner_enum_id, p)
+                        }
+                        _ => {
+                            payload_value.kind() == expected_kind.clone()
+                                || p.specialize_visible_operation_named(
+                                    OperationId::from_name("convert/kind"),
+                                    Some("convert/kind"),
+                                    &[
+                                        payload_value.clone(),
+                                        LegacyValue::Kind(expected_kind.clone()),
+                                    ],
+                                )
+                                .is_ok()
+                        }
                     }
-                    _ => {
-                        payload_value.kind() == expected_kind.clone()
-                            || p.specialize_visible_operation_named(
-                                OperationId::from_name("convert/kind"),
-                                Some("convert/kind"),
-                                &[payload_value.clone(), Value::Kind(expected_kind.clone())],
-                            )
-                            .is_ok()
-                    }
-                },
+                }
                 _ => false,
             }
         }
-        Value::Atom(atom_variant) => {
+        LegacyValue::Atom(atom_variant) => {
             let atom_brrw = atom_variant.borrow();
             let variant_id = atom_brrw.id();
             let atom_name = atom_brrw.name();
@@ -116,13 +121,13 @@ pub(super) fn value_matches_enum_variant(
                 })
         }
         #[cfg(feature = "tuple")]
-        Value::Tuple(tuple_val) => {
+        LegacyValue::Tuple(tuple_val) => {
             let tuple_brrw = tuple_val.borrow();
             if tuple_brrw.elements.len() != 2 {
                 return false;
             }
             let variant_atom = match tuple_brrw.elements[0].as_ref() {
-                Value::Atom(atom) => atom.borrow(),
+                LegacyValue::Atom(atom) => atom.borrow(),
                 _ => return false,
             };
             let variant_id = variant_atom.id();
@@ -136,7 +141,7 @@ pub(super) fn value_matches_enum_variant(
                     None => return false,
                 };
             match declared_payload_kind {
-                Some(Value::Kind(expected_kind)) => match expected_kind {
+                Some(LegacyValue::Kind(expected_kind)) => match expected_kind {
                     ValueKind::Enum(inner_enum_id, _) => {
                         value_matches_enum_variant(payload, *inner_enum_id, p)
                     }
@@ -145,7 +150,7 @@ pub(super) fn value_matches_enum_variant(
                             || p.specialize_visible_operation_named(
                                 OperationId::from_name("convert/kind"),
                                 Some("convert/kind"),
-                                &[payload.clone(), Value::Kind(expected_kind.clone())],
+                                &[payload.clone(), LegacyValue::Kind(expected_kind.clone())],
                             )
                             .is_ok()
                     }

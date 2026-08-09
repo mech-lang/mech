@@ -40,9 +40,9 @@ pub type InterpreterRef = Ref<Box<Interpreter>>;
 #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
 #[derive(Debug)]
 struct BytecodeHashedCompositePack {
-    template: Value,
-    children: Vec<Value>,
-    output: Value,
+    template: LegacyValue,
+    children: Vec<LegacyValue>,
+    output: LegacyValue,
 }
 
 #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
@@ -51,11 +51,11 @@ impl MechFunctionImpl for BytecodeHashedCompositePack {
         let rebuilt = mech_core::rebuild_bytecode_composite(&self.template, self.children.clone())?;
         match (&self.output, rebuilt) {
             #[cfg(feature = "map")]
-            (Value::Map(output), Value::Map(rebuilt)) => {
+            (LegacyValue::Map(output), LegacyValue::Map(rebuilt)) => {
                 *output.borrow_mut() = rebuilt.borrow().clone();
             }
             #[cfg(feature = "set")]
-            (Value::Set(output), Value::Set(rebuilt)) => {
+            (LegacyValue::Set(output), LegacyValue::Set(rebuilt)) => {
                 *output.borrow_mut() = rebuilt.borrow().clone();
             }
             _ => {
@@ -71,11 +71,11 @@ impl MechFunctionImpl for BytecodeHashedCompositePack {
         Ok(())
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.output.clone()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 
@@ -134,10 +134,10 @@ pub struct Interpreter {
     #[cfg(feature = "functions")]
     pub stack: Vec<Frame>,
     bytecode_registers: BytecodeRegisterFile,
-    constants: Vec<Value>,
+    constants: Vec<LegacyValue>,
     pub code: Vec<MechSourceCode>,
-    pub out: Value,
-    pub out_values: Ref<HashMap<u64, Value>>,
+    pub out: LegacyValue,
+    pub out_values: Ref<HashMap<u64, LegacyValue>>,
     #[cfg(feature = "subscript_formula")]
     pub string_access_live_values: Ref<std::collections::BTreeSet<usize>>,
     #[cfg(feature = "subscript_formula")]
@@ -440,7 +440,7 @@ struct UserFunctionDefinitionCheckpoint {
     symbols_target: SymbolTableRef,
     symbols: SymbolTableSnapshot,
     symbol_dictionary_target: Ref<Dictionary>,
-    out_target: Ref<Value>,
+    out_target: Ref<LegacyValue>,
     plan_target: Plan,
     plan: PlanCheckpoint,
 }
@@ -540,12 +540,12 @@ impl UserFunctionsCheckpoint {
         Ok(())
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         let mut values = Vec::new();
         let mut seen_refs = HashSet::new();
         for definition in &self.definitions {
             if seen_refs.insert(definition.out_target.addr()) {
-                values.push(Value::MutableReference(definition.out_target.clone()));
+                values.push(LegacyValue::MutableReference(definition.out_target.clone()));
             }
             let symbols = definition
                 .symbols_target
@@ -557,7 +557,7 @@ impl UserFunctionsCheckpoint {
                 .chain(symbols.mutable_variables.values())
             {
                 if seen_refs.insert(value.addr()) {
-                    values.push(Value::MutableReference(value.clone()));
+                    values.push(LegacyValue::MutableReference(value.clone()));
                 }
             }
             drop(symbols);
@@ -803,10 +803,10 @@ struct InterpreterStructureCheckpoint {
     #[cfg(feature = "functions")]
     frame_checkpoints: Vec<FrameCellCheckpoint>,
     bytecode_registers: BytecodeRegisterFileCheckpoint,
-    constants: Vec<Value>,
+    constants: Vec<LegacyValue>,
     code: Vec<MechSourceCode>,
-    out: Value,
-    out_values: RefPayloadCheckpoint<HashMap<u64, Value>>,
+    out: LegacyValue,
+    out_values: RefPayloadCheckpoint<HashMap<u64, LegacyValue>>,
     #[cfg(feature = "subscript_formula")]
     string_access_live_values: RefPayloadCheckpoint<std::collections::BTreeSet<usize>>,
     #[cfg(feature = "subscript_formula")]
@@ -1480,7 +1480,7 @@ impl Interpreter {
             state
                 .symbol_table
                 .borrow_mut()
-                .insert(ans_id, Value::Empty, false);
+                .insert(ans_id, LegacyValue::Empty, false);
             state
                 .symbol_table
                 .borrow_mut()
@@ -1516,7 +1516,7 @@ impl Interpreter {
             stack: Vec::new(),
             bytecode_registers: BytecodeRegisterFile::new(0),
             constants: Vec::new(),
-            out: Value::Empty,
+            out: LegacyValue::Empty,
             sub_interpreters: Ref::new(HashMap::new()),
             out_values: Ref::new(HashMap::new()),
             #[cfg(feature = "subscript_formula")]
@@ -1796,7 +1796,7 @@ impl Interpreter {
     }
 
     #[cfg(feature = "functions")]
-    pub fn solve_plan(&mut self) -> MResult<Value> {
+    pub fn solve_plan(&mut self) -> MResult<LegacyValue> {
         let mut services = NoMechExecutionServices;
         self.solve_plan_with_services(&mut services)
     }
@@ -1805,12 +1805,12 @@ impl Interpreter {
     pub fn solve_plan_with_services(
         &mut self,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         self.step_with_services(0, 1, services)
     }
 
     #[cfg(feature = "functions")]
-    pub fn step(&mut self, step_id: usize, step_count: u64) -> MResult<Value> {
+    pub fn step(&mut self, step_id: usize, step_count: u64) -> MResult<LegacyValue> {
         let mut services = NoMechExecutionServices;
         self.step_with_services(step_id, step_count, &mut services)
     }
@@ -1821,7 +1821,7 @@ impl Interpreter {
         step_id: usize,
         step_count: u64,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         let checkpoint = self.reactive_turn_checkpoint()?;
         with_reactive_journal_participant(|mut participant| {
             let execution = self.step_reactive_turn_participating(
@@ -1854,7 +1854,7 @@ impl Interpreter {
         step_count: u64,
         participant: &mut ReactiveJournalParticipant<'_>,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         let state_brrw = self.state.borrow();
         let mut plan_brrw = state_brrw
             .plan
@@ -1955,7 +1955,7 @@ impl Interpreter {
     }
 
     #[cfg(all(feature = "source", feature = "functions"))]
-    pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
+    pub fn interpret(&mut self, tree: &Program) -> MResult<LegacyValue> {
         let mut services = NoMechExecutionServices;
         self.interpret_with_services(tree, &mut services)
     }
@@ -1965,7 +1965,7 @@ impl Interpreter {
         &mut self,
         tree: &Program,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         self.code.push(MechSourceCode::Tree(tree.clone()));
         let result = catch_unwind(AssertUnwindSafe(|| {
             let execution = InterpreterExecution::new(self, services);
@@ -2002,7 +2002,7 @@ impl Interpreter {
     }
 
     #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
-    pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
+    pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<LegacyValue> {
         let mut services = NoMechExecutionServices;
         self.run_program_with_services(program, &mut services)
     }
@@ -2012,7 +2012,7 @@ impl Interpreter {
         &mut self,
         program: &ParsedProgram,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         program.validate_runtime_contracts(&self.function_catalog)?;
         let checkpoint = self.checkpoint()?;
         match self.run_validated_program_with_services(program, services) {
@@ -2037,7 +2037,7 @@ impl Interpreter {
         &mut self,
         program: &ParsedProgram,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         // Reset the instruction pointer
         self.ip = 0;
         self.clear_plan();
@@ -2074,9 +2074,9 @@ impl Interpreter {
                             mech_core::rebuild_bytecode_composite(&template, children.clone())?;
                         let hashed = match &value {
                             #[cfg(feature = "map")]
-                            Value::Map(_) => true,
+                            LegacyValue::Map(_) => true,
                             #[cfg(feature = "set")]
-                            Value::Set(_) => true,
+                            LegacyValue::Set(_) => true,
                             _ => false,
                         };
                         self.bytecode_registers.load(*dst, value)?;
@@ -2226,7 +2226,7 @@ impl Interpreter {
                                     .map(|register| {
                                         self.bytecode_registers.function_argument(*register)
                                     })
-                                    .collect::<MResult<Vec<Value>>>()?;
+                                    .collect::<MResult<Vec<LegacyValue>>>()?;
                                 let function_args = FunctionArgs::Variadic(out, argument_values);
                                 self.out =
                                     register_bytecode_function(&state_brrw, entry, function_args)?;
@@ -2250,7 +2250,7 @@ impl Interpreter {
                         let argument_values = arguments
                             .iter()
                             .map(|register| self.bytecode_registers.external_input(*register))
-                            .collect::<MResult<Vec<Value>>>()?;
+                            .collect::<MResult<Vec<LegacyValue>>>()?;
                         let output = self.bytecode_registers.cell(*dst)?;
                         self.out = register_bytecode_node(
                             &state_brrw,
@@ -2430,7 +2430,7 @@ impl Interpreter {
                     };
                     let metadata_string = |index: usize, label: &str| -> MResult<String> {
                         match self.bytecode_registers.value(metadata[index])? {
-                            Value::String(value) => Ok(value.borrow().clone()),
+                            LegacyValue::String(value) => Ok(value.borrow().clone()),
                             value => Err(MechError::new(
                                 BytecodeValidationError {
                                     reason: format!(
@@ -2457,8 +2457,8 @@ impl Interpreter {
                     }
                     let expression = metadata_string(2, "expression")?;
                     let operator = match self.bytecode_registers.value(metadata[3])? {
-                        Value::Empty => None,
-                        Value::String(value) => Some(match value.borrow().as_str() {
+                        LegacyValue::Empty => None,
+                        LegacyValue::String(value) => Some(match value.borrow().as_str() {
                             "eq" => FormulaOperator::Comparison(ComparisonOp::Equal),
                             "neq" => FormulaOperator::Comparison(ComparisonOp::NotEqual),
                             "lt" => FormulaOperator::Comparison(ComparisonOp::LessThan),
@@ -2492,7 +2492,7 @@ impl Interpreter {
                     };
                     let optional_operand = |index: usize| -> MResult<Option<ValRef>> {
                         match self.bytecode_registers.value(metadata[index])? {
-                            Value::Empty => Ok(None),
+                            LegacyValue::Empty => Ok(None),
                             value if operator.is_none() => Err(MechError::new(
                                 BytecodeValidationError {
                                     reason: format!(
@@ -2559,7 +2559,7 @@ fn register_bytecode_function(
     state: &ProgramState,
     entry: &RuntimeFunctionEntry,
     function_args: FunctionArgs,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let input_values = function_args.input_values();
     let function = entry.instantiate(function_args)?;
     register_bytecode_node(state, function, &input_values)
@@ -2569,8 +2569,8 @@ fn register_bytecode_function(
 fn register_bytecode_node(
     state: &ProgramState,
     function: Box<dyn MechFunction>,
-    input_values: &[Value],
-) -> MResult<Value> {
+    input_values: &[LegacyValue],
+) -> MResult<LegacyValue> {
     let output = function.out();
     state.plan.register_function(function, input_values)?;
     Ok(output)
@@ -2877,7 +2877,7 @@ impl<'a> InterpreterExecution<'a> {
     pub fn specialize_visible_operation(
         &self,
         operation: OperationId,
-        arguments: &[Value],
+        arguments: &[LegacyValue],
     ) -> MResult<Box<dyn MechFunction>> {
         self.specialize_visible_operation_named(operation, None, arguments)
     }
@@ -2887,7 +2887,7 @@ impl<'a> InterpreterExecution<'a> {
         &self,
         operation: OperationId,
         canonical_name: Option<&str>,
-        arguments: &[Value],
+        arguments: &[LegacyValue],
     ) -> MResult<Box<dyn MechFunction>> {
         let state = self.state.borrow();
         FunctionResolver::new(

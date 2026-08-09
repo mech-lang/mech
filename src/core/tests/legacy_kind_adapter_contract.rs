@@ -1,5 +1,5 @@
 use mech_core::kind::Kind;
-use mech_core::value::ValueKind;
+use mech_core::legacy_value::ValueKind;
 use mech_core::{
     DimensionEnvironmentBuilder, DimensionExpr, DimensionLifetime, DimensionParameterId,
     DimensionParameterOrigin, EnumVariantSchema, KindExpr, KindId, KindNameCategory,

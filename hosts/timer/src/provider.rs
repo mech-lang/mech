@@ -1,4 +1,4 @@
-use mech_core::{MResult, Ref, Value};
+use mech_core::{LegacyValue, MResult, Ref};
 use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest};
 
 use crate::{SharedTimerSnapshot, TimerSnapshot, timer_error, timer_input_base_uri};
@@ -21,7 +21,7 @@ impl TimerResourceProvider {
         timer_input_base_uri(&self.instance)
     }
 
-    fn value_for(snapshot: TimerSnapshot, path: &str) -> MResult<Value> {
+    fn value_for(snapshot: TimerSnapshot, path: &str) -> MResult<LegacyValue> {
         let value = match path {
             "tick" => snapshot.tick as f64,
             "elapsed-ms" => snapshot.elapsed_ms,
@@ -36,7 +36,7 @@ impl TimerResourceProvider {
                 ));
             }
         };
-        Ok(Value::F64(Ref::new(value)))
+        Ok(LegacyValue::F64(Ref::new(value)))
     }
 }
 
@@ -48,7 +48,7 @@ impl RuntimeResourceProvider for TimerResourceProvider {
         vec![self.base_uri()]
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri != self.base_uri() {
             return Err(timer_error(
                 "TimerResourceProvider",
@@ -58,7 +58,7 @@ impl RuntimeResourceProvider for TimerResourceProvider {
         Self::value_for(TimerSnapshot::default(), &request.path)
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri != self.base_uri() {
             return Err(timer_error(
                 "TimerResourceProvider",
@@ -86,9 +86,9 @@ mod tests {
         }
     }
 
-    fn f64_value(value: Value) -> f64 {
+    fn f64_value(value: LegacyValue) -> f64 {
         match value {
-            Value::F64(value) => *value.borrow(),
+            LegacyValue::F64(value) => *value.borrow(),
             value => panic!("expected F64, got {value:?}"),
         }
     }

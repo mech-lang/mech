@@ -14,8 +14,8 @@ use crate::{
     SourceDeclaration, SourceIndex,
 };
 use mech_core::{
-    ApplicationRequirement, ExecutionResourceRequest, MResult, MechError, MechErrorKind,
-    MechSourceCode, ResourceDelivery, ResourceIntent, Value, hash_str,
+    ApplicationRequirement, ExecutionResourceRequest, LegacyValue, MResult, MechError,
+    MechErrorKind, MechSourceCode, ResourceDelivery, ResourceIntent, hash_str,
 };
 use mech_engine::MechProgram;
 use std::sync::Arc;
@@ -320,7 +320,7 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         target: &mut RuntimeProgramTarget<'_>,
         tree: &mech_core::Program,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         match target {
             RuntimeProgramTarget::Retained => self
                 .with_retained_program_execution_session(context, |program, services| {
@@ -338,7 +338,7 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         target: &mut RuntimeProgramTarget<'_>,
         source: &MechSourceCode,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         match target {
             RuntimeProgramTarget::Retained => self
                 .with_retained_program_execution_session(context, |program, services| {
@@ -852,7 +852,7 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         target: &mut RuntimeProgramTarget<'_>,
         pending: &mut Vec<mech_core::SectionElement>,
-        result: &mut Value,
+        result: &mut LegacyValue,
     ) -> MResult<()> {
         if pending.is_empty() {
             return Ok(());
@@ -1111,11 +1111,14 @@ impl MechRuntime {
         }
     }
 
-    fn resolved_pattern_value_expression(&self, value: Value) -> MResult<mech_core::Expression> {
+    fn resolved_pattern_value_expression(
+        &self,
+        value: LegacyValue,
+    ) -> MResult<mech_core::Expression> {
         let value = resolve_runtime_value(value);
         match value {
             #[cfg(feature = "string")]
-            Value::String(value) => {
+            LegacyValue::String(value) => {
                 let text = value.borrow().clone();
                 Ok(mech_core::Expression::Literal(mech_core::Literal::String(
                     mech_core::MechString {
@@ -1128,7 +1131,7 @@ impl MechRuntime {
                 )))
             }
             #[cfg(feature = "bool")]
-            Value::Bool(value) => {
+            LegacyValue::Bool(value) => {
                 let flag = *value.borrow();
                 Ok(mech_core::Expression::Literal(mech_core::Literal::Boolean(
                     mech_core::Token::new(
@@ -1146,7 +1149,7 @@ impl MechRuntime {
                     ),
                 )))
             }
-            Value::Empty => Ok(mech_core::Expression::Literal(mech_core::Literal::Empty(
+            LegacyValue::Empty => Ok(mech_core::Expression::Literal(mech_core::Literal::Empty(
                 mech_core::Token::new(
                     mech_core::TokenKind::Empty,
                     mech_core::SourceRange::default(),
@@ -1613,7 +1616,7 @@ impl MechRuntime {
         registry: &RuntimeContextRegistry,
         pending: &mut Vec<mech_core::SectionElement>,
         pending_codes: &mut Vec<(mech_core::MechCode, Option<mech_core::Comment>)>,
-        result: &mut Value,
+        result: &mut LegacyValue,
         skip_non_context_imports: bool,
         code: &mech_core::MechCode,
         comment: &Option<mech_core::Comment>,
@@ -1642,7 +1645,7 @@ impl MechRuntime {
                 {
                     *result = resolve_runtime_value(value.borrow().clone());
                 } else {
-                    *result = Value::Empty;
+                    *result = LegacyValue::Empty;
                 }
                 Ok(())
             }
@@ -3458,9 +3461,9 @@ pub(super) fn single_code_program(
     }
 }
 
-pub(super) fn resolve_runtime_value(value: Value) -> Value {
+pub(super) fn resolve_runtime_value(value: LegacyValue) -> LegacyValue {
     match value {
-        Value::MutableReference(value) => value.borrow().clone(),
+        LegacyValue::MutableReference(value) => value.borrow().clone(),
         other => other,
     }
 }

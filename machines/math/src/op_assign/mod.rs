@@ -240,14 +240,14 @@ macro_rules! impl_op_assign_range_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -414,14 +414,14 @@ macro_rules! impl_op_assign_range_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -455,7 +455,7 @@ macro_rules! impl_op_assign_range_fxn_v {
 macro_rules! op_assign_range_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
     paste::paste! {
-      fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      fn $op_fxn_name(sink: LegacyValue, source: LegacyValue, ixes: Vec<LegacyValue>) -> MResult<Box<dyn MechFunction>> {
         let arg = (sink.clone(), ixes.as_slice(), source.clone());
                      impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u8, "u8")
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u16, "u16"))
@@ -485,7 +485,7 @@ macro_rules! op_assign_range_fxn {
 macro_rules! op_assign_range_all_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
     paste::paste! {
-      fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      fn $op_fxn_name(sink: LegacyValue, source: LegacyValue, ixes: Vec<LegacyValue>) -> MResult<Box<dyn MechFunction>> {
         let arg = (sink.clone(), ixes.as_slice(), source.clone());
                      impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u8, "u8")
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u16, "u16"))
@@ -563,11 +563,11 @@ macro_rules! impl_assign_scalar_scalar {
           let next = $checked_op(*self.sink.borrow(), *self.source.borrow())?;
           Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
         }
-        fn out(&self) -> Value { self.sink.to_value() }
+        fn out(&self) -> LegacyValue { self.sink.to_value() }
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn to_string(&self) -> String { format!("{:#?}", self) }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
           Ok(self.reactive_output_values())
         }
       }
@@ -663,11 +663,11 @@ macro_rules! impl_assign_vector_vector {
           }
           Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
         }
-        fn out(&self) -> Value {self.sink.to_value()}
+        fn out(&self) -> LegacyValue {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn to_string(&self) -> String {format!("{:#?}", self)}
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
           Ok(self.reactive_output_values())
         }
       }
@@ -760,11 +760,11 @@ macro_rules! impl_assign_vector_scalar {
           }
           Ok(Box::new(ReactiveRegisterWrite::new(self.sink.clone(), next, self.reactive_output_cell_ids())))
         }
-        fn out(&self) -> Value {self.sink.to_value()}
+        fn out(&self) -> LegacyValue {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
         fn to_string(&self) -> String {format!("{:#?}", self)}
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
           Ok(self.reactive_output_values())
         }
       }
@@ -791,67 +791,67 @@ macro_rules! impl_op_assign_value_match_arms {
       match $arg {
         $(
           #[cfg(feature = $feature)]
-          (Value::$value_kind(sink), Value::$value_kind(source)) => Ok(Box::new([<$op AssignSS>]{ sink: sink.clone(), source: source.clone() })),
+          (LegacyValue::$value_kind(sink), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignSS>]{ sink: sink.clone(), source: source.clone() })),
           #[cfg(all(feature = $feature, feature = "matrix1"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrix2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrix2x3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrix3x2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrix3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrix4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix4(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrixd"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "vector2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector2(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector2(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "vector3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector3(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector3(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "vector4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector4(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "vectord"))]
-          (Value::[<Matrix $value_kind>](Matrix::DVector(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::DVector(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "row_vector2"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector2(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector2(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "row_vector3"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector3(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector3(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "row_vector4"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector4(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "row_vectord"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowDVector(sink)), LegacyValue::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrix1"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix1(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrix2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrix2x3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrix3x2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrix3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrix4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix4(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Matrix4(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Matrix4(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "matrixd"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "vector2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector2(sink)), Value::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "vector3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector3(sink)), Value::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "vector4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)), Value::[<Matrix $value_kind>](Matrix::Vector4(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::Vector4(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::Vector4(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "vectord"))]
-          (Value::[<Matrix $value_kind>](Matrix::DVector(sink)), Value::[<Matrix $value_kind>](Matrix::DVector(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::DVector(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::DVector(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "row_vector2"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector2(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector2(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowVector2(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "row_vector3"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector3(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector3(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowVector3(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "row_vector4"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector4(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowVector4(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowVector4(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $feature, feature = "row_vectord"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          (LegacyValue::[<Matrix $value_kind>](Matrix::RowDVector(sink)), LegacyValue::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new([<$op AssignVV>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
         )+
         (arg1,arg2) => Err(MechError::new(
             UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($op).to_string() },
@@ -873,8 +873,8 @@ mod checked_assignment_tests {
             {
                 let sink = Ref::new(u8::MAX);
                 let function = AddAssignSS::<u8>::new(FunctionArgs::Unary(
-                    Value::U8(sink.clone()),
-                    Value::U8(Ref::new(1)),
+                    LegacyValue::U8(sink.clone()),
+                    LegacyValue::U8(Ref::new(1)),
                 ))
                 .unwrap();
                 (function, Box::new(move || i128::from(*sink.borrow())))
@@ -882,8 +882,8 @@ mod checked_assignment_tests {
             {
                 let sink = Ref::new(i8::MIN);
                 let function = SubAssignSS::<i8>::new(FunctionArgs::Unary(
-                    Value::I8(sink.clone()),
-                    Value::I8(Ref::new(1)),
+                    LegacyValue::I8(sink.clone()),
+                    LegacyValue::I8(Ref::new(1)),
                 ))
                 .unwrap();
                 (function, Box::new(move || i128::from(*sink.borrow())))
@@ -891,8 +891,8 @@ mod checked_assignment_tests {
             {
                 let sink = Ref::new(u8::MAX);
                 let function = MulAssignSS::<u8>::new(FunctionArgs::Unary(
-                    Value::U8(sink.clone()),
-                    Value::U8(Ref::new(2)),
+                    LegacyValue::U8(sink.clone()),
+                    LegacyValue::U8(Ref::new(2)),
                 ))
                 .unwrap();
                 (function, Box::new(move || i128::from(*sink.borrow())))
@@ -900,8 +900,8 @@ mod checked_assignment_tests {
             {
                 let sink = Ref::new(7u8);
                 let function = DivAssignSS::<u8>::new(FunctionArgs::Unary(
-                    Value::U8(sink.clone()),
-                    Value::U8(Ref::new(0)),
+                    LegacyValue::U8(sink.clone()),
+                    LegacyValue::U8(Ref::new(0)),
                 ))
                 .unwrap();
                 (function, Box::new(move || i128::from(*sink.borrow())))
@@ -929,9 +929,9 @@ mod checked_assignment_tests {
         let indices = Ref::new(DVector::from_vec(vec![1usize, 2]));
         let function = AddAssign1DRV::<u8, DVector<u8>, DVector<u8>, DVector<usize>>::new(
             FunctionArgs::Binary(
-                Value::MatrixU8(mech_core::matrix::Matrix::DVector(sink.clone())),
-                Value::MatrixU8(mech_core::matrix::Matrix::DVector(source)),
-                Value::MatrixIndex(mech_core::matrix::Matrix::DVector(indices.clone())),
+                LegacyValue::MatrixU8(mech_core::matrix::Matrix::DVector(sink.clone())),
+                LegacyValue::MatrixU8(mech_core::matrix::Matrix::DVector(source)),
+                LegacyValue::MatrixIndex(mech_core::matrix::Matrix::DVector(indices.clone())),
             ),
         )
         .unwrap();

@@ -1,7 +1,7 @@
 use super::support::{
     ActivationPatternDefinitionUnsupported, Arc, AtomicUsize, FailingPatternRegisterSpecializer,
-    Ordering, PatternRegisterStageFailure, Ref, Value, arm_pulse_generation, arm_register_nodes,
-    assert_dispatch_turn, assert_failed_elaboration_restored, body_output_f64,
+    LegacyValue, Ordering, PatternRegisterStageFailure, Ref, arm_pulse_generation,
+    arm_register_nodes, assert_dispatch_turn, assert_failed_elaboration_restored, body_output_f64,
     committed_capture_value, f64_symbol, hash_str, install_function_extension, interpret,
     interpret_more, plan_snapshot, proposed_capture_value, registration, root_cell,
     set_atom_tuple_event, set_f64_symbol, symbol, turn_changed_nodes, turn_executed_nodes,
@@ -125,7 +125,7 @@ text := "abc"
     let pulse_before = arm_pulse_generation(&i, 0);
     let body_before = body_output_f64(&i, 0);
 
-    let Value::F64(index) = symbol(&i, "index") else {
+    let LegacyValue::F64(index) = symbol(&i, "index") else {
         panic!("index is not f64")
     };
     *index.borrow_mut() = 4.0;
@@ -174,7 +174,10 @@ text := "abc"
     *index.borrow_mut() = 1.0;
     let outcome = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &outcome, 0, 3.0);
-    assert_eq!(committed_capture_value(&i, 0, 0), Value::F64(Ref::new(3.0)));
+    assert_eq!(
+        committed_capture_value(&i, 0, 0),
+        LegacyValue::F64(Ref::new(3.0))
+    );
 }
 
 #[test]

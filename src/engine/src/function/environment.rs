@@ -246,13 +246,13 @@ impl MechErrorKind for FunctionEnvironmentNameCollision {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{FunctionCatalogBuilder, FunctionSpecializer, MechFunction, Value};
+    use mech_core::{FunctionCatalogBuilder, FunctionSpecializer, LegacyValue, MechFunction};
     use std::sync::Arc;
 
     struct TestSpecializer;
 
     impl FunctionSpecializer for TestSpecializer {
-        fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             unreachable!("environment tests do not specialize functions")
         }
     }

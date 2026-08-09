@@ -6,7 +6,7 @@ use super::{
 use crate::dimension::{canonicalize_dimension_environment, normalize_dimension};
 use crate::kind::Kind;
 use crate::kind_expr::{validate_kind_structure, visit_kind_dimensions};
-use crate::value::ValueKind;
+use crate::legacy_value::ValueKind;
 use crate::{
     DimensionEnvironmentBuilder, DimensionExpr, DimensionParameterDeclaration, FloatWidth,
     IntegerWidth, KindExpr, KindField, NominalKind, Schema, SchemaBody, SchemaDraft, SchemaField,

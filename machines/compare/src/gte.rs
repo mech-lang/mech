@@ -106,7 +106,7 @@ macro_rules! gte_row_mat_op {
 impl_compare_fxns!(GTE);
 
 #[cfg(feature = "source")]
-fn impl_gte_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_gte_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       GTE,
       (lhs_value, rhs_value),

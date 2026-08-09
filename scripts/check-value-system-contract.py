@@ -40,7 +40,7 @@ GENERATOR_PATH = ROOT / "scripts/generate-value-system-inventory.py"
 GATE_A_CHECKER_PATH = ROOT / "scripts/check-value-execution-boundary.py"
 CANONICAL_REFERENCE_PATH = ROOT / "scripts/tests/canonical_encoding_v1_reference.py"
 EXPECTED_LEGACY_SCANNER_SHA256 = (
-    "9624eb89c01085cc5e412506b30671f442ba53b057c228b3fbcd113cc77ad834"
+    "8211e9b71af90bca7dd8da33b6caaca83c3ab5569fd2739ae35423b7795fad5b"
 )
 EXPECTED_HASH_CONTRACTS_V1 = {
     "NominalKey": {
@@ -1248,7 +1248,7 @@ def raw_approved_alias_failures(live: dict[str, Any]) -> list[Failure]:
             str(record["path"]),
             "canonical approved-alias spelling",
             str(record["raw_name"]),
-            "scripts/value_system_legacy_scanner_v1.py",
+            "scripts/value_system_legacy_scanner_v2.py",
             int(record["line"]),
             int(record["column"]),
         )
@@ -2305,7 +2305,7 @@ def select_lane(
 GATE_B_SELF_PROTECTED_PATHS = {
     "scripts/check-value-system-contract.py",
     "scripts/generate-value-system-inventory.py",
-    "scripts/value_system_legacy_scanner_v1.py",
+    "scripts/value_system_legacy_scanner_v2.py",
     "scripts/tests/canonical_encoding_v1_reference.py",
     "tests/architecture/value-system/canonical-encoding-v1-schema.json",
     "tests/architecture/value-system/canonical-encoding-v1-vectors-schema.json",
@@ -2347,7 +2347,7 @@ REQUIRED_GATE_B_PROTECTED_EXACT = {
     "scripts/check-gate-b-contract.py",
     "scripts/generate-gate-b-ekf-trace.py",
     "scripts/generate-value-system-inventory.py",
-    "scripts/value_system_legacy_scanner_v1.py",
+    "scripts/value_system_legacy_scanner_v2.py",
     "scripts/tests/canonical_encoding_v1_reference.py",
     "benchmarks/runtime/gate-b/result-schema.json",
     "benchmarks/runtime/gate-b/ekf-v1.json",

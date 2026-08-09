@@ -71,14 +71,14 @@ macro_rules! vertcat_two_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -176,14 +176,14 @@ macro_rules! vertcat_three_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -286,14 +286,14 @@ macro_rules! vertcat_four_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -372,14 +372,14 @@ where
         self.e1.copy_into_row_major(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateTwoArgs\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -477,14 +477,14 @@ where
         self.e2.copy_into_row_major(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateThreeArgs\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -594,14 +594,14 @@ where
         self.e3.copy_into_row_major(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateFourArgs\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -699,14 +699,14 @@ where
         }
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateNArgs\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -834,10 +834,10 @@ macro_rules! vertical_concatenate {
         fn solve_result(&self) -> MResult<()> {
             Ok(())
         }
-        fn out(&self) -> Value { self.out.to_value() }
+        fn out(&self) -> LegacyValue { self.out.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
           Ok(self.reactive_output_values())
         }
       }
@@ -916,14 +916,14 @@ where
         self.e1.copy_into_v(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateVD2\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1019,14 +1019,14 @@ where
         self.e2.copy_into_v(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateVD3\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1133,14 +1133,14 @@ where
         self.e3.copy_into_v(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateVD3\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1252,14 +1252,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateVDN\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1339,14 +1339,14 @@ where
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1479,14 +1479,14 @@ where
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1772,14 +1772,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -2194,7 +2194,7 @@ macro_rules! impl_vertcat_arms {
       }});
       if no_refs {
         let mat: Vec<$kind> = arguments.iter().flat_map(|v| v.[<as_vec $kind:lower>]().unwrap()).collect::<Vec<$kind>>();
-        fn to_column_major<T: Clone>(out: &[Value], row_n: usize, col_n: usize, extract_fn: impl Fn(&Value) -> MResult<Vec<T>> + Clone) -> Vec<T> {
+        fn to_column_major<T: Clone>(out: &[LegacyValue], row_n: usize, col_n: usize, extract_fn: impl Fn(&LegacyValue) -> MResult<Vec<T>> + Clone) -> Vec<T> {
           (0..col_n).flat_map(|col| out.iter().map({let value = extract_fn.clone();move |row| value(row).unwrap()[col].clone()})).collect()
         }
         let mat = to_column_major(&arguments, rows, columns, |v| v.[<as_vec $kind:lower>]());
@@ -2232,7 +2232,7 @@ macro_rules! impl_vertcat_arms {
           (1,2,1) => {
             match &arguments[..] {
               // r2
-              [Value::[<Matrix $kind:camel>](Matrix::Vector2(e0))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e0))] => {
                 return Ok(Box::new(VerticalConcatenateV2{out: e0.clone()}));
               }
               _ => todo!(),
@@ -2242,9 +2242,9 @@ macro_rules! impl_vertcat_arms {
           (1,3,1) => {
             match &arguments[..] {
               // r3
-              [Value::MutableReference(e0)] => {
+              [LegacyValue::MutableReference(e0)] => {
                 match &*e0.borrow() {
-                  Value::[<Matrix $kind:camel>](Matrix::Vector3(e0)) => {
+                  LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(e0)) => {
                     return Ok(Box::new(VerticalConcatenateV3{out: e0.clone()}));
                   }
                   _ => todo!(),
@@ -2257,7 +2257,7 @@ macro_rules! impl_vertcat_arms {
           (1,4,1) => {
             match &arguments[..] {
               // r4
-              [Value::[<Matrix $kind:camel>](Matrix::Vector4(e0))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector4(e0))] => {
                 return Ok(Box::new(VerticalConcatenateV4{out: e0.clone()}));
               }
               _ => todo!(),
@@ -2267,7 +2267,7 @@ macro_rules! impl_vertcat_arms {
           (1,m,1) => {
             match &arguments[..] {
               // rd
-              [Value::[<Matrix $kind:camel>](Matrix::DVector(e0))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::DVector(e0))] => {
                 return Ok(Box::new(VerticalConcatenateVD{out: e0.clone()}));
               }
               _ => todo!(),
@@ -2278,7 +2278,7 @@ macro_rules! impl_vertcat_arms {
             let mut out = Vector2::from_element($default);
             match &arguments[..] {
               // m1m1
-              [Value::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(e1))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1))] => {
                 return Ok(Box::new(VerticalConcatenateM1M1{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
               }
               _ => todo!(),
@@ -2289,11 +2289,11 @@ macro_rules! impl_vertcat_arms {
             let mut out = Vector3::from_element($default);
             match &arguments[..] {
               //m1v2
-              [Value::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),Value::[<Matrix $kind:camel>](Matrix::Vector2(e1))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e1))] => {
                 return Ok(Box::new(VerticalConcatenateM1V2{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
               }
               //v2m1
-              [Value::[<Matrix $kind:camel>](Matrix::Vector2(e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(e1))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1))] => {
                 return Ok(Box::new(VerticalConcatenateV2M1{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
               }
               _ => todo!(),
@@ -2305,17 +2305,17 @@ macro_rules! impl_vertcat_arms {
             match &arguments[..] {
               // m1v3
               #[cfg(all(feature = "matrix1", feature = "vector3"))]
-              [Value::[<Matrix $kind:camel>](Matrix::Matrix1(e0)), Value::[<Matrix $kind:camel>](Matrix::Vector3(e1))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(e1))] => {
                 return Ok(Box::new(VerticalConcatenateM1V3{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
               }
               // v3m1
               #[cfg(all(feature = "matrix1", feature = "vector3"))]
-              [Value::[<Matrix $kind:camel>](Matrix::Vector3(e0)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(e1))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1))] => {
                 return Ok(Box::new(VerticalConcatenateV3M1{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
               }
               // v2v2
               #[cfg(feature = "vector2")]
-              [Value::[<Matrix $kind:camel>](Matrix::Vector2(e0)), Value::[<Matrix $kind:camel>](Matrix::Vector2(e1))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e1))] => {
                 return Ok(Box::new(VerticalConcatenateV2V2{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
               }
               _ => todo!(),
@@ -2325,7 +2325,7 @@ macro_rules! impl_vertcat_arms {
           (2,m,1) => {
             let mut out = DVector::from_element(m,$default);
             match &arguments[..] {
-              [Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1)] => {
+              [LegacyValue::[<Matrix $kind:camel>](e0),LegacyValue::[<Matrix $kind:camel>](e1)] => {
                 let e0 = e0.get_copyable_matrix();
                 let e1 = e1.get_copyable_matrix();
                 return Ok(Box::new(VerticalConcatenateVD2{e0, e1, out: Ref::new(out)}));
@@ -2339,7 +2339,7 @@ macro_rules! impl_vertcat_arms {
             match &arguments[..] {
               // m1 m1 m1
               #[cfg(feature = "matrix1")]
-              [Value::[<Matrix $kind:camel>](Matrix::Matrix1(e0)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(e1)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(e2))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e2))] => {
                 return Ok(Box::new(VerticalConcatenateM1M1M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)}));
               }
               _ => todo!()
@@ -2350,15 +2350,15 @@ macro_rules! impl_vertcat_arms {
             let mut out = Vector4::from_element($default);
             match &arguments[..] {
               // m1 m1 v2
-              [Value::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(e1)),Value::[<Matrix $kind:camel>](Matrix::Vector2(e2))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e2))] => {
                 return Ok(Box::new(VerticalConcatenateM1M1V2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)}));
               }
               // m1 v2 m1
-              [Value::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),Value::[<Matrix $kind:camel>](Matrix::Vector2(e1)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(e2))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e2))] => {
                 return Ok(Box::new(VerticalConcatenateM1V2M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)}));
               }
               // v2 m1 m1
-              [Value::[<Matrix $kind:camel>](Matrix::Vector2(e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(e1)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(e2))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e2))] => {
                 return Ok(Box::new(VerticalConcatenateV2M1M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)}));
               }
               _ => todo!()
@@ -2368,7 +2368,7 @@ macro_rules! impl_vertcat_arms {
           (3,m,1) => {
             let mut out = DVector::from_element(m,$default);
             match &arguments[..] {
-              [Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1),Value::[<Matrix $kind:camel>](e2)] => {
+              [LegacyValue::[<Matrix $kind:camel>](e0),LegacyValue::[<Matrix $kind:camel>](e1),LegacyValue::[<Matrix $kind:camel>](e2)] => {
                 let e0 = e0.get_copyable_matrix();
                 let e1 = e1.get_copyable_matrix();
                 let e2 = e2.get_copyable_matrix();
@@ -2382,7 +2382,7 @@ macro_rules! impl_vertcat_arms {
             let mut out = Vector4::from_element($default);
             match &arguments[..] {
               // m1 m1 m1 m1
-              [Value::[<Matrix $kind:camel>](Matrix::Matrix1(e0)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(e1)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(e2)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(e3))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e2)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e3))] => {
                 return Ok(Box::new(VerticalConcatenateM1M1M1M1{ e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) }));
               }
               _ => todo!(),
@@ -2392,7 +2392,7 @@ macro_rules! impl_vertcat_arms {
           (4,m,1) => {
             let mut out = DVector::from_element(m,$default);
             match &arguments[..] {
-              [Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1),Value::[<Matrix $kind:camel>](e2),Value::[<Matrix $kind:camel>](e3)] => {
+              [LegacyValue::[<Matrix $kind:camel>](e0),LegacyValue::[<Matrix $kind:camel>](e1),LegacyValue::[<Matrix $kind:camel>](e2),LegacyValue::[<Matrix $kind:camel>](e3)] => {
                 let e0 = e0.get_copyable_matrix();
                 let e1 = e1.get_copyable_matrix();
                 let e2 = e2.get_copyable_matrix();
@@ -2410,11 +2410,11 @@ macro_rules! impl_vertcat_arms {
             let mut i = 0;
             for arg in arguments.iter() {
               match &arg {
-                Value::[<$kind:camel>](e0) => {
+                LegacyValue::[<$kind:camel>](e0) => {
                   scalar_args.push((e0.clone(),i));
                   i += 1;
                 }
-                Value::[<Matrix $kind:camel>](e0) => {
+                LegacyValue::[<Matrix $kind:camel>](e0) => {
                   matrix_args.push((e0.get_copyable_matrix(),i));
                   i += e0.shape()[0];
                 }
@@ -2429,7 +2429,7 @@ macro_rules! impl_vertcat_arms {
             match &arguments[..] {
               // v2v2
               #[cfg(feature = "row_vector2")]
-              [Value::[<Matrix $kind:camel>](Matrix::RowVector2(e0)),Value::[<Matrix $kind:camel>](Matrix::RowVector2(e1))] => {return Ok(Box::new(VerticalConcatenateR2R2{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));}
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e1))] => {return Ok(Box::new(VerticalConcatenateR2R2{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));}
               _ => todo!(),
             }
           }
@@ -2439,7 +2439,7 @@ macro_rules! impl_vertcat_arms {
             match &arguments[..] {
               // r3r3
               #[cfg(feature = "row_vector3")]
-              [Value::[<Matrix $kind:camel>](Matrix::RowVector3(e0)),Value::[<Matrix $kind:camel>](Matrix::RowVector3(e1))] => {return Ok(Box::new(VerticalConcatenateR3R3{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));}
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e1))] => {return Ok(Box::new(VerticalConcatenateR3R3{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));}
               _ => todo!(),
             }
           }
@@ -2449,12 +2449,12 @@ macro_rules! impl_vertcat_arms {
             match &arguments[..] {
               // v2m2
               #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
-              [Value::[<Matrix $kind:camel>](Matrix::RowVector2(e0)), Value::[<Matrix $kind:camel>](Matrix::Matrix2(e1))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2(e1))] => {
                 return Ok(Box::new(VerticalConcatenateR2M2{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
               }
               // m2v2
               #[cfg(all(feature = "matrix2", feature = "row_vector2"))]
-              [Value::[<Matrix $kind:camel>](Matrix::Matrix2(e0)), Value::[<Matrix $kind:camel>](Matrix::RowVector2(e1))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e1))] => {
                 return Ok(Box::new(VerticalConcatenateM2R2{e0: e0.clone(), e1: e1.clone(), out: Ref::new(out)}));
               }
               _ => todo!(),
@@ -2467,12 +2467,12 @@ macro_rules! impl_vertcat_arms {
             match &arguments[..] {
               // v3m3x2
               #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
-              [Value::[<Matrix $kind:camel>](Matrix::RowVector3(e0)), Value::[<Matrix $kind:camel>](Matrix::Matrix2x3(e1))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2x3(e1))] => {
                 return Ok(Box::new(VerticalConcatenateR3M2x3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) }));
               }
               // m3x2v3
               #[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
-              [Value::[<Matrix $kind:camel>](Matrix::Matrix2x3(e0)), Value::[<Matrix $kind:camel>](Matrix::RowVector3(e1))] => {
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2x3(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e1))] => {
                 return Ok(Box::new(VerticalConcatenateM2x3R3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) }));
               }
               _ => todo!(),
@@ -2485,13 +2485,13 @@ macro_rules! impl_vertcat_arms {
             match &arguments[..] {
               // r4md
               #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
-              [Value::[<Matrix $kind:camel>](Matrix::RowVector4(e0)), Value::[<Matrix $kind:camel>](Matrix::DMatrix(e1))] => Ok(Box::new(VerticalConcatenateR4MD{e0:e0.clone(),e1:e1.clone(),out:Ref::new(out)})),
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e1))] => Ok(Box::new(VerticalConcatenateR4MD{e0:e0.clone(),e1:e1.clone(),out:Ref::new(out)})),
               // mdr4
               #[cfg(all(feature = "matrixd", feature = "row_vector4"))]
-              [Value::[<Matrix $kind:camel>](Matrix::DMatrix(e0)), Value::[<Matrix $kind:camel>](Matrix::RowVector4(e1))] => Ok(Box::new(VerticalConcatenateMDR4{e0:e0.clone(),e1:e1.clone(),out:Ref::new(out)})),
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e1))] => Ok(Box::new(VerticalConcatenateMDR4{e0:e0.clone(),e1:e1.clone(),out:Ref::new(out)})),
               // mdmd
               #[cfg(feature = "matrixd")]
-              [Value::[<Matrix $kind:camel>](Matrix::DMatrix(e0)), Value::[<Matrix $kind:camel>](Matrix::DMatrix(e1))] => Ok(Box::new(VerticalConcatenateMDMD{e0:e0.clone(),e1:e1.clone(),out:Ref::new(out)})),
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e1))] => Ok(Box::new(VerticalConcatenateMDMD{e0:e0.clone(),e1:e1.clone(),out:Ref::new(out)})),
               _ => todo!(),
             }
 
@@ -2500,7 +2500,7 @@ macro_rules! impl_vertcat_arms {
           (2,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
-              [Value::[<Matrix $kind:camel>](m0), Value::[<Matrix $kind:camel>](m1)] => {
+              [LegacyValue::[<Matrix $kind:camel>](m0), LegacyValue::[<Matrix $kind:camel>](m1)] => {
                 let e0 = m0.get_copyable_matrix();
                 let e1 = m1.get_copyable_matrix();
                 Ok(Box::new(VerticalConcatenateTwoArgs{e0, e1, out: Ref::new(out)}))
@@ -2514,7 +2514,7 @@ macro_rules! impl_vertcat_arms {
             match &arguments[..] {
               // r2r2r2
               #[cfg(feature = "row_vector2")]
-              [Value::[<Matrix $kind:camel>](Matrix::RowVector2(e0)),Value::[<Matrix $kind:camel>](Matrix::RowVector2(e1)),Value::[<Matrix $kind:camel>](Matrix::RowVector2(e2))]=>Ok(Box::new(VerticalConcatenateR2R2R2{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(e2))]=>Ok(Box::new(VerticalConcatenateR2R2R2{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
               _ => todo!(),
             }
           }
@@ -2524,7 +2524,7 @@ macro_rules! impl_vertcat_arms {
             match &arguments[..] {
               // r3r3r3
               #[cfg(feature = "row_vector3")]
-              [Value::[<Matrix $kind:camel>](Matrix::RowVector3(e0)),Value::[<Matrix $kind:camel>](Matrix::RowVector3(e1)),Value::[<Matrix $kind:camel>](Matrix::RowVector3(e2))]=>Ok(Box::new(VerticalConcatenateR3R3R3{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(e2))]=>Ok(Box::new(VerticalConcatenateR3R3R3{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
               _ => todo!(),
             }
           }
@@ -2534,13 +2534,13 @@ macro_rules! impl_vertcat_arms {
             match &arguments[..] {
               // r4r4md
               #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
-              [Value::[<Matrix $kind:camel>](Matrix::RowVector4(e0)),Value::[<Matrix $kind:camel>](Matrix::RowVector4(e1)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(e2))]=>Ok(Box::new(VerticalConcatenateR4R4MD{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e2))]=>Ok(Box::new(VerticalConcatenateR4R4MD{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
               // r4mdr4
               #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
-              [Value::[<Matrix $kind:camel>](Matrix::RowVector4(e0)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(e1)),Value::[<Matrix $kind:camel>](Matrix::RowVector4(e2))]=>Ok(Box::new(VerticalConcatenateR4MDR4{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e2))]=>Ok(Box::new(VerticalConcatenateR4MDR4{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
               // mdr4r4
               #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
-              [Value::[<Matrix $kind:camel>](Matrix::DMatrix(e0)),Value::[<Matrix $kind:camel>](Matrix::RowVector4(e1)),Value::[<Matrix $kind:camel>](Matrix::RowVector4(e2))]=>Ok(Box::new(VerticalConcatenateMDR4R4{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e2))]=>Ok(Box::new(VerticalConcatenateMDR4R4{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:Ref::new(out)})),
               _ => todo!(),
             }
           }
@@ -2548,7 +2548,7 @@ macro_rules! impl_vertcat_arms {
           (3,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
-              [Value::[<Matrix $kind:camel>](m0),Value::[<Matrix $kind:camel>](m1),Value::[<Matrix $kind:camel>](m2)] => {
+              [LegacyValue::[<Matrix $kind:camel>](m0),LegacyValue::[<Matrix $kind:camel>](m1),LegacyValue::[<Matrix $kind:camel>](m2)] => {
                 let e0 = m0.get_copyable_matrix();
                 let e1 = m1.get_copyable_matrix();
                 let e2 = m2.get_copyable_matrix();
@@ -2563,7 +2563,7 @@ macro_rules! impl_vertcat_arms {
             match &arguments[..] {
               // r4r4r4r4
               #[cfg(feature = "row_vector4")]
-              [Value::[<Matrix $kind:camel>](Matrix::RowVector4(e0)),Value::[<Matrix $kind:camel>](Matrix::RowVector4(e1)),Value::[<Matrix $kind:camel>](Matrix::RowVector4(e2)),Value::[<Matrix $kind:camel>](Matrix::RowVector4(e3))]=>Ok(Box::new(VerticalConcatenateR4R4R4R4{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),e3:e3.clone(),out:Ref::new(out)})),
+              [LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e2)),LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(e3))]=>Ok(Box::new(VerticalConcatenateR4R4R4R4{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),e3:e3.clone(),out:Ref::new(out)})),
               _ => todo!(),
             }
           }
@@ -2571,7 +2571,7 @@ macro_rules! impl_vertcat_arms {
           (4,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
-              [Value::[<Matrix $kind:camel>](m0),Value::[<Matrix $kind:camel>](m1),Value::[<Matrix $kind:camel>](m2),Value::[<Matrix $kind:camel>](m3)] => {
+              [LegacyValue::[<Matrix $kind:camel>](m0),LegacyValue::[<Matrix $kind:camel>](m1),LegacyValue::[<Matrix $kind:camel>](m2),LegacyValue::[<Matrix $kind:camel>](m3)] => {
                 let e0 = m0.get_copyable_matrix();
                 let e1 = m1.get_copyable_matrix();
                 let e2 = m2.get_copyable_matrix();
@@ -2587,7 +2587,7 @@ macro_rules! impl_vertcat_arms {
             let mut args = vec![];
             for arg in arguments {
               match arg {
-                Value::[<Matrix $kind:camel>](m0) => {
+                LegacyValue::[<Matrix $kind:camel>](m0) => {
                   let e0 = m0.get_copyable_matrix();
                   args.push(e0);
                 }
@@ -2605,7 +2605,7 @@ macro_rules! impl_vertcat_arms {
         }
   }}}}}
 
-fn impl_vertcat_fxn(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+fn impl_vertcat_fxn(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
     let kinds: Vec<ValueKind> = arguments
         .iter()
         .map(|x| x.kind())
@@ -3044,7 +3044,7 @@ pub mod __mech_native {
 
 pub struct MatrixVertCat {}
 impl FunctionSpecializer for MatrixVertCat {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         impl_vertcat_fxn(arguments)
     }
 }

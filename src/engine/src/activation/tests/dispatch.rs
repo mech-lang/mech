@@ -1,7 +1,7 @@
 use super::support::{
-    FLAT_TUPLE_ACTIVATION, MechTuple, NESTED_TUPLE_ACTIVATION, REPEATED_CAPTURE_ACTIVATION, Ref,
-    Value, ValueKind, assert_dispatch_turn, hash_str, interpret, interpret_more,
-    load_atom_tuple_activation, load_enum_activation, plan_snapshot, root_cell,
+    FLAT_TUPLE_ACTIVATION, LegacyValue, MechTuple, NESTED_TUPLE_ACTIVATION,
+    REPEATED_CAPTURE_ACTIVATION, Ref, ValueKind, assert_dispatch_turn, hash_str, interpret,
+    interpret_more, load_atom_tuple_activation, load_enum_activation, plan_snapshot, root_cell,
     set_atom_tuple_event, set_enum_event, set_f64_matrix_event, set_tuple_event,
     set_unit_enum_event, tuple_fixture, turn_executed_nodes,
 };
@@ -154,7 +154,13 @@ fn activation_pattern_atom_tagged_tuple_captures_payload() {
 #[test]
 fn activation_pattern_tuple_captures_elements() {
     let (mut i, trigger, topology) = tuple_fixture(FLAT_TUPLE_ACTIVATION);
-    set_tuple_event(&i, vec![Value::F64(Ref::new(3.)), Value::F64(Ref::new(4.))]);
+    set_tuple_event(
+        &i,
+        vec![
+            LegacyValue::F64(Ref::new(3.)),
+            LegacyValue::F64(Ref::new(4.)),
+        ],
+    );
     let o = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &o, 0, 34.);
 }
@@ -165,11 +171,11 @@ fn activation_pattern_nested_tuple_captures_elements() {
     set_tuple_event(
         &i,
         vec![
-            Value::Tuple(Ref::new(MechTuple::from_vec(vec![
-                Value::F64(Ref::new(4.)),
-                Value::F64(Ref::new(5.)),
+            LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
+                LegacyValue::F64(Ref::new(4.)),
+                LegacyValue::F64(Ref::new(5.)),
             ]))),
-            Value::F64(Ref::new(6.)),
+            LegacyValue::F64(Ref::new(6.)),
         ],
     );
     let o = i.advance_reactive_turn(&[trigger]).unwrap();
@@ -179,10 +185,22 @@ fn activation_pattern_nested_tuple_captures_elements() {
 #[test]
 fn activation_pattern_repeated_capture_requires_equal_values() {
     let (mut i, trigger, topology) = tuple_fixture(REPEATED_CAPTURE_ACTIVATION);
-    set_tuple_event(&i, vec![Value::F64(Ref::new(2.)), Value::F64(Ref::new(2.))]);
+    set_tuple_event(
+        &i,
+        vec![
+            LegacyValue::F64(Ref::new(2.)),
+            LegacyValue::F64(Ref::new(2.)),
+        ],
+    );
     let o = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &o, 0, 2.);
-    set_tuple_event(&i, vec![Value::F64(Ref::new(2.)), Value::F64(Ref::new(3.))]);
+    set_tuple_event(
+        &i,
+        vec![
+            LegacyValue::F64(Ref::new(2.)),
+            LegacyValue::F64(Ref::new(3.)),
+        ],
+    );
     let o = i.advance_reactive_turn(&[trigger]).unwrap();
     assert_dispatch_turn(&i, &topology, &o, 1, -1.);
 }

@@ -49,7 +49,7 @@ impl_math_unop!(MathSincos, f32, sincosf);
 impl_math_unop!(MathSincos, f64, sincos);
 
 #[cfg(feature = "source")]
-fn impl_sincos_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_sincos_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathSincos,
       (lhs_value),
@@ -63,7 +63,7 @@ pub struct MathSincos {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathSincos {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -78,7 +78,7 @@ impl FunctionSpecializer for MathSincos {
         match impl_sincos_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (input) {
-                (Value::MutableReference(input)) => impl_sincos_fxn(input.borrow().clone()),
+                (LegacyValue::MutableReference(input)) => impl_sincos_fxn(input.borrow().clone()),
                 (arg1, arg2) => Err(MechError::new(
                     UnhandledFunctionArgumentKind2 {
                         arg: (arg1.kind(), arg2.kind()),

@@ -75,11 +75,11 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> Value {
-            Value::F64(self.out.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::F64(self.out.clone())
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
 
@@ -98,7 +98,7 @@ mod test_operations {
     struct BinaryArithmeticSpecializer(BinaryArithmetic);
 
     impl FunctionSpecializer for BinaryArithmeticSpecializer {
-        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             let [lhs, rhs] = arguments else {
                 return Err(test_operation_error(
                     "binary arithmetic expects two arguments",
@@ -125,11 +125,11 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> Value {
-            Value::F64(self.out.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::F64(self.out.clone())
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
 
@@ -148,7 +148,7 @@ mod test_operations {
     struct NegateSpecializer;
 
     impl FunctionSpecializer for NegateSpecializer {
-        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             let [input] = arguments else {
                 return Err(test_operation_error("negation expects one argument"));
             };
@@ -172,8 +172,8 @@ mod test_operations {
     #[derive(Debug)]
     struct ComparisonFunction {
         operation: Comparison,
-        lhs: Value,
-        rhs: Value,
+        lhs: LegacyValue,
+        rhs: LegacyValue,
         out: Ref<bool>,
     }
 
@@ -190,11 +190,11 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> Value {
-            Value::Bool(self.out.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Bool(self.out.clone())
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
 
@@ -213,7 +213,7 @@ mod test_operations {
     struct ComparisonSpecializer(Comparison);
 
     impl FunctionSpecializer for ComparisonSpecializer {
-        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             let [lhs, rhs] = arguments else {
                 return Err(test_operation_error("comparison expects two arguments"));
             };
@@ -257,11 +257,11 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> Value {
-            Value::Bool(self.out.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Bool(self.out.clone())
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
 
@@ -280,7 +280,7 @@ mod test_operations {
     struct BooleanSpecializer(BooleanOperation);
 
     impl FunctionSpecializer for BooleanSpecializer {
-        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             let [lhs, rhs] = arguments else {
                 return Err(test_operation_error(
                     "boolean operation expects two arguments",
@@ -311,11 +311,11 @@ mod test_operations {
             Ok(())
         }
 
-        fn out(&self) -> Value {
-            Value::Bool(self.out.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Bool(self.out.clone())
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
 
@@ -334,7 +334,7 @@ mod test_operations {
     struct NotSpecializer;
 
     impl FunctionSpecializer for NotSpecializer {
-        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             let [input] = arguments else {
                 return Err(test_operation_error("boolean not expects one argument"));
             };
@@ -371,15 +371,15 @@ mod test_operations {
             )))
         }
 
-        fn out(&self) -> Value {
-            Value::F64(self.sink.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::F64(self.sink.clone())
         }
 
         fn reactive_node_kind(&self) -> ReactiveNodeKind {
             ReactiveNodeKind::Register
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
 
@@ -398,7 +398,7 @@ mod test_operations {
     struct AddAssignSpecializer;
 
     impl FunctionSpecializer for AddAssignSpecializer {
-        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             let [sink, source] = arguments else {
                 return Err(test_operation_error("add assignment expects two arguments"));
             };
@@ -409,17 +409,21 @@ mod test_operations {
         }
     }
 
-    fn values_equal(lhs: &Value, rhs: &Value) -> bool {
+    fn values_equal(lhs: &LegacyValue, rhs: &LegacyValue) -> bool {
         match (lhs, rhs) {
-            (Value::MutableReference(lhs), rhs) => values_equal(&lhs.borrow(), rhs),
-            (lhs, Value::MutableReference(rhs)) => values_equal(lhs, &rhs.borrow()),
-            (Value::Typed(lhs, _), rhs) => values_equal(lhs, rhs),
-            (lhs, Value::Typed(rhs, _)) => values_equal(lhs, rhs),
+            (LegacyValue::MutableReference(lhs), rhs) => values_equal(&lhs.borrow(), rhs),
+            (lhs, LegacyValue::MutableReference(rhs)) => values_equal(lhs, &rhs.borrow()),
+            (LegacyValue::Typed(lhs, _), rhs) => values_equal(lhs, rhs),
+            (lhs, LegacyValue::Typed(rhs, _)) => values_equal(lhs, rhs),
             _ => lhs == rhs,
         }
     }
 
-    fn numeric_pair(lhs: &Value, rhs: &Value, compare: impl FnOnce(f64, f64) -> bool) -> bool {
+    fn numeric_pair(
+        lhs: &LegacyValue,
+        rhs: &LegacyValue,
+        compare: impl FnOnce(f64, f64) -> bool,
+    ) -> bool {
         match (lhs.as_f64(), rhs.as_f64()) {
             (Ok(lhs), Ok(rhs)) => compare(*lhs.borrow(), *rhs.borrow()),
             _ => false,
@@ -498,8 +502,8 @@ mod tests {
         feature = "f64"
     ))]
     use mech_core::{
-        FunctionExport, FunctionExposure, FunctionSpecializer, MechFunction, MechFunctionImpl, Ref,
-        Value,
+        FunctionExport, FunctionExposure, FunctionSpecializer, LegacyValue, MechFunction,
+        MechFunctionImpl, Ref,
     };
 
     #[cfg(all(
@@ -528,11 +532,11 @@ mod tests {
             Ok(())
         }
 
-        fn out(&self) -> Value {
-            Value::F64(self.out.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::F64(self.out.clone())
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(Vec::new())
         }
 
@@ -572,8 +576,8 @@ mod tests {
         feature = "f64"
     ))]
     impl FunctionSpecializer for TestAddSpecializer {
-        fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
-            let [Value::F64(lhs), Value::F64(rhs)] = arguments else {
+        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+            let [LegacyValue::F64(lhs), LegacyValue::F64(rhs)] = arguments else {
                 panic!("test math/add expects two f64 arguments");
             };
             let out = Ref::new(*lhs.borrow() + *rhs.borrow());
@@ -721,7 +725,7 @@ mod tests {
 
         let output = program.run_string("1.0 + 2.0").unwrap();
 
-        let Value::F64(output) = output else {
+        let LegacyValue::F64(output) = output else {
             panic!("custom math/add must return f64");
         };
         assert_eq!(*output.borrow(), 3.0);

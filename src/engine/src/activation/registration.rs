@@ -1,9 +1,9 @@
 use crate::patterns::PatternBindingSink;
 use crate::{
-    ActivationArm, ActivationArmBody, ActivationScope, Interpreter, InterpreterExecution, MResult,
-    MechError, PatternActivationArmRegistration, PatternActivationCaptureRegistration,
-    PatternActivationGuardRegistration, PatternActivationRegistration, ReactiveCellId, Ref, Value,
-    match_compiled_pattern_with_values,
+    ActivationArm, ActivationArmBody, ActivationScope, Interpreter, InterpreterExecution,
+    LegacyValue, MResult, MechError, PatternActivationArmRegistration,
+    PatternActivationCaptureRegistration, PatternActivationGuardRegistration,
+    PatternActivationRegistration, ReactiveCellId, Ref, match_compiled_pattern_with_values,
 };
 
 use super::{
@@ -32,10 +32,10 @@ pub(crate) fn activation_scope_entry_cells(interpreter: &Interpreter) -> Vec<Rea
 
 fn elaborate_patterned_activation_inner(
     arms: &[ActivationArm],
-    trigger: Value,
+    trigger: LegacyValue,
     preflight: PreflightPatternedActivation,
     i: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     if trigger.kind().deref_kind() != preflight.trigger_kind {
         return Err(MechError::new(ActivationPatternTriggerInvariant, None));
     }
@@ -212,16 +212,16 @@ fn elaborate_patterned_activation_inner(
             .collect(),
     };
     plan.borrow_mut().register_pattern_activation(registration);
-    Ok(Value::Empty)
+    Ok(LegacyValue::Empty)
 }
 
 pub(crate) fn elaborate_patterned_activation(
     scope: &ActivationScope,
     arms: &[ActivationArm],
-    trigger: Value,
+    trigger: LegacyValue,
     trigger_cells: Vec<ReactiveCellId>,
     interpreter: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let preflight =
         preflight_patterned_activation(scope, arms, &trigger, &trigger_cells, interpreter)?;
     let plan = interpreter.plan();

@@ -10,7 +10,7 @@ use core::fmt::Debug;
 #[cfg(not(feature = "no_std"))]
 use std::string::String;
 
-use crate::{Value, ValueKind};
+use crate::{LegacyValue, ValueKind};
 
 /// Identifies values supported as scalar or aggregate runtime elements.
 ///
@@ -48,7 +48,7 @@ impl ConstElem for crate::C64 {}
 
 impl ConstElem for String {}
 impl ConstElem for usize {}
-impl ConstElem for Value {}
+impl ConstElem for LegacyValue {}
 impl ConstElem for ValueKind {}
 
 macro_rules! impl_const_elem_matrix {

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use mech_console::{ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend};
-use mech_core::{FunctionCatalog, FunctionCatalogBuilder, Value};
+use mech_core::{FunctionCatalog, FunctionCatalogBuilder, LegacyValue};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, PreparedRuntimeEffect, RunResourceGrantConfig,
     RuntimeBuilder, RuntimeCapabilityOperation, RuntimeEventKind, RuntimeHealth,
@@ -31,7 +31,7 @@ fn provider_writes_line_to_backend() {
             path: "line".to_string(),
             context_name: "out".to_string(),
             operation: RuntimeCapabilityOperation::Write,
-            value: Value::from("hello".to_string()),
+            value: LegacyValue::from("hello".to_string()),
             intent: RuntimeResourceWriteIntent::Send,
         },
     );
@@ -48,7 +48,7 @@ fn provider_rejects_unknown_path() {
             path: "text".to_string(),
             context_name: "out".to_string(),
             operation: RuntimeCapabilityOperation::Write,
-            value: Value::from("hello".to_string()),
+            value: LegacyValue::from("hello".to_string()),
             intent: RuntimeResourceWriteIntent::Send,
         })
         .unwrap_err();

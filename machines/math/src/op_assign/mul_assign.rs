@@ -55,7 +55,7 @@ impl_assign_vector_vector!(Mul, checked_mul_assign);
 impl_assign_vector_scalar!(Mul, checked_mul_assign);
 
 #[cfg(feature = "source")]
-fn mul_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
+fn mul_assign_value_fxn(sink: LegacyValue, source: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_op_assign_value_match_arms!(
       Mul,
       (sink, source),
@@ -80,7 +80,7 @@ fn mul_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunct
 pub struct MulAssignValue {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MulAssignValue {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -96,13 +96,13 @@ impl FunctionSpecializer for MulAssignValue {
         match mul_assign_value_fxn(sink.clone(), source.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (sink, source) {
-                (Value::MutableReference(sink), Value::MutableReference(source)) => {
+                (LegacyValue::MutableReference(sink), LegacyValue::MutableReference(source)) => {
                     mul_assign_value_fxn(sink.borrow().clone(), source.borrow().clone())
                 }
-                (sink, Value::MutableReference(source)) => {
+                (sink, LegacyValue::MutableReference(source)) => {
                     mul_assign_value_fxn(sink.clone(), source.borrow().clone())
                 }
-                (Value::MutableReference(sink), source) => {
+                (LegacyValue::MutableReference(sink), source) => {
                     mul_assign_value_fxn(sink.borrow().clone(), source.clone())
                 }
                 (arg1, arg2) => Err(MechError::new(
@@ -190,7 +190,7 @@ op_assign_range_fxn!(mul_assign_range_fxn, MulAssign1DR);
 pub struct MulAssignRange {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MulAssignRange {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -201,23 +201,23 @@ impl FunctionSpecializer for MulAssignRange {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match mul_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (&sink, &ixes, &source) {
-                (Value::MutableReference(sink), ixes, Value::MutableReference(source)) => {
+                (LegacyValue::MutableReference(sink), ixes, LegacyValue::MutableReference(source)) => {
                     mul_assign_range_fxn(
                         sink.borrow().clone(),
                         source.borrow().clone(),
                         ixes.clone(),
                     )
                 }
-                (sink, ixes, Value::MutableReference(source)) => {
+                (sink, ixes, LegacyValue::MutableReference(source)) => {
                     mul_assign_range_fxn(sink.clone(), source.borrow().clone(), ixes.clone())
                 }
-                (Value::MutableReference(sink), ixes, source) => {
+                (LegacyValue::MutableReference(sink), ixes, source) => {
                     mul_assign_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
                 x => Err(MechError::new(
@@ -325,7 +325,7 @@ op_assign_range_all_fxn!(mul_assign_range_all_fxn, MulAssign2DRA);
 pub struct MulAssignRangeAll {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MulAssignRangeAll {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -336,26 +336,26 @@ impl FunctionSpecializer for MulAssignRangeAll {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match mul_assign_range_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => {
                 match (&sink, &ixes, &source) {
-                    (Value::MutableReference(sink), ixes, Value::MutableReference(source)) => {
+                    (LegacyValue::MutableReference(sink), ixes, LegacyValue::MutableReference(source)) => {
                         mul_assign_range_all_fxn(
                             sink.borrow().clone(),
                             source.borrow().clone(),
                             ixes.clone(),
                         )
                     }
-                    (sink, ixes, Value::MutableReference(source)) => mul_assign_range_all_fxn(
+                    (sink, ixes, LegacyValue::MutableReference(source)) => mul_assign_range_all_fxn(
                         sink.clone(),
                         source.borrow().clone(),
                         ixes.clone(),
                     ),
-                    (Value::MutableReference(sink), ixes, source) => mul_assign_range_all_fxn(
+                    (LegacyValue::MutableReference(sink), ixes, source) => mul_assign_range_all_fxn(
                         sink.borrow().clone(),
                         source.clone(),
                         ixes.clone(),

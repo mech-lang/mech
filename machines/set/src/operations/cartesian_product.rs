@@ -58,7 +58,7 @@ fn cartesian_product_output_len(lhs: usize, rhs: usize) -> MResult<usize> {
 pub(crate) fn validate_set_cartesian_product_contract(args: &FunctionArgs) -> MResult<()> {
     let contract = "set_cartesian_product";
     let (lhs_len, lhs_kind) = match args.input_value(0) {
-        Some(Value::Set(value)) => {
+        Some(LegacyValue::Set(value)) => {
             let value = value.borrow();
             (value.set.len(), value.kind.clone())
         }
@@ -70,7 +70,7 @@ pub(crate) fn validate_set_cartesian_product_contract(args: &FunctionArgs) -> MR
         }
     };
     let (rhs_len, rhs_kind) = match args.input_value(1) {
-        Some(Value::Set(value)) => {
+        Some(LegacyValue::Set(value)) => {
             let value = value.borrow();
             (value.set.len(), value.kind.clone())
         }
@@ -83,7 +83,7 @@ pub(crate) fn validate_set_cartesian_product_contract(args: &FunctionArgs) -> MR
     };
     cartesian_product_output_len(lhs_len, rhs_len)?;
     let output_kind = match args.output_value() {
-        Value::Set(value) => value.borrow().kind.clone(),
+        LegacyValue::Set(value) => value.borrow().kind.clone(),
         _ => {
             return Err(function_shape_contract_violation(
                 contract,
@@ -147,7 +147,7 @@ impl MechFunctionImpl for SetCartesianProductFxn {
             let mut next = MechSet::new(output_kind.clone(), output_len);
             for elem1 in &lhs_ptr.set {
                 for elem2 in &rhs_ptr.set {
-                    next.set.insert(Value::Tuple(Ref::new(MechTuple {
+                    next.set.insert(LegacyValue::Tuple(Ref::new(MechTuple {
                         elements: vec![Box::new(elem1.clone()), Box::new(elem2.clone())],
                     })));
                 }
@@ -162,14 +162,14 @@ impl MechFunctionImpl for SetCartesianProductFxn {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Set(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Set(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -182,9 +182,9 @@ impl MechFunctionCompiler for SetCartesianProductFxn {
 }
 
 #[cfg(feature = "source")]
-fn set_cartesian_product_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
+fn set_cartesian_product_fxn(lhs: LegacyValue, rhs: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
-        (Value::Set(lhs), Value::Set(rhs)) => {
+        (LegacyValue::Set(lhs), LegacyValue::Set(rhs)) => {
             let output_len =
                 cartesian_product_output_len(lhs.borrow().set.len(), rhs.borrow().set.len())?;
             Ok(Box::new(SetCartesianProductFxn {
@@ -214,7 +214,7 @@ mod tests {
     fn index_set(cardinality: usize) -> MechSet {
         MechSet::from_vec(
             (0..cardinality)
-                .map(|index| Value::Index(Ref::new(index)))
+                .map(|index| LegacyValue::Index(Ref::new(index)))
                 .collect(),
         )
     }
@@ -265,9 +265,9 @@ mod tests {
         assert!(out.borrow().set.is_empty());
         assert_eq!(out.borrow().kind, output_kind);
         validate_set_cartesian_product_contract(&FunctionArgs::Binary(
-            Value::Set(out),
-            Value::Set(lhs),
-            Value::Set(rhs),
+            LegacyValue::Set(out),
+            LegacyValue::Set(lhs),
+            LegacyValue::Set(rhs),
         ))
         .unwrap();
     }
@@ -277,7 +277,7 @@ mod tests {
 pub struct SetCartesianProduct {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for SetCartesianProduct {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -293,13 +293,13 @@ impl FunctionSpecializer for SetCartesianProduct {
         match set_cartesian_product_fxn(lhs.clone(), rhs.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (lhs, rhs) {
-                (Value::MutableReference(lhs), Value::MutableReference(rhs)) => {
+                (LegacyValue::MutableReference(lhs), LegacyValue::MutableReference(rhs)) => {
                     set_cartesian_product_fxn(lhs.borrow().clone(), rhs.borrow().clone())
                 }
-                (lhs, Value::MutableReference(rhs)) => {
+                (lhs, LegacyValue::MutableReference(rhs)) => {
                     set_cartesian_product_fxn(lhs.clone(), rhs.borrow().clone())
                 }
-                (Value::MutableReference(lhs), rhs) => {
+                (LegacyValue::MutableReference(lhs), rhs) => {
                     set_cartesian_product_fxn(lhs.borrow().clone(), rhs.clone())
                 }
                 x => Err(MechError::new(

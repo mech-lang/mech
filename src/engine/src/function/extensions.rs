@@ -278,12 +278,12 @@ impl MechErrorKind for FunctionExtensionUnavailable {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{MechFunction, OperationId, Value};
+    use mech_core::{LegacyValue, MechFunction, OperationId};
 
     struct TestSpecializer;
 
     impl FunctionSpecializer for TestSpecializer {
-        fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             unreachable!("extension-store tests do not specialize functions")
         }
     }

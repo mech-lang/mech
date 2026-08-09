@@ -1,4 +1,4 @@
-use mech_core::{MResult, MechError, Value};
+use mech_core::{LegacyValue, MResult, MechError};
 use mech_runtime::ActorHostPlanningState;
 
 use crate::{
@@ -34,8 +34,8 @@ impl NativeActorPlanning {
         &mut self,
         instruction: u32,
         name: &str,
-        arguments: &[Value],
-    ) -> MResult<Value> {
+        arguments: &[LegacyValue],
+    ) -> MResult<LegacyValue> {
         self.required = true;
         self.state
             .as_mut()

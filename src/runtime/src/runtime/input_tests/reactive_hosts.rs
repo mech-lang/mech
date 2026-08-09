@@ -3,7 +3,7 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 
-use mech_core::{Ref, Value, hash_str};
+use mech_core::{LegacyValue, Ref, hash_str};
 
 use crate::runtime::test_support::{
     capabilities::{grant_host_call, grant_read},
@@ -20,7 +20,7 @@ use crate::{
 
 const TEST_CLOCK_BASE_URI: &str = "test://clock/ticks";
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
+fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -31,13 +31,13 @@ fn live_input_recomputes_runtime_host_function() {
     let host = PlannedPureHostFunction::new(
         "demo/live-plus-one",
         |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-            Ok(snapshot(Value::F64(Ref::new(
+            Ok(snapshot(LegacyValue::F64(Ref::new(
                 host_f64_argument(&args[0]) + 1.0,
             ))))
         },
         move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
             host_calls.fetch_add(1, Ordering::SeqCst);
-            Ok(snapshot(Value::F64(Ref::new(
+            Ok(snapshot(LegacyValue::F64(Ref::new(
                 host_f64_argument(&args[0]) + 1.0,
             ))))
         },
@@ -79,8 +79,12 @@ fn live_input_recomputes_runtime_host_function() {
 #[test]
 fn runtime_reactive_host_input_executes_only_reachable_branch() {
     let provider = TestResourceProvider::new()
-        .with_value(TEST_CLOCK_BASE_URI, "left", Value::F64(Ref::new(1.0)))
-        .with_value(TEST_CLOCK_BASE_URI, "right", Value::F64(Ref::new(2.0)));
+        .with_value(TEST_CLOCK_BASE_URI, "left", LegacyValue::F64(Ref::new(1.0)))
+        .with_value(
+            TEST_CLOCK_BASE_URI,
+            "right",
+            LegacyValue::F64(Ref::new(2.0)),
+        );
     let left_calls = Arc::new(AtomicUsize::new(0));
     let right_calls = Arc::new(AtomicUsize::new(0));
     let left_host_calls = left_calls.clone();
@@ -90,13 +94,13 @@ fn runtime_reactive_host_input_executes_only_reachable_branch() {
         .host_function(PlannedPureHostFunction::new(
             "demo/left-branch",
             |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::F64(Ref::new(
+                Ok(snapshot(LegacyValue::F64(Ref::new(
                     host_f64_argument(&args[0]) + 100.0,
                 ))))
             },
             move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                 left_host_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(snapshot(Value::F64(Ref::new(
+                Ok(snapshot(LegacyValue::F64(Ref::new(
                     host_f64_argument(&args[0]) + 100.0,
                 ))))
             },
@@ -105,13 +109,13 @@ fn runtime_reactive_host_input_executes_only_reachable_branch() {
         .host_function(PlannedPureHostFunction::new(
             "demo/right-branch",
             |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::F64(Ref::new(
+                Ok(snapshot(LegacyValue::F64(Ref::new(
                     host_f64_argument(&args[0]) + 200.0,
                 ))))
             },
             move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                 right_host_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(snapshot(Value::F64(Ref::new(
+                Ok(snapshot(LegacyValue::F64(Ref::new(
                     host_f64_argument(&args[0]) + 200.0,
                 ))))
             },
@@ -174,13 +178,13 @@ fn live_host_string_output_recomputes_without_replacing_reference() {
     let host = DeterministicHostFunction::new(
         "demo/live-label",
         |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-            Ok(Value::String(Ref::new(format!(
+            Ok(LegacyValue::String(Ref::new(format!(
                 "tick:{}",
                 host_f64_argument(&args[0])
             ))))
         },
         |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-            Ok(Value::String(Ref::new(format!(
+            Ok(LegacyValue::String(Ref::new(format!(
                 "tick:{}",
                 host_f64_argument(&args[0])
             ))))
@@ -206,7 +210,7 @@ fn live_host_string_output_recomputes_without_replacing_reference() {
         .unwrap();
     let outer_pointer = before.as_ptr();
     let inner_pointer = match &*before.borrow() {
-        Value::String(value) => value.as_ptr(),
+        LegacyValue::String(value) => value.as_ptr(),
         other => panic!("expected string, got {other:?}"),
     };
     assert_eq!(string_value(&before.borrow()), "tick:1");
@@ -227,7 +231,7 @@ fn live_host_string_output_recomputes_without_replacing_reference() {
         .unwrap();
     assert_eq!(outer_pointer, after.as_ptr());
     match &*after.borrow() {
-        Value::String(value) => {
+        LegacyValue::String(value) => {
             assert_eq!(inner_pointer, value.as_ptr());
             assert_eq!(&*value.borrow(), "tick:9");
         }
@@ -244,18 +248,20 @@ fn live_host_output_kind_change_preserves_previous_output() {
         PlannedPureHostFunction::new(
             "demo/kind-change",
             |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::F64(Ref::new(
+                Ok(snapshot(LegacyValue::F64(Ref::new(
                     host_f64_argument(&args[0]) + 1.0,
                 ))))
             },
             move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                 let invocation = host_calls.fetch_add(1, Ordering::SeqCst);
                 if invocation == 0 {
-                    return Ok(snapshot(Value::F64(Ref::new(
+                    return Ok(snapshot(LegacyValue::F64(Ref::new(
                         host_f64_argument(&args[0]) + 1.0,
                     ))));
                 }
-                Ok(snapshot(Value::String(Ref::new("bad-kind".to_string()))))
+                Ok(snapshot(LegacyValue::String(Ref::new(
+                    "bad-kind".to_string(),
+                ))))
             },
         ),
     );
@@ -273,7 +279,7 @@ fn live_host_output_kind_change_preserves_previous_output() {
         .get(hash_str("host-result"))
         .unwrap();
     let host_result_inner = match &*host_result.borrow() {
-        Value::F64(value) => value.as_ptr(),
+        LegacyValue::F64(value) => value.as_ptr(),
         other => panic!("expected f64 host result, got {other:?}"),
     };
 
@@ -297,7 +303,7 @@ fn live_host_output_kind_change_preserves_previous_output() {
         .get(hash_str("host-result"))
         .unwrap();
     match &*host_result.borrow() {
-        Value::F64(value) => {
+        LegacyValue::F64(value) => {
             assert_eq!(host_result_inner, value.as_ptr());
             assert_eq!(*value.borrow(), 2.0);
         }
@@ -333,7 +339,7 @@ fn live_host_empty_output_can_recompute() {
             "@pulse := test://clock/ticks{:read(value)}\noutput := demo/live-empty(@pulse/value)",
         )
         .unwrap();
-    assert_eq!(symbol_value(&runtime, "output"), Value::Empty);
+    assert_eq!(symbol_value(&runtime, "output"), LegacyValue::Empty);
 
     let outcome = runtime
         .apply_host_input(RuntimeHostInput::single(
@@ -343,5 +349,5 @@ fn live_host_empty_output_can_recompute() {
         .unwrap();
     assert!(outcome.turn.is_some());
     assert!(calls.load(Ordering::SeqCst) >= 1);
-    assert_eq!(symbol_value(&runtime, "output"), Value::Empty);
+    assert_eq!(symbol_value(&runtime, "output"), LegacyValue::Empty);
 }

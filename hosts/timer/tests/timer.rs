@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 #[cfg(feature = "native")]
 use std::time::{Duration, Instant};
 
-use mech_core::Value;
+use mech_core::LegacyValue;
 #[cfg(feature = "native")]
 use mech_runtime::RuntimeHostFactory;
 use mech_runtime::{
@@ -59,7 +59,7 @@ fn provider_reads_all_timer_fields() {
                 context_name: "tick".to_string(),
             })
             .unwrap();
-        assert!(matches!(value, Value::F64(_)));
+        assert!(matches!(value, LegacyValue::F64(_)));
     }
 }
 

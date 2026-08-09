@@ -819,14 +819,14 @@ fn official_v1_layout_is_deterministic_and_round_trips() {
     assert_eq!(parsed.sections.len(), BYTECODE_SECTION_COUNT);
 
     let decoded = parsed.decode_constants().unwrap();
-    assert!(matches!(decoded[0], crate::Value::Empty));
-    assert!(matches!(&decoded[1], crate::Value::Bool(value) if *value.borrow()));
+    assert!(matches!(decoded[0], crate::LegacyValue::Empty));
+    assert!(matches!(&decoded[1], crate::LegacyValue::Bool(value) if *value.borrow()));
     assert!(
-        matches!(&decoded[2], crate::Value::String(value) if value.borrow().as_str() == "bytecode-v1")
+        matches!(&decoded[2], crate::LegacyValue::String(value) if value.borrow().as_str() == "bytecode-v1")
     );
-    assert!(matches!(&decoded[3], crate::Value::Index(value) if *value.borrow() == 42));
+    assert!(matches!(&decoded[3], crate::LegacyValue::Index(value) if *value.borrow() == 42));
     assert!(
-        matches!(&decoded[4], crate::Value::F64(value) if value.borrow().to_bits() == (-0.0_f64).to_bits())
+        matches!(&decoded[4], crate::LegacyValue::F64(value) if value.borrow().to_bits() == (-0.0_f64).to_bits())
     );
 }
 
@@ -954,28 +954,28 @@ fn every_canonical_scalar_encoding_round_trips_exactly() {
 
     let parsed = ParsedProgram::from_bytes(&write_bytecode(&program(constants)).unwrap()).unwrap();
     let values = parsed.decode_constants().unwrap();
-    assert!(matches!(&values[0], crate::Value::U8(value) if *value.borrow() == u8::MAX));
-    assert!(matches!(&values[4], crate::Value::U128(value) if *value.borrow() == u128::MAX));
-    assert!(matches!(&values[5], crate::Value::I8(value) if *value.borrow() == i8::MIN));
-    assert!(matches!(&values[9], crate::Value::I128(value) if *value.borrow() == i128::MIN));
+    assert!(matches!(&values[0], crate::LegacyValue::U8(value) if *value.borrow() == u8::MAX));
+    assert!(matches!(&values[4], crate::LegacyValue::U128(value) if *value.borrow() == u128::MAX));
+    assert!(matches!(&values[5], crate::LegacyValue::I8(value) if *value.borrow() == i8::MIN));
+    assert!(matches!(&values[9], crate::LegacyValue::I128(value) if *value.borrow() == i128::MIN));
     assert!(
-        matches!(&values[10], crate::Value::F32(value) if value.borrow().to_bits() == f32_bits)
+        matches!(&values[10], crate::LegacyValue::F32(value) if value.borrow().to_bits() == f32_bits)
     );
     assert!(
-        matches!(&values[11], crate::Value::F64(value) if value.borrow().to_bits() == f64_bits)
+        matches!(&values[11], crate::LegacyValue::F64(value) if value.borrow().to_bits() == f64_bits)
     );
-    assert!(matches!(&values[12], crate::Value::C64(value)
+    assert!(matches!(&values[12], crate::LegacyValue::C64(value)
         if value.borrow().0.re.to_bits() == c64_real_bits
         && value.borrow().0.im.to_bits() == c64_imaginary_bits));
-    assert!(matches!(&values[13], crate::Value::R64(value)
+    assert!(matches!(&values[13], crate::LegacyValue::R64(value)
         if *value.borrow().numer() == -3 && *value.borrow().denom() == 7));
     assert!(
-        matches!(&values[14], crate::Value::String(value) if value.borrow().as_str() == "bytecode-v1 🦀")
+        matches!(&values[14], crate::LegacyValue::String(value) if value.borrow().as_str() == "bytecode-v1 🦀")
     );
-    assert!(matches!(&values[15], crate::Value::Bool(value) if *value.borrow()));
-    assert!(matches!(&values[16], crate::Value::Id(42)));
-    assert!(matches!(&values[17], crate::Value::Index(value) if *value.borrow() == 7));
-    assert!(matches!(&values[18], crate::Value::Empty));
+    assert!(matches!(&values[15], crate::LegacyValue::Bool(value) if *value.borrow()));
+    assert!(matches!(&values[16], crate::LegacyValue::Id(42)));
+    assert!(matches!(&values[17], crate::LegacyValue::Index(value) if *value.borrow() == 7));
+    assert!(matches!(&values[18], crate::LegacyValue::Empty));
 }
 
 #[test]
@@ -1136,23 +1136,23 @@ fn every_matrix_element_codec_round_trips_a_dynamic_matrix() {
     let parsed = ParsedProgram::from_bytes(&write_bytecode(&program(constants)).unwrap()).unwrap();
     let values = parsed.decode_constants().unwrap();
     assert_eq!(values.len(), 17);
-    assert!(matches!(&values[0], crate::Value::MatrixIndex(_)));
-    assert!(matches!(&values[1], crate::Value::MatrixBool(_)));
-    assert!(matches!(&values[2], crate::Value::MatrixU8(_)));
-    assert!(matches!(&values[3], crate::Value::MatrixU16(_)));
-    assert!(matches!(&values[4], crate::Value::MatrixU32(_)));
-    assert!(matches!(&values[5], crate::Value::MatrixU64(_)));
-    assert!(matches!(&values[6], crate::Value::MatrixU128(_)));
-    assert!(matches!(&values[7], crate::Value::MatrixI8(_)));
-    assert!(matches!(&values[8], crate::Value::MatrixI16(_)));
-    assert!(matches!(&values[9], crate::Value::MatrixI32(_)));
-    assert!(matches!(&values[10], crate::Value::MatrixI64(_)));
-    assert!(matches!(&values[11], crate::Value::MatrixI128(_)));
-    assert!(matches!(&values[12], crate::Value::MatrixF32(_)));
-    assert!(matches!(&values[13], crate::Value::MatrixF64(_)));
-    assert!(matches!(&values[14], crate::Value::MatrixC64(_)));
-    assert!(matches!(&values[15], crate::Value::MatrixR64(_)));
-    assert!(matches!(&values[16], crate::Value::MatrixString(_)));
+    assert!(matches!(&values[0], crate::LegacyValue::MatrixIndex(_)));
+    assert!(matches!(&values[1], crate::LegacyValue::MatrixBool(_)));
+    assert!(matches!(&values[2], crate::LegacyValue::MatrixU8(_)));
+    assert!(matches!(&values[3], crate::LegacyValue::MatrixU16(_)));
+    assert!(matches!(&values[4], crate::LegacyValue::MatrixU32(_)));
+    assert!(matches!(&values[5], crate::LegacyValue::MatrixU64(_)));
+    assert!(matches!(&values[6], crate::LegacyValue::MatrixU128(_)));
+    assert!(matches!(&values[7], crate::LegacyValue::MatrixI8(_)));
+    assert!(matches!(&values[8], crate::LegacyValue::MatrixI16(_)));
+    assert!(matches!(&values[9], crate::LegacyValue::MatrixI32(_)));
+    assert!(matches!(&values[10], crate::LegacyValue::MatrixI64(_)));
+    assert!(matches!(&values[11], crate::LegacyValue::MatrixI128(_)));
+    assert!(matches!(&values[12], crate::LegacyValue::MatrixF32(_)));
+    assert!(matches!(&values[13], crate::LegacyValue::MatrixF64(_)));
+    assert!(matches!(&values[14], crate::LegacyValue::MatrixC64(_)));
+    assert!(matches!(&values[15], crate::LegacyValue::MatrixR64(_)));
+    assert!(matches!(&values[16], crate::LegacyValue::MatrixString(_)));
 }
 
 #[test]
@@ -1291,33 +1291,36 @@ fn every_composite_constant_codec_round_trips() {
     let parsed = ParsedProgram::from_bytes(&write_bytecode(&program(constants)).unwrap()).unwrap();
     let values = parsed.decode_constants().unwrap();
     assert_eq!(values.len(), 13);
-    assert!(matches!(&values[0], crate::Value::Tuple(_)));
-    assert!(matches!(&values[1], crate::Value::Record(_)));
-    assert!(matches!(&values[2], crate::Value::Map(_)));
-    assert!(matches!(&values[3], crate::Value::Set(_)));
-    assert!(matches!(&values[4], crate::Value::Table(_)));
-    assert!(matches!(&values[5], crate::Value::MutableReference(_)));
+    assert!(matches!(&values[0], crate::LegacyValue::Tuple(_)));
+    assert!(matches!(&values[1], crate::LegacyValue::Record(_)));
+    assert!(matches!(&values[2], crate::LegacyValue::Map(_)));
+    assert!(matches!(&values[3], crate::LegacyValue::Set(_)));
+    assert!(matches!(&values[4], crate::LegacyValue::Table(_)));
+    assert!(matches!(
+        &values[5],
+        crate::LegacyValue::MutableReference(_)
+    ));
     assert!(matches!(
         &values[6],
-        crate::Value::EmptyKind(crate::ValueKind::Option(_))
+        crate::LegacyValue::EmptyKind(crate::ValueKind::Option(_))
     ));
     assert!(matches!(
         &values[7],
-        crate::Value::Typed(_, crate::ValueKind::Option(_))
+        crate::LegacyValue::Typed(_, crate::ValueKind::Option(_))
     ));
-    assert!(matches!(&values[8], crate::Value::Atom(_)));
-    assert!(matches!(&values[9], crate::Value::Enum(_)));
+    assert!(matches!(&values[8], crate::LegacyValue::Atom(_)));
+    assert!(matches!(&values[9], crate::LegacyValue::Enum(_)));
     assert!(matches!(
         &values[10],
-        crate::Value::Kind(crate::ValueKind::U8)
+        crate::LegacyValue::Kind(crate::ValueKind::U8)
     ));
     assert!(matches!(
         &values[11],
-        crate::Value::EmptyKind(crate::ValueKind::Any)
+        crate::LegacyValue::EmptyKind(crate::ValueKind::Any)
     ));
     assert!(matches!(
         &values[12],
-        crate::Value::EmptyKind(crate::ValueKind::None)
+        crate::LegacyValue::EmptyKind(crate::ValueKind::None)
     ));
 }
 
@@ -2024,14 +2027,14 @@ fn composite_pack_round_trips_and_reconstructs_from_child_registers() {
         vec![constants[0].clone(), constants[1].clone()],
     )
     .unwrap();
-    let crate::Value::Tuple(tuple) = rebuilt else {
+    let crate::LegacyValue::Tuple(tuple) = rebuilt else {
         panic!("CompositePack must reconstruct the tuple template");
     };
     assert_eq!(
         tuple.borrow().elements,
         vec![
-            Box::new(crate::Value::U8(crate::Ref::new(7))),
-            Box::new(crate::Value::U8(crate::Ref::new(9))),
+            Box::new(crate::LegacyValue::U8(crate::Ref::new(7))),
+            Box::new(crate::LegacyValue::U8(crate::Ref::new(9))),
         ],
     );
 }
@@ -2898,7 +2901,7 @@ mod compiler_tests {
     use nalgebra::DVector;
 
     use crate::program::compiler::{BytecodeCompilerContext, CompileConst, Register};
-    use crate::{MResult, Ref, Value, ValueKind};
+    use crate::{LegacyValue, MResult, Ref, ValueKind};
 
     #[cfg(any(
         all(feature = "table", feature = "vectord", feature = "u8"),
@@ -3016,7 +3019,7 @@ mod compiler_tests {
         }
     }
 
-    fn encode(value: &Value) -> EncodedConstant {
+    fn encode(value: &LegacyValue) -> EncodedConstant {
         let mut context = ConstantContext::default();
         value.compile_const(&mut context).unwrap();
         context.constant.unwrap()
@@ -3032,7 +3035,7 @@ mod compiler_tests {
 
     #[test]
     fn typed_constant_cannot_discard_a_mismatched_declared_type() {
-        let value = Value::Typed(Box::new(Value::F64(Ref::new(1.0))), ValueKind::Bool);
+        let value = LegacyValue::Typed(Box::new(LegacyValue::F64(Ref::new(1.0))), ValueKind::Bool);
         let error = value
             .compile_const(&mut ConstantContext::default())
             .unwrap_err();
@@ -3053,8 +3056,8 @@ mod compiler_tests {
         feature = "vector2",
         feature = "matrixd"
     ))]
-    fn f64_matrix_storage(value: &Value) -> MatrixStorage {
-        let Value::MatrixF64(matrix) = value else {
+    fn f64_matrix_storage(value: &LegacyValue) -> MatrixStorage {
+        let LegacyValue::MatrixF64(matrix) = value else {
             panic!("expected an f64 matrix, found {value:?}");
         };
         match matrix {
@@ -3081,7 +3084,7 @@ mod compiler_tests {
     fn present_matrix_options_preserve_concrete_storage() {
         let cases = vec![
             (
-                Value::MatrixF64(Matrix::Matrix2(Ref::new(na::Matrix2::from_row_slice(&[
+                LegacyValue::MatrixF64(Matrix::Matrix2(Ref::new(na::Matrix2::from_row_slice(&[
                     1.0, 2.0, 3.0, 4.0,
                 ])))),
                 MatrixStorage::Matrix2,
@@ -3089,7 +3092,7 @@ mod compiler_tests {
                 2,
             ),
             (
-                Value::MatrixF64(Matrix::Matrix2x3(Ref::new(na::Matrix2x3::from_row_slice(
+                LegacyValue::MatrixF64(Matrix::Matrix2x3(Ref::new(na::Matrix2x3::from_row_slice(
                     &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
                 )))),
                 MatrixStorage::Matrix2x3,
@@ -3097,7 +3100,7 @@ mod compiler_tests {
                 3,
             ),
             (
-                Value::MatrixF64(Matrix::RowVector2(Ref::new(
+                LegacyValue::MatrixF64(Matrix::RowVector2(Ref::new(
                     na::RowVector2::from_row_slice(&[1.0, 2.0]),
                 ))),
                 MatrixStorage::RowVector2,
@@ -3105,7 +3108,7 @@ mod compiler_tests {
                 2,
             ),
             (
-                Value::MatrixF64(Matrix::Vector2(Ref::new(na::Vector2::from_column_slice(
+                LegacyValue::MatrixF64(Matrix::Vector2(Ref::new(na::Vector2::from_column_slice(
                     &[1.0, 2.0],
                 )))),
                 MatrixStorage::Vector2,
@@ -3113,7 +3116,7 @@ mod compiler_tests {
                 1,
             ),
             (
-                Value::MatrixF64(Matrix::DMatrix(Ref::new(na::DMatrix::from_row_slice(
+                LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(na::DMatrix::from_row_slice(
                     2,
                     2,
                     &[1.0, 2.0, 3.0, 4.0],
@@ -3126,7 +3129,7 @@ mod compiler_tests {
 
         for (value, expected_storage, expected_rows, expected_cols) in cases {
             let declared_kind = value.kind();
-            let constant = encode(&Value::Typed(
+            let constant = encode(&LegacyValue::Typed(
                 Box::new(value.clone()),
                 ValueKind::Option(Box::new(declared_kind)),
             ));
@@ -3146,7 +3149,7 @@ mod compiler_tests {
             assert_eq!(*storage, expected_storage);
             assert_eq!((*rows, *cols), (expected_rows, expected_cols));
 
-            let Value::Typed(decoded, ValueKind::Option(_)) = decode_one(&constant) else {
+            let LegacyValue::Typed(decoded, ValueKind::Option(_)) = decode_one(&constant) else {
                 panic!("present matrix option did not decode as a typed option");
             };
             assert_eq!(decoded.as_ref(), &value);
@@ -3157,7 +3160,7 @@ mod compiler_tests {
     #[cfg(all(feature = "f64", feature = "matrixd"))]
     #[test]
     fn absent_matrix_option_uses_annotation_derived_dynamic_storage() {
-        let constant = encode(&Value::EmptyKind(ValueKind::Option(Box::new(
+        let constant = encode(&LegacyValue::EmptyKind(ValueKind::Option(Box::new(
             ValueKind::Matrix(Box::new(ValueKind::F64), vec![2, 2]),
         ))));
         assert_eq!(
@@ -3172,7 +3175,7 @@ mod compiler_tests {
         assert_eq!(constant.bytes, [0]);
         assert!(matches!(
             decode_one(&constant),
-            Value::EmptyKind(ValueKind::Option(_))
+            LegacyValue::EmptyKind(ValueKind::Option(_))
         ));
     }
 
@@ -3186,17 +3189,17 @@ mod compiler_tests {
     fn present_matrix_options_reject_semantic_mismatches() {
         let declared = ValueKind::Matrix(Box::new(ValueKind::F64), vec![2, 2]);
         let mismatches = vec![
-            Value::MatrixI64(Matrix::Matrix2(Ref::new(na::Matrix2::from_row_slice(&[
+            LegacyValue::MatrixI64(Matrix::Matrix2(Ref::new(na::Matrix2::from_row_slice(&[
                 1, 2, 3, 4,
             ])))),
-            Value::MatrixF64(Matrix::Matrix3(Ref::new(na::Matrix3::from_row_slice(&[
+            LegacyValue::MatrixF64(Matrix::Matrix3(Ref::new(na::Matrix3::from_row_slice(&[
                 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0,
             ])))),
-            Value::F64(Ref::new(1.0)),
+            LegacyValue::F64(Ref::new(1.0)),
         ];
 
         for actual in mismatches {
-            let error = Value::Typed(
+            let error = LegacyValue::Typed(
                 Box::new(actual),
                 ValueKind::Option(Box::new(declared.clone())),
             )
@@ -3221,21 +3224,22 @@ mod compiler_tests {
     ))]
     #[test]
     fn fixed_matrix_composite_entries_preserve_concrete_storage() {
-        let fixed = Value::MatrixI64(Matrix::Matrix2(Ref::new(na::Matrix2::from_row_slice(&[
-            1, 2, 3, 4,
-        ]))));
+        let fixed =
+            LegacyValue::MatrixI64(Matrix::Matrix2(Ref::new(na::Matrix2::from_row_slice(&[
+                1, 2, 3, 4,
+            ]))));
         let matrix_type = RuntimeType::Matrix {
             element: Box::new(RuntimeType::I64),
             storage: MatrixStorage::Matrix2,
             rows: 2,
             cols: 2,
         };
-        let assert_fixed = |value: &Value| {
-            assert!(matches!(value, Value::MatrixI64(Matrix::Matrix2(_))));
+        let assert_fixed = |value: &LegacyValue| {
+            assert!(matches!(value, LegacyValue::MatrixI64(Matrix::Matrix2(_))));
         };
 
-        let map = crate::MechMap::from_vec(vec![(Value::U8(Ref::new(1)), fixed.clone())]);
-        let map_constant = encode(&Value::Map(Ref::new(map)));
+        let map = crate::MechMap::from_vec(vec![(LegacyValue::U8(Ref::new(1)), fixed.clone())]);
+        let map_constant = encode(&LegacyValue::Map(Ref::new(map)));
         assert_eq!(
             map_constant.runtime_type,
             RuntimeType::Map {
@@ -3243,13 +3247,13 @@ mod compiler_tests {
                 value: Box::new(matrix_type.clone()),
             }
         );
-        let Value::Map(decoded_map) = decode_one(&map_constant) else {
+        let LegacyValue::Map(decoded_map) = decode_one(&map_constant) else {
             panic!("matrix-valued map did not decode as a map");
         };
         assert_fixed(decoded_map.borrow().map.values().next().unwrap());
 
         let set = crate::MechSet::from_vec(vec![fixed.clone()]);
-        let set_constant = encode(&Value::Set(Ref::new(set)));
+        let set_constant = encode(&LegacyValue::Set(Ref::new(set)));
         assert_eq!(
             set_constant.runtime_type,
             RuntimeType::Set {
@@ -3257,7 +3261,7 @@ mod compiler_tests {
                 max_len: Some(1),
             }
         );
-        let Value::Set(decoded_set) = decode_one(&set_constant) else {
+        let LegacyValue::Set(decoded_set) = decode_one(&set_constant) else {
             panic!("matrix-valued set did not decode as a set");
         };
         assert_fixed(decoded_set.borrow().set.iter().next().unwrap());
@@ -3273,7 +3277,7 @@ mod compiler_tests {
             ),
         );
         let table = crate::MechTable::new(1, 1, data, HashMap::from([(id, name.to_owned())]));
-        let table_constant = encode(&Value::Table(Ref::new(table)));
+        let table_constant = encode(&LegacyValue::Table(Ref::new(table)));
         assert_eq!(
             table_constant.runtime_type,
             RuntimeType::Table {
@@ -3281,7 +3285,7 @@ mod compiler_tests {
                 primary_key: 0,
             }
         );
-        let Value::Table(decoded_table) = decode_one(&table_constant) else {
+        let LegacyValue::Table(decoded_table) = decode_one(&table_constant) else {
             panic!("matrix-valued table did not decode as a table");
         };
         let table = decoded_table.borrow();
@@ -3298,11 +3302,17 @@ mod compiler_tests {
             (Vec::new(), Some(0)),
             (Vec::new(), Some(10)),
             (
-                vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0))],
+                vec![
+                    LegacyValue::F64(Ref::new(1.0)),
+                    LegacyValue::F64(Ref::new(2.0)),
+                ],
                 Some(10),
             ),
             (
-                vec![Value::F64(Ref::new(1.0)), Value::F64(Ref::new(2.0))],
+                vec![
+                    LegacyValue::F64(Ref::new(1.0)),
+                    LegacyValue::F64(Ref::new(2.0)),
+                ],
                 None,
             ),
         ];
@@ -3312,7 +3322,7 @@ mod compiler_tests {
             set.kind = ValueKind::F64;
             set.max_elements = max_elements;
             set.num_elements = max_elements.unwrap_or(0);
-            let encoded = encode(&Value::Set(Ref::new(set)));
+            let encoded = encode(&LegacyValue::Set(Ref::new(set)));
             assert_eq!(
                 encoded.runtime_type,
                 RuntimeType::Set {
@@ -3337,7 +3347,7 @@ mod compiler_tests {
         for (column, name) in columns.iter().enumerate() {
             let id = crate::hash_str(name);
             let cells = (0..rows)
-                .map(|row| Value::U8(Ref::new((row + column) as u8)))
+                .map(|row| LegacyValue::U8(Ref::new((row + column) as u8)))
                 .collect();
             data.insert(
                 id,
@@ -3351,7 +3361,7 @@ mod compiler_tests {
         crate::MechTable::new(rows, columns.len(), data, col_names)
     }
 
-    fn decode_one(constant: &EncodedConstant) -> Value {
+    fn decode_one(constant: &EncodedConstant) -> LegacyValue {
         let parsed =
             ParsedProgram::from_bytes(&write_bytecode(&program(vec![constant.clone()])).unwrap())
                 .unwrap();
@@ -3381,27 +3391,27 @@ mod compiler_tests {
     fn present_and_absent_table_options_share_the_same_child_type() {
         let table = table(3, &["value"]);
         let option_kind = ValueKind::Option(Box::new(table.kind()));
-        let present = encode(&Value::Typed(
-            Box::new(Value::Table(Ref::new(table))),
+        let present = encode(&LegacyValue::Typed(
+            Box::new(LegacyValue::Table(Ref::new(table))),
             option_kind.clone(),
         ));
-        let absent = encode(&Value::EmptyKind(option_kind));
+        let absent = encode(&LegacyValue::EmptyKind(option_kind));
 
         assert_eq!(present.runtime_type, absent.runtime_type);
         let (columns, primary_key) = option_table_type(&present.runtime_type);
         assert_eq!(columns, [("value".to_owned(), RuntimeType::U8)]);
         assert_eq!(primary_key, 0);
 
-        let Value::Typed(present_value, ValueKind::Option(_)) = decode_one(&present) else {
+        let LegacyValue::Typed(present_value, ValueKind::Option(_)) = decode_one(&present) else {
             panic!("present table option did not decode as a typed option");
         };
-        let Value::Table(present_table) = present_value.as_ref() else {
+        let LegacyValue::Table(present_table) = present_value.as_ref() else {
             panic!("present table option did not preserve its table child");
         };
         assert_eq!(present_table.borrow().rows, 3);
         assert!(matches!(
             decode_one(&absent),
-            Value::EmptyKind(ValueKind::Option(_))
+            LegacyValue::EmptyKind(ValueKind::Option(_))
         ));
 
         assert_eq!(present.bytes[0], 1);
@@ -3438,13 +3448,17 @@ mod compiler_tests {
             ValueKind::Option(Box::new(inner))
         }
 
-        fn present(value: Value, declared_inner: ValueKind) -> Value {
-            Value::Typed(Box::new(value), option(declared_inner))
+        fn present(value: LegacyValue, declared_inner: ValueKind) -> LegacyValue {
+            LegacyValue::Typed(Box::new(value), option(declared_inner))
         }
 
-        fn map(entries: Vec<(Value, Value)>, key_kind: ValueKind, value_kind: ValueKind) -> Value {
+        fn map(
+            entries: Vec<(LegacyValue, LegacyValue)>,
+            key_kind: ValueKind,
+            value_kind: ValueKind,
+        ) -> LegacyValue {
             let map = entries.into_iter().collect::<IndexMap<_, _>>();
-            Value::Map(Ref::new(MechMap {
+            LegacyValue::Map(Ref::new(MechMap {
                 key_kind,
                 value_kind,
                 num_elements: map.len(),
@@ -3452,9 +3466,9 @@ mod compiler_tests {
             }))
         }
 
-        fn set(elements: Vec<Value>, kind: ValueKind) -> Value {
+        fn set(elements: Vec<LegacyValue>, kind: ValueKind) -> LegacyValue {
             let set = elements.into_iter().collect::<IndexSet<_>>();
-            Value::Set(Ref::new(MechSet {
+            LegacyValue::Set(Ref::new(MechSet {
                 kind,
                 max_elements: Some(set.len()),
                 num_elements: set.len(),
@@ -3462,11 +3476,11 @@ mod compiler_tests {
             }))
         }
 
-        fn table(kind: ValueKind, cells: Vec<Value>) -> Value {
+        fn table(kind: ValueKind, cells: Vec<LegacyValue>) -> LegacyValue {
             let name = "value";
             let id = hash_str(name);
             let rows = cells.len();
-            Value::Table(Ref::new(MechTable::new(
+            LegacyValue::Table(Ref::new(MechTable::new(
                 rows,
                 1,
                 IndexMap::from([(
@@ -3477,14 +3491,14 @@ mod compiler_tests {
             )))
         }
 
-        fn matrix2() -> Value {
-            Value::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::from_row_slice(&[
+        fn matrix2() -> LegacyValue {
+            LegacyValue::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::from_row_slice(&[
                 1.0, 2.0, 3.0, 4.0,
             ]))))
         }
 
-        fn dynamic_matrix2() -> Value {
-            Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_row_slice(
+        fn dynamic_matrix2() -> LegacyValue {
+            LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_row_slice(
                 2,
                 2,
                 &[1.0, 2.0, 3.0, 4.0],
@@ -3505,10 +3519,13 @@ mod compiler_tests {
         #[test]
         fn map_values_finalize_absent_and_present_options_independent_of_iteration_order() {
             let entries = vec![
-                (Value::String(Ref::new("absent".into())), Value::Empty),
                 (
-                    Value::String(Ref::new("present".into())),
-                    present(Value::F64(Ref::new(1.0)), ValueKind::F64),
+                    LegacyValue::String(Ref::new("absent".into())),
+                    LegacyValue::Empty,
+                ),
+                (
+                    LegacyValue::String(Ref::new("present".into())),
+                    present(LegacyValue::F64(Ref::new(1.0)), ValueKind::F64),
                 ),
             ];
             let forward = encode(&map(
@@ -3537,10 +3554,13 @@ mod compiler_tests {
         fn map_keys_finalize_absent_and_present_options() {
             let encoded = encode(&map(
                 vec![
-                    (Value::Empty, Value::F64(Ref::new(1.0))),
+                    (LegacyValue::Empty, LegacyValue::F64(Ref::new(1.0))),
                     (
-                        present(Value::String(Ref::new("present".into())), ValueKind::String),
-                        Value::F64(Ref::new(2.0)),
+                        present(
+                            LegacyValue::String(Ref::new("present".into())),
+                            ValueKind::String,
+                        ),
+                        LegacyValue::F64(Ref::new(2.0)),
                     ),
                 ],
                 option(ValueKind::String),
@@ -3561,8 +3581,8 @@ mod compiler_tests {
         fn set_scalar_options_round_trip_absent_and_present_values() {
             let encoded = encode(&set(
                 vec![
-                    Value::Empty,
-                    present(Value::F64(Ref::new(1.0)), ValueKind::F64),
+                    LegacyValue::Empty,
+                    present(LegacyValue::F64(Ref::new(1.0)), ValueKind::F64),
                 ],
                 option(ValueKind::F64),
             ));
@@ -3581,10 +3601,13 @@ mod compiler_tests {
         fn set_fixed_matrix_options_are_canonical_in_both_iteration_orders() {
             let present = present(matrix2(), declared_matrix());
             let forward = encode(&set(
-                vec![Value::Empty, present.clone()],
+                vec![LegacyValue::Empty, present.clone()],
                 option(declared_matrix()),
             ));
-            let reverse = encode(&set(vec![present, Value::Empty], option(declared_matrix())));
+            let reverse = encode(&set(
+                vec![present, LegacyValue::Empty],
+                option(declared_matrix()),
+            ));
 
             assert_eq!(forward, reverse);
             let RuntimeType::Set { element, .. } = &forward.runtime_type else {
@@ -3602,7 +3625,7 @@ mod compiler_tests {
 
         #[test]
         fn all_absent_matrix_options_use_the_annotation_derived_dynamic_storage() {
-            let encoded = encode(&set(vec![Value::Empty], option(declared_matrix())));
+            let encoded = encode(&set(vec![LegacyValue::Empty], option(declared_matrix())));
             let RuntimeType::Set { element, .. } = &encoded.runtime_type else {
                 panic!("expected set runtime type");
             };
@@ -3639,7 +3662,7 @@ mod compiler_tests {
 
         #[test]
         fn bare_empty_under_non_option_annotation_is_rejected() {
-            let error = set(vec![Value::Empty], ValueKind::F64)
+            let error = set(vec![LegacyValue::Empty], ValueKind::F64)
                 .compile_const(&mut ConstantContext::default())
                 .unwrap_err();
 
@@ -3649,7 +3672,7 @@ mod compiler_tests {
         #[test]
         fn explicit_absent_option_must_match_the_declared_child_type() {
             let error = set(
-                vec![Value::EmptyKind(option(ValueKind::String))],
+                vec![LegacyValue::EmptyKind(option(ValueKind::String))],
                 option(ValueKind::F64),
             )
             .compile_const(&mut ConstantContext::default())
@@ -3663,8 +3686,8 @@ mod compiler_tests {
             let encoded = encode(&table(
                 option(ValueKind::F64),
                 vec![
-                    Value::Empty,
-                    present(Value::F64(Ref::new(1.0)), ValueKind::F64),
+                    LegacyValue::Empty,
+                    present(LegacyValue::F64(Ref::new(1.0)), ValueKind::F64),
                 ],
             ));
             let RuntimeType::Table { columns, .. } = &encoded.runtime_type else {
@@ -3684,7 +3707,7 @@ mod compiler_tests {
         fn table_fixed_matrix_option_column_uses_the_present_storage() {
             let encoded = encode(&table(
                 option(declared_matrix()),
-                vec![Value::Empty, present(matrix2(), declared_matrix())],
+                vec![LegacyValue::Empty, present(matrix2(), declared_matrix())],
             ));
             let RuntimeType::Table { columns, .. } = &encoded.runtime_type else {
                 panic!("expected table runtime type");
@@ -3703,10 +3726,10 @@ mod compiler_tests {
         fn record_option_field_accepts_a_bare_empty_value() {
             let name = "optional";
             let id = hash_str(name);
-            let encoded = encode(&Value::Record(Ref::new(MechRecord {
+            let encoded = encode(&LegacyValue::Record(Ref::new(MechRecord {
                 cols: 1,
                 kinds: vec![option(ValueKind::String)],
-                data: IndexMap::from([(id, Value::Empty)]),
+                data: IndexMap::from([(id, LegacyValue::Empty)]),
                 field_names: HashMap::from([(id, name.into())]),
             })));
 
@@ -3734,7 +3757,7 @@ mod compiler_tests {
 
         let mut one_column_types = Vec::new();
         for (name, value, expected_rows) in cases {
-            let constant = encode(&Value::Table(Ref::new(value.clone())));
+            let constant = encode(&LegacyValue::Table(Ref::new(value.clone())));
             let (columns, primary_key) = table_type(&constant.runtime_type);
             assert_eq!(primary_key, 0, "{name}");
             assert_eq!(columns.len(), value.cols, "{name}");
@@ -3744,7 +3767,7 @@ mod compiler_tests {
                 "{name}"
             );
 
-            let Value::Table(decoded) = decode_one(&constant) else {
+            let LegacyValue::Table(decoded) = decode_one(&constant) else {
                 panic!("{name} constant did not decode as a table");
             };
             assert_eq!(decoded.borrow().rows, expected_rows as usize, "{name}");

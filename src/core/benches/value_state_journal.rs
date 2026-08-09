@@ -1,6 +1,7 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use mech_core::{
-    CommittedValueStateDelta, MechMap, MechRecord, MechSet, Ref, ToMatrix, Value, ValueStateJournal,
+    CommittedValueStateDelta, LegacyValue, MechMap, MechRecord, MechSet, Ref, ToMatrix,
+    ValueStateJournal,
 };
 use std::hint::black_box;
 
@@ -8,13 +9,13 @@ const HASHED_COLLECTION_SIZE: usize = 64;
 const PHASE_SCALARS: usize = 64;
 const VALUE_MATRIX_SIDE: usize = 32;
 
-fn scalar_roots(count: usize) -> Vec<Value> {
+fn scalar_roots(count: usize) -> Vec<LegacyValue> {
     (0..count)
-        .map(|index| Value::F64(Ref::new(index as f64)))
+        .map(|index| LegacyValue::F64(Ref::new(index as f64)))
         .collect()
 }
 
-fn capture_roots(roots: &[Value]) -> ValueStateJournal {
+fn capture_roots(roots: &[LegacyValue]) -> ValueStateJournal {
     let mut journal = ValueStateJournal::new();
     for root in roots {
         journal.capture_value(root).unwrap();
@@ -22,10 +23,10 @@ fn capture_roots(roots: &[Value]) -> ValueStateJournal {
     journal
 }
 
-fn mutate_scalars(roots: &[Value]) {
+fn mutate_scalars(roots: &[LegacyValue]) {
     for (index, root) in roots.iter().enumerate() {
         match root {
-            Value::F64(value) => *value.borrow_mut() = 10_000.0 + index as f64,
+            LegacyValue::F64(value) => *value.borrow_mut() = 10_000.0 + index as f64,
             _ => unreachable!("scalar benchmark roots are f64 values"),
         }
     }
@@ -44,24 +45,38 @@ fn scalar_delta(count: usize) -> CommittedValueStateDelta {
     journal.into_delta().unwrap()
 }
 
-fn scalar_set_root(count: usize) -> (Value, Vec<Ref<f64>>) {
+fn scalar_set_root(count: usize) -> (LegacyValue, Vec<Ref<f64>>) {
     let cells = (0..count)
         .map(|index| Ref::new(index as f64))
         .collect::<Vec<_>>();
-    let members = cells.iter().map(|cell| Value::F64(cell.clone())).collect();
-    (Value::Set(Ref::new(MechSet::from_vec(members))), cells)
+    let members = cells
+        .iter()
+        .map(|cell| LegacyValue::F64(cell.clone()))
+        .collect();
+    (
+        LegacyValue::Set(Ref::new(MechSet::from_vec(members))),
+        cells,
+    )
 }
 
-fn scalar_map_root(count: usize) -> (Value, Vec<Ref<f64>>) {
+fn scalar_map_root(count: usize) -> (LegacyValue, Vec<Ref<f64>>) {
     let cells = (0..count)
         .map(|index| Ref::new(index as f64))
         .collect::<Vec<_>>();
     let entries = cells
         .iter()
         .enumerate()
-        .map(|(index, cell)| (Value::F64(cell.clone()), Value::Id(index as u64)))
+        .map(|(index, cell)| {
+            (
+                LegacyValue::F64(cell.clone()),
+                LegacyValue::Id(index as u64),
+            )
+        })
         .collect();
-    (Value::Map(Ref::new(MechMap::from_vec(entries))), cells)
+    (
+        LegacyValue::Map(Ref::new(MechMap::from_vec(entries))),
+        cells,
+    )
 }
 
 fn hashed_set_journal() -> ValueStateJournal {
@@ -90,31 +105,31 @@ fn hashed_map_delta() -> CommittedValueStateDelta {
     journal.into_delta().unwrap()
 }
 
-fn nested_shared_record() -> Value {
+fn nested_shared_record() -> LegacyValue {
     let shared = Ref::new(1.0);
-    let inner = Value::Record(Ref::new(MechRecord::new(vec![
-        ("left", Value::F64(shared.clone())),
-        ("right", Value::F64(shared.clone())),
+    let inner = LegacyValue::Record(Ref::new(MechRecord::new(vec![
+        ("left", LegacyValue::F64(shared.clone())),
+        ("right", LegacyValue::F64(shared.clone())),
     ])));
-    Value::Record(Ref::new(MechRecord::new(vec![
-        ("direct", Value::F64(shared)),
+    LegacyValue::Record(Ref::new(MechRecord::new(vec![
+        ("direct", LegacyValue::F64(shared)),
         ("nested", inner),
     ])))
 }
 
-fn dynamic_f64_matrix() -> Value {
-    Value::MatrixF64(<f64 as ToMatrix>::to_matrixd(
+fn dynamic_f64_matrix() -> LegacyValue {
+    LegacyValue::MatrixF64(<f64 as ToMatrix>::to_matrixd(
         vec![1.0; 100 * 100],
         100,
         100,
     ))
 }
 
-fn nested_value_matrix() -> Value {
+fn nested_value_matrix() -> LegacyValue {
     let elements = (0..VALUE_MATRIX_SIDE * VALUE_MATRIX_SIDE)
-        .map(|index| Value::F64(Ref::new(index as f64)))
+        .map(|index| LegacyValue::F64(Ref::new(index as f64)))
         .collect();
-    Value::MatrixValue(<Value as ToMatrix>::to_matrixd(
+    LegacyValue::MatrixValue(<LegacyValue as ToMatrix>::to_matrixd(
         elements,
         VALUE_MATRIX_SIDE,
         VALUE_MATRIX_SIDE,
@@ -126,17 +141,17 @@ fn topology_journal() -> ValueStateJournal {
     let retained = Ref::new(2.0);
     let added = Ref::new(3.0);
     let record = Ref::new(MechRecord::new(vec![
-        ("removed", Value::F64(removed)),
-        ("retained", Value::F64(retained.clone())),
+        ("removed", LegacyValue::F64(removed)),
+        ("retained", LegacyValue::F64(retained.clone())),
     ]));
     let mut journal = ValueStateJournal::new();
     journal
-        .capture_value(&Value::Record(record.clone()))
+        .capture_value(&LegacyValue::Record(record.clone()))
         .unwrap();
 
     *record.borrow_mut() = MechRecord::new(vec![
-        ("retained", Value::F64(retained.clone())),
-        ("added", Value::F64(added)),
+        ("retained", LegacyValue::F64(retained.clone())),
+        ("added", LegacyValue::F64(added)),
     ]);
     *retained.borrow_mut() = 20.0;
     journal
@@ -262,7 +277,7 @@ fn scalar_phases(c: &mut Criterion) {
 fn hashed_collection_group(
     c: &mut Criterion,
     name: &str,
-    root: Value,
+    root: LegacyValue,
     journal_factory: fn() -> ValueStateJournal,
     delta_factory: fn() -> CommittedValueStateDelta,
 ) {

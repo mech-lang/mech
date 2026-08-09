@@ -266,7 +266,7 @@ macro_rules! impl_checked_arithmetic_binop {
                 Ok(())
             }
 
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
 
@@ -274,7 +274,7 @@ macro_rules! impl_checked_arithmetic_binop {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }

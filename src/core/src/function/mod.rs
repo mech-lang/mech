@@ -7,9 +7,9 @@ pub use catalog::*;
 pub use contract::*;
 pub use signature::*;
 
+use crate::legacy_value::*;
 use crate::nodes::*;
 use crate::types::*;
-use crate::value::*;
 use crate::*;
 
 #[cfg(feature = "functions")]
@@ -165,16 +165,22 @@ impl MechErrorKind for UserFunctionIdCollision {
 
 #[derive(Clone, Debug)]
 pub enum FunctionArgs {
-    Nullary(Value),
-    Unary(Value, Value),
-    Binary(Value, Value, Value),
-    Ternary(Value, Value, Value, Value),
-    Quaternary(Value, Value, Value, Value, Value),
-    Variadic(Value, Vec<Value>),
+    Nullary(LegacyValue),
+    Unary(LegacyValue, LegacyValue),
+    Binary(LegacyValue, LegacyValue, LegacyValue),
+    Ternary(LegacyValue, LegacyValue, LegacyValue, LegacyValue),
+    Quaternary(
+        LegacyValue,
+        LegacyValue,
+        LegacyValue,
+        LegacyValue,
+        LegacyValue,
+    ),
+    Variadic(LegacyValue, Vec<LegacyValue>),
 }
 
 impl FunctionArgs {
-    pub fn output_value(&self) -> &Value {
+    pub fn output_value(&self) -> &LegacyValue {
         match self {
             FunctionArgs::Nullary(output)
             | FunctionArgs::Unary(output, _)
@@ -185,7 +191,7 @@ impl FunctionArgs {
         }
     }
 
-    pub fn input_value(&self, index: usize) -> Option<&Value> {
+    pub fn input_value(&self, index: usize) -> Option<&LegacyValue> {
         match (self, index) {
             (FunctionArgs::Unary(_, a), 0) => Some(a),
             (FunctionArgs::Binary(_, a, _), 0) => Some(a),
@@ -308,7 +314,7 @@ impl FunctionArgs {
         }
     }
 
-    pub fn input_values(&self) -> Vec<Value> {
+    pub fn input_values(&self) -> Vec<LegacyValue> {
         match self {
             FunctionArgs::Nullary(_) => Vec::new(),
 
@@ -385,7 +391,7 @@ pub trait MechFunctionImpl {
         )
         .with_compiler_loc())
     }
-    fn out(&self) -> Value;
+    fn out(&self) -> LegacyValue;
     fn reactive_dependency_kinds(
         &self,
         _argument_count: usize,
@@ -398,7 +404,7 @@ pub trait MechFunctionImpl {
     ) -> Option<Vec<ReactiveDependencyScope>> {
         None
     }
-    fn reactive_output_values(&self) -> Vec<Value> {
+    fn reactive_output_values(&self) -> Vec<LegacyValue> {
         vec![self.out()]
     }
     /// Returns every `Value`-backed cell that contains retained mutable state
@@ -414,7 +420,7 @@ pub trait MechFunctionImpl {
     /// [`Debug`] output, type names, module names, or other display metadata. A
     /// function that requires participation from a higher-level transaction
     /// coordinator must return [`TransactionStateUnsupportedError`] directly.
-    fn transaction_state_values(&self) -> MResult<Vec<Value>>;
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>>;
     fn reactive_output_cell_ids(&self) -> Vec<ReactiveCellId> {
         let mut cells = Vec::new();
 
@@ -596,7 +602,7 @@ pub struct FunctionDefinition {
     pub input: IndexMap<u64, KindAnnotation>,
     pub output: IndexMap<u64, KindAnnotation>,
     pub symbols: SymbolTableRef,
-    pub out: Ref<Value>,
+    pub out: Ref<LegacyValue>,
     pub plan: Plan,
 }
 
@@ -661,7 +667,7 @@ impl FunctionDefinition {
             code,
             input: IndexMap::new(),
             output: IndexMap::new(),
-            out: Ref::new(Value::Empty),
+            out: Ref::new(LegacyValue::Empty),
             symbols: Ref::new(SymbolTable::new()),
             plan: Plan::new(),
         }
@@ -691,11 +697,11 @@ impl MechFunctionImpl for UserFunction {
         self.fxn.solve_result()?;
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.fxn.out.borrow().clone()
     }
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        let mut values = vec![Value::MutableReference(self.fxn.out.clone())];
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        let mut values = vec![LegacyValue::MutableReference(self.fxn.out.clone())];
         let mut seen_refs = HashSet::new();
         seen_refs.insert(self.fxn.out.addr());
         let symbols = self.fxn.symbols.try_borrow().map_err(|_| {
@@ -714,7 +720,7 @@ impl MechFunctionImpl for UserFunction {
             .chain(symbols.mutable_variables.values())
         {
             if seen_refs.insert(value.addr()) {
-                values.push(Value::MutableReference(value.clone()));
+                values.push(LegacyValue::MutableReference(value.clone()));
             }
         }
         drop(symbols);
@@ -1447,7 +1453,7 @@ impl ReactivePlan {
         self.nodes.iter_mut().map(|node| &mut node.function)
     }
 
-    pub fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    pub fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         let mut values = Vec::new();
         for node in &self.nodes {
             let mut function_values = node.function.transaction_state_values()?;
@@ -1488,7 +1494,7 @@ impl ReactivePlan {
     pub fn register(
         &mut self,
         function: Box<dyn MechFunction>,
-        arguments: &[Value],
+        arguments: &[LegacyValue],
     ) -> MResult<ReactiveNodeId> {
         self.register_with_activation(function, arguments, None)
     }
@@ -1496,7 +1502,7 @@ impl ReactivePlan {
     pub fn register_with_activation(
         &mut self,
         function: Box<dyn MechFunction>,
-        arguments: &[Value],
+        arguments: &[LegacyValue],
         activation: Option<&ActivationRegistrationScope>,
     ) -> MResult<ReactiveNodeId> {
         let node_id = self.nodes.len();
@@ -2186,7 +2192,7 @@ impl Plan {
         Ok(())
     }
 
-    pub fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    pub fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         let reactive = self
             .0
             .try_borrow()
@@ -2241,7 +2247,7 @@ impl Plan {
     pub fn register_function(
         &self,
         function: Box<dyn MechFunction>,
-        arguments: &[Value],
+        arguments: &[LegacyValue],
     ) -> MResult<ReactiveNodeId> {
         let scope = self.1.borrow().last().cloned();
         let kind = function.reactive_node_kind();

@@ -6,7 +6,7 @@ use super::super::{
 };
 #[cfg(feature = "compiler")]
 use crate::{BytecodeCompilerContext, Register};
-use crate::{GenericError, MResult, MechError, ReactiveCellId, Ref, ToValue, Value};
+use crate::{GenericError, LegacyValue, MResult, MechError, ReactiveCellId, Ref, ToValue};
 use std::{cell::RefCell, rc::Rc};
 
 struct RegisterStageTestCommit {
@@ -49,7 +49,7 @@ impl MechFunctionImpl for RegisterStageTestFunction {
         *self.solve_count.borrow_mut() += 1;
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.to_value()
     }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
@@ -93,7 +93,7 @@ impl MechFunctionImpl for RegisterStageTestFunction {
         self.label.to_string()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -173,7 +173,7 @@ impl MechFunctionImpl for RegisterWithoutStaging {
         *self.solves.borrow_mut() += 1;
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.to_value()
     }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
@@ -182,7 +182,7 @@ impl MechFunctionImpl for RegisterWithoutStaging {
     fn to_string(&self) -> String {
         "unsupported".into()
     }
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -359,13 +359,13 @@ fn reactive_register_commit_rejects_combinational_node_without_staging() {
         fn solve_result(&self) -> MResult<()> {
             Ok(())
         }
-        fn out(&self) -> Value {
-            Value::Empty
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Empty
         }
         fn to_string(&self) -> String {
             "C".into()
         }
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
     }
@@ -493,13 +493,13 @@ fn reactive_register_commit_does_not_execute_downstream_nodes() {
             *self.0.borrow_mut() += 1;
             Ok(())
         }
-        fn out(&self) -> Value {
-            Value::Empty
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Empty
         }
         fn to_string(&self) -> String {
             "C".into()
         }
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
     }

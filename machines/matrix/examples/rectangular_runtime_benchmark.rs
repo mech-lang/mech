@@ -1,7 +1,7 @@
 use mech_core::matrix::Matrix as ValueMatrix;
 use mech_core::{
     FunctionCatalog, FunctionCatalogBuilder, GenericError, MResult, MechError, MechFunction,
-    ReactiveCellId, ReactivePlan, Ref, Value,
+    ReactiveCellId, ReactivePlan, Ref, LegacyValue,
 };
 use mech_matrix::MatMulMDMD;
 use mech_runtime::{
@@ -223,8 +223,8 @@ fn reactive(shape: Shape) {
     let lhs = Ref::new(lhs);
     let rhs = Ref::new(rhs);
     let output = Ref::new(DMatrix::zeros(shape.rows, shape.columns));
-    let lhs_value = Value::MatrixF64(ValueMatrix::DMatrix(lhs.clone()));
-    let rhs_value = Value::MatrixF64(ValueMatrix::DMatrix(rhs.clone()));
+    let lhs_value = LegacyValue::MatrixF64(ValueMatrix::DMatrix(lhs.clone()));
+    let rhs_value = LegacyValue::MatrixF64(ValueMatrix::DMatrix(rhs.clone()));
     let dirty: ReactiveCellId = lhs_value.reactive_root_cell_ids()[0];
     let mut plan = ReactivePlan::new();
     plan.register(
@@ -256,13 +256,13 @@ impl MatrixInputProvider {
         Self { lhs, rhs }
     }
 
-    fn value(&self, path: &str) -> MResult<Value> {
+    fn value(&self, path: &str) -> MResult<LegacyValue> {
         match path {
-            "pulse" => Ok(Value::F64(Ref::new(1.0))),
-            "lhs" => Ok(Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(
+            "pulse" => Ok(LegacyValue::F64(Ref::new(1.0))),
+            "lhs" => Ok(LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(
                 self.lhs.clone(),
             )))),
-            "rhs" => Ok(Value::MatrixF64(ValueMatrix::DMatrix(Ref::new(
+            "rhs" => Ok(LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(
                 self.rhs.clone(),
             )))),
             _ => Err(MechError::new(
@@ -284,11 +284,11 @@ impl RuntimeResourceProvider for MatrixInputProvider {
         vec![BASE_URI.to_string()]
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         self.value(&request.path)
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         self.value(&request.path)
     }
 }
@@ -412,7 +412,7 @@ impl RuntimeFixture {
     }
 
     fn validate(&self, shape: Shape) -> f64 {
-        let Value::MatrixF64(ValueMatrix::DMatrix(output)) = self
+        let LegacyValue::MatrixF64(ValueMatrix::DMatrix(output)) = self
             .runtime
             .root_symbol_value("result")
             .unwrap()

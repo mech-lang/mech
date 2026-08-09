@@ -67,7 +67,7 @@ use mech_core::kind::Kind;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::*;
-use mech_core::{Dictionary, Ref, ToValue, ValRef, Value, ValueKind};
+use mech_core::{Dictionary, LegacyValue, Ref, ToValue, ValRef, ValueKind};
 use mech_core::{MResult, hash_str, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 #[cfg(feature = "matrix")]
 use na::DMatrix;

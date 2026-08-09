@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use mech_core::Value;
+use mech_core::LegacyValue;
 
 use crate::{
     ActorId, ActorRecord, BasicCapability, CapabilityId, CapabilityRequest, HostCall,
@@ -238,7 +238,7 @@ fn poisoned_runtime_owned_mutation_is_fail_closed() {
                 path: "poisoned".to_string(),
                 context_name: "manual".to_string(),
                 operation: RuntimeCapabilityOperation::Write,
-                value: Value::String(mech_core::Ref::new("must-not-write".to_string())),
+                value: LegacyValue::String(mech_core::Ref::new("must-not-write".to_string())),
                 intent: RuntimeResourceWriteIntent::Assign,
             })
             .unwrap_err()

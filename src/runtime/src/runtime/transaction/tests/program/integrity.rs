@@ -7,7 +7,7 @@ use crate::{
     CapabilityId, EventId, PlannedStagedHostFunction, PreparedRuntimeEffect, RuntimeEventKind,
     RuntimeIntegrityConstraintFailureReason, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
-use mech_core::{MechSourceCode, Value, hash_str};
+use mech_core::{LegacyValue, MechSourceCode, hash_str};
 use std::sync::{Arc, Mutex};
 
 #[test]
@@ -232,11 +232,11 @@ fn invalid_explicit_integrity_suffix_discards_only_its_effects() {
             .host_function(PlannedStagedHostFunction::new(
                 name,
                 |_context, _args| {
-                    RuntimeValueSnapshot::try_capture(&Value::F64(mech_core::Ref::new(1.0)))
+                    RuntimeValueSnapshot::try_capture(&LegacyValue::F64(mech_core::Ref::new(1.0)))
                 },
                 move |_context, _args| {
                     Ok(RuntimePreparedHostCall {
-                        value: RuntimeValueSnapshot::try_capture(&Value::F64(
+                        value: RuntimeValueSnapshot::try_capture(&LegacyValue::F64(
                             mech_core::Ref::new(1.0),
                         ))?,
                         effect: PreparedRuntimeEffect::Transactional(Box::new(
@@ -368,7 +368,7 @@ fn final_explicit_commit_revalidates_without_consuming_transaction() {
         .unwrap()
         .result
         .clone();
-    if let Value::Bool(value) = &*result.borrow() {
+    if let LegacyValue::Bool(value) = &*result.borrow() {
         *value.borrow_mut() = false;
     } else {
         panic!("constraint result must be bool");

@@ -1,11 +1,11 @@
 use super::{Environment, factor};
-use crate::{InterpreterExecution, MResult, OperationId, RangeExpression, RangeOp, Value};
+use crate::{InterpreterExecution, LegacyValue, MResult, OperationId, RangeExpression, RangeOp};
 
 pub fn range(
     rng: &RangeExpression,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     use super::registration::register_initialized_expression_function;
     let plan = p.plan();
     let start = factor(&rng.start, env, p)?;

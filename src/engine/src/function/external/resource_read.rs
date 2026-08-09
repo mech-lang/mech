@@ -1,7 +1,7 @@
 use crate::apply_stable_value_update;
 use mech_core::{
-    ExecutionResourceRequest, InitialSolvePolicy, MResult, MechExecutionServices, MechFunctionImpl,
-    NoMechExecutionServices, ReactiveSolveStatus, ResourceDelivery, ValRef, Value,
+    ExecutionResourceRequest, InitialSolvePolicy, LegacyValue, MResult, MechExecutionServices,
+    MechFunctionImpl, NoMechExecutionServices, ReactiveSolveStatus, ResourceDelivery, ValRef,
 };
 
 #[cfg(feature = "compiler")]
@@ -62,12 +62,12 @@ impl MechFunctionImpl for ExternalResourceReadFunction {
         Ok(())
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.output.borrow().clone()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(vec![Value::MutableReference(self.output.clone())])
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(vec![LegacyValue::MutableReference(self.output.clone())])
     }
 
     fn to_string(&self) -> String {

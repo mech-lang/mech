@@ -7,8 +7,8 @@ use crate::Matrix;
 #[cfg(feature = "enum")]
 use crate::MechEnum;
 use crate::{
-    CannotConvertToTypeError, Expression, InterpreterExecution, Literal, MResult, MatchArm,
-    MatchExpression, MechError, Pattern, Ref, Token, Value, ValueKind,
+    CannotConvertToTypeError, Expression, InterpreterExecution, LegacyValue, Literal, MResult,
+    MatchArm, MatchExpression, MechError, Pattern, Ref, Token, ValueKind,
 };
 #[cfg(feature = "enum")]
 use std::collections::HashSet;
@@ -17,10 +17,10 @@ pub fn match_expression(
     match_expr: &MatchExpression,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let source = expression(&match_expr.source, env, p)?;
     let detached_source = match &source {
-        Value::MutableReference(reference) => reference.borrow().clone(),
+        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
         _ => source.clone(),
     };
     let mut base_env = env.cloned().unwrap_or_default();
@@ -131,11 +131,11 @@ pub fn match_expression(
 #[cfg(feature = "enum")]
 fn infer_missing_enum_match_patterns(
     match_expr: &MatchExpression,
-    source: &Value,
+    source: &LegacyValue,
     p: &InterpreterExecution<'_>,
 ) -> Option<(String, Vec<String>)> {
     let (source_enum_id, source_tag) = match source {
-        Value::Enum(enum_value) => {
+        LegacyValue::Enum(enum_value) => {
             let enum_brrw = enum_value.borrow();
             if enum_brrw.variants.len() != 1 {
                 (Some(enum_brrw.id), None)
@@ -143,13 +143,13 @@ fn infer_missing_enum_match_patterns(
                 (Some(enum_brrw.id), Some(enum_brrw.variants[0].0))
             }
         }
-        Value::Atom(atom) => (None, Some(atom.borrow().id())),
+        LegacyValue::Atom(atom) => (None, Some(atom.borrow().id())),
         #[cfg(feature = "tuple")]
-        Value::Tuple(tuple_val) => {
+        LegacyValue::Tuple(tuple_val) => {
             let tuple_brrw = tuple_val.borrow();
             match tuple_brrw.elements.first() {
                 Some(tag) => match tag.as_ref() {
-                    Value::Atom(atom) => (None, Some(atom.borrow().id())),
+                    LegacyValue::Atom(atom) => (None, Some(atom.borrow().id())),
                     _ => (None, None),
                 },
                 None => (None, None),
@@ -219,7 +219,7 @@ fn match_validate_arm_kinds(
     match_expr: &MatchExpression,
     matched_arm_ix: usize,
     matched_kind: &ValueKind,
-    source: &Value,
+    source: &LegacyValue,
     base_env: &Environment,
     p: &InterpreterExecution<'_>,
 ) -> MResult<()> {
@@ -304,12 +304,12 @@ fn guard_expression_true(
 }
 
 pub(crate) fn validate_guard_expression_result(
-    guard_result: Value,
+    guard_result: LegacyValue,
     tokens: Vec<Token>,
 ) -> MResult<Ref<bool>> {
     match guard_result {
         #[cfg(feature = "bool")]
-        Value::Bool(flag) => Ok(flag),
+        LegacyValue::Bool(flag) => Ok(flag),
         _ => Err(MechError::new(
             InvalidGuardExpressionError {
                 found: guard_result.kind(),
@@ -340,15 +340,18 @@ fn has_identity_wildcard_coalesce_arms(match_expr: &MatchExpression) -> bool {
 }
 
 #[cfg(feature = "matrix")]
-fn coalesce_option_matrix_with_fallback(source: &Value, fallback: &Value) -> MResult<Value> {
+fn coalesce_option_matrix_with_fallback(
+    source: &LegacyValue,
+    fallback: &LegacyValue,
+) -> MResult<LegacyValue> {
     let source_kind = source.kind();
     if let ValueKind::Option(inner_kind) = source_kind.clone() {
         let raw = match source {
-            Value::Typed(inner, _) => inner.as_ref().clone(),
+            LegacyValue::Typed(inner, _) => inner.as_ref().clone(),
             value => value.clone(),
         };
         let candidate = match raw {
-            Value::Empty | Value::EmptyKind(_) => fallback.clone(),
+            LegacyValue::Empty | LegacyValue::EmptyKind(_) => fallback.clone(),
             value => value,
         };
         return candidate.convert_to(inner_kind.as_ref()).ok_or_else(|| {
@@ -385,7 +388,7 @@ fn coalesce_option_matrix_with_fallback(source: &Value, fallback: &Value) -> MRe
         .into_iter()
         .map(|value| {
             let raw = match value {
-                Value::Empty | Value::EmptyKind(_) => fill_value.clone(),
+                LegacyValue::Empty | LegacyValue::EmptyKind(_) => fill_value.clone(),
                 other => other,
             };
             raw.convert_to(&inner_kind).ok_or_else(|| {
@@ -398,30 +401,30 @@ fn coalesce_option_matrix_with_fallback(source: &Value, fallback: &Value) -> MRe
                 .with_compiler_loc()
             })
         })
-        .collect::<MResult<Vec<Value>>>()?;
-    Ok(Value::MatrixValue(Matrix::from_vec(
+        .collect::<MResult<Vec<LegacyValue>>>()?;
+    Ok(LegacyValue::MatrixValue(Matrix::from_vec(
         converted_values,
         shape[0],
         shape[1],
     )))
 }
 
-fn value_contains_empty(value: &Value) -> bool {
+fn value_contains_empty(value: &LegacyValue) -> bool {
     match value {
-        Value::Empty | Value::EmptyKind(_) => true,
+        LegacyValue::Empty | LegacyValue::EmptyKind(_) => true,
         #[cfg(feature = "matrix")]
-        Value::MatrixValue(matrix) => matrix
+        LegacyValue::MatrixValue(matrix) => matrix
             .as_vec()
             .iter()
             .any(|value| value_contains_empty(value)),
         #[cfg(feature = "tuple")]
-        Value::Tuple(tuple) => tuple
+        LegacyValue::Tuple(tuple) => tuple
             .borrow()
             .elements
             .iter()
             .any(|value| value_contains_empty(value.as_ref())),
-        Value::Typed(value, _) => value_contains_empty(value),
-        Value::MutableReference(reference) => value_contains_empty(&reference.borrow()),
+        LegacyValue::Typed(value, _) => value_contains_empty(value),
+        LegacyValue::MutableReference(reference) => value_contains_empty(&reference.borrow()),
         _ => false,
     }
 }

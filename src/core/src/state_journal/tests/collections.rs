@@ -3,14 +3,16 @@ use super::support::{
     set_contains_scalar,
 };
 use crate::structures::matrix::Matrix as ValueMatrix;
-use crate::{MechMap, MechSet, MechTable, Ref, Value, ValueKind, ValueStateJournal, hash_str};
+use crate::{
+    LegacyValue, MechMap, MechSet, MechTable, Ref, ValueKind, ValueStateJournal, hash_str,
+};
 use indexmap::{IndexMap, IndexSet};
 use nalgebra::{DMatrix, DVector};
 use std::collections::HashMap;
 
-fn scalar_set_value(value: f64) -> Value {
+fn scalar_set_value(value: f64) -> LegacyValue {
     let member = scalar(value);
-    Value::Set(Ref::new(MechSet::from_vec(vec![scalar_value(&member)])))
+    LegacyValue::Set(Ref::new(MechSet::from_vec(vec![scalar_value(&member)])))
 }
 
 fn map_contains_scalar_set_key(map: &Ref<MechMap>, value: f64) -> bool {
@@ -89,22 +91,22 @@ fn state_journal_map_restores_metadata_order_and_retained_value() {
     let retained = scalar(2.0);
     let added = scalar(3.0);
     let mut data = IndexMap::new();
-    data.insert(Value::Id(1), scalar_value(&removed));
-    data.insert(Value::Id(2), scalar_value(&retained));
+    data.insert(LegacyValue::Id(1), scalar_value(&removed));
+    data.insert(LegacyValue::Id(2), scalar_value(&retained));
     let map = Ref::new(MechMap {
         key_kind: ValueKind::Id,
         value_kind: ValueKind::F64,
         num_elements: 2,
         map: data,
     });
-    let root = Value::Map(map.clone());
+    let root = LegacyValue::Map(map.clone());
 
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();
     {
         let mut map = map.borrow_mut();
-        map.map.shift_remove(&Value::Id(1));
-        map.map.insert(Value::Id(3), scalar_value(&added));
+        map.map.shift_remove(&LegacyValue::Id(1));
+        map.map.insert(LegacyValue::Id(3), scalar_value(&added));
         map.key_kind = ValueKind::Any;
         map.value_kind = ValueKind::Any;
         map.num_elements = 9;
@@ -118,14 +120,14 @@ fn state_journal_map_restores_metadata_order_and_retained_value() {
     assert_eq!(map.num_elements, 2);
     assert_eq!(
         map.map.keys().cloned().collect::<Vec<_>>(),
-        vec![Value::Id(1), Value::Id(2)]
+        vec![LegacyValue::Id(1), LegacyValue::Id(2)]
     );
     assert_eq!(
-        as_scalar(map.map.get(&Value::Id(1)).unwrap()).addr(),
+        as_scalar(map.map.get(&LegacyValue::Id(1)).unwrap()).addr(),
         removed.addr()
     );
     assert_eq!(
-        as_scalar(map.map.get(&Value::Id(2)).unwrap()).addr(),
+        as_scalar(map.map.get(&LegacyValue::Id(2)).unwrap()).addr(),
         retained.addr()
     );
     assert_eq!(*retained.borrow(), 2.0);
@@ -145,7 +147,7 @@ fn state_journal_set_restores_metadata_order_and_retained_cell() {
         num_elements: 2,
         set: members,
     });
-    let root = Value::Set(set.clone());
+    let root = LegacyValue::Set(set.clone());
 
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();
@@ -182,7 +184,9 @@ fn state_journal_set_membership_survives_repeated_rewind_and_replay() {
     let member_address = member.addr();
     let set_address = set.addr();
     let mut journal = ValueStateJournal::new();
-    journal.capture_value(&Value::Set(set.clone())).unwrap();
+    journal
+        .capture_value(&LegacyValue::Set(set.clone()))
+        .unwrap();
     assert_eq!(journal.cell_count(), 2);
 
     *member.borrow_mut() = 2.0;
@@ -238,7 +242,9 @@ fn state_journal_map_key_lookup_survives_repeated_rewind_and_replay() {
     let key_address = key.addr();
     let map_address = map.addr();
     let mut journal = ValueStateJournal::new();
-    journal.capture_value(&Value::Map(map.clone())).unwrap();
+    journal
+        .capture_value(&LegacyValue::Map(map.clone()))
+        .unwrap();
     assert_eq!(journal.cell_count(), 3);
 
     *key.borrow_mut() = 2.0;
@@ -291,15 +297,15 @@ fn state_journal_nested_hashed_collection_lookups_survive_delta() {
     let member = scalar(1.0);
     let inner_set = Ref::new(MechSet::from_vec(vec![scalar_value(&member)]));
     let outer_map = Ref::new(MechMap::from_vec(vec![(
-        Value::Set(inner_set.clone()),
-        Value::Id(7),
+        LegacyValue::Set(inner_set.clone()),
+        LegacyValue::Id(7),
     )]));
     let outer_address = outer_map.addr();
     let inner_address = inner_set.addr();
     let member_address = member.addr();
     let mut journal = ValueStateJournal::new();
     journal
-        .capture_value(&Value::Map(outer_map.clone()))
+        .capture_value(&LegacyValue::Map(outer_map.clone()))
         .unwrap();
     assert_eq!(journal.cell_count(), 3);
 
@@ -321,11 +327,11 @@ fn state_journal_nested_hashed_collection_lookups_survive_delta() {
         assert_eq!(outer_map.borrow().map.len(), 1);
         assert!(matches!(
             outer_map.borrow().map.values().next(),
-            Some(Value::Id(7))
+            Some(LegacyValue::Id(7))
         ));
         let restored_key = outer_map.borrow().map.keys().next().cloned().unwrap();
         match restored_key {
-            Value::Set(restored) => assert_eq!(restored.addr(), inner_address),
+            LegacyValue::Set(restored) => assert_eq!(restored.addr(), inner_address),
             _ => panic!("expected nested set key"),
         }
         assert_eq!(
@@ -352,11 +358,11 @@ fn state_journal_nested_hashed_collection_lookups_survive_delta() {
         assert_eq!(outer_map.borrow().map.len(), 1);
         assert!(matches!(
             outer_map.borrow().map.values().next(),
-            Some(Value::Id(7))
+            Some(LegacyValue::Id(7))
         ));
         let restored_key = outer_map.borrow().map.keys().next().cloned().unwrap();
         match restored_key {
-            Value::Set(restored) => assert_eq!(restored.addr(), inner_address),
+            LegacyValue::Set(restored) => assert_eq!(restored.addr(), inner_address),
             _ => panic!("expected nested set key"),
         }
         assert_eq!(
@@ -397,7 +403,7 @@ fn state_journal_table_restores_columns_backings_and_nested_cells() {
         data,
         col_names: names,
     });
-    let root = Value::Table(table.clone());
+    let root = LegacyValue::Table(table.clone());
 
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();
@@ -439,7 +445,7 @@ fn state_journal_table_restores_columns_backings_and_nested_cells() {
 #[test]
 fn state_journal_dynamic_matrix_restores_shape_contents_and_backing() {
     let backing = Ref::new(DMatrix::from_vec(2, 2, vec![1.0, 2.0, 3.0, 4.0]));
-    let root = Value::MatrixF64(ValueMatrix::DMatrix(backing.clone()));
+    let root = LegacyValue::MatrixF64(ValueMatrix::DMatrix(backing.clone()));
     let address = backing.addr();
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();
@@ -456,7 +462,7 @@ fn state_journal_dynamic_matrix_restores_shape_contents_and_backing() {
 #[test]
 fn state_journal_dynamic_vector_restores_contents_and_backing() {
     let backing = Ref::new(DVector::from_vec(vec![1.0, 2.0, 3.0]));
-    let root = Value::MatrixF64(ValueMatrix::DVector(backing.clone()));
+    let root = LegacyValue::MatrixF64(ValueMatrix::DVector(backing.clone()));
     let address = backing.addr();
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();
@@ -472,7 +478,7 @@ fn state_journal_dynamic_vector_restores_contents_and_backing() {
 #[test]
 fn state_journal_fixed_matrix_restores_contents_and_backing() {
     let backing = Ref::new(nalgebra::Matrix2::from_vec(vec![1.0, 2.0, 3.0, 4.0]));
-    let root = Value::MatrixF64(ValueMatrix::Matrix2(backing.clone()));
+    let root = LegacyValue::MatrixF64(ValueMatrix::Matrix2(backing.clone()));
     let address = backing.addr();
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();

@@ -1,12 +1,12 @@
 use mech_core::{
-  with_reactive_journal_participant, Value,
+  with_reactive_journal_participant, LegacyValue,
 };
 
 fn main() {
   let _ = with_reactive_journal_participant(
     |mut participant| {
       participant.apply_restore_before();
-      participant.capture_value(&Value::Empty)?;
+      participant.capture_value(&LegacyValue::Empty)?;
       Ok(())
     },
   );

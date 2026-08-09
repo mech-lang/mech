@@ -94,14 +94,14 @@ macro_rules! impl_two_arg_fxn {
                 $op!(arg1_ptr, arg2_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -190,55 +190,55 @@ macro_rules! impl_binop_atan2 {
         $(
           // Scalar
           #[cfg(feature = $feat)]
-          (Value::$t(arg1), Value::$t(arg2)) => Ok(Box::new([<$fxn $t>]{arg1, arg2, out: Ref::new($zero_fn)})),
+          (LegacyValue::$t(arg1), LegacyValue::$t(arg2)) => Ok(Box::new([<$fxn $t>]{arg1, arg2, out: Ref::new($zero_fn)})),
 
           // Fixed matrices
           #[cfg(all(feature = "matrix1", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::Matrix1(arg1)), Value::[<Matrix $t>](Matrix::Matrix1(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::Matrix1(arg1)), LegacyValue::[<Matrix $t>](Matrix::Matrix1(arg2))) =>
             Ok(Box::new([<$fxn M1 $t>]{arg1, arg2, out: Ref::new(Matrix1::from_element($zero_fn))})),
           #[cfg(all(feature = "matrix2", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::Matrix2(arg1)), Value::[<Matrix $t>](Matrix::Matrix2(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::Matrix2(arg1)), LegacyValue::[<Matrix $t>](Matrix::Matrix2(arg2))) =>
             Ok(Box::new([<$fxn M2 $t>]{arg1, arg2, out: Ref::new(Matrix2::from_element($zero_fn))})),
           #[cfg(all(feature = "matrix3", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::Matrix3(arg1)), Value::[<Matrix $t>](Matrix::Matrix3(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::Matrix3(arg1)), LegacyValue::[<Matrix $t>](Matrix::Matrix3(arg2))) =>
             Ok(Box::new([<$fxn M3 $t>]{arg1, arg2, out: Ref::new(Matrix3::from_element($zero_fn))})),
           #[cfg(all(feature = "matrix4", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::Matrix4(arg1)), Value::[<Matrix $t>](Matrix::Matrix4(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::Matrix4(arg1)), LegacyValue::[<Matrix $t>](Matrix::Matrix4(arg2))) =>
             Ok(Box::new([<$fxn M4 $t>]{arg1, arg2, out: Ref::new(Matrix4::from_element($zero_fn))})),
 
           // Fixed vectors
           #[cfg(all(feature = "vector2", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::Vector2(arg1)), Value::[<Matrix $t>](Matrix::Vector2(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::Vector2(arg1)), LegacyValue::[<Matrix $t>](Matrix::Vector2(arg2))) =>
             Ok(Box::new([<$fxn V2 $t>]{arg1, arg2, out: Ref::new(Vector2::from_element($zero_fn))})),
           #[cfg(all(feature = "vector3", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::Vector3(arg1)), Value::[<Matrix $t>](Matrix::Vector3(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::Vector3(arg1)), LegacyValue::[<Matrix $t>](Matrix::Vector3(arg2))) =>
             Ok(Box::new([<$fxn V3 $t>]{arg1, arg2, out: Ref::new(Vector3::from_element($zero_fn))})),
           #[cfg(all(feature = "vector4", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::Vector4(arg1)), Value::[<Matrix $t>](Matrix::Vector4(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::Vector4(arg1)), LegacyValue::[<Matrix $t>](Matrix::Vector4(arg2))) =>
             Ok(Box::new([<$fxn V4 $t>]{arg1, arg2, out: Ref::new(Vector4::from_element($zero_fn))})),
 
           // Fixed row vectors
           #[cfg(all(feature = "row_vector2", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::RowVector2(arg1)), Value::[<Matrix $t>](Matrix::RowVector2(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::RowVector2(arg1)), LegacyValue::[<Matrix $t>](Matrix::RowVector2(arg2))) =>
             Ok(Box::new([<$fxn R2 $t>]{arg1, arg2, out: Ref::new(RowVector2::from_element($zero_fn))})),
           #[cfg(all(feature = "row_vector3", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::RowVector3(arg1)), Value::[<Matrix $t>](Matrix::RowVector3(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::RowVector3(arg1)), LegacyValue::[<Matrix $t>](Matrix::RowVector3(arg2))) =>
             Ok(Box::new([<$fxn R3 $t>]{arg1, arg2, out: Ref::new(RowVector3::from_element($zero_fn))})),
           #[cfg(all(feature = "row_vector4", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::RowVector4(arg1)), Value::[<Matrix $t>](Matrix::RowVector4(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::RowVector4(arg1)), LegacyValue::[<Matrix $t>](Matrix::RowVector4(arg2))) =>
             Ok(Box::new([<$fxn R4 $t>]{arg1, arg2, out: Ref::new(RowVector4::from_element($zero_fn))})),
 
           // Dynamic vectors
           #[cfg(all(feature = "vectord", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::DVector(arg1)), Value::[<Matrix $t>](Matrix::DVector(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::DVector(arg1)), LegacyValue::[<Matrix $t>](Matrix::DVector(arg2))) =>
             Ok(Box::new([<$fxn VD $t>]{arg1: arg1.clone(), arg2, out: Ref::new(DVector::from_element(arg1.borrow().nrows(), $zero_fn))})),
           #[cfg(all(feature = "row_vectord", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::RowDVector(arg1)), Value::[<Matrix $t>](Matrix::RowDVector(arg2))) =>
+          (LegacyValue::[<Matrix $t>](Matrix::RowDVector(arg1)), LegacyValue::[<Matrix $t>](Matrix::RowDVector(arg2))) =>
             Ok(Box::new([<$fxn RD $t>]{arg1: arg1.clone(), arg2, out: Ref::new(RowDVector::from_element(arg1.borrow().ncols(), $zero_fn))})),
 
           // Dynamic matrices
           #[cfg(all(feature = "matrixd", feature = $feat))]
-          (Value::[<Matrix $t>](Matrix::DMatrix(arg1)), Value::[<Matrix $t>](Matrix::DMatrix(arg2))) => {
+          (LegacyValue::[<Matrix $t>](Matrix::DMatrix(arg1)), LegacyValue::[<Matrix $t>](Matrix::DMatrix(arg2))) => {
             let rows = arg1.borrow().nrows();
             let cols = arg1.borrow().ncols();
             Ok(Box::new([<$fxn MD $t>]{arg1, arg2, out: Ref::new(DMatrix::from_element(rows, cols, $zero_fn))}))
@@ -255,7 +255,7 @@ macro_rules! impl_binop_atan2 {
 }
 
 #[cfg(feature = "source")]
-pub fn impl_atan2_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
+pub fn impl_atan2_fxn(arg1_value: LegacyValue, arg2_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_binop_atan2!(Atan2, arg1_value, arg2_value,
       F32, f32::default(), "f32";
       F64, f64::default(), "f64";
@@ -267,7 +267,7 @@ pub struct MathAtan2 {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathAtan2 {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -283,13 +283,13 @@ impl FunctionSpecializer for MathAtan2 {
         match impl_atan2_fxn(arg1.clone(), arg2.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (arg1, arg2) {
-                (Value::MutableReference(arg1), Value::MutableReference(arg2)) => {
+                (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2)) => {
                     impl_atan2_fxn(arg1.borrow().clone(), arg2.borrow().clone())
                 }
-                (Value::MutableReference(arg1), arg2) => {
+                (LegacyValue::MutableReference(arg1), arg2) => {
                     impl_atan2_fxn(arg1.borrow().clone(), arg2.clone())
                 }
-                (arg1, Value::MutableReference(arg2)) => {
+                (arg1, LegacyValue::MutableReference(arg2)) => {
                     impl_atan2_fxn(arg1.clone(), arg2.borrow().clone())
                 }
                 (arg1, arg2) => Err(MechError::new(

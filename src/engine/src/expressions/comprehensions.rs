@@ -5,8 +5,8 @@ pub use crate::intrinsics::constructors::ValueMatrixComprehension;
 pub use crate::intrinsics::constructors::ValueSetComprehension;
 use crate::patterns::PatternBindingSink;
 use crate::{
-    ComprehensionQualifier, FunctionSpecializer, Interpreter, InterpreterExecution, MResult,
-    MechError, MechFunction, Ref, ToValue, Value, execute_catalog_operation, hash_str,
+    ComprehensionQualifier, FunctionSpecializer, Interpreter, InterpreterExecution, LegacyValue,
+    MResult, MechError, MechFunction, Ref, ToValue, execute_catalog_operation, hash_str,
 };
 #[cfg(feature = "matrix_comprehensions")]
 use crate::{Matrix, MatrixComprehension};
@@ -56,7 +56,7 @@ fn comprehension_environments(
                         expression(expr, Some(env), execution)
                     });
                     match result {
-                        Ok(Value::Bool(v)) => v.borrow().clone(),
+                        Ok(LegacyValue::Bool(v)) => v.borrow().clone(),
                         Ok(_) => false,
                         Err(_) => false,
                     }
@@ -78,59 +78,89 @@ fn comprehension_environments(
 }
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
-fn comprehension_generator_values(collection: &Value) -> MResult<Vec<Value>> {
+fn comprehension_generator_values(collection: &LegacyValue) -> MResult<Vec<LegacyValue>> {
     match collection {
         #[cfg(feature = "set")]
-        Value::Set(mset) => Ok(mset.borrow().set.iter().cloned().collect()),
+        LegacyValue::Set(mset) => Ok(mset.borrow().set.iter().cloned().collect()),
         #[cfg(feature = "matrix")]
-        Value::MatrixIndex(matrix) => Ok(matrix
+        LegacyValue::MatrixIndex(matrix) => Ok(matrix
             .as_vec()
             .into_iter()
-            .map(|value| Value::Index(Ref::new(value)))
+            .map(|value| LegacyValue::Index(Ref::new(value)))
             .collect()),
         #[cfg(all(feature = "matrix", feature = "bool"))]
-        Value::MatrixBool(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixBool(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "u8"))]
-        Value::MatrixU8(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU8(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "u16"))]
-        Value::MatrixU16(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU16(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "u32"))]
-        Value::MatrixU32(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU32(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "u64"))]
-        Value::MatrixU64(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU64(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "u128"))]
-        Value::MatrixU128(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU128(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "i8"))]
-        Value::MatrixI8(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI8(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "i16"))]
-        Value::MatrixI16(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI16(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "i32"))]
-        Value::MatrixI32(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI32(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "i64"))]
-        Value::MatrixI64(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI64(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "i128"))]
-        Value::MatrixI128(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI128(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "f32"))]
-        Value::MatrixF32(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixF32(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "f64"))]
-        Value::MatrixF64(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixF64(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "string"))]
-        Value::MatrixString(matrix) => Ok(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixString(matrix) => {
+            Ok(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "rational"))]
-        Value::MatrixR64(matrix) => Ok(matrix
+        LegacyValue::MatrixR64(matrix) => Ok(matrix
             .as_vec()
             .into_iter()
             .map(|value| value.to_value())
             .collect()),
         #[cfg(all(feature = "matrix", feature = "complex"))]
-        Value::MatrixC64(matrix) => Ok(matrix
+        LegacyValue::MatrixC64(matrix) => Ok(matrix
             .as_vec()
             .into_iter()
             .map(|value| value.to_value())
             .collect()),
         #[cfg(feature = "matrix")]
-        Value::MatrixValue(matrix) => Ok(matrix.as_vec()),
-        Value::MutableReference(reference) => comprehension_generator_values(&reference.borrow()),
+        LegacyValue::MatrixValue(matrix) => Ok(matrix.as_vec()),
+        LegacyValue::MutableReference(reference) => {
+            comprehension_generator_values(&reference.borrow())
+        }
         x => Err(
             MechError::new(ComprehensionGeneratorError { found: x.kind() }, None)
                 .with_compiler_loc(),
@@ -142,7 +172,7 @@ fn comprehension_generator_values(collection: &Value) -> MResult<Vec<Value>> {
 pub struct SetComprehensionDefine {}
 #[cfg(all(feature = "set_comprehensions", feature = "functions"))]
 impl FunctionSpecializer for SetComprehensionDefine {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         Ok(Box::new(ValueSetComprehension {
             arguments: arguments.to_vec(),
             out: Ref::new(MechSet::from_vec(arguments.to_vec())),
@@ -153,9 +183,9 @@ impl FunctionSpecializer for SetComprehensionDefine {
 pub struct MatrixComprehensionDefine {}
 #[cfg(all(feature = "matrix_comprehensions", feature = "functions"))]
 impl FunctionSpecializer for MatrixComprehensionDefine {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         let out = if arguments.is_empty() {
-            Value::MatrixValue(Matrix::from_vec(vec![], 0, 0))
+            LegacyValue::MatrixValue(Matrix::from_vec(vec![], 0, 0))
         } else {
             let fxn = crate::intrinsics::horzcat::impl_horzcat_fxn(arguments)?;
             fxn.solve_result()?;
@@ -171,7 +201,7 @@ impl FunctionSpecializer for MatrixComprehensionDefine {
 pub fn set_comprehension(
     set_comp: &SetComprehension,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let comprehension_id = hash_str(&format!("{:?}", set_comp));
     let (envs, new_p) = comprehension_environments(&set_comp.qualifiers, comprehension_id, p)?;
     let mut values = Vec::new();
@@ -189,7 +219,7 @@ pub fn set_comprehension(
 pub fn matrix_comprehension(
     matrix_comp: &MatrixComprehension,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let comprehension_id = hash_str(&format!("{:?}", matrix_comp));
     let (envs, new_p) = comprehension_environments(&matrix_comp.qualifiers, comprehension_id, p)?;
     let mut values = Vec::new();

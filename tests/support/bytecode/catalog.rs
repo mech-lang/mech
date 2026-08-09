@@ -1,5 +1,5 @@
 use mech_core::structures::Matrix as ValueMatrix;
-use mech_core::{MResult, ParsedProgram, RuntimeFunctionId, Value};
+use mech_core::{LegacyValue, MResult, ParsedProgram, RuntimeFunctionId};
 use mech_engine::{MechProgram, MechProgramConfig};
 
 fn full_program() -> MechProgram {
@@ -33,7 +33,7 @@ fn dynamic_matrix_add_bytecode_uses_catalog_factory() -> MResult<()> {
     decoded.run_bytecode_program(&parsed)?;
 
     let output = decoded.solve_plan()?.value;
-    let Value::MatrixF64(ValueMatrix::DMatrix(matrix)) = output else {
+    let LegacyValue::MatrixF64(ValueMatrix::DMatrix(matrix)) = output else {
         panic!("dynamic matrix addition must return a dynamic f64 matrix");
     };
     let matrix = matrix.borrow();

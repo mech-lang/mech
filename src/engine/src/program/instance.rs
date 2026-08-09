@@ -34,9 +34,9 @@ use std::time::Instant;
 #[cfg(feature = "functions")]
 use mech_core::FunctionCatalog;
 use mech_core::{
-    FunctionSpecializer, MResult, MechError, MechErrorKind, MechFunction, MechSourceCode,
-    ParsedProgram, ReactiveCellId, ReactiveJournalParticipant, ReactiveTurnOutcome, ValRef, Value,
-    ValueKind, hash_str, val_ref_reactive_cell_ids, validate_stable_value_update,
+    FunctionSpecializer, LegacyValue, MResult, MechError, MechErrorKind, MechFunction,
+    MechSourceCode, ParsedProgram, ReactiveCellId, ReactiveJournalParticipant, ReactiveTurnOutcome,
+    ValRef, ValueKind, hash_str, val_ref_reactive_cell_ids, validate_stable_value_update,
     with_reactive_journal_participant,
 };
 
@@ -50,22 +50,25 @@ use mech_syntax::parser;
 #[cfg(all(feature = "source", feature = "native"))]
 use crate::ClosureFunctionSpecializer;
 
-pub fn compile_stable_value_update(sink: ValRef, source: Value) -> MResult<Box<dyn MechFunction>> {
+pub fn compile_stable_value_update(
+    sink: ValRef,
+    source: LegacyValue,
+) -> MResult<Box<dyn MechFunction>> {
     {
         let current = sink.borrow();
         validate_stable_value_update(&current, &source)?;
     }
 
-    crate::AssignValue {}.specialize(&[Value::MutableReference(sink), source])
+    crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink), source])
 }
 
-pub fn apply_stable_value_update(sink: ValRef, source: Value) -> MResult<Value> {
+pub fn apply_stable_value_update(sink: ValRef, source: LegacyValue) -> MResult<LegacyValue> {
     {
         let current = sink.borrow();
         validate_stable_value_update(&current, &source)?;
     }
     let update =
-        crate::AssignValue {}.specialize(&[Value::MutableReference(sink.clone()), source])?;
+        crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink.clone()), source])?;
     update.solve_result()?;
     Ok(sink.borrow().clone())
 }
@@ -113,14 +116,14 @@ pub struct ProgramInputId {
 #[derive(Clone, Debug)]
 pub struct ProgramInputUpdate {
     pub input: ProgramInputId,
-    pub value: Value,
+    pub value: LegacyValue,
 }
 
 #[derive(Clone)]
 pub struct ProgramCellUpdate {
     pub interpreter_id: u64,
     pub target: ValRef,
-    pub value: Value,
+    pub value: LegacyValue,
 }
 
 #[derive(Clone, Debug)]
@@ -151,7 +154,7 @@ struct PreparedProgramCellBatch {
 
 #[derive(Clone, Debug)]
 pub struct ProgramSolveOutcome {
-    pub value: Value,
+    pub value: LegacyValue,
     pub plan_len: usize,
 }
 
@@ -476,7 +479,7 @@ impl MechProgram {
     pub fn register_native_closure(
         &mut self,
         name: impl Into<String>,
-        function: impl Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
+        function: impl Fn(Vec<LegacyValue>) -> MResult<LegacyValue> + Send + Sync + 'static,
     ) -> MResult<()> {
         let name = name.into();
 
@@ -536,7 +539,7 @@ impl MechProgram {
     }
 
     #[cfg(feature = "source")]
-    pub fn run_string(&mut self, source: &str) -> MResult<Value> {
+    pub fn run_string(&mut self, source: &str) -> MResult<LegacyValue> {
         let mut services = NoMechExecutionServices;
         self.run_string_with_services(source, &mut services)
     }
@@ -546,13 +549,13 @@ impl MechProgram {
         &mut self,
         source: &str,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         let tree = parser::parse(source.trim())?;
         self.run_tree_with_services(&tree, services)
     }
 
     #[cfg(feature = "source")]
-    pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<Value> {
+    pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<LegacyValue> {
         let mut services = NoMechExecutionServices;
         self.run_tree_with_services(tree, &mut services)
     }
@@ -562,11 +565,11 @@ impl MechProgram {
         &mut self,
         tree: &mech_core::Program,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         self.interpreter.interpret_with_services(tree, services)
     }
 
-    pub fn run_bytecode(&mut self, bytecode: &[u8]) -> MResult<Value> {
+    pub fn run_bytecode(&mut self, bytecode: &[u8]) -> MResult<LegacyValue> {
         let mut services = NoMechExecutionServices;
         self.run_bytecode_with_services(bytecode, &mut services)
     }
@@ -575,12 +578,12 @@ impl MechProgram {
         &mut self,
         bytecode: &[u8],
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         let parsed = ParsedProgram::from_bytes(bytecode)?;
         self.run_bytecode_program_with_services(&parsed, services)
     }
 
-    pub fn run_bytecode_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
+    pub fn run_bytecode_program(&mut self, program: &ParsedProgram) -> MResult<LegacyValue> {
         let mut services = NoMechExecutionServices;
         self.run_bytecode_program_with_services(program, &mut services)
     }
@@ -589,18 +592,18 @@ impl MechProgram {
         &mut self,
         program: &ParsedProgram,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         self.interpreter
             .run_program_with_services(program, services)
     }
 
     #[cfg(feature = "source")]
-    pub fn run_program(&mut self, source: &str) -> MResult<Value> {
+    pub fn run_program(&mut self, source: &str) -> MResult<LegacyValue> {
         self.run_profiled_string(source)
     }
 
     #[cfg(feature = "source")]
-    pub fn run_profiled_string(&mut self, source: &str) -> MResult<Value> {
+    pub fn run_profiled_string(&mut self, source: &str) -> MResult<LegacyValue> {
         let now = Instant::now();
         let result = self.run_string(source);
 
@@ -624,7 +627,7 @@ impl MechProgram {
         &self,
         interpreter_id: u64,
         output_id: u64,
-    ) -> Option<Value> {
+    ) -> Option<LegacyValue> {
         with_interpreter(&self.interpreter, interpreter_id, &mut |interpreter| {
             interpreter.out_values.borrow().get(&output_id).cloned()
         })
@@ -649,7 +652,7 @@ impl MechProgram {
         &self,
         interpreter_id: u64,
         names: &[String],
-    ) -> Option<Vec<(String, Value)>> {
+    ) -> Option<Vec<(String, LegacyValue)>> {
         with_interpreter(&self.interpreter, interpreter_id, &mut |interpreter| {
             let symbols = interpreter.symbols();
             let symbols_brrw = symbols.borrow();
@@ -657,12 +660,12 @@ impl MechProgram {
         })
     }
 
-    pub fn root_symbol_value(&self, name: &str) -> MResult<Value> {
+    pub fn root_symbol_value(&self, name: &str) -> MResult<LegacyValue> {
         let mut values = self.root_symbol_values(&[name])?;
         Ok(values.remove(0).1)
     }
 
-    pub fn root_symbol_values(&self, names: &[&str]) -> MResult<Vec<(String, Value)>> {
+    pub fn root_symbol_values(&self, names: &[&str]) -> MResult<Vec<(String, LegacyValue)>> {
         let symbols = self.interpreter.symbols();
         let symbols_brrw = symbols.borrow();
         let mut values = Vec::with_capacity(names.len());
@@ -681,7 +684,7 @@ impl MechProgram {
         Ok(values)
     }
 
-    pub fn root_symbol_values_all(&self) -> Vec<(String, Value)> {
+    pub fn root_symbol_values_all(&self) -> Vec<(String, LegacyValue)> {
         let symbols = self.interpreter.symbols();
         let symbols_brrw = symbols.borrow();
         let mut values = symbol_rows(&symbols_brrw, &[]);
@@ -689,7 +692,7 @@ impl MechProgram {
         values
     }
 
-    pub fn bind_ans_for_interpreter(&mut self, interpreter_id: u64, value: &Value) -> bool {
+    pub fn bind_ans_for_interpreter(&mut self, interpreter_id: u64, value: &LegacyValue) -> bool {
         bind_ans_recursive(&mut self.interpreter, interpreter_id, value)
     }
 
@@ -766,7 +769,7 @@ impl MechProgram {
         interpreter_id: u64,
         symbol_id: u64,
         name: &str,
-        initial_value: Value,
+        initial_value: LegacyValue,
     ) -> MResult<ProgramInputId> {
         let Some(existed) =
             with_interpreter_mut(&mut self.interpreter, interpreter_id, &mut |interpreter| {
@@ -804,7 +807,7 @@ impl MechProgram {
         Ok(input)
     }
 
-    pub fn update_input(&mut self, input: ProgramInputId, value: Value) -> MResult<usize> {
+    pub fn update_input(&mut self, input: ProgramInputId, value: LegacyValue) -> MResult<usize> {
         self.update_inputs(&[ProgramInputUpdate { input, value }])
     }
 
@@ -1245,7 +1248,7 @@ impl MechProgram {
         Ok(ProgramSolveOutcome { value, plan_len })
     }
 
-    pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<Value> {
+    pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<LegacyValue> {
         let mut services = NoMechExecutionServices;
         self.run_source_with_services(source, &mut services)
     }
@@ -1254,7 +1257,7 @@ impl MechProgram {
         &mut self,
         source: &MechSourceCode,
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         match source {
             #[cfg(feature = "source")]
             MechSourceCode::String(source) => self.run_string_with_services(source, services),
@@ -1273,7 +1276,7 @@ impl MechProgram {
         }
     }
 
-    pub fn run_sources(&mut self, sources: &[MechSourceCode]) -> MResult<Value> {
+    pub fn run_sources(&mut self, sources: &[MechSourceCode]) -> MResult<LegacyValue> {
         let mut services = NoMechExecutionServices;
         self.run_sources_with_services(sources, &mut services)
     }
@@ -1282,8 +1285,8 @@ impl MechProgram {
         &mut self,
         sources: &[MechSourceCode],
         services: &mut dyn MechExecutionServices,
-    ) -> MResult<Value> {
-        let mut value = Value::Empty;
+    ) -> MResult<LegacyValue> {
+        let mut value = LegacyValue::Empty;
 
         for source in sources {
             value = self.run_source_with_services(source, services)?;
@@ -1304,12 +1307,12 @@ impl MechProgram {
 
         #[cfg(feature = "invariant_define")]
         if !state.integrity_constraints.is_empty() {
-            let marker_output = Value::Bool(Ref::new(false));
+            let marker_output = LegacyValue::Bool(Ref::new(false));
             let marker_register = context.resolve_value_register(&marker_output)?;
             for constraint in state.integrity_constraints.values() {
-                let result = Value::MutableReference(constraint.result.clone());
-                let name = Value::String(Ref::new(constraint.name.clone()));
-                let expression = Value::String(Ref::new(constraint.expression.clone()));
+                let result = LegacyValue::MutableReference(constraint.result.clone());
+                let name = LegacyValue::String(Ref::new(constraint.name.clone()));
+                let expression = LegacyValue::String(Ref::new(constraint.expression.clone()));
                 let operator = match &constraint.operator {
                     Some(FormulaOperator::Comparison(ComparisonOp::Equal)) => "eq",
                     Some(FormulaOperator::Comparison(ComparisonOp::NotEqual)) => "neq",
@@ -1332,20 +1335,20 @@ impl MechProgram {
                     None => "",
                 };
                 let operator = if operator.is_empty() {
-                    Value::Empty
+                    LegacyValue::Empty
                 } else {
-                    Value::String(Ref::new(operator.to_owned()))
+                    LegacyValue::String(Ref::new(operator.to_owned()))
                 };
                 let lhs = constraint
                     .lhs
                     .as_ref()
-                    .map(|value| Value::MutableReference(value.clone()))
-                    .unwrap_or(Value::Empty);
+                    .map(|value| LegacyValue::MutableReference(value.clone()))
+                    .unwrap_or(LegacyValue::Empty);
                 let rhs = constraint
                     .rhs
                     .as_ref()
-                    .map(|value| Value::MutableReference(value.clone()))
-                    .unwrap_or(Value::Empty);
+                    .map(|value| LegacyValue::MutableReference(value.clone()))
+                    .unwrap_or(LegacyValue::Empty);
                 let metadata = [result, name, expression, operator, lhs, rhs]
                     .iter()
                     .map(|value| context.resolve_value_register(value))
@@ -1471,7 +1474,11 @@ fn with_interpreter<T>(
     None
 }
 
-fn bind_ans_recursive(interpreter: &mut Interpreter, interpreter_id: u64, value: &Value) -> bool {
+fn bind_ans_recursive(
+    interpreter: &mut Interpreter,
+    interpreter_id: u64,
+    value: &LegacyValue,
+) -> bool {
     if interpreter_id == 0 || interpreter.id == interpreter_id {
         bind_ans_on_interpreter(interpreter, value);
         return true;
@@ -1500,9 +1507,9 @@ fn bind_ans_recursive(interpreter: &mut Interpreter, interpreter_id: u64, value:
     false
 }
 
-fn bind_ans_on_interpreter(interpreter: &mut Interpreter, value: &Value) {
+fn bind_ans_on_interpreter(interpreter: &mut Interpreter, value: &LegacyValue) {
     let resolved_value = match value {
-        Value::MutableReference(reference) => reference.borrow().clone(),
+        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
         _ => value.clone(),
     };
     let ans_id = hash_str("ans");
@@ -1519,7 +1526,10 @@ fn bind_ans_on_interpreter(interpreter: &mut Interpreter, value: &Value) {
         .insert(ans_id, "ans".to_string());
 }
 
-fn symbol_rows(symbol_table: &mech_core::SymbolTable, names: &[String]) -> Vec<(String, Value)> {
+fn symbol_rows(
+    symbol_table: &mech_core::SymbolTable,
+    names: &[String],
+) -> Vec<(String, LegacyValue)> {
     let dictionary = symbol_table.dictionary.borrow();
     let mut rows = Vec::new();
 
@@ -1581,7 +1591,7 @@ mod tests {
 
     #[cfg(feature = "functions")]
     impl FunctionSpecializer for UnusedTestSpecializer {
-        fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             unreachable!("program checkpoint test never specializes its marker operation")
         }
     }
@@ -1666,10 +1676,10 @@ mod tests {
     }
 
     #[cfg(all(feature = "functions", feature = "f64"))]
-    fn extension_f64_value(value: &Value) -> f64 {
+    fn extension_f64_value(value: &LegacyValue) -> f64 {
         match value {
-            Value::F64(value) => *value.borrow(),
-            Value::MutableReference(value) => extension_f64_value(&value.borrow()),
+            LegacyValue::F64(value) => *value.borrow(),
+            LegacyValue::MutableReference(value) => extension_f64_value(&value.borrow()),
             other => panic!("expected f64 value, got {other:?}"),
         }
     }
@@ -1681,7 +1691,7 @@ mod tests {
         let catalog = Arc::clone(program.function_catalog());
 
         program
-            .register_native_closure("host/checkpoint", |_| Ok(Value::F64(Ref::new(1.0))))
+            .register_native_closure("host/checkpoint", |_| Ok(LegacyValue::F64(Ref::new(1.0))))
             .unwrap();
         program.run_string("before := host/checkpoint()").unwrap();
         assert_eq!(
@@ -1691,7 +1701,7 @@ mod tests {
 
         let checkpoint = program.checkpoint().unwrap();
         program
-            .register_native_closure("host/checkpoint", |_| Ok(Value::F64(Ref::new(2.0))))
+            .register_native_closure("host/checkpoint", |_| Ok(LegacyValue::F64(Ref::new(2.0))))
             .unwrap();
         program
             .run_string("replacement := host/checkpoint()")
@@ -1723,7 +1733,7 @@ mod tests {
             .len();
 
         let error = program
-            .register_native_closure("", |_| Ok(Value::Empty))
+            .register_native_closure("", |_| Ok(LegacyValue::Empty))
             .unwrap_err();
         assert_eq!(error.kind_name(), "FunctionExtensionInvalidEntry");
         assert_eq!(
@@ -1738,7 +1748,7 @@ mod tests {
 
         let checkpoint = program.checkpoint().unwrap();
         program
-            .register_native_closure("host/temporary", |_| Ok(Value::Index(Ref::new(3))))
+            .register_native_closure("host/temporary", |_| Ok(LegacyValue::Index(Ref::new(3))))
             .unwrap();
         assert!(matches!(
             program
@@ -1781,7 +1791,7 @@ mod tests {
     fn native_closure_bytecode_rejection_remains_structured() {
         let mut program = test_mech_program(MechProgramConfig::default());
         program
-            .register_native_closure("host/source-only", |_| Ok(Value::F64(Ref::new(4.0))))
+            .register_native_closure("host/source-only", |_| Ok(LegacyValue::F64(Ref::new(4.0))))
             .unwrap();
         program
             .run_string("source-only := host/source-only()")
@@ -1852,12 +1862,12 @@ mod tests {
             .unwrap();
         assert_eq!(descriptor.lhs.as_ref().unwrap().addr(), target.addr());
         assert!(descriptor.rhs.is_some());
-        if let Value::F64(value) = &*target.borrow() {
+        if let LegacyValue::F64(value) = &*target.borrow() {
             *value.borrow_mut() = 3.0;
         } else {
             panic!("target must be f64");
         }
-        if let Value::F64(value) = &*descriptor.lhs.unwrap().borrow() {
+        if let LegacyValue::F64(value) = &*descriptor.lhs.unwrap().borrow() {
             assert_eq!(*value.borrow(), 3.0);
         } else {
             panic!("captured lhs must remain the target cell");
@@ -1938,7 +1948,7 @@ mod tests {
             nested
                 .out_values
                 .borrow_mut()
-                .insert(output_id, Value::U64(mech_core::Ref::new(42)));
+                .insert(output_id, LegacyValue::U64(mech_core::Ref::new(42)));
         }
 
         assert!(
@@ -1951,7 +1961,7 @@ mod tests {
     #[test]
     fn program_bind_ans_for_interpreter_binds_ans() {
         let mut program = test_mech_program(MechProgramConfig::default());
-        let value = Value::U64(mech_core::Ref::new(42));
+        let value = LegacyValue::U64(mech_core::Ref::new(42));
         assert!(program.bind_ans_for_interpreter(0, &value));
         let ans_id = hash_str("ans");
         let bound = program
@@ -1971,9 +1981,9 @@ mod live_input_tests {
     use mech_core::structures::matrix::Matrix as MechMatrix;
     use mech_core::{Ref, hash_str};
 
-    fn f64_value(value: &Value) -> f64 {
+    fn f64_value(value: &LegacyValue) -> f64 {
         match value {
-            Value::F64(value) => *value.borrow(),
+            LegacyValue::F64(value) => *value.borrow(),
             other => panic!("expected f64, got {other:?}"),
         }
     }
@@ -1981,16 +1991,16 @@ mod live_input_tests {
     #[cfg(feature = "f64")]
     #[test]
     fn stable_value_update_preserves_f64_reference() {
-        let sink = Ref::new(Value::F64(Ref::new(1.0)));
+        let sink = Ref::new(LegacyValue::F64(Ref::new(1.0)));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
-            Value::F64(value) => value.as_ptr(),
+            LegacyValue::F64(value) => value.as_ptr(),
             other => panic!("expected f64, got {other:?}"),
         };
-        apply_stable_value_update(sink.clone(), Value::F64(Ref::new(9.0))).unwrap();
+        apply_stable_value_update(sink.clone(), LegacyValue::F64(Ref::new(9.0))).unwrap();
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
-            Value::F64(value) => {
+            LegacyValue::F64(value) => {
                 assert_eq!(inner_pointer, value.as_ptr());
                 assert_eq!(*value.borrow(), 9.0);
             }
@@ -2001,16 +2011,16 @@ mod live_input_tests {
     #[cfg(feature = "i64")]
     #[test]
     fn stable_value_update_preserves_i64_reference() {
-        let sink = Ref::new(Value::I64(Ref::new(1)));
+        let sink = Ref::new(LegacyValue::I64(Ref::new(1)));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
-            Value::I64(value) => value.as_ptr(),
+            LegacyValue::I64(value) => value.as_ptr(),
             other => panic!("expected i64, got {other:?}"),
         };
-        apply_stable_value_update(sink.clone(), Value::I64(Ref::new(9))).unwrap();
+        apply_stable_value_update(sink.clone(), LegacyValue::I64(Ref::new(9))).unwrap();
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
-            Value::I64(value) => {
+            LegacyValue::I64(value) => {
                 assert_eq!(inner_pointer, value.as_ptr());
                 assert_eq!(*value.borrow(), 9);
             }
@@ -2021,16 +2031,16 @@ mod live_input_tests {
     #[cfg(feature = "bool")]
     #[test]
     fn stable_value_update_preserves_bool_reference() {
-        let sink = Ref::new(Value::Bool(Ref::new(false)));
+        let sink = Ref::new(LegacyValue::Bool(Ref::new(false)));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
-            Value::Bool(value) => value.as_ptr(),
+            LegacyValue::Bool(value) => value.as_ptr(),
             other => panic!("expected bool, got {other:?}"),
         };
-        apply_stable_value_update(sink.clone(), Value::Bool(Ref::new(true))).unwrap();
+        apply_stable_value_update(sink.clone(), LegacyValue::Bool(Ref::new(true))).unwrap();
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
-            Value::Bool(value) => {
+            LegacyValue::Bool(value) => {
                 assert_eq!(inner_pointer, value.as_ptr());
                 assert!(*value.borrow());
             }
@@ -2041,17 +2051,20 @@ mod live_input_tests {
     #[cfg(any(feature = "string", feature = "variable_define"))]
     #[test]
     fn stable_value_update_preserves_string_reference() {
-        let sink = Ref::new(Value::String(Ref::new("old".to_string())));
+        let sink = Ref::new(LegacyValue::String(Ref::new("old".to_string())));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
-            Value::String(value) => value.as_ptr(),
+            LegacyValue::String(value) => value.as_ptr(),
             other => panic!("expected string, got {other:?}"),
         };
-        apply_stable_value_update(sink.clone(), Value::String(Ref::new("new".to_string())))
-            .unwrap();
+        apply_stable_value_update(
+            sink.clone(),
+            LegacyValue::String(Ref::new("new".to_string())),
+        )
+        .unwrap();
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
-            Value::String(value) => {
+            LegacyValue::String(value) => {
                 assert_eq!(inner_pointer, value.as_ptr());
                 assert_eq!(&*value.borrow(), "new");
             }
@@ -2061,16 +2074,16 @@ mod live_input_tests {
 
     #[test]
     fn stable_value_update_preserves_index_reference() {
-        let sink = Ref::new(Value::Index(Ref::new(1)));
+        let sink = Ref::new(LegacyValue::Index(Ref::new(1)));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
-            Value::Index(value) => value.as_ptr(),
+            LegacyValue::Index(value) => value.as_ptr(),
             other => panic!("expected index, got {other:?}"),
         };
-        apply_stable_value_update(sink.clone(), Value::Index(Ref::new(9))).unwrap();
+        apply_stable_value_update(sink.clone(), LegacyValue::Index(Ref::new(9))).unwrap();
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
-            Value::Index(value) => {
+            LegacyValue::Index(value) => {
                 assert_eq!(inner_pointer, value.as_ptr());
                 assert_eq!(*value.borrow(), 9);
             }
@@ -2081,17 +2094,20 @@ mod live_input_tests {
     #[cfg(all(feature = "f64", any(feature = "string", feature = "variable_define")))]
     #[test]
     fn stable_value_update_rejects_incompatible_kind() {
-        let sink = Ref::new(Value::F64(Ref::new(1.0)));
+        let sink = Ref::new(LegacyValue::F64(Ref::new(1.0)));
         let inner_pointer = match &*sink.borrow() {
-            Value::F64(value) => value.as_ptr(),
+            LegacyValue::F64(value) => value.as_ptr(),
             other => panic!("expected f64, got {other:?}"),
         };
         assert!(
-            apply_stable_value_update(sink.clone(), Value::String(Ref::new("bad".to_string())))
-                .is_err()
+            apply_stable_value_update(
+                sink.clone(),
+                LegacyValue::String(Ref::new("bad".to_string()))
+            )
+            .is_err()
         );
         match &*sink.borrow() {
-            Value::F64(value) => {
+            LegacyValue::F64(value) => {
                 assert_eq!(inner_pointer, value.as_ptr());
                 assert_eq!(*value.borrow(), 1.0);
             }
@@ -2112,16 +2128,17 @@ mod live_input_tests {
             2,
             vec![5.0, 6.0, 7.0, 8.0],
         )));
-        let sink = Ref::new(Value::MatrixF64(sink_matrix));
+        let sink = Ref::new(LegacyValue::MatrixF64(sink_matrix));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
-            Value::MatrixF64(value) => value.addr(),
+            LegacyValue::MatrixF64(value) => value.addr(),
             other => panic!("expected f64 matrix, got {other:?}"),
         };
-        apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix.clone())).unwrap();
+        apply_stable_value_update(sink.clone(), LegacyValue::MatrixF64(source_matrix.clone()))
+            .unwrap();
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
-            Value::MatrixF64(value) => {
+            LegacyValue::MatrixF64(value) => {
                 assert_eq!(inner_pointer, value.addr());
                 assert_eq!(value, &source_matrix);
             }
@@ -2132,16 +2149,16 @@ mod live_input_tests {
     #[cfg(feature = "f64")]
     #[test]
     fn stable_value_update_preserves_typed_scalar_reference() {
-        let sink = Ref::new(Value::Typed(
-            Box::new(Value::F64(Ref::new(1.0))),
+        let sink = Ref::new(LegacyValue::Typed(
+            Box::new(LegacyValue::F64(Ref::new(1.0))),
             ValueKind::F64,
         ));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
-            Value::Typed(inner, annotation) => {
+            LegacyValue::Typed(inner, annotation) => {
                 assert_eq!(annotation, &ValueKind::F64);
                 match inner.as_ref() {
-                    Value::F64(value) => value.as_ptr(),
+                    LegacyValue::F64(value) => value.as_ptr(),
                     other => panic!("expected typed f64 inner, got {other:?}"),
                 }
             }
@@ -2150,16 +2167,16 @@ mod live_input_tests {
 
         apply_stable_value_update(
             sink.clone(),
-            Value::Typed(Box::new(Value::F64(Ref::new(9.0))), ValueKind::F64),
+            LegacyValue::Typed(Box::new(LegacyValue::F64(Ref::new(9.0))), ValueKind::F64),
         )
         .unwrap();
 
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
-            Value::Typed(inner, annotation) => {
+            LegacyValue::Typed(inner, annotation) => {
                 assert_eq!(annotation, &ValueKind::F64);
                 match inner.as_ref() {
-                    Value::F64(value) => {
+                    LegacyValue::F64(value) => {
                         assert_eq!(inner_pointer, value.as_ptr());
                         assert_eq!(*value.borrow(), 9.0);
                     }
@@ -2173,14 +2190,14 @@ mod live_input_tests {
     #[cfg(feature = "f64")]
     #[test]
     fn stable_value_update_rejects_different_typed_annotation() {
-        let sink = Ref::new(Value::Typed(
-            Box::new(Value::F64(Ref::new(1.0))),
+        let sink = Ref::new(LegacyValue::Typed(
+            Box::new(LegacyValue::F64(Ref::new(1.0))),
             ValueKind::F64,
         ));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
-            Value::Typed(inner, _) => match inner.as_ref() {
-                Value::F64(value) => value.as_ptr(),
+            LegacyValue::Typed(inner, _) => match inner.as_ref() {
+                LegacyValue::F64(value) => value.as_ptr(),
                 other => panic!("expected typed f64 inner, got {other:?}"),
             },
             other => panic!("expected typed value, got {other:?}"),
@@ -2188,7 +2205,7 @@ mod live_input_tests {
 
         let result = apply_stable_value_update(
             sink.clone(),
-            Value::Typed(Box::new(Value::F64(Ref::new(9.0))), ValueKind::String),
+            LegacyValue::Typed(Box::new(LegacyValue::F64(Ref::new(9.0))), ValueKind::String),
         );
         assert!(
             format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
@@ -2196,10 +2213,10 @@ mod live_input_tests {
 
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
-            Value::Typed(inner, annotation) => {
+            LegacyValue::Typed(inner, annotation) => {
                 assert_eq!(annotation, &ValueKind::F64);
                 match inner.as_ref() {
-                    Value::F64(value) => {
+                    LegacyValue::F64(value) => {
                         assert_eq!(inner_pointer, value.as_ptr());
                         assert_eq!(*value.borrow(), 1.0);
                     }
@@ -2213,28 +2230,28 @@ mod live_input_tests {
     #[cfg(feature = "f64")]
     #[test]
     fn stable_value_update_rejects_typed_to_untyped() {
-        let sink = Ref::new(Value::Typed(
-            Box::new(Value::F64(Ref::new(1.0))),
+        let sink = Ref::new(LegacyValue::Typed(
+            Box::new(LegacyValue::F64(Ref::new(1.0))),
             ValueKind::F64,
         ));
         let inner_pointer = match &*sink.borrow() {
-            Value::Typed(inner, _) => match inner.as_ref() {
-                Value::F64(value) => value.as_ptr(),
+            LegacyValue::Typed(inner, _) => match inner.as_ref() {
+                LegacyValue::F64(value) => value.as_ptr(),
                 other => panic!("expected typed f64 inner, got {other:?}"),
             },
             other => panic!("expected typed value, got {other:?}"),
         };
 
-        let result = apply_stable_value_update(sink.clone(), Value::F64(Ref::new(9.0)));
+        let result = apply_stable_value_update(sink.clone(), LegacyValue::F64(Ref::new(9.0)));
         assert!(
             format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
         );
 
         match &*sink.borrow() {
-            Value::Typed(inner, annotation) => {
+            LegacyValue::Typed(inner, annotation) => {
                 assert_eq!(annotation, &ValueKind::F64);
                 match inner.as_ref() {
-                    Value::F64(value) => {
+                    LegacyValue::F64(value) => {
                         assert_eq!(inner_pointer, value.as_ptr());
                         assert_eq!(*value.borrow(), 1.0);
                     }
@@ -2248,7 +2265,8 @@ mod live_input_tests {
     #[cfg(feature = "compiler")]
     #[test]
     fn empty_stable_assignment_bytecode_compile_returns_error() {
-        let assignment = compile_stable_value_update(Ref::new(Value::Empty), Value::Empty).unwrap();
+        let assignment =
+            compile_stable_value_update(Ref::new(LegacyValue::Empty), LegacyValue::Empty).unwrap();
         let mut ctx = CompileCtx::new();
         let error = assignment.compile(&mut ctx).unwrap_err();
         let rendered = format!("{error:?}");
@@ -2260,21 +2278,21 @@ mod live_input_tests {
 
     #[test]
     fn stable_value_update_accepts_empty_to_empty() {
-        let sink = Ref::new(Value::Empty);
-        compile_stable_value_update(sink.clone(), Value::Empty).unwrap();
-        apply_stable_value_update(sink.clone(), Value::Empty).unwrap();
-        assert_eq!(&*sink.borrow(), &Value::Empty);
+        let sink = Ref::new(LegacyValue::Empty);
+        compile_stable_value_update(sink.clone(), LegacyValue::Empty).unwrap();
+        apply_stable_value_update(sink.clone(), LegacyValue::Empty).unwrap();
+        assert_eq!(&*sink.borrow(), &LegacyValue::Empty);
     }
 
     #[cfg(feature = "f64")]
     #[test]
     fn stable_value_update_rejects_empty_to_value() {
-        let sink = Ref::new(Value::Empty);
-        let result = apply_stable_value_update(sink.clone(), Value::F64(Ref::new(1.0)));
+        let sink = Ref::new(LegacyValue::Empty);
+        let result = apply_stable_value_update(sink.clone(), LegacyValue::F64(Ref::new(1.0)));
         assert!(
             format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
         );
-        assert_eq!(&*sink.borrow(), &Value::Empty);
+        assert_eq!(&*sink.borrow(), &LegacyValue::Empty);
     }
 
     #[cfg(all(feature = "matrix", feature = "f64"))]
@@ -2283,20 +2301,20 @@ mod live_input_tests {
         let sink_matrix = MechMatrix::from_vec((1..=25).map(|x| x as f64).collect(), 5, 5);
         let source_matrix = MechMatrix::from_vec((1..=36).map(|x| x as f64).collect(), 6, 6);
         let expected = sink_matrix.clone();
-        let sink = Ref::new(Value::MatrixF64(sink_matrix));
+        let sink = Ref::new(LegacyValue::MatrixF64(sink_matrix));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
-            Value::MatrixF64(value) => value.addr(),
+            LegacyValue::MatrixF64(value) => value.addr(),
             other => panic!("expected f64 matrix, got {other:?}"),
         };
 
-        let error =
-            apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix)).unwrap_err();
+        let error = apply_stable_value_update(sink.clone(), LegacyValue::MatrixF64(source_matrix))
+            .unwrap_err();
         assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
 
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
-            Value::MatrixF64(value) => {
+            LegacyValue::MatrixF64(value) => {
                 assert_eq!(inner_pointer, value.addr());
                 assert_eq!(value.shape(), vec![5, 5]);
                 assert_eq!(value, &expected);
@@ -2319,18 +2337,18 @@ mod live_input_tests {
             vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0],
         )));
         let expected = sink_matrix.clone();
-        let sink = Ref::new(Value::MatrixF64(sink_matrix));
+        let sink = Ref::new(LegacyValue::MatrixF64(sink_matrix));
         let inner_pointer = match &*sink.borrow() {
-            Value::MatrixF64(value) => value.addr(),
+            LegacyValue::MatrixF64(value) => value.addr(),
             other => panic!("expected f64 matrix, got {other:?}"),
         };
 
-        let error =
-            apply_stable_value_update(sink.clone(), Value::MatrixF64(source_matrix)).unwrap_err();
+        let error = apply_stable_value_update(sink.clone(), LegacyValue::MatrixF64(source_matrix))
+            .unwrap_err();
         assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
 
         match &*sink.borrow() {
-            Value::MatrixF64(value) => {
+            LegacyValue::MatrixF64(value) => {
                 assert_eq!(inner_pointer, value.addr());
                 assert_eq!(value.shape(), vec![2, 3]);
                 assert_eq!(value, &expected);
@@ -2342,9 +2360,9 @@ mod live_input_tests {
     #[cfg(all(feature = "matrix", feature = "f64"))]
     #[test]
     fn stable_value_update_rejects_matrix_value_sink() {
-        let matrix_value = MechMatrix::from_vec(vec![Value::F64(Ref::new(1.0))], 1, 1);
-        let sink = Ref::new(Value::MatrixValue(matrix_value));
-        let result = apply_stable_value_update(sink.clone(), Value::F64(Ref::new(9.0)));
+        let matrix_value = MechMatrix::from_vec(vec![LegacyValue::F64(Ref::new(1.0))], 1, 1);
+        let sink = Ref::new(LegacyValue::MatrixValue(matrix_value));
+        let result = apply_stable_value_update(sink.clone(), LegacyValue::F64(Ref::new(9.0)));
         let rendered = format!("{:?}", result.unwrap_err());
         assert!(
             rendered.contains("StableValueUpdateContractViolation"),
@@ -2355,9 +2373,10 @@ mod live_input_tests {
     #[cfg(all(feature = "matrix", feature = "f64"))]
     #[test]
     fn stable_value_update_rejects_matrix_value_source() {
-        let sink = Ref::new(Value::F64(Ref::new(1.0)));
-        let matrix_value = MechMatrix::from_vec(vec![Value::F64(Ref::new(9.0))], 1, 1);
-        let result = apply_stable_value_update(sink.clone(), Value::MatrixValue(matrix_value));
+        let sink = Ref::new(LegacyValue::F64(Ref::new(1.0)));
+        let matrix_value = MechMatrix::from_vec(vec![LegacyValue::F64(Ref::new(9.0))], 1, 1);
+        let result =
+            apply_stable_value_update(sink.clone(), LegacyValue::MatrixValue(matrix_value));
         let rendered = format!("{:?}", result.unwrap_err());
         assert!(
             rendered.contains("StableValueUpdateContractViolation"),
@@ -2369,20 +2388,20 @@ mod live_input_tests {
     #[test]
     fn stable_value_update_preserves_matrix_index_reference() {
         let matrix = MechMatrix::from_vec(vec![1usize, 2, 3, 4], 2, 2);
-        let sink = Ref::new(Value::MatrixIndex(matrix));
+        let sink = Ref::new(LegacyValue::MatrixIndex(matrix));
         let outer_pointer = sink.as_ptr();
         let inner_pointer = match &*sink.borrow() {
-            Value::MatrixIndex(value) => value.addr(),
+            LegacyValue::MatrixIndex(value) => value.addr(),
             other => panic!("expected index matrix, got {other:?}"),
         };
         apply_stable_value_update(
             sink.clone(),
-            Value::MatrixIndex(MechMatrix::from_vec(vec![5usize, 6, 7, 8], 2, 2)),
+            LegacyValue::MatrixIndex(MechMatrix::from_vec(vec![5usize, 6, 7, 8], 2, 2)),
         )
         .unwrap();
         assert_eq!(outer_pointer, sink.as_ptr());
         match &*sink.borrow() {
-            Value::MatrixIndex(value) => {
+            LegacyValue::MatrixIndex(value) => {
                 assert_eq!(inner_pointer, value.addr());
                 assert_eq!(value.shape(), vec![2, 2]);
                 assert_eq!(value, &MechMatrix::from_vec(vec![5usize, 6, 7, 8], 2, 2));
@@ -2403,69 +2422,69 @@ mod live_input_tests {
     #[test]
     fn stable_value_update_publishes_every_composite_without_replacing_its_cell() {
         let record = |value| {
-            Value::Record(Ref::new(mech_core::MechRecord::new(vec![(
+            LegacyValue::Record(Ref::new(mech_core::MechRecord::new(vec![(
                 "value",
-                Value::F64(Ref::new(value)),
+                LegacyValue::F64(Ref::new(value)),
             )])))
         };
         let map = |value| {
-            Value::Map(Ref::new(mech_core::MechMap::from_typed_vec(
+            LegacyValue::Map(Ref::new(mech_core::MechMap::from_typed_vec(
                 ValueKind::String,
                 ValueKind::F64,
                 1,
                 vec![(
-                    Value::String(Ref::new("key".to_owned())),
-                    Value::F64(Ref::new(value)),
+                    LegacyValue::String(Ref::new("key".to_owned())),
+                    LegacyValue::F64(Ref::new(value)),
                 )],
             )))
         };
         let set = |value| {
-            Value::Set(Ref::new(mech_core::MechSet::from_vec(vec![Value::F64(
-                Ref::new(value),
-            )])))
+            LegacyValue::Set(Ref::new(mech_core::MechSet::from_vec(vec![
+                LegacyValue::F64(Ref::new(value)),
+            ])))
         };
         let table = |value| {
-            Value::Table(Ref::new(
+            LegacyValue::Table(Ref::new(
                 mech_core::MechTable::from_records(vec![mech_core::MechRecord::new(vec![(
                     "value",
-                    Value::F64(Ref::new(value)),
+                    LegacyValue::F64(Ref::new(value)),
                 )])])
                 .unwrap(),
             ))
         };
         let tuple = |value| {
-            Value::Tuple(Ref::new(mech_core::MechTuple::from_vec(vec![Value::F64(
-                Ref::new(value),
-            )])))
+            LegacyValue::Tuple(Ref::new(mech_core::MechTuple::from_vec(vec![
+                LegacyValue::F64(Ref::new(value)),
+            ])))
         };
-        let composite_addr = |value: &Value| match value {
-            Value::Record(value) => value.addr(),
-            Value::Map(value) => value.addr(),
-            Value::Set(value) => value.addr(),
-            Value::Table(value) => value.addr(),
-            Value::Tuple(value) => value.addr(),
+        let composite_addr = |value: &LegacyValue| match value {
+            LegacyValue::Record(value) => value.addr(),
+            LegacyValue::Map(value) => value.addr(),
+            LegacyValue::Set(value) => value.addr(),
+            LegacyValue::Table(value) => value.addr(),
+            LegacyValue::Tuple(value) => value.addr(),
             other => panic!("expected composite, got {other:?}"),
         };
-        let nested_f64 = |value: &Value| -> Option<Ref<f64>> {
+        let nested_f64 = |value: &LegacyValue| -> Option<Ref<f64>> {
             let nested = match value {
-                Value::Record(value) => value.borrow().data.values().next().cloned(),
-                Value::Map(value) => value.borrow().map.values().next().cloned(),
-                Value::Table(value) => value
+                LegacyValue::Record(value) => value.borrow().data.values().next().cloned(),
+                LegacyValue::Map(value) => value.borrow().map.values().next().cloned(),
+                LegacyValue::Table(value) => value
                     .borrow()
                     .data
                     .values()
                     .next()
                     .and_then(|(_, values)| values.as_vec().into_iter().next()),
-                Value::Tuple(value) => value
+                LegacyValue::Tuple(value) => value
                     .borrow()
                     .elements
                     .first()
                     .map(|value| value.as_ref().clone()),
-                Value::Set(_) => None,
+                LegacyValue::Set(_) => None,
                 other => panic!("expected composite, got {other:?}"),
             };
             nested.map(|value| match value {
-                Value::F64(value) => value,
+                LegacyValue::F64(value) => value,
                 other => panic!("expected nested F64, got {other:?}"),
             })
         };
@@ -2500,13 +2519,13 @@ mod live_input_tests {
         }
 
         let shared = Ref::new(1.0);
-        let aliased = Value::Record(Ref::new(mech_core::MechRecord::new(vec![
-            ("left", Value::F64(shared.clone())),
-            ("right", Value::F64(shared.clone())),
+        let aliased = LegacyValue::Record(Ref::new(mech_core::MechRecord::new(vec![
+            ("left", LegacyValue::F64(shared.clone())),
+            ("right", LegacyValue::F64(shared.clone())),
         ])));
-        let distinct = Value::Record(Ref::new(mech_core::MechRecord::new(vec![
-            ("left", Value::F64(Ref::new(2.0))),
-            ("right", Value::F64(Ref::new(3.0))),
+        let distinct = LegacyValue::Record(Ref::new(mech_core::MechRecord::new(vec![
+            ("left", LegacyValue::F64(Ref::new(2.0))),
+            ("right", LegacyValue::F64(Ref::new(3.0))),
         ])));
         let aliased = Ref::new(aliased);
         let error = match compile_stable_value_update(aliased, distinct)
@@ -2534,7 +2553,7 @@ mod live_input_tests {
                 program.interpreter().id,
                 input_id,
                 "input",
-                Value::F64(Ref::new(1.0)),
+                LegacyValue::F64(Ref::new(1.0)),
             )
             .unwrap();
         program.run_string("output := input * 2").unwrap();
@@ -2546,7 +2565,7 @@ mod live_input_tests {
             .unwrap();
         let outer_pointer = before.as_ptr();
         let inner_pointer = match &*before.borrow() {
-            Value::F64(value) => value.as_ptr(),
+            LegacyValue::F64(value) => value.as_ptr(),
             other => panic!("expected f64 input, got {other:?}"),
         };
         let output = program
@@ -2562,11 +2581,11 @@ mod live_input_tests {
                 program.interpreter().id,
                 input_id,
                 "input",
-                Value::F64(Ref::new(1.0)),
+                LegacyValue::F64(Ref::new(1.0)),
             )
             .unwrap();
         program
-            .update_input(handle, Value::F64(Ref::new(5.0)))
+            .update_input(handle, LegacyValue::F64(Ref::new(5.0)))
             .unwrap();
         let after = program
             .interpreter()
@@ -2576,7 +2595,7 @@ mod live_input_tests {
             .unwrap();
         assert_eq!(outer_pointer, after.as_ptr());
         match &*after.borrow() {
-            Value::F64(value) => assert_eq!(inner_pointer, value.as_ptr()),
+            LegacyValue::F64(value) => assert_eq!(inner_pointer, value.as_ptr()),
             other => panic!("expected f64 input, got {other:?}"),
         }
 
@@ -2608,7 +2627,7 @@ mod live_input_tests {
                 interpreter_id,
                 input_id,
                 "live-x",
-                Value::F64(Ref::new(1.0)),
+                LegacyValue::F64(Ref::new(1.0)),
             )
             .unwrap();
         let before = program
@@ -2625,7 +2644,7 @@ mod live_input_tests {
                 interpreter_id,
                 input_id,
                 "live-x",
-                Value::F64(Ref::new(9.0)),
+                LegacyValue::F64(Ref::new(9.0)),
             )
             .unwrap();
         let after = program
@@ -2647,7 +2666,7 @@ mod live_input_tests {
                 program.interpreter().id,
                 input_id,
                 "input",
-                Value::F64(Ref::new(1.0)),
+                LegacyValue::F64(Ref::new(1.0)),
             )
             .unwrap();
         program.run_string("output := input * 2").unwrap();
@@ -2659,7 +2678,7 @@ mod live_input_tests {
             program
                 .update_inputs(&[ProgramInputUpdate {
                     input: handle,
-                    value: Value::String(Ref::new("bad".to_string()))
+                    value: LegacyValue::String(Ref::new("bad".to_string()))
                 }])
                 .is_err()
         );
@@ -2686,19 +2705,19 @@ mod live_input_tests {
         let b_id = hash_str("b");
         let interpreter_id = program.interpreter().id;
         let a = program
-            .ensure_input(interpreter_id, a_id, "a", Value::F64(Ref::new(1.0)))
+            .ensure_input(interpreter_id, a_id, "a", LegacyValue::F64(Ref::new(1.0)))
             .unwrap();
         let b = program
-            .ensure_input(interpreter_id, b_id, "b", Value::F64(Ref::new(2.0)))
+            .ensure_input(interpreter_id, b_id, "b", LegacyValue::F64(Ref::new(2.0)))
             .unwrap();
         let result = program.update_inputs(&[
             ProgramInputUpdate {
                 input: a,
-                value: Value::F64(Ref::new(3.0)),
+                value: LegacyValue::F64(Ref::new(3.0)),
             },
             ProgramInputUpdate {
                 input: b,
-                value: Value::String(Ref::new("bad".to_string())),
+                value: LegacyValue::String(Ref::new("bad".to_string())),
             },
         ]);
         assert!(result.is_err());
@@ -2715,7 +2734,12 @@ mod live_input_tests {
         let input_id = hash_str("input");
         let interpreter_id = program.interpreter().id;
         let input = program
-            .ensure_input(interpreter_id, input_id, "input", Value::F64(Ref::new(1.0)))
+            .ensure_input(
+                interpreter_id,
+                input_id,
+                "input",
+                LegacyValue::F64(Ref::new(1.0)),
+            )
             .unwrap();
         let input_val_ref = program
             .interpreter()
@@ -2725,14 +2749,14 @@ mod live_input_tests {
             .unwrap();
         let input_val_ref_id = input_val_ref.id();
         let nested_scalar_id = match &*input_val_ref.borrow() {
-            Value::F64(value) => value.id(),
+            LegacyValue::F64(value) => value.id(),
             other => panic!("expected f64 input, got {other:?}"),
         };
 
         let outcome = program
             .update_inputs_with_dirty_cells(&[ProgramInputUpdate {
                 input,
-                value: Value::F64(Ref::new(2.0)),
+                value: LegacyValue::F64(Ref::new(2.0)),
             }])
             .unwrap();
 
@@ -2757,7 +2781,7 @@ mod live_input_tests {
         };
         assert!(
             program
-                .update_input(missing, Value::F64(Ref::new(1.0)))
+                .update_input(missing, LegacyValue::F64(Ref::new(1.0)))
                 .is_err()
         );
     }
@@ -2768,9 +2792,9 @@ mod root_symbol_snapshot_tests {
     use super::*;
     use mech_core::Ref;
 
-    fn f64_value(value: &Value) -> f64 {
+    fn f64_value(value: &LegacyValue) -> f64 {
         match value {
-            Value::F64(value) => *value.borrow(),
+            LegacyValue::F64(value) => *value.borrow(),
             other => panic!("expected f64, got {other:?}"),
         }
     }
@@ -2840,15 +2864,15 @@ mod root_symbol_snapshot_tests {
 mod program_reactive_turn_tests {
     use super::*;
     use mech_core::Ref;
-    fn f64_value(v: f64) -> Value {
-        Value::F64(Ref::new(v))
+    fn f64_value(v: f64) -> LegacyValue {
+        LegacyValue::F64(Ref::new(v))
     }
     fn input(p: &mut MechProgram, n: &str, v: f64) -> ProgramInputId {
         let id = hash_str(n);
         p.ensure_input(p.interpreter().id, id, n, f64_value(v))
             .unwrap()
     }
-    fn symbol(p: &MechProgram, id: u64, n: &str) -> Value {
+    fn symbol(p: &MechProgram, id: u64, n: &str) -> LegacyValue {
         with_interpreter(p.interpreter(), id, &mut |i| {
             i.symbols()
                 .borrow()
@@ -3106,7 +3130,7 @@ mod program_reactive_turn_tests {
                 },
                 ProgramInputUpdate {
                     input: b,
-                    value: Value::String(Ref::new("bad".into())),
+                    value: LegacyValue::String(Ref::new("bad".into())),
                 },
             ])
             .unwrap_err();
@@ -3331,14 +3355,14 @@ mod compact_program_reactive_turn_tests {
             Ok(ReactiveSolveStatus::Changed)
         }
 
-        fn out(&self) -> Value {
-            Value::Index(self.output.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Index(self.output.clone())
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             *self.captures.borrow_mut() += 1;
-            let mut values = vec![Value::Index(self.output.clone())];
-            values.extend(self.hidden.iter().cloned().map(Value::Index));
+            let mut values = vec![LegacyValue::Index(self.output.clone())];
+            values.extend(self.hidden.iter().cloned().map(LegacyValue::Index));
             Ok(values)
         }
 
@@ -3429,7 +3453,7 @@ mod compact_program_reactive_turn_tests {
                 interpreter_id,
                 symbol_id,
                 name,
-                Value::Index(Ref::new(value)),
+                LegacyValue::Index(Ref::new(value)),
             )
             .unwrap();
         let outer = with_interpreter(program.interpreter(), interpreter_id, &mut |interpreter| {
@@ -3437,7 +3461,7 @@ mod compact_program_reactive_turn_tests {
         })
         .unwrap();
         let inner = match &*outer.borrow() {
-            Value::Index(inner) => inner.clone(),
+            LegacyValue::Index(inner) => inner.clone(),
             other => panic!("expected index input, got {other:?}"),
         };
         (input, outer, inner)
@@ -3457,7 +3481,7 @@ mod compact_program_reactive_turn_tests {
                 .borrow_mut()
                 .register(
                     Box::new(function.take().expect("function registered once")),
-                    &[Value::Index(input.clone())],
+                    &[LegacyValue::Index(input.clone())],
                 )
                 .unwrap();
         })
@@ -3467,7 +3491,7 @@ mod compact_program_reactive_turn_tests {
     fn update(input: ProgramInputId, value: usize) -> ProgramInputUpdate {
         ProgramInputUpdate {
             input,
-            value: Value::Index(Ref::new(value)),
+            value: LegacyValue::Index(Ref::new(value)),
         }
     }
 
@@ -3489,7 +3513,7 @@ mod compact_program_reactive_turn_tests {
                 &[ProgramCellUpdate {
                     interpreter_id: id,
                     target: target.clone(),
-                    value: Value::Index(Ref::new(9)),
+                    value: LegacyValue::Index(Ref::new(9)),
                 }],
                 &mut services,
             )
@@ -3526,7 +3550,7 @@ mod compact_program_reactive_turn_tests {
                 &[ProgramCellUpdate {
                     interpreter_id: id,
                     target: target.clone(),
-                    value: Value::Index(Ref::new(9)),
+                    value: LegacyValue::Index(Ref::new(9)),
                 }],
                 &mut services,
             )
@@ -3581,8 +3605,8 @@ mod compact_program_reactive_turn_tests {
         fn solve_result(&self) -> MResult<()> {
             Ok(())
         }
-        fn out(&self) -> Value {
-            Value::Index(self.sink.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Index(self.sink.clone())
         }
         fn reactive_node_kind(&self) -> ReactiveNodeKind {
             ReactiveNodeKind::Register
@@ -3598,7 +3622,7 @@ mod compact_program_reactive_turn_tests {
             "program-register".into()
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
     }
@@ -3624,7 +3648,7 @@ mod compact_program_reactive_turn_tests {
                     source: source.clone(),
                     sink: sink.clone(),
                 }),
-                &[Value::Index(source.clone())],
+                &[LegacyValue::Index(source.clone())],
             )
             .unwrap();
         let order = Rc::new(RefCell::new(Vec::new()));
@@ -3632,7 +3656,7 @@ mod compact_program_reactive_turn_tests {
         failure.fail = true;
         plan.0
             .borrow_mut()
-            .register(Box::new(failure), &[Value::Index(sink.clone())])
+            .register(Box::new(failure), &[LegacyValue::Index(sink.clone())])
             .unwrap();
 
         program
@@ -3854,7 +3878,7 @@ mod compact_program_reactive_turn_tests {
         function.fail = true;
         add_reactive(&program, id, function, &input);
         program
-            .advance_reactive_turn(id, &Value::Index(input).reactive_root_cell_ids())
+            .advance_reactive_turn(id, &LegacyValue::Index(input).reactive_root_cell_ids())
             .unwrap_err();
         assert_eq!(*output.borrow(), 7);
     }
@@ -4207,7 +4231,7 @@ mod compact_program_reactive_turn_tests {
             .with_program_reactive_turn_journal_for_test(|program, mut journal| {
                 program.advance_reactive_turn_with_journal_for_test(
                     id,
-                    &Value::Index(input).reactive_root_cell_ids(),
+                    &LegacyValue::Index(input).reactive_root_cell_ids(),
                     &mut journal,
                 )?;
                 assert_eq!(*output.borrow(), 6);
@@ -4309,14 +4333,14 @@ mod retained_checkpoint_tests {
             *self.solve_count.borrow_mut() += 1;
             Ok(())
         }
-        fn out(&self) -> Value {
-            Value::F64(self.output.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::F64(self.output.clone())
         }
         fn to_string(&self) -> String {
             "RestoreProbe".into()
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(self.reactive_output_values())
         }
     }
@@ -4337,10 +4361,10 @@ mod retained_checkpoint_tests {
         fn solve_result(&self) -> MResult<()> {
             Ok(())
         }
-        fn out(&self) -> Value {
-            Value::Empty
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Empty
         }
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Err(MechError::new(
                 mech_core::TransactionStateUnsupportedError {
                     function: self.to_string(),
@@ -4372,7 +4396,7 @@ mod retained_checkpoint_tests {
             .get(hash_str(name))
             .expect("symbol");
         let inner = match &*outer.borrow() {
-            Value::F64(value) => value.clone(),
+            LegacyValue::F64(value) => value.clone(),
             other => panic!("expected f64 symbol, got {other:?}"),
         };
         (outer, inner)
@@ -4382,7 +4406,7 @@ mod retained_checkpoint_tests {
         program: &MechProgram,
         arm_index: usize,
         capture_index: usize,
-    ) -> (ReactiveCellId, Value) {
+    ) -> (ReactiveCellId, LegacyValue) {
         let plan = program.interpreter().plan();
         let registration = {
             let registrations = plan.pattern_activation_registrations();
@@ -4407,7 +4431,7 @@ mod retained_checkpoint_tests {
     fn tuple_f64_backing(tuple: &Ref<MechTuple>, index: usize) -> Ref<f64> {
         let tuple = tuple.borrow();
         match tuple.elements.get(index).map(|element| element.as_ref()) {
-            Some(Value::F64(backing)) => backing.clone(),
+            Some(LegacyValue::F64(backing)) => backing.clone(),
             other => panic!("expected tuple f64 backing, got {other:?}"),
         }
     }
@@ -4419,10 +4443,11 @@ mod retained_checkpoint_tests {
     ) -> (ValRef, Ref<f64>) {
         let id = hash_str(name);
         let inner = Ref::new(value);
-        let outer = interpreter
-            .symbols()
-            .borrow_mut()
-            .insert(id, Value::F64(inner.clone()), true);
+        let outer =
+            interpreter
+                .symbols()
+                .borrow_mut()
+                .insert(id, LegacyValue::F64(inner.clone()), true);
         interpreter
             .symbols()
             .borrow()
@@ -4541,7 +4566,7 @@ event := (1.0, 2.0)
             .unwrap();
 
         let (capture_cell, capture_value) = activation_capture(&program, 0, 0);
-        let Value::Tuple(capture_outer) = capture_value else {
+        let LegacyValue::Tuple(capture_outer) = capture_value else {
             panic!("expected tuple activation capture")
         };
         let first_backing = tuple_f64_backing(&capture_outer, 0);
@@ -4557,14 +4582,14 @@ event := (1.0, 2.0)
         *first_backing.borrow_mut() = 99.0;
         *second_backing.borrow_mut() = 100.0;
         *capture_outer.borrow_mut() = MechTuple::from_vec(vec![
-            Value::F64(Ref::new(101.0)),
-            Value::F64(Ref::new(102.0)),
+            LegacyValue::F64(Ref::new(101.0)),
+            LegacyValue::F64(Ref::new(102.0)),
         ]);
 
         program.restore(checkpoint).unwrap();
 
         let (restored_cell, restored_value) = activation_capture(&program, 0, 0);
-        let Value::Tuple(restored_outer) = restored_value else {
+        let LegacyValue::Tuple(restored_outer) = restored_value else {
             panic!("expected restored tuple activation capture")
         };
         let restored_first = tuple_f64_backing(&restored_outer, 0);
@@ -4754,21 +4779,22 @@ event := (1.0, 2.0)
         let shared = Ref::new(1.0);
         let matrix = <f64 as ToMatrix>::to_matrixd(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
         let record = Ref::new(MechRecord::new(vec![
-            ("shared", Value::F64(shared.clone())),
-            ("matrix", Value::MatrixF64(matrix.clone())),
+            ("shared", LegacyValue::F64(shared.clone())),
+            ("matrix", LegacyValue::MatrixF64(matrix.clone())),
         ]));
         let record_addr = record.addr();
-        let matrix_cells = Value::MatrixF64(matrix.clone()).reactive_cell_ids();
+        let matrix_cells = LegacyValue::MatrixF64(matrix.clone()).reactive_cell_ids();
         let record_outer = program.interpreter().symbols().borrow_mut().insert(
             hash_str("nested"),
-            Value::Record(record.clone()),
+            LegacyValue::Record(record.clone()),
             true,
         );
         let checkpoint = program.checkpoint().unwrap();
 
         *shared.borrow_mut() = 10.0;
         matrix.set(vec![10.0, 20.0, 30.0, 40.0]);
-        *record.borrow_mut() = MechRecord::new(vec![("replacement", Value::F64(Ref::new(99.0)))]);
+        *record.borrow_mut() =
+            MechRecord::new(vec![("replacement", LegacyValue::F64(Ref::new(99.0)))]);
 
         program.restore(checkpoint).unwrap();
 
@@ -4776,13 +4802,13 @@ event := (1.0, 2.0)
         assert_eq!(*shared.borrow(), 1.0);
         assert_eq!(matrix.as_vec(), vec![1.0, 2.0, 3.0, 4.0]);
         assert_eq!(
-            Value::MatrixF64(matrix.clone()).reactive_cell_ids(),
+            LegacyValue::MatrixF64(matrix.clone()).reactive_cell_ids(),
             matrix_cells,
         );
         assert_eq!(record.borrow().cols, 2);
         assert_eq!(
             record_outer.borrow().reactive_cell_ids(),
-            Value::Record(record).reactive_cell_ids(),
+            LegacyValue::Record(record).reactive_cell_ids(),
         );
     }
 

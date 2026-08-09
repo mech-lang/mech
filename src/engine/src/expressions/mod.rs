@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
 
 use crate::{
-    Expression, FeatureNotEnabledError, InterpreterExecution, MResult, MechError, Value, literal,
-    structure,
+    Expression, FeatureNotEnabledError, InterpreterExecution, LegacyValue, MResult, MechError,
+    literal, structure,
 };
 
 use std::collections::HashMap;
@@ -86,13 +86,13 @@ mod tests;
 // Expressions
 // ----------------------------------------------------------------------------
 
-pub type Environment = HashMap<u64, Value>;
+pub type Environment = HashMap<u64, LegacyValue>;
 
 pub fn expression(
     expr: &Expression,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     match &expr {
         #[cfg(feature = "variables")]
         Expression::Var(v) => var(v, env, p),

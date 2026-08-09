@@ -3,7 +3,9 @@ use super::support::{
     expected_distinct_assignment_shape, register, register_node_id_for_output, set_value, symbol,
     value,
 };
-use crate::{Interpreter, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnState, Value};
+use crate::{
+    Interpreter, LegacyValue, ReactiveDependencyKind, ReactiveNodeKind, ReactiveTurnState,
+};
 
 #[test]
 fn whole_variable_assignment_registers_state_node() {
@@ -58,7 +60,7 @@ fn whole_matrix_assignment_uses_root_cells() {
     assert!(plan.reactive_consumers_for(y_cell).contains(&node_id));
     assert!(!plan.sampled_consumers_for(y_cell).contains(&node_id));
     let resolved_output = match output {
-        Value::MutableReference(reference) => reference.borrow().clone(),
+        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
         other => other,
     };
     assert_eq!(resolved_output, y);

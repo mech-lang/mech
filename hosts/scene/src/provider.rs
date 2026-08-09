@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::{MResult, Value};
+use mech_core::{LegacyValue, MResult};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
@@ -73,7 +73,7 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
     fn base_uris(&self) -> Vec<String> {
         vec![self.base()]
     }
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         Err(scene_error(
             "SceneResourceProvider",
             format!("scene resource `{}` is write-only", request.base_uri),
