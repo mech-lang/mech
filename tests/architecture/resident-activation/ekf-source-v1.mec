@@ -1,0 +1,72 @@
+@trace := gate-d://ekf/frame{:read(sample)}
+frame := @trace/sample
+
+dt := 0.05
+landmark := [25.0; -10.0]
+process-covariance := [0.04, 0.0; 0.0, 0.0025]
+measurement-covariance := [0.25, 0.0; 0.0, 0.0009]
+
+~state := [2.0; 1.0; 0.15]
+~covariance := [1.0, 0.0, 0.0; 0.0, 1.0, 0.0; 0.0, 0.0, 0.05]
+
+trigonometric-state := ekf/trigonometric-state(state)
+
+motion-jacobian := ekf/motion-jacobian(state,
+  frame,
+  trigonometric-state,
+  dt)
+
+control-jacobian := ekf/control-jacobian(trigonometric-state,
+  dt)
+
+predicted-state := ekf/predicted-state(state,
+  frame,
+  trigonometric-state,
+  dt)
+
+predicted-covariance := ekf/predicted-covariance(covariance,
+  motion-jacobian,
+  control-jacobian,
+  process-covariance)
+
+delta-range := ekf/landmark-delta-and-range(predicted-state,
+  landmark)
+
+predicted-measurement := ekf/predicted-measurement(predicted-state,
+  delta-range)
+
+measurement-jacobian := ekf/measurement-jacobian(delta-range)
+
+innovation-covariance := ekf/innovation-covariance(predicted-covariance,
+  measurement-jacobian,
+  measurement-covariance)
+
+inverse-innovation := ekf/solve-2x2(innovation-covariance)
+
+gain := ekf/kalman-gain(predicted-covariance,
+  measurement-jacobian,
+  inverse-innovation)
+
+innovation := ekf/innovation(frame,
+  predicted-measurement)
+
+corrected-state := ekf/corrected-state(predicted-state,
+  gain,
+  innovation)
+
+corrected-covariance := ekf/joseph-covariance-update(predicted-covariance,
+  measurement-jacobian,
+  gain,
+  measurement-covariance)
+
+symmetrized-covariance := ekf/covariance-symmetrization(corrected-covariance)
+
+finite-candidate! := ekf/candidate-finite(corrected-state,
+  symmetrized-covariance)
+positive-covariance! := ekf/covariance-positive-diagonal(symmetrized-covariance)
+symmetric-covariance! := ekf/covariance-symmetric(symmetrized-covariance)
+
+state = corrected-state
+covariance = symmetrized-covariance
+
+estimate := state

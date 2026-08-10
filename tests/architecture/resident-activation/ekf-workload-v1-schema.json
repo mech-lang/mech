@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mech-lang.org/schemas/d0-ekf-workload-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "gate", "workload", "source", "gate_b", "input", "state", "constants", "operations", "integrity_constraints", "state_updates", "output", "d1_acceptance_targets"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "gate": {"const": "D0"},
+    "workload": {"const": "ordinary-ekf-resident-v1"},
+    "source": {"$ref": "#/$defs/source"},
+    "gate_b": {"$ref": "#/$defs/gateB"},
+    "input": {"$ref": "#/$defs/input"},
+    "state": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/state"}},
+    "constants": {"type": "array", "minItems": 4, "items": {"$ref": "#/$defs/constant"}},
+    "operations": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 18,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 0}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/trigonometric-state"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 1}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/motion-jacobian"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 2}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/control-jacobian"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 3}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/predicted-state"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 4}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/predicted-covariance"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 5}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/landmark-delta-and-range"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 6}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/predicted-measurement"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 7}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/measurement-jacobian"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 8}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/innovation-covariance"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 9}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/solve-2x2"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 10}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/kalman-gain"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 11}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/innovation"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 12}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/corrected-state"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 13}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/joseph-covariance-update"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 14}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/covariance-symmetrization"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 15}, "role": {"const": "integrity-predicate"}, "operation": {"const": "ekf/candidate-finite"}, "change_detection": {"const": "ExactScalar"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 16}, "role": {"const": "integrity-predicate"}, "operation": {"const": "ekf/covariance-positive-diagonal"}, "change_detection": {"const": "ExactScalar"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 17}, "role": {"const": "integrity-predicate"}, "operation": {"const": "ekf/covariance-symmetric"}, "change_detection": {"const": "ExactScalar"}}}]}
+      ],
+      "items": false
+    },
+    "integrity_constraints": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/integrity"}, {"properties": {"name": {"const": "finite-candidate"}, "operation": {"const": "integrity/assert"}, "predicate_operation_ordinal": {"const": 15}}}]},
+        {"allOf": [{"$ref": "#/$defs/integrity"}, {"properties": {"name": {"const": "positive-covariance"}, "operation": {"const": "integrity/assert"}, "predicate_operation_ordinal": {"const": 16}}}]},
+        {"allOf": [{"$ref": "#/$defs/integrity"}, {"properties": {"name": {"const": "symmetric-covariance"}, "operation": {"const": "integrity/assert"}, "predicate_operation_ordinal": {"const": 17}}}]}
+      ],
+      "items": false
+    },
+    "state_updates": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/stateUpdate"}},
+    "output": {"$ref": "#/$defs/output"},
+    "d1_acceptance_targets": {"$ref": "#/$defs/acceptance"}
+  },
+  "$defs": {
+    "stringArray": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"const": "tests/architecture/resident-activation/ekf-source-v1.mec"},
+        "sha256": {"const": "a64d72c34434fe240dfac2ce31763d4b1af24e8eb3abc0319c167db50468e1ec"}
+      }
+    },
+    "gateB": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "trace", "trace_sha256", "episode_length", "trajectory_sha256"],
+      "properties": {
+        "contract": {"const": "benchmarks/runtime/gate-b/ekf-v1.json"},
+        "trace": {"const": "benchmarks/runtime/gate-b/ekf-input-v1.bin"},
+        "trace_sha256": {"const": "ab901e1d115aa92166dc2a6d45a28732e6a548363b829997aa410ae4c2d77c8b"},
+        "episode_length": {"const": 4096},
+        "trajectory_sha256": {"const": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758"}
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "schema", "fields", "storage", "interaction", "replay"],
+      "properties": {
+        "name": {"const": "frame"},
+        "schema": {"const": "Matrix<f64,4,1>"},
+        "fields": {"$ref": "#/$defs/stringArray"},
+        "storage": {"const": "turn-workspace"},
+        "interaction": {"const": "Observation"},
+        "replay": {"const": "CaptureAsInputFact"}
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "schema", "storage"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "schema": {"type": "string", "minLength": 1},
+        "initial_payload": {"type": "array", "items": {"type": "number"}},
+        "initial_payload_column_major": {"type": "array", "items": {"type": "number"}},
+        "storage": {"const": "dual-version"}
+      }
+    },
+    "constant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "schema", "payload"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "schema": {"type": "string", "minLength": 1},
+        "payload": {}
+      }
+    },
+    "construction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "shape"],
+      "properties": {
+        "kind": {"const": "FullWrite"},
+        "shape": {"const": "Declared"}
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "role", "operation", "input_schemas", "output_schema", "contract", "delivery", "interaction", "input_access", "output_access", "construction", "alias", "change_detection"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 0},
+        "role": {"enum": ["resident-kernel", "integrity-predicate"]},
+        "operation": {"type": "string", "minLength": 1},
+        "input_schemas": {"$ref": "#/$defs/stringArray"},
+        "output_schema": {"type": "string", "minLength": 1},
+        "contract": {"const": "Declared"},
+        "delivery": {"const": "Signal"},
+        "interaction": {"const": "Pure"},
+        "input_access": {"const": "Read"},
+        "output_access": {"const": "Write"},
+        "construction": {"$ref": "#/$defs/construction"},
+        "alias": {"const": "NoAlias"},
+        "change_detection": {"enum": ["KernelReported", "ExactScalar"]}
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "operation", "predicate_operation_ordinal", "predicate_schema", "interaction", "access", "delivery", "input_count", "output_count"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "operation": {"const": "integrity/assert"},
+        "predicate_operation_ordinal": {"type": "integer", "minimum": 15},
+        "predicate_schema": {"const": "bool"},
+        "interaction": {"const": "Pure"},
+        "access": {"const": "Read"},
+        "delivery": {"const": "Signal"},
+        "input_count": {"const": 1},
+        "output_count": {"const": 0}
+      }
+    },
+    "stateUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source", "write"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "source": {"type": "string", "minLength": 1},
+        "write": {"const": "complete-full-write"}
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "schema", "source", "observer_policy"],
+      "properties": {
+        "name": {"const": "estimate"},
+        "schema": {"const": "Matrix<f64,3,1>"},
+        "source": {"const": "state"},
+        "observer_policy": {"const": "synchronous-before-next-candidate"}
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinary_source_compiles", "source_and_bytecode_artifacts_equal", "legacy_opaque_contracts", "resident_activation_succeeds", "steady_state_allocations", "persistent_candidate_bytes_per_instance", "candidate_seed_bytes", "published_buffer_copy_bytes", "publication_store_count", "commit_runtime_calls", "legacy_journal_captures", "trajectory_sha256"],
+      "properties": {
+        "ordinary_source_compiles": {"const": true},
+        "source_and_bytecode_artifacts_equal": {"const": true},
+        "legacy_opaque_contracts": {"const": 0},
+        "resident_activation_succeeds": {"const": true},
+        "steady_state_allocations": {"const": 0},
+        "persistent_candidate_bytes_per_instance": {"const": 96},
+        "candidate_seed_bytes": {"const": 0},
+        "published_buffer_copy_bytes": {"const": 0},
+        "publication_store_count": {"const": 1},
+        "commit_runtime_calls": {"const": 0},
+        "legacy_journal_captures": {"const": 0},
+        "trajectory_sha256": {"const": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758"}
+      }
+    }
+  }
+}

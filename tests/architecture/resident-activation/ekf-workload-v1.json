@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "gate": "D0",
+  "workload": "ordinary-ekf-resident-v1",
+  "source": {
+    "path": "tests/architecture/resident-activation/ekf-source-v1.mec",
+    "sha256": "a64d72c34434fe240dfac2ce31763d4b1af24e8eb3abc0319c167db50468e1ec"
+  },
+  "gate_b": {
+    "contract": "benchmarks/runtime/gate-b/ekf-v1.json",
+    "trace": "benchmarks/runtime/gate-b/ekf-input-v1.bin",
+    "trace_sha256": "ab901e1d115aa92166dc2a6d45a28732e6a548363b829997aa410ae4c2d77c8b",
+    "episode_length": 4096,
+    "trajectory_sha256": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758"
+  },
+  "input": {
+    "name": "frame",
+    "schema": "Matrix<f64,4,1>",
+    "fields": ["v", "omega", "z_range", "z_bearing"],
+    "storage": "turn-workspace",
+    "interaction": "Observation",
+    "replay": "CaptureAsInputFact"
+  },
+  "state": [
+    {
+      "name": "state",
+      "schema": "Matrix<f64,3,1>",
+      "initial_payload": [2.0, 1.0, 0.15],
+      "storage": "dual-version"
+    },
+    {
+      "name": "covariance",
+      "schema": "Matrix<f64,3,3>",
+      "initial_payload_column_major": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.05
+      ],
+      "storage": "dual-version"
+    }
+  ],
+  "constants": [
+    {"name": "dt", "schema": "f64", "payload": 0.05},
+    {"name": "landmark", "schema": "Matrix<f64,2,1>", "payload": [25.0, -10.0]},
+    {"name": "process-covariance", "schema": "Matrix<f64,2,2>", "payload": [0.04, 0.0, 0.0, 0.0025]},
+    {"name": "measurement-covariance", "schema": "Matrix<f64,2,2>", "payload": [0.25, 0.0, 0.0, 0.0009]}
+  ],
+  "operations": [
+    {"ordinal": 0, "role": "resident-kernel", "operation": "ekf/trigonometric-state", "input_schemas": ["3x1"], "output_schema": "2x1", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 1, "role": "resident-kernel", "operation": "ekf/motion-jacobian", "input_schemas": ["3x1", "4x1", "2x1", "f64"], "output_schema": "3x3", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 2, "role": "resident-kernel", "operation": "ekf/control-jacobian", "input_schemas": ["2x1", "f64"], "output_schema": "3x2", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 3, "role": "resident-kernel", "operation": "ekf/predicted-state", "input_schemas": ["3x1", "4x1", "2x1", "f64"], "output_schema": "3x1", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 4, "role": "resident-kernel", "operation": "ekf/predicted-covariance", "input_schemas": ["3x3", "3x3", "3x2", "2x2"], "output_schema": "3x3", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 5, "role": "resident-kernel", "operation": "ekf/landmark-delta-and-range", "input_schemas": ["3x1", "2x1"], "output_schema": "3x1", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 6, "role": "resident-kernel", "operation": "ekf/predicted-measurement", "input_schemas": ["3x1", "3x1"], "output_schema": "2x1", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 7, "role": "resident-kernel", "operation": "ekf/measurement-jacobian", "input_schemas": ["3x1"], "output_schema": "2x3", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 8, "role": "resident-kernel", "operation": "ekf/innovation-covariance", "input_schemas": ["3x3", "2x3", "2x2"], "output_schema": "2x2", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 9, "role": "resident-kernel", "operation": "ekf/solve-2x2", "input_schemas": ["2x2"], "output_schema": "2x2", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 10, "role": "resident-kernel", "operation": "ekf/kalman-gain", "input_schemas": ["3x3", "2x3", "2x2"], "output_schema": "3x2", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 11, "role": "resident-kernel", "operation": "ekf/innovation", "input_schemas": ["4x1", "2x1"], "output_schema": "2x1", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 12, "role": "resident-kernel", "operation": "ekf/corrected-state", "input_schemas": ["3x1", "3x2", "2x1"], "output_schema": "3x1", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 13, "role": "resident-kernel", "operation": "ekf/joseph-covariance-update", "input_schemas": ["3x3", "2x3", "3x2", "2x2"], "output_schema": "3x3", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 14, "role": "resident-kernel", "operation": "ekf/covariance-symmetrization", "input_schemas": ["3x3"], "output_schema": "3x3", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 15, "role": "integrity-predicate", "operation": "ekf/candidate-finite", "input_schemas": ["3x1", "3x3"], "output_schema": "bool", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "ExactScalar"},
+    {"ordinal": 16, "role": "integrity-predicate", "operation": "ekf/covariance-positive-diagonal", "input_schemas": ["3x3"], "output_schema": "bool", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "ExactScalar"},
+    {"ordinal": 17, "role": "integrity-predicate", "operation": "ekf/covariance-symmetric", "input_schemas": ["3x3"], "output_schema": "bool", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "ExactScalar"}
+  ],
+  "integrity_constraints": [
+    {"name": "finite-candidate", "operation": "integrity/assert", "predicate_operation_ordinal": 15, "predicate_schema": "bool", "interaction": "Pure", "access": "Read", "delivery": "Signal", "input_count": 1, "output_count": 0},
+    {"name": "positive-covariance", "operation": "integrity/assert", "predicate_operation_ordinal": 16, "predicate_schema": "bool", "interaction": "Pure", "access": "Read", "delivery": "Signal", "input_count": 1, "output_count": 0},
+    {"name": "symmetric-covariance", "operation": "integrity/assert", "predicate_operation_ordinal": 17, "predicate_schema": "bool", "interaction": "Pure", "access": "Read", "delivery": "Signal", "input_count": 1, "output_count": 0}
+  ],
+  "state_updates": [
+    {"name": "state", "source": "corrected-state", "write": "complete-full-write"},
+    {"name": "covariance", "source": "symmetrized-covariance", "write": "complete-full-write"}
+  ],
+  "output": {
+    "name": "estimate",
+    "schema": "Matrix<f64,3,1>",
+    "source": "state",
+    "observer_policy": "synchronous-before-next-candidate"
+  },
+  "d1_acceptance_targets": {
+    "ordinary_source_compiles": true,
+    "source_and_bytecode_artifacts_equal": true,
+    "legacy_opaque_contracts": 0,
+    "resident_activation_succeeds": true,
+    "steady_state_allocations": 0,
+    "persistent_candidate_bytes_per_instance": 96,
+    "candidate_seed_bytes": 0,
+    "published_buffer_copy_bytes": 0,
+    "publication_store_count": 1,
+    "commit_runtime_calls": 0,
+    "legacy_journal_captures": 0,
+    "trajectory_sha256": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758"
+  }
+}
