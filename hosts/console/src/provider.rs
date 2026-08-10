@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::{LegacyValue, MResult};
+use mech_core::{LegacyValue, MResult, OperationContractDeclaration};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
@@ -84,6 +84,14 @@ impl<B: ConsoleBackend + 'static> RuntimeResourceProvider for ConsoleResourcePro
             bases.push("console://output".to_string());
         }
         bases
+    }
+
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Send)
+            .then(mech_runtime::provider_defined_effect_contract)
     }
 
     fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {

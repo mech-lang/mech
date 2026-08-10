@@ -74,6 +74,7 @@ pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult
         input,
         output: Ref::new(LegacyValue::Empty),
         initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
+        semantic_contract: None,
     };
     execute_specialized_function(Box::new(function), &arguments, p)
 }

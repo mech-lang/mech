@@ -209,6 +209,7 @@ mod tests {
             request: resource_request(ResourceIntent::Read),
             output: output.clone(),
             initial_solve_policy: InitialSolvePolicy::Solve,
+            semantic_contract: None,
         };
         let mut services = FailingServices::default();
 
@@ -227,6 +228,7 @@ mod tests {
             input: LegacyValue::F64(Ref::new(43.0)),
             output: output.clone(),
             initial_solve_policy: InitialSolvePolicy::Solve,
+            semantic_contract: None,
         };
         let mut services = FailingServices::default();
 

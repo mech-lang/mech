@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
+use mech_core::{
+    LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration, Ref,
+};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeCompensatableEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
@@ -46,6 +48,18 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
     }
     fn base_uris(&self) -> Vec<String> {
         vec![self.base("commands"), self.base("state")]
+    }
+
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(mech_runtime::resource_observation_contract())
+    }
+
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Send)
+            .then(mech_runtime::prepare_commit_compensate_contract)
     }
 
     fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {

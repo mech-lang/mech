@@ -1,8 +1,27 @@
 use mech_core::{
-    ExecutionResourceRequest, InitialSolvePolicy, LegacyValue, MResult, MechError, MechErrorKind,
-    MechExecutionServices, MechFunctionImpl, NoMechExecutionServices, ReactiveDependencyScope,
-    ReactiveSolveStatus, ResourceIntent, ValRef,
+    AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExecutionResourceRequest,
+    ExternalInteraction, IdempotencyRequirement, InitialSolvePolicy, InputPortLayout,
+    InputPortPolicy, LegacyValue, MResult, MechError, MechErrorKind, MechExecutionServices,
+    MechFunctionImpl, NoMechExecutionServices, OperationContractDeclaration,
+    ReactiveDependencyScope, ReactiveSolveStatus, ResourceIntent, ValRef,
 };
+use std::sync::LazyLock;
+
+static RESOURCE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::ProviderDefined,
+            idempotency: IdempotencyRequirement::Optional,
+        }),
+    });
 
 #[cfg(feature = "compiler")]
 use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCompiler, Register};
@@ -13,6 +32,7 @@ pub struct ExternalResourceWriteFunction {
     pub input: LegacyValue,
     pub output: ValRef,
     pub initial_solve_policy: InitialSolvePolicy,
+    pub semantic_contract: Option<&'static OperationContractDeclaration>,
 }
 
 impl ExternalResourceWriteFunction {
@@ -98,6 +118,10 @@ impl MechFunctionImpl for ExternalResourceWriteFunction {
         self.output.borrow().clone()
     }
 
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        self.semantic_contract.or(Some(&RESOURCE_EFFECT_CONTRACT))
+    }
+
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(vec![LegacyValue::MutableReference(self.output.clone())])
     }
@@ -179,6 +203,7 @@ mod tests {
             input: LegacyValue::F64(Ref::new(1.0)),
             output: Ref::new(LegacyValue::F64(Ref::new(2.0))),
             initial_solve_policy: InitialSolvePolicy::Solve,
+            semantic_contract: None,
         };
 
         let error = function.solve_result().unwrap_err();

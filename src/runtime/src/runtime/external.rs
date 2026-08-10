@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use mech_core::{
     ApplicationRequirement, ExecutionResourceRequest, FunctionSpecializer, GuardFunctionSafety,
-    InitialSolvePolicy, LegacyValue, MResult, MechError, MechErrorKind, Ref, ResourceIntent,
-    ValueSnapshotRecreator,
+    InitialSolvePolicy, LegacyValue, MResult, MechError, MechErrorKind,
+    OperationContractDeclaration, Ref, ResourceIntent, ValueSnapshotRecreator,
 };
 use mech_engine::{ExternalResourceReadFunction, ExternalResourceWriteFunction};
 
@@ -51,6 +51,7 @@ pub(crate) struct RuntimeResourceReadSpecializer {
     pub interpreter_id: u64,
     pub request: ExecutionResourceRequest,
     pub initial: RuntimeResourceInitialValue,
+    pub semantic_contract: Option<&'static OperationContractDeclaration>,
 }
 
 fn assert_send_sync<T: Send + Sync>() {}
@@ -70,6 +71,7 @@ impl FunctionSpecializer for RuntimeResourceReadSpecializer {
             request: self.request.clone(),
             output: Ref::new(self.initial.to_value()),
             initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
+            semantic_contract: self.semantic_contract,
         }))
     }
 }
@@ -77,6 +79,7 @@ impl FunctionSpecializer for RuntimeResourceReadSpecializer {
 #[derive(Clone, Debug)]
 pub(crate) struct RuntimeResourceWriteSpecializer {
     pub request: ExecutionResourceRequest,
+    pub semantic_contract: Option<&'static OperationContractDeclaration>,
 }
 
 impl FunctionSpecializer for RuntimeResourceWriteSpecializer {
@@ -91,6 +94,7 @@ impl FunctionSpecializer for RuntimeResourceWriteSpecializer {
             input: arguments[0].clone(),
             output: Ref::new(LegacyValue::Empty),
             initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
+            semantic_contract: self.semantic_contract,
         }))
     }
 }
@@ -461,9 +465,12 @@ mod tests {
         let ApplicationRequirement::Resource(request) = request(ResourceIntent::Send) else {
             unreachable!("test helper always returns a resource requirement");
         };
-        let function = RuntimeResourceWriteSpecializer { request }
-            .specialize(&[LegacyValue::Empty])
-            .unwrap();
+        let function = RuntimeResourceWriteSpecializer {
+            request,
+            semantic_contract: None,
+        }
+        .specialize(&[LegacyValue::Empty])
+        .unwrap();
 
         assert_eq!(
             function.initial_solve_policy(),

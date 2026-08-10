@@ -1,8 +1,30 @@
 use crate::apply_stable_value_update;
 use mech_core::{
-    ExecutionResourceRequest, InitialSolvePolicy, LegacyValue, MResult, MechExecutionServices,
-    MechFunctionImpl, NoMechExecutionServices, ReactiveSolveStatus, ResourceDelivery, ValRef,
+    AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExecutionResourceRequest,
+    ExternalInteraction, InitialSolvePolicy, InputPortLayout, LegacyValue, MResult,
+    MechExecutionServices, MechFunctionImpl, NoMechExecutionServices, ObservationContract,
+    ObservationReplayPolicy, OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
+    ReactiveSolveStatus, ResourceDelivery, ShapeRule, ValRef,
 };
+use std::sync::LazyLock;
+
+static RESOURCE_OBSERVATION_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(Box::new([])),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::AlwaysChanged,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Observation(ObservationContract {
+            replay: ObservationReplayPolicy::CaptureAsInputFact,
+        }),
+    });
 
 #[cfg(feature = "compiler")]
 use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCompiler, Register};
@@ -13,6 +35,7 @@ pub struct ExternalResourceReadFunction {
     pub request: ExecutionResourceRequest,
     pub output: ValRef,
     pub initial_solve_policy: InitialSolvePolicy,
+    pub semantic_contract: Option<&'static OperationContractDeclaration>,
 }
 
 impl ExternalResourceReadFunction {
@@ -64,6 +87,11 @@ impl MechFunctionImpl for ExternalResourceReadFunction {
 
     fn out(&self) -> LegacyValue {
         self.output.borrow().clone()
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        self.semantic_contract
+            .or(Some(&RESOURCE_OBSERVATION_CONTRACT))
     }
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {

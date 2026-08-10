@@ -1183,6 +1183,7 @@ mod external_bytecode_tests {
                 request: read_request.clone(),
                 output: read_output.clone(),
                 initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
+                semantic_contract: None,
             }),
             &[],
         )
@@ -1194,6 +1195,7 @@ mod external_bytecode_tests {
                 input: assigned.clone(),
                 output: Ref::new(LegacyValue::Empty),
                 initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
+                semantic_contract: None,
             }),
             &[assigned],
         )
@@ -1205,6 +1207,7 @@ mod external_bytecode_tests {
                 input: sent.clone(),
                 output: Ref::new(LegacyValue::Empty),
                 initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
+                semantic_contract: None,
             }),
             &[sent],
         )

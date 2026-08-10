@@ -204,6 +204,7 @@ impl MechRuntime {
             path: request.path.clone(),
             context_name: request.context_name.clone(),
         };
+        let semantic_contract = self.resources.semantic_read_contract(&request.base_uri)?;
         let initial = match self.execution_mode {
             RuntimeExecutionMode::Execute => {
                 let staged = if let Some(transaction_id) = context.transaction {
@@ -238,6 +239,7 @@ impl MechRuntime {
                     interpreter_id,
                     request,
                     initial,
+                    semantic_contract,
                 }),
             )?;
 
@@ -280,13 +282,19 @@ impl MechRuntime {
             },
             delivery: ResourceDelivery::Snapshot,
         };
+        let semantic_contract = self
+            .resources
+            .semantic_write_contract(&request.base_uri, intent)?;
         let name = self
             .external_requirements
             .register(ApplicationRequirement::Resource(request.clone()))?;
         self.program_target_mut(target)
             .register_function_extension(
                 name.clone(),
-                Arc::new(RuntimeResourceWriteSpecializer { request }),
+                Arc::new(RuntimeResourceWriteSpecializer {
+                    request,
+                    semantic_contract,
+                }),
             )?;
         Ok(mech_core::Expression::FunctionCall(
             mech_core::FunctionCall {

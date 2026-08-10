@@ -2278,6 +2278,7 @@ impl Interpreter {
                                 request,
                                 output,
                                 initial_solve_policy: InitialSolvePolicy::Solve,
+                                semantic_contract: None,
                             }),
                             &[],
                         )?;
@@ -2302,6 +2303,7 @@ impl Interpreter {
                                 input: input.clone(),
                                 output,
                                 initial_solve_policy: InitialSolvePolicy::Solve,
+                                semantic_contract: None,
                             }),
                             &[input],
                         )?;
@@ -2326,6 +2328,7 @@ impl Interpreter {
                                 input: input.clone(),
                                 output,
                                 initial_solve_policy: InitialSolvePolicy::Solve,
+                                semantic_contract: None,
                             }),
                             &[input],
                         )?;

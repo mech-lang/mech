@@ -1,4 +1,4 @@
-use mech_core::{LegacyValue, MResult, Ref};
+use mech_core::{LegacyValue, MResult, OperationContractDeclaration, Ref};
 use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest};
 
 use crate::{SharedTimeSnapshot, TimeSnapshot, time_error, time_input_base_uri};
@@ -46,6 +46,10 @@ impl RuntimeResourceProvider for TimeResourceProvider {
 
     fn base_uris(&self) -> Vec<String> {
         vec![self.base_uri()]
+    }
+
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(mech_runtime::resource_observation_contract())
     }
 
     fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
