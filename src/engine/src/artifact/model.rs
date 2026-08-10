@@ -1,8 +1,11 @@
 use core::ops::Range;
 
 use mech_core::{
-    BindingId, CellSlotId, ConstantId, ConstantStore, InputId, IntegrityConstraintId,
-    LegacySnapshotError, MechError, NodeId, OutputId, ProgramRevision, SchemaId, SchemaTable,
+    AccessMode, BindingId, CellSlotId, ConstantId, ConstantStore, DeclaredOperationContract,
+    DeliveryMode, ExternalInteraction, InputId, IntegrityConstraintId,
+    LegacyOpaqueOperationContract, LegacySnapshotError, MechError, NodeId, OperationContractError,
+    OperationContractId, OperationContractTable, OperationContractTableBuilder, OutputId,
+    ProgramRevision, ResolvedInputPort, ResolvedOperationContract, SchemaId, SchemaTable,
     SemanticModelError, SnapshotValueError,
 };
 
@@ -85,6 +88,7 @@ impl BindingDeclaration {
 pub struct NodeDeclaration {
     pub node: NodeId,
     pub operation: OperationReference,
+    pub contract: OperationContractId,
     pub input_bindings: Range<u32>,
     pub output_bindings: Range<u32>,
 }
@@ -109,6 +113,7 @@ pub struct OutputDeclaration {
 pub struct IntegrityConstraintDeclaration {
     pub constraint: IntegrityConstraintId,
     pub operation: OperationReference,
+    pub contract: OperationContractId,
     pub inputs: Box<[ArtifactSource]>,
 }
 
@@ -117,6 +122,7 @@ pub struct ProgramArtifact {
     revision: ProgramRevision,
     schemas: SchemaTable,
     constants: ConstantStore,
+    contracts: OperationContractTable,
     inputs: Box<[InputDeclaration]>,
     slots: Box<[SlotDeclaration]>,
     nodes: Box<[NodeDeclaration]>,
@@ -136,6 +142,10 @@ impl ProgramArtifact {
 
     pub const fn constants(&self) -> &ConstantStore {
         &self.constants
+    }
+
+    pub const fn contracts(&self) -> &OperationContractTable {
+        &self.contracts
     }
 
     pub const fn inputs(&self) -> &[InputDeclaration] {
@@ -167,6 +177,7 @@ impl ProgramArtifact {
 pub struct ProgramArtifactDraft {
     pub schemas: SchemaTable,
     pub constants: ConstantStore,
+    pub contracts: OperationContractTable,
     pub inputs: Box<[InputDeclaration]>,
     pub slots: Box<[SlotDeclaration]>,
     pub nodes: Box<[NodeDeclaration]>,
@@ -183,6 +194,7 @@ impl ProgramArtifactDraft {
             revision,
             schemas: self.schemas,
             constants: self.constants,
+            contracts: self.contracts,
             inputs: self.inputs,
             slots: self.slots,
             nodes: self.nodes,
@@ -190,6 +202,106 @@ impl ProgramArtifactDraft {
             outputs: self.outputs,
             constraints: self.constraints,
         })
+    }
+}
+
+impl ProgramArtifactDraft {
+    pub(super) fn attach_legacy_contracts(mut self) -> Result<Self, ArtifactBuildError> {
+        let mut builder = OperationContractTableBuilder::new();
+        let mut node_handles = Vec::with_capacity(self.nodes.len());
+        for node in &self.nodes {
+            let inputs = binding_range(&self, &node.input_bindings, node.node)?
+                .iter()
+                .map(|binding| match binding {
+                    BindingDeclaration::Input { source, .. } => source_schema(&self, *source),
+                    BindingDeclaration::Output { id, .. } => {
+                        Err(ArtifactBuildError::BindingDirectionMismatch { binding: *id })
+                    }
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let outputs = binding_range(&self, &node.output_bindings, node.node)?
+                .iter()
+                .map(|binding| match binding {
+                    BindingDeclaration::Output { target, .. } => self
+                        .slots
+                        .get(target.get() as usize)
+                        .filter(|slot| slot.slot == *target)
+                        .map(|slot| slot.schema)
+                        .ok_or(ArtifactBuildError::UnknownSlot { slot: *target }),
+                    BindingDeclaration::Input { id, .. } => {
+                        Err(ArtifactBuildError::BindingDirectionMismatch { binding: *id })
+                    }
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            node_handles.push(builder.insert(ResolvedOperationContract::LegacyOpaque(
+                LegacyOpaqueOperationContract {
+                    input_schemas: inputs.into_boxed_slice(),
+                    output_schemas: outputs.into_boxed_slice(),
+                },
+            ))?);
+        }
+
+        let mut constraint_handles = Vec::with_capacity(self.constraints.len());
+        for constraint in &self.constraints {
+            let inputs = constraint
+                .inputs
+                .iter()
+                .map(|source| {
+                    Ok(ResolvedInputPort {
+                        schema: source_schema(&self, *source)?,
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    })
+                })
+                .collect::<Result<Vec<_>, ArtifactBuildError>>()?;
+            constraint_handles.push(builder.insert(ResolvedOperationContract::Declared(
+                DeclaredOperationContract {
+                    inputs: inputs.into_boxed_slice(),
+                    outputs: Box::new([]),
+                    interaction: ExternalInteraction::Pure,
+                },
+            ))?);
+        }
+
+        let build = builder.finish()?;
+        for (node, handle) in self.nodes.iter_mut().zip(node_handles) {
+            node.contract = build.resolve(handle)?;
+        }
+        for (constraint, handle) in self.constraints.iter_mut().zip(constraint_handles) {
+            constraint.contract = build.resolve(handle)?;
+        }
+        self.contracts = build.table;
+        Ok(self)
+    }
+}
+
+fn binding_range<'a>(
+    draft: &'a ProgramArtifactDraft,
+    range: &Range<u32>,
+    node: NodeId,
+) -> Result<&'a [BindingDeclaration], ArtifactBuildError> {
+    draft
+        .bindings
+        .get(range.start as usize..range.end as usize)
+        .ok_or(ArtifactBuildError::BindingRangeMismatch { node })
+}
+
+fn source_schema(
+    draft: &ProgramArtifactDraft,
+    source: ArtifactSource,
+) -> Result<SchemaId, ArtifactBuildError> {
+    match source {
+        ArtifactSource::Constant(constant) => draft
+            .constants
+            .get(constant)
+            .map(|value| value.schema())
+            .ok_or(ArtifactBuildError::UnknownConstant { constant }),
+        ArtifactSource::Slot(slot) => draft
+            .slots
+            .get(slot.get() as usize)
+            .filter(|declaration| declaration.slot == slot)
+            .map(|declaration| declaration.schema)
+            .ok_or(ArtifactBuildError::UnknownSlot { slot }),
     }
 }
 
@@ -278,6 +390,24 @@ pub enum ArtifactBuildError {
     UnknownSchema {
         schema: SchemaId,
     },
+    UnknownOperationContract {
+        contract: OperationContractId,
+    },
+    ContractInputSchemaMismatch {
+        contract: OperationContractId,
+        port: u16,
+        expected: SchemaId,
+        actual: SchemaId,
+    },
+    ContractOutputSchemaMismatch {
+        contract: OperationContractId,
+        port: u16,
+        expected: SchemaId,
+        actual: SchemaId,
+    },
+    IntegrityConstraintContractInvalid {
+        constraint: IntegrityConstraintId,
+    },
     UnknownConstant {
         constant: ConstantId,
     },
@@ -337,6 +467,7 @@ pub enum ArtifactBuildError {
     Semantic(SemanticModelError),
     LegacySnapshot(LegacySnapshotError),
     CoreBytecode(MechError),
+    OperationContract(OperationContractError),
 }
 
 impl From<SnapshotValueError> for ArtifactBuildError {
@@ -354,6 +485,12 @@ impl From<SemanticModelError> for ArtifactBuildError {
 impl From<LegacySnapshotError> for ArtifactBuildError {
     fn from(error: LegacySnapshotError) -> Self {
         Self::LegacySnapshot(error)
+    }
+}
+
+impl From<OperationContractError> for ArtifactBuildError {
+    fn from(error: OperationContractError) -> Self {
+        Self::OperationContract(error)
     }
 }
 

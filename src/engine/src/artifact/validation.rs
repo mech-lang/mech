@@ -1,6 +1,10 @@
 use std::collections::BTreeSet;
 
-use mech_core::{BindingId, CellSlotId, ConstantId, NodeId, SchemaId};
+use mech_core::{
+    AccessMode, BindingId, CellSlotId, ConstantId, DeliveryMode, ExternalInteraction, NodeId,
+    OperationContractError, OperationContractId, PortDirection, ResolvedOperationContract,
+    SchemaId, validate_contract_schemas, validate_signal_bindings,
+};
 
 use super::{
     ArtifactBuildError, ArtifactSource, BindingDeclaration, InitializerReference,
@@ -9,12 +13,21 @@ use super::{
 
 pub(super) fn validate(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError> {
     validate_dense_identities(draft)?;
+    validate_contract_table(draft)?;
     validate_interfaces(draft)?;
     validate_slots(draft)?;
     validate_nodes_and_bindings(draft)?;
     validate_outputs_and_constraints(draft)?;
     validate_constants(draft)?;
     validate_combinational_graph(draft)
+}
+
+fn validate_contract_table(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError> {
+    draft.contracts.validate_canonical_order()?;
+    for contract in draft.contracts.iter() {
+        validate_contract_schemas(contract, &draft.schemas)?;
+    }
+    Ok(())
 }
 
 fn canonical_name(value: &str) -> bool {
@@ -118,6 +131,52 @@ fn require_node(
         .get(node.get() as usize)
         .filter(|declaration| declaration.node == node)
         .ok_or(ArtifactBuildError::UnknownNode { node })
+}
+
+fn require_contract(
+    draft: &ProgramArtifactDraft,
+    contract: OperationContractId,
+) -> Result<&ResolvedOperationContract, ArtifactBuildError> {
+    draft
+        .contracts
+        .get(contract)
+        .ok_or(ArtifactBuildError::UnknownOperationContract { contract })
+}
+
+fn contract_input_schema(contract: &ResolvedOperationContract, ordinal: usize) -> Option<SchemaId> {
+    match contract {
+        ResolvedOperationContract::Declared(contract) => {
+            contract.inputs.get(ordinal).map(|port| port.schema)
+        }
+        ResolvedOperationContract::LegacyOpaque(contract) => {
+            contract.input_schemas.get(ordinal).copied()
+        }
+    }
+}
+
+fn contract_output_schema(
+    contract: &ResolvedOperationContract,
+    ordinal: usize,
+) -> Option<SchemaId> {
+    match contract {
+        ResolvedOperationContract::Declared(contract) => {
+            contract.outputs.get(ordinal).map(|port| port.schema)
+        }
+        ResolvedOperationContract::LegacyOpaque(contract) => {
+            contract.output_schemas.get(ordinal).copied()
+        }
+    }
+}
+
+fn contract_port_counts(contract: &ResolvedOperationContract) -> (usize, usize) {
+    match contract {
+        ResolvedOperationContract::Declared(contract) => {
+            (contract.inputs.len(), contract.outputs.len())
+        }
+        ResolvedOperationContract::LegacyOpaque(contract) => {
+            (contract.input_schemas.len(), contract.output_schemas.len())
+        }
+    }
 }
 
 fn validate_interfaces(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError> {
@@ -261,7 +320,27 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
         }
         cursor = outputs.end;
 
-        for (ordinal, binding) in draft.bindings[inputs].iter().enumerate() {
+        let contract = require_contract(draft, node.contract)?;
+        validate_signal_bindings(contract)?;
+        let (expected_inputs, expected_outputs) = contract_port_counts(contract);
+        if inputs.len() != expected_inputs {
+            return Err(OperationContractError::PortCountMismatch {
+                direction: PortDirection::Input,
+                expected: expected_inputs as u64,
+                actual: inputs.len() as u64,
+            }
+            .into());
+        }
+        if outputs.len() != expected_outputs {
+            return Err(OperationContractError::PortCountMismatch {
+                direction: PortDirection::Output,
+                expected: expected_outputs as u64,
+                actual: outputs.len() as u64,
+            }
+            .into());
+        }
+
+        for (ordinal, binding) in draft.bindings[inputs.clone()].iter().enumerate() {
             validate_binding_identity(binding, node.node, ordinal)?;
             let BindingDeclaration::Input { source, .. } = binding else {
                 return Err(ArtifactBuildError::BindingDirectionMismatch {
@@ -269,8 +348,19 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                 });
             };
             validate_source(draft, *source)?;
+            let expected = contract_input_schema(contract, ordinal)
+                .expect("contract input count was validated");
+            let actual = source_schema(draft, *source)?;
+            if actual != expected {
+                return Err(ArtifactBuildError::ContractInputSchemaMismatch {
+                    contract: node.contract,
+                    port: ordinal as u16,
+                    expected,
+                    actual,
+                });
+            }
         }
-        for (ordinal, binding) in draft.bindings[outputs].iter().enumerate() {
+        for (ordinal, binding) in draft.bindings[outputs.clone()].iter().enumerate() {
             validate_binding_identity(binding, node.node, ordinal)?;
             let BindingDeclaration::Output { target, .. } = binding else {
                 return Err(ArtifactBuildError::BindingDirectionMismatch {
@@ -278,6 +368,16 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                 });
             };
             let slot = require_slot(draft, *target)?;
+            let expected = contract_output_schema(contract, ordinal)
+                .expect("contract output count was validated");
+            if slot.schema != expected {
+                return Err(ArtifactBuildError::ContractOutputSchemaMismatch {
+                    contract: node.contract,
+                    port: ordinal as u16,
+                    expected,
+                    actual: slot.schema,
+                });
+            }
             if slot.producer
                 != (ProducerReference::NodeOutput {
                     node: node.node,
@@ -346,6 +446,20 @@ fn validate_source(
     }
 }
 
+fn source_schema(
+    draft: &ProgramArtifactDraft,
+    source: ArtifactSource,
+) -> Result<SchemaId, ArtifactBuildError> {
+    match source {
+        ArtifactSource::Constant(constant) => draft
+            .constants
+            .get(constant)
+            .map(|value| value.schema())
+            .ok_or(ArtifactBuildError::UnknownConstant { constant }),
+        ArtifactSource::Slot(slot) => require_slot(draft, slot).map(|slot| slot.schema),
+    }
+}
+
 fn validate_outputs_and_constraints(
     draft: &ProgramArtifactDraft,
 ) -> Result<(), ArtifactBuildError> {
@@ -360,8 +474,31 @@ fn validate_outputs_and_constraints(
     }
     for constraint in &draft.constraints {
         validate_operation(&constraint.operation)?;
-        for source in &constraint.inputs {
+        let contract = require_contract(draft, constraint.contract)?;
+        let ResolvedOperationContract::Declared(contract) = contract else {
+            return Err(ArtifactBuildError::IntegrityConstraintContractInvalid {
+                constraint: constraint.constraint,
+            });
+        };
+        if contract.interaction != ExternalInteraction::Pure
+            || !contract.outputs.is_empty()
+            || contract.inputs.len() != constraint.inputs.len()
+        {
+            return Err(ArtifactBuildError::IntegrityConstraintContractInvalid {
+                constraint: constraint.constraint,
+            });
+        }
+        for (ordinal, source) in constraint.inputs.iter().enumerate() {
             validate_source(draft, *source)?;
+            let port = &contract.inputs[ordinal];
+            if port.access != AccessMode::Read
+                || port.delivery != DeliveryMode::Signal
+                || port.schema != source_schema(draft, *source)?
+            {
+                return Err(ArtifactBuildError::IntegrityConstraintContractInvalid {
+                    constraint: constraint.constraint,
+                });
+            }
         }
     }
     Ok(())

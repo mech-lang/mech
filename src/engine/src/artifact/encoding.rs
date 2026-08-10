@@ -89,6 +89,8 @@ pub(super) fn program_revision(
         writer.bytes(&value.canonical_payload_bytes(&draft.schemas)?);
     }
 
+    writer.bytes(&draft.contracts.canonical_bytes()?);
+
     writer.u32(draft.inputs.len() as u32);
     for input in &draft.inputs {
         writer.u32(input.input.get());
@@ -133,6 +135,7 @@ pub(super) fn program_revision(
     for node in &draft.nodes {
         writer.u32(node.node.get());
         writer.operation(&node.operation);
+        writer.u32(node.contract.get());
         writer.u32(node.input_bindings.start);
         writer.u32(node.input_bindings.end);
         writer.u32(node.output_bindings.start);
@@ -181,6 +184,7 @@ pub(super) fn program_revision(
     for constraint in &draft.constraints {
         writer.u32(constraint.constraint.get());
         writer.operation(&constraint.operation);
+        writer.u32(constraint.contract.get());
         writer.u32(constraint.inputs.len() as u32);
         for source in &constraint.inputs {
             writer.source(*source);

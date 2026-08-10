@@ -7,9 +7,10 @@ use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
     BindingId, BytecodeArtifactSections, BytecodeProgram, CellSlotId, ConstantId, ConstantStore,
     ConstantStoreBuilder, DimensionParameterDeclaration, DimensionParameterId,
-    DimensionParameterOrigin, InputId, IntegrityConstraintId, MechError, NodeId, OutputId,
-    ParsedProgram, SchemaDraft, SchemaId, SchemaTable, SchemaTableBuilder, SemanticModelError,
-    SnapshotValueError, Value, ValueDraft, write_bytecode_with_artifact,
+    DimensionParameterOrigin, InputId, IntegrityConstraintId, MechError, NodeId,
+    OperationContractId, OperationContractTable, OutputId, ParsedProgram, SchemaDraft, SchemaId,
+    SchemaTable, SchemaTableBuilder, SemanticModelError, SnapshotValueError, Value, ValueDraft,
+    write_bytecode_with_artifact,
 };
 use serde::{
     Deserialize, Serialize,
@@ -376,6 +377,7 @@ pub fn decode_program_artifact_sections_with_limits(
     ProgramArtifactDraft {
         schemas,
         constants,
+        contracts: OperationContractTable::from_canonical_entries(Box::new([])),
         inputs: inputs
             .into_iter()
             .map(|input| InputDeclaration {
@@ -427,6 +429,7 @@ pub fn decode_program_artifact_sections_with_limits(
                 Ok(NodeDeclaration {
                     node: NodeId(node.node),
                     operation: operation(node.operation)?,
+                    contract: OperationContractId::new(0),
                     input_bindings: node.input_start..node.input_end,
                     output_bindings: node.output_start..node.output_end,
                 })
@@ -454,6 +457,7 @@ pub fn decode_program_artifact_sections_with_limits(
                 Ok(IntegrityConstraintDeclaration {
                     constraint: IntegrityConstraintId(constraint.constraint),
                     operation: operation(constraint.operation)?,
+                    contract: OperationContractId::new(0),
                     inputs: constraint
                         .inputs
                         .into_vec()
@@ -466,6 +470,7 @@ pub fn decode_program_artifact_sections_with_limits(
             .collect::<Result<Vec<_>, ArtifactBytecodeError>>()?
             .into_boxed_slice(),
     }
+    .attach_legacy_contracts()?
     .finalize()
     .map_err(Into::into)
 }

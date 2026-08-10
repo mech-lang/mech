@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 
 use mech_core::{
     BindingId, CellSlotId, ConstantId, ConstantStore, InputId, IntegrityConstraintId, NodeId,
-    OutputId, SchemaId, SchemaTable,
+    OperationContractId, OperationContractTable, OutputId, SchemaId, SchemaTable,
 };
 
 #[cfg(feature = "compiler")]
@@ -253,6 +253,7 @@ pub fn compile_source_program(
         nodes.push(NodeDeclaration {
             node,
             operation: declaration.operation.clone(),
+            contract: OperationContractId::new(0),
             input_bindings: input_start..input_end,
             output_bindings: output_start..output_end,
         });
@@ -285,6 +286,7 @@ pub fn compile_source_program(
             Ok(IntegrityConstraintDeclaration {
                 constraint: IntegrityConstraintId(checked_u32(index, "IntegrityConstraintId")?),
                 operation: constraint.operation.clone(),
+                contract: OperationContractId::new(0),
                 inputs: constraint
                     .inputs
                     .iter()
@@ -300,6 +302,7 @@ pub fn compile_source_program(
     ProgramArtifactDraft {
         schemas: context.schemas.clone(),
         constants: context.constants.clone(),
+        contracts: OperationContractTable::empty(),
         inputs: inputs.into_boxed_slice(),
         slots: slots.into_boxed_slice(),
         nodes: nodes.into_boxed_slice(),
@@ -307,6 +310,7 @@ pub fn compile_source_program(
         outputs: outputs.into_boxed_slice(),
         constraints: constraints.into_boxed_slice(),
     }
+    .attach_legacy_contracts()?
     .finalize()
 }
 

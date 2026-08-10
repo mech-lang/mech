@@ -5,8 +5,9 @@ use mech_engine::*;
 use mech_core::{
     CanonicalNominalPath, ConstantHandle, ConstantStoreBuilder, DimensionExpr, DimensionLifetime,
     DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
-    IntegerWidth, KindExpr, LegacyValue, NominalKey, NominalKind, SchemaBody, SchemaDraft,
-    SchemaField, SchemaHandle, SchemaTableBuilder, Value, ValueDataDraft, ValueDraft,
+    IntegerWidth, KindExpr, LegacyOpaqueOperationContract, LegacyValue, NominalKey, NominalKind,
+    OperationContractId, OperationContractTable, ResolvedOperationContract, SchemaBody,
+    SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder, Value, ValueDataDraft, ValueDraft,
     snapshot::{
         Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
         MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SnapshotValidationContext,
@@ -725,6 +726,15 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
     let missing_binding = ProgramArtifactDraft {
         schemas: data.schemas.clone(),
         constants: data.constants.clone(),
+        contracts: OperationContractTable::from_canonical_entries(
+            vec![ResolvedOperationContract::LegacyOpaque(
+                LegacyOpaqueOperationContract {
+                    input_schemas: Box::new([]),
+                    output_schemas: Box::new([]),
+                },
+            )]
+            .into_boxed_slice(),
+        ),
         inputs: Box::new([]),
         slots: vec![SlotDeclaration {
             slot: CellSlotId(0),
@@ -740,6 +750,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         nodes: vec![NodeDeclaration {
             node: NodeId(0),
             operation: operation("test", "producer"),
+            contract: OperationContractId::new(0),
             input_bindings: 0..0,
             output_bindings: 0..0,
         }]
@@ -1242,6 +1253,7 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
     let artifact = ProgramArtifactDraft {
         schemas,
         constants,
+        contracts: OperationContractTable::from_canonical_entries(Box::new([])),
         inputs: Box::new([]),
         slots: Box::new([]),
         nodes: Box::new([]),
