@@ -175,6 +175,7 @@ pub mod kind_expr;
 pub mod kind_scheme;
 pub mod legacy_adapter;
 pub mod nominal;
+pub mod operation_contract;
 pub mod schema;
 pub mod semantic_error;
 pub mod semantic_identity;
@@ -184,6 +185,7 @@ pub use self::kind_expr::*;
 pub use self::kind_scheme::*;
 pub use self::legacy_adapter::*;
 pub use self::nominal::*;
+pub use self::operation_contract::*;
 
 // Mech Source Code
 // ---------------------------------------------------------------------------
