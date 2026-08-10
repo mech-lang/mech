@@ -1,0 +1,5 @@
+{
+  "path": "src/engine/src/resident/new_legacy.rs",
+  "baseline": "",
+  "current": "fn execute_legacy() { let _value: Option<LegacyValue> = None; }\n"
+}

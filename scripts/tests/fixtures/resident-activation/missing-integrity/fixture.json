@@ -1,0 +1,4 @@
+{
+  "replace_from": "finite-candidate! :=",
+  "replace_to": "finite-candidate :="
+}
