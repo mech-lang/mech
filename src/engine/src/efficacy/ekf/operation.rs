@@ -1,7 +1,7 @@
 use mech_core::ChangeDetectionPolicy;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum EkfKernel {
+pub enum EkfKernel {
     TrigonometricState,
     MotionJacobian,
     ControlJacobian,
@@ -20,7 +20,7 @@ pub(crate) enum EkfKernel {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum EkfPredicate {
+pub enum EkfPredicate {
     CandidateFinite,
     CovariancePositiveDiagonal,
     CovarianceSymmetric,

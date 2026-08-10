@@ -891,7 +891,7 @@ fn validate_constraints(
     Ok(constraints.into_boxed_slice())
 }
 
-fn value_f64s(artifact: &ProgramArtifact, constant: ConstantId) -> Option<Vec<f64>> {
+pub(crate) fn value_f64s(artifact: &ProgramArtifact, constant: ConstantId) -> Option<Vec<f64>> {
     match artifact.constants().get(constant)?.data() {
         ValueData::F64(value) => Some(vec![value.to_f64()]),
         ValueData::Matrix(matrix) => match matrix.elements() {

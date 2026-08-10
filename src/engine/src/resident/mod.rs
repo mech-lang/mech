@@ -5,6 +5,8 @@ pub(crate) mod bench;
 mod candidate;
 mod full_write;
 mod kernel;
+#[cfg(feature = "resident-ekf-artifact")]
+pub(crate) mod program_activation;
 mod workspace;
 mod efficacy {
     pub(crate) mod ekf;
