@@ -8,7 +8,8 @@ use std::collections::BTreeMap;
 
 use mech_core::{
     BindingId, CellSlotId, ConstantId, ConstantStore, InputId, IntegrityConstraintId, NodeId,
-    OperationContractId, OperationContractTable, OutputId, SchemaId, SchemaTable,
+    OperationContractDeclaration, OperationContractId, OperationContractTable, OutputId, SchemaId,
+    SchemaTable,
 };
 
 #[cfg(feature = "compiler")]
@@ -120,6 +121,14 @@ impl<'a> ArtifactBuildContext<'a> {
 pub fn compile_source_program(
     graph: &SourceProgram,
     context: &mut ArtifactBuildContext<'_>,
+) -> Result<ProgramArtifact, ArtifactBuildError> {
+    compile_source_program_with_contracts(graph, context, &[])
+}
+
+fn compile_source_program_with_contracts(
+    graph: &SourceProgram,
+    context: &mut ArtifactBuildContext<'_>,
+    node_contracts: &[Option<&'static OperationContractDeclaration>],
 ) -> Result<ProgramArtifact, ArtifactBuildError> {
     let input_count = checked_u32(graph.inputs.len(), "InputId")?;
     let state_count = checked_u32(graph.states.len(), "CellSlotId")?;
@@ -299,7 +308,7 @@ pub fn compile_source_program(
         })
         .collect::<Result<Vec<_>, ArtifactBuildError>>()?;
 
-    ProgramArtifactDraft {
+    let draft = ProgramArtifactDraft {
         schemas: context.schemas.clone(),
         constants: context.constants.clone(),
         contracts: OperationContractTable::empty(),
@@ -309,9 +318,12 @@ pub fn compile_source_program(
         bindings: bindings.into_boxed_slice(),
         outputs: outputs.into_boxed_slice(),
         constraints: constraints.into_boxed_slice(),
+    };
+    if node_contracts.is_empty() {
+        draft.attach_legacy_contracts()?.finalize()
+    } else {
+        draft.attach_contracts(node_contracts)?.finalize()
     }
-    .attach_legacy_contracts()?
-    .finalize()
 }
 
 #[cfg(feature = "compiler")]
@@ -402,6 +414,16 @@ pub fn compile_executable_program_artifact(
         "instruction_roles",
         compiled.program.instructions.len(),
         compiled.instruction_roles.len(),
+    )?;
+    validate_compiled_metadata_length(
+        "instruction_contracts",
+        compiled.program.instructions.len(),
+        compiled.instruction_contracts.len(),
+    )?;
+    validate_compiled_metadata_length(
+        "instruction_source_nodes",
+        compiled.program.instructions.len(),
+        compiled.instruction_source_nodes.len(),
     )?;
     validate_compiled_metadata_length(
         "register_kinds",
@@ -647,6 +669,8 @@ pub fn compile_executable_program_artifact(
     let mut state_initializers = vec![None::<ConstantId>; compiled.program.register_count as usize];
     let mut states = Vec::<SourceState>::new();
     let mut nodes = Vec::<SourceNode>::new();
+    let mut node_contracts = Vec::<Option<&'static OperationContractDeclaration>>::new();
+    let mut lowered_declared_source_nodes = std::collections::BTreeSet::new();
 
     for (instruction_index, instruction) in compiled.program.instructions.iter().enumerate() {
         let instruction_id = checked_u32(instruction_index, "instruction")?;
@@ -783,6 +807,16 @@ pub fn compile_executable_program_artifact(
                 } else {
                     None
                 };
+                // Specialized plan nodes can expose a contract directly, but
+                // catalog-installed runtime functions also carry authoritative
+                // semantic metadata. Preserve that declaration when the
+                // specialized function uses the trait's default `None`.
+                let declaration = compiled.instruction_contracts[instruction_index].or_else(|| {
+                    instruction
+                        .runtime_function()
+                        .and_then(|function| catalog.runtime_entry_by_raw(function))
+                        .and_then(|entry| entry.semantic_contract())
+                });
                 let semantic_inputs = semantics
                     .inputs
                     .iter()
@@ -801,6 +835,18 @@ pub fn compile_executable_program_artifact(
                     })
                     .collect::<Result<Vec<_>, ArtifactBuildError>>()?
                     .into_boxed_slice();
+                if declaration.is_some() {
+                    if let Some(source_node) = compiled.instruction_source_nodes[instruction_index]
+                    {
+                        if !lowered_declared_source_nodes.insert(source_node) {
+                            return Err(
+                                ArtifactBuildError::DeclaredSourceNodeLoweringUnsupported {
+                                    source_node,
+                                },
+                            );
+                        }
+                    }
+                }
                 nodes.push(SourceNode {
                     operation: semantics.operation,
                     inputs: semantic_inputs,
@@ -811,6 +857,7 @@ pub fn compile_executable_program_artifact(
                     }
                     .into_boxed_slice(),
                 });
+                node_contracts.push(declaration);
                 if schema.is_none() {
                     set_register(&mut registers, dst, None)?;
                     continue;
@@ -873,6 +920,7 @@ pub fn compile_executable_program_artifact(
                         }]
                         .into_boxed_slice(),
                     });
+                    node_contracts.push(None);
                     SourceSlot::NodeOutput {
                         node,
                         output_ordinal: 0,
@@ -946,7 +994,7 @@ pub fn compile_executable_program_artifact(
         });
     }
 
-    compile_source_program(
+    compile_source_program_with_contracts(
         &SourceProgram {
             inputs: inputs.into_boxed_slice(),
             states: states.into_boxed_slice(),
@@ -955,6 +1003,7 @@ pub fn compile_executable_program_artifact(
             constraints: constraints.into_boxed_slice(),
         },
         &mut ArtifactBuildContext::new(&schemas, &constant_store),
+        &node_contracts,
     )
 }
 

@@ -4,8 +4,9 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
     BytecodeRegisterIdentity, BytecodeValidationError, EncodedConstant, LegacyValue, MResult,
-    MechError, ParsedProgram, Register, ValueKind, compare_application_requirements,
-    compile_value_register, hash_str, value_kind_from_runtime_type, write_bytecode,
+    MechError, OperationContractDeclaration, ParsedProgram, Register, ValueKind,
+    compare_application_requirements, compile_value_register, hash_str,
+    value_kind_from_runtime_type, write_bytecode,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -42,6 +43,11 @@ pub struct CompiledBytecode {
     pub program: BytecodeProgram,
     /// Parallel to `program.instructions`.
     pub instruction_roles: Vec<Option<CompiledInstructionRole>>,
+    /// Portable semantic declaration captured from each specialized source
+    /// node, parallel to `program.instructions`.
+    pub instruction_contracts: Vec<Option<&'static OperationContractDeclaration>>,
+    /// Dense source-plan node identity, parallel to `program.instructions`.
+    pub instruction_source_nodes: Vec<Option<u32>>,
     /// Dense and parallel to the register space. `None` is permitted only for
     /// registers that never participate in semantic artifact data.
     pub register_kinds: Vec<Option<ValueKind>>,
@@ -81,11 +87,16 @@ pub struct CompileCtx {
     pending_requirements: Vec<ApplicationRequirement>,
     instructions: Vec<BytecodeInstruction>,
     instruction_roles: Vec<Option<CompiledInstructionRole>>,
+    instruction_contracts: Vec<Option<&'static OperationContractDeclaration>>,
+    instruction_source_nodes: Vec<Option<u32>>,
     register_kinds: BTreeMap<Register, ValueKind>,
     register_collection_cardinalities: BTreeMap<Register, usize>,
     next_register_kind_override: Option<ValueKind>,
     symbol_definitions: Vec<CompiledSymbolDefinition>,
     current_node_kind: Option<CompiledNodeKind>,
+    current_node_contract: Option<&'static OperationContractDeclaration>,
+    current_source_node: Option<u32>,
+    next_source_node: u32,
     integrity_constraints: Vec<CompiledIntegrityConstraint>,
     next_register: Register,
 }
@@ -103,11 +114,16 @@ impl Default for CompileCtx {
             pending_requirements: Vec::new(),
             instructions: Vec::new(),
             instruction_roles: Vec::new(),
+            instruction_contracts: Vec::new(),
+            instruction_source_nodes: Vec::new(),
             register_kinds: BTreeMap::new(),
             register_collection_cardinalities: BTreeMap::new(),
             next_register_kind_override: None,
             symbol_definitions: Vec::new(),
             current_node_kind: None,
+            current_node_contract: None,
+            current_source_node: None,
+            next_source_node: 0,
             integrity_constraints: Vec::new(),
             next_register: 0,
         }
@@ -159,15 +175,31 @@ impl CompileCtx {
     }
 
     pub fn begin_plan_node(&mut self, kind: CompiledNodeKind) -> MResult<()> {
+        self.begin_plan_node_with_contract(kind, None)
+    }
+
+    pub fn begin_plan_node_with_contract(
+        &mut self,
+        kind: CompiledNodeKind,
+        contract: Option<&'static OperationContractDeclaration>,
+    ) -> MResult<()> {
         if self.current_node_kind.is_some() {
             return invalid("cannot begin a bytecode plan node while another node is active");
         }
         self.current_node_kind = Some(kind);
+        self.current_node_contract = contract;
+        self.current_source_node = Some(self.next_source_node);
+        self.next_source_node = self
+            .next_source_node
+            .checked_add(1)
+            .ok_or_else(|| invalid::<()>("source plan node identity exceeds u32").unwrap_err())?;
         Ok(())
     }
 
     pub fn end_plan_node(&mut self) {
         self.current_node_kind = None;
+        self.current_node_contract = None;
+        self.current_source_node = None;
     }
 
     pub fn record_integrity_constraint(&mut self, result_register: Register) -> MResult<()> {
@@ -196,6 +228,8 @@ impl CompileCtx {
             });
         self.instruction_roles
             .push(Some(CompiledInstructionRole::IntegrityMarker));
+        self.instruction_contracts.push(None);
+        self.instruction_source_nodes.push(None);
     }
 
     pub fn finish_program(&mut self, return_register: Register) -> MResult<CompiledBytecode> {
@@ -210,6 +244,20 @@ impl CompileCtx {
             return invalid(format!(
                 "instruction role count {} does not match instruction count {}",
                 self.instruction_roles.len(),
+                self.instructions.len(),
+            ));
+        }
+        if self.instruction_contracts.len() != self.instructions.len() {
+            return invalid(format!(
+                "instruction contract count {} does not match instruction count {}",
+                self.instruction_contracts.len(),
+                self.instructions.len(),
+            ));
+        }
+        if self.instruction_source_nodes.len() != self.instructions.len() {
+            return invalid(format!(
+                "instruction source node count {} does not match instruction count {}",
+                self.instruction_source_nodes.len(),
                 self.instructions.len(),
             ));
         }
@@ -244,6 +292,10 @@ impl CompileCtx {
         });
         let mut instruction_roles = self.instruction_roles.clone();
         instruction_roles.push(None);
+        let mut instruction_contracts = self.instruction_contracts.clone();
+        instruction_contracts.push(None);
+        let mut instruction_source_nodes = self.instruction_source_nodes.clone();
+        instruction_source_nodes.push(None);
 
         let mut register_kinds = vec![None; self.next_register as usize];
         for (register, kind) in &self.register_kinds {
@@ -281,6 +333,8 @@ impl CompileCtx {
                 requirements,
             },
             instruction_roles,
+            instruction_contracts,
+            instruction_source_nodes,
             register_kinds,
             register_collection_cardinalities,
             symbol_definitions: self.symbol_definitions.clone(),
@@ -472,6 +526,8 @@ impl BytecodeCompilerContext for CompileCtx {
             constant,
         });
         self.instruction_roles.push(None);
+        self.instruction_contracts.push(None);
+        self.instruction_source_nodes.push(None);
     }
 
     fn emit_composite_pack(
@@ -489,6 +545,8 @@ impl BytecodeCompilerContext for CompileCtx {
             self.current_node_kind
                 .map(|_| CompiledInstructionRole::Node(CompiledNodeKind::Combinational)),
         );
+        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_source_nodes.push(self.current_source_node);
     }
 
     fn emit_nullop(&mut self, function: u64, destination: Register) {
@@ -498,6 +556,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
+        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_source_nodes.push(self.current_source_node);
     }
 
     fn emit_unop(&mut self, function: u64, destination: Register, source: Register) {
@@ -508,6 +568,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
+        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_source_nodes.push(self.current_source_node);
     }
 
     fn emit_binop(&mut self, function: u64, destination: Register, lhs: Register, rhs: Register) {
@@ -519,6 +581,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
+        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_source_nodes.push(self.current_source_node);
     }
 
     fn emit_ternop(
@@ -538,6 +602,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
+        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_source_nodes.push(self.current_source_node);
     }
 
     fn emit_quadop(
@@ -560,6 +626,8 @@ impl BytecodeCompilerContext for CompileCtx {
             });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
+        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_source_nodes.push(self.current_source_node);
     }
 
     fn emit_varop(&mut self, function: u64, destination: Register, arguments: Vec<Register>) {
@@ -571,6 +639,8 @@ impl BytecodeCompilerContext for CompileCtx {
             });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
+        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_source_nodes.push(self.current_source_node);
     }
 
     fn emit_host_call(
@@ -586,6 +656,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
+        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_source_nodes.push(self.current_source_node);
     }
 
     fn emit_resource_read(&mut self, requirement: u32, destination: Register) {
@@ -595,6 +667,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
+        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_source_nodes.push(self.current_source_node);
     }
 
     fn emit_resource_write(&mut self, requirement: u32, destination: Register, source: Register) {
@@ -605,6 +679,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
+        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_source_nodes.push(self.current_source_node);
     }
 
     fn emit_resource_send(&mut self, requirement: u32, destination: Register, source: Register) {
@@ -615,6 +691,8 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
+        self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_source_nodes.push(self.current_source_node);
     }
 }
 
@@ -681,8 +759,10 @@ fn invalid<T>(reason: impl Into<String>) -> MResult<T> {
 mod tests {
     use super::*;
     use mech_core::{
-        ExecutionHostFunctionRequest, ExecutionResourceRequest, ResourceDelivery, ResourceIntent,
-        RuntimeType,
+        AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExecutionHostFunctionRequest,
+        ExecutionResourceRequest, ExternalInteraction, InputPortLayout, InputPortPolicy,
+        OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ResourceDelivery,
+        ResourceIntent, RuntimeType, ShapeRule,
     };
 
     fn f64_constant(value: f64) -> EncodedConstant {
@@ -936,6 +1016,52 @@ mod tests {
                 Some(CompiledInstructionRole::Node(CompiledNodeKind::Register)),
             ]
         );
+    }
+
+    #[test]
+    fn semantic_contracts_and_source_nodes_are_parallel_to_instructions() {
+        let declaration = Box::leak(Box::new(OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                }]
+                .into_boxed_slice(),
+            ),
+            outputs: vec![OutputPortPolicy {
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::ExactScalar,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        }));
+        let mut context = CompileCtx::new();
+        let registers = allocate_registers(&mut context, 2);
+        initialize_registers(&mut context, &registers);
+        context
+            .begin_plan_node_with_contract(CompiledNodeKind::Combinational, Some(declaration))
+            .unwrap();
+        context.emit_unop(1, registers[1], registers[0]);
+        context.end_plan_node();
+
+        let compiled = context.finish_program(registers[1]).unwrap();
+        assert_eq!(
+            compiled.instruction_contracts.len(),
+            compiled.program.instructions.len()
+        );
+        assert_eq!(
+            compiled.instruction_source_nodes.len(),
+            compiled.program.instructions.len()
+        );
+        assert_eq!(compiled.instruction_contracts[2], Some(&*declaration));
+        assert_eq!(compiled.instruction_source_nodes[2], Some(0));
+        assert_eq!(compiled.instruction_contracts[3], None);
+        assert_eq!(compiled.instruction_source_nodes[3], None);
     }
 
     #[test]

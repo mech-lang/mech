@@ -1378,10 +1378,13 @@ fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
     let mut context = CompileCtx::new();
 
     for step in plan.iter() {
-        context.begin_plan_node(match step.reactive_node_kind() {
-            ReactiveNodeKind::Combinational => CompiledNodeKind::Combinational,
-            ReactiveNodeKind::Register => CompiledNodeKind::Register,
-        })?;
+        context.begin_plan_node_with_contract(
+            match step.reactive_node_kind() {
+                ReactiveNodeKind::Combinational => CompiledNodeKind::Combinational,
+                ReactiveNodeKind::Register => CompiledNodeKind::Register,
+            },
+            step.semantic_operation_contract(),
+        )?;
         let compile_result = step.compile(&mut context);
         context.end_plan_node();
         compile_result?;

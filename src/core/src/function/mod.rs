@@ -437,6 +437,13 @@ pub trait MechFunctionImpl {
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
         ReactiveNodeKind::Combinational
     }
+    /// Portable semantic metadata for the compiled operation represented by
+    /// this specialized function. Current execution continues to use
+    /// `RuntimeFunctionContract`; this declaration is consumed only while
+    /// constructing a `ProgramArtifact`.
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        None
+    }
     fn to_string(&self) -> String;
 }
 

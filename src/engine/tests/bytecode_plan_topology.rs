@@ -3,15 +3,17 @@ use mech_bytecode::{
     CompiledNodeKind, CompiledSymbolDefinition,
 };
 use mech_core::{
-    ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
-    DimensionExpr, EncodedConstant, ExecutionResourceRequest, FloatWidth, FunctionArgs,
-    FunctionArgumentRole, FunctionCatalog, FunctionCatalogBuilder, FunctionRuntimeType,
-    FunctionSpecializer, GuardFunctionSafety, IncorrectNumberOfArguments, LegacyValue, MResult,
-    MechError, MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl,
-    ParsedProgram, Plan, ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind,
-    ReactiveTurnState, Ref, Register, ResourceDelivery, ResourceIntent, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, SchemaBody, ValueData,
-    ValueKind, compile_value_register, hash_str,
+    AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
+    BytecodeProgram, ChangeDetectionPolicy, DeliveryMode, DimensionExpr, EncodedConstant,
+    ExecutionResourceRequest, ExternalInteraction, FloatWidth, FunctionArgs, FunctionArgumentRole,
+    FunctionCatalog, FunctionCatalogBuilder, FunctionRuntimeType, FunctionSpecializer,
+    GuardFunctionSafety, IncorrectNumberOfArguments, InputPortLayout, InputPortPolicy, LegacyValue,
+    MResult, MechError, MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ParsedProgram, Plan,
+    ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState,
+    Ref, Register, ResolvedOperationContract, ResourceDelivery, ResourceIntent,
+    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType,
+    SchemaBody, ShapeRule, ValueData, ValueKind, compile_value_register, hash_str,
 };
 use mech_engine::Interpreter;
 use mech_engine::{
@@ -809,6 +811,8 @@ fn compiled_fixture(
             dictionary: BTreeMap::new(),
             requirements,
         },
+        instruction_contracts: vec![None; instruction_roles.len()],
+        instruction_source_nodes: vec![None; instruction_roles.len()],
         instruction_roles,
         register_collection_cardinalities: vec![None; register_kinds.len()],
         register_kinds,
@@ -866,6 +870,75 @@ fn resource_requirement() -> ApplicationRequirement {
         intent: ResourceIntent::Read,
         delivery: ResourceDelivery::Snapshot,
     })
+}
+
+fn unary_declared_contract() -> &'static OperationContractDeclaration {
+    Box::leak(Box::new(OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::ExactScalar,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }))
+}
+
+#[test]
+fn compiler_sidecar_resolves_declared_contracts_into_the_artifact() {
+    let catalog = source_catalog();
+    let mut compiled = valid_compiled_fixture();
+    compiled.instruction_contracts[2] = Some(unary_declared_contract());
+    compiled.instruction_source_nodes[2] = Some(0);
+
+    let artifact = mech_engine::compile_executable_program_artifact(&compiled, &catalog).unwrap();
+    let node = &artifact.nodes()[0];
+    let ResolvedOperationContract::Declared(contract) =
+        artifact.contracts().get(node.contract).unwrap()
+    else {
+        panic!("declared compiler metadata became opaque");
+    };
+    assert_eq!(contract.inputs.len(), 1);
+    assert_eq!(contract.outputs.len(), 1);
+    assert_eq!(contract.interaction, ExternalInteraction::Pure);
+}
+
+#[test]
+fn catalog_contract_fills_an_empty_specialized_function_sidecar() {
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    builder
+        .insert_runtime_factory_with_semantic_contract::<TestLessFactory>(
+            TEST_LESS_RUNTIME,
+            RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            unary_declared_contract(),
+        )
+        .unwrap();
+    let catalog = builder.build().unwrap();
+    let compiled = valid_compiled_fixture();
+    assert!(compiled.instruction_contracts[2].is_none());
+
+    let artifact = mech_engine::compile_executable_program_artifact(&compiled, &catalog).unwrap();
+    let node = &artifact.nodes()[0];
+    let ResolvedOperationContract::Declared(contract) =
+        artifact.contracts().get(node.contract).unwrap()
+    else {
+        panic!("catalog contract became opaque");
+    };
+    assert_eq!(contract.inputs.len(), 1);
+    assert_eq!(contract.outputs.len(), 1);
+    assert_eq!(contract.interaction, ExternalInteraction::Pure);
 }
 
 #[test]

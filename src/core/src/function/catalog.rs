@@ -6,7 +6,8 @@ use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec
 use crate::{
     FunctionArgs, FunctionValueRepresentation, GuardFunctionSafety, LegacyValue, MResult,
     MechError, MechErrorKind, MechFunction, MechFunctionFactory, NativeValueFeature,
-    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, hash_str,
+    OperationContractDeclaration, RuntimeFunctionContract, RuntimeFunctionSignature,
+    RuntimeOutputAliasPolicy, hash_str,
 };
 
 #[repr(transparent)]
@@ -107,6 +108,7 @@ pub struct RuntimeFunctionEntry {
     factory: RuntimeFunctionFactory,
     signature: RuntimeFunctionSignature,
     contract: RuntimeFunctionContract,
+    semantic_contract: Option<&'static OperationContractDeclaration>,
 
     #[cfg(feature = "native-plan")]
     pub native_linkage: Option<NativeFunctionLinkage>,
@@ -145,6 +147,10 @@ impl RuntimeFunctionEntry {
 
     pub fn output_alias_policy(&self) -> RuntimeOutputAliasPolicy {
         self.contract.output_alias
+    }
+
+    pub const fn semantic_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        self.semantic_contract
     }
 
     fn wrap_contract_error(&self, error: MechError) -> MechError {
@@ -621,6 +627,30 @@ impl FunctionCatalogBuilder {
             factory: F::new,
             signature: F::SIGNATURE,
             contract,
+            semantic_contract: None,
+            #[cfg(feature = "native-plan")]
+            native_linkage: None,
+        })
+    }
+
+    pub fn insert_runtime_factory_with_semantic_contract<F>(
+        &mut self,
+        name: impl Into<String>,
+        contract: RuntimeFunctionContract,
+        semantic_contract: &'static OperationContractDeclaration,
+    ) -> MResult<()>
+    where
+        F: MechFunctionFactory,
+    {
+        let name = name.into();
+        let id = RuntimeFunctionId::from_name(&name);
+        self.insert_runtime_entry(RuntimeFunctionEntry {
+            id,
+            name,
+            factory: F::new,
+            signature: F::SIGNATURE,
+            contract,
+            semantic_contract: Some(semantic_contract),
             #[cfg(feature = "native-plan")]
             native_linkage: None,
         })
@@ -644,6 +674,31 @@ impl FunctionCatalogBuilder {
             factory: F::new,
             signature: F::SIGNATURE,
             contract,
+            semantic_contract: None,
+            native_linkage: Some(linkage),
+        })
+    }
+
+    #[cfg(feature = "native-plan")]
+    pub fn insert_runtime_factory_with_linkage_and_semantic_contract<F>(
+        &mut self,
+        name: impl Into<String>,
+        contract: RuntimeFunctionContract,
+        linkage: NativeFunctionLinkage,
+        semantic_contract: &'static OperationContractDeclaration,
+    ) -> MResult<()>
+    where
+        F: MechFunctionFactory,
+    {
+        let name = name.into();
+        let id = RuntimeFunctionId::from_name(&name);
+        self.insert_runtime_entry(RuntimeFunctionEntry {
+            id,
+            name,
+            factory: F::new,
+            signature: F::SIGNATURE,
+            contract,
+            semantic_contract: Some(semantic_contract),
             native_linkage: Some(linkage),
         })
     }
@@ -1401,6 +1456,7 @@ mod tests {
                 factory: TestFactory::new,
                 signature: TestFactory::SIGNATURE,
                 contract: test_runtime_contract(),
+                semantic_contract: None,
                 #[cfg(feature = "native-plan")]
                 native_linkage: None,
             })
@@ -1413,6 +1469,7 @@ mod tests {
                 factory: TestFactory::new,
                 signature: TestFactory::SIGNATURE,
                 contract: test_runtime_contract(),
+                semantic_contract: None,
                 #[cfg(feature = "native-plan")]
                 native_linkage: None,
             })

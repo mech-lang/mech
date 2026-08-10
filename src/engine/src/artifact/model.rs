@@ -3,10 +3,11 @@ use core::ops::Range;
 use mech_core::{
     AccessMode, BindingId, CellSlotId, ConstantId, ConstantStore, DeclaredOperationContract,
     DeliveryMode, ExternalInteraction, InputId, IntegrityConstraintId,
-    LegacyOpaqueOperationContract, LegacySnapshotError, MechError, NodeId, OperationContractError,
-    OperationContractId, OperationContractTable, OperationContractTableBuilder, OutputId,
-    ProgramRevision, ResolvedInputPort, ResolvedOperationContract, SchemaId, SchemaTable,
-    SemanticModelError, SnapshotValueError,
+    LegacyOpaqueOperationContract, LegacySnapshotError, MechError, NodeId,
+    OperationContractDeclaration, OperationContractError, OperationContractId,
+    OperationContractTable, OperationContractTableBuilder, OutputId, PortDirection,
+    ProgramRevision, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaId,
+    SchemaTable, SemanticModelError, SnapshotValueError, validate_declaration,
 };
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -206,10 +207,25 @@ impl ProgramArtifactDraft {
 }
 
 impl ProgramArtifactDraft {
-    pub(super) fn attach_legacy_contracts(mut self) -> Result<Self, ArtifactBuildError> {
+    pub(super) fn attach_legacy_contracts(self) -> Result<Self, ArtifactBuildError> {
+        let declarations = vec![None; self.nodes.len()];
+        self.attach_contracts(&declarations)
+    }
+
+    pub(super) fn attach_contracts(
+        mut self,
+        declarations: &[Option<&'static OperationContractDeclaration>],
+    ) -> Result<Self, ArtifactBuildError> {
+        if declarations.len() != self.nodes.len() {
+            return Err(ArtifactBuildError::CompiledMetadataLengthMismatch {
+                table: "node_contracts",
+                expected: self.nodes.len(),
+                actual: declarations.len(),
+            });
+        }
         let mut builder = OperationContractTableBuilder::new();
         let mut node_handles = Vec::with_capacity(self.nodes.len());
-        for node in &self.nodes {
+        for (node, declaration) in self.nodes.iter().zip(declarations) {
             let inputs = binding_range(&self, &node.input_bindings, node.node)?
                 .iter()
                 .map(|binding| match binding {
@@ -233,12 +249,51 @@ impl ProgramArtifactDraft {
                     }
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            node_handles.push(builder.insert(ResolvedOperationContract::LegacyOpaque(
-                LegacyOpaqueOperationContract {
+            let contract = match declaration {
+                None => ResolvedOperationContract::LegacyOpaque(LegacyOpaqueOperationContract {
                     input_schemas: inputs.into_boxed_slice(),
                     output_schemas: outputs.into_boxed_slice(),
-                },
-            ))?);
+                }),
+                Some(declaration) => {
+                    validate_declaration(declaration)?;
+                    let policies = declaration.inputs.resolve(inputs.len())?;
+                    if declaration.outputs.len() != outputs.len() {
+                        return Err(OperationContractError::PortCountMismatch {
+                            direction: PortDirection::Output,
+                            expected: declaration.outputs.len() as u64,
+                            actual: outputs.len() as u64,
+                        }
+                        .into());
+                    }
+                    ResolvedOperationContract::Declared(DeclaredOperationContract {
+                        inputs: inputs
+                            .into_iter()
+                            .zip(policies)
+                            .map(|(schema, policy)| ResolvedInputPort {
+                                schema,
+                                access: policy.access,
+                                delivery: policy.delivery,
+                            })
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                        outputs: outputs
+                            .into_iter()
+                            .zip(declaration.outputs.iter())
+                            .map(|(schema, policy)| ResolvedOutputPort {
+                                schema,
+                                access: policy.access,
+                                delivery: policy.delivery,
+                                construction: policy.construction.clone(),
+                                alias: policy.alias,
+                                change_detection: policy.change_detection,
+                            })
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                        interaction: declaration.interaction.clone(),
+                    })
+                }
+            };
+            node_handles.push(builder.insert(contract)?);
         }
 
         let mut constraint_handles = Vec::with_capacity(self.constraints.len());
@@ -361,6 +416,9 @@ pub enum ArtifactBuildError {
         instruction: u32,
         expected: u32,
         found: u32,
+    },
+    DeclaredSourceNodeLoweringUnsupported {
+        source_node: u32,
     },
     IntegrityConstraintMetadataMismatch {
         constraint: u32,
