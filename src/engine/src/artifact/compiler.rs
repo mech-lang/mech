@@ -125,7 +125,9 @@ pub fn compile_source_program(
     compile_source_program_with_contracts(graph, context, &[])
 }
 
-fn compile_source_program_with_contracts(
+/// Compiles a semantic source graph with declarations already selected by the
+/// specializing compiler. The declaration slice is parallel to `graph.nodes`.
+pub fn compile_source_program_with_contracts(
     graph: &SourceProgram,
     context: &mut ArtifactBuildContext<'_>,
     node_contracts: &[Option<&'static OperationContractDeclaration>],

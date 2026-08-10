@@ -47,8 +47,8 @@
       "expected_output": "bytecode-v1 🦀",
       "file": "canonical-scalars.mecb",
       "header": {
-        "checksum_offset": 1544,
-        "file_len": 1548,
+        "checksum_offset": 1576,
+        "file_len": 1580,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 20,
@@ -72,11 +72,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "61332122cf169e2aa368af7222398bde83ae1062b02ceab7209442a4bfc2a6cf",
+      "native_plan_sha256": "132f7fe98c0db8d3ce4cd208921b7a7da60b9cd2d42f7a487e1a26f68979070b",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -258,7 +258,7 @@
           "item_count": 19,
           "kind": "Types",
           "length": 152,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -267,7 +267,7 @@
           "item_count": 19,
           "kind": "ConstantTable",
           "length": 456,
-          "offset": 760,
+          "offset": 792,
           "reserved": 0
         },
         {
@@ -276,7 +276,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 152,
-          "offset": 1216,
+          "offset": 1248,
           "reserved": 0
         },
         {
@@ -285,7 +285,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -294,7 +294,7 @@
           "item_count": 20,
           "kind": "Instructions",
           "length": 176,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -303,7 +303,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -312,7 +312,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -321,7 +321,7 @@
           "item_count": 0,
           "kind": "ArtifactSchemas",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -330,7 +330,7 @@
           "item_count": 0,
           "kind": "ArtifactConstants",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -339,7 +339,7 @@
           "item_count": 0,
           "kind": "ArtifactInputs",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -348,7 +348,7 @@
           "item_count": 0,
           "kind": "ArtifactSlots",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -357,7 +357,7 @@
           "item_count": 0,
           "kind": "ArtifactProducers",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -366,7 +366,7 @@
           "item_count": 0,
           "kind": "ArtifactNodes",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -375,7 +375,7 @@
           "item_count": 0,
           "kind": "ArtifactBindings",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -384,7 +384,7 @@
           "item_count": 0,
           "kind": "ArtifactOutputs",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -393,7 +393,7 @@
           "item_count": 0,
           "kind": "ArtifactIntegrityConstraints",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -402,11 +402,20 @@
           "item_count": 0,
           "kind": "ArtifactOperations",
           "length": 0,
-          "offset": 1544,
+          "offset": 1576,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 0,
+          "kind": "ArtifactOperationContracts",
+          "length": 0,
+          "offset": 1576,
           "reserved": 0
         }
       ],
-      "sha256": "4ee0f3bb5af90d457a12d25084275fd49a0e8a57b200eb61e1581aef4b97cf8e",
+      "sha256": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
       "source": null,
       "source_file": null
     },
@@ -496,8 +505,8 @@
       ],
       "file": "canonical-matrices.mecb",
       "header": {
-        "checksum_offset": 3544,
-        "file_len": 3548,
+        "checksum_offset": 3576,
+        "file_len": 3580,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 33,
@@ -521,11 +530,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "aed7dd337c67df767cb1f7951cc8b2f892f63e7c41e938462c79a2764c6a49ce",
+      "native_plan_sha256": "55b847c7eaaaf68904026650d3b433de36a710c958a90b82be15f14cbd4b73e0",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -1141,7 +1150,7 @@
           "item_count": 49,
           "kind": "Types",
           "length": 808,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -1150,7 +1159,7 @@
           "item_count": 32,
           "kind": "ConstantTable",
           "length": 768,
-          "offset": 1416,
+          "offset": 1448,
           "reserved": 0
         },
         {
@@ -1159,7 +1168,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 1064,
-          "offset": 2184,
+          "offset": 2216,
           "reserved": 0
         },
         {
@@ -1168,7 +1177,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 3248,
+          "offset": 3280,
           "reserved": 0
         },
         {
@@ -1177,7 +1186,7 @@
           "item_count": 33,
           "kind": "Instructions",
           "length": 293,
-          "offset": 3248,
+          "offset": 3280,
           "reserved": 0
         },
         {
@@ -1186,7 +1195,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
           "reserved": 0
         },
         {
@@ -1195,7 +1204,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
           "reserved": 0
         },
         {
@@ -1204,7 +1213,7 @@
           "item_count": 0,
           "kind": "ArtifactSchemas",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
           "reserved": 0
         },
         {
@@ -1213,7 +1222,7 @@
           "item_count": 0,
           "kind": "ArtifactConstants",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
           "reserved": 0
         },
         {
@@ -1222,7 +1231,7 @@
           "item_count": 0,
           "kind": "ArtifactInputs",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
           "reserved": 0
         },
         {
@@ -1231,7 +1240,7 @@
           "item_count": 0,
           "kind": "ArtifactSlots",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
           "reserved": 0
         },
         {
@@ -1240,7 +1249,7 @@
           "item_count": 0,
           "kind": "ArtifactProducers",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
           "reserved": 0
         },
         {
@@ -1249,7 +1258,7 @@
           "item_count": 0,
           "kind": "ArtifactNodes",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
           "reserved": 0
         },
         {
@@ -1258,7 +1267,7 @@
           "item_count": 0,
           "kind": "ArtifactBindings",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
           "reserved": 0
         },
         {
@@ -1267,7 +1276,7 @@
           "item_count": 0,
           "kind": "ArtifactOutputs",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
           "reserved": 0
         },
         {
@@ -1276,7 +1285,7 @@
           "item_count": 0,
           "kind": "ArtifactIntegrityConstraints",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
           "reserved": 0
         },
         {
@@ -1285,11 +1294,20 @@
           "item_count": 0,
           "kind": "ArtifactOperations",
           "length": 0,
-          "offset": 3544,
+          "offset": 3576,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 0,
+          "kind": "ArtifactOperationContracts",
+          "length": 0,
+          "offset": 3576,
           "reserved": 0
         }
       ],
-      "sha256": "29eb6fd0261e8caa9f49def66909f5f452fc6d007c8b82b90725e607f4528a62",
+      "sha256": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
       "source": null,
       "source_file": null
     },
@@ -1333,8 +1351,8 @@
       ],
       "file": "canonical-composites.mecb",
       "header": {
-        "checksum_offset": 1368,
-        "file_len": 1372,
+        "checksum_offset": 1400,
+        "file_len": 1404,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 12,
@@ -1358,11 +1376,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "b280c46b13740eb58e20348481dab0dc2e8d65c09611d6367f1af630bc904335",
+      "native_plan_sha256": "bbb571608b56bce72ec0c7b83a2cfe8f92b5eb1a526218370096af9d073764e1",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -1555,7 +1573,7 @@
           "item_count": 13,
           "kind": "Types",
           "length": 245,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -1564,7 +1582,7 @@
           "item_count": 11,
           "kind": "ConstantTable",
           "length": 264,
-          "offset": 856,
+          "offset": 888,
           "reserved": 0
         },
         {
@@ -1573,7 +1591,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 137,
-          "offset": 1120,
+          "offset": 1152,
           "reserved": 0
         },
         {
@@ -1582,7 +1600,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 1264,
+          "offset": 1296,
           "reserved": 0
         },
         {
@@ -1591,7 +1609,7 @@
           "item_count": 12,
           "kind": "Instructions",
           "length": 104,
-          "offset": 1264,
+          "offset": 1296,
           "reserved": 0
         },
         {
@@ -1600,7 +1618,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -1609,7 +1627,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -1618,7 +1636,7 @@
           "item_count": 0,
           "kind": "ArtifactSchemas",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -1627,7 +1645,7 @@
           "item_count": 0,
           "kind": "ArtifactConstants",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -1636,7 +1654,7 @@
           "item_count": 0,
           "kind": "ArtifactInputs",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -1645,7 +1663,7 @@
           "item_count": 0,
           "kind": "ArtifactSlots",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -1654,7 +1672,7 @@
           "item_count": 0,
           "kind": "ArtifactProducers",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -1663,7 +1681,7 @@
           "item_count": 0,
           "kind": "ArtifactNodes",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -1672,7 +1690,7 @@
           "item_count": 0,
           "kind": "ArtifactBindings",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -1681,7 +1699,7 @@
           "item_count": 0,
           "kind": "ArtifactOutputs",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -1690,7 +1708,7 @@
           "item_count": 0,
           "kind": "ArtifactIntegrityConstraints",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -1699,11 +1717,20 @@
           "item_count": 0,
           "kind": "ArtifactOperations",
           "length": 0,
-          "offset": 1368,
+          "offset": 1400,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 0,
+          "kind": "ArtifactOperationContracts",
+          "length": 0,
+          "offset": 1400,
           "reserved": 0
         }
       ],
-      "sha256": "a016580a32d216a10904cece6a783fd6fce4d3b0b6db4f1657942bcbd1150c7a",
+      "sha256": "8e82426a8af20678627870134cb8d6a329bfdaf2451be1667e5ff77a98da415a",
       "source": null,
       "source_file": null
     },
@@ -1724,8 +1751,8 @@
       "expected_output": 42.0,
       "file": "literal-f64.mecb",
       "header": {
-        "checksum_offset": 1245,
-        "file_len": 1249,
+        "checksum_offset": 1322,
+        "file_len": 1326,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 2,
@@ -1749,11 +1776,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "f521685e0292d0a4db4aedef9e1afdd65d32c74fda8bc15b09073186d50c1ee3",
+      "native_plan_sha256": "f259dda6d8e9e9553b527e210e4f3f3c770bfd0380051863ece59e6a8ff8387d",
       "origin": "source-compiler",
       "packages": [
         {
@@ -1797,7 +1824,7 @@
           "item_count": 1,
           "kind": "Types",
           "length": 8,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -1806,7 +1833,7 @@
           "item_count": 1,
           "kind": "ConstantTable",
           "length": 24,
-          "offset": 616,
+          "offset": 648,
           "reserved": 0
         },
         {
@@ -1815,7 +1842,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 8,
-          "offset": 640,
+          "offset": 672,
           "reserved": 0
         },
         {
@@ -1824,7 +1851,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 648,
+          "offset": 680,
           "reserved": 0
         },
         {
@@ -1833,7 +1860,7 @@
           "item_count": 2,
           "kind": "Instructions",
           "length": 14,
-          "offset": 648,
+          "offset": 680,
           "reserved": 0
         },
         {
@@ -1842,7 +1869,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 664,
+          "offset": 696,
           "reserved": 0
         },
         {
@@ -1851,7 +1878,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 664,
+          "offset": 696,
           "reserved": 0
         },
         {
@@ -1860,7 +1887,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 60,
-          "offset": 664,
+          "offset": 696,
           "reserved": 0
         },
         {
@@ -1869,7 +1896,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 67,
-          "offset": 728,
+          "offset": 760,
           "reserved": 0
         },
         {
@@ -1878,7 +1905,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 800,
+          "offset": 832,
           "reserved": 0
         },
         {
@@ -1887,7 +1914,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 51,
-          "offset": 808,
+          "offset": 840,
           "reserved": 0
         },
         {
@@ -1896,7 +1923,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 46,
-          "offset": 864,
+          "offset": 896,
           "reserved": 0
         },
         {
@@ -1904,8 +1931,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 88,
-          "offset": 912,
+          "length": 101,
+          "offset": 944,
           "reserved": 0
         },
         {
@@ -1914,7 +1941,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 127,
-          "offset": 1000,
+          "offset": 1048,
           "reserved": 0
         },
         {
@@ -1923,7 +1950,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1128,
+          "offset": 1176,
           "reserved": 0
         },
         {
@@ -1932,7 +1959,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1184,
+          "offset": 1232,
           "reserved": 0
         },
         {
@@ -1941,11 +1968,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 53,
-          "offset": 1192,
+          "offset": 1240,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 26,
+          "offset": 1296,
           "reserved": 0
         }
       ],
-      "sha256": "dd0f2f9b4cdd873dd24d576ca23e47d51810a0e105e41e51e36fa2f054ad92cb",
+      "sha256": "98ed0a607513985607e3d06975487c847cef1946d4d841eb6ae2b6c59ad7fb52",
       "source": "42.0",
       "source_file": "literal-f64.mec"
     },
@@ -1966,8 +2002,8 @@
       "expected_output": 3.0,
       "file": "scalar-add-f64.mecb",
       "header": {
-        "checksum_offset": 1555,
-        "file_len": 1559,
+        "checksum_offset": 1649,
+        "file_len": 1653,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -1991,11 +2027,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "ff3394a36174db2e109c03387835f769aba9f493986909d34260f8d2042c3352",
+      "native_plan_sha256": "713d356b4413e898b1331afe4379267f1732fbbf1bbfeb3b921ba378383a84c1",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2059,7 +2095,7 @@
           "item_count": 1,
           "kind": "Types",
           "length": 8,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -2068,7 +2104,7 @@
           "item_count": 3,
           "kind": "ConstantTable",
           "length": 72,
-          "offset": 616,
+          "offset": 648,
           "reserved": 0
         },
         {
@@ -2077,7 +2113,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 24,
-          "offset": 688,
+          "offset": 720,
           "reserved": 0
         },
         {
@@ -2086,7 +2122,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 712,
+          "offset": 744,
           "reserved": 0
         },
         {
@@ -2095,7 +2131,7 @@
           "item_count": 5,
           "kind": "Instructions",
           "length": 53,
-          "offset": 712,
+          "offset": 744,
           "reserved": 0
         },
         {
@@ -2104,7 +2140,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 768,
+          "offset": 800,
           "reserved": 0
         },
         {
@@ -2113,7 +2149,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 768,
+          "offset": 800,
           "reserved": 0
         },
         {
@@ -2122,7 +2158,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 60,
-          "offset": 768,
+          "offset": 800,
           "reserved": 0
         },
         {
@@ -2131,7 +2167,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 199,
-          "offset": 832,
+          "offset": 864,
           "reserved": 0
         },
         {
@@ -2140,7 +2176,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1032,
+          "offset": 1064,
           "reserved": 0
         },
         {
@@ -2149,7 +2185,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 51,
-          "offset": 1040,
+          "offset": 1072,
           "reserved": 0
         },
         {
@@ -2158,7 +2194,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 46,
-          "offset": 1096,
+          "offset": 1128,
           "reserved": 0
         },
         {
@@ -2166,8 +2202,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 88,
-          "offset": 1144,
+          "length": 101,
+          "offset": 1176,
           "reserved": 0
         },
         {
@@ -2176,7 +2212,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 196,
-          "offset": 1232,
+          "offset": 1280,
           "reserved": 0
         },
         {
@@ -2185,7 +2221,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1432,
+          "offset": 1480,
           "reserved": 0
         },
         {
@@ -2194,7 +2230,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1488,
+          "offset": 1536,
           "reserved": 0
         },
         {
@@ -2203,11 +2239,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 59,
-          "offset": 1496,
+          "offset": 1544,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 41,
+          "offset": 1608,
           "reserved": 0
         }
       ],
-      "sha256": "30bafce07539346e36e3f1b142d6f14de9f5b96daf373fc8f5beb6ced15616a6",
+      "sha256": "af91170ae55fc69b5949e796a843b0844986cfc6ac0d9ef89b2a70f652ae1463",
       "source": "1.0 + 2.0",
       "source_file": "scalar-add.mec"
     },
@@ -2244,8 +2289,8 @@
       ],
       "file": "fixed-matrix-add-f64.mecb",
       "header": {
-        "checksum_offset": 6336,
-        "file_len": 6340,
+        "checksum_offset": 6549,
+        "file_len": 6553,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 23,
@@ -2269,11 +2314,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "874a979c2fb3f7dff13ee048d8ab7f08ee68d18982d1cabbffd3073f54d7c833",
+      "native_plan_sha256": "5f0a1a31f2f2b6cd405e26601ad8163b275c8ff11c1137f6e713dc3ea32870fb",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2381,7 +2426,7 @@
           "item_count": 3,
           "kind": "Types",
           "length": 50,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -2390,7 +2435,7 @@
           "item_count": 15,
           "kind": "ConstantTable",
           "length": 360,
-          "offset": 664,
+          "offset": 696,
           "reserved": 0
         },
         {
@@ -2399,7 +2444,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 280,
-          "offset": 1024,
+          "offset": 1056,
           "reserved": 0
         },
         {
@@ -2408,7 +2453,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 1304,
+          "offset": 1336,
           "reserved": 0
         },
         {
@@ -2417,7 +2462,7 @@
           "item_count": 23,
           "kind": "Instructions",
           "length": 287,
-          "offset": 1304,
+          "offset": 1336,
           "reserved": 0
         },
         {
@@ -2426,7 +2471,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 1592,
+          "offset": 1624,
           "reserved": 0
         },
         {
@@ -2435,7 +2480,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 1592,
+          "offset": 1624,
           "reserved": 0
         },
         {
@@ -2444,7 +2489,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 314,
-          "offset": 1592,
+          "offset": 1624,
           "reserved": 0
         },
         {
@@ -2453,7 +2498,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 1446,
-          "offset": 1912,
+          "offset": 1944,
           "reserved": 0
         },
         {
@@ -2462,7 +2507,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 3360,
+          "offset": 3392,
           "reserved": 0
         },
         {
@@ -2471,7 +2516,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 351,
-          "offset": 3368,
+          "offset": 3400,
           "reserved": 0
         },
         {
@@ -2480,7 +2525,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 316,
-          "offset": 3720,
+          "offset": 3752,
           "reserved": 0
         },
         {
@@ -2488,8 +2533,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 625,
-          "offset": 4040,
+          "length": 716,
+          "offset": 4072,
           "reserved": 0
         },
         {
@@ -2498,7 +2543,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 1358,
-          "offset": 4672,
+          "offset": 4792,
           "reserved": 0
         },
         {
@@ -2507,7 +2552,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 6032,
+          "offset": 6152,
           "reserved": 0
         },
         {
@@ -2516,7 +2561,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 6088,
+          "offset": 6208,
           "reserved": 0
         },
         {
@@ -2525,11 +2570,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 240,
-          "offset": 6096,
+          "offset": 6216,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 93,
+          "offset": 6456,
           "reserved": 0
         }
       ],
-      "sha256": "009e78834614a2f71ef490d534d078caf6a04714b2a90aea3537dee5d17b0d75",
+      "sha256": "da2ace7eec86d95871318dcfed44a63fee228e669197853554903c48184e88a9",
       "source": "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]",
       "source_file": "fixed-matrix-add-f64.mec"
     },
@@ -2596,8 +2650,8 @@
       ],
       "file": "dynamic-matrix-add-f64.mecb",
       "header": {
-        "checksum_offset": 17887,
-        "file_len": 17891,
+        "checksum_offset": 18205,
+        "file_len": 18209,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 77,
@@ -2621,11 +2675,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "0f18a4848a4d522ae6b061febdacd6717fbfff09b54edf19dae5ca41d92bcde3",
+      "native_plan_sha256": "29a99e6089af015b0388db6fe89782b1d2d8f93a71ff3cdc933477845f707092",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2736,7 +2790,7 @@
           "item_count": 3,
           "kind": "Types",
           "length": 50,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -2745,7 +2799,7 @@
           "item_count": 38,
           "kind": "ConstantTable",
           "length": 912,
-          "offset": 664,
+          "offset": 696,
           "reserved": 0
         },
         {
@@ -2754,7 +2808,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 1304,
-          "offset": 1576,
+          "offset": 1608,
           "reserved": 0
         },
         {
@@ -2763,7 +2817,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 2880,
+          "offset": 2912,
           "reserved": 0
         },
         {
@@ -2772,7 +2826,7 @@
           "item_count": 77,
           "kind": "Instructions",
           "length": 1037,
-          "offset": 2880,
+          "offset": 2912,
           "reserved": 0
         },
         {
@@ -2781,7 +2835,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 3920,
+          "offset": 3952,
           "reserved": 0
         },
         {
@@ -2790,7 +2844,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 3920,
+          "offset": 3952,
           "reserved": 0
         },
         {
@@ -2799,7 +2853,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 314,
-          "offset": 3920,
+          "offset": 3952,
           "reserved": 0
         },
         {
@@ -2808,7 +2862,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 5814,
-          "offset": 4240,
+          "offset": 4272,
           "reserved": 0
         },
         {
@@ -2817,7 +2871,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 10056,
+          "offset": 10088,
           "reserved": 0
         },
         {
@@ -2826,7 +2880,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 654,
-          "offset": 10064,
+          "offset": 10096,
           "reserved": 0
         },
         {
@@ -2835,7 +2889,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 589,
-          "offset": 10720,
+          "offset": 10752,
           "reserved": 0
         },
         {
@@ -2843,8 +2897,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 1182,
-          "offset": 11312,
+          "length": 1351,
+          "offset": 11344,
           "reserved": 0
         },
         {
@@ -2853,7 +2907,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 5107,
-          "offset": 12496,
+          "offset": 12696,
           "reserved": 0
         },
         {
@@ -2862,7 +2916,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 53,
-          "offset": 17608,
+          "offset": 17808,
           "reserved": 0
         },
         {
@@ -2871,7 +2925,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 17664,
+          "offset": 17864,
           "reserved": 0
         },
         {
@@ -2880,11 +2934,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 215,
-          "offset": 17672,
+          "offset": 17872,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 117,
+          "offset": 18088,
           "reserved": 0
         }
       ],
-      "sha256": "99bac8e2da5eb687388751d4493ce75cc308c9205df48615b9e8fff5819652e0",
+      "sha256": "2f46eada7b3d1d40d5feb199c3af0155cc92f40cdcb511c21d092f863e53db0d",
       "source": "[1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; 11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; 21.0 22.0 23.0 24.0 25.0] + [25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; 15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; 5.0 4.0 3.0 2.0 1.0]",
       "source_file": "dynamic-matrix-add-f64.mec"
     },
@@ -2919,8 +2982,8 @@
       ],
       "file": "variadic-horzcat-f64.mecb",
       "header": {
-        "checksum_offset": 2438,
-        "file_len": 2442,
+        "checksum_offset": 2530,
+        "file_len": 2534,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 8,
@@ -2944,11 +3007,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "9938dd065f028772aec7e648af5cbea7b19ae0b521f90510872fab48f0063c51",
+      "native_plan_sha256": "0c80082e71b00ecdbc6218ea3d6ed4c82c799010d47e562d386cc6183c1b1274",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3017,7 +3080,7 @@
           "item_count": 2,
           "kind": "Types",
           "length": 29,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -3026,7 +3089,7 @@
           "item_count": 6,
           "kind": "ConstantTable",
           "length": 144,
-          "offset": 640,
+          "offset": 672,
           "reserved": 0
         },
         {
@@ -3035,7 +3098,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 88,
-          "offset": 784,
+          "offset": 816,
           "reserved": 0
         },
         {
@@ -3044,7 +3107,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 872,
+          "offset": 904,
           "reserved": 0
         },
         {
@@ -3053,7 +3116,7 @@
           "item_count": 8,
           "kind": "Instructions",
           "length": 96,
-          "offset": 872,
+          "offset": 904,
           "reserved": 0
         },
         {
@@ -3062,7 +3125,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 968,
+          "offset": 1000,
           "reserved": 0
         },
         {
@@ -3071,7 +3134,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 968,
+          "offset": 1000,
           "reserved": 0
         },
         {
@@ -3080,7 +3143,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 187,
-          "offset": 968,
+          "offset": 1000,
           "reserved": 0
         },
         {
@@ -3089,7 +3152,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 522,
-          "offset": 1160,
+          "offset": 1192,
           "reserved": 0
         },
         {
@@ -3098,7 +3161,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1688,
+          "offset": 1720,
           "reserved": 0
         },
         {
@@ -3107,7 +3170,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 51,
-          "offset": 1696,
+          "offset": 1728,
           "reserved": 0
         },
         {
@@ -3116,7 +3179,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 46,
-          "offset": 1752,
+          "offset": 1784,
           "reserved": 0
         },
         {
@@ -3124,8 +3187,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 88,
-          "offset": 1800,
+          "length": 101,
+          "offset": 1832,
           "reserved": 0
         },
         {
@@ -3134,7 +3197,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 403,
-          "offset": 1888,
+          "offset": 1936,
           "reserved": 0
         },
         {
@@ -3143,7 +3206,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 2296,
+          "offset": 2344,
           "reserved": 0
         },
         {
@@ -3152,7 +3215,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 2352,
+          "offset": 2400,
           "reserved": 0
         },
         {
@@ -3161,11 +3224,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 78,
-          "offset": 2360,
+          "offset": 2408,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 42,
+          "offset": 2488,
           "reserved": 0
         }
       ],
-      "sha256": "e975fa17d0273ed124dc9f1970aefe1449316214ba09a99d53d8d8d3db57fb16",
+      "sha256": "48adb63df63f1714a92e6a18ebf2a87ff2dfb2e0e2b677eef41b0ecc0a26a631",
       "source": "[1.0 2.0 3.0 4.0 5.0]",
       "source_file": "variadic-horzcat-f64.mec"
     },
@@ -3186,8 +3258,8 @@
       "expected_output": "bytecode-v1",
       "file": "string.mecb",
       "header": {
-        "checksum_offset": 1229,
-        "file_len": 1233,
+        "checksum_offset": 1306,
+        "file_len": 1310,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 2,
@@ -3211,11 +3283,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "383cfac4e49fc382a557247c889b5aee8ad5f7c1fa7931dc3c80c1955b341d3d",
+      "native_plan_sha256": "df556431d344e7b8e32c5ca48a807c17257a91a7f884c1c6aa7c60d3c68aaf5d",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3259,7 +3331,7 @@
           "item_count": 1,
           "kind": "Types",
           "length": 8,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -3268,7 +3340,7 @@
           "item_count": 1,
           "kind": "ConstantTable",
           "length": 24,
-          "offset": 616,
+          "offset": 648,
           "reserved": 0
         },
         {
@@ -3277,7 +3349,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 11,
-          "offset": 640,
+          "offset": 672,
           "reserved": 0
         },
         {
@@ -3286,7 +3358,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 656,
+          "offset": 688,
           "reserved": 0
         },
         {
@@ -3295,7 +3367,7 @@
           "item_count": 2,
           "kind": "Instructions",
           "length": 14,
-          "offset": 656,
+          "offset": 688,
           "reserved": 0
         },
         {
@@ -3304,7 +3376,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 672,
+          "offset": 704,
           "reserved": 0
         },
         {
@@ -3313,7 +3385,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 672,
+          "offset": 704,
           "reserved": 0
         },
         {
@@ -3322,7 +3394,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 45,
-          "offset": 672,
+          "offset": 704,
           "reserved": 0
         },
         {
@@ -3331,7 +3403,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 64,
-          "offset": 720,
+          "offset": 752,
           "reserved": 0
         },
         {
@@ -3340,7 +3412,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 784,
+          "offset": 816,
           "reserved": 0
         },
         {
@@ -3349,7 +3421,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 51,
-          "offset": 792,
+          "offset": 824,
           "reserved": 0
         },
         {
@@ -3358,7 +3430,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 46,
-          "offset": 848,
+          "offset": 880,
           "reserved": 0
         },
         {
@@ -3366,8 +3438,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 88,
-          "offset": 896,
+          "length": 101,
+          "offset": 928,
           "reserved": 0
         },
         {
@@ -3376,7 +3448,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 127,
-          "offset": 984,
+          "offset": 1032,
           "reserved": 0
         },
         {
@@ -3385,7 +3457,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1112,
+          "offset": 1160,
           "reserved": 0
         },
         {
@@ -3394,7 +3466,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1168,
+          "offset": 1216,
           "reserved": 0
         },
         {
@@ -3403,11 +3475,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 53,
-          "offset": 1176,
+          "offset": 1224,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 26,
+          "offset": 1280,
           "reserved": 0
         }
       ],
-      "sha256": "e71702dbad8a0c1f47271822aeb2637d012809908238d35bff094a4eead1dd94",
+      "sha256": "b9f316040d0a7a40af1fbf99729bac0544fade75e16d0607e33d57680de299f5",
       "source": "\"bytecode-v1\"",
       "source_file": "string.mec"
     },
@@ -3434,8 +3515,8 @@
       ],
       "file": "unary.mecb",
       "header": {
-        "checksum_offset": 1566,
-        "file_len": 1570,
+        "checksum_offset": 1642,
+        "file_len": 1646,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 4,
@@ -3459,11 +3540,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "3ced1c584e340b32accd66d387b8ace46afdb0e3ba2131c7d68a58399495a734",
+      "native_plan_sha256": "912a93a4986f83f50a76d9b888a7498f5919590ef30e6bdf68e7d96587cbe5f8",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3530,7 +3611,7 @@
           "item_count": 2,
           "kind": "Types",
           "length": 29,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -3539,7 +3620,7 @@
           "item_count": 2,
           "kind": "ConstantTable",
           "length": 48,
-          "offset": 640,
+          "offset": 672,
           "reserved": 0
         },
         {
@@ -3548,7 +3629,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 24,
-          "offset": 688,
+          "offset": 720,
           "reserved": 0
         },
         {
@@ -3557,7 +3638,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 712,
+          "offset": 744,
           "reserved": 0
         },
         {
@@ -3566,7 +3647,7 @@
           "item_count": 4,
           "kind": "Instructions",
           "length": 40,
-          "offset": 712,
+          "offset": 744,
           "reserved": 0
         },
         {
@@ -3575,7 +3656,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 752,
+          "offset": 784,
           "reserved": 0
         },
         {
@@ -3584,7 +3665,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 752,
+          "offset": 784,
           "reserved": 0
         },
         {
@@ -3593,7 +3674,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 187,
-          "offset": 752,
+          "offset": 784,
           "reserved": 0
         },
         {
@@ -3602,7 +3683,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 146,
-          "offset": 944,
+          "offset": 976,
           "reserved": 0
         },
         {
@@ -3611,7 +3692,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1096,
+          "offset": 1128,
           "reserved": 0
         },
         {
@@ -3620,7 +3701,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 51,
-          "offset": 1104,
+          "offset": 1136,
           "reserved": 0
         },
         {
@@ -3629,7 +3710,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 46,
-          "offset": 1160,
+          "offset": 1192,
           "reserved": 0
         },
         {
@@ -3637,8 +3718,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 88,
-          "offset": 1208,
+          "length": 101,
+          "offset": 1240,
           "reserved": 0
         },
         {
@@ -3647,7 +3728,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 127,
-          "offset": 1296,
+          "offset": 1344,
           "reserved": 0
         },
         {
@@ -3656,7 +3737,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1424,
+          "offset": 1472,
           "reserved": 0
         },
         {
@@ -3665,7 +3746,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1480,
+          "offset": 1528,
           "reserved": 0
         },
         {
@@ -3674,11 +3755,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 78,
-          "offset": 1488,
+          "offset": 1536,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 26,
+          "offset": 1616,
           "reserved": 0
         }
       ],
-      "sha256": "49cdc62c60d0b2c7c8849fd92d9928990dd9a0dc3f08a3fdcbf406300e959406",
+      "sha256": "e934f9e070acafb114f507dcc027e7b86ffa67f6f82f5d3badd9ed725495290c",
       "source": "[9.0]",
       "source_file": "unary.mec"
     },
@@ -3708,8 +3798,8 @@
       ],
       "file": "ternary.mecb",
       "header": {
-        "checksum_offset": 1957,
-        "file_len": 1961,
+        "checksum_offset": 2042,
+        "file_len": 2046,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 6,
@@ -3733,11 +3823,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "7efb30a8921ced54b636d6f0abf6006c9b56cf4b09e393bc12ba9c3843a776e5",
+      "native_plan_sha256": "2ed0e8d062eae40badb6a6c5661157724df4b5fc0399ec08a9ea96579e8b3c13",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3819,7 +3909,7 @@
           "item_count": 2,
           "kind": "Types",
           "length": 29,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -3828,7 +3918,7 @@
           "item_count": 3,
           "kind": "ConstantTable",
           "length": 72,
-          "offset": 640,
+          "offset": 672,
           "reserved": 0
         },
         {
@@ -3837,7 +3927,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 56,
-          "offset": 712,
+          "offset": 744,
           "reserved": 0
         },
         {
@@ -3846,7 +3936,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 768,
+          "offset": 800,
           "reserved": 0
         },
         {
@@ -3855,7 +3945,7 @@
           "item_count": 6,
           "kind": "Instructions",
           "length": 66,
-          "offset": 768,
+          "offset": 800,
           "reserved": 0
         },
         {
@@ -3864,7 +3954,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 840,
+          "offset": 872,
           "reserved": 0
         },
         {
@@ -3873,7 +3963,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 840,
+          "offset": 872,
           "reserved": 0
         },
         {
@@ -3882,7 +3972,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 187,
-          "offset": 840,
+          "offset": 872,
           "reserved": 0
         },
         {
@@ -3891,7 +3981,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 296,
-          "offset": 1032,
+          "offset": 1064,
           "reserved": 0
         },
         {
@@ -3900,7 +3990,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1328,
+          "offset": 1360,
           "reserved": 0
         },
         {
@@ -3909,7 +3999,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 51,
-          "offset": 1336,
+          "offset": 1368,
           "reserved": 0
         },
         {
@@ -3918,7 +4008,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 46,
-          "offset": 1392,
+          "offset": 1424,
           "reserved": 0
         },
         {
@@ -3926,8 +4016,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 88,
-          "offset": 1440,
+          "length": 101,
+          "offset": 1472,
           "reserved": 0
         },
         {
@@ -3936,7 +4026,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 265,
-          "offset": 1528,
+          "offset": 1576,
           "reserved": 0
         },
         {
@@ -3945,7 +4035,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1800,
+          "offset": 1848,
           "reserved": 0
         },
         {
@@ -3954,7 +4044,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1856,
+          "offset": 1904,
           "reserved": 0
         },
         {
@@ -3963,11 +4053,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 93,
-          "offset": 1864,
+          "offset": 1912,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 34,
+          "offset": 2008,
           "reserved": 0
         }
       ],
-      "sha256": "1918ad22c9907c406da17528b97ab3e16c1e0af5b37d5db85777fe6ebcc7d8cf",
+      "sha256": "3180c13013953bb47ad32a2d05ea2e11e7b907e81d4553d42c4ee34a9e0142e2",
       "source": "1.0..1.0..=4.0",
       "source_file": "ternary.mec"
     },
@@ -4031,8 +4130,8 @@
       ],
       "file": "quaternary.mecb",
       "header": {
-        "checksum_offset": 11885,
-        "file_len": 11889,
+        "checksum_offset": 12208,
+        "file_len": 12212,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 47,
@@ -4056,11 +4155,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "c9e16d0d77f9b8da4b3312d5a57c4e842443c4f8882680ca5906bb92b6cb924d",
+      "native_plan_sha256": "918cbcffc0c6431ef7751045d42d76c2f01893fb25c8eec23b2c9b281559d5f0",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4177,7 +4276,7 @@
           "item_count": 5,
           "kind": "Types",
           "length": 66,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -4186,7 +4285,7 @@
           "item_count": 30,
           "kind": "ConstantTable",
           "length": 720,
-          "offset": 680,
+          "offset": 712,
           "reserved": 0
         },
         {
@@ -4195,7 +4294,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 552,
-          "offset": 1400,
+          "offset": 1432,
           "reserved": 0
         },
         {
@@ -4204,7 +4303,7 @@
           "item_count": 4,
           "kind": "Symbols",
           "length": 64,
-          "offset": 1952,
+          "offset": 1984,
           "reserved": 0
         },
         {
@@ -4213,7 +4312,7 @@
           "item_count": 47,
           "kind": "Instructions",
           "length": 615,
-          "offset": 2016,
+          "offset": 2048,
           "reserved": 0
         },
         {
@@ -4222,7 +4321,7 @@
           "item_count": 4,
           "kind": "Dictionary",
           "length": 52,
-          "offset": 2632,
+          "offset": 2664,
           "reserved": 0
         },
         {
@@ -4231,7 +4330,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 2688,
+          "offset": 2720,
           "reserved": 0
         },
         {
@@ -4240,7 +4339,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 400,
-          "offset": 2688,
+          "offset": 2720,
           "reserved": 0
         },
         {
@@ -4249,7 +4348,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 2961,
-          "offset": 3088,
+          "offset": 3120,
           "reserved": 0
         },
         {
@@ -4258,7 +4357,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 6056,
+          "offset": 6088,
           "reserved": 0
         },
         {
@@ -4267,7 +4366,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 654,
-          "offset": 6064,
+          "offset": 6096,
           "reserved": 0
         },
         {
@@ -4276,7 +4375,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 589,
-          "offset": 6720,
+          "offset": 6752,
           "reserved": 0
         },
         {
@@ -4284,8 +4383,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 1178,
-          "offset": 7312,
+          "length": 1347,
+          "offset": 7344,
           "reserved": 0
         },
         {
@@ -4294,7 +4393,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 3004,
-          "offset": 8496,
+          "offset": 8696,
           "reserved": 0
         },
         {
@@ -4303,7 +4402,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 53,
-          "offset": 11504,
+          "offset": 11704,
           "reserved": 0
         },
         {
@@ -4312,7 +4411,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 11560,
+          "offset": 11760,
           "reserved": 0
         },
         {
@@ -4321,11 +4420,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 317,
-          "offset": 11568,
+          "offset": 11768,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 120,
+          "offset": 12088,
           "reserved": 0
         }
       ],
-      "sha256": "55039f735e3fdbb8b566807ae62ebd94d944044e640ad7b4840652c1d72bf0ef",
+      "sha256": "5329d9d6bc8f061e3e7401a130c82cf35201d9b6731ee950a99cfdce2c4b0013",
       "source": "a := [1.0 2.0 3.0 4.0 5.0]; b := [6.0 7.0 8.0 9.0 10.0]; c := [11.0 12.0 13.0 14.0 15.0]; d := [16.0 17.0 18.0 19.0 20.0]; [a; b; c; d]",
       "source_file": "quaternary.mec"
     },
@@ -4346,8 +4454,8 @@
       "expected_output": 0.0,
       "file": "named-module-operation.mecb",
       "header": {
-        "checksum_offset": 1260,
-        "file_len": 1264,
+        "checksum_offset": 1338,
+        "file_len": 1342,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 4,
@@ -4371,11 +4479,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "5f923a8bd1c0b185ab971628367a54d31e2501d57df8eeceb69dcb06c7254d90",
+      "native_plan_sha256": "6f7eb1a7d07ab04fff3938be8717112fa1811ee17da4193f07ad37040d4a88d6",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4439,7 +4547,7 @@
           "item_count": 1,
           "kind": "Types",
           "length": 8,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -4448,7 +4556,7 @@
           "item_count": 1,
           "kind": "ConstantTable",
           "length": 24,
-          "offset": 616,
+          "offset": 648,
           "reserved": 0
         },
         {
@@ -4457,7 +4565,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 8,
-          "offset": 640,
+          "offset": 672,
           "reserved": 0
         },
         {
@@ -4466,7 +4574,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 648,
+          "offset": 680,
           "reserved": 0
         },
         {
@@ -4475,7 +4583,7 @@
           "item_count": 4,
           "kind": "Instructions",
           "length": 40,
-          "offset": 648,
+          "offset": 680,
           "reserved": 0
         },
         {
@@ -4484,7 +4592,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 688,
+          "offset": 720,
           "reserved": 0
         },
         {
@@ -4493,7 +4601,7 @@
           "item_count": 0,
           "kind": "ApplicationRequirements",
           "length": 0,
-          "offset": 688,
+          "offset": 720,
           "reserved": 0
         },
         {
@@ -4502,7 +4610,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 60,
-          "offset": 688,
+          "offset": 720,
           "reserved": 0
         },
         {
@@ -4511,7 +4619,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 49,
-          "offset": 752,
+          "offset": 784,
           "reserved": 0
         },
         {
@@ -4520,7 +4628,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 808,
+          "offset": 840,
           "reserved": 0
         },
         {
@@ -4529,7 +4637,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 51,
-          "offset": 816,
+          "offset": 848,
           "reserved": 0
         },
         {
@@ -4538,7 +4646,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 46,
-          "offset": 872,
+          "offset": 904,
           "reserved": 0
         },
         {
@@ -4546,8 +4654,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 88,
-          "offset": 920,
+          "length": 101,
+          "offset": 952,
           "reserved": 0
         },
         {
@@ -4556,7 +4664,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 127,
-          "offset": 1008,
+          "offset": 1056,
           "reserved": 0
         },
         {
@@ -4565,7 +4673,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1136,
+          "offset": 1184,
           "reserved": 0
         },
         {
@@ -4574,7 +4682,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1192,
+          "offset": 1240,
           "reserved": 0
         },
         {
@@ -4583,11 +4691,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 60,
-          "offset": 1200,
+          "offset": 1248,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 26,
+          "offset": 1312,
           "reserved": 0
         }
       ],
-      "sha256": "1506f1b195de4f89ccc2e528e01debae650b5f0557c2c2c476d682074fbc3957",
+      "sha256": "ae85588f576d164482fd8eb468fafc3eb1a1a4e48b89851b1571c070dfabbc4f",
       "source": "+> math\nmath/sin(0.0)",
       "source_file": "named-module-operation.mec"
     },
@@ -4623,8 +4740,8 @@
       "expected_output": "done",
       "file": "cli-stdout.mecb",
       "header": {
-        "checksum_offset": 1658,
-        "file_len": 1662,
+        "checksum_offset": 1777,
+        "file_len": 1781,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -4648,11 +4765,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "4cde7058fa9a8227905a6c8c863fa20299a241c55648a17276390d2dfde3d24b",
+      "native_plan_sha256": "6ff3a1562c28537740dfacf3c3bf2c9ffdba730d5698994ed54ad571eedd729c",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4725,7 +4842,7 @@
           "item_count": 2,
           "kind": "Types",
           "length": 16,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -4734,7 +4851,7 @@
           "item_count": 3,
           "kind": "ConstantTable",
           "length": 72,
-          "offset": 624,
+          "offset": 656,
           "reserved": 0
         },
         {
@@ -4743,7 +4860,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 20,
-          "offset": 696,
+          "offset": 728,
           "reserved": 0
         },
         {
@@ -4752,7 +4869,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 720,
+          "offset": 752,
           "reserved": 0
         },
         {
@@ -4761,7 +4878,7 @@
           "item_count": 5,
           "kind": "Instructions",
           "length": 45,
-          "offset": 720,
+          "offset": 752,
           "reserved": 0
         },
         {
@@ -4770,7 +4887,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 768,
+          "offset": 800,
           "reserved": 0
         },
         {
@@ -4779,7 +4896,7 @@
           "item_count": 1,
           "kind": "ApplicationRequirements",
           "length": 47,
-          "offset": 768,
+          "offset": 800,
           "reserved": 0
         },
         {
@@ -4788,7 +4905,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 45,
-          "offset": 816,
+          "offset": 848,
           "reserved": 0
         },
         {
@@ -4797,7 +4914,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 125,
-          "offset": 864,
+          "offset": 896,
           "reserved": 0
         },
         {
@@ -4806,7 +4923,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 992,
+          "offset": 1024,
           "reserved": 0
         },
         {
@@ -4815,7 +4932,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 51,
-          "offset": 1000,
+          "offset": 1032,
           "reserved": 0
         },
         {
@@ -4824,7 +4941,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 46,
-          "offset": 1056,
+          "offset": 1088,
           "reserved": 0
         },
         {
@@ -4832,8 +4949,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 175,
-          "offset": 1104,
+          "length": 201,
+          "offset": 1136,
           "reserved": 0
         },
         {
@@ -4842,7 +4959,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 196,
-          "offset": 1280,
+          "offset": 1344,
           "reserved": 0
         },
         {
@@ -4851,7 +4968,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1480,
+          "offset": 1544,
           "reserved": 0
         },
         {
@@ -4860,7 +4977,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1536,
+          "offset": 1600,
           "reserved": 0
         },
         {
@@ -4869,11 +4986,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 114,
-          "offset": 1544,
+          "offset": 1608,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 49,
+          "offset": 1728,
           "reserved": 0
         }
       ],
-      "sha256": "5e2d5fba7ef7b56a972e6c97323c6b733ea8137956164f10a86903f05d20d408",
+      "sha256": "4ae83459ed3f2f65ce7cee0720aa8ed859b8887c02cd67eeda26707cf692b877",
       "source": "+> @out := cli/stdout\n\n@out/line <- \"phase1-hosted-ok\"\n\n\"done\"",
       "source_file": "cli-stdout.mec"
     },
@@ -4909,8 +5035,8 @@
       "expected_output": "console-done",
       "file": "console.mecb",
       "header": {
-        "checksum_offset": 1682,
-        "file_len": 1686,
+        "checksum_offset": 1801,
+        "file_len": 1805,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -4934,11 +5060,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "4041b30f9847fa11c72d191edadab7ce567a95e98c69665cd1cc88ea2267bf4e",
+      "native_plan_sha256": "98d76de1799ba02a5f4a2ae4c1201fbcfe42f6dfc6a18967b41461bf130d3877",
       "origin": "source-compiler",
       "packages": [
         {
@@ -5011,7 +5137,7 @@
           "item_count": 2,
           "kind": "Types",
           "length": 16,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -5020,7 +5146,7 @@
           "item_count": 3,
           "kind": "ConstantTable",
           "length": 72,
-          "offset": 624,
+          "offset": 656,
           "reserved": 0
         },
         {
@@ -5029,7 +5155,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 31,
-          "offset": 696,
+          "offset": 728,
           "reserved": 0
         },
         {
@@ -5038,7 +5164,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 728,
+          "offset": 760,
           "reserved": 0
         },
         {
@@ -5047,7 +5173,7 @@
           "item_count": 5,
           "kind": "Instructions",
           "length": 45,
-          "offset": 728,
+          "offset": 760,
           "reserved": 0
         },
         {
@@ -5056,7 +5182,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 776,
+          "offset": 808,
           "reserved": 0
         },
         {
@@ -5065,7 +5191,7 @@
           "item_count": 1,
           "kind": "ApplicationRequirements",
           "length": 55,
-          "offset": 776,
+          "offset": 808,
           "reserved": 0
         },
         {
@@ -5074,7 +5200,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 45,
-          "offset": 832,
+          "offset": 864,
           "reserved": 0
         },
         {
@@ -5083,7 +5209,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 136,
-          "offset": 880,
+          "offset": 912,
           "reserved": 0
         },
         {
@@ -5092,7 +5218,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1016,
+          "offset": 1048,
           "reserved": 0
         },
         {
@@ -5101,7 +5227,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 51,
-          "offset": 1024,
+          "offset": 1056,
           "reserved": 0
         },
         {
@@ -5110,7 +5236,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 46,
-          "offset": 1080,
+          "offset": 1112,
           "reserved": 0
         },
         {
@@ -5118,8 +5244,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 175,
-          "offset": 1128,
+          "length": 201,
+          "offset": 1160,
           "reserved": 0
         },
         {
@@ -5128,7 +5254,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 196,
-          "offset": 1304,
+          "offset": 1368,
           "reserved": 0
         },
         {
@@ -5137,7 +5263,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1504,
+          "offset": 1568,
           "reserved": 0
         },
         {
@@ -5146,7 +5272,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1560,
+          "offset": 1624,
           "reserved": 0
         },
         {
@@ -5155,11 +5281,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 114,
-          "offset": 1568,
+          "offset": 1632,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 49,
+          "offset": 1752,
           "reserved": 0
         }
       ],
-      "sha256": "e894a7dd0d9dabb755136a1effb21fe9b4d34b0257c13b25ed0496eefa286d6e",
+      "sha256": "8e4bcbf1ada685c8493bcbd618174d267eb883ae62b9a9674b06348bf9141a7e",
       "source": "@out := console://console/output{:write(line)}\n@out/line <- \"bytecode-v1-console\"\n\"console-done\"",
       "source_file": "console.mec"
     },
@@ -5203,8 +5338,8 @@
       "expected_output": "time-done",
       "file": "time.mecb",
       "header": {
-        "checksum_offset": 2482,
-        "file_len": 2486,
+        "checksum_offset": 2638,
+        "file_len": 2642,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 7,
@@ -5228,11 +5363,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "0b4943caec631c158839b00e22e0491056f594c8085aaf0f495a07b7979faf9f",
+      "native_plan_sha256": "db0226466d6228ae20057b11e0763eb57c55ac3daeeebef658003a3e6e4b0399",
       "origin": "source-compiler",
       "packages": [
         {
@@ -5325,7 +5460,7 @@
           "item_count": 3,
           "kind": "Types",
           "length": 24,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -5334,7 +5469,7 @@
           "item_count": 4,
           "kind": "ConstantTable",
           "length": 96,
-          "offset": 632,
+          "offset": 664,
           "reserved": 0
         },
         {
@@ -5343,7 +5478,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 24,
-          "offset": 728,
+          "offset": 760,
           "reserved": 0
         },
         {
@@ -5352,7 +5487,7 @@
           "item_count": 1,
           "kind": "Symbols",
           "length": 16,
-          "offset": 752,
+          "offset": 784,
           "reserved": 0
         },
         {
@@ -5361,7 +5496,7 @@
           "item_count": 7,
           "kind": "Instructions",
           "length": 71,
-          "offset": 768,
+          "offset": 800,
           "reserved": 0
         },
         {
@@ -5370,7 +5505,7 @@
           "item_count": 1,
           "kind": "Dictionary",
           "length": 18,
-          "offset": 840,
+          "offset": 872,
           "reserved": 0
         },
         {
@@ -5379,7 +5514,7 @@
           "item_count": 1,
           "kind": "ApplicationRequirements",
           "length": 49,
-          "offset": 864,
+          "offset": 896,
           "reserved": 0
         },
         {
@@ -5388,7 +5523,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 146,
-          "offset": 920,
+          "offset": 952,
           "reserved": 0
         },
         {
@@ -5397,7 +5532,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 221,
-          "offset": 1072,
+          "offset": 1104,
           "reserved": 0
         },
         {
@@ -5406,7 +5541,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1296,
+          "offset": 1328,
           "reserved": 0
         },
         {
@@ -5415,7 +5550,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 151,
-          "offset": 1304,
+          "offset": 1336,
           "reserved": 0
         },
         {
@@ -5424,7 +5559,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 136,
-          "offset": 1456,
+          "offset": 1488,
           "reserved": 0
         },
         {
@@ -5432,8 +5567,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 262,
-          "offset": 1592,
+          "length": 301,
+          "offset": 1624,
           "reserved": 0
         },
         {
@@ -5442,7 +5577,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 379,
-          "offset": 1856,
+          "offset": 1928,
           "reserved": 0
         },
         {
@@ -5451,7 +5586,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 2240,
+          "offset": 2312,
           "reserved": 0
         },
         {
@@ -5460,7 +5595,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 2296,
+          "offset": 2368,
           "reserved": 0
         },
         {
@@ -5469,11 +5604,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 178,
-          "offset": 2304,
+          "offset": 2376,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 78,
+          "offset": 2560,
           "reserved": 0
         }
       ],
-      "sha256": "abc33e0ad636a1ac2c19937e30624136bad8ee0e5fac74bd37a421badfae4a84",
+      "sha256": "4b22452ac2d692f2c37f3e8a1a1509b02d23f4ad4be10f11b2f56c3844ae22c7",
       "source": "@clock := time://clock/clock{:read(second)}\nsecond := @clock/second\n\"time-done\"",
       "source_file": "time.mec"
     },
@@ -5517,8 +5661,8 @@
       "expected_output": "timer-done",
       "file": "timer.mecb",
       "header": {
-        "checksum_offset": 2466,
-        "file_len": 2470,
+        "checksum_offset": 2622,
+        "file_len": 2626,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 7,
@@ -5542,11 +5686,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "78526180bd6c635b8aeb70e9866761bc32c2dd56bb182a684850a934196cd059",
+      "native_plan_sha256": "8934e90d1c659991d44d159f2c14fd5011050f5def8fae373ab101eb926e7daf",
       "origin": "source-compiler",
       "packages": [
         {
@@ -5639,7 +5783,7 @@
           "item_count": 3,
           "kind": "Types",
           "length": 24,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -5648,7 +5792,7 @@
           "item_count": 4,
           "kind": "ConstantTable",
           "length": 96,
-          "offset": 632,
+          "offset": 664,
           "reserved": 0
         },
         {
@@ -5657,7 +5801,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 23,
-          "offset": 728,
+          "offset": 760,
           "reserved": 0
         },
         {
@@ -5666,7 +5810,7 @@
           "item_count": 1,
           "kind": "Symbols",
           "length": 16,
-          "offset": 752,
+          "offset": 784,
           "reserved": 0
         },
         {
@@ -5675,7 +5819,7 @@
           "item_count": 7,
           "kind": "Instructions",
           "length": 71,
-          "offset": 768,
+          "offset": 800,
           "reserved": 0
         },
         {
@@ -5684,7 +5828,7 @@
           "item_count": 1,
           "kind": "Dictionary",
           "length": 16,
-          "offset": 840,
+          "offset": 872,
           "reserved": 0
         },
         {
@@ -5693,7 +5837,7 @@
           "item_count": 1,
           "kind": "ApplicationRequirements",
           "length": 46,
-          "offset": 856,
+          "offset": 888,
           "reserved": 0
         },
         {
@@ -5702,7 +5846,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 146,
-          "offset": 904,
+          "offset": 936,
           "reserved": 0
         },
         {
@@ -5711,7 +5855,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 220,
-          "offset": 1056,
+          "offset": 1088,
           "reserved": 0
         },
         {
@@ -5720,7 +5864,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1280,
+          "offset": 1312,
           "reserved": 0
         },
         {
@@ -5729,7 +5873,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 151,
-          "offset": 1288,
+          "offset": 1320,
           "reserved": 0
         },
         {
@@ -5738,7 +5882,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 136,
-          "offset": 1440,
+          "offset": 1472,
           "reserved": 0
         },
         {
@@ -5746,8 +5890,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 262,
-          "offset": 1576,
+          "length": 301,
+          "offset": 1608,
           "reserved": 0
         },
         {
@@ -5756,7 +5900,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 379,
-          "offset": 1840,
+          "offset": 1912,
           "reserved": 0
         },
         {
@@ -5765,7 +5909,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 2224,
+          "offset": 2296,
           "reserved": 0
         },
         {
@@ -5774,7 +5918,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 2280,
+          "offset": 2352,
           "reserved": 0
         },
         {
@@ -5783,11 +5927,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 178,
-          "offset": 2288,
+          "offset": 2360,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 78,
+          "offset": 2544,
           "reserved": 0
         }
       ],
-      "sha256": "ebffe3dc4fecb64c9f292003ec2da814d6766652ea133b938eaef004a99c00a0",
+      "sha256": "73dcb4b8661d6e720eb24939f0c3464d1dcb99d5a1531c958c1671f9881c6c0a",
       "source": "@timer := timer://timer/tick{:read(tick)}\ntick := @timer/tick\n\"timer-done\"",
       "source_file": "timer.mec"
     },
@@ -5834,8 +5987,8 @@
       "expected_output": "scene-done",
       "file": "scene.mecb",
       "header": {
-        "checksum_offset": 2730,
-        "file_len": 2734,
+        "checksum_offset": 2883,
+        "file_len": 2887,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 8,
@@ -5859,11 +6012,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "15a7004023445e8ff4859095062e4c4ffda137243362fdf81c2fb858ef786d6e",
+      "native_plan_sha256": "dd855858d1c756c54dfcb5f463a3017a6c6ce99a19ba3588a56f0afdeb7d30c8",
       "origin": "source-compiler",
       "packages": [
         {
@@ -5991,7 +6144,7 @@
           "item_count": 5,
           "kind": "Types",
           "length": 89,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -6000,7 +6153,7 @@
           "item_count": 5,
           "kind": "ConstantTable",
           "length": 120,
-          "offset": 704,
+          "offset": 736,
           "reserved": 0
         },
         {
@@ -6009,7 +6162,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 53,
-          "offset": 824,
+          "offset": 856,
           "reserved": 0
         },
         {
@@ -6018,7 +6171,7 @@
           "item_count": 1,
           "kind": "Symbols",
           "length": 16,
-          "offset": 880,
+          "offset": 912,
           "reserved": 0
         },
         {
@@ -6027,7 +6180,7 @@
           "item_count": 8,
           "kind": "Instructions",
           "length": 84,
-          "offset": 896,
+          "offset": 928,
           "reserved": 0
         },
         {
@@ -6036,7 +6189,7 @@
           "item_count": 1,
           "kind": "Dictionary",
           "length": 17,
-          "offset": 984,
+          "offset": 1016,
           "reserved": 0
         },
         {
@@ -6045,7 +6198,7 @@
           "item_count": 1,
           "kind": "ApplicationRequirements",
           "length": 52,
-          "offset": 1008,
+          "offset": 1040,
           "reserved": 0
         },
         {
@@ -6054,7 +6207,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 276,
-          "offset": 1064,
+          "offset": 1096,
           "reserved": 0
         },
         {
@@ -6063,7 +6216,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 173,
-          "offset": 1344,
+          "offset": 1376,
           "reserved": 0
         },
         {
@@ -6072,7 +6225,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 48,
-          "offset": 1520,
+          "offset": 1552,
           "reserved": 0
         },
         {
@@ -6081,7 +6234,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 151,
-          "offset": 1568,
+          "offset": 1600,
           "reserved": 0
         },
         {
@@ -6090,7 +6243,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 103,
-          "offset": 1720,
+          "offset": 1752,
           "reserved": 0
         },
         {
@@ -6098,8 +6251,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 262,
-          "offset": 1824,
+          "length": 301,
+          "offset": 1856,
           "reserved": 0
         },
         {
@@ -6108,7 +6261,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 387,
-          "offset": 2088,
+          "offset": 2160,
           "reserved": 0
         },
         {
@@ -6117,7 +6270,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 2480,
+          "offset": 2552,
           "reserved": 0
         },
         {
@@ -6126,7 +6279,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 2536,
+          "offset": 2608,
           "reserved": 0
         },
         {
@@ -6135,11 +6288,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 186,
-          "offset": 2544,
+          "offset": 2616,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 75,
+          "offset": 2808,
           "reserved": 0
         }
       ],
-      "sha256": "06c7ed62bb5f6af535487b595266870644dfe602c40664cafff96e3ff272e2fc",
+      "sha256": "f67daa150e50a2fbd0d7171b16e331327c667b721e2bd82b794b20f699ad4f9e",
       "source": "@frame := scene://scene/frame{:write(replace)}\nframe := {width: 640.0, height: 480.0, background: \"black\"}\n@frame/replace <- frame\n\"scene-done\"",
       "source_file": "scene.mec"
     },
@@ -6178,8 +6340,8 @@
       "expected_output": "robot-done",
       "file": "robot-arm.mecb",
       "header": {
-        "checksum_offset": 1697,
-        "file_len": 1701,
+        "checksum_offset": 1816,
+        "file_len": 1820,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -6203,11 +6365,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "eb7c25bdcabb9d17f1ed8fae032dd9ec6b712880370b09b3a11d211bc00620d2",
+      "native_plan_sha256": "bca10036c77c8d7413d19df215a30a37794115975b5ed16d9f30cbf04c97d755",
       "origin": "source-compiler",
       "packages": [
         {
@@ -6289,7 +6451,7 @@
           "item_count": 3,
           "kind": "Types",
           "length": 24,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -6298,7 +6460,7 @@
           "item_count": 3,
           "kind": "ConstantTable",
           "length": 72,
-          "offset": 632,
+          "offset": 664,
           "reserved": 0
         },
         {
@@ -6307,7 +6469,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 11,
-          "offset": 704,
+          "offset": 736,
           "reserved": 0
         },
         {
@@ -6316,7 +6478,7 @@
           "item_count": 0,
           "kind": "Symbols",
           "length": 0,
-          "offset": 720,
+          "offset": 752,
           "reserved": 0
         },
         {
@@ -6325,7 +6487,7 @@
           "item_count": 5,
           "kind": "Instructions",
           "length": 45,
-          "offset": 720,
+          "offset": 752,
           "reserved": 0
         },
         {
@@ -6334,7 +6496,7 @@
           "item_count": 0,
           "kind": "Dictionary",
           "length": 0,
-          "offset": 768,
+          "offset": 800,
           "reserved": 0
         },
         {
@@ -6343,7 +6505,7 @@
           "item_count": 1,
           "kind": "ApplicationRequirements",
           "length": 52,
-          "offset": 768,
+          "offset": 800,
           "reserved": 0
         },
         {
@@ -6352,7 +6514,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 87,
-          "offset": 824,
+          "offset": 856,
           "reserved": 0
         },
         {
@@ -6361,7 +6523,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 115,
-          "offset": 912,
+          "offset": 944,
           "reserved": 0
         },
         {
@@ -6370,7 +6532,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1032,
+          "offset": 1064,
           "reserved": 0
         },
         {
@@ -6379,7 +6541,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 51,
-          "offset": 1040,
+          "offset": 1072,
           "reserved": 0
         },
         {
@@ -6388,7 +6550,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 46,
-          "offset": 1096,
+          "offset": 1128,
           "reserved": 0
         },
         {
@@ -6396,8 +6558,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 175,
-          "offset": 1144,
+          "length": 201,
+          "offset": 1176,
           "reserved": 0
         },
         {
@@ -6406,7 +6568,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 196,
-          "offset": 1320,
+          "offset": 1384,
           "reserved": 0
         },
         {
@@ -6415,7 +6577,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1520,
+          "offset": 1584,
           "reserved": 0
         },
         {
@@ -6424,7 +6586,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1576,
+          "offset": 1640,
           "reserved": 0
         },
         {
@@ -6433,11 +6595,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 113,
-          "offset": 1584,
+          "offset": 1648,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 48,
+          "offset": 1768,
           "reserved": 0
         }
       ],
-      "sha256": "3729127cd73577bc78dee2f364a4faee919befd4185dfc5a8070939360516f72",
+      "sha256": "a4553c4898358c17b71b60f065025304b7d4f82af48f6869dc9fbea433f2ae27",
       "source": "@arm := robot://arm/commands{:move(move)}\n@arm/move <- true\n\"robot-done\"",
       "source_file": "robot-arm.mec"
     },
@@ -6472,8 +6643,8 @@
       "expected_output": "actor-done",
       "file": "actor-host-function.mecb",
       "header": {
-        "checksum_offset": 2393,
-        "file_len": 2397,
+        "checksum_offset": 2542,
+        "file_len": 2546,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 7,
@@ -6497,11 +6668,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "2f301b8301fd17ed68899409d879d902f0c5a99d99a59db608fcbc5e7376b1c9",
+      "native_plan_sha256": "19962e089446c86ea47b6041b4ff7c99bdcb5c51c39a827629287d208825a8a6",
       "origin": "source-compiler",
       "packages": [
         {
@@ -6575,7 +6746,7 @@
           "item_count": 2,
           "kind": "Types",
           "length": 16,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -6584,7 +6755,7 @@
           "item_count": 4,
           "kind": "ConstantTable",
           "length": 96,
-          "offset": 624,
+          "offset": 656,
           "reserved": 0
         },
         {
@@ -6593,7 +6764,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 16,
-          "offset": 720,
+          "offset": 752,
           "reserved": 0
         },
         {
@@ -6602,7 +6773,7 @@
           "item_count": 1,
           "kind": "Symbols",
           "length": 16,
-          "offset": 736,
+          "offset": 768,
           "reserved": 0
         },
         {
@@ -6611,7 +6782,7 @@
           "item_count": 7,
           "kind": "Instructions",
           "length": 75,
-          "offset": 752,
+          "offset": 784,
           "reserved": 0
         },
         {
@@ -6620,7 +6791,7 @@
           "item_count": 1,
           "kind": "Dictionary",
           "length": 17,
-          "offset": 832,
+          "offset": 864,
           "reserved": 0
         },
         {
@@ -6629,7 +6800,7 @@
           "item_count": 1,
           "kind": "ApplicationRequirements",
           "length": 30,
-          "offset": 856,
+          "offset": 888,
           "reserved": 0
         },
         {
@@ -6638,7 +6809,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 87,
-          "offset": 888,
+          "offset": 920,
           "reserved": 0
         },
         {
@@ -6647,7 +6818,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 225,
-          "offset": 976,
+          "offset": 1008,
           "reserved": 0
         },
         {
@@ -6656,7 +6827,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1208,
+          "offset": 1240,
           "reserved": 0
         },
         {
@@ -6665,7 +6836,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 151,
-          "offset": 1216,
+          "offset": 1248,
           "reserved": 0
         },
         {
@@ -6674,7 +6845,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 136,
-          "offset": 1368,
+          "offset": 1400,
           "reserved": 0
         },
         {
@@ -6682,8 +6853,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 262,
-          "offset": 1504,
+          "length": 301,
+          "offset": 1536,
           "reserved": 0
         },
         {
@@ -6692,7 +6863,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 379,
-          "offset": 1768,
+          "offset": 1840,
           "reserved": 0
         },
         {
@@ -6701,7 +6872,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 2152,
+          "offset": 2224,
           "reserved": 0
         },
         {
@@ -6710,7 +6881,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 2208,
+          "offset": 2280,
           "reserved": 0
         },
         {
@@ -6719,11 +6890,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 177,
-          "offset": 2216,
+          "offset": 2288,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 70,
+          "offset": 2472,
           "reserved": 0
         }
       ],
-      "sha256": "4752c1106755e9b74cbc80c3d231708fd2471cf26c88934b5ce3780234ebb43e",
+      "sha256": "6147155f5a78781a091d936249da0860f20994b81ddf06e340d159446b180f4d",
       "source": "state := actor/state/id()\n\"actor-done\"",
       "source_file": "actor-host-function.mec"
     },
@@ -6798,8 +6978,8 @@
       ],
       "file": "synthetic-live-read.mecb",
       "header": {
-        "checksum_offset": 5420,
-        "file_len": 5424,
+        "checksum_offset": 5751,
+        "file_len": 5755,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 23,
@@ -6823,11 +7003,11 @@
           0
         ],
         "reserved0": 0,
-        "section_count": 17,
+        "section_count": 18,
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "80fb4d03c464b9caecf446974be577a56cabca956ddb2102b15843e444b97ae6",
+      "native_plan_sha256": "55b7661a5fb0cfdfd40fc9c54d8e6a01c5376fa4bc9d16b14db6ec2595fc0186",
       "origin": "source-compiler",
       "packages": [
         {
@@ -7005,7 +7185,7 @@
           "item_count": 7,
           "kind": "Types",
           "length": 92,
-          "offset": 608,
+          "offset": 640,
           "reserved": 0
         },
         {
@@ -7014,7 +7194,7 @@
           "item_count": 9,
           "kind": "ConstantTable",
           "length": 216,
-          "offset": 704,
+          "offset": 736,
           "reserved": 0
         },
         {
@@ -7023,7 +7203,7 @@
           "item_count": 0,
           "kind": "ConstantBlob",
           "length": 93,
-          "offset": 920,
+          "offset": 952,
           "reserved": 0
         },
         {
@@ -7032,7 +7212,7 @@
           "item_count": 4,
           "kind": "Symbols",
           "length": 64,
-          "offset": 1016,
+          "offset": 1048,
           "reserved": 0
         },
         {
@@ -7041,7 +7221,7 @@
           "item_count": 23,
           "kind": "Instructions",
           "length": 271,
-          "offset": 1080,
+          "offset": 1112,
           "reserved": 0
         },
         {
@@ -7050,7 +7230,7 @@
           "item_count": 4,
           "kind": "Dictionary",
           "length": 72,
-          "offset": 1352,
+          "offset": 1384,
           "reserved": 0
         },
         {
@@ -7059,7 +7239,7 @@
           "item_count": 3,
           "kind": "ApplicationRequirements",
           "length": 165,
-          "offset": 1424,
+          "offset": 1456,
           "reserved": 0
         },
         {
@@ -7068,7 +7248,7 @@
           "item_count": 1,
           "kind": "ArtifactSchemas",
           "length": 342,
-          "offset": 1592,
+          "offset": 1624,
           "reserved": 0
         },
         {
@@ -7077,7 +7257,7 @@
           "item_count": 1,
           "kind": "ArtifactConstants",
           "length": 334,
-          "offset": 1936,
+          "offset": 1968,
           "reserved": 0
         },
         {
@@ -7086,7 +7266,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 97,
-          "offset": 2272,
+          "offset": 2304,
           "reserved": 0
         },
         {
@@ -7095,7 +7275,7 @@
           "item_count": 1,
           "kind": "ArtifactSlots",
           "length": 401,
-          "offset": 2376,
+          "offset": 2408,
           "reserved": 0
         },
         {
@@ -7104,7 +7284,7 @@
           "item_count": 1,
           "kind": "ArtifactProducers",
           "length": 295,
-          "offset": 2784,
+          "offset": 2816,
           "reserved": 0
         },
         {
@@ -7112,8 +7292,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 714,
-          "offset": 3080,
+          "length": 818,
+          "offset": 3112,
           "reserved": 0
         },
         {
@@ -7122,7 +7302,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 1163,
-          "offset": 3800,
+          "offset": 3936,
           "reserved": 0
         },
         {
@@ -7131,7 +7311,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 53,
-          "offset": 4968,
+          "offset": 5104,
           "reserved": 0
         },
         {
@@ -7140,7 +7320,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 5024,
+          "offset": 5160,
           "reserved": 0
         },
         {
@@ -7149,11 +7329,20 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 388,
-          "offset": 5032,
+          "offset": 5168,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 191,
+          "offset": 5560,
           "reserved": 0
         }
       ],
-      "sha256": "3871e0907a9276f23cb9141c8d96485f3b8eee4b50af35035c047fded2c5c464",
+      "sha256": "f04ac1be7f6d675fa93965113bff82641d715f5d9ed0e9d59fe08d08d399043e",
       "source": "+> @clock := test-live/clock\n\n+> @out := test-live/output\n\nvalue := @clock/value\ndoubled := value + value\n\npayload := (value, doubled)\nframe := {rotation: value}\n@out/tuple <- payload\n@out/frame <- frame\n\npayload",
       "source_file": "synthetic-live-read.mec"
     }

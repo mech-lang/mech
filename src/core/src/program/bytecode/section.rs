@@ -4,9 +4,9 @@ use alloc::vec::Vec;
 use std::vec::Vec;
 
 pub const BYTECODE_SECTION_ENTRY_SIZE: usize = 32;
-pub const BYTECODE_SECTION_COUNT: usize = 17;
+pub const BYTECODE_SECTION_COUNT: usize = 18;
 pub const BYTECODE_SECTION_TABLE_OFFSET: u64 = 64;
-pub const BYTECODE_CONTENT_OFFSET: u64 = 608;
+pub const BYTECODE_CONTENT_OFFSET: u64 = 640;
 
 #[repr(u16)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -28,6 +28,7 @@ pub enum BytecodeSectionKind {
     ArtifactOutputs = 15,
     ArtifactIntegrityConstraints = 16,
     ArtifactOperations = 17,
+    ArtifactOperationContracts = 18,
 }
 
 impl BytecodeSectionKind {
@@ -49,6 +50,7 @@ impl BytecodeSectionKind {
         Self::ArtifactOutputs,
         Self::ArtifactIntegrityConstraints,
         Self::ArtifactOperations,
+        Self::ArtifactOperationContracts,
     ];
 
     pub fn from_u16(value: u16) -> Option<Self> {
@@ -73,6 +75,7 @@ pub struct BytecodeArtifactSections {
     pub outputs: Vec<u8>,
     pub integrity_constraints: Vec<u8>,
     pub operations: Vec<u8>,
+    pub operation_contracts: Vec<u8>,
 }
 
 impl BytecodeArtifactSections {
@@ -87,9 +90,10 @@ impl BytecodeArtifactSections {
             && self.outputs.is_empty()
             && self.integrity_constraints.is_empty()
             && self.operations.is_empty()
+            && self.operation_contracts.is_empty()
     }
 
-    pub(crate) fn ordered(&self) -> [&[u8]; 10] {
+    pub(crate) fn ordered(&self) -> [&[u8]; 11] {
         [
             &self.schemas,
             &self.constants,
@@ -101,6 +105,7 @@ impl BytecodeArtifactSections {
             &self.outputs,
             &self.integrity_constraints,
             &self.operations,
+            &self.operation_contracts,
         ]
     }
 }

@@ -429,6 +429,7 @@ fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> M
                 &parsed.artifact.outputs,
                 &parsed.artifact.integrity_constraints,
                 &parsed.artifact.operations,
+                &parsed.artifact.operation_contracts,
             ]
             .iter()
             .all(|section| !section.is_empty())
@@ -436,6 +437,7 @@ fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> M
         let artifact_b = decode_program_artifact_sections(&parsed.artifact)
             .expect("normal bytecode-v1 artifact sections must decode");
         assert_eq!(artifact_a.revision(), artifact_b.revision());
+        assert_eq!(artifact_a.contracts(), artifact_b.contracts());
         assert_eq!(artifact_a.inputs(), artifact_b.inputs());
         assert_eq!(artifact_a.slots(), artifact_b.slots());
         assert_eq!(artifact_a.nodes(), artifact_b.nodes());
@@ -455,6 +457,7 @@ fn compile_artifact_fixture(source: &str) -> MResult<(ProgramArtifact, ProgramAr
     let bytecode_artifact = decode_program_artifact_sections(&parsed.artifact)
         .expect("fixture bytecode artifact sections must decode");
     assert_eq!(source_artifact.revision(), bytecode_artifact.revision());
+    assert_eq!(source_artifact.contracts(), bytecode_artifact.contracts());
     assert_eq!(source_artifact.inputs(), bytecode_artifact.inputs());
     assert_eq!(source_artifact.slots(), bytecode_artifact.slots());
     assert_eq!(source_artifact.nodes(), bytecode_artifact.nodes());

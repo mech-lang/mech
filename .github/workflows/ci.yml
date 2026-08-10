@@ -71,10 +71,12 @@ jobs:
             --check-legacy-baseline
           python3 scripts/check-value-system-contract.py
           python3 scripts/check-program-artifact-contract.py
+          python3 scripts/check-operation-contract.py
           python3 -B -m unittest \
             scripts/tests/test_generate_value_system_inventory.py \
             scripts/tests/test_check_value_system_contract.py \
-            scripts/tests/test_check_program_artifact_contract.py
+            scripts/tests/test_check_program_artifact_contract.py \
+            scripts/tests/test_check_operation_contract.py
           python3 -B -m unittest scripts/tests/test_run_gate_a_benchmarks.py
           python3 scripts/check-bytecode-v1-format.py
           cargo +nightly-2026-03-03 fetch --locked

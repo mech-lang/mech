@@ -13,12 +13,14 @@
     "ArtifactBindings",
     "ArtifactOutputs",
     "ArtifactIntegrityConstraints",
-    "ArtifactOperations"
+    "ArtifactOperations",
+    "ArtifactOperationContracts"
   ],
   "artifact_fields": [
     "revision",
     "schemas",
     "constants",
+    "contracts",
     "inputs",
     "slots",
     "nodes",
@@ -43,7 +45,15 @@
     "src/runtime/src"
   ],
   "allowed_protected_changes": [
+    "src/engine/src/interpreter/mod.rs",
+    "src/engine/src/interpreter/tests/bytecode.rs",
     "src/engine/src/program/instance.rs",
-    "src/runtime/src/capability/basic.rs"
+    "src/runtime/src/capability/basic.rs",
+    "src/runtime/src/lib.rs",
+    "src/runtime/src/resource.rs",
+    "src/runtime/src/resource_contract.rs",
+    "src/runtime/src/runtime/execution/context_preflight.rs",
+    "src/runtime/src/runtime/execution/tests/source.rs",
+    "src/runtime/src/runtime/external.rs"
   ]
 }

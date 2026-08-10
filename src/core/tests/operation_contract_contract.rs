@@ -6,7 +6,7 @@ use mech_core::{
     OperationContractError, OperationContractId, OperationContractTable,
     OperationContractTableBuilder, OutputConstruction, OutputPortPolicy, PortDirection,
     RegionPolicy, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaBody,
-    SchemaDraft, SchemaId, SchemaTableBuilder, ShapeContractReference, ShapeRule,
+    SchemaDraft, SchemaField, SchemaId, SchemaTableBuilder, ShapeContractReference, ShapeRule,
     TransactionalEffectProtocol, TransactionalExternalContract, validate_contract_schemas,
     validate_declaration, validate_resolved_contract, validate_signal_bindings,
 };
@@ -713,6 +713,80 @@ fn same_as_input_checks_enum_variant_and_payload_shapes() {
             })
         );
     }
+}
+
+#[test]
+fn same_as_input_checks_nested_table_column_shapes() {
+    let matrix_body = |element, rows, columns| SchemaBody::Matrix {
+        element: Box::new(element),
+        dimensions: vec![
+            DimensionExpr::Constant(rows),
+            DimensionExpr::Constant(columns),
+        ]
+        .into_boxed_slice(),
+    };
+    let table_schema = |column_schema| {
+        SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Table {
+                columns: vec![SchemaField {
+                    name: "value".to_owned(),
+                    schema: column_schema,
+                }]
+                .into_boxed_slice(),
+                rows: DimensionExpr::Constant(4),
+            },
+        }
+        .finalize()
+        .unwrap()
+    };
+    let mut builder = SchemaTableBuilder::new();
+    let input = builder
+        .insert(table_schema(matrix_body(SchemaBody::Bool, 2, 3)))
+        .unwrap();
+    let same_shape = builder
+        .insert(table_schema(matrix_body(SchemaBody::Index, 2, 3)))
+        .unwrap();
+    let wrong_column_shape = builder
+        .insert(table_schema(matrix_body(SchemaBody::Bool, 7, 11)))
+        .unwrap();
+    let build = builder.finish().unwrap();
+    let input = build.resolve(input).unwrap();
+    let same_shape = build.resolve(same_shape).unwrap();
+    let wrong_column_shape = build.resolve(wrong_column_shape).unwrap();
+    let (schemas, _) = build.into_parts();
+
+    let contract_for = |output_schema| {
+        ResolvedOperationContract::Declared(DeclaredOperationContract {
+            inputs: vec![ResolvedInputPort {
+                schema: input,
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+            outputs: vec![ResolvedOutputPort {
+                schema: output_schema,
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::SameAsInput { input: 0 },
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        })
+    };
+
+    assert!(validate_contract_schemas(&contract_for(same_shape), &schemas).is_ok());
+    assert_eq!(
+        validate_contract_schemas(&contract_for(wrong_column_shape), &schemas),
+        Err(OperationContractError::SameShapeSchemaMismatch {
+            input: 0,
+            output: 0,
+        })
+    );
 }
 
 #[test]

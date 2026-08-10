@@ -14,29 +14,29 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
-EXPECTED_MANIFEST_SHA256 = "4fa0693131815898f6863f17f81d3d90c7ca86d37ad21b994a21a3a954eaa20f"
+EXPECTED_MANIFEST_SHA256 = "81aae7eec15d9f7ee8cc0d6a706abddee9fe5634eb114f01c7a38e5c03b51696"
 EXPECTED_FIXTURE_SHA256 = {
-    "canonical-scalars.mecb": "4ee0f3bb5af90d457a12d25084275fd49a0e8a57b200eb61e1581aef4b97cf8e",
-    "canonical-matrices.mecb": "29eb6fd0261e8caa9f49def66909f5f452fc6d007c8b82b90725e607f4528a62",
-    "canonical-composites.mecb": "a016580a32d216a10904cece6a783fd6fce4d3b0b6db4f1657942bcbd1150c7a",
-    "literal-f64.mecb": "dd0f2f9b4cdd873dd24d576ca23e47d51810a0e105e41e51e36fa2f054ad92cb",
-    "scalar-add-f64.mecb": "30bafce07539346e36e3f1b142d6f14de9f5b96daf373fc8f5beb6ced15616a6",
-    "fixed-matrix-add-f64.mecb": "009e78834614a2f71ef490d534d078caf6a04714b2a90aea3537dee5d17b0d75",
-    "dynamic-matrix-add-f64.mecb": "99bac8e2da5eb687388751d4493ce75cc308c9205df48615b9e8fff5819652e0",
-    "variadic-horzcat-f64.mecb": "e975fa17d0273ed124dc9f1970aefe1449316214ba09a99d53d8d8d3db57fb16",
-    "string.mecb": "e71702dbad8a0c1f47271822aeb2637d012809908238d35bff094a4eead1dd94",
-    "unary.mecb": "49cdc62c60d0b2c7c8849fd92d9928990dd9a0dc3f08a3fdcbf406300e959406",
-    "ternary.mecb": "1918ad22c9907c406da17528b97ab3e16c1e0af5b37d5db85777fe6ebcc7d8cf",
-    "quaternary.mecb": "55039f735e3fdbb8b566807ae62ebd94d944044e640ad7b4840652c1d72bf0ef",
-    "named-module-operation.mecb": "1506f1b195de4f89ccc2e528e01debae650b5f0557c2c2c476d682074fbc3957",
-    "cli-stdout.mecb": "5e2d5fba7ef7b56a972e6c97323c6b733ea8137956164f10a86903f05d20d408",
-    "console.mecb": "e894a7dd0d9dabb755136a1effb21fe9b4d34b0257c13b25ed0496eefa286d6e",
-    "time.mecb": "abc33e0ad636a1ac2c19937e30624136bad8ee0e5fac74bd37a421badfae4a84",
-    "timer.mecb": "ebffe3dc4fecb64c9f292003ec2da814d6766652ea133b938eaef004a99c00a0",
-    "scene.mecb": "06c7ed62bb5f6af535487b595266870644dfe602c40664cafff96e3ff272e2fc",
-    "robot-arm.mecb": "3729127cd73577bc78dee2f364a4faee919befd4185dfc5a8070939360516f72",
-    "actor-host-function.mecb": "4752c1106755e9b74cbc80c3d231708fd2471cf26c88934b5ce3780234ebb43e",
-    "synthetic-live-read.mecb": "3871e0907a9276f23cb9141c8d96485f3b8eee4b50af35035c047fded2c5c464",
+    "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
+    "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
+    "canonical-composites.mecb": "8e82426a8af20678627870134cb8d6a329bfdaf2451be1667e5ff77a98da415a",
+    "literal-f64.mecb": "98ed0a607513985607e3d06975487c847cef1946d4d841eb6ae2b6c59ad7fb52",
+    "scalar-add-f64.mecb": "af91170ae55fc69b5949e796a843b0844986cfc6ac0d9ef89b2a70f652ae1463",
+    "fixed-matrix-add-f64.mecb": "da2ace7eec86d95871318dcfed44a63fee228e669197853554903c48184e88a9",
+    "dynamic-matrix-add-f64.mecb": "2f46eada7b3d1d40d5feb199c3af0155cc92f40cdcb511c21d092f863e53db0d",
+    "variadic-horzcat-f64.mecb": "48adb63df63f1714a92e6a18ebf2a87ff2dfb2e0e2b677eef41b0ecc0a26a631",
+    "string.mecb": "b9f316040d0a7a40af1fbf99729bac0544fade75e16d0607e33d57680de299f5",
+    "unary.mecb": "e934f9e070acafb114f507dcc027e7b86ffa67f6f82f5d3badd9ed725495290c",
+    "ternary.mecb": "3180c13013953bb47ad32a2d05ea2e11e7b907e81d4553d42c4ee34a9e0142e2",
+    "quaternary.mecb": "5329d9d6bc8f061e3e7401a130c82cf35201d9b6731ee950a99cfdce2c4b0013",
+    "named-module-operation.mecb": "ae85588f576d164482fd8eb468fafc3eb1a1a4e48b89851b1571c070dfabbc4f",
+    "cli-stdout.mecb": "4ae83459ed3f2f65ce7cee0720aa8ed859b8887c02cd67eeda26707cf692b877",
+    "console.mecb": "8e4bcbf1ada685c8493bcbd618174d267eb883ae62b9a9674b06348bf9141a7e",
+    "time.mecb": "4b22452ac2d692f2c37f3e8a1a1509b02d23f4ad4be10f11b2f56c3844ae22c7",
+    "timer.mecb": "73dcb4b8661d6e720eb24939f0c3464d1dcb99d5a1531c958c1671f9881c6c0a",
+    "scene.mecb": "f67daa150e50a2fbd0d7171b16e331327c667b721e2bd82b794b20f699ad4f9e",
+    "robot-arm.mecb": "a4553c4898358c17b71b60f065025304b7d4f82af48f6869dc9fbea433f2ae27",
+    "actor-host-function.mecb": "6147155f5a78781a091d936249da0860f20994b81ddf06e340d159446b180f4d",
+    "synthetic-live-read.mecb": "f04ac1be7f6d675fa93965113bff82641d715f5d9ed0e9d59fe08d08d399043e",
 }
 EXPECTED_FILES = [
     "canonical-scalars.mecb",
@@ -102,6 +102,7 @@ SECTION_NAMES = [
     "ArtifactOutputs",
     "ArtifactIntegrityConstraints",
     "ArtifactOperations",
+    "ArtifactOperationContracts",
 ]
 TYPE_NAMES = {
     1: "u8",
@@ -865,7 +866,7 @@ def validate_fixture(entry: dict[str, object]) -> None:
     require(version == 1 and header_size == 64, f"{name}: wrong v1 header")
     require((mech_major, mech_minor, mech_patch) == (0, 3, 5), f"{name}: wrong Mech version")
     require(flags == 0 and reserved0 == 0 and reserved == bytes(12), f"{name}: nonzero reserved header field")
-    require(section_count == 17 and section_table_offset == 64, f"{name}: wrong section directory")
+    require(section_count == 18 and section_table_offset == 64, f"{name}: wrong section directory")
     require(file_len == len(data), f"{name}: header length mismatch")
     require(checksum_offset == len(data) - 4, f"{name}: checksum is not the four-byte trailer")
     expected_crc = struct.unpack_from("<I", data, checksum_offset)[0]
@@ -894,7 +895,7 @@ def validate_fixture(entry: dict[str, object]) -> None:
 
     sections: list[dict[str, object]] = []
     section_payloads: list[bytes] = []
-    previous_end = 608
+    previous_end = 640
     for index, section_name in enumerate(SECTION_NAMES):
         offset = 64 + index * SECTION.size
         kind, section_flags, item_count, start, length, section_reserved = SECTION.unpack_from(data, offset)
@@ -916,7 +917,7 @@ def validate_fixture(entry: dict[str, object]) -> None:
             }
         )
         section_payloads.append(data[start : start + length])
-    require(sections[0]["offset"] == 608, f"{name}: first content offset is not 608")
+    require(sections[0]["offset"] == 640, f"{name}: first content offset is not 640")
     require(not any(data[previous_end:checksum_offset]), f"{name}: trailing padding is nonzero")
     require(sections == entry.get("sections"), f"{name}: manifest section metadata is stale")
     require(

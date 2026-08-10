@@ -40,6 +40,7 @@ pub struct ArtifactDecodeLimits {
     pub max_outputs: usize,
     pub max_constraints: usize,
     pub max_operations: usize,
+    pub max_contracts: usize,
 }
 
 impl Default for ArtifactDecodeLimits {
@@ -56,6 +57,7 @@ impl Default for ArtifactDecodeLimits {
             max_outputs: 1_000_000,
             max_constraints: 1_000_000,
             max_operations: 1_000_000,
+            max_contracts: 100_000,
         }
     }
 }
@@ -150,6 +152,7 @@ enum WireProducer {
 struct WireNode {
     node: u32,
     operation: u32,
+    contract: u32,
     input_start: u32,
     input_end: u32,
     output_start: u32,
@@ -190,6 +193,7 @@ struct WireOutput {
 struct WireConstraint {
     constraint: u32,
     operation: u32,
+    contract: u32,
     inputs: Box<[WireSource]>,
 }
 
@@ -275,6 +279,7 @@ pub fn encode_program_artifact_sections(
                 .map(|node| WireNode {
                     node: node.node.get(),
                     operation: operation_ids[&node.operation],
+                    contract: node.contract.get(),
                     input_start: node.input_bindings.start,
                     input_end: node.input_bindings.end,
                     output_start: node.output_bindings.start,
@@ -308,11 +313,17 @@ pub fn encode_program_artifact_sections(
                 .map(|constraint| WireConstraint {
                     constraint: constraint.constraint.get(),
                     operation: operation_ids[&constraint.operation],
+                    contract: constraint.contract.get(),
                     inputs: constraint.inputs.iter().copied().map(wire_source).collect(),
                 })
                 .collect::<Vec<_>>(),
         )?,
         operations: encode(&operations)?,
+        operation_contracts: artifact
+            .contracts()
+            .canonical_bytes()
+            .map_err(ArtifactBuildError::from)?
+            .into_vec(),
     })
 }
 
@@ -343,6 +354,23 @@ pub fn decode_program_artifact_sections_with_limits(
     let value_drafts: Vec<ValueDraft> =
         decode_vec("constants", &sections.constants, limits.max_constants)?;
     let constants = finalize_constants(value_drafts, &schemas)?;
+    let contract_count = sections
+        .operation_contracts
+        .get(..4)
+        .map(|bytes| u32::from_le_bytes(bytes.try_into().unwrap()) as usize)
+        .ok_or(ArtifactBytecodeError::InvalidWireTag {
+            section: "operation contracts",
+            tag: 0,
+        })?;
+    if contract_count > limits.max_contracts {
+        return Err(ArtifactBytecodeError::SectionItemLimit {
+            section: "operation contracts",
+            limit: limits.max_contracts,
+            actual: contract_count,
+        });
+    }
+    let contracts = OperationContractTable::from_canonical_bytes(&sections.operation_contracts)
+        .map_err(ArtifactBuildError::from)?;
     let operations: Vec<WireOperation> =
         decode_vec("operations", &sections.operations, limits.max_operations)?;
     let inputs: Vec<WireInput> = decode_vec("inputs", &sections.inputs, limits.max_inputs)?;
@@ -377,7 +405,7 @@ pub fn decode_program_artifact_sections_with_limits(
     ProgramArtifactDraft {
         schemas,
         constants,
-        contracts: OperationContractTable::from_canonical_entries(Box::new([])),
+        contracts,
         inputs: inputs
             .into_iter()
             .map(|input| InputDeclaration {
@@ -429,7 +457,7 @@ pub fn decode_program_artifact_sections_with_limits(
                 Ok(NodeDeclaration {
                     node: NodeId(node.node),
                     operation: operation(node.operation)?,
-                    contract: OperationContractId::new(0),
+                    contract: OperationContractId::new(node.contract),
                     input_bindings: node.input_start..node.input_end,
                     output_bindings: node.output_start..node.output_end,
                 })
@@ -457,7 +485,7 @@ pub fn decode_program_artifact_sections_with_limits(
                 Ok(IntegrityConstraintDeclaration {
                     constraint: IntegrityConstraintId(constraint.constraint),
                     operation: operation(constraint.operation)?,
-                    contract: OperationContractId::new(0),
+                    contract: OperationContractId::new(constraint.contract),
                     inputs: constraint
                         .inputs
                         .into_vec()
@@ -470,7 +498,6 @@ pub fn decode_program_artifact_sections_with_limits(
             .collect::<Result<Vec<_>, ArtifactBytecodeError>>()?
             .into_boxed_slice(),
     }
-    .attach_legacy_contracts()?
     .finalize()
     .map_err(Into::into)
 }
@@ -509,7 +536,7 @@ fn validate_operation_table(
     Ok(())
 }
 
-fn artifact_section_bytes(sections: &BytecodeArtifactSections) -> [(&'static str, &[u8]); 10] {
+fn artifact_section_bytes(sections: &BytecodeArtifactSections) -> [(&'static str, &[u8]); 11] {
     [
         ("schemas", &sections.schemas),
         ("constants", &sections.constants),
@@ -521,6 +548,7 @@ fn artifact_section_bytes(sections: &BytecodeArtifactSections) -> [(&'static str
         ("outputs", &sections.outputs),
         ("integrity constraints", &sections.integrity_constraints),
         ("operations", &sections.operations),
+        ("operation contracts", &sections.operation_contracts),
     ]
 }
 

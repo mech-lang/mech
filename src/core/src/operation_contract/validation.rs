@@ -509,7 +509,16 @@ fn schema_bodies_have_same_shape(input: &SchemaBody, output: &SchemaBody) -> boo
                 columns: output_columns,
                 rows: output_rows,
             },
-        ) => input_rows == output_rows && input_columns.len() == output_columns.len(),
+        ) => {
+            input_rows == output_rows
+                && input_columns.len() == output_columns.len()
+                && input_columns
+                    .iter()
+                    .zip(output_columns.iter())
+                    .all(|(input, output)| {
+                        schema_bodies_have_same_shape(&input.schema, &output.schema)
+                    })
+        }
         (
             SchemaBody::Set {
                 cardinality: input_cardinality,

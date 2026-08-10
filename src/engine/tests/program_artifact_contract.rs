@@ -3,11 +3,16 @@
 use mech_engine::*;
 
 use mech_core::{
-    CanonicalNominalPath, ConstantHandle, ConstantStoreBuilder, DimensionExpr, DimensionLifetime,
-    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
-    IntegerWidth, KindExpr, LegacyOpaqueOperationContract, LegacyValue, NominalKey, NominalKind,
-    OperationContractId, OperationContractTable, ResolvedOperationContract, SchemaBody,
-    SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder, Value, ValueDataDraft, ValueDraft,
+    AccessMode, AliasPolicy, CanonicalNominalPath, ChangeDetectionPolicy, ConstantHandle,
+    ConstantStoreBuilder, DeliveryMode, DimensionExpr, DimensionLifetime,
+    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, EffectContract,
+    EffectDeliveryPolicy, ExternalInteraction, FloatWidth, IdempotencyRequirement, InputPortLayout,
+    InputPortPolicy, IntegerWidth, KindExpr, LegacyOpaqueOperationContract, LegacyValue,
+    NominalKey, NominalKind, OperationContractDeclaration, OperationContractId,
+    OperationContractTable, OperationContractTableBuilder, OutputConstruction, OutputPortPolicy,
+    RegionPolicy, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaBody,
+    SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder, ShapeContractReference, ShapeRule,
+    Value, ValueDataDraft, ValueDraft,
     snapshot::{
         Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
         MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SnapshotValidationContext,
@@ -451,6 +456,52 @@ fn build_both(data: &FixtureData, graph: SourceProgram) -> (ProgramArtifact, Pro
     (source, bytecode)
 }
 
+fn pure_full_write_contract(
+    input_count: usize,
+    output_count: usize,
+) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                };
+                input_count
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![
+            OutputPortPolicy {
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                alias: AliasPolicy::NoAlias,
+                change_detection: ChangeDetectionPolicy::KernelReported,
+            };
+            output_count
+        ]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+fn build_both_with_contracts(
+    data: &FixtureData,
+    graph: SourceProgram,
+    declarations: &[Option<&'static OperationContractDeclaration>],
+) -> (ProgramArtifact, ProgramArtifact) {
+    let mut source_context = ArtifactBuildContext::new(&data.schemas, &data.constants);
+    let source =
+        compile_source_program_with_contracts(&graph, &mut source_context, declarations).unwrap();
+    let bytes = encode_program_artifact_bytecode_v1(&source).unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
+    let bytecode = decode_program_artifact_sections(&parsed.artifact).unwrap();
+    (source, bytecode)
+}
+
 #[test]
 fn representative_source_and_bytecode_routes_produce_identical_artifacts() {
     let data = fixture_data();
@@ -467,11 +518,13 @@ fn representative_source_and_bytecode_routes_produce_identical_artifacts() {
     for graph in fixtures {
         let (source, bytecode) = build_both(&data, graph);
         assert_eq!(source.revision(), bytecode.revision());
+        assert_eq!(source.contracts(), bytecode.contracts());
         assert_eq!(source.inputs(), bytecode.inputs());
         assert_eq!(source.slots(), bytecode.slots());
         assert_eq!(source.nodes(), bytecode.nodes());
         assert_eq!(source.bindings(), bytecode.bindings());
         assert_eq!(source.outputs(), bytecode.outputs());
+        assert_eq!(source.constraints(), bytecode.constraints());
         assert!(
             source
                 .slots()
@@ -488,6 +541,57 @@ fn representative_source_and_bytecode_routes_produce_identical_artifacts() {
                 })
         );
     }
+}
+
+#[test]
+fn synthetic_ekf_contract_fixture_is_fully_declared_and_round_trips_contract_ids() {
+    // This synthetic graph intentionally injects a declaration for every node.
+    // It proves canonical contract-table construction, zero-opaque behavior when
+    // metadata is complete, and bytecode contract-ID round-tripping. It does not
+    // claim that ordinary source compilation already supplies complete EKF
+    // operation-contract coverage.
+    let data = fixture_data();
+    let graph = ekf(&data);
+    let declarations = graph
+        .nodes
+        .iter()
+        .map(|node| {
+            Some(Box::leak(Box::new(pure_full_write_contract(
+                node.inputs.len(),
+                node.outputs.len(),
+            ))) as &'static OperationContractDeclaration)
+        })
+        .collect::<Vec<_>>();
+    let (source, bytecode) = build_both_with_contracts(&data, graph, &declarations);
+
+    assert!(
+        source
+            .contracts()
+            .iter()
+            .all(|contract| matches!(contract, ResolvedOperationContract::Declared(_)))
+    );
+    assert_eq!(
+        source
+            .contracts()
+            .iter()
+            .filter(|contract| matches!(contract, ResolvedOperationContract::LegacyOpaque(_)))
+            .count(),
+        0
+    );
+    assert_eq!(source.revision(), bytecode.revision());
+    assert_eq!(source.contracts(), bytecode.contracts());
+    assert_eq!(
+        source
+            .nodes()
+            .iter()
+            .map(|node| node.contract)
+            .collect::<Vec<_>>(),
+        bytecode
+            .nodes()
+            .iter()
+            .map(|node| node.contract)
+            .collect::<Vec<_>>()
+    );
 }
 
 #[test]
@@ -723,18 +827,20 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         Err(ArtifactBuildError::InitializerSchemaMismatch { .. })
     ));
 
+    let mut contract_builder = OperationContractTableBuilder::new();
+    contract_builder
+        .insert(ResolvedOperationContract::LegacyOpaque(
+            LegacyOpaqueOperationContract {
+                input_schemas: Box::new([]),
+                output_schemas: Box::new([]),
+            },
+        ))
+        .unwrap();
+    let contracts = contract_builder.finish().unwrap().table;
     let missing_binding = ProgramArtifactDraft {
         schemas: data.schemas.clone(),
         constants: data.constants.clone(),
-        contracts: OperationContractTable::from_canonical_entries(
-            vec![ResolvedOperationContract::LegacyOpaque(
-                LegacyOpaqueOperationContract {
-                    input_schemas: Box::new([]),
-                    output_schemas: Box::new([]),
-                },
-            )]
-            .into_boxed_slice(),
-        ),
+        contracts,
         inputs: Box::new([]),
         slots: vec![SlotDeclaration {
             slot: CellSlotId(0),
@@ -808,6 +914,138 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
     ));
 }
 
+fn one_output_bytecode_contract(
+    alias: AliasPolicy,
+    construction: OutputConstruction,
+    interaction: ExternalInteraction,
+) -> ResolvedOperationContract {
+    ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+        inputs: vec![ResolvedInputPort {
+            schema: SchemaId::new(3),
+            access: AccessMode::Read,
+            delivery: DeliveryMode::Signal,
+        }]
+        .into_boxed_slice(),
+        outputs: vec![ResolvedOutputPort {
+            schema: SchemaId::new(3),
+            access: match &construction {
+                OutputConstruction::ReadModifyWrite { .. } => AccessMode::ReadWrite,
+                _ => AccessMode::Write,
+            },
+            delivery: DeliveryMode::Signal,
+            construction,
+            alias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction,
+    })
+}
+
+fn one_entry_operation_contract_table(contract: &[u8]) -> Vec<u8> {
+    let mut table = Vec::with_capacity(8 + contract.len());
+    table.extend_from_slice(&1_u32.to_le_bytes());
+    table.extend_from_slice(&u32::try_from(contract.len()).unwrap().to_le_bytes());
+    table.extend_from_slice(contract);
+    table
+}
+
+fn decode_with_mutated_operation_contract(
+    data: &FixtureData,
+    contract: ResolvedOperationContract,
+    mutate: impl FnOnce(&mut Vec<u8>),
+) -> Result<ProgramArtifact, ArtifactBytecodeError> {
+    let artifact = build_both(data, scalar_add(data)).0;
+    let mut sections = encode_program_artifact_sections(&artifact).unwrap();
+    let mut contract = contract.canonical_bytes().unwrap().into_vec();
+    mutate(&mut contract);
+    sections.operation_contracts = one_entry_operation_contract_table(&contract);
+    decode_program_artifact_sections(&sections)
+}
+
+#[test]
+fn artifact_bytecode_rejects_malformed_operation_contract_semantics_first() {
+    let data = fixture_data();
+    for alias in [
+        AliasPolicy::MayAlias { input: 0 },
+        AliasPolicy::InPlaceRequired { input: 0 },
+    ] {
+        let result = decode_with_mutated_operation_contract(
+            &data,
+            one_output_bytecode_contract(
+                alias,
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                ExternalInteraction::Pure,
+            ),
+            |bytes| bytes[16..20].copy_from_slice(&9_u32.to_le_bytes()),
+        );
+        assert!(matches!(
+            result,
+            Err(ArtifactBytecodeError::Artifact(
+                ArtifactBuildError::OperationContract(
+                    mech_core::OperationContractError::AliasSchemaMismatch {
+                        output: 0,
+                        input: 0,
+                        input_schema,
+                        output_schema,
+                    }
+                )
+            )) if input_schema == SchemaId::new(3) && output_schema == SchemaId::new(9)
+        ));
+    }
+
+    let effect = decode_with_mutated_operation_contract(
+        &data,
+        one_output_bytecode_contract(
+            AliasPolicy::NoAlias,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ExternalInteraction::Pure,
+        ),
+        |bytes| {
+            assert_eq!(bytes.pop(), Some(0));
+            bytes.extend_from_slice(&[2, 0, 0]);
+        },
+    );
+    assert!(matches!(
+        effect,
+        Err(ArtifactBytecodeError::Artifact(
+            ArtifactBuildError::OperationContract(
+                mech_core::OperationContractError::EffectOutputUnsupported { outputs: 1 }
+            )
+        ))
+    ));
+
+    let build = one_output_bytecode_contract(
+        AliasPolicy::NoAlias,
+        OutputConstruction::Build {
+            postcondition: ShapeContractReference {
+                module_path: vec!["matrixx".to_owned()].into_boxed_slice(),
+                contract_name: "logical-mask-output".to_owned(),
+            },
+        },
+        ExternalInteraction::Pure,
+    );
+    let invalid_reference = decode_with_mutated_operation_contract(&data, build, |bytes| {
+        let start = bytes
+            .windows(b"matrixx".len())
+            .position(|window| window == b"matrixx")
+            .unwrap();
+        bytes[start..start + b"mat/ixx".len()].copy_from_slice(b"mat/ixx");
+    });
+    assert!(matches!(
+        invalid_reference,
+        Err(ArtifactBytecodeError::Artifact(
+            ArtifactBuildError::OperationContract(
+                mech_core::OperationContractError::InvalidShapeContractReference { .. }
+            )
+        ))
+    ));
+}
+
 #[test]
 fn decoded_artifact_sections_revalidate_structure_and_limits() {
     let data = fixture_data();
@@ -828,7 +1066,9 @@ fn decoded_artifact_sections_revalidate_structure_and_limits() {
     assert!(matches!(
         decode_program_artifact_sections(&missing_binding),
         Err(ArtifactBytecodeError::Artifact(
-            ArtifactBuildError::MissingProducerBinding { .. }
+            ArtifactBuildError::OperationContract(
+                mech_core::OperationContractError::PortCountMismatch { .. }
+            )
         ))
     ));
 
@@ -885,6 +1125,28 @@ fn decoded_artifact_sections_revalidate_structure_and_limits() {
         Err(ArtifactBytecodeError::NonCanonicalOperationTable)
     ));
 
+    let mut unknown_contract = sections.clone();
+    let mut nodes: serde_json::Value = serde_json::from_slice(&unknown_contract.nodes).unwrap();
+    nodes.as_array_mut().unwrap()[0]["contract"] = serde_json::Value::from(u32::MAX);
+    unknown_contract.nodes = serde_json::to_vec(&nodes).unwrap();
+    assert!(matches!(
+        decode_program_artifact_sections(&unknown_contract),
+        Err(ArtifactBytecodeError::Artifact(
+            ArtifactBuildError::UnknownOperationContract { .. }
+        ))
+    ));
+
+    let mut malformed_contract = sections.clone();
+    malformed_contract.operation_contracts[9] = u8::MAX;
+    assert!(matches!(
+        decode_program_artifact_sections(&malformed_contract),
+        Err(ArtifactBytecodeError::Artifact(
+            ArtifactBuildError::OperationContract(
+                mech_core::OperationContractError::InvalidCanonicalEncoding { .. }
+            )
+        ))
+    ));
+
     let (multi_operation, _) = build_both(&data, ekf(&data));
     let mut reordered_operation = encode_program_artifact_sections(&multi_operation).unwrap();
     let mut operations: serde_json::Value =
@@ -922,6 +1184,19 @@ fn decoded_artifact_sections_revalidate_structure_and_limits() {
         decode_program_artifact_sections_with_limits(
             &sections,
             ArtifactDecodeLimits {
+                max_contracts: 0,
+                ..ArtifactDecodeLimits::default()
+            }
+        ),
+        Err(ArtifactBytecodeError::SectionItemLimit {
+            section: "operation contracts",
+            ..
+        })
+    ));
+    assert!(matches!(
+        decode_program_artifact_sections_with_limits(
+            &sections,
+            ArtifactDecodeLimits {
                 max_section_bytes: 1,
                 ..ArtifactDecodeLimits::default()
             }
@@ -938,6 +1213,184 @@ fn program_revision_changes_with_semantic_graph_order() {
     reversed.nodes[0].inputs.swap(0, 1);
     let (reversed, _) = build_both(&data, reversed);
     assert_ne!(forward.revision(), reversed.revision());
+}
+
+fn artifact_with_declaration(
+    data: &FixtureData,
+    declaration: OperationContractDeclaration,
+) -> ProgramArtifact {
+    let declaration = Box::leak(Box::new(declaration));
+    compile_source_program_with_contracts(
+        &scalar_add(data),
+        &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
+        &[Some(declaration)],
+    )
+    .unwrap()
+}
+
+#[test]
+fn program_revision_commits_to_every_operation_contract_semantic() {
+    let data = fixture_data();
+    let mut baseline_contract = pure_full_write_contract(2, 1);
+    baseline_contract.outputs[0].change_detection = ChangeDetectionPolicy::ExactScalar;
+    let baseline = artifact_with_declaration(&data, baseline_contract.clone()).revision();
+
+    let mut consume = baseline_contract.clone();
+    let InputPortLayout::Fixed(inputs) = &mut consume.inputs else {
+        unreachable!()
+    };
+    inputs[0].access = AccessMode::Consume;
+    assert_ne!(
+        baseline,
+        artifact_with_declaration(&data, consume).revision()
+    );
+
+    let mut read_modify_write = baseline_contract.clone();
+    read_modify_write.outputs[0].access = AccessMode::ReadWrite;
+    read_modify_write.outputs[0].construction = OutputConstruction::ReadModifyWrite {
+        base_input: 0,
+        regions: RegionPolicy::SingleElement,
+    };
+    assert_ne!(
+        baseline,
+        artifact_with_declaration(&data, read_modify_write).revision()
+    );
+
+    let mut transactional = baseline_contract.clone();
+    transactional.interaction =
+        ExternalInteraction::TransactionalExternal(mech_core::TransactionalExternalContract {
+            protocol: mech_core::TransactionalEffectProtocol::PrepareCommit,
+        });
+    assert_ne!(
+        baseline,
+        artifact_with_declaration(&data, transactional).revision()
+    );
+
+    let mut alias = baseline_contract.clone();
+    alias.outputs[0].alias = AliasPolicy::MayAlias { input: 0 };
+    assert_ne!(baseline, artifact_with_declaration(&data, alias).revision());
+
+    let mut always_changed = baseline_contract.clone();
+    always_changed.outputs[0].change_detection = ChangeDetectionPolicy::AlwaysChanged;
+    assert_ne!(
+        baseline,
+        artifact_with_declaration(&data, always_changed).revision()
+    );
+
+    let effect_source = SourceProgram {
+        nodes: vec![node(
+            operation("resource", "write"),
+            vec![SourceValue::Constant(data.constant.one)],
+            Vec::new(),
+        )]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+    let effect_contract = |delivery| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery,
+            idempotency: IdempotencyRequirement::Optional,
+        }),
+    };
+    let provider_defined = Box::leak(Box::new(effect_contract(
+        EffectDeliveryPolicy::ProviderDefined,
+    )));
+    let provider_defined = compile_source_program_with_contracts(
+        &effect_source,
+        &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
+        &[Some(provider_defined)],
+    )
+    .unwrap()
+    .revision();
+    let at_most_once = Box::leak(Box::new(effect_contract(EffectDeliveryPolicy::AtMostOnce)));
+    let at_most_once = compile_source_program_with_contracts(
+        &effect_source,
+        &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
+        &[Some(at_most_once)],
+    )
+    .unwrap()
+    .revision();
+    assert_ne!(provider_defined, at_most_once);
+
+    let mut first_shape = baseline_contract.clone();
+    first_shape.outputs[0].construction = OutputConstruction::Build {
+        postcondition: ShapeContractReference {
+            module_path: vec!["matrix".to_owned(), "selection".to_owned()].into_boxed_slice(),
+            contract_name: "logical-mask-output".to_owned(),
+        },
+    };
+    let mut second_shape = first_shape.clone();
+    let OutputConstruction::Build { postcondition } = &mut second_shape.outputs[0].construction
+    else {
+        unreachable!()
+    };
+    postcondition.contract_name = "index-selection-output".to_owned();
+    assert_ne!(
+        artifact_with_declaration(&data, first_shape).revision(),
+        artifact_with_declaration(&data, second_shape).revision()
+    );
+}
+
+#[test]
+fn contract_insertion_order_does_not_change_program_revision() {
+    let data = fixture_data();
+    let mut exact = pure_full_write_contract(2, 1);
+    exact.outputs[0].change_detection = ChangeDetectionPolicy::ExactScalar;
+    let mut always = exact.clone();
+    always.outputs[0].change_detection = ChangeDetectionPolicy::AlwaysChanged;
+    let exact = artifact_with_declaration(&data, exact)
+        .contracts()
+        .iter()
+        .next()
+        .unwrap()
+        .clone();
+    let always = artifact_with_declaration(&data, always)
+        .contracts()
+        .iter()
+        .next()
+        .unwrap()
+        .clone();
+
+    let mut first_builder = OperationContractTableBuilder::new();
+    let first_exact = first_builder.insert(exact.clone()).unwrap();
+    first_builder.insert(always.clone()).unwrap();
+    let first = first_builder.finish().unwrap();
+
+    let mut second_builder = OperationContractTableBuilder::new();
+    second_builder.insert(always).unwrap();
+    let second_exact = second_builder.insert(exact).unwrap();
+    let second = second_builder.finish().unwrap();
+
+    let base = build_both(&data, scalar_add(&data)).0;
+    let make_draft = |contracts: OperationContractTable, contract: OperationContractId| {
+        let mut nodes = base.nodes().to_vec();
+        nodes[0].contract = contract;
+        ProgramArtifactDraft {
+            schemas: base.schemas().clone(),
+            constants: base.constants().clone(),
+            contracts,
+            inputs: base.inputs().to_vec().into_boxed_slice(),
+            slots: base.slots().to_vec().into_boxed_slice(),
+            nodes: nodes.into_boxed_slice(),
+            bindings: base.bindings().to_vec().into_boxed_slice(),
+            outputs: base.outputs().to_vec().into_boxed_slice(),
+            constraints: base.constraints().to_vec().into_boxed_slice(),
+        }
+    };
+    let first_id = first.resolve(first_exact).unwrap();
+    let second_id = second.resolve(second_exact).unwrap();
+    let first = make_draft(first.table, first_id).finalize().unwrap();
+    let second = make_draft(second.table, second_id).finalize().unwrap();
+    assert_eq!(first.contracts(), second.contracts());
+    assert_eq!(first.revision(), second.revision());
 }
 
 #[test]
@@ -1253,7 +1706,7 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
     let artifact = ProgramArtifactDraft {
         schemas,
         constants,
-        contracts: OperationContractTable::from_canonical_entries(Box::new([])),
+        contracts: OperationContractTable::empty(),
         inputs: Box::new([]),
         slots: Box::new([]),
         nodes: Box::new([]),

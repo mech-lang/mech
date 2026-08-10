@@ -7,11 +7,12 @@ use crate::runtime::gate_a_probe::{gate_a_cost_snapshot, reset_gate_a_costs};
 use mech_core::matrix::Matrix;
 #[cfg(feature = "compiler")]
 use mech_core::{
-    BytecodeInstruction, LegacyValue, MechError, ParsedProgram, ReactiveCellId,
-    ReactiveDependencyKind, ReactiveNodeKind, Ref, hash_str,
+    BytecodeInstruction, ExternalInteraction, LegacyValue, MechError, ParsedProgram,
+    ReactiveCellId, ReactiveDependencyKind, ReactiveNodeKind, Ref, ResolvedOperationContract,
+    TransactionalEffectProtocol, TransactionalExternalContract, hash_str,
 };
 #[cfg(feature = "compiler")]
-use mech_engine::MechProgram;
+use mech_engine::{MechProgram, decode_program_artifact_sections};
 #[cfg(feature = "compiler")]
 use std::{
     collections::BTreeMap,
@@ -137,6 +138,13 @@ impl RuntimeResourceProvider for PlanningWriteProvider {
 
     fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<LegacyValue> {
         panic!("planning write fixture must not read {request:?}")
+    }
+
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static mech_core::OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Send).then(crate::prepare_commit_compensate_contract)
     }
 
     fn preflight_write(
@@ -524,6 +532,37 @@ fn planning_top_level_writes_preflight_once_through_external_initialization() {
     assert_eq!(counters.send_preflights.load(Ordering::SeqCst), 1);
     assert_eq!(counters.prepares.load(Ordering::SeqCst), 0);
     assert_eq!(counters.deliveries.load(Ordering::SeqCst), 0);
+}
+
+#[cfg(feature = "compiler")]
+#[test]
+fn provider_transaction_contract_reaches_the_source_program_artifact() {
+    let (mut runtime, _) = planning_runtime_with_write_counters();
+    grant_write(&mut runtime, PLANNING_WRITE_BASE_URI, "sent");
+
+    runtime
+        .run_string(
+            r#"@out := counting://sink{:write(sent)}
+@out/sent <- 2.0
+"#,
+        )
+        .unwrap();
+
+    let bytecode = runtime.compile_program_bytecode().unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
+    let artifact = decode_program_artifact_sections(&parsed.artifact).unwrap();
+    assert!(artifact.nodes().iter().any(|node| {
+        matches!(
+            artifact.contracts().get(node.contract),
+            Some(ResolvedOperationContract::Declared(contract))
+                if matches!(
+                    contract.interaction,
+                    ExternalInteraction::TransactionalExternal(TransactionalExternalContract {
+                        protocol: TransactionalEffectProtocol::PrepareCommitCompensate,
+                    })
+                )
+        )
+    }));
 }
 
 #[cfg(feature = "compiler")]

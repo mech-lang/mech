@@ -22,7 +22,7 @@ The file starts with this fixed 64-byte header:
 | 14 | 2 | `flags` | `0` |
 | 16 | 4 | `register_count` | Number of program registers |
 | 20 | 4 | `instruction_count` | Number of instructions |
-| 24 | 2 | `section_count` | `17` |
+| 24 | 2 | `section_count` | `18` |
 | 26 | 2 | `reserved0` | `0` |
 | 28 | 8 | `section_table_offset` | `64` |
 | 36 | 8 | `file_len` | Exact file length, including checksum |
@@ -36,8 +36,8 @@ ABI tuple.
 
 ## Section directory
 
-Seventeen 32-byte directory entries begin at byte 64, so content starts at
-byte 608. Each entry is:
+Eighteen 32-byte directory entries begin at byte 64, so content starts at
+byte 640. Each entry is:
 
 | Offset | Width | Field |
 | ---: | ---: | --- |
@@ -69,6 +69,7 @@ The entries occur exactly once and in this order:
 | 15 | Artifact outputs | `1` when the artifact is present, otherwise `0` |
 | 16 | Artifact integrity constraints | `1` when the artifact is present, otherwise `0` |
 | 17 | Artifact operations | `1` when the artifact is present, otherwise `0` |
+| 18 | Artifact operation contracts | `1` when the artifact is present, otherwise `0` |
 
 Every section offset is aligned to eight bytes. Sections are ordered,
 non-overlapping, and contained before the checksum. Inter-section and
@@ -320,18 +321,19 @@ resource instruction; unreferenced requirement rows are noncanonical.
 
 ## Semantic program artifact
 
-Sections 8 through 17 carry the finalized `ProgramArtifact` produced by the
+Sections 8 through 18 carry the finalized `ProgramArtifact` produced by the
 ordinary source compiler. They are a direct part of bytecode v1, not a legacy
 adapter and not a second bytecode version. Constructed runtime-only programs
-may leave all ten sections absent. Source compiler output includes all ten;
+may leave all eleven sections absent. Source compiler output includes all eleven;
 partial presence is invalid.
 
-Each present section is a compact UTF-8 JSON array with no insignificant
-whitespace. The arrays use the field order below, decimal JSON integers, JSON
+Sections 8 through 17 are compact UTF-8 JSON arrays with no insignificant
+whitespace; section 18 is the canonical binary contract table described
+below. The JSON arrays use the field order below, decimal JSON integers, JSON
 strings, `null` for an absent optional value, and Serde's externally tagged
 form for sum types. Decoders first enforce the raw section and aggregate byte
-limits, count top-level array elements without constructing them, and only
-then allocate and decode typed values.
+limits, count top-level JSON array elements without constructing them, and
+only then allocate and decode typed values.
 
 | Section | Array element |
 | --- | --- |
@@ -340,19 +342,86 @@ then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{node,operation,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{node,operation,contract,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
-| Artifact integrity constraints | `{constraint,operation,inputs}` |
+| Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
 | Artifact operations | `{module_path,operation_name}` |
+| Artifact operation contracts | Canonical binary `OperationContractTable`, described below |
 
 An artifact source is `{"Constant":id}` or `{"Slot":id}`. Schema and
 constant arrays are already in canonical ID order. Operation rows are sorted
 and deduplicated by module path and operation name; nodes and constraints
-refer to them by zero-based `operation`. The engine reconstructs
+refer to them by zero-based `operation` and to the canonical contract table by
+zero-based `contract`. The engine reconstructs
 `ProgramArtifactDraft`, validates all references and producer/binding
 bijections, recomputes `ProgramRevision`, and exposes only the finalized
 read-only artifact.
+
+### Operation-contract binary encoding
+
+The artifact operation-contract section is binary rather than JSON. It begins
+with `contract_count u32`, followed by `contract_length u32` and exactly that
+many canonical bytes for each contract. Contract rows are sorted by their
+canonical bytes, duplicate rows are forbidden, and every node and integrity
+constraint contract ID is in range. Each contract starts with encoding version
+`1 u8` and a contract tag: `0` for `Declared`, `1` for `LegacyOpaque`.
+
+A declared contract is:
+
+```text
+input_count u32
+repeated input_count times:
+  schema u32, access u8, delivery u8
+output_count u32
+repeated output_count times:
+  schema u32, access u8, delivery u8
+  output_construction
+  alias_policy
+  change_detection u8
+external_interaction
+```
+
+Access tags are `0 Read`, `1 Write`, `2 ReadWrite`, `3 Consume`. Delivery tags
+are `0 Signal`, `1 Stream`, `2 Future`. Change-detection tags are
+`0 KernelReported`, `1 ExactScalar`, `2 SemanticHash`, `3 AlwaysChanged`.
+
+Output construction starts with one tag:
+
+- `0 FullWrite`, followed by a shape rule;
+- `1 ReadModifyWrite`, followed by `base_input u16` and a region tag;
+- `2 Replace`, followed by a shape rule;
+- `3 Build`, followed by `module_segment_count u32`, that many strings, and a
+  contract-name string.
+
+A string is `byte_length u32` followed by that many UTF-8 bytes. Shape-rule
+tags are `0 Declared`, `1 SameAsInput` plus `input u16`, `2 TransposeOf` plus
+`input u16`, and `3 MatrixProduct` plus `lhs u16, rhs u16`. Region tags are
+`0 SingleElement`, `1 ContiguousRange`, `2 RectangularRegion`,
+`3 CollectionEntry`, `4 Arbitrary`. Alias-policy tags are `0 NoAlias`,
+`1 MayAlias` plus `input u16`, and `2 InPlaceRequired` plus `input u16`.
+
+External interaction is `0 Pure`; `1 Observation` followed by replay tag
+`0 CaptureAsInputFact`; `2 Effect` followed by a delivery tag
+(`0 ProviderDefined`, `1 AtMostOnce`, `2 AtLeastOnce`, `3 IdempotentRetry`)
+and idempotency tag (`0 NotRequired`, `1 Optional`, `2 Required`); or
+`3 TransactionalExternal` followed by protocol tag `0 PrepareCommit` or
+`1 PrepareCommitCompensate`.
+
+Declared-contract validation is part of canonical decoding. Every referenced
+input ordinal must be in range. `MayAlias` and `InPlaceRequired` require the
+referenced input schema ID to equal the output schema ID exactly. `Effect`
+contracts have zero outputs; `Observation` and `TransactionalExternal`
+contracts are not subject to that restriction. Every `Build` module-path
+segment and contract name is nonempty, trimmed, is neither `.` nor `..`, and
+contains no NUL, `/`, or `\` character.
+
+A legacy-opaque contract contains, after its version and tag, an input schema
+list and an output schema list. Each list is `count u32` followed by that many
+`schema u32` IDs. This row represents only an operation for which the source
+compiler has no declared semantic contract; it is not a bytecode compatibility
+adapter. Decoders prove every count against the remaining bytes before
+allocating and require canonical re-encoding to reproduce the original bytes.
 
 The source compiler's in-memory sidecar supplies an exact schema kind for
 every semantic register, one role for every instruction, source-definition
@@ -404,6 +473,7 @@ Default read limits are:
 | Artifact schemas | 100,000 |
 | Artifact constants, inputs, slots, nodes, bindings, outputs, constraints | 1,000,000 each |
 | Artifact operations | 1,000,000 |
+| Artifact operation contracts | 100,000 |
 | Variadic or host-call arguments | 65,536 |
 | Type recursion | 256 |
 | Constant recursion | 256 |
@@ -435,7 +505,9 @@ nesting produces `BytecodeConstantDepthExceeded`.
 
 ## Version policy
 
-Version 1 is the only supported bytecode format. There is no pre-v1 reader,
-translation branch, or compatibility promise. Any incompatible wire-format
-change requires a new bytecode version. A language/runtime ABI change is a
-separate explicit decision and must update the header authority.
+Version 1 is the only bytecode format before launch and evolves directly with
+the architecture. There is no pre-v1 reader, translation branch, or
+compatibility promise for earlier prerelease v1 layouts. At launch, bytecode
+v1 freezes as the first supported public format; after that boundary, an
+incompatible wire-format change requires bytecode v2. A language/runtime ABI
+change is a separate explicit decision and must update the header authority.
