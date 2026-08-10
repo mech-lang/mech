@@ -21,12 +21,12 @@ use mech_core::snapshot::SnapshotValidationContext;
 #[cfg(feature = "compiler")]
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, CanonicalNominalPath, ConstantHandle,
-    ConstantStoreBuilder, DimensionEnvironmentBuilder, DimensionExpr, FunctionCatalog, KindId,
-    LegacyEmptyPolicy, LegacyExtentRole, LegacyExtentSite, LegacyNominalResolution,
-    LegacyReferencePolicy, LegacyResolvedExtent, LegacySemanticContext, LegacySnapshotContext,
-    LegacyValue, NamedKindPathResolver, NominalKind, SchemaBody, SchemaHandle, SchemaTableBuilder,
-    SemanticModelError, ValueKind, schema_from_legacy_value_kind, snapshot_from_legacy,
-    write_bytecode,
+    ConstantStoreBuilder, DimensionEnvironmentBuilder, DimensionExpr, FunctionCatalog,
+    InputPortLayout, KindId, LegacyEmptyPolicy, LegacyExtentRole, LegacyExtentSite,
+    LegacyNominalResolution, LegacyReferencePolicy, LegacyResolvedExtent, LegacySemanticContext,
+    LegacySnapshotContext, LegacyValue, NamedKindPathResolver, NominalKind, OperationContractError,
+    OutputConstruction, SchemaBody, SchemaHandle, SchemaTableBuilder, SemanticModelError,
+    ValueKind, schema_from_legacy_value_kind, snapshot_from_legacy, write_bytecode,
 };
 
 use super::{
@@ -817,8 +817,7 @@ pub fn compile_executable_program_artifact(
                         .and_then(|function| catalog.runtime_entry_by_raw(function))
                         .and_then(|entry| entry.semantic_contract())
                 });
-                let semantic_inputs = semantics
-                    .inputs
+                let semantic_inputs = semantic_input_registers(&semantics, declaration)?
                     .iter()
                     .map(|input| {
                         if *input == dst && state_index.is_some() {
@@ -1259,6 +1258,46 @@ struct CompiledInstructionSemantics {
     destination: u32,
     inputs: Vec<u32>,
     operation: OperationReference,
+}
+
+/// Some executable instructions use their destination as the logical base of
+/// a read/modify/write operation without repeating it in the operand list.
+/// The semantic artifact exposes that dependency without changing bytecode.
+#[cfg(feature = "compiler")]
+fn semantic_input_registers(
+    semantics: &CompiledInstructionSemantics,
+    declaration: Option<&OperationContractDeclaration>,
+) -> Result<Vec<u32>, ArtifactBuildError> {
+    let mut inputs = semantics.inputs.clone();
+    let Some(declaration) = declaration else {
+        return Ok(inputs);
+    };
+    let InputPortLayout::Fixed(policies) = &declaration.inputs else {
+        return Ok(inputs);
+    };
+    if policies.len() != inputs.len() + 1 {
+        return Ok(inputs);
+    }
+    let base_input = declaration.outputs.iter().find_map(|output| {
+        if let OutputConstruction::ReadModifyWrite { base_input, .. } = output.construction {
+            Some(base_input)
+        } else {
+            None
+        }
+    });
+    let Some(base_input) = base_input else {
+        return Ok(inputs);
+    };
+    if base_input as usize > inputs.len() {
+        return Err(OperationContractError::InputOrdinalOutOfRange {
+            field: "ReadModifyWrite.base_input",
+            input: base_input,
+            inputs: policies.len() as u32,
+        }
+        .into());
+    }
+    inputs.insert(base_input as usize, semantics.destination);
+    Ok(inputs)
 }
 
 #[cfg(feature = "compiler")]

@@ -152,18 +152,31 @@ macro_rules! add_scalar_rhs_op {
     };
 }
 
-impl_fxns!(Add, T, T, impl_checked_arithmetic_binop);
+macro_rules! impl_checked_add_binop {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
+        impl_checked_arithmetic_binop!(
+            $struct_name,
+            $arg1_type,
+            $arg2_type,
+            $out_type,
+            $op,
+            crate::ops::arithmetic_full_write_contract
+        );
+    };
+}
+
+impl_fxns!(Add, T, T, impl_checked_add_binop);
 
 #[cfg(all(
     feature = "matrixd",
     any(feature = "matrix1", feature = "matrix1_interop")
 ))]
-impl_checked_arithmetic_binop!(AddM1MD, Matrix1<T>, DMatrix<T>, DMatrix<T>, add_m1_md_op);
+impl_checked_add_binop!(AddM1MD, Matrix1<T>, DMatrix<T>, DMatrix<T>, add_m1_md_op);
 #[cfg(all(
     feature = "matrixd",
     any(feature = "matrix1", feature = "matrix1_interop")
 ))]
-impl_checked_arithmetic_binop!(AddMDM1, DMatrix<T>, Matrix1<T>, DMatrix<T>, add_md_m1_op);
+impl_checked_add_binop!(AddMDM1, DMatrix<T>, Matrix1<T>, DMatrix<T>, add_md_m1_op);
 
 #[cfg(all(test, feature = "u8"))]
 mod checked_arithmetic_tests {

@@ -6,6 +6,44 @@ use nalgebra::{
 };
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::sync::LazyLock;
+
+static PURE_MATRIX_ELEMENT_ASSIGNMENT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::ReadWrite,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::SingleElement,
+            },
+            alias: AliasPolicy::MayAlias { input: 0 },
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 // Assign -----------------------------------------------------------------
 
@@ -815,6 +853,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.sink.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_MATRIX_ELEMENT_ASSIGNMENT_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)

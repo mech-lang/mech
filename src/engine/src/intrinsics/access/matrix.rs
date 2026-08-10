@@ -6,6 +6,101 @@ use nalgebra::{
 };
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::sync::LazyLock;
+
+fn matrix_selection_contract(
+    input_count: usize,
+    postcondition_name: &'static str,
+) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                };
+                input_count
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["matrix".to_owned(), "selection".to_owned()]
+                        .into_boxed_slice(),
+                    contract_name: postcondition_name.to_owned(),
+                },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+macro_rules! declare_matrix_selection_contract {
+    ($name:ident, $input_count:literal, $postcondition:literal) => {
+        static $name: LazyLock<OperationContractDeclaration> =
+            LazyLock::new(|| matrix_selection_contract($input_count, $postcondition));
+    };
+}
+
+declare_matrix_selection_contract!(PURE_BINARY_SCALAR_INDEX_CONTRACT, 2, "scalar-index-output");
+declare_matrix_selection_contract!(
+    PURE_TERNARY_SCALAR_SCALAR_CONTRACT,
+    3,
+    "scalar-row-scalar-column-output"
+);
+declare_matrix_selection_contract!(
+    PURE_BINARY_EXPLICIT_INDEX_CONTRACT,
+    2,
+    "explicit-index-vector-output"
+);
+declare_matrix_selection_contract!(PURE_BINARY_LOGICAL_MASK_CONTRACT, 2, "logical-mask-output");
+declare_matrix_selection_contract!(PURE_BINARY_ALL_ELEMENTS_CONTRACT, 2, "all-elements-output");
+declare_matrix_selection_contract!(
+    PURE_BINARY_ALL_ROWS_SCALAR_COLUMN_CONTRACT,
+    2,
+    "all-rows-scalar-column-output"
+);
+declare_matrix_selection_contract!(
+    PURE_BINARY_SCALAR_ROW_ALL_COLUMNS_CONTRACT,
+    2,
+    "scalar-row-all-columns-output"
+);
+declare_matrix_selection_contract!(
+    PURE_BINARY_EXPLICIT_ROWS_ALL_COLUMNS_CONTRACT,
+    2,
+    "explicit-rows-all-columns-output"
+);
+declare_matrix_selection_contract!(
+    PURE_BINARY_LOGICAL_ROWS_ALL_COLUMNS_CONTRACT,
+    2,
+    "logical-rows-all-columns-output"
+);
+declare_matrix_selection_contract!(
+    PURE_TERNARY_SCALAR_ROW_EXPLICIT_COLUMNS_CONTRACT,
+    3,
+    "scalar-row-explicit-columns-output"
+);
+declare_matrix_selection_contract!(
+    PURE_TERNARY_SCALAR_ROW_LOGICAL_COLUMNS_CONTRACT,
+    3,
+    "scalar-row-logical-columns-output"
+);
+declare_matrix_selection_contract!(
+    PURE_TERNARY_EXPLICIT_ROWS_SCALAR_COLUMN_CONTRACT,
+    3,
+    "explicit-rows-scalar-column-output"
+);
+declare_matrix_selection_contract!(
+    PURE_TERNARY_LOGICAL_ROWS_SCALAR_COLUMN_CONTRACT,
+    3,
+    "logical-rows-scalar-column-output"
+);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum MatrixAccessSelection {
@@ -862,7 +957,7 @@ macro_rules! impl_access_all_fxn_v {
   };}*/
 
 macro_rules! impl_access_fxn {
-    ($struct_name:ident, $arg_type:ty, $ix_type:ty, $out_type:ty, $op:ident) => {
+    ($struct_name:ident, $arg_type:ty, $ix_type:ty, $out_type:ty, $op:ident, $contract:ident) => {
         #[derive(Debug)]
         struct $struct_name<T> {
             source: Ref<$arg_type>,
@@ -935,6 +1030,9 @@ macro_rules! impl_access_fxn {
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(&$contract)
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -957,7 +1055,7 @@ macro_rules! impl_access_fxn {
 }
 
 macro_rules! impl_access_fxn2 {
-    ($struct_name:ident, $arg_type:ty, $ix1_type:ty, $ix2_type:ty, $out_type:ty, $op:ident) => {
+    ($struct_name:ident, $arg_type:ty, $ix1_type:ty, $ix2_type:ty, $out_type:ty, $op:ident, $contract:ident) => {
         #[derive(Debug)]
         struct $struct_name<T> {
             source: Ref<$arg_type>,
@@ -1040,6 +1138,9 @@ macro_rules! impl_access_fxn2 {
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(&$contract)
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -1062,116 +1163,177 @@ macro_rules! impl_access_fxn2 {
 }
 
 macro_rules! impl_access_fxn_shape {
-    ($name:ident, $ix_type:ty, $out_type:ty, $fxn:ident) => {
+    ($name:ident, $ix_type:ty, $out_type:ty, $fxn:ident, $contract:ident) => {
         paste! {
           #[cfg(feature = "matrix1")]
-          impl_access_fxn!([<$name M1>],   Matrix1<T>,    $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name M1>],   Matrix1<T>,    $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix2")]
-          impl_access_fxn!([<$name M2>],   Matrix2<T>,    $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name M2>],   Matrix2<T>,    $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix3")]
-          impl_access_fxn!([<$name M3>],   Matrix3<T>,    $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name M3>],   Matrix3<T>,    $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix4")]
-          impl_access_fxn!([<$name M4>],   Matrix4<T>,    $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name M4>],   Matrix4<T>,    $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix2x3")]
-          impl_access_fxn!([<$name M2x3>], Matrix2x3<T>,  $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name M2x3>], Matrix2x3<T>,  $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix3x2")]
-          impl_access_fxn!([<$name M3x2>], Matrix3x2<T>,  $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name M3x2>], Matrix3x2<T>,  $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrixd")]
-          impl_access_fxn!([<$name MD>],   DMatrix<T>,    $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name MD>],   DMatrix<T>,    $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "vector2")]
-          impl_access_fxn!([<$name V2>],   Vector2<T>,    $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name V2>],   Vector2<T>,    $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "vector3")]
-          impl_access_fxn!([<$name V3>],   Vector3<T>,    $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name V3>],   Vector3<T>,    $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "vector4")]
-          impl_access_fxn!([<$name V4>],   Vector4<T>,    $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name V4>],   Vector4<T>,    $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "vectord")]
-          impl_access_fxn!([<$name VD>],   DVector<T>,    $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name VD>],   DVector<T>,    $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "row_vector2")]
-          impl_access_fxn!([<$name R2>],   RowVector2<T>, $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name R2>],   RowVector2<T>, $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "row_vector3")]
-          impl_access_fxn!([<$name R3>],   RowVector3<T>, $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name R3>],   RowVector3<T>, $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "row_vector4")]
-          impl_access_fxn!([<$name R4>],   RowVector4<T>, $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name R4>],   RowVector4<T>, $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "row_vectord")]
-          impl_access_fxn!([<$name RD>],   RowDVector<T>, $ix_type, $out_type, $fxn);
+          impl_access_fxn!([<$name RD>],   RowDVector<T>, $ix_type, $out_type, $fxn, $contract);
         }
     };
 }
 
 macro_rules! impl_access_fxn_shape2 {
-    ($name:ident, $ix1_type:ty, $ix2_type:ty, $out_type:ty, $fxn:ident) => {
+    ($name:ident, $ix1_type:ty, $ix2_type:ty, $out_type:ty, $fxn:ident, $contract:ident) => {
         paste! {
           #[cfg(feature = "matrix1")]
-          impl_access_fxn2!([<$name M1>],   Matrix1<T>,    $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name M1>],   Matrix1<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix2")]
-          impl_access_fxn2!([<$name M2>],   Matrix2<T>,    $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name M2>],   Matrix2<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix3")]
-          impl_access_fxn2!([<$name M3>],   Matrix3<T>,    $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name M3>],   Matrix3<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix4")]
-          impl_access_fxn2!([<$name M4>],   Matrix4<T>,    $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name M4>],   Matrix4<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix2x3")]
-          impl_access_fxn2!([<$name M2x3>], Matrix2x3<T>,  $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name M2x3>], Matrix2x3<T>,  $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix3x2")]
-          impl_access_fxn2!([<$name M3x2>], Matrix3x2<T>,  $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name M3x2>], Matrix3x2<T>,  $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrixd")]
-          impl_access_fxn2!([<$name MD>],   DMatrix<T>,    $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name MD>],   DMatrix<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "vector2")]
-          impl_access_fxn2!([<$name V2>],   Vector2<T>,    $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name V2>],   Vector2<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "vector3")]
-          impl_access_fxn2!([<$name V3>],   Vector3<T>,    $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name V3>],   Vector3<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "vector4")]
-          impl_access_fxn2!([<$name V4>],   Vector4<T>,    $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name V4>],   Vector4<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "vectord")]
-          impl_access_fxn2!([<$name VD>],   DVector<T>,    $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name VD>],   DVector<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "row_vector2")]
-          impl_access_fxn2!([<$name R2>],   RowVector2<T>, $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name R2>],   RowVector2<T>, $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "row_vector3")]
-          impl_access_fxn2!([<$name R3>],   RowVector3<T>, $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name R3>],   RowVector3<T>, $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "row_vector4")]
-          impl_access_fxn2!([<$name R4>],   RowVector4<T>, $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name R4>],   RowVector4<T>, $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "row_vectord")]
-          impl_access_fxn2!([<$name RD>],   RowDVector<T>, $ix1_type, $ix2_type, $out_type, $fxn);
+          impl_access_fxn2!([<$name RD>],   RowDVector<T>, $ix1_type, $ix2_type, $out_type, $fxn, $contract);
         }
     };
 }
 
 // x[1]
-impl_access_fxn_shape!(Access1DS, usize, T, access_1d);
+impl_access_fxn_shape!(
+    Access1DS,
+    usize,
+    T,
+    access_1d,
+    PURE_BINARY_SCALAR_INDEX_CONTRACT
+);
 
 // x[1,2]
-impl_access_fxn_shape2!(Access2DSS, usize, usize, T, access_2d);
+impl_access_fxn_shape2!(
+    Access2DSS,
+    usize,
+    usize,
+    T,
+    access_2d,
+    PURE_TERNARY_SCALAR_SCALAR_CONTRACT
+);
 
 // x[1..3]
-impl_access_fxn_shape!(Access1DVD, DVector<usize>, DVector<T>, access_1d_slice);
+impl_access_fxn_shape!(
+    Access1DVD,
+    DVector<usize>,
+    DVector<T>,
+    access_1d_slice,
+    PURE_BINARY_EXPLICIT_INDEX_CONTRACT
+);
 impl_access_fxn_shape!(
     Access1DVDb,
     DVector<bool>,
     DVector<T>,
-    access_1d_slice_bool_v
+    access_1d_slice_bool_v,
+    PURE_BINARY_LOGICAL_MASK_CONTRACT
 );
 
 // x[:]
-impl_access_fxn_shape!(Access1DA, LegacyValue, DVector<T>, access_1d_all);
+impl_access_fxn_shape!(
+    Access1DA,
+    LegacyValue,
+    DVector<T>,
+    access_1d_all,
+    PURE_BINARY_ALL_ELEMENTS_CONTRACT
+);
 
 // x[:,1]
-impl_access_fxn_shape!(Access2DAS, usize, DVector<T>, access_col);
+impl_access_fxn_shape!(
+    Access2DAS,
+    usize,
+    DVector<T>,
+    access_col,
+    PURE_BINARY_ALL_ROWS_SCALAR_COLUMN_CONTRACT
+);
 
 // x[1,:]
 #[cfg(feature = "matrix1")]
-impl_access_fxn!(Access2DSAM1, Matrix1<T>, usize, Matrix1<T>, access_row);
+impl_access_fxn!(
+    Access2DSAM1,
+    Matrix1<T>,
+    usize,
+    Matrix1<T>,
+    access_row,
+    PURE_BINARY_SCALAR_ROW_ALL_COLUMNS_CONTRACT
+);
 #[cfg(all(feature = "matrix2", feature = "row_vector2"))]
-impl_access_fxn!(Access2DSAM2, Matrix2<T>, usize, RowVector2<T>, access_row);
+impl_access_fxn!(
+    Access2DSAM2,
+    Matrix2<T>,
+    usize,
+    RowVector2<T>,
+    access_row,
+    PURE_BINARY_SCALAR_ROW_ALL_COLUMNS_CONTRACT
+);
 #[cfg(all(feature = "matrix3", feature = "row_vector3"))]
-impl_access_fxn!(Access2DSAM3, Matrix3<T>, usize, RowVector3<T>, access_row);
+impl_access_fxn!(
+    Access2DSAM3,
+    Matrix3<T>,
+    usize,
+    RowVector3<T>,
+    access_row,
+    PURE_BINARY_SCALAR_ROW_ALL_COLUMNS_CONTRACT
+);
 #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
-impl_access_fxn!(Access2DSAM4, Matrix4<T>, usize, RowVector4<T>, access_row);
+impl_access_fxn!(
+    Access2DSAM4,
+    Matrix4<T>,
+    usize,
+    RowVector4<T>,
+    access_row,
+    PURE_BINARY_SCALAR_ROW_ALL_COLUMNS_CONTRACT
+);
 #[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
 impl_access_fxn!(
     Access2DSAM2x3,
     Matrix2x3<T>,
     usize,
     RowVector3<T>,
-    access_row
+    access_row,
+    PURE_BINARY_SCALAR_ROW_ALL_COLUMNS_CONTRACT
 );
 #[cfg(all(feature = "matrix3x2", feature = "row_vector2"))]
 impl_access_fxn!(
@@ -1179,18 +1341,33 @@ impl_access_fxn!(
     Matrix3x2<T>,
     usize,
     RowVector2<T>,
-    access_row
+    access_row,
+    PURE_BINARY_SCALAR_ROW_ALL_COLUMNS_CONTRACT
 );
 #[cfg(all(feature = "matrixd", feature = "row_vectord"))]
-impl_access_fxn!(Access2DSAMD, DMatrix<T>, usize, RowDVector<T>, access_row);
+impl_access_fxn!(
+    Access2DSAMD,
+    DMatrix<T>,
+    usize,
+    RowDVector<T>,
+    access_row,
+    PURE_BINARY_SCALAR_ROW_ALL_COLUMNS_CONTRACT
+);
 
 // x[1..3,:]
-impl_access_fxn_shape!(Access2DVDA, DVector<usize>, DMatrix<T>, access_2d_slice_all);
+impl_access_fxn_shape!(
+    Access2DVDA,
+    DVector<usize>,
+    DMatrix<T>,
+    access_2d_slice_all,
+    PURE_BINARY_EXPLICIT_ROWS_ALL_COLUMNS_CONTRACT
+);
 impl_access_fxn_shape!(
     Access2DVDbA,
     DVector<bool>,
     DMatrix<T>,
-    access_2d_slice_all_bool
+    access_2d_slice_all_bool,
+    PURE_BINARY_LOGICAL_ROWS_ALL_COLUMNS_CONTRACT
 );
 
 // x[2,1..3]
@@ -1199,14 +1376,16 @@ impl_access_fxn_shape2!(
     usize,
     DVector<usize>,
     RowDVector<T>,
-    access_2d_row_slice
+    access_2d_row_slice,
+    PURE_TERNARY_SCALAR_ROW_EXPLICIT_COLUMNS_CONTRACT
 );
 impl_access_fxn_shape2!(
     Access2DSVDb,
     usize,
     DVector<bool>,
     RowDVector<T>,
-    access_2d_row_slice_bool
+    access_2d_row_slice_bool,
+    PURE_TERNARY_SCALAR_ROW_LOGICAL_COLUMNS_CONTRACT
 );
 
 // x[1..3,2]
@@ -1215,14 +1394,16 @@ impl_access_fxn_shape2!(
     DVector<usize>,
     usize,
     DVector<T>,
-    access_2d_col_slice
+    access_2d_col_slice,
+    PURE_TERNARY_EXPLICIT_ROWS_SCALAR_COLUMN_CONTRACT
 );
 impl_access_fxn_shape2!(
     Access2DVDbS,
     DVector<bool>,
     usize,
     DVector<T>,
-    access_2d_col_slice_bool
+    access_2d_col_slice_bool,
+    PURE_TERNARY_LOGICAL_ROWS_SCALAR_COLUMN_CONTRACT
 );
 
 macro_rules! impl_access_match_arms {

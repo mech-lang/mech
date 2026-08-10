@@ -1,13 +1,39 @@
 use core::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::sync::LazyLock;
 
 use mech_core::{
-    ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
-    BytecodeRegisterIdentity, BytecodeValidationError, EncodedConstant, LegacyValue, MResult,
-    MechError, OperationContractDeclaration, ParsedProgram, Register, ValueKind,
+    AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
+    BytecodeProgram, BytecodeRegisterIdentity, BytecodeValidationError, ChangeDetectionPolicy,
+    DeliveryMode, EncodedConstant, ExternalInteraction, InputPortLayout, InputPortPolicy,
+    LegacyValue, MResult, MechError, OperationContractDeclaration, OutputConstruction,
+    OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueKind,
     compare_application_requirements, compile_value_register, hash_str,
     value_kind_from_runtime_type, write_bytecode,
 };
+
+static PURE_COMPOSITE_PACK_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 0,
+        },
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Replace {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::AlwaysChanged,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CompiledNodeKind {
@@ -545,8 +571,11 @@ impl BytecodeCompilerContext for CompileCtx {
             self.current_node_kind
                 .map(|_| CompiledInstructionRole::Node(CompiledNodeKind::Combinational)),
         );
-        self.instruction_contracts.push(self.current_node_contract);
-        self.instruction_source_nodes.push(self.current_source_node);
+        self.instruction_contracts
+            .push(Some(&PURE_COMPOSITE_PACK_CONTRACT));
+        // This is a compiler-owned record/tuple/etc. construction node, not a
+        // second lowering of the source plan node whose input requested it.
+        self.instruction_source_nodes.push(None);
     }
 
     fn emit_nullop(&mut self, function: u64, destination: Register) {

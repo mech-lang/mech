@@ -62,11 +62,25 @@ macro_rules! checked_matmul_op {
 
 macro_rules! impl_matmul {
     ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
-        impl_checked_matrix_binop!($name, $type1, $type2, $out_type, checked_matmul_op);
+        impl_checked_matrix_binop!(
+            $name,
+            $type1,
+            $type2,
+            $out_type,
+            checked_matmul_op,
+            crate::product_contract
+        );
     };
 }
 
-impl_checked_matrix_binop!(MatMulScalar, T, T, T, checked_mul_op);
+impl_checked_matrix_binop!(
+    MatMulScalar,
+    T,
+    T,
+    T,
+    checked_mul_op,
+    crate::product_contract
+);
 #[cfg(all(feature = "row_vector4", feature = "vector4", feature = "matrix1"))]
 impl_matmul!(MatMulR4V4, RowVector4<T>, Vector4<T>, Matrix1<T>);
 #[cfg(all(feature = "row_vector4", feature = "matrix4"))]

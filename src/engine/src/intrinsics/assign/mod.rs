@@ -32,6 +32,28 @@ pub use self::tuple::*;
 
 // x = 1 ----------------------------------------------------------------------
 
+static PURE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Replace {
+                shape: ShapeRule::SameAsInput { input: 0 },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
+
 trait AssignRuntimeName {
     fn assign_runtime_name() -> String;
 }
@@ -547,6 +569,9 @@ where
     }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
         ReactiveNodeKind::Register
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_STATE_REGISTER_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
