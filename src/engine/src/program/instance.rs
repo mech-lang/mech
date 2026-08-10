@@ -42,6 +42,8 @@ use mech_core::{
 
 #[cfg(feature = "compiler")]
 use mech_bytecode::{CompileCtx, CompiledBytecode, CompiledNodeKind};
+#[cfg(all(feature = "compiler", feature = "invariant_define"))]
+use mech_core::Register;
 
 use crate::{Interpreter, InterpreterCheckpoint, InterpreterReactiveTurnCheckpoint};
 #[cfg(feature = "source")]
@@ -1371,6 +1373,16 @@ impl MechProgram {
 /// Builds the executable compiler product before the C3 semantic artifact is
 /// finalized. Keeping this boundary separate makes the adapter's legacy input
 /// explicit without exposing it through `ProgramArtifact`.
+#[cfg(all(feature = "compiler", feature = "invariant_define"))]
+struct RetainedIntegrityMarkerMetadata {
+    result_register: Register,
+    name: LegacyValue,
+    expression: LegacyValue,
+    operator: LegacyValue,
+    lhs: LegacyValue,
+    rhs: LegacyValue,
+}
+
 #[cfg(feature = "compiler")]
 fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
     let state = program.interpreter.state.borrow();
@@ -1391,9 +1403,8 @@ fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
     }
 
     #[cfg(feature = "invariant_define")]
-    if !state.integrity_constraints.is_empty() {
-        let marker_output = LegacyValue::Bool(Ref::new(false));
-        let marker_register = context.resolve_value_register(&marker_output)?;
+    let retained_integrity_metadata = if !state.integrity_constraints.is_empty() {
+        let mut metadata = Vec::with_capacity(state.integrity_constraints.len());
         for constraint in state.integrity_constraints.values() {
             let result = LegacyValue::MutableReference(constraint.result.clone());
             let result_register = context.resolve_value_register(&result)?;
@@ -1401,12 +1412,24 @@ fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
             let name = LegacyValue::String(Ref::new(constraint.name.clone()));
             let expression = LegacyValue::String(Ref::new(constraint.expression.clone()));
             let operator = match &constraint.operator {
-                Some(FormulaOperator::Comparison(ComparisonOp::Equal)) => "eq",
-                Some(FormulaOperator::Comparison(ComparisonOp::NotEqual)) => "neq",
-                Some(FormulaOperator::Comparison(ComparisonOp::LessThan)) => "lt",
-                Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual)) => "lte",
-                Some(FormulaOperator::Comparison(ComparisonOp::GreaterThan)) => "gt",
-                Some(FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual)) => "gte",
+                Some(FormulaOperator::Comparison(ComparisonOp::Equal)) => {
+                    LegacyValue::String(Ref::new("eq".to_owned()))
+                }
+                Some(FormulaOperator::Comparison(ComparisonOp::NotEqual)) => {
+                    LegacyValue::String(Ref::new("neq".to_owned()))
+                }
+                Some(FormulaOperator::Comparison(ComparisonOp::LessThan)) => {
+                    LegacyValue::String(Ref::new("lt".to_owned()))
+                }
+                Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual)) => {
+                    LegacyValue::String(Ref::new("lte".to_owned()))
+                }
+                Some(FormulaOperator::Comparison(ComparisonOp::GreaterThan)) => {
+                    LegacyValue::String(Ref::new("gt".to_owned()))
+                }
+                Some(FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual)) => {
+                    LegacyValue::String(Ref::new("gte".to_owned()))
+                }
                 Some(other) => {
                     return Err(MechError::new(
                         BytecodeValidationError {
@@ -1419,12 +1442,7 @@ fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
                     )
                     .with_compiler_loc());
                 }
-                None => "",
-            };
-            let operator = if operator.is_empty() {
-                LegacyValue::Empty
-            } else {
-                LegacyValue::String(Ref::new(operator.to_owned()))
+                None => LegacyValue::Empty,
             };
             let lhs = constraint
                 .lhs
@@ -1436,13 +1454,36 @@ fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
                 .as_ref()
                 .map(|value| LegacyValue::MutableReference(value.clone()))
                 .unwrap_or(LegacyValue::Empty);
-            let mut metadata = vec![result_register];
-            metadata.extend(
-                [name, expression, operator, lhs, rhs]
-                    .iter()
-                    .map(|value| context.resolve_value_register(value))
-                    .collect::<MResult<Vec<_>>>()?,
-            );
+            metadata.push(RetainedIntegrityMarkerMetadata {
+                result_register,
+                name,
+                expression,
+                operator,
+                lhs,
+                rhs,
+            });
+        }
+        metadata
+    } else {
+        Vec::new()
+    };
+
+    #[cfg(feature = "invariant_define")]
+    let retained_integrity_marker_output =
+        (!retained_integrity_metadata.is_empty()).then(|| LegacyValue::Bool(Ref::new(false)));
+
+    #[cfg(feature = "invariant_define")]
+    if let Some(marker_output) = retained_integrity_marker_output.as_ref() {
+        let marker_register = context.resolve_value_register(marker_output)?;
+        for marker in &retained_integrity_metadata {
+            let metadata = vec![
+                marker.result_register,
+                context.resolve_value_register(&marker.name)?,
+                context.resolve_value_register(&marker.expression)?,
+                context.resolve_value_register(&marker.operator)?,
+                context.resolve_value_register(&marker.lhs)?,
+                context.resolve_value_register(&marker.rhs)?,
+            ];
             context.emit_integrity_marker(
                 hash_str("integrity/constraint"),
                 marker_register,
@@ -1452,7 +1493,15 @@ fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
     }
 
     let return_register = context.resolve_value_register(&program.interpreter.out)?;
-    context.finish_program(return_register)
+    let compiled = context.finish_program(return_register)?;
+
+    #[cfg(feature = "invariant_define")]
+    {
+        drop(retained_integrity_marker_output);
+        drop(retained_integrity_metadata);
+    }
+
+    Ok(compiled)
 }
 
 fn with_interpreter_mut<T>(
@@ -1674,6 +1723,14 @@ impl MechErrorKind for UnsupportedProgramSourceError {
 mod tests {
     use super::*;
     use mech_core::Ref;
+    #[cfg(all(
+        feature = "compiler",
+        feature = "source",
+        feature = "invariant_define",
+        feature = "compare_default",
+        feature = "f64"
+    ))]
+    use mech_core::{BytecodeInstruction, ParsedProgram, Register};
     #[cfg(feature = "functions")]
     use mech_core::{
         FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer, OperationId,
@@ -1988,6 +2045,95 @@ mod tests {
         assert!(descriptor.lhs.is_none());
         assert!(descriptor.operator.is_some());
         assert!(descriptor.rhs.is_some());
+    }
+
+    #[cfg(all(
+        feature = "compiler",
+        feature = "source",
+        feature = "invariant_define",
+        feature = "compare_default",
+        feature = "f64"
+    ))]
+    #[test]
+    fn integrity_marker_metadata_lives_through_bytecode_finalization() -> MResult<()> {
+        let source = concat!(
+            "finite-candidate! := 1.0 <= 2.0\n",
+            "positive-covariance! := 2.0 <= 3.0\n",
+            "symmetric-covariance! := 3.0 <= 4.0",
+        );
+        let expected_names = BTreeSet::from([
+            "finite-candidate!".to_owned(),
+            "positive-covariance!".to_owned(),
+            "symmetric-covariance!".to_owned(),
+        ]);
+
+        for _ in 0..64 {
+            let mut program = test_mech_program(MechProgramConfig::default());
+            program.run_string(source)?;
+            let expected_expressions = program
+                .interpreter()
+                .state
+                .borrow()
+                .integrity_constraints
+                .values()
+                .map(|constraint| (constraint.name.clone(), constraint.expression.clone()))
+                .collect::<BTreeMap<_, _>>();
+            let parsed = ParsedProgram::from_bytes(&program.compile_bytecode()?)?;
+            let constants = parsed.decode_constants()?;
+            let constant_registers = parsed
+                .instructions
+                .iter()
+                .filter_map(|instruction| match instruction {
+                    BytecodeInstruction::ConstLoad { dst, constant } => Some((*dst, *constant)),
+                    _ => None,
+                })
+                .collect::<BTreeMap<Register, u32>>();
+            let string_at = |register: Register| -> String {
+                let constant = constant_registers
+                    .get(&register)
+                    .expect("marker String metadata must be loaded from a constant");
+                match &constants[*constant as usize] {
+                    LegacyValue::String(value) => value.borrow().clone(),
+                    other => {
+                        panic!("marker metadata register {register} must be String, got {other:?}")
+                    }
+                }
+            };
+            let markers = parsed
+                .instructions
+                .iter()
+                .filter_map(|instruction| match instruction {
+                    BytecodeInstruction::RuntimeVariadic {
+                        function,
+                        arguments,
+                        ..
+                    } if *function == hash_str("integrity/constraint") => Some(arguments),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+
+            assert_eq!(markers.len(), 3);
+            let mut decoded_names = BTreeSet::new();
+            let mut distinct_string_registers = BTreeSet::new();
+            for arguments in markers {
+                assert_eq!(arguments.len(), 6);
+                let name = string_at(arguments[1]);
+                let expression = string_at(arguments[2]);
+                assert_eq!(
+                    parsed.symbols.get(&hash_str(&name)),
+                    Some(&arguments[0]),
+                    "integrity marker must remain associated with its named result register",
+                );
+                assert_eq!(expected_expressions.get(&name), Some(&expression));
+                assert!(decoded_names.insert(name));
+                assert!(distinct_string_registers.insert(arguments[1]));
+                assert!(distinct_string_registers.insert(arguments[2]));
+            }
+            assert_eq!(decoded_names, expected_names);
+            assert_eq!(distinct_string_registers.len(), 6);
+        }
+
+        Ok(())
     }
 
     fn program_with_nested_interpreter(nested_id: u64, child_id: u64) -> MechProgram {

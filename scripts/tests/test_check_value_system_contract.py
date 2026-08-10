@@ -752,9 +752,10 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
                     if variants
                 ]
         return {
-            "schema_version": 3,
+            "schema_version": 4,
             "reference_commit": self.reference,
             "families": families,
+            "authorized_high_risk_uses": [],
             "use_classifications": classifications,
         }
 
@@ -1066,6 +1067,45 @@ class LegacyGrowthTests(unittest.TestCase):
     def test_new_value_state_journal_path_fails(self):
         self.assertTrue(
             self.failures([], [self.row("new.rs", 1)], "value-state-journal")
+        )
+
+    def test_exact_post_c0_authorization_passes_but_excess_authorization_fails(self):
+        live = self.row("new.rs", 1)
+        authorization = {
+            "gate": "D1A",
+            "identifier": "valref-alias",
+            "path": "new.rs",
+            "fingerprint": live["sites"][0]["fingerprint"],
+            "count": 1,
+            "reason": "authorized compiler adapter boundary",
+        }
+        baseline = {"high_risk_api_uses": {"valref-alias": []}}
+        current = {"high_risk_api_uses": {"valref-alias": [live]}}
+        migration = {"authorized_high_risk_uses": [authorization]}
+        self.assertEqual(
+            CHECKER.high_risk_failures(
+                baseline,
+                current,
+                Path("baseline.json"),
+                migration,
+                Path("migration.json"),
+            ),
+            [],
+        )
+
+        authorization["count"] = 2
+        self.assertIn(
+            "C0-LEGACY-AUTHORIZATION-STALE",
+            {
+                item.contract_id
+                for item in CHECKER.high_risk_failures(
+                    baseline,
+                    current,
+                    Path("baseline.json"),
+                    migration,
+                    Path("migration.json"),
+                )
+            },
         )
 
 

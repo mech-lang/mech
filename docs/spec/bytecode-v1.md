@@ -272,10 +272,40 @@ retains the child registers as its reactive dependencies.
 All registers and indices are in range, and runtime-function IDs are nonzero.
 There is exactly one `Return`; it is the final instruction.
 
+### Register initialization
+
+Bytecode validation tracks static register initialization.
+
+The following instructions define a previously uninitialized destination:
+
+- `ConstLoad`
+- `CompositePack`
+- `ResourceRead`
+
+Each such destination must be uninitialized before that instruction and is
+initialized afterward. A register may have only one static defining
+instruction.
+
+`ResourceRead` is a defining instruction because its first value is supplied
+by the external resource provider. Its destination cell exists before
+execution with an `Empty` runtime payload, but no program-authored payload is
+serialized for that register.
+
+Runtime function instructions, `HostCall`, `ResourceWrite`, and `ResourceSend`
+operate on already initialized destination cells and therefore require their
+destinations to have an earlier static definition.
+
+All input/source operands and `Return` sources must be initialized before use.
+
 Each register owns one stable outer value cell for the program's lifetime.
 Constant loads and external instructions update the value behind that cell;
 symbols, downstream instructions, rollback checkpoints, and `Return` all
 observe the same cell identity.
+
+Static bytecode initialization is distinct from allocation of the outer cell.
+The interpreter allocates register cells before instruction execution.
+`ResourceRead` establishes the first concrete payload of that pre-existing
+cell.
 
 ### Runtime factory contracts
 
@@ -291,6 +321,34 @@ Core bytecode validation and native planning share this one instruction
 contract traversal. Native planning supplies a trusted external-contract
 resolver for host calls and resource operations; it does not replay the
 instruction stream in a second interpreter.
+
+`ResourceRead` has no destination seed. During contract planning, a trusted
+external contract resolver supplies a concrete representative of the
+provider-owned first output representation. That representative exists only
+for validation: it is not serialized, is not a constant, and does not
+contribute to program identity. The default structural resolver fails closed
+for `ResourceRead` because it has no provider output representation to supply.
+
+Runtime contract planning treats the resolver result as the destination's
+value when validating downstream instruction contracts. Runtime execution
+independently obtains the actual first value from the provider.
+
+The execution-service boundary makes those two provider interactions
+explicit. Contract planning obtains a detached, non-consuming representative
+that establishes the expected runtime representation and shape; it must not
+advance or inspect the provider's actual observation stream. Execution later
+performs the resource read exactly once. The representative is transient
+engine-local planning evidence: it is not serialized, is not a program
+constant, does not contribute to program identity, and need not contain the
+same payload as the actual first value.
+
+During decoded-program installation, the representative temporarily
+populates the existing stable destination cell so downstream factories can
+bind to the correct representation. The `ResourceRead` node is installed
+before its dependents. Initial plan execution replaces or stable-updates the
+representative with the one actual provider value before those dependents
+run, so successful execution never exposes the representative as a program
+observation or live-resource event.
 
 Factories that intentionally update an input register declare that alias
 policy explicitly. Other matrix outputs must not alias any input. Dynamic

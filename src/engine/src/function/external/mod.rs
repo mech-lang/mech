@@ -21,6 +21,15 @@ pub(super) fn compile_external_output(
 }
 
 #[cfg(feature = "compiler")]
+pub(super) fn compile_runtime_produced_external_output(
+    output: &ValRef,
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    let value = output.borrow();
+    mech_core::compile_runtime_produced_register(&value, output.addr(), context)
+}
+
+#[cfg(feature = "compiler")]
 pub(super) fn compile_external_value(
     value: &LegacyValue,
     context: &mut dyn BytecodeCompilerContext,
@@ -40,12 +49,14 @@ fn compile_external_value_with_fallback(
 #[cfg(all(test, feature = "f64"))]
 mod tests {
     use super::*;
-    use mech_bytecode::CompileCtx;
+    use mech_bytecode::{CompileCtx, CompiledBytecode};
     use mech_core::{
-        ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError, InitialSolvePolicy,
-        LegacyValue, MResult, MechError, MechExecutionServices, MechFunctionImpl, Ref,
-        ResourceDelivery, ResourceIntent, ValRef,
+        BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError,
+        InitialSolvePolicy, LegacyValue, MResult, MechError, MechExecutionServices,
+        MechFunctionCompiler, MechFunctionImpl, Ref, ResourceDelivery, ResourceIntent, ValRef,
     };
+    use nalgebra::DMatrix;
+    use std::collections::VecDeque;
 
     #[derive(Default)]
     struct FailingServices {
@@ -99,6 +110,81 @@ mod tests {
         }
     }
 
+    struct RecordingReadServices {
+        results: VecDeque<LegacyValue>,
+        planning_representative: Option<LegacyValue>,
+        planning_calls: usize,
+        resource_reads: usize,
+        live_bindings: usize,
+        bound_targets: Vec<ValRef>,
+    }
+
+    impl RecordingReadServices {
+        fn new(results: impl IntoIterator<Item = LegacyValue>) -> Self {
+            let results: VecDeque<_> = results.into_iter().collect();
+            Self {
+                planning_representative: results.front().cloned(),
+                results,
+                planning_calls: 0,
+                resource_reads: 0,
+                live_bindings: 0,
+                bound_targets: Vec::new(),
+            }
+        }
+
+        fn with_planning_representative(mut self, representative: LegacyValue) -> Self {
+            self.planning_representative = Some(representative);
+            self
+        }
+    }
+
+    impl MechExecutionServices for RecordingReadServices {
+        fn invoke_host_function(
+            &mut self,
+            _request: &ExecutionHostFunctionRequest,
+            _arguments: &[LegacyValue],
+        ) -> MResult<LegacyValue> {
+            Err(FailingServices::error("unexpected host call"))
+        }
+
+        fn plan_resource_read_output(
+            &mut self,
+            _request: &ExecutionResourceRequest,
+        ) -> MResult<LegacyValue> {
+            self.planning_calls += 1;
+            self.planning_representative
+                .as_ref()
+                .ok_or_else(|| FailingServices::error("missing planning representative"))?
+                .try_deep_snapshot()
+        }
+
+        fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+            self.resource_reads += 1;
+            self.results
+                .pop_front()
+                .ok_or_else(|| FailingServices::error("missing resource result"))
+        }
+
+        fn write_resource(
+            &mut self,
+            _request: &ExecutionResourceRequest,
+            _value: &LegacyValue,
+        ) -> MResult<()> {
+            Err(FailingServices::error("unexpected resource write"))
+        }
+
+        fn bind_live_resource(
+            &mut self,
+            _interpreter_id: u64,
+            _request: &ExecutionResourceRequest,
+            target: ValRef,
+        ) -> MResult<()> {
+            self.live_bindings += 1;
+            self.bound_targets.push(target);
+            Ok(())
+        }
+    }
+
     fn resource_request(intent: ResourceIntent) -> ExecutionResourceRequest {
         ExecutionResourceRequest {
             base_uri: "test://provider".into(),
@@ -113,6 +199,40 @@ mod tests {
             intent,
             delivery: ResourceDelivery::Snapshot,
         }
+    }
+
+    fn resource_read_function(
+        output: ValRef,
+        delivery: ResourceDelivery,
+    ) -> ExternalResourceReadFunction {
+        let mut request = resource_request(ResourceIntent::Read);
+        request.delivery = delivery;
+        ExternalResourceReadFunction {
+            interpreter_id: 7,
+            request,
+            output,
+            initial_solve_policy: InitialSolvePolicy::Solve,
+            semantic_contract: None,
+        }
+    }
+
+    fn matrix(rows: usize, columns: usize, values: Vec<f64>) -> LegacyValue {
+        LegacyValue::MatrixF64(crate::Matrix::DMatrix(Ref::new(DMatrix::from_vec(
+            rows, columns, values,
+        ))))
+    }
+
+    fn compile_resource_read(
+        observed: LegacyValue,
+        delivery: ResourceDelivery,
+    ) -> (CompiledBytecode, Vec<u8>, u32) {
+        let output = Ref::new(observed);
+        let function = resource_read_function(output, delivery);
+        let mut context = CompileCtx::new();
+        let destination = function.compile(&mut context).unwrap();
+        let compiled = context.finish_program(destination).unwrap();
+        let bytes = context.finish(destination).unwrap();
+        (compiled, bytes, destination)
     }
 
     #[test]
@@ -218,6 +338,209 @@ mod tests {
         assert!(error.full_chain_message().contains("resource read failure"));
         assert_eq!(services.resource_reads, 1);
         assert!(matches!(&*output.borrow(), LegacyValue::F64(value) if *value.borrow() == 42.0));
+    }
+
+    #[test]
+    fn resource_read_initializes_empty_stable_output() {
+        let output = Ref::new(LegacyValue::Empty);
+        let output_address = output.addr();
+        let function = resource_read_function(output.clone(), ResourceDelivery::Snapshot);
+        let mut services = RecordingReadServices::new([LegacyValue::F64(Ref::new(42.0))]);
+
+        function.solve_result_with(&mut services).unwrap();
+
+        assert_eq!(output.addr(), output_address);
+        assert!(matches!(&*output.borrow(), LegacyValue::F64(value) if *value.borrow() == 42.0));
+        assert_eq!(services.resource_reads, 1);
+    }
+
+    #[test]
+    fn resource_read_initializes_empty_matrix_output() {
+        let output = Ref::new(LegacyValue::Empty);
+        let output_address = output.addr();
+        let function = resource_read_function(output.clone(), ResourceDelivery::Snapshot);
+        let mut services = RecordingReadServices::new([matrix(2, 2, vec![1.0, 2.0, 3.0, 4.0])]);
+
+        function.solve_result_with(&mut services).unwrap();
+
+        assert_eq!(output.addr(), output_address);
+        assert!(matches!(
+            &*output.borrow(),
+            LegacyValue::MatrixF64(crate::Matrix::DMatrix(value))
+                if value.borrow().shape() == (2, 2)
+        ));
+    }
+
+    #[test]
+    fn resource_read_subsequent_same_representation_update_uses_stable_contract() {
+        let output = Ref::new(LegacyValue::Empty);
+        let output_address = output.addr();
+        let function = resource_read_function(output.clone(), ResourceDelivery::Snapshot);
+        let mut services = RecordingReadServices::new([
+            LegacyValue::F64(Ref::new(1.0)),
+            LegacyValue::F64(Ref::new(2.0)),
+        ]);
+
+        function.solve_result_with(&mut services).unwrap();
+        function.solve_result_with(&mut services).unwrap();
+
+        assert_eq!(output.addr(), output_address);
+        assert!(matches!(&*output.borrow(), LegacyValue::F64(value) if *value.borrow() == 2.0));
+    }
+
+    #[test]
+    fn resource_read_rejects_representation_change_after_initialization() {
+        let output = Ref::new(LegacyValue::Empty);
+        let function = resource_read_function(output.clone(), ResourceDelivery::Snapshot);
+        let mut services =
+            RecordingReadServices::new([LegacyValue::F64(Ref::new(1.0)), matrix(1, 1, vec![2.0])]);
+
+        function.solve_result_with(&mut services).unwrap();
+        let error = function.solve_result_with(&mut services).unwrap_err();
+
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
+        assert!(matches!(&*output.borrow(), LegacyValue::F64(value) if *value.borrow() == 1.0));
+    }
+
+    #[test]
+    fn resource_read_rejects_shape_change_after_initialization() {
+        let output = Ref::new(LegacyValue::Empty);
+        let function = resource_read_function(output.clone(), ResourceDelivery::Snapshot);
+        let mut services = RecordingReadServices::new([
+            matrix(1, 2, vec![1.0, 2.0]),
+            matrix(2, 1, vec![3.0, 4.0]),
+        ]);
+
+        function.solve_result_with(&mut services).unwrap();
+        let error = function.solve_result_with(&mut services).unwrap_err();
+
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
+        assert!(matches!(
+            &*output.borrow(),
+            LegacyValue::MatrixF64(crate::Matrix::DMatrix(value))
+                if value.borrow().shape() == (1, 2)
+                    && value.borrow().as_slice() == [1.0, 2.0]
+        ));
+    }
+
+    #[test]
+    fn resource_read_rejects_empty_initial_provider_result() {
+        let output = Ref::new(LegacyValue::Empty);
+        let function = resource_read_function(output.clone(), ResourceDelivery::Live);
+        let mut services = RecordingReadServices::new([LegacyValue::Empty]);
+
+        let error = function.solve_result_with(&mut services).unwrap_err();
+
+        assert_eq!(error.kind_name(), "ExternalResourceReadUninitializedValue");
+        assert_eq!(*output.borrow(), LegacyValue::Empty);
+        assert_eq!(services.live_bindings, 0);
+    }
+
+    #[test]
+    fn resource_read_live_binding_observes_initialized_cell() {
+        let output = Ref::new(LegacyValue::Empty);
+        let output_address = output.addr();
+        let function = resource_read_function(output.clone(), ResourceDelivery::Live);
+        let mut services = RecordingReadServices::new([matrix(2, 1, vec![1.0, 2.0])]);
+
+        function.solve_result_with(&mut services).unwrap();
+
+        assert_eq!(services.live_bindings, 1);
+        assert_eq!(services.bound_targets[0].addr(), output_address);
+        assert!(matches!(
+            &*services.bound_targets[0].borrow(),
+            LegacyValue::MatrixF64(crate::Matrix::DMatrix(value))
+                if value.borrow().shape() == (2, 1)
+        ));
+    }
+
+    #[test]
+    fn resource_read_compile_records_kind_without_const_load() {
+        let observed = matrix(4, 1, vec![1.0, 2.0, 3.0, 4.0]);
+        let expected_kind = observed.kind();
+        let (compiled, _bytes, destination) =
+            compile_resource_read(observed, ResourceDelivery::Live);
+
+        assert_eq!(compiled.program.register_count, 1);
+        assert_eq!(
+            compiled.register_kinds[destination as usize].as_ref(),
+            Some(&expected_kind)
+        );
+        assert_eq!(
+            compiled
+                .program
+                .instructions
+                .iter()
+                .filter(|instruction| matches!(
+                    instruction,
+                    BytecodeInstruction::ResourceRead { dst, .. } if *dst == destination
+                ))
+                .count(),
+            1
+        );
+        assert!(!compiled.program.instructions.iter().any(|instruction| {
+            matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == destination)
+        }));
+        assert!(!compiled.program.instructions.iter().any(|instruction| {
+            matches!(instruction, BytecodeInstruction::CompositePack { dst, .. } if *dst == destination)
+        }));
+        assert!(compiled.program.constants.is_empty());
+    }
+
+    #[test]
+    fn resource_read_compile_does_not_encode_observed_payload() {
+        let (first, first_bytes, _) = compile_resource_read(
+            matrix(4, 1, vec![1.0, 2.0, 3.0, 4.0]),
+            ResourceDelivery::Live,
+        );
+        let (second, second_bytes, _) = compile_resource_read(
+            matrix(4, 1, vec![101.0, 202.0, 303.0, 404.0]),
+            ResourceDelivery::Live,
+        );
+
+        assert_eq!(first.program.register_count, second.program.register_count);
+        assert_eq!(first.register_kinds, second.register_kinds);
+        assert_eq!(first.program.requirements, second.program.requirements);
+        assert_eq!(first.program.instructions, second.program.instructions);
+        assert_eq!(first.program.constants.len(), 0);
+        assert_eq!(second.program.constants.len(), 0);
+        assert_eq!(first_bytes, second_bytes);
+    }
+
+    #[test]
+    fn resource_read_without_const_initializer_executes_after_decode() {
+        let (_compiled, bytes, destination) = compile_resource_read(
+            matrix(4, 1, vec![1.0, 2.0, 3.0, 4.0]),
+            ResourceDelivery::Live,
+        );
+        let parsed = mech_core::ParsedProgram::from_bytes(&bytes).unwrap();
+        assert!(parsed.instructions.iter().any(|instruction| matches!(
+            instruction,
+            BytecodeInstruction::ResourceRead { dst, .. } if *dst == destination
+        )));
+        assert!(!parsed.instructions.iter().any(|instruction| matches!(
+            instruction,
+            BytecodeInstruction::ConstLoad { dst, .. } if *dst == destination
+        )));
+
+        let planning_frame = vec![11.25, -0.375, 22.5, 0.125];
+        let runtime_frame = vec![1.0, 2.0, 3.0, 4.0];
+        let mut services = RecordingReadServices::new([matrix(4, 1, runtime_frame.clone())])
+            .with_planning_representative(matrix(4, 1, planning_frame.clone()));
+        let mut program = crate::MechProgram::new(crate::MechProgramConfig::default());
+        let output = program
+            .run_bytecode_with_services(&bytes, &mut services)
+            .unwrap();
+
+        assert_eq!(output.as_vecf64().unwrap(), runtime_frame);
+        assert_ne!(output.as_vecf64().unwrap(), planning_frame);
+        assert_eq!(services.planning_calls, 1);
+        assert_eq!(services.resource_reads, 1);
+        assert_eq!(services.live_bindings, 1);
+        assert_eq!(
+            services.bound_targets[0].borrow().as_vecf64().unwrap(),
+            vec![1.0, 2.0, 3.0, 4.0]
+        );
     }
 
     #[test]

@@ -294,6 +294,7 @@ fn validate_composite_packs(
     }
     let values = decode_constants(types, constants, blob)?;
     let mut registers = vec![None::<LegacyValue>; register_count];
+    let mut dynamic = vec![false; register_count];
     for instruction in instructions {
         match instruction {
             BytecodeInstruction::ConstLoad { dst, constant } => {
@@ -305,13 +306,37 @@ fn validate_composite_packs(
                 children,
             } => {
                 let template = &values[*template as usize];
-                let children = children
+                let static_children = children
                     .iter()
-                    .map(|child| registers[*child as usize].clone().unwrap())
-                    .collect::<Vec<_>>();
-                let rebuilt = crate::rebuild_bytecode_composite(template, children)?;
-                registers[*dst as usize] = Some(rebuilt);
+                    .map(|child| registers[*child as usize].clone())
+                    .collect::<Option<Vec<_>>>();
+                if let Some(children) = static_children {
+                    registers[*dst as usize] =
+                        Some(crate::rebuild_bytecode_composite(template, children)?);
+                } else {
+                    for child in children {
+                        if registers[*child as usize].is_none() && !dynamic[*child as usize] {
+                            return invalid(format!(
+                                "CompositePack child register {child} has no producer"
+                            ));
+                        }
+                    }
+                    let template_children = crate::bytecode_composite_children(template)
+                        .ok_or_else(|| {
+                            invalid::<()>("CompositePack template is not a composite value")
+                                .unwrap_err()
+                        })?;
+                    if template_children.len() != children.len() {
+                        return invalid(format!(
+                            "CompositePack template expects {} children, found {}",
+                            template_children.len(),
+                            children.len(),
+                        ));
+                    }
+                    dynamic[*dst as usize] = true;
+                }
             }
+            BytecodeInstruction::ResourceRead { dst, .. } => dynamic[*dst as usize] = true,
             _ => {}
         }
     }
@@ -1202,7 +1227,13 @@ fn validate_instructions(
                 dst,
             } => {
                 requirement(*req)?;
-                require_initialized_register(&register, &initialized, index, *dst)?;
+                let destination = register(index, *dst)?;
+                if initialized[destination] {
+                    return invalid(format!(
+                        "instruction {index} register {dst} is initialized more than once"
+                    ));
+                }
+                initialized[destination] = true;
             }
             BytecodeInstruction::ResourceWrite {
                 requirement: req,

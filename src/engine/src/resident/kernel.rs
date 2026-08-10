@@ -1,30 +1,20 @@
 use mech_core::InstanceEpoch;
 
 use super::{Candidate, NODES_PER_EKF, ResidentExecutionError, efficacy::ekf};
+use crate::efficacy::ekf::math;
 
 #[inline]
 fn validate_candidate(
     state: &[f64; 3],
     covariance: &[f64; 9],
 ) -> Result<(), ResidentExecutionError> {
-    if !state
-        .iter()
-        .chain(covariance)
-        .all(|value| value.is_finite())
-    {
+    if !math::candidate_finite(state, covariance) {
         return Err(ResidentExecutionError::NonFiniteState);
     }
-    if ![0, 4, 8].into_iter().all(|index| covariance[index] > 0.0) {
+    if !math::covariance_positive_diagonal(covariance) {
         return Err(ResidentExecutionError::CovarianceDiagonal);
     }
-    let mut symmetry_error = 0.0_f64;
-    for column in 0..3 {
-        for row in 0..3 {
-            symmetry_error = symmetry_error
-                .max((covariance[column * 3 + row] - covariance[row * 3 + column]).abs());
-        }
-    }
-    if symmetry_error > 1.0e-10 {
+    if !math::covariance_symmetric(covariance) {
         return Err(ResidentExecutionError::CovarianceSymmetry);
     }
     Ok(())

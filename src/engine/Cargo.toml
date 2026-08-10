@@ -25,6 +25,7 @@ runtime = ["program", "functions"]
 # Runtime-only diagnostic hook consumed by mech-runtime's non-default Gate A probes.
 runtime_bench_probes = ["runtime"]
 resident-ekf = ["mech-core/resident-execution"]
+resident-ekf-artifact = ["resident-ekf", "compiler_default"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 source = ["runtime", "dep:mech-syntax"]

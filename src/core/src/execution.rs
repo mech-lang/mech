@@ -73,6 +73,29 @@ pub trait MechExecutionServices {
         arguments: &[LegacyValue],
     ) -> MResult<LegacyValue>;
 
+    /// Supplies a detached representative of the first resource-read output
+    /// representation for bytecode contract planning.
+    ///
+    /// This operation must not consume a resource value, advance a cursor,
+    /// dequeue an event, read a sensor sample, increment an observation
+    /// sequence, perform the actual resource read, or bind a live target. It
+    /// may inspect or cache non-consuming provider metadata. The returned
+    /// payload is semantically irrelevant, need not equal the first runtime
+    /// value, and is used only to establish shape and representation. The
+    /// provider promises that the actual runtime value is stable-update
+    /// compatible with this representative.
+    fn plan_resource_read_output(
+        &mut self,
+        request: &ExecutionResourceRequest,
+    ) -> MResult<LegacyValue> {
+        Err(MechError::new(
+            ResourceReadPlanningUnsupported {
+                request: request.clone(),
+            },
+            None,
+        ))
+    }
+
     fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue>;
 
     fn write_resource(
@@ -169,6 +192,24 @@ pub struct ResourceReadExecutionUnsupported {
     pub request: ExecutionResourceRequest,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ResourceReadPlanningUnsupported {
+    pub request: ExecutionResourceRequest,
+}
+
+impl MechErrorKind for ResourceReadPlanningUnsupported {
+    fn name(&self) -> &str {
+        "ResourceReadPlanningUnsupported"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "resource-read request {:?} requires non-consuming output-representation planning",
+            self.request,
+        )
+    }
+}
+
 impl MechErrorKind for ResourceReadExecutionUnsupported {
     fn name(&self) -> &str {
         "ResourceReadExecutionUnsupported"
@@ -260,6 +301,21 @@ mod tests {
         assert_eq!(
             read_error
                 .kind_as::<ResourceReadExecutionUnsupported>()
+                .unwrap()
+                .request,
+            resource_request,
+        );
+
+        let planning_error = services
+            .plan_resource_read_output(&resource_request)
+            .unwrap_err();
+        assert_eq!(
+            planning_error.kind_name(),
+            "ResourceReadPlanningUnsupported"
+        );
+        assert_eq!(
+            planning_error
+                .kind_as::<ResourceReadPlanningUnsupported>()
                 .unwrap()
                 .request,
             resource_request,

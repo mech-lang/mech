@@ -105,6 +105,22 @@ impl MechExecutionServices for RuntimeCoordinatedExecutionServices<'_, '_> {
         runtime.with_runtime_execution_session(context, |session| session.read_resource(request))
     }
 
+    fn plan_resource_read_output(
+        &mut self,
+        request: &ExecutionResourceRequest,
+    ) -> MResult<LegacyValue> {
+        let mut turn = self
+            .turn
+            .try_borrow_mut()
+            .map_err(|_| execution_services_borrow_conflict("runtime_plan_resource_read_output"))?;
+        let RuntimeCoordinatedTurn {
+            runtime, context, ..
+        } = &mut *turn;
+        runtime.with_runtime_execution_session(context, |session| {
+            session.plan_resource_read_output(request)
+        })
+    }
+
     fn write_resource(
         &mut self,
         request: &ExecutionResourceRequest,

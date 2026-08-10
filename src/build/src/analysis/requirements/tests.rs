@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant,
     ExecutionHostFunctionRequest, ExecutionResourceRequest, FunctionCatalog, LegacyValue, MResult,
-    ParsedProgram, ResourceDelivery, ResourceIntent, RuntimeType, write_bytecode,
+    ParsedProgram, Ref, ResourceDelivery, ResourceIntent, RuntimeType, write_bytecode,
 };
 use mech_runtime::{
     ConfigValue, HostContextManifest, HostInstanceConfig, HostManifestConfig, LogLevel,
@@ -179,19 +179,8 @@ fn analyze_requirements_with_production_resolver(
                 });
             }
             ApplicationRequirement::Resource(request) if request.intent == ResourceIntent::Read => {
-                let constant = if request.base_uri.starts_with("time://") {
-                    f64_constant(0.0)
-                } else if request.base_uri.starts_with("test://") {
-                    empty_constant()
-                } else {
-                    string_constant("")
-                };
-                let dst = push_constant_load(
-                    &mut constants,
-                    &mut instructions,
-                    &mut next_register,
-                    constant,
-                );
+                let dst = next_register;
+                next_register += 1;
                 instructions.push(BytecodeInstruction::ResourceRead {
                     requirement: requirement_index as u32,
                     dst,
@@ -315,7 +304,7 @@ impl RuntimeResourceProvider for TestResourceProvider {
     }
 
     fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        Ok(LegacyValue::Empty)
+        Ok(LegacyValue::String(Ref::new("planned".to_owned())))
     }
 
     fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {

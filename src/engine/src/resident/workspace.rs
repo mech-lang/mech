@@ -1,24 +1,7 @@
 use mech_core::{InstanceEpoch, SlotIndex};
 
 use super::{ActivatedPlan, NodeIndex, slot};
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub(crate) struct EkfScratch {
-    pub(crate) trig: [f64; 2],
-    pub(crate) motion_jacobian: [f64; 9],
-    pub(crate) control_jacobian: [f64; 6],
-    pub(crate) predicted_state: [f64; 3],
-    pub(crate) predicted_covariance: [f64; 9],
-    pub(crate) delta_range: [f64; 3],
-    pub(crate) predicted_measurement: [f64; 2],
-    pub(crate) measurement_jacobian: [f64; 6],
-    pub(crate) innovation_covariance: [f64; 4],
-    pub(crate) inverse_innovation: [f64; 4],
-    pub(crate) gain: [f64; 6],
-    pub(crate) innovation: [f64; 2],
-    pub(crate) corrected_state: [f64; 3],
-    pub(crate) corrected_covariance: [f64; 9],
-}
+use crate::efficacy::ekf::operation::EkfScratch;
 
 #[derive(Debug)]
 pub(crate) struct TurnWorkspace {

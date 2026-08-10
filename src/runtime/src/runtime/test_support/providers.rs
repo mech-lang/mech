@@ -1,6 +1,10 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
 use std::thread;
 use std::time::Duration;
 
@@ -69,6 +73,28 @@ impl RuntimeAfterCommitEffect for TestAfterCommitEffect {
 #[derive(Debug, Default)]
 pub(crate) struct TestResourceProvider {
     values: BTreeMap<String, BTreeMap<String, LegacyValue>>,
+    access_counts: Option<Arc<TestResourceAccessCounts>>,
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct TestResourceAccessCounts {
+    plans: AtomicUsize,
+    reads: AtomicUsize,
+}
+
+impl TestResourceAccessCounts {
+    pub(crate) fn reset(&self) {
+        self.plans.store(0, Ordering::SeqCst);
+        self.reads.store(0, Ordering::SeqCst);
+    }
+
+    pub(crate) fn plans(&self) -> usize {
+        self.plans.load(Ordering::SeqCst)
+    }
+
+    pub(crate) fn reads(&self) -> usize {
+        self.reads.load(Ordering::SeqCst)
+    }
 }
 
 impl TestResourceProvider {
@@ -88,6 +114,11 @@ impl TestResourceProvider {
             .insert(path.to_string(), value);
         self
     }
+
+    pub(crate) fn with_access_counts(mut self, counts: Arc<TestResourceAccessCounts>) -> Self {
+        self.access_counts = Some(counts);
+        self
+    }
 }
 
 impl RuntimeResourceProvider for TestResourceProvider {
@@ -100,11 +131,27 @@ impl RuntimeResourceProvider for TestResourceProvider {
     }
 
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        if let Some(counts) = &self.access_counts {
+            counts.reads.fetch_add(1, Ordering::SeqCst);
+        }
         self.planned_value(request)
     }
 
     fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        self.planned_value(request)
+        if let Some(counts) = &self.access_counts {
+            counts.plans.fetch_add(1, Ordering::SeqCst);
+        }
+        match self.planned_value(request)? {
+            LegacyValue::F64(value) => {
+                let actual = *value.borrow();
+                Ok(LegacyValue::F64(Ref::new(if actual == 0.0 {
+                    1.0
+                } else {
+                    0.0
+                })))
+            }
+            value => Ok(value),
+        }
     }
 }
 

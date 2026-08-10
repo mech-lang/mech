@@ -47,6 +47,9 @@ pub enum CompiledInstructionRole {
     /// The legacy runtime instruction used to retain current invariant
     /// behavior. It must not become a `ProgramArtifact` node.
     IntegrityMarker,
+    /// Executable legacy variable-definition instruction whose semantic
+    /// declaration is already represented by symbol and slot metadata.
+    DeclarationMarker,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -80,6 +83,10 @@ pub struct CompiledBytecode {
     /// Exact current cardinality for map/set registers. Dense and parallel to
     /// the register space; other register families carry `None`.
     pub register_collection_cardinalities: Vec<Option<usize>>,
+    /// Source-declaration initializer constant, dense and parallel to the
+    /// register space. This is compilation sidecar metadata, not an
+    /// executable instruction.
+    pub register_state_initializers: Vec<Option<u32>>,
     /// Exact first-definition order, unlike the canonically sorted symbol map.
     pub symbol_definitions: Vec<CompiledSymbolDefinition>,
     pub return_register: Register,
@@ -117,6 +124,7 @@ pub struct CompileCtx {
     instruction_source_nodes: Vec<Option<u32>>,
     register_kinds: BTreeMap<Register, ValueKind>,
     register_collection_cardinalities: BTreeMap<Register, usize>,
+    register_state_initializers: BTreeMap<Register, u32>,
     next_register_kind_override: Option<ValueKind>,
     symbol_definitions: Vec<CompiledSymbolDefinition>,
     current_node_kind: Option<CompiledNodeKind>,
@@ -144,6 +152,7 @@ impl Default for CompileCtx {
             instruction_source_nodes: Vec::new(),
             register_kinds: BTreeMap::new(),
             register_collection_cardinalities: BTreeMap::new(),
+            register_state_initializers: BTreeMap::new(),
             next_register_kind_override: None,
             symbol_definitions: Vec::new(),
             current_node_kind: None,
@@ -198,6 +207,56 @@ impl CompileCtx {
             self.register_kinds.insert(register, kind);
         }
         Ok(())
+    }
+
+    fn remove_instruction(&mut self, index: usize) {
+        self.instructions.remove(index);
+        self.instruction_roles.remove(index);
+        self.instruction_contracts.remove(index);
+        self.instruction_source_nodes.remove(index);
+    }
+
+    fn remove_constant_if_unreferenced(&mut self, constant: u32) {
+        let instruction_references =
+            self.instructions
+                .iter()
+                .any(|instruction| match instruction {
+                    BytecodeInstruction::ConstLoad {
+                        constant: referenced,
+                        ..
+                    }
+                    | BytecodeInstruction::CompositePack {
+                        template: referenced,
+                        ..
+                    } => *referenced == constant,
+                    _ => false,
+                });
+        let state_references = self
+            .register_state_initializers
+            .values()
+            .any(|referenced| *referenced == constant);
+        if instruction_references || state_references {
+            return;
+        }
+
+        self.pending_constants.remove(constant as usize);
+        for instruction in &mut self.instructions {
+            let referenced = match instruction {
+                BytecodeInstruction::ConstLoad { constant, .. } => Some(constant),
+                BytecodeInstruction::CompositePack { template, .. } => Some(template),
+                _ => None,
+            };
+            if let Some(referenced) = referenced
+                && *referenced > constant
+            {
+                *referenced -= 1;
+            }
+        }
+        for initializer in self.register_state_initializers.values_mut() {
+            if *initializer > constant {
+                *initializer -= 1;
+            }
+        }
     }
 
     pub fn begin_plan_node(&mut self, kind: CompiledNodeKind) -> MResult<()> {
@@ -347,6 +406,19 @@ impl CompileCtx {
                 })?;
             *target = Some(*cardinality);
         }
+        let mut register_state_initializers = vec![None; self.next_register as usize];
+        for (register, constant) in &self.register_state_initializers {
+            let target = register_state_initializers
+                .get_mut(*register as usize)
+                .ok_or_else(|| {
+                    invalid::<()>(format!(
+                        "recorded state initializer register {register} is outside register count {}",
+                        self.next_register,
+                    ))
+                    .unwrap_err()
+                })?;
+            *target = Some(*constant);
+        }
 
         Ok(CompiledBytecode {
             program: BytecodeProgram {
@@ -363,6 +435,7 @@ impl CompileCtx {
             instruction_source_nodes,
             register_kinds,
             register_collection_cardinalities,
+            register_state_initializers,
             symbol_definitions: self.symbol_definitions.clone(),
             return_register,
             integrity_constraints: self.integrity_constraints.clone(),
@@ -453,6 +526,84 @@ impl BytecodeCompilerContext for CompileCtx {
         let kind = value_kind_from_runtime_type(&encoded.runtime_type)?;
         self.record_register_kind_exact(register, kind)?;
         self.record_register_constant_metadata(register, constant)
+    }
+
+    fn record_runtime_produced_register(&mut self, register: Register) -> MResult<()> {
+        if self.register_state_initializers.contains_key(&register) {
+            return invalid(format!(
+                "state register {register} cannot be replaced by a runtime-produced value"
+            ));
+        }
+        let initializers = self
+            .instructions
+            .iter()
+            .enumerate()
+            .filter_map(|(index, instruction)| match instruction {
+                BytecodeInstruction::ConstLoad { dst, constant } if *dst == register => {
+                    Some((index, *constant))
+                }
+                BytecodeInstruction::CompositePack { dst, template, .. } if *dst == register => {
+                    Some((index, *template))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        if initializers.len() > 1 {
+            return invalid(format!(
+                "runtime-produced register {register} has more than one provisional initializer"
+            ));
+        }
+        let Some((index, constant)) = initializers.first().copied() else {
+            return Ok(());
+        };
+        self.remove_instruction(index);
+        self.remove_constant_if_unreferenced(constant);
+        Ok(())
+    }
+
+    fn record_state_initializer(&mut self, register: Register, constant: u32) -> MResult<()> {
+        if self.pending_constants.get(constant as usize).is_none() {
+            return invalid(format!("constant index {constant} is out of range"));
+        }
+        if let Some(existing) = self.register_state_initializers.get(&register).copied() {
+            if existing != constant {
+                return invalid(format!(
+                    "register {register} has existing state initializer {existing}, incoming initializer {constant}",
+                ));
+            }
+            return Ok(());
+        }
+        let seed_instruction = self
+            .instructions
+            .iter()
+            .position(|instruction| match instruction {
+                BytecodeInstruction::ConstLoad { dst, .. } => *dst == register,
+                _ => false,
+            })
+            .ok_or_else(|| {
+                invalid::<()>(format!(
+                    "state register {register} has no declaration seed ConstLoad"
+                ))
+                .unwrap_err()
+            })?;
+        let BytecodeInstruction::ConstLoad { constant: seed, .. } =
+            self.instructions[seed_instruction]
+        else {
+            unreachable!("seed instruction was filtered as ConstLoad");
+        };
+        if seed == constant {
+            self.register_state_initializers.insert(register, constant);
+            return Ok(());
+        }
+        if let BytecodeInstruction::ConstLoad {
+            constant: target, ..
+        } = &mut self.instructions[seed_instruction]
+        {
+            *target = constant;
+        }
+        self.register_state_initializers.insert(register, constant);
+        self.remove_constant_if_unreferenced(seed);
+        Ok(())
     }
 
     fn intern_constant(&mut self, constant: EncodedConstant) -> MResult<u32> {
@@ -612,6 +763,25 @@ impl BytecodeCompilerContext for CompileCtx {
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
         self.instruction_contracts.push(self.current_node_contract);
         self.instruction_source_nodes.push(self.current_source_node);
+    }
+
+    fn emit_declaration_binary(
+        &mut self,
+        function: u64,
+        destination: Register,
+        first: Register,
+        second: Register,
+    ) {
+        self.instructions.push(BytecodeInstruction::RuntimeBinary {
+            function,
+            dst: destination,
+            lhs: first,
+            rhs: second,
+        });
+        self.instruction_roles
+            .push(Some(CompiledInstructionRole::DeclarationMarker));
+        self.instruction_contracts.push(None);
+        self.instruction_source_nodes.push(None);
     }
 
     fn emit_ternop(
@@ -855,6 +1025,64 @@ mod tests {
             context.register_for_ptr_with_initialization_status(100),
             (0, true),
         );
+    }
+
+    #[test]
+    fn runtime_producer_discards_an_earlier_planning_seed() {
+        let value = LegacyValue::F64(mech_core::Ref::new(7.0));
+        let fallback = std::ptr::from_ref(&value).addr();
+        let mut context = CompileCtx::new();
+        let seeded = compile_value_register(&value, fallback, &mut context).unwrap();
+
+        let produced =
+            mech_core::compile_runtime_produced_register(&value, fallback, &mut context).unwrap();
+        let requirement = context
+            .intern_requirement(resource_requirement("test://provider"))
+            .unwrap();
+        context.emit_resource_read(requirement, produced);
+        let compiled = context.finish_program(produced).unwrap();
+
+        assert_eq!(seeded, produced);
+        assert!(compiled.program.constants.is_empty());
+        assert!(!compiled.program.instructions.iter().any(|instruction| {
+            matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == produced)
+        }));
+        assert!(compiled.program.instructions.iter().any(|instruction| {
+            matches!(instruction, BytecodeInstruction::ResourceRead { dst, .. } if *dst == produced)
+        }));
+    }
+
+    #[test]
+    fn runtime_producer_keeps_a_seed_constant_used_by_another_register() {
+        let produced_value = LegacyValue::F64(mech_core::Ref::new(7.0));
+        let retained_value = LegacyValue::F64(mech_core::Ref::new(7.0));
+        let produced_fallback = std::ptr::from_ref(&produced_value).addr();
+        let retained_fallback = std::ptr::from_ref(&retained_value).addr();
+        let mut context = CompileCtx::new();
+        let produced =
+            compile_value_register(&produced_value, produced_fallback, &mut context).unwrap();
+        let retained =
+            compile_value_register(&retained_value, retained_fallback, &mut context).unwrap();
+
+        mech_core::compile_runtime_produced_register(
+            &produced_value,
+            produced_fallback,
+            &mut context,
+        )
+        .unwrap();
+        let requirement = context
+            .intern_requirement(resource_requirement("test://provider"))
+            .unwrap();
+        context.emit_resource_read(requirement, produced);
+        let compiled = context.finish_program(produced).unwrap();
+
+        assert_eq!(compiled.program.constants.len(), 1);
+        assert!(compiled.program.instructions.iter().any(|instruction| {
+            matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == retained)
+        }));
+        assert!(!compiled.program.instructions.iter().any(|instruction| {
+            matches!(instruction, BytecodeInstruction::ConstLoad { dst, .. } if *dst == produced)
+        }));
     }
 
     #[test]
@@ -1159,7 +1387,7 @@ mod tests {
         fn compile(resource_first: bool) -> Vec<u8> {
             let mut context = CompileCtx::new();
             let registers = allocate_registers(&mut context, 2);
-            initialize_registers(&mut context, &registers);
+            initialize_registers(&mut context, &registers[..1]);
             let host = host_requirement("cli/stdout");
             let resource = resource_requirement("context://input");
             let (host_id, resource_id) = if resource_first {
@@ -1184,11 +1412,11 @@ mod tests {
             ApplicationRequirement::HostFunction(_)
         ));
         assert!(matches!(
-            parsed.instructions[2],
+            parsed.instructions[1],
             BytecodeInstruction::HostCall { requirement: 0, .. }
         ));
         assert!(matches!(
-            parsed.instructions[3],
+            parsed.instructions[2],
             BytecodeInstruction::ResourceRead { requirement: 1, .. }
         ));
     }
@@ -1218,8 +1446,8 @@ mod tests {
     #[test]
     fn all_instruction_shapes_round_trip() {
         let mut context = CompileCtx::new();
-        let registers = allocate_registers(&mut context, 7);
-        initialize_registers(&mut context, &registers);
+        let registers = allocate_registers(&mut context, 8);
+        initialize_registers(&mut context, &registers[..7]);
         let host = context
             .intern_requirement(host_requirement("cli/stdout"))
             .unwrap();
@@ -1241,8 +1469,8 @@ mod tests {
         );
         context.emit_varop(6, registers[5], registers[..5].to_vec());
         context.emit_host_call(host, registers[5], registers[..2].to_vec());
-        context.emit_resource_read(resource, registers[5]);
-        context.emit_resource_write(resource, registers[5], registers[0]);
+        context.emit_resource_read(resource, registers[7]);
+        context.emit_resource_write(resource, registers[5], registers[7]);
         context.emit_resource_send(resource, registers[6], registers[5]);
 
         let parsed = ParsedProgram::from_bytes(&context.finish(registers[6]).unwrap()).unwrap();

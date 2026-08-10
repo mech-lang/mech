@@ -26,6 +26,17 @@ mod activation_scope;
 
 #[cfg(all(
     test,
+    feature = "functions",
+    feature = "variables",
+    feature = "variable_define",
+    feature = "f64",
+    feature = "program",
+    feature = "compiler",
+))]
+mod context;
+
+#[cfg(all(
+    test,
     feature = "variable_define",
     feature = "f64",
     feature = "string",

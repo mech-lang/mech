@@ -271,18 +271,6 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                 ),
             ));
         }
-        validate_stable_value_update(contract.output_seed, &planned).map_err(|error| {
-            application_instruction_error(
-                contract.instruction,
-                format!(
-                    "resource read destination has seed kind {:?}, but trusted planning returns {:?}: {}",
-                    contract.output_seed.kind(),
-                    planned.kind(),
-                    error.display_message(),
-                ),
-            )
-            .with_source(error)
-        })?;
         self.record_resource_requirement(contract.request, owner, grant);
         Ok(planned)
     }

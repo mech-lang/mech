@@ -1,7 +1,8 @@
 use crate::{
     ContextBase, ContextDeclaration, ContextSend, ExecutionResourceRequest,
-    ExternalResourceWriteFunction, GenericError, InitialSolvePolicy, InterpreterExecution,
-    LegacyValue, MResult, MechError, Ref, ResourceDelivery, ResourceIntent,
+    ExternalResourceReadFunction, ExternalResourceWriteFunction, GenericError, Identifier,
+    InitialSolvePolicy, InterpreterExecution, LegacyValue, MResult, MechError, Ref,
+    ResourceDelivery, ResourceIntent, UndefinedContextError, ValRef, Var,
     execute_specialized_function, expression,
 };
 
@@ -22,8 +23,8 @@ pub fn context_declaration(
                 Ok(LegacyValue::Empty)
             }
             None => Err(MechError::new(
-                GenericError {
-                    msg: format!("Context `@{}` is not defined", base.to_string()),
+                UndefinedContextError {
+                    context: base.to_string(),
                 },
                 None,
             )
@@ -31,6 +32,70 @@ pub fn context_declaration(
             .with_tokens(base.tokens())),
         },
     }
+}
+
+fn resource_request(
+    context: &Identifier,
+    path: &Identifier,
+    operation: &'static str,
+    intent: ResourceIntent,
+    delivery: ResourceDelivery,
+    interpreter: &InterpreterExecution<'_>,
+) -> MResult<ExecutionResourceRequest> {
+    let binding = interpreter.context_binding(context).ok_or_else(|| {
+        MechError::new(
+            UndefinedContextError {
+                context: context.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+        .with_tokens(context.tokens())
+    })?;
+
+    Ok(ExecutionResourceRequest {
+        base_uri: binding.base_uri,
+        path: path.to_string(),
+        context_name: binding.context_name,
+        operation: operation.to_owned(),
+        intent,
+        delivery,
+    })
+}
+
+pub(crate) fn context_read(
+    variable: &Var,
+    interpreter: &InterpreterExecution<'_>,
+) -> MResult<ValRef> {
+    let context = variable.context.as_ref().ok_or_else(|| {
+        MechError::new(
+            GenericError {
+                msg: "context_read requires a context-addressed variable".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+        .with_tokens(variable.tokens())
+    })?;
+    let request = resource_request(
+        context,
+        &variable.name,
+        "read",
+        ResourceIntent::Read,
+        ResourceDelivery::Live,
+        interpreter,
+    )?;
+    let output = Ref::new(LegacyValue::Empty);
+    let function = ExternalResourceReadFunction {
+        interpreter_id: interpreter.id,
+        request,
+        output: output.clone(),
+        initial_solve_policy: InitialSolvePolicy::Solve,
+        semantic_contract: None,
+    };
+    let arguments = Vec::<LegacyValue>::new();
+    execute_specialized_function(Box::new(function), &arguments, interpreter)?;
+    Ok(output)
 }
 
 /// Lower a direct source send into the same external resource node used by
@@ -50,27 +115,18 @@ pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult
         .with_compiler_loc()
         .with_tokens(send.target.tokens())
     })?;
-    let binding = p.context_binding(context).ok_or_else(|| {
-        MechError::new(
-            GenericError {
-                msg: format!("Context `@{}` is not defined", context.to_string()),
-            },
-            None,
-        )
-        .with_compiler_loc()
-        .with_tokens(context.tokens())
-    })?;
+    let request = resource_request(
+        context,
+        &send.target.name,
+        "write",
+        ResourceIntent::Send,
+        ResourceDelivery::Snapshot,
+        p,
+    )?;
     let input = expression(&send.expression, None, p)?;
     let arguments = vec![input.clone()];
     let function = ExternalResourceWriteFunction {
-        request: ExecutionResourceRequest {
-            base_uri: binding.base_uri,
-            path: send.target.name.to_string(),
-            context_name: binding.context_name,
-            operation: "write".to_string(),
-            intent: ResourceIntent::Send,
-            delivery: ResourceDelivery::Snapshot,
-        },
+        request,
         input,
         output: Ref::new(LegacyValue::Empty),
         initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,

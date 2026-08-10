@@ -14,29 +14,29 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
-EXPECTED_MANIFEST_SHA256 = "81aae7eec15d9f7ee8cc0d6a706abddee9fe5634eb114f01c7a38e5c03b51696"
+EXPECTED_MANIFEST_SHA256 = "d3c8eedeaf96e98636ee30dc6540b0def272cb89c8d56de2746868e04bf8358b"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
     "canonical-composites.mecb": "8e82426a8af20678627870134cb8d6a329bfdaf2451be1667e5ff77a98da415a",
     "literal-f64.mecb": "98ed0a607513985607e3d06975487c847cef1946d4d841eb6ae2b6c59ad7fb52",
     "scalar-add-f64.mecb": "af91170ae55fc69b5949e796a843b0844986cfc6ac0d9ef89b2a70f652ae1463",
-    "fixed-matrix-add-f64.mecb": "da2ace7eec86d95871318dcfed44a63fee228e669197853554903c48184e88a9",
-    "dynamic-matrix-add-f64.mecb": "2f46eada7b3d1d40d5feb199c3af0155cc92f40cdcb511c21d092f863e53db0d",
-    "variadic-horzcat-f64.mecb": "48adb63df63f1714a92e6a18ebf2a87ff2dfb2e0e2b677eef41b0ecc0a26a631",
+    "fixed-matrix-add-f64.mecb": "566e989a560cc528d2efc01a6b77cab720477c325ac1650778edbcfe5404d414",
+    "dynamic-matrix-add-f64.mecb": "e902efbf7aba3d1b5b0c816606c7996182d485de7880e191590a012f7537c278",
+    "variadic-horzcat-f64.mecb": "4c6360655be8e28bf4cf1a567ef86cba2e190a4f8ebcde585efff0ae6902647d",
     "string.mecb": "b9f316040d0a7a40af1fbf99729bac0544fade75e16d0607e33d57680de299f5",
-    "unary.mecb": "e934f9e070acafb114f507dcc027e7b86ffa67f6f82f5d3badd9ed725495290c",
+    "unary.mecb": "c637be7287599f4c2714f8c8d7970d77157aeace43b882eef2e07598ae1d52f9",
     "ternary.mecb": "3180c13013953bb47ad32a2d05ea2e11e7b907e81d4553d42c4ee34a9e0142e2",
-    "quaternary.mecb": "5329d9d6bc8f061e3e7401a130c82cf35201d9b6731ee950a99cfdce2c4b0013",
+    "quaternary.mecb": "ab4954222195c41605a4c4e42fdb35769ab94d8aea50f02c63561430f5594313",
     "named-module-operation.mecb": "ae85588f576d164482fd8eb468fafc3eb1a1a4e48b89851b1571c070dfabbc4f",
     "cli-stdout.mecb": "4ae83459ed3f2f65ce7cee0720aa8ed859b8887c02cd67eeda26707cf692b877",
     "console.mecb": "8e4bcbf1ada685c8493bcbd618174d267eb883ae62b9a9674b06348bf9141a7e",
-    "time.mecb": "4b22452ac2d692f2c37f3e8a1a1509b02d23f4ad4be10f11b2f56c3844ae22c7",
-    "timer.mecb": "73dcb4b8661d6e720eb24939f0c3464d1dcb99d5a1531c958c1671f9881c6c0a",
-    "scene.mecb": "f67daa150e50a2fbd0d7171b16e331327c667b721e2bd82b794b20f699ad4f9e",
+    "time.mecb": "0e7453df0fea9b2c83dce73bd9ebe94ca2c4d68c38e20f6581bb1aa948800aa9",
+    "timer.mecb": "47fe9a2d688f0c0b305c5fbb72275643520d08fbae5039d6be4ec2ce10c5ac5f",
+    "scene.mecb": "c8657cefc24b45499fb212cbc50014a18f8d8e44559aa8a326eed39b2e7f16c0",
     "robot-arm.mecb": "a4553c4898358c17b71b60f065025304b7d4f82af48f6869dc9fbea433f2ae27",
-    "actor-host-function.mecb": "6147155f5a78781a091d936249da0860f20994b81ddf06e340d159446b180f4d",
-    "synthetic-live-read.mecb": "f04ac1be7f6d675fa93965113bff82641d715f5d9ed0e9d59fe08d08d399043e",
+    "actor-host-function.mecb": "fd112615fcde983adbc927a4c7f3c8a980a4d6fe689669ecb2552cb02bc21cf4",
+    "synthetic-live-read.mecb": "b5ac2e489216b77408941425cbe29e81d55d44085950a761dd830ee9dd505b20",
 }
 EXPECTED_FILES = [
     "canonical-scalars.mecb",

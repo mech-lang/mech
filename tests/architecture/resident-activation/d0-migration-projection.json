@@ -4,7 +4,7 @@
   "source_targets": "tests/architecture/value-system/frozen-semantic-targets-v1.json",
   "source_migration": "tests/architecture/value-system/migration.json",
   "target_count": 2,
-  "occurrence_count": 488,
+  "occurrence_count": 497,
   "targets": [
     {
       "id": "mutable-reference-runtime-storage",
@@ -2092,7 +2092,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/core/src/program/bytecode/runtime_contracts.rs",
-          "line": 250,
+          "line": 280,
           "column": 26,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2100,7 +2100,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/core/src/program/bytecode/runtime_contracts.rs",
-          "line": 251,
+          "line": 281,
           "column": 31,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2116,7 +2116,15 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/core/src/program/compiler/api.rs",
-          "line": 171,
+          "line": 203,
+          "column": 12,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/core/src/program/compiler/api.rs",
+          "line": 278,
           "column": 12,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2571,6 +2579,38 @@
         {
           "enum": "LegacyValue",
           "variant": "MutableReference",
+          "path": "src/engine/src/efficacy/ekf/catalog.rs",
+          "line": 218,
+          "column": 9,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/efficacy/ekf/catalog.rs",
+          "line": 589,
+          "column": 9,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/efficacy/ekf/catalog.rs",
+          "line": 685,
+          "column": 9,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/efficacy/ekf/catalog.rs",
+          "line": 734,
+          "column": 9,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
           "path": "src/engine/src/expressions/comprehensions.rs",
           "line": 161,
           "column": 9,
@@ -2644,16 +2684,16 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/expressions/variables.rs",
-          "line": 97,
-          "column": 56,
+          "line": 96,
+          "column": 47,
           "target": "mutable-reference-runtime-storage"
         },
         {
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/expressions/variables.rs",
-          "line": 120,
-          "column": 52,
+          "line": 124,
+          "column": 43,
           "target": "mutable-reference-runtime-storage"
         },
         {
@@ -2668,7 +2708,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/function/external/resource_read.rs",
-          "line": 98,
+          "line": 140,
           "column": 17,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2740,7 +2780,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/interpreter/mod.rs",
-          "line": 548,
+          "line": 638,
           "column": 29,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2748,7 +2788,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/interpreter/mod.rs",
-          "line": 560,
+          "line": 650,
           "column": 33,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3132,7 +3172,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/assign/mod.rs",
-          "line": 887,
+          "line": 904,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3140,7 +3180,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/assign/mod.rs",
-          "line": 887,
+          "line": 904,
           "column": 55,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3148,7 +3188,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/assign/mod.rs",
-          "line": 890,
+          "line": 907,
           "column": 24,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3156,7 +3196,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/assign/mod.rs",
-          "line": 893,
+          "line": 910,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3164,7 +3204,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/assign/mod.rs",
-          "line": 978,
+          "line": 995,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3172,7 +3212,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/assign/mod.rs",
-          "line": 978,
+          "line": 995,
           "column": 55,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3180,7 +3220,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/assign/mod.rs",
-          "line": 981,
+          "line": 998,
           "column": 24,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3188,7 +3228,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/assign/mod.rs",
-          "line": 984,
+          "line": 1001,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3332,7 +3372,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/define.rs",
-          "line": 602,
+          "line": 628,
           "column": 17,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3340,7 +3380,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/define.rs",
-          "line": 1021,
+          "line": 1049,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3524,7 +3564,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/program/instance.rs",
-          "line": 62,
+          "line": 64,
           "column": 40,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3532,7 +3572,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/program/instance.rs",
-          "line": 71,
+          "line": 73,
           "column": 44,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3540,7 +3580,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/program/instance.rs",
-          "line": 1398,
+          "line": 1409,
           "column": 26,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3548,7 +3588,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/program/instance.rs",
-          "line": 1432,
+          "line": 1450,
           "column": 30,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3556,7 +3596,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/program/instance.rs",
-          "line": 1437,
+          "line": 1455,
           "column": 30,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3564,7 +3604,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/program/instance.rs",
-          "line": 1605,
+          "line": 1654,
           "column": 9,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3688,7 +3728,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/build/src/analysis/requirements/external.rs",
-          "line": 294,
+          "line": 282,
           "column": 37,
           "target": "uninitialized-storage"
         },
@@ -3704,7 +3744,15 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/core/src/program/bytecode/runtime_contracts.rs",
-          "line": 131,
+          "line": 78,
+          "column": 24,
+          "target": "uninitialized-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "Empty",
+          "path": "src/core/src/program/bytecode/runtime_contracts.rs",
+          "line": 161,
           "column": 37,
           "target": "uninitialized-storage"
         },
@@ -3712,7 +3760,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/core/src/program/bytecode/runtime_contracts.rs",
-          "line": 261,
+          "line": 291,
           "column": 10,
           "target": "uninitialized-storage"
         },
@@ -3720,7 +3768,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/core/src/program/bytecode/runtime_contracts.rs",
-          "line": 261,
+          "line": 291,
           "column": 30,
           "target": "uninitialized-storage"
         },
@@ -3737,6 +3785,22 @@
           "variant": "Empty",
           "path": "src/core/src/structures/table.rs",
           "line": 161,
+          "column": 33,
+          "target": "uninitialized-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "Empty",
+          "path": "src/engine/src/function/external/resource_read.rs",
+          "line": 63,
+          "column": 32,
+          "target": "uninitialized-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "Empty",
+          "path": "src/engine/src/function/external/resource_read.rs",
+          "line": 67,
           "column": 33,
           "target": "uninitialized-storage"
         },
@@ -3760,7 +3824,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/interpreter/mod.rs",
-          "line": 1483,
+          "line": 1573,
           "column": 33,
           "target": "uninitialized-storage"
         },
@@ -3768,7 +3832,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/interpreter/mod.rs",
-          "line": 1519,
+          "line": 1609,
           "column": 18,
           "target": "uninitialized-storage"
         },
@@ -3792,7 +3856,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/intrinsics/define.rs",
-          "line": 746,
+          "line": 774,
           "column": 10,
           "target": "uninitialized-storage"
         },
@@ -3800,7 +3864,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/intrinsics/define.rs",
-          "line": 748,
+          "line": 776,
           "column": 31,
           "target": "uninitialized-storage"
         },
@@ -3808,7 +3872,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/intrinsics/define.rs",
-          "line": 749,
+          "line": 777,
           "column": 26,
           "target": "uninitialized-storage"
         },
@@ -3912,15 +3976,23 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/mechdown.rs",
-          "line": 272,
-          "column": 37,
+          "line": 635,
+          "column": 20,
           "target": "uninitialized-storage"
         },
         {
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/statements/context.rs",
-          "line": 75,
+          "line": 88,
+          "column": 27,
+          "target": "uninitialized-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "Empty",
+          "path": "src/engine/src/statements/context.rs",
+          "line": 131,
           "column": 26,
           "target": "uninitialized-storage"
         },

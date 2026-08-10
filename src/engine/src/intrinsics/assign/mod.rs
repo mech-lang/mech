@@ -44,7 +44,7 @@ static PURE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclar
         outputs: vec![OutputPortPolicy {
             access: AccessMode::Write,
             delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::Replace {
+            construction: OutputConstruction::FullWrite {
                 shape: ShapeRule::SameAsInput { input: 0 },
             },
             alias: AliasPolicy::NoAlias,
@@ -53,6 +53,23 @@ static PURE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclar
         .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
     });
+
+#[cfg(feature = "resident-ekf-artifact")]
+pub(crate) fn install_frozen_ekf_state_runtime(
+    builder: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
+    builder.insert_runtime_factory_with_semantic_contract::<Assign<DVector<f64>>>(
+        "Assign<f64DVector>",
+        RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
+        &PURE_STATE_REGISTER_CONTRACT,
+    )?;
+    builder.insert_runtime_factory_with_semantic_contract::<Assign<DMatrix<f64>>>(
+        "Assign<f64DMatrix>",
+        RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
+        &PURE_STATE_REGISTER_CONTRACT,
+    )?;
+    Ok(())
+}
 
 trait AssignRuntimeName {
     fn assign_runtime_name() -> String;

@@ -367,6 +367,9 @@ pub enum ArtifactBuildError {
         expected: usize,
         actual: usize,
     },
+    InvalidDeclarationMarker {
+        instruction: u32,
+    },
     MissingInstructionRole {
         instruction: u32,
     },

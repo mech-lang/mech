@@ -1,8 +1,7 @@
 use mech_core::{CellSlotId, SlotIndex};
 
-use super::artifact::{
-    EkfConstants, EkfOp, LOGICAL_SLOTS_PER_EKF, NODES_PER_EKF, ProgramArtifact, SlotKind, SlotRole,
-};
+use super::artifact::{LOGICAL_SLOTS_PER_EKF, NODES_PER_EKF, ProgramArtifact, SlotKind, SlotRole};
+use crate::efficacy::ekf::operation::{EkfConstants, EkfKernel};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(transparent)]
@@ -14,7 +13,7 @@ pub(crate) enum EdgeTiming {
     NextTurn,
 }
 
-pub(crate) type ActivatedKernel = EkfOp;
+pub(crate) type ActivatedKernel = EkfKernel;
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct ResolvedSlot {

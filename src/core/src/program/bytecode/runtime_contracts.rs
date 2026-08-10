@@ -70,6 +70,25 @@ fn violation_with_source(
     .with_source(source)
 }
 
+fn detached_resource_read_output(instruction: usize, value: LegacyValue) -> MResult<LegacyValue> {
+    let value = value
+        .try_deep_snapshot()
+        .map_err(|error| violation_with_source(instruction, None, None, error))?;
+
+    if matches!(value, LegacyValue::Empty) {
+        return Err(violation(
+            instruction,
+            None,
+            None,
+            "ResourceRead resolver returned Empty; the first provider value must establish a concrete representation",
+        ));
+    }
+
+    validate_stable_value_update(&value, &value)
+        .map_err(|error| violation_with_source(instruction, None, None, error))?;
+    Ok(value)
+}
+
 pub struct BytecodeHostCallContract<'a> {
     pub instruction: u32,
     pub request: &'a ExecutionHostFunctionRequest,
@@ -80,7 +99,6 @@ pub struct BytecodeHostCallContract<'a> {
 pub struct BytecodeResourceReadContract<'a> {
     pub instruction: u32,
     pub request: &'a ExecutionResourceRequest,
-    pub output_seed: &'a LegacyValue,
 }
 
 pub struct BytecodeResourceWriteContract<'a> {
@@ -96,6 +114,10 @@ pub trait BytecodeExternalContractResolver {
         contract: BytecodeHostCallContract<'_>,
     ) -> MResult<LegacyValue>;
 
+    /// Returns a detached concrete representative of the provider-owned first
+    /// value for runtime-contract planning. The representative is ephemeral
+    /// validation evidence: it is not serialized, interned as a constant, or
+    /// included in program identity.
     fn validate_resource_read(
         &mut self,
         contract: BytecodeResourceReadContract<'_>,
@@ -121,7 +143,15 @@ impl BytecodeExternalContractResolver for StructuralExternalContractResolver {
         &mut self,
         contract: BytecodeResourceReadContract<'_>,
     ) -> MResult<LegacyValue> {
-        Ok(contract.output_seed.clone())
+        Err(violation(
+            contract.instruction as usize,
+            None,
+            None,
+            format!(
+                "ResourceRead for {:?} requires an external contract resolver to provide the provider-owned output representation",
+                contract.request,
+            ),
+        ))
     }
 
     fn validate_resource_write(
@@ -348,7 +378,9 @@ pub fn validate_stable_value_update(current: &LegacyValue, incoming: &LegacyValu
 
 impl ParsedProgram {
     /// Validates catalog-aware bytecode contracts without mutating interpreter
-    /// or runtime state.
+    /// or runtime state. Programs containing `ResourceRead` require
+    /// `validate_runtime_contracts_with` and a trusted resolver that supplies
+    /// the provider-owned output representation.
     pub fn validate_runtime_contracts(&self, catalog: &FunctionCatalog) -> MResult<()> {
         let mut resolver = StructuralExternalContractResolver;
         self.validate_runtime_contracts_with(catalog, &mut resolver)
@@ -440,7 +472,7 @@ impl ParsedProgram {
                             instruction_index,
                             instruction.runtime_function(),
                             None,
-                            format!("register {index} has no detached constant seed"),
+                            format!("register {index} has no detached planning value"),
                         )
                     })
             };
@@ -573,17 +605,30 @@ impl ParsedProgram {
                         *requirement,
                         ResourceIntent::Read,
                     )?;
-                    let output_seed = register(*dst)?;
+                    let destination = registers.get_mut(*dst as usize).ok_or_else(|| {
+                        violation(
+                            instruction_index,
+                            None,
+                            None,
+                            format!("register {dst} is out of range"),
+                        )
+                    })?;
+                    if destination.is_some() {
+                        return Err(violation(
+                            instruction_index,
+                            None,
+                            None,
+                            format!(
+                                "ResourceRead destination register {dst} already has a planned value"
+                            ),
+                        ));
+                    }
                     let planned =
                         resolver.validate_resource_read(BytecodeResourceReadContract {
                             instruction: u32::try_from(instruction_index).unwrap_or(u32::MAX),
                             request,
-                            output_seed: &output_seed,
                         })?;
-                    validate_stable_value_update(&output_seed, &planned).map_err(|error| {
-                        violation_with_source(instruction_index, None, None, error)
-                    })?;
-                    registers[*dst as usize] = Some(planned);
+                    *destination = Some(detached_resource_read_output(instruction_index, planned)?);
                 }
                 BytecodeInstruction::ResourceWrite {
                     requirement,
@@ -798,6 +843,82 @@ mod tests {
             )
             .unwrap();
         builder.build().unwrap()
+    }
+
+    fn exact_read_request() -> ExecutionResourceRequest {
+        ExecutionResourceRequest {
+            base_uri: "test://provider/root".into(),
+            path: "item".into(),
+            context_name: "root".into(),
+            operation: "read".into(),
+            intent: ResourceIntent::Read,
+            delivery: ResourceDelivery::Live,
+        }
+    }
+
+    fn unseeded_resource_read_program() -> (ParsedProgram, Vec<u8>) {
+        let bytes = write_bytecode(&BytecodeProgram {
+            register_count: 1,
+            constants: Vec::new(),
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: vec![
+                BytecodeInstruction::ResourceRead {
+                    requirement: 0,
+                    dst: 0,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            dictionary: BTreeMap::new(),
+            requirements: vec![ApplicationRequirement::Resource(exact_read_request())],
+        })
+        .unwrap();
+        (ParsedProgram::from_bytes(&bytes).unwrap(), bytes)
+    }
+
+    struct RecordingReadResolver {
+        output: LegacyValue,
+        calls: usize,
+        requests: Vec<ExecutionResourceRequest>,
+    }
+
+    impl RecordingReadResolver {
+        fn new(output: LegacyValue) -> Self {
+            Self {
+                output,
+                calls: 0,
+                requests: Vec::new(),
+            }
+        }
+    }
+
+    impl BytecodeExternalContractResolver for RecordingReadResolver {
+        fn validate_host_call(
+            &mut self,
+            contract: BytecodeHostCallContract<'_>,
+        ) -> MResult<LegacyValue> {
+            Ok(contract.output_seed.clone())
+        }
+
+        fn validate_resource_read(
+            &mut self,
+            contract: BytecodeResourceReadContract<'_>,
+        ) -> MResult<LegacyValue> {
+            let BytecodeResourceReadContract {
+                instruction: _,
+                request,
+            } = contract;
+            self.calls += 1;
+            self.requests.push(request.clone());
+            Ok(self.output.clone())
+        }
+
+        fn validate_resource_write(
+            &mut self,
+            _contract: BytecodeResourceWriteContract<'_>,
+        ) -> MResult<()> {
+            Ok(())
+        }
     }
 
     fn assert_contract_violation(program: &ParsedProgram, expected: &str) {
@@ -1016,10 +1137,22 @@ mod tests {
             instruction: BytecodeInstruction,
             requirement: ApplicationRequirement,
         ) -> ParsedProgram {
-            ParsedProgram::from_bytes(
-                &write_bytecode(&BytecodeProgram {
-                    register_count: 2,
-                    constants: vec![
+            let resource_read = matches!(instruction, BytecodeInstruction::ResourceRead { .. });
+            let (constants, mut instructions) = if resource_read {
+                (
+                    vec![EncodedConstant {
+                        runtime_type: RuntimeType::F64,
+                        alignment: 8,
+                        bytes: 1.0_f64.to_bits().to_le_bytes().to_vec(),
+                    }],
+                    vec![BytecodeInstruction::ConstLoad {
+                        dst: 1,
+                        constant: 0,
+                    }],
+                )
+            } else {
+                (
+                    vec![
                         EncodedConstant {
                             runtime_type: RuntimeType::Empty,
                             alignment: 1,
@@ -1031,9 +1164,7 @@ mod tests {
                             bytes: 1.0_f64.to_bits().to_le_bytes().to_vec(),
                         },
                     ],
-                    symbols: BTreeMap::new(),
-                    mutable_symbols: BTreeSet::new(),
-                    instructions: vec![
+                    vec![
                         BytecodeInstruction::ConstLoad {
                             dst: 0,
                             constant: 0,
@@ -1042,9 +1173,18 @@ mod tests {
                             dst: 1,
                             constant: 1,
                         },
-                        instruction,
-                        BytecodeInstruction::Return { src: 0 },
                     ],
+                )
+            };
+            instructions.push(instruction);
+            instructions.push(BytecodeInstruction::Return { src: 0 });
+            ParsedProgram::from_bytes(
+                &write_bytecode(&BytecodeProgram {
+                    register_count: 2,
+                    constants,
+                    symbols: BTreeMap::new(),
+                    mutable_symbols: BTreeSet::new(),
+                    instructions,
                     dictionary: BTreeMap::new(),
                     requirements: vec![requirement],
                 })
@@ -1241,49 +1381,78 @@ mod tests {
         assert!(error.kind_message().contains("not implicitly unwrapped"));
     }
 
-    #[cfg(all(feature = "matrix2", feature = "matrixd"))]
     #[test]
-    fn external_planning_rejects_fixed_seed_for_dynamic_matrix_output() {
-        use crate::structures::matrix::Matrix as ValueMatrix;
-        use nalgebra::DMatrix;
+    fn unseeded_resource_read_is_planned_from_external_resolver() {
+        let (program, _) = unseeded_resource_read_program();
+        let mut resolver = RecordingReadResolver::new(LegacyValue::F64(Ref::new(42.0)));
 
-        struct DynamicReadResolver;
-        impl BytecodeExternalContractResolver for DynamicReadResolver {
-            fn validate_host_call(
-                &mut self,
-                contract: BytecodeHostCallContract<'_>,
-            ) -> MResult<LegacyValue> {
-                Ok(contract.output_seed.clone())
-            }
+        program
+            .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut resolver)
+            .unwrap();
 
-            fn validate_resource_read(
-                &mut self,
-                _contract: BytecodeResourceReadContract<'_>,
-            ) -> MResult<LegacyValue> {
-                Ok(LegacyValue::MatrixF64(ValueMatrix::DMatrix(Ref::new(
-                    DMatrix::identity(2, 2),
-                ))))
-            }
+        assert_eq!(resolver.calls, 1);
+        assert_eq!(resolver.requests, vec![exact_read_request()]);
+    }
 
-            fn validate_resource_write(
-                &mut self,
-                _contract: BytecodeResourceWriteContract<'_>,
-            ) -> MResult<()> {
-                Ok(())
-            }
-        }
+    #[test]
+    fn resource_read_resolver_cannot_return_empty() {
+        let (program, _) = unseeded_resource_read_program();
+        let mut resolver = RecordingReadResolver::new(LegacyValue::Empty);
 
-        let program = ParsedProgram::from_bytes(
-            &write_bytecode(&BytecodeProgram {
+        let error = program
+            .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut resolver)
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
+        assert!(
+            error
+                .kind_message()
+                .contains("first provider value must establish a concrete representation")
+        );
+    }
+
+    #[test]
+    fn structural_runtime_contract_validation_requires_resource_resolver() {
+        let (program, _) = unseeded_resource_read_program();
+
+        let error = program
+            .validate_runtime_contracts(&FunctionCatalog::empty())
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
+        assert!(
+            error
+                .kind_message()
+                .contains("requires an external contract resolver")
+        );
+
+        let mut resolver = RecordingReadResolver::new(LegacyValue::F64(Ref::new(42.0)));
+        program
+            .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut resolver)
+            .unwrap();
+    }
+
+    #[test]
+    fn resource_read_planning_is_payload_independent() {
+        let (program, original_bytes) = unseeded_resource_read_program();
+        let mut first = RecordingReadResolver::new(LegacyValue::F64(Ref::new(1.0)));
+        let mut second = RecordingReadResolver::new(LegacyValue::F64(Ref::new(91.0)));
+
+        program
+            .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut first)
+            .unwrap();
+        program
+            .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut second)
+            .unwrap();
+
+        assert_eq!(first.calls, 1);
+        assert_eq!(second.calls, 1);
+        assert_eq!(
+            write_bytecode(&BytecodeProgram {
                 register_count: 1,
-                constants: vec![f64_matrix_constant(crate::MatrixStorage::Matrix2, 2, 2)],
+                constants: Vec::new(),
                 symbols: BTreeMap::new(),
                 mutable_symbols: BTreeSet::new(),
                 instructions: vec![
-                    BytecodeInstruction::ConstLoad {
-                        dst: 0,
-                        constant: 0,
-                    },
                     BytecodeInstruction::ResourceRead {
                         requirement: 0,
                         dst: 0,
@@ -1291,25 +1460,167 @@ mod tests {
                     BytecodeInstruction::Return { src: 0 },
                 ],
                 dictionary: BTreeMap::new(),
-                requirements: vec![ApplicationRequirement::Resource(ExecutionResourceRequest {
-                    base_uri: "test://provider/input".into(),
-                    path: "matrix".into(),
-                    context_name: "input".into(),
-                    operation: "read".into(),
-                    intent: ResourceIntent::Read,
-                    delivery: ResourceDelivery::Snapshot,
-                })],
+                requirements: vec![ApplicationRequirement::Resource(exact_read_request())],
             })
             .unwrap(),
-        )
-        .unwrap();
-        let mut resolver = DynamicReadResolver;
+            original_bytes
+        );
+    }
+
+    #[test]
+    fn resource_read_contract_has_no_output_seed() {
+        let request = exact_read_request();
+        let contract = BytecodeResourceReadContract {
+            instruction: 7,
+            request: &request,
+        };
+        assert_eq!(contract.instruction, 7);
+        assert_eq!(contract.request, &request);
+    }
+
+    #[cfg(feature = "matrix")]
+    #[test]
+    fn resource_read_resolver_result_must_be_stable_updateable() {
+        use crate::structures::matrix::Matrix as ValueMatrix;
+        use nalgebra::DVector;
+
+        let unstable =
+            LegacyValue::MatrixValue(ValueMatrix::DVector(Ref::new(DVector::from_vec(vec![
+                LegacyValue::F64(Ref::new(1.0)),
+            ]))));
+        let (program, _) = unseeded_resource_read_program();
+        let mut resolver = RecordingReadResolver::new(unstable);
+
         let error = program
             .validate_runtime_contracts_with(&FunctionCatalog::empty(), &mut resolver)
             .unwrap_err();
 
         assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
-        assert!(error.kind_message().contains("matrix storage differs"));
+        assert!(
+            error
+                .full_chain_message()
+                .contains("heterogeneous value matrices have no stable whole-value assignment")
+        );
+    }
+
+    #[cfg(all(feature = "matrix2", feature = "matrixd"))]
+    #[test]
+    fn resource_read_result_validates_downstream_runtime_contract() {
+        use crate::structures::matrix::Matrix as ValueMatrix;
+        use nalgebra::DMatrix;
+
+        #[derive(Debug)]
+        struct PlanningMatrixBinary {
+            output: LegacyValue,
+        }
+
+        impl MechFunctionFactory for PlanningMatrixBinary {
+            const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+                FunctionValueRepresentation::AnyValue,
+                FunctionValueRepresentation::AnyValue,
+                FunctionValueRepresentation::AnyValue,
+            );
+
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                let FunctionArgs::Binary(output, _, _) = args else {
+                    return Err(MechError::new(
+                        crate::IncorrectNumberOfArguments {
+                            expected: 2,
+                            found: args.len(),
+                        },
+                        None,
+                    ));
+                };
+                Ok(Box::new(Self { output }))
+            }
+        }
+
+        impl MechFunctionImpl for PlanningMatrixBinary {
+            fn solve_result(&self) -> MResult<()> {
+                Ok(())
+            }
+
+            fn out(&self) -> LegacyValue {
+                self.output.clone()
+            }
+
+            fn to_string(&self) -> String {
+                "PlanningMatrixBinary".into()
+            }
+
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+                Ok(self.reactive_output_values())
+            }
+        }
+
+        #[cfg(feature = "compiler")]
+        impl MechFunctionCompiler for PlanningMatrixBinary {
+            fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                Ok(0)
+            }
+        }
+
+        let function = RuntimeFunctionId::from_name("PlanningMatrixBinary").raw();
+        let bytes = write_bytecode(&BytecodeProgram {
+            register_count: 3,
+            constants: vec![
+                f64_matrix_constant(crate::MatrixStorage::MatrixD, 2, 1),
+                f64_matrix_constant_with_offset(crate::MatrixStorage::MatrixD, 2, 1, 10),
+            ],
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: vec![
+                BytecodeInstruction::ResourceRead {
+                    requirement: 0,
+                    dst: 0,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 1,
+                    constant: 0,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 2,
+                    constant: 1,
+                },
+                BytecodeInstruction::RuntimeBinary {
+                    function,
+                    dst: 1,
+                    lhs: 0,
+                    rhs: 2,
+                },
+                BytecodeInstruction::Return { src: 1 },
+            ],
+            dictionary: BTreeMap::new(),
+            requirements: vec![ApplicationRequirement::Resource(exact_read_request())],
+        })
+        .unwrap();
+        let program = ParsedProgram::from_bytes(&bytes).unwrap();
+        let mut catalog = FunctionCatalogBuilder::new();
+        catalog
+            .insert_runtime_factory::<PlanningMatrixBinary>(
+                "PlanningMatrixBinary",
+                crate::RuntimeFunctionContract::same_shape(
+                    crate::RuntimeOutputAliasPolicy::DisallowInputAlias,
+                ),
+            )
+            .unwrap();
+        let catalog = catalog.build().unwrap();
+
+        let mut matching = RecordingReadResolver::new(LegacyValue::MatrixF64(
+            ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(2, 1))),
+        ));
+        program
+            .validate_runtime_contracts_with(&catalog, &mut matching)
+            .unwrap();
+
+        let mut incompatible = RecordingReadResolver::new(LegacyValue::MatrixF64(
+            ValueMatrix::DMatrix(Ref::new(DMatrix::zeros(3, 1))),
+        ));
+        let error = program
+            .validate_runtime_contracts_with(&catalog, &mut incompatible)
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "BytecodeRuntimeContractViolation");
+        assert!(error.kind_message().contains("shape"));
     }
 
     #[cfg(all(feature = "matrix2", feature = "matrixd"))]

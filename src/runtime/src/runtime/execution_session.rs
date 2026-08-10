@@ -181,6 +181,32 @@ impl RuntimeSessionServices<'_> {
         value.try_deep_snapshot()
     }
 
+    fn plan_external_resource_read(
+        &mut self,
+        request: &ExecutionResourceRequest,
+    ) -> MResult<LegacyValue> {
+        self.validate_context()?;
+        if request.intent != ResourceIntent::Read {
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "execution_plan_resource_read",
+                    reason: format!("resource read received {:?} intent", request.intent),
+                },
+                None,
+            ));
+        }
+        let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
+        let operation = RuntimeCapabilityOperation::from_name(request.operation.clone())?;
+        self.check_resource_capability(&operation, &key)?;
+        self.resources
+            .plan_read(RuntimeResourceReadRequest {
+                base_uri: key.base_uri,
+                path: key.path,
+                context_name: request.context_name.clone(),
+            })?
+            .try_deep_snapshot()
+    }
+
     fn write_external_resource(
         &mut self,
         request: &ExecutionResourceRequest,
@@ -566,6 +592,38 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
             context,
         }
         .read_external_resource(request)
+    }
+
+    fn plan_resource_read_output(
+        &mut self,
+        request: &ExecutionResourceRequest,
+    ) -> MResult<LegacyValue> {
+        let Self {
+            runtime_id,
+            execution_mode,
+            max_events,
+            context,
+            transaction,
+            id_generator,
+            store,
+            capability_kernel,
+            resources,
+            event_sequence,
+            ..
+        } = self;
+        RuntimeSessionServices {
+            runtime_id: *runtime_id,
+            execution_mode: *execution_mode,
+            max_events: *max_events,
+            transaction,
+            id_generator: &mut **id_generator,
+            store: &mut **store,
+            capability_kernel: &mut **capability_kernel,
+            resources,
+            event_sequence,
+            context,
+        }
+        .plan_external_resource_read(request)
     }
 
     fn write_resource(

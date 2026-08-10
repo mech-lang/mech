@@ -29,8 +29,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1007,
-          "column": 27
+          "column": 27,
+          "line": 1007
         }
       ],
       "target": "kind-wildcard",
@@ -121,8 +121,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1012,
-          "column": 38
+          "column": 38,
+          "line": 1012
         }
       ],
       "target": "atom-kind-expression",
@@ -217,8 +217,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1009,
-          "column": 29
+          "column": 29,
+          "line": 1009
         }
       ],
       "target": "kind-hole",
@@ -309,8 +309,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1013,
-          "column": 38
+          "column": 38,
+          "line": 1013
         }
       ],
       "target": "enum-kind-expression",
@@ -393,8 +393,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1010,
-          "column": 26
+          "column": 26,
+          "line": 1010
         }
       ],
       "target": "id-kind-expression",
@@ -473,8 +473,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1011,
-          "column": 29
+          "column": 29,
+          "line": 1011
         }
       ],
       "target": "index-kind-expression",
@@ -553,8 +553,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1042,
-          "column": 37
+          "column": 37,
+          "line": 1042
         }
       ],
       "target": "type-of-kind-expression",
@@ -649,8 +649,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1037,
-          "column": 39
+          "column": 39,
+          "line": 1037
         }
       ],
       "target": "map-kind-expression",
@@ -745,8 +745,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1015,
-          "column": 13
+          "column": 13,
+          "line": 1015
         }
       ],
       "target": "matrix-kind-expression",
@@ -841,8 +841,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1008,
-          "column": 28
+          "column": 28,
+          "line": 1008
         }
       ],
       "target": "kind-never",
@@ -933,8 +933,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1017,
-          "column": 39
+          "column": 39,
+          "line": 1017
         }
       ],
       "target": "option-kind-expression",
@@ -1029,8 +1029,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1021,
-          "column": 38
+          "column": 38,
+          "line": 1021
         }
       ],
       "target": "record-kind-expression",
@@ -1125,8 +1125,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1041,
-          "column": 42
+          "column": 42,
+          "line": 1041
         }
       ],
       "target": "reference-binding-contract",
@@ -1209,8 +1209,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1058,
-          "column": 30
+          "column": 30,
+          "line": 1058
         }
       ],
       "target": "named-kind-expression",
@@ -1305,8 +1305,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1035,
-          "column": 13
+          "column": 13,
+          "line": 1035
         }
       ],
       "target": "set-kind-expression",
@@ -1405,8 +1405,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1027,
-          "column": 44
+          "column": 44,
+          "line": 1027
         }
       ],
       "target": "table-kind-expression",
@@ -1501,8 +1501,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 1019,
-          "column": 13
+          "column": 13,
+          "line": 1019
         }
       ],
       "target": "tuple-kind-expression",
@@ -1617,16 +1617,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 544,
-          "column": 9
+          "column": 9,
+          "line": 544
         },
         {
-          "line": 603,
-          "column": 13
+          "column": 13,
+          "line": 603
         },
         {
-          "line": 1170,
-          "column": 27
+          "column": 27,
+          "line": 1170
         }
       ],
       "target": "atom-snapshot",
@@ -1858,11 +1858,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 744
+          "line": 761
         },
         {
           "column": 35,
-          "line": 744
+          "line": 761
         }
       ],
       "target": "atom-snapshot",
@@ -1890,7 +1890,7 @@
       "sites": [
         {
           "column": 10,
-          "line": 837
+          "line": 865
         }
       ],
       "target": "atom-snapshot",
@@ -2129,12 +2129,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 538,
-          "column": 9
+          "column": 9,
+          "line": 538
         },
         {
-          "line": 1152,
-          "column": 23
+          "column": 23,
+          "line": 1152
         }
       ],
       "target": "bool-snapshot",
@@ -2350,6 +2350,30 @@
     },
     {
       "enum": "LegacyValue",
+      "path": "src/engine/src/efficacy/ekf/catalog.rs",
+      "sites": [
+        {
+          "column": 42,
+          "line": 187
+        },
+        {
+          "column": 9,
+          "line": 591
+        },
+        {
+          "column": 38,
+          "line": 666
+        },
+        {
+          "column": 9,
+          "line": 769
+        }
+      ],
+      "target": "bool-snapshot",
+      "variant": "Bool"
+    },
+    {
+      "enum": "LegacyValue",
       "path": "src/engine/src/expressions/comprehensions.rs",
       "sites": [
         {
@@ -2469,8 +2493,8 @@
       "path": "src/engine/src/program/instance.rs",
       "sites": [
         {
-          "column": 29,
-          "line": 1395
+          "column": 59,
+          "line": 1473
         }
       ],
       "target": "bool-snapshot",
@@ -2689,12 +2713,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 520,
-          "column": 9
+          "column": 9,
+          "line": 520
         },
         {
-          "line": 1122,
-          "column": 23
+          "column": 23,
+          "line": 1122
         }
       ],
       "target": "complex-snapshot",
@@ -2958,7 +2982,7 @@
       "sites": [
         {
           "column": 37,
-          "line": 294
+          "line": 282
         }
       ],
       "target": "uninitialized-storage",
@@ -2993,16 +3017,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 334,
-          "column": 24
+          "column": 24,
+          "line": 334
         },
         {
-          "line": 446,
-          "column": 24
+          "column": 24,
+          "line": 446
         },
         {
-          "line": 552,
-          "column": 11
+          "column": 11,
+          "line": 552
         }
       ],
       "target": "option-absence",
@@ -3025,16 +3049,20 @@
       "path": "src/core/src/program/bytecode/runtime_contracts.rs",
       "sites": [
         {
+          "column": 24,
+          "line": 78
+        },
+        {
           "column": 37,
-          "line": 131
+          "line": 161
         },
         {
           "column": 10,
-          "line": 261
+          "line": 291
         },
         {
           "column": 30,
-          "line": 261
+          "line": 291
         }
       ],
       "target": "uninitialized-storage",
@@ -3045,8 +3073,8 @@
       "path": "src/core/src/program/compiler/constants.rs",
       "sites": [
         {
-          "column": 9,
-          "line": 679
+          "column": 24,
+          "line": 1287
         }
       ],
       "target": "generic-dispatch",
@@ -3065,8 +3093,8 @@
           "line": 61
         },
         {
-          "column": 24,
-          "line": 1287
+          "column": 9,
+          "line": 679
         }
       ],
       "target": "option-absence",
@@ -3137,6 +3165,18 @@
           "line": 1604
         },
         {
+          "column": 14,
+          "line": 1709
+        },
+        {
+          "column": 64,
+          "line": 1709
+        },
+        {
+          "column": 71,
+          "line": 1710
+        },
+        {
           "column": 13,
           "line": 2341
         },
@@ -3147,7 +3187,15 @@
         {
           "column": 13,
           "line": 2642
-        },
+        }
+      ],
+      "target": "generic-dispatch",
+      "variant": "Empty"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/core/src/value.rs",
+      "sites": [
         {
           "column": 13,
           "line": 2752
@@ -3159,26 +3207,6 @@
         {
           "column": 13,
           "line": 3772
-        }
-      ],
-      "target": "generic-dispatch",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/core/src/value.rs",
-      "sites": [
-        {
-          "column": 14,
-          "line": 1709
-        },
-        {
-          "column": 64,
-          "line": 1709
-        },
-        {
-          "column": 71,
-          "line": 1710
         }
       ],
       "target": "option-absence",
@@ -3254,6 +3282,22 @@
     },
     {
       "enum": "LegacyValue",
+      "path": "src/engine/src/function/external/resource_read.rs",
+      "sites": [
+        {
+          "column": 32,
+          "line": 63
+        },
+        {
+          "column": 33,
+          "line": 67
+        }
+      ],
+      "target": "uninitialized-storage",
+      "variant": "Empty"
+    },
+    {
+      "enum": "LegacyValue",
       "path": "src/engine/src/function/external/resource_write.rs",
       "sites": [
         {
@@ -3310,11 +3354,11 @@
       "sites": [
         {
           "column": 25,
-          "line": 2463
+          "line": 2580
         },
         {
           "column": 29,
-          "line": 2498
+          "line": 2615
         }
       ],
       "target": "option-absence",
@@ -3326,11 +3370,11 @@
       "sites": [
         {
           "column": 33,
-          "line": 1483
+          "line": 1573
         },
         {
           "column": 18,
-          "line": 1519
+          "line": 1609
         }
       ],
       "target": "uninitialized-storage",
@@ -3378,7 +3422,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 618
+          "line": 635
         }
       ],
       "target": "execution-no-result",
@@ -3390,11 +3434,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 695
+          "line": 712
         },
         {
           "column": 30,
-          "line": 695
+          "line": 712
         }
       ],
       "target": "generic-dispatch",
@@ -3478,15 +3522,15 @@
       "sites": [
         {
           "column": 10,
-          "line": 746
+          "line": 774
         },
         {
           "column": 31,
-          "line": 748
+          "line": 776
         },
         {
           "column": 26,
-          "line": 749
+          "line": 777
         }
       ],
       "target": "uninitialized-storage",
@@ -3621,6 +3665,10 @@
           "line": 216
         },
         {
+          "column": 37,
+          "line": 272
+        },
+        {
           "column": 8,
           "line": 295
         },
@@ -3655,10 +3703,6 @@
         {
           "column": 16,
           "line": 452
-        },
-        {
-          "column": 20,
-          "line": 635
         }
       ],
       "target": "execution-no-result",
@@ -3669,8 +3713,8 @@
       "path": "src/engine/src/mechdown.rs",
       "sites": [
         {
-          "column": 37,
-          "line": 272
+          "column": 20,
+          "line": 635
         }
       ],
       "target": "uninitialized-storage",
@@ -3694,7 +3738,7 @@
       "sites": [
         {
           "column": 25,
-          "line": 1327
+          "line": 1329
         }
       ],
       "target": "execution-no-result",
@@ -3705,16 +3749,16 @@
       "path": "src/engine/src/program/instance.rs",
       "sites": [
         {
-          "column": 17,
-          "line": 1425
+          "column": 25,
+          "line": 1445
         },
         {
           "column": 28,
-          "line": 1433
+          "line": 1451
         },
         {
           "column": 28,
-          "line": 1438
+          "line": 1456
         }
       ],
       "target": "option-absence",
@@ -3726,11 +3770,11 @@
       "sites": [
         {
           "column": 16,
-          "line": 17
+          "line": 18
         },
         {
           "column": 20,
-          "line": 22
+          "line": 23
         }
       ],
       "target": "execution-no-result",
@@ -3741,8 +3785,12 @@
       "path": "src/engine/src/statements/context.rs",
       "sites": [
         {
+          "column": 27,
+          "line": 88
+        },
+        {
           "column": 26,
-          "line": 75
+          "line": 131
         }
       ],
       "target": "uninitialized-storage",
@@ -3754,15 +3802,15 @@
       "sites": [
         {
           "column": 47,
-          "line": 71
+          "line": 73
         },
         {
           "column": 47,
-          "line": 72
+          "line": 74
         },
         {
           "column": 16,
-          "line": 88
+          "line": 90
         }
       ],
       "target": "execution-no-result",
@@ -3981,24 +4029,24 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 247,
-          "column": 42
+          "column": 42,
+          "line": 247
         },
         {
-          "line": 345,
-          "column": 12
+          "column": 12,
+          "line": 345
         },
         {
-          "line": 457,
-          "column": 12
+          "column": 12,
+          "line": 457
         },
         {
-          "line": 551,
-          "column": 11
+          "column": 11,
+          "line": 551
         },
         {
-          "line": 1218,
-          "column": 28
+          "column": 28,
+          "line": 1218
         }
       ],
       "target": "legacy-typed-empty-adapter",
@@ -4226,11 +4274,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 765
+          "line": 793
         },
         {
           "column": 27,
-          "line": 766
+          "line": 794
         }
       ],
       "target": "legacy-typed-empty-adapter",
@@ -4281,16 +4329,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 596,
-          "column": 9
+          "column": 9,
+          "line": 596
         },
         {
-          "line": 624,
-          "column": 13
+          "column": 13,
+          "line": 624
         },
         {
-          "line": 1204,
-          "column": 27
+          "column": 27,
+          "line": 1204
         }
       ],
       "target": "enum-snapshot",
@@ -4546,11 +4594,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 751
+          "line": 768
         },
         {
           "column": 35,
-          "line": 751
+          "line": 768
         }
       ],
       "target": "enum-snapshot",
@@ -4578,7 +4626,7 @@
       "sites": [
         {
           "column": 10,
-          "line": 847
+          "line": 875
         }
       ],
       "target": "enum-snapshot",
@@ -4837,8 +4885,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 512,
-          "column": 9
+          "column": 9,
+          "line": 512
         }
       ],
       "target": "floating-point-snapshot",
@@ -5449,8 +5497,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 516,
-          "column": 9
+          "column": 9,
+          "line": 516
         }
       ],
       "target": "floating-point-snapshot",
@@ -5719,6 +5767,54 @@
         {
           "column": 31,
           "line": 518
+        }
+      ],
+      "target": "floating-point-snapshot",
+      "variant": "F64"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/efficacy/ekf/catalog.rs",
+      "sites": [
+        {
+          "column": 41,
+          "line": 186
+        },
+        {
+          "column": 9,
+          "line": 219
+        },
+        {
+          "column": 36,
+          "line": 219
+        },
+        {
+          "column": 13,
+          "line": 518
+        },
+        {
+          "column": 17,
+          "line": 520
+        },
+        {
+          "column": 9,
+          "line": 556
+        },
+        {
+          "column": 22,
+          "line": 570
+        },
+        {
+          "column": 9,
+          "line": 590
+        },
+        {
+          "column": 37,
+          "line": 673
+        },
+        {
+          "column": 9,
+          "line": 735
         }
       ],
       "target": "floating-point-snapshot",
@@ -6001,8 +6097,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 510,
-          "column": 9
+          "column": 9,
+          "line": 510
         }
       ],
       "target": "signed-integer-snapshot",
@@ -6409,8 +6505,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 504,
-          "column": 9
+          "column": 9,
+          "line": 504
         }
       ],
       "target": "signed-integer-snapshot",
@@ -6825,8 +6921,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 506,
-          "column": 9
+          "column": 9,
+          "line": 506
         }
       ],
       "target": "signed-integer-snapshot",
@@ -7229,8 +7325,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 508,
-          "column": 9
+          "column": 9,
+          "line": 508
         }
       ],
       "target": "signed-integer-snapshot",
@@ -7697,8 +7793,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 502,
-          "column": 9
+          "column": 9,
+          "line": 502
         }
       ],
       "target": "signed-integer-snapshot",
@@ -8061,12 +8157,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 539,
-          "column": 9
+          "column": 9,
+          "line": 539
         },
         {
-          "line": 1158,
-          "column": 61
+          "column": 61,
+          "line": 1158
         }
       ],
       "target": "id-snapshot",
@@ -8385,12 +8481,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 540,
-          "column": 9
+          "column": 9,
+          "line": 540
         },
         {
-          "line": 1160,
-          "column": 23
+          "column": 23,
+          "line": 1160
         }
       ],
       "target": "index-snapshot",
@@ -9670,15 +9766,15 @@
       "sites": [
         {
           "column": 10,
-          "line": 698
+          "line": 715
         },
         {
           "column": 36,
-          "line": 698
+          "line": 715
         },
         {
           "column": 9,
-          "line": 794
+          "line": 811
         }
       ],
       "target": "index-snapshot",
@@ -9765,16 +9861,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 361,
-          "column": 24
+          "column": 24,
+          "line": 361
         },
         {
-          "line": 473,
-          "column": 24
+          "column": 24,
+          "line": 473
         },
         {
-          "line": 550,
-          "column": 11
+          "column": 11,
+          "line": 550
         }
       ],
       "target": "index-all-selection-ir",
@@ -9786,11 +9882,11 @@
       "sites": [
         {
           "column": 26,
-          "line": 265
+          "line": 295
         },
         {
           "column": 71,
-          "line": 265
+          "line": 295
         }
       ],
       "target": "index-all-selection-ir",
@@ -10846,7 +10942,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 793
+          "line": 810
         }
       ],
       "target": "index-all-selection-ir",
@@ -10925,16 +11021,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 549,
-          "column": 11
+          "column": 11,
+          "line": 549
         },
         {
-          "line": 876,
-          "column": 13
+          "column": 13,
+          "line": 876
         },
         {
-          "line": 1390,
-          "column": 23
+          "column": 23,
+          "line": 1390
         }
       ],
       "target": "reified-type-snapshot",
@@ -11210,11 +11306,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 736
+          "line": 764
         },
         {
           "column": 27,
-          "line": 737
+          "line": 765
         }
       ],
       "target": "reified-type-snapshot",
@@ -11365,16 +11461,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 588,
-          "column": 9
+          "column": 9,
+          "line": 588
         },
         {
-          "line": 835,
-          "column": 9
+          "column": 9,
+          "line": 835
         },
         {
-          "line": 1371,
-          "column": 27
+          "column": 27,
+          "line": 1371
         }
       ],
       "target": "map-snapshot",
@@ -11418,11 +11514,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 189
+          "line": 219
         },
         {
           "column": 37,
-          "line": 189
+          "line": 219
         }
       ],
       "target": "map-snapshot",
@@ -11606,7 +11702,7 @@
         },
         {
           "column": 29,
-          "line": 2077
+          "line": 2173
         }
       ],
       "target": "map-snapshot",
@@ -11642,27 +11738,27 @@
       "sites": [
         {
           "column": 10,
-          "line": 254
+          "line": 271
         },
         {
           "column": 34,
-          "line": 254
+          "line": 271
         },
         {
           "column": 10,
-          "line": 716
+          "line": 733
         },
         {
           "column": 34,
-          "line": 716
+          "line": 733
         },
         {
           "column": 23,
-          "line": 718
+          "line": 735
         },
         {
           "column": 25,
-          "line": 719
+          "line": 736
         }
       ],
       "target": "map-snapshot",
@@ -11674,7 +11770,7 @@
       "sites": [
         {
           "column": 10,
-          "line": 827
+          "line": 855
         }
       ],
       "target": "map-snapshot",
@@ -11737,8 +11833,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 554,
-          "column": 9
+          "column": 9,
+          "line": 554
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -13073,8 +13169,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 584,
-          "column": 9
+          "column": 9,
+          "line": 584
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -14365,8 +14461,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 576,
-          "column": 9
+          "column": 9,
+          "line": 576
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -15781,8 +15877,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 578,
-          "column": 9
+          "column": 9,
+          "line": 578
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -15958,6 +16054,66 @@
     },
     {
       "enum": "LegacyValue",
+      "path": "src/engine/src/efficacy/ekf/catalog.rs",
+      "sites": [
+        {
+          "column": 17,
+          "line": 189
+        },
+        {
+          "column": 17,
+          "line": 192
+        },
+        {
+          "column": 9,
+          "line": 592
+        },
+        {
+          "column": 9,
+          "line": 595
+        },
+        {
+          "column": 13,
+          "line": 668
+        },
+        {
+          "column": 13,
+          "line": 671
+        },
+        {
+          "column": 9,
+          "line": 688
+        },
+        {
+          "column": 9,
+          "line": 701
+        },
+        {
+          "column": 9,
+          "line": 752
+        },
+        {
+          "column": 9,
+          "line": 756
+        }
+      ],
+      "target": "typed-matrix-snapshot",
+      "variant": "MatrixF64"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/efficacy/ekf/closure.rs",
+      "sites": [
+        {
+          "column": 13,
+          "line": 953
+        }
+      ],
+      "target": "typed-matrix-snapshot",
+      "variant": "MatrixF64"
+    },
+    {
+      "enum": "LegacyValue",
       "path": "src/engine/src/expressions/comprehensions.rs",
       "sites": [
         {
@@ -16113,8 +16269,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 574,
-          "column": 9
+          "column": 9,
+          "line": 574
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -16401,8 +16557,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 568,
-          "column": 9
+          "column": 9,
+          "line": 568
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -16689,8 +16845,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 570,
-          "column": 9
+          "column": 9,
+          "line": 570
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -16977,8 +17133,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 572,
-          "column": 9
+          "column": 9,
+          "line": 572
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -17265,8 +17421,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 566,
-          "column": 9
+          "column": 9,
+          "line": 566
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -17557,8 +17713,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 546,
-          "column": 9
+          "column": 9,
+          "line": 546
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -19174,23 +19330,23 @@
       "sites": [
         {
           "column": 21,
-          "line": 501
+          "line": 518
         },
         {
           "column": 21,
-          "line": 502
+          "line": 519
         },
         {
           "column": 10,
-          "line": 705
+          "line": 722
         },
         {
           "column": 42,
-          "line": 705
+          "line": 722
         },
         {
           "column": 9,
-          "line": 795
+          "line": 812
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -19281,8 +19437,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 582,
-          "column": 9
+          "column": 9,
+          "line": 582
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -19537,8 +19693,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 580,
-          "column": 9
+          "column": 9,
+          "line": 580
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -19825,8 +19981,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 564,
-          "column": 9
+          "column": 9,
+          "line": 564
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -20113,8 +20269,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 558,
-          "column": 9
+          "column": 9,
+          "line": 558
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -20401,8 +20557,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 560,
-          "column": 9
+          "column": 9,
+          "line": 560
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -20689,8 +20845,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 562,
-          "column": 9
+          "column": 9,
+          "line": 562
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -20981,8 +21137,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 556,
-          "column": 9
+          "column": 9,
+          "line": 556
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -21257,12 +21413,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 249,
-          "column": 45
+          "column": 45,
+          "line": 249
         },
         {
-          "line": 744,
-          "column": 16
+          "column": 39,
+          "line": 546
         }
       ],
       "target": "homogeneous-matrix-snapshot",
@@ -21273,12 +21429,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 546,
-          "column": 39
+          "column": 16,
+          "line": 744
         },
         {
-          "line": 1458,
-          "column": 12
+          "column": 12,
+          "line": 1458
         }
       ],
       "target": "legacy-matrix-value-adapter",
@@ -21626,11 +21782,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 776
+          "line": 804
         },
         {
           "column": 27,
-          "line": 777
+          "line": 805
         }
       ],
       "target": "matrix-construction-ir",
@@ -21685,6 +21841,10 @@
           "line": 619
         },
         {
+          "column": 23,
+          "line": 653
+        },
+        {
           "column": 42,
           "line": 662
         },
@@ -21695,10 +21855,6 @@
         {
           "column": 23,
           "line": 695
-        },
-        {
-          "column": 19,
-          "line": 739
         }
       ],
       "target": "legacy-matrix-value-adapter",
@@ -21709,8 +21865,8 @@
       "path": "src/engine/src/structures.rs",
       "sites": [
         {
-          "column": 23,
-          "line": 653
+          "column": 19,
+          "line": 739
         }
       ],
       "target": "matrix-construction-ir",
@@ -23477,16 +23633,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 352,
-          "column": 12
+          "column": 12,
+          "line": 352
         },
         {
-          "line": 464,
-          "column": 12
+          "column": 12,
+          "line": 464
         },
         {
-          "line": 547,
-          "column": 9
+          "column": 9,
+          "line": 547
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -23510,11 +23666,11 @@
       "sites": [
         {
           "column": 26,
-          "line": 250
+          "line": 280
         },
         {
           "column": 31,
-          "line": 251
+          "line": 281
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -23530,7 +23686,11 @@
         },
         {
           "column": 12,
-          "line": 171
+          "line": 203
+        },
+        {
+          "column": 12,
+          "line": 278
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -23810,6 +23970,30 @@
     },
     {
       "enum": "LegacyValue",
+      "path": "src/engine/src/efficacy/ekf/catalog.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 218
+        },
+        {
+          "column": 9,
+          "line": 589
+        },
+        {
+          "column": 9,
+          "line": 685
+        },
+        {
+          "column": 9,
+          "line": 734
+        }
+      ],
+      "target": "mutable-reference-runtime-storage",
+      "variant": "MutableReference"
+    },
+    {
+      "enum": "LegacyValue",
       "path": "src/engine/src/expressions/comprehensions.rs",
       "sites": [
         {
@@ -23881,12 +24065,12 @@
       "path": "src/engine/src/expressions/variables.rs",
       "sites": [
         {
-          "column": 56,
-          "line": 97
+          "column": 47,
+          "line": 96
         },
         {
-          "column": 52,
-          "line": 120
+          "column": 43,
+          "line": 124
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -23910,7 +24094,7 @@
       "sites": [
         {
           "column": 17,
-          "line": 98
+          "line": 140
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -23994,11 +24178,11 @@
       "sites": [
         {
           "column": 29,
-          "line": 548
+          "line": 638
         },
         {
           "column": 33,
-          "line": 560
+          "line": 650
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -24270,35 +24454,35 @@
       "sites": [
         {
           "column": 18,
-          "line": 887
+          "line": 904
         },
         {
           "column": 55,
-          "line": 887
+          "line": 904
         },
         {
           "column": 24,
-          "line": 890
+          "line": 907
         },
         {
           "column": 18,
-          "line": 893
+          "line": 910
         },
         {
           "column": 18,
-          "line": 978
+          "line": 995
         },
         {
           "column": 55,
-          "line": 978
+          "line": 995
         },
         {
           "column": 24,
-          "line": 981
+          "line": 998
         },
         {
           "column": 18,
-          "line": 984
+          "line": 1001
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -24434,11 +24618,11 @@
       "sites": [
         {
           "column": 17,
-          "line": 602
+          "line": 628
         },
         {
           "column": 18,
-          "line": 1021
+          "line": 1049
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -24578,27 +24762,27 @@
       "sites": [
         {
           "column": 40,
-          "line": 62
+          "line": 64
         },
         {
           "column": 44,
-          "line": 71
+          "line": 73
         },
         {
           "column": 26,
-          "line": 1398
+          "line": 1409
         },
         {
           "column": 30,
-          "line": 1432
+          "line": 1450
         },
         {
           "column": 30,
-          "line": 1437
+          "line": 1455
         },
         {
           "column": 9,
-          "line": 1605
+          "line": 1654
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -24773,12 +24957,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 528,
-          "column": 9
+          "column": 9,
+          "line": 528
         },
         {
-          "line": 1133,
-          "column": 23
+          "column": 23,
+          "line": 1133
         }
       ],
       "target": "rational-snapshot",
@@ -25049,16 +25233,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 590,
-          "column": 9
+          "column": 9,
+          "line": 590
         },
         {
-          "line": 701,
-          "column": 13
+          "column": 13,
+          "line": 701
         },
         {
-          "line": 1266,
-          "column": 27
+          "column": 27,
+          "line": 1266
         }
       ],
       "target": "record-snapshot",
@@ -25102,11 +25286,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 185
+          "line": 215
         },
         {
           "column": 40,
-          "line": 185
+          "line": 215
         }
       ],
       "target": "record-snapshot",
@@ -25322,27 +25506,27 @@
       "sites": [
         {
           "column": 10,
-          "line": 222
+          "line": 239
         },
         {
           "column": 37,
-          "line": 222
+          "line": 239
         },
         {
           "column": 10,
-          "line": 709
+          "line": 726
         },
         {
           "column": 37,
-          "line": 709
+          "line": 726
         },
         {
           "column": 23,
-          "line": 711
+          "line": 728
         },
         {
           "column": 25,
-          "line": 712
+          "line": 729
         }
       ],
       "target": "record-snapshot",
@@ -25378,7 +25562,7 @@
       "sites": [
         {
           "column": 10,
-          "line": 817
+          "line": 845
         }
       ],
       "target": "record-snapshot",
@@ -25753,16 +25937,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 586,
-          "column": 9
+          "column": 9,
+          "line": 586
         },
         {
-          "line": 811,
-          "column": 13
+          "column": 13,
+          "line": 811
         },
         {
-          "line": 1325,
-          "column": 27
+          "column": 27,
+          "line": 1325
         }
       ],
       "target": "set-snapshot",
@@ -25806,11 +25990,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 199
+          "line": 229
         },
         {
           "column": 37,
-          "line": 199
+          "line": 229
         }
       ],
       "target": "set-snapshot",
@@ -25998,7 +26182,7 @@
         },
         {
           "column": 29,
-          "line": 2079
+          "line": 2175
         }
       ],
       "target": "set-snapshot",
@@ -26010,11 +26194,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 723
+          "line": 740
         },
         {
           "column": 34,
-          "line": 723
+          "line": 740
         }
       ],
       "target": "set-snapshot",
@@ -26062,7 +26246,7 @@
       "sites": [
         {
           "column": 10,
-          "line": 797
+          "line": 825
         }
       ],
       "target": "set-snapshot",
@@ -26189,12 +26373,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 536,
-          "column": 9
+          "column": 9,
+          "line": 536
         },
         {
-          "line": 1144,
-          "column": 23
+          "column": 23,
+          "line": 1144
         }
       ],
       "target": "string-snapshot",
@@ -26410,11 +26594,11 @@
       "sites": [
         {
           "column": 29,
-          "line": 2436
+          "line": 2553
         },
         {
           "column": 25,
-          "line": 2464
+          "line": 2581
         }
       ],
       "target": "string-snapshot",
@@ -26538,15 +26722,35 @@
       "sites": [
         {
           "column": 24,
-          "line": 1401
+          "line": 1412
         },
         {
           "column": 30,
-          "line": 1402
+          "line": 1413
         },
         {
-          "column": 17,
-          "line": 1427
+          "column": 21,
+          "line": 1416
+        },
+        {
+          "column": 21,
+          "line": 1419
+        },
+        {
+          "column": 21,
+          "line": 1422
+        },
+        {
+          "column": 21,
+          "line": 1425
+        },
+        {
+          "column": 21,
+          "line": 1428
+        },
+        {
+          "column": 21,
+          "line": 1431
         }
       ],
       "target": "string-snapshot",
@@ -26765,16 +26969,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 592,
-          "column": 9
+          "column": 9,
+          "line": 592
         },
         {
-          "line": 768,
-          "column": 13
+          "column": 13,
+          "line": 768
         },
         {
-          "line": 1499,
-          "column": 12
+          "column": 12,
+          "line": 1499
         }
       ],
       "target": "table-snapshot",
@@ -26818,11 +27022,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 205
+          "line": 235
         },
         {
           "column": 39,
-          "line": 205
+          "line": 235
         }
       ],
       "target": "table-snapshot",
@@ -27062,31 +27266,31 @@
       "sites": [
         {
           "column": 10,
-          "line": 284
+          "line": 301
         },
         {
           "column": 36,
-          "line": 284
+          "line": 301
         },
         {
           "column": 10,
-          "line": 730
+          "line": 747
         },
         {
           "column": 36,
-          "line": 730
+          "line": 747
         },
         {
           "column": 23,
-          "line": 732
+          "line": 749
         },
         {
           "column": 25,
-          "line": 733
+          "line": 750
         },
         {
           "column": 9,
-          "line": 948
+          "line": 965
         }
       ],
       "target": "table-snapshot",
@@ -27146,7 +27350,7 @@
       "sites": [
         {
           "column": 10,
-          "line": 787
+          "line": 815
         }
       ],
       "target": "table-snapshot",
@@ -27265,16 +27469,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 594,
-          "column": 9
+          "column": 9,
+          "line": 594
         },
         {
-          "line": 670,
-          "column": 13
+          "column": 13,
+          "line": 670
         },
         {
-          "line": 1241,
-          "column": 27
+          "column": 27,
+          "line": 1241
         }
       ],
       "target": "tuple-snapshot",
@@ -27318,11 +27522,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 221
+          "line": 251
         },
         {
           "column": 39,
-          "line": 221
+          "line": 251
         }
       ],
       "target": "tuple-snapshot",
@@ -27582,27 +27786,27 @@
       "sites": [
         {
           "column": 10,
-          "line": 317
+          "line": 334
         },
         {
           "column": 36,
-          "line": 317
+          "line": 334
         },
         {
           "column": 10,
-          "line": 737
+          "line": 754
         },
         {
           "column": 36,
-          "line": 737
+          "line": 754
         },
         {
           "column": 23,
-          "line": 739
+          "line": 756
         },
         {
           "column": 25,
-          "line": 740
+          "line": 757
         }
       ],
       "target": "tuple-snapshot",
@@ -27626,7 +27830,7 @@
       "sites": [
         {
           "column": 10,
-          "line": 807
+          "line": 835
         }
       ],
       "target": "tuple-snapshot",
@@ -27789,20 +27993,20 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 315,
-          "column": 12
+          "column": 12,
+          "line": 315
         },
         {
-          "line": 427,
-          "column": 12
+          "column": 12,
+          "line": 427
         },
         {
-          "line": 548,
-          "column": 11
+          "column": 11,
+          "line": 548
         },
         {
-          "line": 1219,
-          "column": 35
+          "column": 35,
+          "line": 1219
         }
       ],
       "target": "typed-wrapper-removal",
@@ -27846,19 +28050,19 @@
       "sites": [
         {
           "column": 9,
-          "line": 230
+          "line": 260
         },
         {
           "column": 9,
-          "line": 231
+          "line": 261
         },
         {
           "column": 26,
-          "line": 243
+          "line": 273
         },
         {
           "column": 74,
-          "line": 243
+          "line": 273
         }
       ],
       "target": "typed-wrapper-removal",
@@ -28006,6 +28210,34 @@
     },
     {
       "enum": "LegacyValue",
+      "path": "src/engine/src/efficacy/ekf/catalog.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 217
+        },
+        {
+          "column": 13,
+          "line": 519
+        },
+        {
+          "column": 9,
+          "line": 588
+        },
+        {
+          "column": 9,
+          "line": 684
+        },
+        {
+          "column": 9,
+          "line": 733
+        }
+      ],
+      "target": "typed-wrapper-removal",
+      "variant": "Typed"
+    },
+    {
+      "enum": "LegacyValue",
       "path": "src/engine/src/expressions/matches.rs",
       "sites": [
         {
@@ -28070,19 +28302,19 @@
       "sites": [
         {
           "column": 13,
-          "line": 212
+          "line": 229
         },
         {
           "column": 13,
-          "line": 213
+          "line": 230
         },
         {
           "column": 13,
-          "line": 690
+          "line": 707
         },
         {
           "column": 13,
-          "line": 691
+          "line": 708
         }
       ],
       "target": "typed-wrapper-removal",
@@ -28114,11 +28346,11 @@
       "sites": [
         {
           "column": 10,
-          "line": 755
+          "line": 783
         },
         {
           "column": 27,
-          "line": 756
+          "line": 784
         }
       ],
       "target": "typed-wrapper-removal",
@@ -28213,8 +28445,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 500,
-          "column": 9
+          "column": 9,
+          "line": 500
         }
       ],
       "target": "unsigned-integer-snapshot",
@@ -28601,8 +28833,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 494,
-          "column": 9
+          "column": 9,
+          "line": 494
         }
       ],
       "target": "unsigned-integer-snapshot",
@@ -28989,8 +29221,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 496,
-          "column": 9
+          "column": 9,
+          "line": 496
         }
       ],
       "target": "unsigned-integer-snapshot",
@@ -29389,8 +29621,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 498,
-          "column": 9
+          "column": 9,
+          "line": 498
         }
       ],
       "target": "unsigned-integer-snapshot",
@@ -29817,8 +30049,8 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 492,
-          "column": 9
+          "column": 9,
+          "line": 492
         }
       ],
       "target": "unsigned-integer-snapshot",
@@ -30185,12 +30417,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 964,
-          "column": 9
+          "column": 9,
+          "line": 964
         },
         {
-          "line": 1007,
-          "column": 9
+          "column": 9,
+          "line": 1007
         }
       ],
       "target": "kind-wildcard",
@@ -30283,6 +30515,18 @@
         {
           "column": 30,
           "line": 1314
+        }
+      ],
+      "target": "kind-wildcard",
+      "variant": "Any"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 28,
+          "line": 1325
         }
       ],
       "target": "kind-wildcard",
@@ -30405,16 +30649,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 993,
-          "column": 11
+          "column": 11,
+          "line": 993
         },
         {
-          "line": 1012,
-          "column": 9
+          "column": 9,
+          "line": 1012
         },
         {
-          "line": 1579,
-          "column": 13
+          "column": 13,
+          "line": 1579
         }
       ],
       "target": "atom-schema",
@@ -30549,16 +30793,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 986,
-          "column": 11
+          "column": 11,
+          "line": 986
         },
         {
-          "line": 1058,
-          "column": 11
+          "column": 11,
+          "line": 1058
         },
         {
-          "line": 1558,
-          "column": 29
+          "column": 29,
+          "line": 1558
         }
       ],
       "target": "bool-schema",
@@ -30718,7 +30962,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 221
+          "line": 247
         }
       ],
       "target": "bool-schema",
@@ -30761,16 +31005,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 983,
-          "column": 11
+          "column": 11,
+          "line": 983
         },
         {
-          "line": 1055,
-          "column": 11
+          "column": 11,
+          "line": 1055
         },
         {
-          "line": 1571,
-          "column": 49
+          "column": 49,
+          "line": 1571
         }
       ],
       "target": "complex-schema",
@@ -30914,7 +31158,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 215
+          "line": 241
         }
       ],
       "target": "complex-schema",
@@ -31025,12 +31269,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 963,
-          "column": 9
+          "column": 9,
+          "line": 963
         },
         {
-          "line": 1009,
-          "column": 9
+          "column": 9,
+          "line": 1009
         }
       ],
       "target": "value-kind-hole",
@@ -31123,6 +31367,18 @@
         {
           "column": 38,
           "line": 2858
+        }
+      ],
+      "target": "value-kind-hole",
+      "variant": "Empty"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 1325
         }
       ],
       "target": "value-kind-hole",
@@ -31281,16 +31537,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 990,
-          "column": 11
+          "column": 11,
+          "line": 990
         },
         {
-          "line": 1013,
-          "column": 9
+          "column": 9,
+          "line": 1013
         },
         {
-          "line": 1583,
-          "column": 13
+          "column": 13,
+          "line": 1583
         }
       ],
       "target": "enum-schema",
@@ -31541,16 +31797,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 981,
-          "column": 11
+          "column": 11,
+          "line": 981
         },
         {
-          "line": 1053,
-          "column": 11
+          "column": 11,
+          "line": 1053
         },
         {
-          "line": 1569,
-          "column": 55
+          "column": 55,
+          "line": 1569
         }
       ],
       "target": "floating-point-schema",
@@ -31830,7 +32086,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 211
+          "line": 237
         }
       ],
       "target": "floating-point-schema",
@@ -31869,16 +32125,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 982,
-          "column": 11
+          "column": 11,
+          "line": 982
         },
         {
-          "line": 1054,
-          "column": 11
+          "column": 11,
+          "line": 1054
         },
         {
-          "line": 1570,
-          "column": 55
+          "column": 55,
+          "line": 1570
         }
       ],
       "target": "floating-point-schema",
@@ -32186,7 +32442,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 213
+          "line": 239
         }
       ],
       "target": "floating-point-schema",
@@ -32225,16 +32481,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 980,
-          "column": 11
+          "column": 11,
+          "line": 980
         },
         {
-          "line": 1052,
-          "column": 11
+          "column": 11,
+          "line": 1052
         },
         {
-          "line": 1568,
-          "column": 58
+          "column": 58,
+          "line": 1568
         }
       ],
       "target": "signed-integer-schema",
@@ -32462,7 +32718,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 209
+          "line": 235
         }
       ],
       "target": "signed-integer-schema",
@@ -32501,16 +32757,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 977,
-          "column": 11
+          "column": 11,
+          "line": 977
         },
         {
-          "line": 1049,
-          "column": 11
+          "column": 11,
+          "line": 1049
         },
         {
-          "line": 1565,
-          "column": 57
+          "column": 57,
+          "line": 1565
         }
       ],
       "target": "signed-integer-schema",
@@ -32738,7 +32994,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 203
+          "line": 229
         }
       ],
       "target": "signed-integer-schema",
@@ -32777,16 +33033,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 978,
-          "column": 11
+          "column": 11,
+          "line": 978
         },
         {
-          "line": 1050,
-          "column": 11
+          "column": 11,
+          "line": 1050
         },
         {
-          "line": 1566,
-          "column": 57
+          "column": 57,
+          "line": 1566
         }
       ],
       "target": "signed-integer-schema",
@@ -33014,7 +33270,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 205
+          "line": 231
         }
       ],
       "target": "signed-integer-schema",
@@ -33053,16 +33309,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 979,
-          "column": 11
+          "column": 11,
+          "line": 979
         },
         {
-          "line": 1051,
-          "column": 11
+          "column": 11,
+          "line": 1051
         },
         {
-          "line": 1567,
-          "column": 57
+          "column": 57,
+          "line": 1567
         }
       ],
       "target": "signed-integer-schema",
@@ -33290,7 +33546,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 207
+          "line": 233
         }
       ],
       "target": "signed-integer-schema",
@@ -33329,16 +33585,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 976,
-          "column": 11
+          "column": 11,
+          "line": 976
         },
         {
-          "line": 1048,
-          "column": 11
+          "column": 11,
+          "line": 1048
         },
         {
-          "line": 1564,
-          "column": 56
+          "column": 56,
+          "line": 1564
         }
       ],
       "target": "signed-integer-schema",
@@ -33566,7 +33822,7 @@
       "sites": [
         {
           "column": 34,
-          "line": 201
+          "line": 227
         }
       ],
       "target": "signed-integer-schema",
@@ -33617,16 +33873,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 987,
-          "column": 11
+          "column": 11,
+          "line": 987
         },
         {
-          "line": 1010,
-          "column": 9
+          "column": 9,
+          "line": 1010
         },
         {
-          "line": 1575,
-          "column": 27
+          "column": 27,
+          "line": 1575
         }
       ],
       "target": "id-schema",
@@ -33737,16 +33993,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 988,
-          "column": 11
+          "column": 11,
+          "line": 988
         },
         {
-          "line": 1011,
-          "column": 9
+          "column": 9,
+          "line": 1011
         },
         {
-          "line": 1576,
-          "column": 30
+          "column": 30,
+          "line": 1576
         }
       ],
       "target": "index-schema",
@@ -33985,12 +34241,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 964,
-          "column": 70
+          "column": 70,
+          "line": 964
         },
         {
-          "line": 1042,
-          "column": 9
+          "column": 9,
+          "line": 1042
         }
       ],
       "target": "reified-type-schema",
@@ -34054,6 +34310,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 1314
+        },
+        {
+          "column": 14,
+          "line": 1316
+        }
+      ],
+      "target": "reified-type-schema",
+      "variant": "Kind"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/kind.rs",
       "sites": [
         {
@@ -34085,16 +34357,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 992,
-          "column": 11
+          "column": 11,
+          "line": 992
         },
         {
-          "line": 1037,
-          "column": 9
+          "column": 9,
+          "line": 1037
         },
         {
-          "line": 1639,
-          "column": 47
+          "column": 47,
+          "line": 1639
         }
       ],
       "target": "map-schema",
@@ -34190,6 +34462,26 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 36,
+          "line": 354
+        },
+        {
+          "column": 9,
+          "line": 1271
+        },
+        {
+          "column": 17,
+          "line": 1275
+        }
+      ],
+      "target": "map-schema",
+      "variant": "Map"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/engine/src/integrity.rs",
       "sites": [
         {
@@ -34234,7 +34526,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 873
+          "line": 890
         }
       ],
       "target": "map-schema",
@@ -34273,16 +34565,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 989,
-          "column": 11
+          "column": 11,
+          "line": 989
         },
         {
-          "line": 1014,
-          "column": 9
+          "column": 9,
+          "line": 1014
         },
         {
-          "line": 1610,
-          "column": 14
+          "column": 14,
+          "line": 1610
         }
       ],
       "target": "matrix-schema",
@@ -34502,6 +34794,26 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 13,
+          "line": 352
+        },
+        {
+          "column": 9,
+          "line": 1252
+        },
+        {
+          "column": 17,
+          "line": 1255
+        }
+      ],
+      "target": "matrix-schema",
+      "variant": "Matrix"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/engine/src/expressions/matches.rs",
       "sites": [
         {
@@ -34650,7 +34962,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 869
+          "line": 886
         }
       ],
       "target": "matrix-schema",
@@ -34813,12 +35125,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 964,
-          "column": 26
+          "column": 26,
+          "line": 964
         },
         {
-          "line": 1008,
-          "column": 9
+          "column": 9,
+          "line": 1008
         }
       ],
       "target": "kind-never",
@@ -34890,6 +35202,18 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 45,
+          "line": 1325
+        }
+      ],
+      "target": "kind-never",
+      "variant": "None"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/engine/src/structures.rs",
       "sites": [
         {
@@ -34933,16 +35257,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 997,
-          "column": 11
+          "column": 11,
+          "line": 997
         },
         {
-          "line": 1017,
-          "column": 9
+          "column": 9,
+          "line": 1017
         },
         {
-          "line": 1585,
-          "column": 40
+          "column": 40,
+          "line": 1585
         }
       ],
       "target": "option-schema",
@@ -35059,6 +35383,22 @@
         {
           "column": 21,
           "line": 1711
+        }
+      ],
+      "target": "option-schema",
+      "variant": "Option"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 1310
+        },
+        {
+          "column": 14,
+          "line": 1312
         }
       ],
       "target": "option-schema",
@@ -35261,16 +35601,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 984,
-          "column": 11
+          "column": 11,
+          "line": 984
         },
         {
-          "line": 1056,
-          "column": 11
+          "column": 11,
+          "line": 1056
         },
         {
-          "line": 1573,
-          "column": 35
+          "column": 35,
+          "line": 1573
         }
       ],
       "target": "rational-schema",
@@ -35414,7 +35754,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 217
+          "line": 243
         }
       ],
       "target": "rational-schema",
@@ -35465,16 +35805,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 991,
-          "column": 11
+          "column": 11,
+          "line": 991
         },
         {
-          "line": 1021,
-          "column": 9
+          "column": 9,
+          "line": 1021
         },
         {
-          "line": 1596,
-          "column": 39
+          "column": 39,
+          "line": 1596
         }
       ],
       "target": "record-schema",
@@ -35570,6 +35910,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 1259
+        },
+        {
+          "column": 14,
+          "line": 1269
+        }
+      ],
+      "target": "record-schema",
+      "variant": "Record"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/engine/src/expressions/subscripts/dot.rs",
       "sites": [
         {
@@ -35610,7 +35966,7 @@
       "sites": [
         {
           "column": 13,
-          "line": 927
+          "line": 944
         }
       ],
       "target": "record-schema",
@@ -35650,6 +36006,30 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/bytecode/src/context.rs",
+      "sites": [
+        {
+          "column": 32,
+          "line": 194
+        },
+        {
+          "column": 22,
+          "line": 197
+        },
+        {
+          "column": 32,
+          "line": 663
+        },
+        {
+          "column": 39,
+          "line": 665
+        }
+      ],
+      "target": "reference-binding-contract",
+      "variant": "Reference"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/core/src/kind.rs",
       "sites": [
         {
@@ -35681,12 +36061,12 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 964,
-          "column": 44
+          "column": 44,
+          "line": 964
         },
         {
-          "line": 1041,
-          "column": 9
+          "column": 9,
+          "line": 1041
         }
       ],
       "target": "reference-binding-contract",
@@ -35775,6 +36155,22 @@
         {
           "column": 49,
           "line": 2854
+        }
+      ],
+      "target": "reference-binding-contract",
+      "variant": "Reference"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 1248
+        },
+        {
+          "column": 9,
+          "line": 1326
         }
       ],
       "target": "reference-binding-contract",
@@ -35913,16 +36309,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 996,
-          "column": 11
+          "column": 11,
+          "line": 996
         },
         {
-          "line": 1034,
-          "column": 9
+          "column": 9,
+          "line": 1034
         },
         {
-          "line": 1632,
-          "column": 14
+          "column": 14,
+          "line": 1632
         }
       ],
       "target": "set-schema",
@@ -36022,6 +36418,26 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 13,
+          "line": 354
+        },
+        {
+          "column": 9,
+          "line": 1303
+        },
+        {
+          "column": 17,
+          "line": 1306
+        }
+      ],
+      "target": "set-schema",
+      "variant": "Set"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/engine/src/integrity.rs",
       "sites": [
         {
@@ -36085,16 +36501,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 985,
-          "column": 11
+          "column": 11,
+          "line": 985
         },
         {
-          "line": 1057,
-          "column": 11
+          "column": 11,
+          "line": 1057
         },
         {
-          "line": 1574,
-          "column": 31
+          "column": 31,
+          "line": 1574
         }
       ],
       "target": "string-schema",
@@ -36314,7 +36730,7 @@
       "sites": [
         {
           "column": 38,
-          "line": 219
+          "line": 245
         }
       ],
       "target": "string-schema",
@@ -36369,16 +36785,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 994,
-          "column": 11
+          "column": 11,
+          "line": 994
         },
         {
-          "line": 1027,
-          "column": 9
+          "column": 9,
+          "line": 1027
         },
         {
-          "line": 1617,
-          "column": 48
+          "column": 48,
+          "line": 1617
         }
       ],
       "target": "table-schema",
@@ -36482,6 +36898,26 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 13,
+          "line": 353
+        },
+        {
+          "column": 9,
+          "line": 1279
+        },
+        {
+          "column": 14,
+          "line": 1289
+        }
+      ],
+      "target": "table-schema",
+      "variant": "Table"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/engine/src/integrity.rs",
       "sites": [
         {
@@ -36518,7 +36954,7 @@
       "sites": [
         {
           "column": 13,
-          "line": 925
+          "line": 942
         }
       ],
       "target": "table-schema",
@@ -36609,16 +37045,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 995,
-          "column": 11
+          "column": 11,
+          "line": 995
         },
         {
-          "line": 1018,
-          "column": 9
+          "column": 9,
+          "line": 1018
         },
         {
-          "line": 1590,
-          "column": 40
+          "column": 40,
+          "line": 1590
         }
       ],
       "target": "tuple-schema",
@@ -36726,6 +37162,22 @@
     },
     {
       "enum": "ValueKind",
+      "path": "src/engine/src/artifact/compiler.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 1291
+        },
+        {
+          "column": 14,
+          "line": 1301
+        }
+      ],
+      "target": "tuple-schema",
+      "variant": "Tuple"
+    },
+    {
+      "enum": "ValueKind",
       "path": "src/engine/src/expressions/subscripts/dot.rs",
       "sites": [
         {
@@ -36766,7 +37218,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 877
+          "line": 894
         }
       ],
       "target": "tuple-schema",
@@ -36829,16 +37281,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 975,
-          "column": 11
+          "column": 11,
+          "line": 975
         },
         {
-          "line": 1047,
-          "column": 11
+          "column": 11,
+          "line": 1047
         },
         {
-          "line": 1563,
-          "column": 60
+          "column": 60,
+          "line": 1563
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37078,7 +37530,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 199
+          "line": 225
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37117,16 +37569,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 972,
-          "column": 11
+          "column": 11,
+          "line": 972
         },
         {
-          "line": 1044,
-          "column": 11
+          "column": 11,
+          "line": 1044
         },
         {
-          "line": 1560,
-          "column": 59
+          "column": 59,
+          "line": 1560
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37366,7 +37818,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 193
+          "line": 219
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37405,16 +37857,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 973,
-          "column": 11
+          "column": 11,
+          "line": 973
         },
         {
-          "line": 1045,
-          "column": 11
+          "column": 11,
+          "line": 1045
         },
         {
-          "line": 1561,
-          "column": 59
+          "column": 59,
+          "line": 1561
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37654,7 +38106,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 195
+          "line": 221
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37693,16 +38145,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 974,
-          "column": 11
+          "column": 11,
+          "line": 974
         },
         {
-          "line": 1046,
-          "column": 11
+          "column": 11,
+          "line": 1046
         },
         {
-          "line": 1562,
-          "column": 59
+          "column": 59,
+          "line": 1562
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37942,7 +38394,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 197
+          "line": 223
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37981,16 +38433,16 @@
       "path": "src/core/src/legacy_adapter/value.rs",
       "sites": [
         {
-          "line": 971,
-          "column": 9
+          "column": 9,
+          "line": 971
         },
         {
-          "line": 1043,
-          "column": 9
+          "column": 9,
+          "line": 1043
         },
         {
-          "line": 1559,
-          "column": 58
+          "column": 58,
+          "line": 1559
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38230,7 +38682,7 @@
       "sites": [
         {
           "column": 34,
-          "line": 191
+          "line": 217
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38247,226 +38699,6 @@
       ],
       "target": "unsigned-integer-schema",
       "variant": "U8"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 28,
-          "line": 1091
-        }
-      ],
-      "target": "kind-wildcard",
-      "variant": "Any"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 1091
-        }
-      ],
-      "target": "value-kind-hole",
-      "variant": "Empty"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 45,
-          "line": 1091
-        }
-      ],
-      "target": "kind-never",
-      "variant": "None"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 1014
-        },
-        {
-          "column": 9,
-          "line": 1092
-        }
-      ],
-      "target": "reference-binding-contract",
-      "variant": "Reference"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 13,
-          "line": 352
-        },
-        {
-          "column": 9,
-          "line": 1018
-        },
-        {
-          "column": 17,
-          "line": 1021
-        }
-      ],
-      "target": "matrix-schema",
-      "variant": "Matrix"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 1025
-        },
-        {
-          "column": 14,
-          "line": 1035
-        }
-      ],
-      "target": "record-schema",
-      "variant": "Record"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 36,
-          "line": 354
-        },
-        {
-          "column": 9,
-          "line": 1037
-        },
-        {
-          "column": 17,
-          "line": 1041
-        }
-      ],
-      "target": "map-schema",
-      "variant": "Map"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 13,
-          "line": 353
-        },
-        {
-          "column": 9,
-          "line": 1045
-        },
-        {
-          "column": 14,
-          "line": 1055
-        }
-      ],
-      "target": "table-schema",
-      "variant": "Table"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 1057
-        },
-        {
-          "column": 14,
-          "line": 1067
-        }
-      ],
-      "target": "tuple-schema",
-      "variant": "Tuple"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 13,
-          "line": 354
-        },
-        {
-          "column": 9,
-          "line": 1069
-        },
-        {
-          "column": 17,
-          "line": 1072
-        }
-      ],
-      "target": "set-schema",
-      "variant": "Set"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 1076
-        },
-        {
-          "column": 14,
-          "line": 1078
-        }
-      ],
-      "target": "option-schema",
-      "variant": "Option"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/artifact/compiler.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 1080
-        },
-        {
-          "column": 14,
-          "line": 1082
-        }
-      ],
-      "target": "reified-type-schema",
-      "variant": "Kind"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/bytecode/src/context.rs",
-      "sites": [
-        {
-          "column": 32,
-          "line": 185
-        },
-        {
-          "column": 22,
-          "line": 188
-        },
-        {
-          "column": 32,
-          "line": 512
-        },
-        {
-          "column": 39,
-          "line": 514
-        }
-      ],
-      "target": "reference-binding-contract",
-      "variant": "Reference"
     }
   ],
   "schema_version": 1,

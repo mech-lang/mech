@@ -9,6 +9,7 @@ mod context;
 mod destructure;
 mod integrity;
 
+pub(crate) use context::context_read;
 pub use context::{context_declaration, context_send};
 #[cfg(feature = "tuple")]
 pub use destructure::tuple_destructure;
@@ -26,7 +27,8 @@ pub use enums::enum_define;
 pub use errors::UnableToConvertRecordError;
 pub use errors::{
     AddressedAssignmentUnsupported, NotMutableError, UnableToConvertAtomError,
-    UnableToConvertAtomToEnumVariantError, UndefinedVariableError, VariableAlreadyDefinedError,
+    UnableToConvertAtomToEnumVariantError, UndefinedContextError, UndefinedVariableError,
+    VariableAlreadyDefinedError,
 };
 #[cfg(feature = "kind_define")]
 pub use kinds::kind_define;

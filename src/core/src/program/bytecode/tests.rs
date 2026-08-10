@@ -34,6 +34,33 @@ fn string_constant(value: &str) -> EncodedConstant {
     }
 }
 
+fn read_requirement() -> ApplicationRequirement {
+    ApplicationRequirement::Resource(ExecutionResourceRequest {
+        base_uri: "test://provider/root".into(),
+        path: "item".into(),
+        context_name: "root".into(),
+        operation: "read".into(),
+        intent: ResourceIntent::Read,
+        delivery: ResourceDelivery::Live,
+    })
+}
+
+fn read_program(
+    register_count: u32,
+    constants: Vec<EncodedConstant>,
+    instructions: Vec<BytecodeInstruction>,
+) -> BytecodeProgram {
+    BytecodeProgram {
+        register_count,
+        constants,
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions,
+        dictionary: BTreeMap::new(),
+        requirements: vec![read_requirement()],
+    }
+}
+
 fn u8_tuple_constant(values: &[u8]) -> EncodedConstant {
     let mut bytes = (values.len() as u32).to_le_bytes().to_vec();
     for value in values {
@@ -354,6 +381,148 @@ fn structural_program(
         dictionary: BTreeMap::new(),
         requirements: Vec::new(),
     }
+}
+
+#[test]
+fn resource_read_defines_uninitialized_destination() {
+    let input = read_program(
+        1,
+        Vec::new(),
+        vec![
+            BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+    );
+
+    let bytes = write_bytecode(&input).unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
+    assert!(parsed.constants.is_empty());
+}
+
+#[test]
+fn resource_read_destination_counts_as_initialized_after_instruction() {
+    let input = read_program(
+        2,
+        vec![empty_constant()],
+        vec![
+            BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            BytecodeInstruction::ConstLoad {
+                dst: 1,
+                constant: 0,
+            },
+            BytecodeInstruction::RuntimeUnary {
+                function: 1,
+                dst: 1,
+                src: 0,
+            },
+            BytecodeInstruction::Return { src: 1 },
+        ],
+    );
+
+    ParsedProgram::from_bytes(&write_bytecode(&input).unwrap()).unwrap();
+}
+
+#[test]
+fn resource_read_rejects_prior_const_initializer() {
+    let input = read_program(
+        1,
+        vec![empty_constant()],
+        vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
+            BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+    );
+
+    let error = write_bytecode(&input).unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeValidation");
+    assert!(
+        error
+            .kind_message()
+            .contains("register 0 is initialized more than once")
+    );
+}
+
+#[test]
+fn resource_read_rejects_second_static_definition() {
+    let input = read_program(
+        1,
+        Vec::new(),
+        vec![
+            BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+    );
+
+    let error = write_bytecode(&input).unwrap_err();
+    assert_eq!(error.kind_name(), "BytecodeValidation");
+    assert!(
+        error
+            .kind_message()
+            .contains("register 0 is initialized more than once")
+    );
+}
+
+#[test]
+fn resource_read_can_back_a_symbol_without_const_load() {
+    let name = "observed";
+    let id = hash_str(name);
+    let mut input = read_program(
+        1,
+        Vec::new(),
+        vec![
+            BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+    );
+    input.symbols.insert(id, 0);
+    input.dictionary.insert(id, name.to_string());
+
+    ParsedProgram::from_bytes(&write_bytecode(&input).unwrap()).unwrap();
+}
+
+#[test]
+fn dynamic_resource_read_can_supply_a_composite_child() {
+    let input = read_program(
+        2,
+        vec![u8_tuple_constant(&[0])],
+        vec![
+            BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            BytecodeInstruction::CompositePack {
+                dst: 1,
+                template: 0,
+                children: vec![0],
+            },
+            BytecodeInstruction::Return { src: 1 },
+        ],
+    );
+
+    ParsedProgram::from_bytes(&write_bytecode(&input).unwrap()).unwrap();
 }
 
 #[test]
@@ -1924,15 +2093,21 @@ fn rejects_unknown_requirement_fields_utf8_opcode_and_trailing_bytes() {
         intent: ResourceIntent::Read,
         delivery: ResourceDelivery::Snapshot,
     });
-    let mut input = program(vec![empty_constant()]);
-    input.requirements.push(requirement);
-    input.instructions.insert(
-        1,
-        BytecodeInstruction::ResourceRead {
-            requirement: 0,
-            dst: 0,
-        },
-    );
+    let mut input = BytecodeProgram {
+        register_count: 1,
+        constants: Vec::new(),
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions: vec![
+            BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+        dictionary: BTreeMap::new(),
+        requirements: vec![requirement],
+    };
     let requirement = write_bytecode(&input).unwrap();
     let requirement_offset = section_offset(
         &requirement,
@@ -2541,6 +2716,7 @@ fn requirements_use_the_explicit_canonical_order() {
     ];
     requirements.sort_by(compare_application_requirements);
     let mut input = program(vec![empty_constant()]);
+    input.register_count = 2;
     input.requirements = requirements.clone();
     input.instructions = vec![BytecodeInstruction::ConstLoad {
         dst: 0,
@@ -2557,7 +2733,7 @@ fn requirements_use_the_explicit_canonical_order() {
             ApplicationRequirement::Resource(request) => match request.intent {
                 ResourceIntent::Read => BytecodeInstruction::ResourceRead {
                     requirement,
-                    dst: 0,
+                    dst: 1,
                 },
                 ResourceIntent::Assign => BytecodeInstruction::ResourceWrite {
                     requirement,
@@ -2580,25 +2756,28 @@ fn requirements_use_the_explicit_canonical_order() {
 }
 
 fn resource_program(base_uri: &str, path: &str) -> BytecodeProgram {
-    let mut input = program(vec![empty_constant()]);
-    input
-        .requirements
-        .push(ApplicationRequirement::Resource(ExecutionResourceRequest {
+    BytecodeProgram {
+        register_count: 1,
+        constants: Vec::new(),
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions: vec![
+            BytecodeInstruction::ResourceRead {
+                requirement: 0,
+                dst: 0,
+            },
+            BytecodeInstruction::Return { src: 0 },
+        ],
+        dictionary: BTreeMap::new(),
+        requirements: vec![ApplicationRequirement::Resource(ExecutionResourceRequest {
             base_uri: base_uri.into(),
             path: path.into(),
             context_name: "ctx".into(),
             operation: "read".into(),
             intent: ResourceIntent::Read,
             delivery: ResourceDelivery::Snapshot,
-        }));
-    input.instructions.insert(
-        1,
-        BytecodeInstruction::ResourceRead {
-            requirement: 0,
-            dst: 0,
-        },
-    );
-    input
+        })],
+    }
 }
 
 fn resource_requirement_field_offsets(bytes: &[u8]) -> (usize, usize) {

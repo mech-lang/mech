@@ -75,6 +75,8 @@ use std::time::Duration;
 
 #[cfg(all(feature = "source", feature = "functions", feature = "symbol_table"))]
 pub mod activation;
+#[cfg(feature = "resident-ekf")]
+mod efficacy;
 #[cfg(feature = "source")]
 pub mod expressions;
 #[cfg(feature = "functions")]
@@ -102,6 +104,17 @@ pub mod __gate_b_resident {
     };
     pub use crate::resident::{
         FULL_WRITE_ELEMENTS, PreparedResidentFullWrite, ResidentExecutionError, ResidentFullWrite,
+    };
+}
+#[cfg(feature = "resident-ekf-artifact")]
+#[doc(hidden)]
+pub mod __gate_d {
+    pub use crate::efficacy::ekf::catalog::frozen_ekf_compiler_catalog;
+    pub use crate::efficacy::ekf::closure::{
+        FrozenEkfArtifactClosure, FrozenEkfArtifactClosureError, FrozenEkfCompilation,
+        FrozenEkfCompilationServices, FrozenEkfConstantClosure, FrozenEkfConstraint,
+        FrozenEkfInputClosure, FrozenEkfKernelNode, FrozenEkfOutputClosure, FrozenEkfPredicateNode,
+        FrozenEkfStateUpdate, FrozenLiveBinding, compile_frozen_ekf_source,
     };
 }
 #[cfg(all(feature = "source", feature = "state_machines"))]
