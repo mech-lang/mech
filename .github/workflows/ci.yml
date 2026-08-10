@@ -48,6 +48,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         with:
+          # D0 validates the exact five-commit PR head, not GitHub's synthetic merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
       - name: Install formatting and contract tools
         run: |
@@ -72,11 +74,14 @@ jobs:
           python3 scripts/check-value-system-contract.py
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
+          python3 scripts/check-resident-activation-contract.py
           python3 -B -m unittest \
             scripts/tests/test_generate_value_system_inventory.py \
             scripts/tests/test_check_value_system_contract.py \
             scripts/tests/test_check_program_artifact_contract.py \
-            scripts/tests/test_check_operation_contract.py
+            scripts/tests/test_check_operation_contract.py \
+            scripts/tests/test_generate_resident_activation_contract.py \
+            scripts/tests/test_check_resident_activation_contract.py
           python3 -B -m unittest scripts/tests/test_run_gate_a_benchmarks.py
           python3 scripts/check-bytecode-v1-format.py
           cargo +nightly-2026-03-03 fetch --locked
