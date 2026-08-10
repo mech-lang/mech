@@ -1383,6 +1383,16 @@
           "kinds": [
             "test"
           ],
+          "name": "resident_activation_contract",
+          "reachable_rust_files": [
+            "src/engine/tests/resident_activation_contract.rs"
+          ],
+          "root": "src/engine/tests/resident_activation_contract.rs"
+        },
+        {
+          "kinds": [
+            "test"
+          ],
           "name": "resident_ekf_contract",
           "reachable_rust_files": [
             "src/engine/tests/resident_ekf_contract.rs"
@@ -2754,6 +2764,7 @@
     "src/engine/tests/op_assign_feature_gates.rs",
     "src/engine/tests/program.rs",
     "src/engine/tests/program_artifact_contract.rs",
+    "src/engine/tests/resident_activation_contract.rs",
     "src/engine/tests/resident_ekf_contract.rs",
     "src/engine/tests/support/bytecode_compiler.rs",
     "src/engine/tests/support/catalog.rs",
@@ -61013,7 +61024,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 912
+      "rust_file_count": 913
     },
     {
       "directory": "hosts/browser",
@@ -61085,7 +61096,7 @@
       "directory": "src/engine",
       "manifest": "src/engine/Cargo.toml",
       "name": "mech-engine",
-      "rust_file_count": 143
+      "rust_file_count": 144
     },
     {
       "directory": "src/runtime",
