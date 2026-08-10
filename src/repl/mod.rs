@@ -345,7 +345,7 @@ impl MechRepl {
                 Ok("".to_string())
             }
             ReplCommand::Load(paths) => {
-                let mut result = Value::Empty;
+                let mut result = LegacyValue::Empty;
                 for source_path in paths {
                     let source = std::fs::read_to_string(&source_path)?;
                     result = prgrm.run_string(&source)?;
@@ -358,7 +358,7 @@ impl MechRepl {
                 return Ok(format!("\n{}\n{}\n", r.kind(), r));
             }
             ReplCommand::Code(code) => {
-                let mut result = Value::Empty;
+                let mut result = LegacyValue::Empty;
                 for (_, src) in code {
                     result = prgrm.run_string(&src.to_string())?;
                 }

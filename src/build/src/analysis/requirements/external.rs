@@ -2,8 +2,8 @@ use std::collections::BTreeSet;
 
 use mech_core::{
     ApplicationRequirement, BytecodeExternalContractResolver, BytecodeHostCallContract,
-    BytecodeResourceReadContract, BytecodeResourceWriteContract, MResult, MechError,
-    ResourceIntent, Value, validate_stable_value_update,
+    BytecodeResourceReadContract, BytecodeResourceWriteContract, LegacyValue, MResult, MechError,
+    ResourceIntent, validate_stable_value_update,
 };
 use mech_runtime::{
     RuntimeCapabilityOperation, RuntimeConfig, RuntimeResourceWriteIntent,
@@ -152,7 +152,10 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
 }
 
 impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
-    fn validate_host_call(&mut self, contract: BytecodeHostCallContract<'_>) -> MResult<Value> {
+    fn validate_host_call(
+        &mut self,
+        contract: BytecodeHostCallContract<'_>,
+    ) -> MResult<LegacyValue> {
         let linkage = self
             .host_catalog
             .function(&contract.request.name)
@@ -212,7 +215,7 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
     fn validate_resource_read(
         &mut self,
         contract: BytecodeResourceReadContract<'_>,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         let (planned, owner, grant, driven_live) = {
             let owner = resolve_resource_owner(contract.request, &self.materialized)?;
             let configured_grants = self
@@ -288,7 +291,7 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
         &mut self,
         contract: BytecodeResourceWriteContract<'_>,
     ) -> MResult<()> {
-        if contract.output_seed != &Value::Empty {
+        if contract.output_seed != &LegacyValue::Empty {
             return Err(application_instruction_error(
                 contract.instruction,
                 format!(

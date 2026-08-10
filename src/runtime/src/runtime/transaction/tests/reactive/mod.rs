@@ -2,7 +2,7 @@ use crate::{MechRuntime, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeTran
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
-    GenericError, MResult, MechError, MechFunctionImpl, ReactiveSolveStatus, Ref, Value,
+    GenericError, LegacyValue, MResult, MechError, MechFunctionImpl, ReactiveSolveStatus, Ref,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -105,12 +105,12 @@ impl MechFunctionImpl for ReactiveTransactionTestFunction {
         Ok(ReactiveSolveStatus::Changed)
     }
 
-    fn out(&self) -> Value {
-        Value::Index(self.output.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Index(self.output.clone())
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(vec![Value::Index(self.output.clone())])
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(vec![LegacyValue::Index(self.output.clone())])
     }
 
     fn to_string(&self) -> String {
@@ -128,12 +128,12 @@ impl MechFunctionImpl for PanickingReactiveFunction {
         panic!("{}", self.message);
     }
 
-    fn out(&self) -> Value {
-        Value::Index(self.output.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Index(self.output.clone())
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(vec![Value::Index(self.output.clone())])
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(vec![LegacyValue::Index(self.output.clone())])
     }
 
     fn to_string(&self) -> String {

@@ -49,7 +49,7 @@ impl_math_unop!(MathFloor, f32, floorf);
 impl_math_unop!(MathFloor, f64, floor);
 
 #[cfg(feature = "source")]
-fn impl_floor_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_floor_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathFloor,
       (lhs_value),
@@ -63,7 +63,7 @@ pub struct MathFloor {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathFloor {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -78,7 +78,7 @@ impl FunctionSpecializer for MathFloor {
         match impl_floor_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (input) {
-                (Value::MutableReference(input)) => impl_floor_fxn(input.borrow().clone()),
+                (LegacyValue::MutableReference(input)) => impl_floor_fxn(input.borrow().clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),

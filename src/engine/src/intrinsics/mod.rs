@@ -162,14 +162,14 @@ macro_rules! impl_range_range_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -305,14 +305,14 @@ macro_rules! impl_all_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }

@@ -2,7 +2,7 @@ use mech_core::matrix::Matrix as MechMatrix;
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, EncodedConstant, FunctionCatalog,
     FunctionCatalogBuilder, FunctionExposure, MResult, MechSet, OperationId, Ref, Register,
-    RuntimeFunctionId, Value, ValueKind, hash_str,
+    RuntimeFunctionId, LegacyValue, ValueKind, hash_str,
 };
 use mech_engine as _;
 use mech_engine::{FunctionBinding, FunctionEnvironment, MechProgram, MechProgramConfig};
@@ -107,7 +107,7 @@ fn runtime_factory(catalog: &FunctionCatalog, id: u64) -> AppResult<RuntimeFacto
 struct CaseInput {
     name: &'static str,
     operation: &'static str,
-    arguments: Vec<Value>,
+    arguments: Vec<LegacyValue>,
 }
 
 #[derive(Default)]
@@ -830,25 +830,25 @@ fn specialize_case(catalog: &FunctionCatalog, input: CaseInput) -> AppResult<Spe
     })
 }
 
-fn value_spec(value: &Value) -> AppResult<ValueSpec> {
+fn value_spec(value: &LegacyValue) -> AppResult<ValueSpec> {
     match value {
-        Value::F64(_) => Ok(ValueSpec {
+        LegacyValue::F64(_) => Ok(ValueSpec {
             kind: "f64".to_string(),
             shape: Vec::new(),
         }),
-        Value::Bool(_) => Ok(ValueSpec {
+        LegacyValue::Bool(_) => Ok(ValueSpec {
             kind: "bool".to_string(),
             shape: Vec::new(),
         }),
-        Value::String(_) => Ok(ValueSpec {
+        LegacyValue::String(_) => Ok(ValueSpec {
             kind: "string".to_string(),
             shape: Vec::new(),
         }),
-        Value::MatrixF64(matrix) => Ok(ValueSpec {
+        LegacyValue::MatrixF64(matrix) => Ok(ValueSpec {
             kind: "f64".to_string(),
             shape: matrix.shape(),
         }),
-        Value::Set(set) => {
+        LegacyValue::Set(set) => {
             let set = set.borrow();
             let kind = match &set.kind {
                 ValueKind::F64 => "{f64}".to_string(),
@@ -863,8 +863,8 @@ fn value_spec(value: &Value) -> AppResult<ValueSpec> {
                 shape: Vec::new(),
             })
         }
-        Value::MutableReference(value) => value_spec(&value.borrow()),
-        Value::Typed(value, _) => value_spec(value),
+        LegacyValue::MutableReference(value) => value_spec(&value.borrow()),
+        LegacyValue::Typed(value, _) => value_spec(value),
         other => Err(format!(
             "unsupported value kind in baseline case: {}",
             other.kind(),
@@ -910,48 +910,48 @@ fn format_id(id: u64) -> String {
     format!("{id:016x}")
 }
 
-fn f64_value(value: f64) -> Value {
-    Value::F64(Ref::new(value))
+fn f64_value(value: f64) -> LegacyValue {
+    LegacyValue::F64(Ref::new(value))
 }
 
-fn bool_value(value: bool) -> Value {
-    Value::Bool(Ref::new(value))
+fn bool_value(value: bool) -> LegacyValue {
+    LegacyValue::Bool(Ref::new(value))
 }
 
-fn string_value(value: &str) -> Value {
-    Value::String(Ref::new(value.to_string()))
+fn string_value(value: &str) -> LegacyValue {
+    LegacyValue::String(Ref::new(value.to_string()))
 }
 
-fn mutable_value(value: Value) -> Value {
-    Value::MutableReference(Ref::new(value))
+fn mutable_value(value: LegacyValue) -> LegacyValue {
+    LegacyValue::MutableReference(Ref::new(value))
 }
 
-fn dynamic_matrix(values: &[f64], rows: usize, cols: usize) -> Value {
-    Value::MatrixF64(MechMatrix::DMatrix(Ref::new(DMatrix::from_row_slice(
+fn dynamic_matrix(values: &[f64], rows: usize, cols: usize) -> LegacyValue {
+    LegacyValue::MatrixF64(MechMatrix::DMatrix(Ref::new(DMatrix::from_row_slice(
         rows, cols, values,
     ))))
 }
 
-fn dynamic_vector(values: &[f64]) -> Value {
-    Value::MatrixF64(MechMatrix::DVector(Ref::new(DVector::from_column_slice(
+fn dynamic_vector(values: &[f64]) -> LegacyValue {
+    LegacyValue::MatrixF64(MechMatrix::DVector(Ref::new(DVector::from_column_slice(
         values,
     ))))
 }
 
 #[cfg(feature = "fixed-specialization-cases")]
-fn fixed_matrix2(a11: f64, a12: f64, a21: f64, a22: f64) -> Value {
-    Value::MatrixF64(MechMatrix::Matrix2(Ref::new(Matrix2::new(
+fn fixed_matrix2(a11: f64, a12: f64, a21: f64, a22: f64) -> LegacyValue {
+    LegacyValue::MatrixF64(MechMatrix::Matrix2(Ref::new(Matrix2::new(
         a11, a12, a21, a22,
     ))))
 }
 
 #[cfg(feature = "fixed-specialization-cases")]
-fn fixed_vector2(first: f64, second: f64) -> Value {
-    Value::MatrixF64(MechMatrix::Vector2(Ref::new(Vector2::new(first, second))))
+fn fixed_vector2(first: f64, second: f64) -> LegacyValue {
+    LegacyValue::MatrixF64(MechMatrix::Vector2(Ref::new(Vector2::new(first, second))))
 }
 
-fn f64_set(values: &[f64]) -> Value {
-    Value::Set(Ref::new(MechSet::from_vec(
+fn f64_set(values: &[f64]) -> LegacyValue {
+    LegacyValue::Set(Ref::new(MechSet::from_vec(
         values.iter().copied().map(f64_value).collect(),
     )))
 }

@@ -29,7 +29,7 @@ use crate::Subscript;
     feature = "subscript_range"
 ))]
 use crate::subscript_range;
-use crate::{Environment, InterpreterExecution, MResult, Value};
+use crate::{Environment, InterpreterExecution, LegacyValue, MResult};
 #[cfg(all(
     any(
         feature = "math_add_assign",
@@ -78,7 +78,7 @@ pub fn op_assign(
     op_assgn: &OpAssign,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let mut source = expression(&op_assgn.expression, env, p)?;
     let slc = &op_assgn.target;
     if slc.context.is_some() {
@@ -169,7 +169,7 @@ pub fn op_assign(
 }
 
 #[cfg(feature = "math_add_assign")]
-fn add_assignment_operation(sink: &Value) -> &'static str {
+fn add_assignment_operation(sink: &LegacyValue) -> &'static str {
     #[cfg(feature = "table")]
     if engine_add_assignment_sink(sink) {
         return "assign/add";
@@ -179,10 +179,10 @@ fn add_assignment_operation(sink: &Value) -> &'static str {
 }
 
 #[cfg(all(feature = "math_add_assign", feature = "table"))]
-fn engine_add_assignment_sink(sink: &Value) -> bool {
+fn engine_add_assignment_sink(sink: &LegacyValue) -> bool {
     match sink {
-        Value::Table(_) => true,
-        Value::MutableReference(value) => engine_add_assignment_sink(&value.borrow()),
+        LegacyValue::Table(_) => true,
+        LegacyValue::MutableReference(value) => engine_add_assignment_sink(&value.borrow()),
         _ => false,
     }
 }
@@ -199,7 +199,7 @@ fn engine_add_assignment_sink(sink: &Value) -> bool {
 fn catalog_op_assignment_function(
     p: &InterpreterExecution<'_>,
     canonical_name: &str,
-    arguments: &[Value],
+    arguments: &[LegacyValue],
 ) -> MResult<Box<dyn MechFunction>> {
     p.specialize_visible_operation_named(
         OperationId::from_name(canonical_name),
@@ -211,7 +211,7 @@ fn catalog_op_assignment_function(
 macro_rules! op_assign {
   ($fxn_name:ident, $op:tt, $range_operation:literal, $range_all_operation:literal) => {
     paste!{
-      pub fn $fxn_name(sbscrpt: &Subscript, sink: &Value, source: &Value, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
+      pub fn $fxn_name(sbscrpt: &Subscript, sink: &LegacyValue, source: &LegacyValue, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
         let plan = p.plan();
         match sbscrpt {
           Subscript::Dot(x) => {
@@ -245,7 +245,7 @@ macro_rules! op_assign {
                 let ix = subscript_formula_ix(&subs[0], env, p)?;
                 let shape = ix.shape();
                 fxn_input.push(ix);
-                fxn_input.push(Value::IndexAll);
+                fxn_input.push(LegacyValue::IndexAll);
                 match shape[..] {
                   [1,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, "assign", &fxn_input)?); }
                   [1,n] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?); }
@@ -265,7 +265,7 @@ macro_rules! op_assign {
                 fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], env, p)?;
                 fxn_input.push(ixes);
-                fxn_input.push(Value::IndexAll);
+                fxn_input.push(LegacyValue::IndexAll);
                 plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?);
               },
               x => todo!("{:?}", x),

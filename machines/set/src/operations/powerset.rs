@@ -150,7 +150,7 @@ impl MechFunctionImpl for SetPowersetFxn {
             );
             for set in vec_set {
                 next.set
-                    .insert(Value::Set(Ref::new(MechSet::from_vec(set))));
+                    .insert(LegacyValue::Set(Ref::new(MechSet::from_vec(set))));
             }
             next.sync_cardinality_from_contents();
             next.kind = ValueKind::Set(Box::new(input_ptr.kind.clone()), None);
@@ -159,14 +159,14 @@ impl MechFunctionImpl for SetPowersetFxn {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Set(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Set(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -179,9 +179,9 @@ impl MechFunctionCompiler for SetPowersetFxn {
 }
 
 #[cfg(feature = "source")]
-fn set_powerset_fxn(input: Value) -> MResult<Box<dyn MechFunction>> {
+fn set_powerset_fxn(input: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (input) {
-        (Value::Set(input)) => {
+        (LegacyValue::Set(input)) => {
             let output_len = powerset_output_len(input.borrow().set.len())?;
             Ok(Box::new(SetPowersetFxn {
                 input: input.clone(),
@@ -206,7 +206,7 @@ mod tests {
     fn index_set(cardinality: usize) -> MechSet {
         MechSet::from_vec(
             (0..cardinality)
-                .map(|index| Value::Index(Ref::new(index)))
+                .map(|index| LegacyValue::Index(Ref::new(index)))
                 .collect(),
         )
     }
@@ -237,7 +237,7 @@ mod tests {
 pub struct SetPowerset {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for SetPowerset {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -252,7 +252,7 @@ impl FunctionSpecializer for SetPowerset {
         match set_powerset_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match input {
-                Value::MutableReference(input) => set_powerset_fxn(input.borrow().clone()),
+                LegacyValue::MutableReference(input) => set_powerset_fxn(input.borrow().clone()),
                 input => set_powerset_fxn(input.clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {

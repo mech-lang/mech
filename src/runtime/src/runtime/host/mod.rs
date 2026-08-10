@@ -43,7 +43,7 @@ use crate::{
 };
 use mech_core::{
     ExecutionHostFunctionRequest, FunctionSpecializer, GuardFunctionSafety, InitialSolvePolicy,
-    MResult, MechError, MechExecutionServices, Ref, Value,
+    LegacyValue, MResult, MechError, MechExecutionServices, Ref,
 };
 use mech_engine::{ExternalHostCallFunction, MechProgram};
 use std::sync::Arc;
@@ -129,7 +129,7 @@ impl MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         call: HostCall,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         self.call_host_with_context_map(context, call, Ok)
     }
 
@@ -137,7 +137,7 @@ impl MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         call: HostCall,
-        finish: impl FnOnce(Value) -> MResult<T>,
+        finish: impl FnOnce(LegacyValue) -> MResult<T>,
     ) -> MResult<T> {
         self.ensure_runtime_mutation_allowed("call_host_with_context")?;
         self.validate_context_for_runtime(context)?;
@@ -241,7 +241,7 @@ impl FunctionSpecializer for RuntimeHostFunctionSpecializer {
         GuardFunctionSafety::Unsupported
     }
 
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn mech_core::MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn mech_core::MechFunction>> {
         let argument_snapshots = arguments
             .iter()
             .map(RuntimeValueSnapshot::try_capture)

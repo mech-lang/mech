@@ -64,7 +64,7 @@ mod tests {
         BTreeMap, ExecutionResourceRequest, LiveRegistrationMode, MechRuntime, ResourceDelivery,
         ResourceIntent, RuntimeExecutionMode, RuntimeHostInputSource,
     };
-    use mech_core::{Ref, Value};
+    use mech_core::{LegacyValue, Ref};
 
     fn live_read_request() -> ExecutionResourceRequest {
         ExecutionResourceRequest {
@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn repeated_live_resource_binding_is_idempotent() {
         let request = live_read_request();
-        let target = Ref::new(Value::F64(Ref::new(1.0)));
+        let target = Ref::new(LegacyValue::F64(Ref::new(1.0)));
         let target_address = target.as_ptr();
         let mut bindings = BTreeMap::new();
 
@@ -114,7 +114,7 @@ mod tests {
             &mut bindings,
             7,
             &request,
-            Ref::new(Value::F64(Ref::new(1.0))),
+            Ref::new(LegacyValue::F64(Ref::new(1.0))),
         )
         .unwrap();
 

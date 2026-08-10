@@ -12,7 +12,7 @@ use crate::{
     MessageRecord, ModuleVersionId, NoActorBehaviorDriver, ObjectId, ResourceBudgetExceededError,
     RuntimeContext, RuntimeEventKind, RuntimeTransactionNotFoundError, TransactionId,
 };
-use mech_core::{MResult, MechError, Value};
+use mech_core::{LegacyValue, MResult, MechError};
 use std::collections::HashMap;
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
@@ -470,7 +470,7 @@ impl ActorBehaviorRuntime for MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         call: HostCall,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         MechRuntime::call_host_value_with_context(self, context, call)
     }
 }

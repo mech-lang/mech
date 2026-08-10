@@ -1,6 +1,6 @@
-use crate::{Interpreter, ReactiveCellId, ReactiveNodeId, ReactiveNodeKind, Value, hash_str};
+use crate::{Interpreter, LegacyValue, ReactiveCellId, ReactiveNodeId, ReactiveNodeKind, hash_str};
 
-fn symbol(interpreter: &Interpreter, name: &str) -> Value {
+fn symbol(interpreter: &Interpreter, name: &str) -> LegacyValue {
     interpreter
         .symbols()
         .borrow()

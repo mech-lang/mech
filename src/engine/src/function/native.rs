@@ -3,10 +3,10 @@ use std::sync::Arc;
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechError, MechFunctionCompiler, Register};
 use mech_core::{
-    FunctionSpecializer, GuardFunctionSafety, MResult, MechErrorKind, MechFunctionImpl, Value,
+    FunctionSpecializer, GuardFunctionSafety, LegacyValue, MResult, MechErrorKind, MechFunctionImpl,
 };
 
-pub type NativeClosure = dyn Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static;
+pub type NativeClosure = dyn Fn(Vec<LegacyValue>) -> MResult<LegacyValue> + Send + Sync + 'static;
 
 #[derive(Clone)]
 pub struct ClosureFunctionSpecializer {
@@ -17,7 +17,7 @@ pub struct ClosureFunctionSpecializer {
 impl ClosureFunctionSpecializer {
     pub fn new(
         name: impl Into<String>,
-        function: impl Fn(Vec<Value>) -> MResult<Value> + Send + Sync + 'static,
+        function: impl Fn(Vec<LegacyValue>) -> MResult<LegacyValue> + Send + Sync + 'static,
     ) -> Self {
         Self {
             name: name.into(),
@@ -27,7 +27,7 @@ impl ClosureFunctionSpecializer {
 }
 
 impl FunctionSpecializer for ClosureFunctionSpecializer {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn mech_core::MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn mech_core::MechFunction>> {
         let value = (self.function)(arguments.to_vec())?;
 
         Ok(Box::new(ClosureNativeFunction {
@@ -44,7 +44,7 @@ impl FunctionSpecializer for ClosureFunctionSpecializer {
 #[derive(Clone, Debug)]
 pub struct ClosureNativeFunction {
     name: String,
-    value: Value,
+    value: LegacyValue,
 }
 
 impl MechFunctionImpl for ClosureNativeFunction {
@@ -53,7 +53,7 @@ impl MechFunctionImpl for ClosureNativeFunction {
         Ok(())
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.value.clone()
     }
 
@@ -61,7 +61,7 @@ impl MechFunctionImpl for ClosureNativeFunction {
         format!("ClosureNativeFunction::{}", self.name)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }

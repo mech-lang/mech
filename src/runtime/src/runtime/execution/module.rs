@@ -18,7 +18,7 @@ use crate::runtime::{
 };
 use crate::store::ModuleVersionRecord;
 use crate::{RuntimeContext, RuntimeModuleResult, RuntimeValueSnapshot};
-use mech_core::{MResult, MechError, MechSourceCode, Value, hash_str};
+use mech_core::{LegacyValue, MResult, MechError, MechSourceCode, hash_str};
 #[cfg(feature = "invariant_define")]
 use mech_engine::{IntegrityConstraintEvaluation, IntegrityConstraintReport};
 use mech_engine::{MechProgramConfig, MechProgramEnvironment};
@@ -58,7 +58,7 @@ fn append_integrity_report(
 pub(in crate::runtime) struct ModuleInstance {
     pub(in crate::runtime) version: ModuleVersionId,
     pub(in crate::runtime) exports: HashMap<String, mech_core::ValRef>,
-    pub(in crate::runtime) result: Value,
+    pub(in crate::runtime) result: LegacyValue,
 }
 
 impl ModuleInstance {
@@ -384,7 +384,7 @@ impl MechRuntime {
             return Ok(ModuleInstance {
                 version,
                 exports: HashMap::new(),
-                result: Value::Empty,
+                result: LegacyValue::Empty,
             });
         }
         seen.insert(instance_key.clone());
@@ -514,7 +514,7 @@ impl MechRuntime {
         module_instances: &mut HashMap<(ModuleVersionId, SourceScope), ModuleInstance>,
         integrity_evaluations: &mut IntegrityEvaluationCollector,
         turn_started: Instant,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         self.validate_context_for_runtime(context)?;
         context.charge_step()?;
 
@@ -531,7 +531,7 @@ impl MechRuntime {
 
         let instance_key = (version, scope.clone());
         if seen.contains(&instance_key) {
-            return Ok(Value::Empty);
+            return Ok(LegacyValue::Empty);
         }
         seen.insert(instance_key);
 
@@ -544,7 +544,7 @@ impl MechRuntime {
             integrity_evaluations,
         )?;
 
-        let result = (|| -> MResult<Value> {
+        let result = (|| -> MResult<LegacyValue> {
             self.register_retained_program_host_functions(context)?;
             materialize_function_imports_for_scope(&mut self.program, &prepared.record, scope)?;
             ProgramEnvironmentOverlay::install(&mut self.program, &prepared.environment)?;
@@ -598,7 +598,7 @@ impl MechRuntime {
         source: &MechSourceCode,
         scope: &SourceScope,
         registration_mode: crate::runtime::live_state::LiveRegistrationMode,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         // Host compilers and explicit module imports are installed once by the
         // module-scope caller. Recursive MechSourceCode::Program execution must not
         // re-register hosts and overwrite import precedence.
@@ -666,7 +666,7 @@ impl MechRuntime {
                     }
                 }
                 MechSourceCode::Program(sources) => {
-                    let mut result = Ok(Value::Empty);
+                    let mut result = Ok(LegacyValue::Empty);
                     for source in sources {
                         result = runtime.run_module_source_on_program(
                             context,

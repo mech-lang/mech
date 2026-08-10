@@ -1,8 +1,8 @@
 use std::sync::{Arc, OnceLock};
 
 use mech_core::{
-    FunctionCatalog, FunctionCatalogBuilder, FunctionSpecializer, MResult, MechFunction,
-    MechFunctionImpl, Ref, Value,
+    FunctionCatalog, FunctionCatalogBuilder, FunctionSpecializer, LegacyValue, MResult,
+    MechFunction, MechFunctionImpl, Ref,
 };
 use mech_runtime::RuntimeBuilder;
 
@@ -45,11 +45,11 @@ impl MechFunctionImpl for BenchmarkAddFunction {
         Ok(())
     }
 
-    fn out(&self) -> Value {
-        Value::F64(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::F64(self.out.clone())
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 
@@ -68,8 +68,8 @@ impl MechFunctionCompiler for BenchmarkAddFunction {
 struct BenchmarkAddSpecializer;
 
 impl FunctionSpecializer for BenchmarkAddSpecializer {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
-        let [Value::F64(lhs), Value::F64(rhs)] = arguments else {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+        let [LegacyValue::F64(lhs), LegacyValue::F64(rhs)] = arguments else {
             panic!("benchmark math/add expects two f64 arguments");
         };
         Ok(Box::new(BenchmarkAddFunction {

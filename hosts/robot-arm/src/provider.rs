@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
+use mech_core::{
+    LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration, Ref,
+};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeCompensatableEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
@@ -11,8 +13,8 @@ use mech_runtime::{
 
 #[derive(Clone, Debug, Default)]
 pub struct RobotArmState {
-    pub position: Option<Value>,
-    pub gripper: Option<Value>,
+    pub position: Option<LegacyValue>,
+    pub gripper: Option<LegacyValue>,
     pub last_command: Option<String>,
 }
 
@@ -48,7 +50,19 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
         vec![self.base("commands"), self.base("state")]
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(mech_runtime::resource_observation_contract())
+    }
+
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Send)
+            .then(mech_runtime::prepare_commit_compensate_contract)
+    }
+
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         Err(MechError::new(
             NativeResourceReadNotPlannable {
                 base_uri: request.base_uri,
@@ -58,7 +72,7 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
         ))
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if !self.matches_base(&request.base_uri, "state") {
             return Err(robot_error(request.base_uri, "only state can be read"));
         }
@@ -67,13 +81,13 @@ impl RuntimeResourceProvider for RobotArmResourceProvider {
             .lock()
             .map_err(|_| robot_error(request.base_uri.clone(), "robot state lock poisoned"))?;
         match request.path.as_str() {
-            "position" => Ok(state.position.clone().unwrap_or(Value::Empty)),
-            "gripper" => Ok(state.gripper.clone().unwrap_or(Value::Empty)),
+            "position" => Ok(state.position.clone().unwrap_or(LegacyValue::Empty)),
+            "gripper" => Ok(state.gripper.clone().unwrap_or(LegacyValue::Empty)),
             "last-command" => Ok(state
                 .last_command
                 .clone()
-                .map(|s| Value::String(Ref::new(s)))
-                .unwrap_or(Value::Empty)),
+                .map(|s| LegacyValue::String(Ref::new(s)))
+                .unwrap_or(LegacyValue::Empty)),
             _ => Err(robot_error(
                 request.base_uri,
                 format!("unsupported robot state path `{}`", request.path),
@@ -147,7 +161,7 @@ struct RobotCommandEffect {
     base_uri: String,
     operation: String,
     path: String,
-    value: Value,
+    value: LegacyValue,
     previous: Option<RobotArmState>,
     applied: bool,
 }
@@ -180,7 +194,7 @@ impl RuntimeCompensatableEffect for RobotCommandEffect {
                 state.last_command = Some("grip".to_string());
             }
             ("home", "home") => {
-                state.position = Some(Value::Empty);
+                state.position = Some(LegacyValue::Empty);
                 state.last_command = Some("home".to_string());
             }
             (operation, path) => Err(robot_error(
@@ -305,8 +319,8 @@ mod tests {
     use super::*;
     use mech_runtime::{RuntimeCapabilityOperation, RuntimeResourceProvider};
 
-    fn bool_value(value: bool) -> Value {
-        Value::Bool(Ref::new(value))
+    fn bool_value(value: bool) -> LegacyValue {
+        LegacyValue::Bool(Ref::new(value))
     }
 
     fn apply_write(

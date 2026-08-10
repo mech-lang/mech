@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use mech_core::{Ref, Value, hash_str};
+use mech_core::{LegacyValue, Ref, hash_str};
 
 use super::super::MechRuntime;
 use crate::runtime::test_support::{
@@ -64,8 +64,8 @@ fn packet_with_bound_and_unbound_sources_updates_bound_inputs() {
 #[test]
 fn runtime_reactive_host_input_preflight_failure_mutates_nothing() {
     let provider = TestResourceProvider::new()
-        .with_value(TEST_SIGNALS_BASE_URI, "a", Value::F64(Ref::new(1.0)))
-        .with_value(TEST_SIGNALS_BASE_URI, "b", Value::F64(Ref::new(2.0)));
+        .with_value(TEST_SIGNALS_BASE_URI, "a", LegacyValue::F64(Ref::new(1.0)))
+        .with_value(TEST_SIGNALS_BASE_URI, "b", LegacyValue::F64(Ref::new(2.0)));
     let (mut runtime, output) = test_runtime_with_output(provider);
     grant_read(&mut runtime, TEST_SIGNALS_BASE_URI, "a");
     grant_read(&mut runtime, TEST_SIGNALS_BASE_URI, "b");

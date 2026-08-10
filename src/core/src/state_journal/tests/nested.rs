@@ -3,7 +3,7 @@ use super::support::{as_scalar, record_value, scalar, scalar_payload, scalar_val
 use crate::MechAtom;
 use crate::structures::matrix::Matrix as ValueMatrix;
 use crate::{
-    MechEnum, MechTuple, ReactiveCellId, Ref, Value, ValueKind, ValueStateJournal, hash_str,
+    LegacyValue, MechEnum, MechTuple, ReactiveCellId, Ref, ValueKind, ValueStateJournal, hash_str,
 };
 use nalgebra::{DMatrix, DVector};
 use std::collections::HashMap;
@@ -32,8 +32,8 @@ fn state_journal_deduplicates_shared_cells_and_restores_aliases() {
 
 #[test]
 fn state_journal_self_reference_terminates_in_both_phases() {
-    let cell = Ref::new(Value::Empty);
-    *cell.borrow_mut() = Value::MutableReference(cell.clone());
+    let cell = Ref::new(LegacyValue::Empty);
+    *cell.borrow_mut() = LegacyValue::MutableReference(cell.clone());
 
     let mut journal = ValueStateJournal::new();
     journal.capture_val_ref(&cell).unwrap();
@@ -43,12 +43,12 @@ fn state_journal_self_reference_terminates_in_both_phases() {
 
     delta.rewind().unwrap();
     match &*cell.borrow() {
-        Value::MutableReference(inner) => assert_eq!(inner.addr(), cell.addr()),
+        LegacyValue::MutableReference(inner) => assert_eq!(inner.addr(), cell.addr()),
         _ => panic!("self-reference was not restored"),
     }
     delta.replay().unwrap();
     match &*cell.borrow() {
-        Value::MutableReference(inner) => assert_eq!(inner.addr(), cell.addr()),
+        LegacyValue::MutableReference(inner) => assert_eq!(inner.addr(), cell.addr()),
         _ => panic!("self-reference was not replayed"),
     }
 }
@@ -91,7 +91,7 @@ fn state_journal_tuple_restores_structure_order_and_child_identity() {
         scalar_value(&first),
         scalar_value(&retained),
     ]));
-    let root = Value::Tuple(tuple.clone());
+    let root = LegacyValue::Tuple(tuple.clone());
 
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();
@@ -137,7 +137,7 @@ fn state_journal_enum_restores_names_variants_and_payload_identities() {
         ],
         names: names.clone(),
     });
-    let root = Value::Enum(enum_value.clone());
+    let root = LegacyValue::Enum(enum_value.clone());
 
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();
@@ -184,7 +184,7 @@ fn state_journal_atom_restores_its_reachable_dictionary_cell() {
     let names = Ref::new(dictionary);
     let names_address = names.addr();
     let atom = Ref::new(MechAtom((atom_id, names.clone())));
-    let root = Value::Atom(atom.clone());
+    let root = LegacyValue::Atom(atom.clone());
 
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();
@@ -207,7 +207,7 @@ fn state_journal_value_matrix_restores_topology_and_nested_cells() {
         1,
         vec![scalar_value(&first), scalar_value(&retained)],
     ));
-    let root = Value::MatrixValue(ValueMatrix::DMatrix(backing.clone()));
+    let root = LegacyValue::MatrixValue(ValueMatrix::DMatrix(backing.clone()));
     let address = backing.addr();
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();
@@ -228,7 +228,7 @@ fn state_journal_value_matrix_restores_topology_and_nested_cells() {
 #[test]
 fn state_journal_typed_value_rewinds_nested_state_without_changing_kind() {
     let cell = scalar(1.0);
-    let root = Value::Typed(Box::new(scalar_value(&cell)), ValueKind::F64);
+    let root = LegacyValue::Typed(Box::new(scalar_value(&cell)), ValueKind::F64);
     let mut journal = ValueStateJournal::new();
     journal.capture_value(&root).unwrap();
     *cell.borrow_mut() = 2.0;
@@ -240,7 +240,7 @@ fn state_journal_typed_value_rewinds_nested_state_without_changing_kind() {
     delta.replay().unwrap();
     assert_eq!(*cell.borrow(), 2.0);
     match root {
-        Value::Typed(_, kind) => assert_eq!(kind, ValueKind::F64),
+        LegacyValue::Typed(_, kind) => assert_eq!(kind, ValueKind::F64),
         _ => panic!("typed wrapper changed"),
     }
 }

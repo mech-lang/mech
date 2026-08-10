@@ -48,7 +48,7 @@ impl_math_unop!(MathTanh, f32, tanhf);
 impl_math_unop!(MathTanh, f64, tanh);
 
 #[cfg(feature = "source")]
-fn impl_tanh_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_tanh_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathTanh,
       (lhs_value),
@@ -62,7 +62,7 @@ pub struct MathTanh {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathTanh {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -77,7 +77,7 @@ impl FunctionSpecializer for MathTanh {
         match impl_tanh_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match input {
-                Value::MutableReference(input) => impl_tanh_fxn(input.borrow().clone()),
+                LegacyValue::MutableReference(input) => impl_tanh_fxn(input.borrow().clone()),
                 _ => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: input.kind(),

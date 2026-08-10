@@ -7,11 +7,12 @@ use crate::runtime::gate_a_probe::{gate_a_cost_snapshot, reset_gate_a_costs};
 use mech_core::matrix::Matrix;
 #[cfg(feature = "compiler")]
 use mech_core::{
-    BytecodeInstruction, MechError, ParsedProgram, ReactiveCellId, ReactiveDependencyKind,
-    ReactiveNodeKind, Ref, Value, hash_str,
+    BytecodeInstruction, ExternalInteraction, LegacyValue, MechError, ParsedProgram,
+    ReactiveCellId, ReactiveDependencyKind, ReactiveNodeKind, Ref, ResolvedOperationContract,
+    TransactionalEffectProtocol, TransactionalExternalContract, hash_str,
 };
 #[cfg(feature = "compiler")]
-use mech_engine::MechProgram;
+use mech_engine::{MechProgram, decode_program_artifact_sections};
 #[cfg(feature = "compiler")]
 use std::{
     collections::BTreeMap,
@@ -135,8 +136,15 @@ impl RuntimeResourceProvider for PlanningWriteProvider {
         vec![PLANNING_WRITE_BASE_URI.to_string()]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<LegacyValue> {
         panic!("planning write fixture must not read {request:?}")
+    }
+
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static mech_core::OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Send).then(crate::prepare_commit_compensate_contract)
     }
 
     fn preflight_write(
@@ -226,23 +234,23 @@ impl RuntimeResourceProvider for ExecutionModeReadProvider {
         vec![MODE_READ_BASE_URI.to_string()]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<LegacyValue> {
         assert_eq!(request.base_uri, MODE_READ_BASE_URI);
         assert_eq!(request.path, "value");
         self.counters.resource_reads.fetch_add(1, Ordering::SeqCst);
-        Ok(Value::F64(Ref::new(22.0)))
+        Ok(LegacyValue::F64(Ref::new(22.0)))
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<LegacyValue> {
         assert_eq!(request.base_uri, MODE_READ_BASE_URI);
         assert_eq!(request.path, "value");
         self.counters.resource_plans.fetch_add(1, Ordering::SeqCst);
-        Ok(Value::F64(Ref::new(11.0)))
+        Ok(LegacyValue::F64(Ref::new(11.0)))
     }
 }
 
 #[cfg(feature = "compiler")]
-fn execute_source_resource_value(path: &str, value: Value) -> Value {
+fn execute_source_resource_value(path: &str, value: LegacyValue) -> LegacyValue {
     let provider = TestResourceProvider::new().with_value(BROAD_READ_BASE_URI, path, value);
     let mut runtime = test_runtime_builder()
         .resource_provider(Box::new(provider))
@@ -263,8 +271,8 @@ fn execute_source_resource_value(path: &str, value: Value) -> Value {
 #[cfg(all(feature = "compiler", feature = "u8"))]
 #[test]
 fn execute_source_resource_read_accepts_non_planner_scalar_values() {
-    match execute_source_resource_value("scalar", Value::U8(Ref::new(17))) {
-        Value::U8(value) => assert_eq!(*value.borrow(), 17),
+    match execute_source_resource_value("scalar", LegacyValue::U8(Ref::new(17))) {
+        LegacyValue::U8(value) => assert_eq!(*value.borrow(), 17),
         other => panic!("expected u8 resource value, got {other:?}"),
     }
 }
@@ -274,11 +282,11 @@ fn execute_source_resource_read_accepts_non_planner_scalar_values() {
 fn execute_source_resource_read_accepts_matrix_values() {
     let result = execute_source_resource_value(
         "matrix",
-        Value::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 2, 2)),
+        LegacyValue::MatrixF64(Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 2, 2)),
     );
 
     match result {
-        Value::MatrixF64(value) => {
+        LegacyValue::MatrixF64(value) => {
             assert_eq!(value.rows(), 2);
             assert_eq!(value.cols(), 2);
             assert_eq!(value.as_vec(), vec![1.0, 2.0, 3.0, 4.0]);
@@ -335,7 +343,7 @@ fn run_execution_mode_live_source(
     MechRuntime,
     Arc<ExecutionModeCounters>,
     Arc<LiveReadDriverCounters>,
-    Value,
+    LegacyValue,
 ) {
     let resource_counters = Arc::new(ExecutionModeCounters::default());
     let driver_counters = Arc::new(LiveReadDriverCounters::default());
@@ -368,7 +376,9 @@ fn run_execution_mode_live_source(
 }
 
 #[cfg(feature = "compiler")]
-fn run_execution_mode_source(planning: bool) -> (MechRuntime, Arc<ExecutionModeCounters>, Value) {
+fn run_execution_mode_source(
+    planning: bool,
+) -> (MechRuntime, Arc<ExecutionModeCounters>, LegacyValue) {
     let counters = Arc::new(ExecutionModeCounters::default());
     let host_plan_counters = Arc::clone(&counters);
     let host_invoke_counters = Arc::clone(&counters);
@@ -380,17 +390,17 @@ fn run_execution_mode_source(planning: bool) -> (MechRuntime, Arc<ExecutionModeC
             "test/execution-mode",
             move |_context: &RuntimeCallContext, _arguments: &[RuntimeValueSnapshot]| {
                 host_plan_counters.host_plans.fetch_add(1, Ordering::SeqCst);
-                Ok(RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(
-                    33.0,
-                )))?)
+                Ok(RuntimeValueSnapshot::try_capture(&LegacyValue::F64(
+                    Ref::new(33.0),
+                ))?)
             },
             move |_context: &RuntimeCallContext, _arguments: Vec<RuntimeValueSnapshot>| {
                 host_invoke_counters
                     .host_invocations
                     .fetch_add(1, Ordering::SeqCst);
-                Ok(RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(
-                    44.0,
-                )))?)
+                Ok(RuntimeValueSnapshot::try_capture(&LegacyValue::F64(
+                    Ref::new(44.0),
+                ))?)
             },
         ))
         .unwrap();
@@ -417,9 +427,9 @@ fn run_execution_mode_source(planning: bool) -> (MechRuntime, Arc<ExecutionModeC
 }
 
 #[cfg(feature = "compiler")]
-fn assert_f64_value(value: Value, expected: f64, label: &str) {
+fn assert_f64_value(value: LegacyValue, expected: f64, label: &str) {
     match value {
-        Value::F64(value) => assert_eq!(*value.borrow(), expected, "{label}"),
+        LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected, "{label}"),
         other => panic!("expected {label} to be F64({expected}), got {other:?}"),
     }
 }
@@ -522,6 +532,37 @@ fn planning_top_level_writes_preflight_once_through_external_initialization() {
     assert_eq!(counters.send_preflights.load(Ordering::SeqCst), 1);
     assert_eq!(counters.prepares.load(Ordering::SeqCst), 0);
     assert_eq!(counters.deliveries.load(Ordering::SeqCst), 0);
+}
+
+#[cfg(feature = "compiler")]
+#[test]
+fn provider_transaction_contract_reaches_the_source_program_artifact() {
+    let (mut runtime, _) = planning_runtime_with_write_counters();
+    grant_write(&mut runtime, PLANNING_WRITE_BASE_URI, "sent");
+
+    runtime
+        .run_string(
+            r#"@out := counting://sink{:write(sent)}
+@out/sent <- 2.0
+"#,
+        )
+        .unwrap();
+
+    let bytecode = runtime.compile_program_bytecode().unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
+    let artifact = decode_program_artifact_sections(&parsed.artifact).unwrap();
+    assert!(artifact.nodes().iter().any(|node| {
+        matches!(
+            artifact.contracts().get(node.contract),
+            Some(ResolvedOperationContract::Declared(contract))
+                if matches!(
+                    contract.interaction,
+                    ExternalInteraction::TransactionalExternal(TransactionalExternalContract {
+                        protocol: TransactionalEffectProtocol::PrepareCommitCompensate,
+                    })
+                )
+        )
+    }));
 }
 
 #[cfg(feature = "compiler")]
@@ -788,7 +829,7 @@ fn retained_bytecode_install_replaces_the_root_program() {
 
     assert!(runtime.program.root_symbol_value("old-root").is_err());
     match runtime.program.root_symbol_value("installed-root").unwrap() {
-        Value::F64(value) => assert_eq!(*value.borrow(), 2.0),
+        LegacyValue::F64(value) => assert_eq!(*value.borrow(), 2.0),
         other => panic!("expected f64 installed root, got {other:?}"),
     }
 }
@@ -943,7 +984,7 @@ fn failed_retained_bytecode_install_restores_program_and_live_bindings() {
     assert_eq!(bindings.len(), 1);
     assert_eq!(bindings[0].target.as_ptr(), target_address);
     match bindings[0].target.borrow().clone() {
-        Value::F64(value) => assert_eq!(*value.borrow(), 1.0),
+        LegacyValue::F64(value) => assert_eq!(*value.borrow(), 1.0),
         other => panic!("expected f64 rollback anchor, got {other:?}"),
     }
 }
@@ -955,7 +996,7 @@ fn runtime_source_external_operations_compile_and_reconstruct_an_equivalent_plan
     let invocation_count = Arc::clone(&host_invocations);
     let output = RecordingTestOutput::default();
     let docs = InMemoryDocsProvider::new()
-        .with_value("docs://manual", "item", Value::F64(Ref::new(0.0)))
+        .with_value("docs://manual", "item", LegacyValue::F64(Ref::new(0.0)))
         .unwrap();
     let mut runtime = test_runtime_builder()
         .resource_provider(Box::new(test_provider_with(
@@ -1105,7 +1146,7 @@ fn failed_valid_bytecode_install_removes_a_new_live_binding() {
         .root_symbol_value("rollback-anchor")
         .unwrap()
     {
-        Value::F64(value) => assert_eq!(*value.borrow(), 7.0),
+        LegacyValue::F64(value) => assert_eq!(*value.borrow(), 7.0),
         other => panic!("expected f64 rollback anchor, got {other:?}"),
     }
 }

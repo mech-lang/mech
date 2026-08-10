@@ -1,7 +1,7 @@
 use super::super::ValueStateKey;
 use super::support::{scalar, scalar_value};
 use crate::{
-    ReactiveCellId, Ref, Value, ValueKind, ValueStateEntryTypeMismatch, ValueStateJournal,
+    LegacyValue, ReactiveCellId, Ref, ValueKind, ValueStateEntryTypeMismatch, ValueStateJournal,
 };
 use core::any::type_name;
 
@@ -28,12 +28,12 @@ fn state_journal_scalar_restore_preserves_address_and_reactive_identity() {
 #[test]
 fn state_journal_non_cell_roots_remain_empty() {
     let roots = vec![
-        Value::Id(1),
-        Value::Kind(ValueKind::F64),
-        Value::IndexAll,
-        Value::EmptyKind(ValueKind::F64),
-        Value::Empty,
-        Value::Typed(Box::new(Value::Empty), ValueKind::F64),
+        LegacyValue::Id(1),
+        LegacyValue::Kind(ValueKind::F64),
+        LegacyValue::IndexAll,
+        LegacyValue::EmptyKind(ValueKind::F64),
+        LegacyValue::Empty,
+        LegacyValue::Typed(Box::new(LegacyValue::Empty), ValueKind::F64),
     ];
     let mut journal = ValueStateJournal::new();
     for root in roots {
@@ -49,7 +49,7 @@ fn state_journal_erased_type_mismatch_is_structured() {
     let index = Ref::new(1usize);
     let float = scalar(1.0);
     let mut journal = ValueStateJournal::new();
-    journal.capture_value(&Value::Index(index)).unwrap();
+    journal.capture_value(&LegacyValue::Index(index)).unwrap();
 
     let float_key = ValueStateKey::of(&float);
     journal.entry_indices.insert(float_key, 0);

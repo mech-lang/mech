@@ -6,7 +6,7 @@ use super::{
 };
 use crate::{
     FunctionCall, FunctionDefinition, FunctionExtensionEntry, FunctionResolver,
-    FunctionSpecializerEntry, InterpreterExecution, MResult, ResolvedNamedFunction, Value,
+    FunctionSpecializerEntry, InterpreterExecution, LegacyValue, MResult, ResolvedNamedFunction,
     execute_specialized_function, format_trace, format_trace_args,
 };
 
@@ -20,7 +20,7 @@ fn evaluate_arguments(
     fxn_call: &FunctionCall,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Vec<Value>> {
+) -> MResult<Vec<LegacyValue>> {
     fxn_call
         .args
         .iter()
@@ -34,7 +34,7 @@ pub fn function_call(
     fxn_call: &FunctionCall,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let fxn_name = fxn_call.name.to_string();
 
     let resolved = {

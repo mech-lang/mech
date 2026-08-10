@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use mech_core::{GenericError, MResult, MechError, Ref, Value};
+use mech_core::{GenericError, LegacyValue, MResult, MechError, Ref};
 use mech_runtime::{
     ActorId, ActorRecord, BasicCapability, BasicOperation, BasicResource, BasicSubject,
     CapabilityId, EventId, InMemoryStore, MechRuntime, MechStore, MessageId, MessageRecord,
@@ -53,9 +53,9 @@ impl RuntimeResourceProvider for HistoryInputProvider {
         vec![INPUT_BASE_URI.to_string()]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri == INPUT_BASE_URI && request.path == INPUT_PATH {
-            return Ok(Value::F64(Ref::new(1.0)));
+            return Ok(LegacyValue::F64(Ref::new(1.0)));
         }
         Err(MechError::new(
             GenericError {
@@ -65,9 +65,9 @@ impl RuntimeResourceProvider for HistoryInputProvider {
         ))
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri == INPUT_BASE_URI && request.path == INPUT_PATH {
-            return Ok(Value::F64(Ref::new(0.0)));
+            return Ok(LegacyValue::F64(Ref::new(0.0)));
         }
         Err(MechError::new(
             GenericError {

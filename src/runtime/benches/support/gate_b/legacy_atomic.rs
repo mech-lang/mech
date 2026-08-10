@@ -4,8 +4,8 @@ use std::sync::Arc;
 use mech_core::structures::Matrix as MechMatrix;
 use mech_core::{
     FunctionCatalog, FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer,
-    GenericError, InitialSolvePolicy, MResult, MechError, MechFunction, MechFunctionImpl, Ref,
-    Value,
+    GenericError, InitialSolvePolicy, LegacyValue, MResult, MechError, MechFunction,
+    MechFunctionImpl, Ref,
 };
 use mech_runtime::{
     InMemoryStore, MechRuntime, ResourcePathCapability, RuntimeBuilder, RuntimeContext,
@@ -24,11 +24,11 @@ const EKF_BASE_URI: &str = "bench://gate-b/ekf";
 const FULL_WRITE_BASE_URI: &str = "bench://gate-b/full-write";
 const EKF_PATHS: [&str; 4] = ["v", "omega", "z-range", "z-bearing"];
 
-fn f64_ref(value: &Value) -> Ref<f64> {
+fn f64_ref(value: &LegacyValue) -> Ref<f64> {
     match value {
-        Value::F64(value) => value.clone(),
-        Value::MutableReference(value) => match &*value.borrow() {
-            Value::F64(value) => value.clone(),
+        LegacyValue::F64(value) => value.clone(),
+        LegacyValue::MutableReference(value) => match &*value.borrow() {
+            LegacyValue::F64(value) => value.clone(),
             other => panic!("expected Gate B f64 reference, got {other:?}"),
         },
         other => panic!("expected Gate B f64 argument, got {other:?}"),
@@ -77,11 +77,11 @@ impl MechFunctionImpl for LegacyEkfFunction {
         InitialSolvePolicy::PreserveSpecializedOutput
     }
 
-    fn out(&self) -> Value {
-        Value::MatrixF64(self.output.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::MatrixF64(self.output.clone())
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 
@@ -93,7 +93,7 @@ impl MechFunctionImpl for LegacyEkfFunction {
 struct LegacyEkfSpecializer;
 
 impl FunctionSpecializer for LegacyEkfSpecializer {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         let [velocity, angular_velocity, measured_range, measured_bearing] = arguments else {
             panic!("Gate B EKF expects four f64 arguments")
         };
@@ -136,11 +136,11 @@ impl MechFunctionImpl for LegacyFullWriteFunction {
         InitialSolvePolicy::PreserveSpecializedOutput
     }
 
-    fn out(&self) -> Value {
-        Value::MatrixF64(self.output.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::MatrixF64(self.output.clone())
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 
@@ -152,7 +152,7 @@ impl MechFunctionImpl for LegacyFullWriteFunction {
 struct LegacyFullWriteSpecializer;
 
 impl FunctionSpecializer for LegacyFullWriteSpecializer {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         let [input] = arguments else {
             panic!("Gate B full-write control expects one f64 argument")
         };
@@ -235,16 +235,16 @@ impl RuntimeResourceProvider for GateBInputProvider {
         vec![EKF_BASE_URI.to_string(), FULL_WRITE_BASE_URI.to_string()]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         self.plan_read(request)
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         let ekf = request.base_uri == EKF_BASE_URI && EKF_PATHS.contains(&request.path.as_str());
         let full_write =
             request.base_uri == FULL_WRITE_BASE_URI && request.path.as_str() == "input";
         if ekf || full_write {
-            return Ok(Value::F64(Ref::new(0.0)));
+            return Ok(LegacyValue::F64(Ref::new(0.0)));
         }
         Err(MechError::new(
             GenericError {
@@ -319,8 +319,8 @@ fn ekf_packet(
     .expect("Gate B four-update packet")
 }
 
-fn matrix_values(value: Value) -> Vec<f64> {
-    let Value::MatrixF64(MechMatrix::DMatrix(matrix)) = value else {
+fn matrix_values(value: LegacyValue) -> Vec<f64> {
+    let LegacyValue::MatrixF64(MechMatrix::DMatrix(matrix)) = value else {
         panic!("expected Gate B dynamic f64 matrix output")
     };
     matrix.borrow().as_slice().to_vec()

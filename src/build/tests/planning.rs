@@ -17,10 +17,10 @@ use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
     EncodedConstant, ExecutionHostFunctionRequest, FunctionArgs, FunctionArgumentRole,
     FunctionCatalog, FunctionCatalogBuilder, FunctionRuntimeType, FunctionValueRepresentation,
-    MResult, MatrixStorage, MechFunction, MechFunctionCompiler, MechFunctionFactory,
+    LegacyValue, MResult, MatrixStorage, MechFunction, MechFunctionCompiler, MechFunctionFactory,
     MechFunctionImpl, NativeFunctionLinkage, Ref, Register, RuntimeFunctionContract,
     RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, ToValue,
-    Value, hash_str, write_bytecode,
+    hash_str, write_bytecode,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 use sha2::{Digest, Sha256};
@@ -87,7 +87,7 @@ impl RuntimeResourceProvider for PlanningCliResourceProvider {
             .collect()
     }
 
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         unreachable!("native planning does not execute resource access")
     }
 
@@ -485,7 +485,7 @@ impl MechFunctionImpl for PlanningFunction {
         Ok(())
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.output.to_value()
     }
 
@@ -493,7 +493,7 @@ impl MechFunctionImpl for PlanningFunction {
         "PlanningFunction".into()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }

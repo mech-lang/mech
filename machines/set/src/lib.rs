@@ -47,9 +47,9 @@ pub use self::setdata::*;
 // Set Library
 // ----------------------------------------------------------------------------
 
-fn normalize_set_element(value: Value) -> Value {
+fn normalize_set_element(value: LegacyValue) -> LegacyValue {
     match value {
-        Value::MutableReference(reference) => reference.borrow().clone(),
+        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
         value => value,
     }
 }

@@ -20,21 +20,21 @@ use crate::MechTuple;
 #[cfg(feature = "rational")]
 use crate::R64;
 use crate::{
-    Interpreter, MResult, MechError, PatternBindingSink, PatternMatch, Ref, Value, ValueKind,
+    Interpreter, LegacyValue, MResult, MechError, PatternBindingSink, PatternMatch, Ref, ValueKind,
     hash_str,
 };
 #[cfg(feature = "matrix")]
 use mech_core::structures::matrix::Matrix;
 
-pub(super) fn generation() -> (Ref<usize>, Value) {
+pub(super) fn generation() -> (Ref<usize>, LegacyValue) {
     let generation = Ref::new(0);
-    (generation.clone(), Value::Index(generation))
+    (generation.clone(), LegacyValue::Index(generation))
 }
 
-pub(super) fn transaction_bool_state(value: &Ref<bool>) -> MResult<Value> {
+pub(super) fn transaction_bool_state(value: &Ref<bool>) -> MResult<LegacyValue> {
     #[cfg(any(feature = "bool", feature = "variable_define"))]
     {
-        Ok(Value::Bool(value.clone()))
+        Ok(LegacyValue::Bool(value.clone()))
     }
     #[cfg(not(any(feature = "bool", feature = "variable_define")))]
     {
@@ -51,12 +51,12 @@ pub(super) struct ActivationPatternCapture {
     pub(super) id: u64,
     pub(super) name: String,
     pub(super) kind: ValueKind,
-    pub(super) proposed: Value,
-    pub(super) committed: Value,
+    pub(super) proposed: LegacyValue,
+    pub(super) committed: LegacyValue,
 }
-pub(super) fn detached(v: &Value) -> Value {
+pub(super) fn detached(v: &LegacyValue) -> LegacyValue {
     match v {
-        Value::MutableReference(r) => detached(&r.borrow()),
+        LegacyValue::MutableReference(r) => detached(&r.borrow()),
         _ => v.clone(),
     }
 }
@@ -78,52 +78,52 @@ fn capture_matrix_dimensions(shape: &[usize]) -> MResult<(usize, usize)> {
 pub(super) fn create_capture_slot_for_kind(
     kind: &ValueKind,
     interpreter: &Interpreter,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     match kind.deref_kind() {
         #[cfg(feature = "u8")]
-        ValueKind::U8 => Ok(Value::U8(Ref::new(0))),
+        ValueKind::U8 => Ok(LegacyValue::U8(Ref::new(0))),
         #[cfg(feature = "u16")]
-        ValueKind::U16 => Ok(Value::U16(Ref::new(0))),
+        ValueKind::U16 => Ok(LegacyValue::U16(Ref::new(0))),
         #[cfg(feature = "u32")]
-        ValueKind::U32 => Ok(Value::U32(Ref::new(0))),
+        ValueKind::U32 => Ok(LegacyValue::U32(Ref::new(0))),
         #[cfg(feature = "u64")]
-        ValueKind::U64 => Ok(Value::U64(Ref::new(0))),
+        ValueKind::U64 => Ok(LegacyValue::U64(Ref::new(0))),
         #[cfg(feature = "u128")]
-        ValueKind::U128 => Ok(Value::U128(Ref::new(0))),
+        ValueKind::U128 => Ok(LegacyValue::U128(Ref::new(0))),
         #[cfg(feature = "i8")]
-        ValueKind::I8 => Ok(Value::I8(Ref::new(0))),
+        ValueKind::I8 => Ok(LegacyValue::I8(Ref::new(0))),
         #[cfg(feature = "i16")]
-        ValueKind::I16 => Ok(Value::I16(Ref::new(0))),
+        ValueKind::I16 => Ok(LegacyValue::I16(Ref::new(0))),
         #[cfg(feature = "i32")]
-        ValueKind::I32 => Ok(Value::I32(Ref::new(0))),
+        ValueKind::I32 => Ok(LegacyValue::I32(Ref::new(0))),
         #[cfg(feature = "i64")]
-        ValueKind::I64 => Ok(Value::I64(Ref::new(0))),
+        ValueKind::I64 => Ok(LegacyValue::I64(Ref::new(0))),
         #[cfg(feature = "i128")]
-        ValueKind::I128 => Ok(Value::I128(Ref::new(0))),
+        ValueKind::I128 => Ok(LegacyValue::I128(Ref::new(0))),
         #[cfg(feature = "f64")]
-        ValueKind::F64 => Ok(Value::F64(Ref::new(0.0))),
+        ValueKind::F64 => Ok(LegacyValue::F64(Ref::new(0.0))),
         #[cfg(feature = "f32")]
-        ValueKind::F32 => Ok(Value::F32(Ref::new(0.0))),
+        ValueKind::F32 => Ok(LegacyValue::F32(Ref::new(0.0))),
         #[cfg(feature = "complex")]
-        ValueKind::C64 => Ok(Value::C64(Ref::new(C64::default()))),
+        ValueKind::C64 => Ok(LegacyValue::C64(Ref::new(C64::default()))),
         #[cfg(feature = "rational")]
-        ValueKind::R64 => Ok(Value::R64(Ref::new(R64::default()))),
+        ValueKind::R64 => Ok(LegacyValue::R64(Ref::new(R64::default()))),
         #[cfg(any(feature = "bool", feature = "variable_define"))]
-        ValueKind::Bool => Ok(Value::Bool(Ref::new(false))),
+        ValueKind::Bool => Ok(LegacyValue::Bool(Ref::new(false))),
         #[cfg(any(feature = "string", feature = "variable_define"))]
-        ValueKind::String => Ok(Value::String(Ref::new(String::new()))),
-        ValueKind::Index => Ok(Value::Index(Ref::new(0))),
+        ValueKind::String => Ok(LegacyValue::String(Ref::new(String::new()))),
+        ValueKind::Index => Ok(LegacyValue::Index(Ref::new(0))),
         #[cfg(feature = "atom")]
-        ValueKind::Atom(id, _) => Ok(Value::Atom(Ref::new(MechAtom::new(id)))),
+        ValueKind::Atom(id, _) => Ok(LegacyValue::Atom(Ref::new(MechAtom::new(id)))),
         #[cfg(feature = "tuple")]
-        ValueKind::Tuple(kinds) => Ok(Value::Tuple(Ref::new(MechTuple::from_vec(
+        ValueKind::Tuple(kinds) => Ok(LegacyValue::Tuple(Ref::new(MechTuple::from_vec(
             kinds
                 .iter()
                 .map(|kind| create_capture_slot_for_kind(kind, interpreter))
                 .collect::<MResult<Vec<_>>>()?,
         )))),
         #[cfg(feature = "enum")]
-        ValueKind::Enum(id, _) => Ok(Value::Enum(Ref::new(MechEnum {
+        ValueKind::Enum(id, _) => Ok(LegacyValue::Enum(Ref::new(MechEnum {
             id,
             variants: Vec::new(),
             names: interpreter.dictionary(),
@@ -139,17 +139,17 @@ pub(super) fn create_capture_slot_for_kind(
                     ))
                 })
                 .collect::<MResult<Vec<_>>>()?;
-            Ok(Value::Record(Ref::new(MechRecord::from_vec(values))))
+            Ok(LegacyValue::Record(Ref::new(MechRecord::from_vec(values))))
         }
         #[cfg(feature = "map")]
-        ValueKind::Map(key_kind, value_kind) => Ok(Value::Map(Ref::new(MechMap {
+        ValueKind::Map(key_kind, value_kind) => Ok(LegacyValue::Map(Ref::new(MechMap {
             key_kind: *key_kind,
             value_kind: *value_kind,
             num_elements: 0,
             map: Default::default(),
         }))),
         #[cfg(feature = "set")]
-        ValueKind::Set(element_kind, size) => Ok(Value::Set(Ref::new(MechSet::new(
+        ValueKind::Set(element_kind, size) => Ok(LegacyValue::Set(Ref::new(MechSet::new(
             *element_kind,
             size.unwrap_or(0),
         )))),
@@ -164,7 +164,7 @@ pub(super) fn create_capture_slot_for_kind(
                 let default = create_capture_slot_for_kind(&kind, interpreter)?;
                 values.push(vec![default; rows]);
             }
-            Ok(Value::Table(Ref::new(MechTable::new_table(
+            Ok(LegacyValue::Table(Ref::new(MechTable::new_table(
                 names, kinds, values,
             ))))
         }
@@ -173,111 +173,111 @@ pub(super) fn create_capture_slot_for_kind(
             let (rows, cols) = capture_matrix_dimensions(&shape)?;
             let count = rows.saturating_mul(cols);
             match *element_kind {
-                ValueKind::Index => Ok(Value::MatrixIndex(Matrix::from_vec(
+                ValueKind::Index => Ok(LegacyValue::MatrixIndex(Matrix::from_vec(
                     vec![0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "bool")]
-                ValueKind::Bool => Ok(Value::MatrixBool(Matrix::from_vec(
+                ValueKind::Bool => Ok(LegacyValue::MatrixBool(Matrix::from_vec(
                     vec![false; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "u8")]
-                ValueKind::U8 => Ok(Value::MatrixU8(Matrix::from_vec(
+                ValueKind::U8 => Ok(LegacyValue::MatrixU8(Matrix::from_vec(
                     vec![0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "u16")]
-                ValueKind::U16 => Ok(Value::MatrixU16(Matrix::from_vec(
+                ValueKind::U16 => Ok(LegacyValue::MatrixU16(Matrix::from_vec(
                     vec![0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "u32")]
-                ValueKind::U32 => Ok(Value::MatrixU32(Matrix::from_vec(
+                ValueKind::U32 => Ok(LegacyValue::MatrixU32(Matrix::from_vec(
                     vec![0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "u64")]
-                ValueKind::U64 => Ok(Value::MatrixU64(Matrix::from_vec(
+                ValueKind::U64 => Ok(LegacyValue::MatrixU64(Matrix::from_vec(
                     vec![0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "u128")]
-                ValueKind::U128 => Ok(Value::MatrixU128(Matrix::from_vec(
+                ValueKind::U128 => Ok(LegacyValue::MatrixU128(Matrix::from_vec(
                     vec![0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "i8")]
-                ValueKind::I8 => Ok(Value::MatrixI8(Matrix::from_vec(
+                ValueKind::I8 => Ok(LegacyValue::MatrixI8(Matrix::from_vec(
                     vec![0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "i16")]
-                ValueKind::I16 => Ok(Value::MatrixI16(Matrix::from_vec(
+                ValueKind::I16 => Ok(LegacyValue::MatrixI16(Matrix::from_vec(
                     vec![0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "i32")]
-                ValueKind::I32 => Ok(Value::MatrixI32(Matrix::from_vec(
+                ValueKind::I32 => Ok(LegacyValue::MatrixI32(Matrix::from_vec(
                     vec![0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "i64")]
-                ValueKind::I64 => Ok(Value::MatrixI64(Matrix::from_vec(
+                ValueKind::I64 => Ok(LegacyValue::MatrixI64(Matrix::from_vec(
                     vec![0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "i128")]
-                ValueKind::I128 => Ok(Value::MatrixI128(Matrix::from_vec(
+                ValueKind::I128 => Ok(LegacyValue::MatrixI128(Matrix::from_vec(
                     vec![0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "f32")]
-                ValueKind::F32 => Ok(Value::MatrixF32(Matrix::from_vec(
+                ValueKind::F32 => Ok(LegacyValue::MatrixF32(Matrix::from_vec(
                     vec![0.0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "f64")]
-                ValueKind::F64 => Ok(Value::MatrixF64(Matrix::from_vec(
+                ValueKind::F64 => Ok(LegacyValue::MatrixF64(Matrix::from_vec(
                     vec![0.0; count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "string")]
-                ValueKind::String => Ok(Value::MatrixString(Matrix::from_vec(
+                ValueKind::String => Ok(LegacyValue::MatrixString(Matrix::from_vec(
                     vec![String::new(); count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "rational")]
-                ValueKind::R64 => Ok(Value::MatrixR64(Matrix::from_vec(
+                ValueKind::R64 => Ok(LegacyValue::MatrixR64(Matrix::from_vec(
                     vec![R64::default(); count],
                     rows,
                     cols,
                 ))),
                 #[cfg(feature = "complex")]
-                ValueKind::C64 => Ok(Value::MatrixC64(Matrix::from_vec(
+                ValueKind::C64 => Ok(LegacyValue::MatrixC64(Matrix::from_vec(
                     vec![C64::default(); count],
                     rows,
                     cols,
                 ))),
                 element_kind => {
                     let default = create_capture_slot_for_kind(&element_kind, interpreter)
-                        .unwrap_or(Value::EmptyKind(element_kind));
-                    Ok(Value::MatrixValue(Matrix::from_vec(
+                        .unwrap_or(LegacyValue::EmptyKind(element_kind));
+                    Ok(LegacyValue::MatrixValue(Matrix::from_vec(
                         vec![default; count],
                         rows,
                         cols,
@@ -292,11 +292,11 @@ pub(super) fn create_capture_slot_for_kind(
     }
 }
 
-fn capture_slot_accepts_payload(destination: &Value, source: &Value) -> bool {
+fn capture_slot_accepts_payload(destination: &LegacyValue, source: &LegacyValue) -> bool {
     let source = detached(source);
     match (destination, &source) {
         #[cfg(feature = "tuple")]
-        (Value::Tuple(destination), Value::Tuple(source)) => {
+        (LegacyValue::Tuple(destination), LegacyValue::Tuple(source)) => {
             let destination = destination.borrow();
             let source = source.borrow();
             destination.elements.len() == source.elements.len()
@@ -307,7 +307,7 @@ fn capture_slot_accepts_payload(destination: &Value, source: &Value) -> bool {
                     .all(|(destination, source)| capture_slot_accepts_payload(destination, source))
         }
         #[cfg(feature = "enum")]
-        (Value::Enum(destination), Value::Enum(source)) => {
+        (LegacyValue::Enum(destination), LegacyValue::Enum(source)) => {
             let destination = destination.borrow();
             let source = source.borrow();
             if destination.id != source.id || destination.variants.is_empty() {
@@ -331,7 +331,7 @@ fn capture_slot_accepts_payload(destination: &Value, source: &Value) -> bool {
                 )
         }
         #[cfg(feature = "record")]
-        (Value::Record(destination), Value::Record(source)) => {
+        (LegacyValue::Record(destination), LegacyValue::Record(source)) => {
             let destination = destination.borrow();
             let source = source.borrow();
             destination.data.len() == source.data.len()
@@ -343,7 +343,7 @@ fn capture_slot_accepts_payload(destination: &Value, source: &Value) -> bool {
                 )
         }
         #[cfg(feature = "map")]
-        (Value::Map(destination), Value::Map(source)) => {
+        (LegacyValue::Map(destination), LegacyValue::Map(source)) => {
             let destination = destination.borrow();
             let source = source.borrow();
             if destination.map.is_empty() || destination.map.len() != source.map.len() {
@@ -362,7 +362,7 @@ fn capture_slot_accepts_payload(destination: &Value, source: &Value) -> bool {
                     .all(|(destination, source)| capture_slot_accepts_payload(destination, source))
         }
         #[cfg(feature = "table")]
-        (Value::Table(destination), Value::Table(source)) => {
+        (LegacyValue::Table(destination), LegacyValue::Table(source)) => {
             let destination = destination.borrow();
             let source = source.borrow();
             destination.rows == source.rows
@@ -379,75 +379,75 @@ fn capture_slot_accepts_payload(destination: &Value, source: &Value) -> bool {
                 )
         }
         #[cfg(feature = "matrix")]
-        (Value::MatrixIndex(destination), Value::MatrixIndex(source)) => {
+        (LegacyValue::MatrixIndex(destination), LegacyValue::MatrixIndex(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "bool"))]
-        (Value::MatrixBool(destination), Value::MatrixBool(source)) => {
+        (LegacyValue::MatrixBool(destination), LegacyValue::MatrixBool(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "u8"))]
-        (Value::MatrixU8(destination), Value::MatrixU8(source)) => {
+        (LegacyValue::MatrixU8(destination), LegacyValue::MatrixU8(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "u16"))]
-        (Value::MatrixU16(destination), Value::MatrixU16(source)) => {
+        (LegacyValue::MatrixU16(destination), LegacyValue::MatrixU16(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "u32"))]
-        (Value::MatrixU32(destination), Value::MatrixU32(source)) => {
+        (LegacyValue::MatrixU32(destination), LegacyValue::MatrixU32(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "u64"))]
-        (Value::MatrixU64(destination), Value::MatrixU64(source)) => {
+        (LegacyValue::MatrixU64(destination), LegacyValue::MatrixU64(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "u128"))]
-        (Value::MatrixU128(destination), Value::MatrixU128(source)) => {
+        (LegacyValue::MatrixU128(destination), LegacyValue::MatrixU128(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "i8"))]
-        (Value::MatrixI8(destination), Value::MatrixI8(source)) => {
+        (LegacyValue::MatrixI8(destination), LegacyValue::MatrixI8(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "i16"))]
-        (Value::MatrixI16(destination), Value::MatrixI16(source)) => {
+        (LegacyValue::MatrixI16(destination), LegacyValue::MatrixI16(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "i32"))]
-        (Value::MatrixI32(destination), Value::MatrixI32(source)) => {
+        (LegacyValue::MatrixI32(destination), LegacyValue::MatrixI32(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "i64"))]
-        (Value::MatrixI64(destination), Value::MatrixI64(source)) => {
+        (LegacyValue::MatrixI64(destination), LegacyValue::MatrixI64(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "i128"))]
-        (Value::MatrixI128(destination), Value::MatrixI128(source)) => {
+        (LegacyValue::MatrixI128(destination), LegacyValue::MatrixI128(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "f32"))]
-        (Value::MatrixF32(destination), Value::MatrixF32(source)) => {
+        (LegacyValue::MatrixF32(destination), LegacyValue::MatrixF32(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "f64"))]
-        (Value::MatrixF64(destination), Value::MatrixF64(source)) => {
+        (LegacyValue::MatrixF64(destination), LegacyValue::MatrixF64(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "string"))]
-        (Value::MatrixString(destination), Value::MatrixString(source)) => {
+        (LegacyValue::MatrixString(destination), LegacyValue::MatrixString(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "rational"))]
-        (Value::MatrixR64(destination), Value::MatrixR64(source)) => {
+        (LegacyValue::MatrixR64(destination), LegacyValue::MatrixR64(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(all(feature = "matrix", feature = "complex"))]
-        (Value::MatrixC64(destination), Value::MatrixC64(source)) => {
+        (LegacyValue::MatrixC64(destination), LegacyValue::MatrixC64(source)) => {
             destination.can_replace_payload_from(source)
         }
         #[cfg(feature = "matrix")]
-        (Value::MatrixValue(destination), Value::MatrixValue(source)) => {
+        (LegacyValue::MatrixValue(destination), LegacyValue::MatrixValue(source)) => {
             destination.can_replace_payload_from(source)
         }
         (destination, source) => {
@@ -456,7 +456,7 @@ fn capture_slot_accepts_payload(destination: &Value, source: &Value) -> bool {
     }
 }
 
-pub(super) fn commit_capture_slot(destination: &Value, source: &Value) -> MResult<()> {
+pub(super) fn commit_capture_slot(destination: &LegacyValue, source: &LegacyValue) -> MResult<()> {
     if !capture_slot_accepts_payload(destination, source) {
         return Err(MechError::new(
             ActivationPatternCaptureKindUnsupported,
@@ -465,96 +465,96 @@ pub(super) fn commit_capture_slot(destination: &Value, source: &Value) -> MResul
     }
     match (destination, &detached(source)) {
         #[cfg(feature = "u8")]
-        (Value::U8(a), Value::U8(b)) => {
+        (LegacyValue::U8(a), LegacyValue::U8(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "u16")]
-        (Value::U16(a), Value::U16(b)) => {
+        (LegacyValue::U16(a), LegacyValue::U16(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "u32")]
-        (Value::U32(a), Value::U32(b)) => {
+        (LegacyValue::U32(a), LegacyValue::U32(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "u64")]
-        (Value::U64(a), Value::U64(b)) => {
+        (LegacyValue::U64(a), LegacyValue::U64(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "u128")]
-        (Value::U128(a), Value::U128(b)) => {
+        (LegacyValue::U128(a), LegacyValue::U128(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "i8")]
-        (Value::I8(a), Value::I8(b)) => {
+        (LegacyValue::I8(a), LegacyValue::I8(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "i16")]
-        (Value::I16(a), Value::I16(b)) => {
+        (LegacyValue::I16(a), LegacyValue::I16(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "i32")]
-        (Value::I32(a), Value::I32(b)) => {
+        (LegacyValue::I32(a), LegacyValue::I32(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "i64")]
-        (Value::I64(a), Value::I64(b)) => {
+        (LegacyValue::I64(a), LegacyValue::I64(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "i128")]
-        (Value::I128(a), Value::I128(b)) => {
+        (LegacyValue::I128(a), LegacyValue::I128(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "f64")]
-        (Value::F64(a), Value::F64(b)) => {
+        (LegacyValue::F64(a), LegacyValue::F64(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "f32")]
-        (Value::F32(a), Value::F32(b)) => {
+        (LegacyValue::F32(a), LegacyValue::F32(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "complex")]
-        (Value::C64(a), Value::C64(b)) => {
+        (LegacyValue::C64(a), LegacyValue::C64(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "rational")]
-        (Value::R64(a), Value::R64(b)) => {
+        (LegacyValue::R64(a), LegacyValue::R64(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(any(feature = "bool", feature = "variable_define"))]
-        (Value::Bool(a), Value::Bool(b)) => {
+        (LegacyValue::Bool(a), LegacyValue::Bool(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(any(feature = "string", feature = "variable_define"))]
-        (Value::String(a), Value::String(b)) => {
+        (LegacyValue::String(a), LegacyValue::String(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
-        (Value::Index(a), Value::Index(b)) => {
+        (LegacyValue::Index(a), LegacyValue::Index(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "atom")]
-        (Value::Atom(a), Value::Atom(b)) => {
+        (LegacyValue::Atom(a), LegacyValue::Atom(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "tuple")]
-        (Value::Tuple(a), Value::Tuple(b)) => {
+        (LegacyValue::Tuple(a), LegacyValue::Tuple(b)) => {
             let a = a.borrow();
             let b = b.borrow();
             for (destination, source) in a.elements.iter().zip(&b.elements) {
@@ -563,7 +563,7 @@ pub(super) fn commit_capture_slot(destination: &Value, source: &Value) -> MResul
             Ok(())
         }
         #[cfg(feature = "enum")]
-        (Value::Enum(a), Value::Enum(b)) => {
+        (LegacyValue::Enum(a), LegacyValue::Enum(b)) => {
             let preserve_payload_cells = {
                 let a = a.borrow();
                 let b = b.borrow();
@@ -588,7 +588,7 @@ pub(super) fn commit_capture_slot(destination: &Value, source: &Value) -> MResul
             Ok(())
         }
         #[cfg(feature = "record")]
-        (Value::Record(a), Value::Record(b)) => {
+        (LegacyValue::Record(a), LegacyValue::Record(b)) => {
             let a = a.borrow();
             let b = b.borrow();
             for ((_, destination), (_, source)) in a.data.iter().zip(&b.data) {
@@ -597,7 +597,7 @@ pub(super) fn commit_capture_slot(destination: &Value, source: &Value) -> MResul
             Ok(())
         }
         #[cfg(feature = "map")]
-        (Value::Map(a), Value::Map(b)) => {
+        (LegacyValue::Map(a), LegacyValue::Map(b)) => {
             let preserve_value_cells = {
                 let a = a.borrow();
                 let b = b.borrow();
@@ -617,12 +617,12 @@ pub(super) fn commit_capture_slot(destination: &Value, source: &Value) -> MResul
             Ok(())
         }
         #[cfg(feature = "set")]
-        (Value::Set(a), Value::Set(b)) => {
+        (LegacyValue::Set(a), LegacyValue::Set(b)) => {
             clone_ref_value(a, b);
             Ok(())
         }
         #[cfg(feature = "table")]
-        (Value::Table(a), Value::Table(b)) => {
+        (LegacyValue::Table(a), LegacyValue::Table(b)) => {
             let a = a.borrow();
             let b = b.borrow();
             for ((_, (_, destination)), (_, (_, source))) in a.data.iter().zip(&b.data) {
@@ -636,41 +636,75 @@ pub(super) fn commit_capture_slot(destination: &Value, source: &Value) -> MResul
             Ok(())
         }
         #[cfg(feature = "matrix")]
-        (Value::MatrixIndex(a), Value::MatrixIndex(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixIndex(a), LegacyValue::MatrixIndex(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "bool"))]
-        (Value::MatrixBool(a), Value::MatrixBool(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixBool(a), LegacyValue::MatrixBool(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "u8"))]
-        (Value::MatrixU8(a), Value::MatrixU8(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixU8(a), LegacyValue::MatrixU8(b)) if a.replace_payload_from(b) => Ok(()),
         #[cfg(all(feature = "matrix", feature = "u16"))]
-        (Value::MatrixU16(a), Value::MatrixU16(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixU16(a), LegacyValue::MatrixU16(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "u32"))]
-        (Value::MatrixU32(a), Value::MatrixU32(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixU32(a), LegacyValue::MatrixU32(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "u64"))]
-        (Value::MatrixU64(a), Value::MatrixU64(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixU64(a), LegacyValue::MatrixU64(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "u128"))]
-        (Value::MatrixU128(a), Value::MatrixU128(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixU128(a), LegacyValue::MatrixU128(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "i8"))]
-        (Value::MatrixI8(a), Value::MatrixI8(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixI8(a), LegacyValue::MatrixI8(b)) if a.replace_payload_from(b) => Ok(()),
         #[cfg(all(feature = "matrix", feature = "i16"))]
-        (Value::MatrixI16(a), Value::MatrixI16(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixI16(a), LegacyValue::MatrixI16(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "i32"))]
-        (Value::MatrixI32(a), Value::MatrixI32(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixI32(a), LegacyValue::MatrixI32(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "i64"))]
-        (Value::MatrixI64(a), Value::MatrixI64(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixI64(a), LegacyValue::MatrixI64(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "i128"))]
-        (Value::MatrixI128(a), Value::MatrixI128(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixI128(a), LegacyValue::MatrixI128(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "f32"))]
-        (Value::MatrixF32(a), Value::MatrixF32(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixF32(a), LegacyValue::MatrixF32(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "f64"))]
-        (Value::MatrixF64(a), Value::MatrixF64(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixF64(a), LegacyValue::MatrixF64(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "string"))]
-        (Value::MatrixString(a), Value::MatrixString(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixString(a), LegacyValue::MatrixString(b))
+            if a.replace_payload_from(b) =>
+        {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "rational"))]
-        (Value::MatrixR64(a), Value::MatrixR64(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixR64(a), LegacyValue::MatrixR64(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(all(feature = "matrix", feature = "complex"))]
-        (Value::MatrixC64(a), Value::MatrixC64(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixC64(a), LegacyValue::MatrixC64(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         #[cfg(feature = "matrix")]
-        (Value::MatrixValue(a), Value::MatrixValue(b)) if a.replace_payload_from(b) => Ok(()),
+        (LegacyValue::MatrixValue(a), LegacyValue::MatrixValue(b)) if a.replace_payload_from(b) => {
+            Ok(())
+        }
         _ => Err(MechError::new(
             ActivationPatternCaptureKindUnsupported,
             None,

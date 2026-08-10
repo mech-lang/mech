@@ -26,7 +26,7 @@ where
         Ok(())
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.to_value()
     }
 
@@ -34,7 +34,7 @@ where
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -53,12 +53,12 @@ where
 // -----------------------------------------------------------------------------
 
 fn impl_tuple_assign_fxn(
-    tuple: Value,
-    source: Value,
+    tuple: LegacyValue,
+    source: LegacyValue,
     index: usize, // 0-based internally
 ) -> MResult<Box<dyn MechFunction>> {
     match &tuple {
-        Value::Tuple(tuple_ref) => {
+        LegacyValue::Tuple(tuple_ref) => {
             let tuple = tuple_ref.borrow();
 
             if index >= tuple.size() {
@@ -76,28 +76,30 @@ fn impl_tuple_assign_fxn(
 
             match (&*sink, &source) {
                 #[cfg(feature = "bool")]
-                (Value::Bool(sink), Value::Bool(source)) => Ok(Box::new(TupleAssign {
+                (LegacyValue::Bool(sink), LegacyValue::Bool(source)) => Ok(Box::new(TupleAssign {
                     sink: sink.clone(),
                     source: source.clone(),
                 })),
 
                 #[cfg(feature = "i64")]
-                (Value::I64(sink), Value::I64(source)) => Ok(Box::new(TupleAssign {
+                (LegacyValue::I64(sink), LegacyValue::I64(source)) => Ok(Box::new(TupleAssign {
                     sink: sink.clone(),
                     source: source.clone(),
                 })),
 
                 #[cfg(feature = "f64")]
-                (Value::F64(sink), Value::F64(source)) => Ok(Box::new(TupleAssign {
+                (LegacyValue::F64(sink), LegacyValue::F64(source)) => Ok(Box::new(TupleAssign {
                     sink: sink.clone(),
                     source: source.clone(),
                 })),
 
                 #[cfg(feature = "string")]
-                (Value::String(sink), Value::String(source)) => Ok(Box::new(TupleAssign {
-                    sink: sink.clone(),
-                    source: source.clone(),
-                })),
+                (LegacyValue::String(sink), LegacyValue::String(source)) => {
+                    Ok(Box::new(TupleAssign {
+                        sink: sink.clone(),
+                        source: source.clone(),
+                    }))
+                }
 
                 _ => Err(MechError::new(
                     TupleElementKindMismatchError {
@@ -125,7 +127,7 @@ fn impl_tuple_assign_fxn(
 pub struct TupleAssignScalar {}
 
 impl FunctionSpecializer for TupleAssignScalar {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -142,7 +144,7 @@ impl FunctionSpecializer for TupleAssignScalar {
         let index_val = arguments[2].clone();
 
         let index = match &index_val {
-            Value::Index(ix) => {
+            LegacyValue::Index(ix) => {
                 let ix = *ix.borrow() as isize;
                 if ix <= 0 {
                     return Err(MechError::new(
@@ -173,7 +175,7 @@ impl FunctionSpecializer for TupleAssignScalar {
             Ok(fxn) => Ok(fxn),
 
             Err(_) => match &tuple {
-                Value::MutableReference(tuple_ref) => {
+                LegacyValue::MutableReference(tuple_ref) => {
                     impl_tuple_assign_fxn(tuple_ref.borrow().clone(), source, index)
                 }
 

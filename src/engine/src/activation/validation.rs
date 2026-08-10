@@ -1,8 +1,8 @@
 use crate::{
     ActivationArm, ActivationArmBody, ActivationScope, CompiledPattern, ComprehensionQualifier,
     Expression, Factor, FunctionDefinition, FunctionResolver, GuardFunctionSafety, Interpreter,
-    MResult, MechCode, MechError, MechErrorKind, Pattern, RangeExpression, ReactiveCellId,
-    ResolvedNamedFunction, Slice, SliceRef, Statement, Structure, Subscript, Token, Value,
+    LegacyValue, MResult, MechCode, MechError, MechErrorKind, Pattern, RangeExpression,
+    ReactiveCellId, ResolvedNamedFunction, Slice, SliceRef, Statement, Structure, Subscript, Token,
     ValueKind, compile_pattern,
 };
 use std::collections::HashSet;
@@ -87,7 +87,7 @@ fn pattern_is_irrefutable(pattern: &CompiledPattern, trigger_kind: &ValueKind) -
 pub(super) fn preflight_patterned_activation(
     scope: &ActivationScope,
     arms: &[ActivationArm],
-    trigger: &Value,
+    trigger: &LegacyValue,
     trigger_cells: &[ReactiveCellId],
     i: &Interpreter,
 ) -> MResult<PreflightPatternedActivation> {

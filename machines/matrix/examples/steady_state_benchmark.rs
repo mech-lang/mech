@@ -1,5 +1,5 @@
 use mech_core::matrix::Matrix as ValueMatrix;
-use mech_core::{MResult, MechFunction, ReactiveCellId, ReactivePlan, Ref, Value};
+use mech_core::{MResult, MechFunction, ReactiveCellId, ReactivePlan, Ref, LegacyValue};
 use mech_matrix::{MatMulMDMD, MatrixSolveMDVD};
 use nalgebra::{DMatrix, DVector};
 use std::{
@@ -194,8 +194,8 @@ fn reactive_matmul_fixture(size: usize) -> (ReactivePlan, ReactiveCellId, Ref<DM
     let lhs = Ref::new(lhs);
     let rhs = Ref::new(rhs);
     let output = Ref::new(DMatrix::zeros(size, size));
-    let lhs_value = Value::MatrixF64(ValueMatrix::DMatrix(lhs.clone()));
-    let rhs_value = Value::MatrixF64(ValueMatrix::DMatrix(rhs.clone()));
+    let lhs_value = LegacyValue::MatrixF64(ValueMatrix::DMatrix(lhs.clone()));
+    let rhs_value = LegacyValue::MatrixF64(ValueMatrix::DMatrix(rhs.clone()));
     let dirty = lhs_value.reactive_root_cell_ids()[0];
     let mut plan = ReactivePlan::new();
     plan.register(
@@ -223,8 +223,8 @@ fn reactive_solve_fixture(
     let lhs = Ref::new(matrix.clone());
     let input = Ref::new(rhs.clone());
     let output = Ref::new(DVector::zeros(size));
-    let lhs_value = Value::MatrixF64(ValueMatrix::DMatrix(lhs.clone()));
-    let rhs_value = Value::MatrixF64(ValueMatrix::DVector(input.clone()));
+    let lhs_value = LegacyValue::MatrixF64(ValueMatrix::DMatrix(lhs.clone()));
+    let rhs_value = LegacyValue::MatrixF64(ValueMatrix::DVector(input.clone()));
     let mut plan = ReactivePlan::new();
     plan.register(
         Box::new(MatrixSolveMDVD::<f64> {

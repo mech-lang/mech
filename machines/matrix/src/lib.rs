@@ -59,6 +59,8 @@ use std::fmt::Debug;
 use std::ops::*;
 
 use std::fmt::Display;
+#[cfg(any(feature = "dot", feature = "matmul"))]
+use std::sync::LazyLock;
 
 #[cfg(any(feature = "dot", feature = "matmul"))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -218,12 +220,67 @@ fn checked_matrix_mul<T: RuntimeMatrixArithmetic>(
     })
 }
 
+#[cfg(any(feature = "dot", feature = "matmul"))]
+static PURE_SCALAR_PRODUCT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_product_contract(false));
+#[cfg(any(feature = "dot", feature = "matmul"))]
+static PURE_MATRIX_PRODUCT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_product_contract(true));
+
+#[cfg(any(feature = "dot", feature = "matmul"))]
+fn pure_product_contract(matrix: bool) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: if matrix {
+                    ShapeRule::MatrixProduct { lhs: 0, rhs: 1 }
+                } else {
+                    ShapeRule::Declared
+                },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: if matrix {
+                ChangeDetectionPolicy::KernelReported
+            } else {
+                ChangeDetectionPolicy::ExactScalar
+            },
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+#[cfg(any(feature = "dot", feature = "matmul"))]
+fn product_contract(
+    output: FunctionValueRepresentation,
+) -> &'static OperationContractDeclaration {
+    match output {
+        FunctionValueRepresentation::Matrix { .. } => &PURE_MATRIX_PRODUCT_CONTRACT,
+        _ => &PURE_SCALAR_PRODUCT_CONTRACT,
+    }
+}
+
 /// Fallible counterpart to `impl_binop!` for reduction kernels. The operation
 /// macro computes a complete staged result and may use `?`; it publishes only
 /// after every multiplication and accumulation succeeds.
 #[cfg(any(feature = "dot", feature = "matmul"))]
 macro_rules! impl_checked_matrix_binop {
-    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
         pub struct $struct_name<T> {
             pub lhs: Ref<$arg1_type>,
@@ -271,6 +328,7 @@ macro_rules! impl_checked_matrix_binop {
         where
             T: RuntimeMatrixArithmetic,
             Ref<$out_type>: ToValue,
+            $out_type: FunctionRuntimeType,
         {
             fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
@@ -280,15 +338,23 @@ macro_rules! impl_checked_matrix_binop {
                 Ok(())
             }
 
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
+            }
+
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                let contract: Option<&'static OperationContractDeclaration> = None;
+                $(let contract = Some($semantic_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ));)?
+                contract
             }
 
             fn to_string(&self) -> String {
                 format!("{self:#?}")
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }

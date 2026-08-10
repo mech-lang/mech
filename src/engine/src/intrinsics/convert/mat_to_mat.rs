@@ -8,18 +8,18 @@ use std::ops::{Index, IndexMut};
 
 #[derive(Debug)]
 pub struct ConvertMatPassthrough {
-    pub out: Ref<Value>,
+    pub out: Ref<LegacyValue>,
 }
 
 impl MechFunctionImpl for ConvertMatPassthrough {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.borrow().clone()
     }
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(vec![Value::MutableReference(self.out.clone())])
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(vec![LegacyValue::MutableReference(self.out.clone())])
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
@@ -32,12 +32,12 @@ mod passthrough_transaction_state_tests {
 
     #[test]
     fn matrix_passthrough_exposes_original_outer_value_cell() {
-        let out = Ref::new(Value::Empty);
+        let out = Ref::new(LegacyValue::Empty);
         let function = ConvertMatPassthrough { out: out.clone() };
         let values = function.transaction_state_values().unwrap();
         assert_eq!(values.len(), 1);
         match &values[0] {
-            Value::MutableReference(value) => assert_eq!(value.addr(), out.addr()),
+            LegacyValue::MutableReference(value) => assert_eq!(value.addr(), out.addr()),
             value => panic!("expected mutable-reference transaction state, got {value:?}"),
         }
     }
@@ -79,14 +79,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -603,10 +603,10 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
     );+ $(;)?
   ) => {
     pub fn impl_conversion_mat_to_mat_fxn(
-      source_value: Value,
+      source_value: LegacyValue,
       target_kind: ValueKind
     ) -> MResult<Box<dyn MechFunction>> {
-      if let (Value::MatrixValue(source_matrix), ValueKind::Matrix(target_element_kind, target_dims)) = (&source_value, &target_kind) {
+      if let (LegacyValue::MatrixValue(source_matrix), ValueKind::Matrix(target_element_kind, target_dims)) = (&source_value, &target_kind) {
         let source_shape = source_matrix.shape();
         let output_shape = if target_dims.is_empty() {
           source_shape.clone()
@@ -629,8 +629,8 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
               return Ok(value.clone());
             }
             match value {
-              Value::Empty | Value::EmptyKind(_) if matches!(target_element_kind.as_ref(), ValueKind::Option(_)) => Ok(Value::Empty),
-              Value::Empty | Value::EmptyKind(_) => Err(MechError::new(
+              LegacyValue::Empty | LegacyValue::EmptyKind(_) if matches!(target_element_kind.as_ref(), ValueKind::Option(_)) => Ok(LegacyValue::Empty),
+              LegacyValue::Empty | LegacyValue::EmptyKind(_) => Err(MechError::new(
                 UnsupportedConversionError { from: value.kind(), to: target_element_kind.as_ref().clone() },
                 None,
               ).with_compiler_loc()),
@@ -642,7 +642,7 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
                 ).with_compiler_loc()),
             }
           })
-          .collect::<MResult<Vec<Value>>>()?;
+          .collect::<MResult<Vec<LegacyValue>>>()?;
         let out = matrix_value_to_concrete_matrix(converted, target_element_kind.as_ref(), &output_shape)?;
         return Ok(Box::new(ConvertMatPassthrough { out: Ref::new(out) }));
       }
@@ -650,7 +650,7 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
         if let ValueKind::Matrix(source_element_kind, _) = source_value.kind() {
           if target_dims.is_empty()
             && source_element_kind == *target_element_kind
-            && !matches!(source_value, Value::MatrixValue(_))
+            && !matches!(source_value, LegacyValue::MatrixValue(_))
           {
             return Ok(Box::new(ConvertMatPassthrough { out: Ref::new(source_value.clone()) }));
           }
@@ -662,7 +662,7 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
         match (source_value.clone(), target_kind.clone()) {
           $(
             #[cfg(all(feature = "matrix", feature = $src_string))]
-            (Value::[<Matrix $src:camel>](v), ValueKind::Matrix(target_kind, dims)) if matches!(target_kind.as_ref(), ValueKind::Any) => {
+            (LegacyValue::[<Matrix $src:camel>](v), ValueKind::Matrix(target_kind, dims)) if matches!(target_kind.as_ref(), ValueKind::Any) => {
               if dims.is_empty() {
                 create_convert_mat_to_mat::<$src, $src>(v, &shape)
               } else if ((shape[0] == dims[0]) && (shape[1] == dims[1])) {
@@ -675,7 +675,7 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
             }
             $(
               #[cfg(all(feature = "matrix", feature = $src_string, feature = $dst_string))]
-              (Value::[<Matrix $src:camel>](v), ValueKind::Matrix(target_kind, dims)) if matches!(target_kind.as_ref(), ValueKind::[<$dst:camel>]) => {
+              (LegacyValue::[<Matrix $src:camel>](v), ValueKind::Matrix(target_kind, dims)) if matches!(target_kind.as_ref(), ValueKind::[<$dst:camel>]) => {
                 if dims.is_empty() {
                   create_convert_mat_to_mat::<$src, $dst>(v, &shape)
                 } else if ((shape[0] == dims[0]) && (shape[1] == dims[1])) {
@@ -696,16 +696,16 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
 }
 
 fn matrix_value_to_concrete_matrix(
-    converted: Vec<Value>,
+    converted: Vec<LegacyValue>,
     target_element_kind: &ValueKind,
     output_shape: &[usize],
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     macro_rules! cast_matrix_values {
         ($values:expr, $shape:expr, $scalar_variant:ident, $scalar_ty:ty, $matrix_variant:ident) => {{
             let values = $values
                 .into_iter()
                 .map(|value| match value {
-                    Value::$scalar_variant(v) => Ok((*v.borrow()).clone()),
+                    LegacyValue::$scalar_variant(v) => Ok((*v.borrow()).clone()),
                     other => Err(MechError::new(
                         UnsupportedConversionError {
                             from: other.kind(),
@@ -716,7 +716,7 @@ fn matrix_value_to_concrete_matrix(
                     .with_compiler_loc()),
                 })
                 .collect::<MResult<Vec<$scalar_ty>>>()?;
-            Ok(Value::$matrix_variant(Matrix::from_vec(
+            Ok(LegacyValue::$matrix_variant(Matrix::from_vec(
                 values, $shape[0], $shape[1],
             )))
         }};
@@ -757,7 +757,7 @@ fn matrix_value_to_concrete_matrix(
         ValueKind::R64 => cast_matrix_values!(converted, output_shape, R64, R64, MatrixR64),
         #[cfg(feature = "complex")]
         ValueKind::C64 => cast_matrix_values!(converted, output_shape, C64, C64, MatrixC64),
-        _ => Ok(Value::MatrixValue(Matrix::from_vec(
+        _ => Ok(LegacyValue::MatrixValue(Matrix::from_vec(
             converted,
             output_shape[0],
             output_shape[1],
@@ -806,7 +806,7 @@ impl_conversion_mat_to_mat_fxn! {
 pub struct ConvertMatToMat {}
 
 impl FunctionSpecializer for ConvertMatToMat {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -822,7 +822,7 @@ impl FunctionSpecializer for ConvertMatToMat {
         match impl_conversion_mat_to_mat_fxn(source_value.clone(), target_kind.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(err) => match source_value {
-                Value::MutableReference(rhs) => {
+                LegacyValue::MutableReference(rhs) => {
                     impl_conversion_mat_to_mat_fxn(rhs.borrow().clone(), target_kind.clone())
                         .or(Err(err))
                 }

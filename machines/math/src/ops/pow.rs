@@ -218,14 +218,14 @@ macro_rules! impl_powop {
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -319,14 +319,14 @@ impl MechFunctionImpl for PowRational {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -339,10 +339,10 @@ impl MechFunctionCompiler for PowRational {
 }
 
 #[cfg(feature = "source")]
-fn impl_pow_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_pow_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (&lhs_value, &rhs_value) {
         #[cfg(all(feature = "rational", feature = "i32"))]
-        (Value::R64(lhs), Value::I32(rhs)) => {
+        (LegacyValue::R64(lhs), LegacyValue::I32(rhs)) => {
             return Ok(Box::new(PowRational {
                 lhs: lhs.clone(),
                 rhs: rhs.clone(),

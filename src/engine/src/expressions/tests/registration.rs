@@ -2,8 +2,8 @@ use super::super::{register_expression_function_batch, register_initialized_expr
 #[cfg(feature = "compiler")]
 use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use crate::{
-    InitialSolvePolicy, MResult, MechError, MechErrorKind, MechFunction, MechFunctionImpl, Plan,
-    ReactiveCellId, ReactiveDependencyKind, Ref, Value,
+    InitialSolvePolicy, LegacyValue, MResult, MechError, MechErrorKind, MechFunction,
+    MechFunctionImpl, Plan, ReactiveCellId, ReactiveDependencyKind, Ref,
 };
 use std::sync::{
     Arc,
@@ -11,7 +11,7 @@ use std::sync::{
 };
 
 struct IndexedExpressionTestFunction {
-    output: Value,
+    output: LegacyValue,
     solve_calls: Arc<AtomicUsize>,
     initial_solve_policy: InitialSolvePolicy,
 }
@@ -30,7 +30,7 @@ impl MechErrorKind for InitialExpressionSolveFailure {
 }
 
 struct FailingInitialExpressionFunction {
-    output: Value,
+    output: LegacyValue,
     solve_result_calls: Arc<AtomicUsize>,
 }
 
@@ -40,7 +40,7 @@ impl MechFunctionImpl for FailingInitialExpressionFunction {
         Err(MechError::new(InitialExpressionSolveFailure, None))
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.output.clone()
     }
 
@@ -48,7 +48,7 @@ impl MechFunctionImpl for FailingInitialExpressionFunction {
         "failing-initial-expression".to_owned()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -66,7 +66,7 @@ impl MechFunctionImpl for IndexedExpressionTestFunction {
         Ok(())
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.output.clone()
     }
 
@@ -78,7 +78,7 @@ impl MechFunctionImpl for IndexedExpressionTestFunction {
         "indexed-expression-test".to_string()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -90,13 +90,13 @@ impl MechFunctionCompiler for IndexedExpressionTestFunction {
     }
 }
 
-fn scalar(value: f64) -> (Value, ReactiveCellId) {
+fn scalar(value: f64) -> (LegacyValue, ReactiveCellId) {
     let reference = Ref::new(value);
     let cell = ReactiveCellId::new(reference.id());
-    (Value::F64(reference), cell)
+    (LegacyValue::F64(reference), cell)
 }
 
-fn function(output: Value, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
+fn function(output: LegacyValue, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
     Box::new(IndexedExpressionTestFunction {
         output,
         solve_calls: calls,
@@ -104,7 +104,7 @@ fn function(output: Value, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
     })
 }
 
-fn preserving_function(output: Value, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
+fn preserving_function(output: LegacyValue, calls: Arc<AtomicUsize>) -> Box<dyn MechFunction> {
     Box::new(IndexedExpressionTestFunction {
         output,
         solve_calls: calls,

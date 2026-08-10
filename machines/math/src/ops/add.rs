@@ -152,18 +152,31 @@ macro_rules! add_scalar_rhs_op {
     };
 }
 
-impl_fxns!(Add, T, T, impl_checked_arithmetic_binop);
+macro_rules! impl_checked_add_binop {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
+        impl_checked_arithmetic_binop!(
+            $struct_name,
+            $arg1_type,
+            $arg2_type,
+            $out_type,
+            $op,
+            crate::ops::arithmetic_full_write_contract
+        );
+    };
+}
+
+impl_fxns!(Add, T, T, impl_checked_add_binop);
 
 #[cfg(all(
     feature = "matrixd",
     any(feature = "matrix1", feature = "matrix1_interop")
 ))]
-impl_checked_arithmetic_binop!(AddM1MD, Matrix1<T>, DMatrix<T>, DMatrix<T>, add_m1_md_op);
+impl_checked_add_binop!(AddM1MD, Matrix1<T>, DMatrix<T>, DMatrix<T>, add_m1_md_op);
 #[cfg(all(
     feature = "matrixd",
     any(feature = "matrix1", feature = "matrix1_interop")
 ))]
-impl_checked_arithmetic_binop!(AddMDM1, DMatrix<T>, Matrix1<T>, DMatrix<T>, add_md_m1_op);
+impl_checked_add_binop!(AddMDM1, DMatrix<T>, Matrix1<T>, DMatrix<T>, add_md_m1_op);
 
 #[cfg(all(test, feature = "u8"))]
 mod checked_arithmetic_tests {
@@ -346,8 +359,8 @@ macro_rules! specialize_add_matrix1_dynamic {
                     any(feature = "matrix1", feature = "matrix1_interop")
                 ))]
                 if let (
-                    Value::[<Matrix $value_kind>](Matrix::Matrix1(lhs)),
-                    Value::[<Matrix $value_kind>](Matrix::DMatrix(rhs)),
+                    LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(lhs)),
+                    LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(rhs)),
                 ) = (&$lhs, &$rhs)
                 {
                     if rhs.borrow().shape() == (1, 1) {
@@ -365,8 +378,8 @@ macro_rules! specialize_add_matrix1_dynamic {
                     any(feature = "matrix1", feature = "matrix1_interop")
                 ))]
                 if let (
-                    Value::[<Matrix $value_kind>](Matrix::DMatrix(lhs)),
-                    Value::[<Matrix $value_kind>](Matrix::Matrix1(rhs)),
+                    LegacyValue::[<Matrix $value_kind>](Matrix::DMatrix(lhs)),
+                    LegacyValue::[<Matrix $value_kind>](Matrix::Matrix1(rhs)),
                 ) = (&$lhs, &$rhs)
                 {
                     if lhs.borrow().shape() == (1, 1) {
@@ -383,17 +396,17 @@ macro_rules! specialize_add_matrix1_dynamic {
 }
 
 #[cfg(feature = "source")]
-fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_add_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     #[cfg(feature = "c64")]
     match (&lhs_value, &rhs_value) {
-        (Value::C64(lhs), rhs) if !matches!(rhs, Value::C64(_)) => {
+        (LegacyValue::C64(lhs), rhs) if !matches!(rhs, LegacyValue::C64(_)) => {
             if let Ok(rhs_c64) = rhs.as_c64() {
-                return impl_add_fxn(Value::C64(lhs.clone()), Value::C64(rhs_c64));
+                return impl_add_fxn(LegacyValue::C64(lhs.clone()), LegacyValue::C64(rhs_c64));
             }
         }
-        (lhs, Value::C64(rhs)) if !matches!(lhs, Value::C64(_)) => {
+        (lhs, LegacyValue::C64(rhs)) if !matches!(lhs, LegacyValue::C64(_)) => {
             if let Ok(lhs_c64) = lhs.as_c64() {
-                return impl_add_fxn(Value::C64(lhs_c64), Value::C64(rhs.clone()));
+                return impl_add_fxn(LegacyValue::C64(lhs_c64), LegacyValue::C64(rhs.clone()));
             }
         }
         _ => {}
@@ -439,7 +452,7 @@ fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunct
 }
 
 #[cfg(feature = "source")]
-fn specialize_math_add(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+fn specialize_math_add(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
         return Err(MechError::new(
             IncorrectNumberOfArguments {
@@ -456,13 +469,13 @@ fn specialize_math_add(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
     match impl_add_fxn(lhs_value.clone(), rhs_value.clone()) {
         Ok(fxn) => Ok(fxn),
         Err(_) => match (lhs_value, rhs_value) {
-            (Value::MutableReference(lhs), Value::MutableReference(rhs)) => {
+            (LegacyValue::MutableReference(lhs), LegacyValue::MutableReference(rhs)) => {
                 impl_add_fxn(lhs.borrow().clone(), rhs.borrow().clone())
             }
-            (lhs_value, Value::MutableReference(rhs)) => {
+            (lhs_value, LegacyValue::MutableReference(rhs)) => {
                 impl_add_fxn(lhs_value, rhs.borrow().clone())
             }
-            (Value::MutableReference(lhs), rhs_value) => {
+            (LegacyValue::MutableReference(lhs), rhs_value) => {
                 impl_add_fxn(lhs.borrow().clone(), rhs_value)
             }
             (lhs, rhs) => {
@@ -494,7 +507,7 @@ pub struct MathAdd {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathAdd {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         specialize_math_add(arguments)
     }
 
@@ -860,7 +873,7 @@ mod tests {
     ))]
     fn assert_catalog_specializes_to(
         specializer: &dyn FunctionSpecializer,
-        arguments: [Value; 2],
+        arguments: [LegacyValue; 2],
         expected_family: &str,
         expected_runtime_name: &str,
     ) {
@@ -935,7 +948,7 @@ mod tests {
         let output = Ref::new(41.0_f64);
         let lhs = Ref::new(2.0_f64);
         let rhs = Ref::new(3.0_f64);
-        let wrong = Value::I8(Ref::new(7));
+        let wrong = LegacyValue::I8(Ref::new(7));
         let scalar = entry(&catalog, "AddSS<f64>");
 
         assert_contract_error(
@@ -968,8 +981,8 @@ mod tests {
             "construction must not mutate output"
         );
 
-        let fixed = Value::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::identity())));
-        let dynamic = Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
+        let fixed = LegacyValue::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::identity())));
+        let dynamic = LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
         assert_contract_error(
             entry(&catalog, "AddM2M2<f64>").instantiate(FunctionArgs::Binary(
                 fixed.clone(),
@@ -1142,13 +1155,13 @@ mod tests {
             .specializer
             .as_ref();
 
-        let scalar = Value::from(1.0_f64);
-        let matrix = Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_row_slice(
+        let scalar = LegacyValue::from(1.0_f64);
+        let matrix = LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_row_slice(
             2,
             2,
             &[1.0, 2.0, 3.0, 4.0],
         ))));
-        let vector = Value::MatrixF64(Matrix::Vector2(Ref::new(Vector2::new(1.0, 2.0))));
+        let vector = LegacyValue::MatrixF64(Matrix::Vector2(Ref::new(Vector2::new(1.0, 2.0))));
 
         assert_catalog_specializes_to(
             specializer,
@@ -1192,16 +1205,16 @@ mod tests {
             ],
             [0x00f1_f90b_3463_d8de, 0x002f_c488_ae85_b3ec],
         );
-        let dynamic_values = |value: Value| match value {
-            Value::MatrixF64(Matrix::DMatrix(value)) => value.borrow().as_slice().to_vec(),
+        let dynamic_values = |value: LegacyValue| match value {
+            LegacyValue::MatrixF64(Matrix::DMatrix(value)) => value.borrow().as_slice().to_vec(),
             other => panic!("expected dynamic f64 matrix output, got {other:?}"),
         };
         let fixed = Ref::new(Matrix1::from_element(2.0_f64));
         let dynamic = Ref::new(DMatrix::from_element(1, 1, 3.0_f64));
 
         let fixed_dynamic = specialize_math_add(&[
-            Value::MatrixF64(Matrix::Matrix1(fixed.clone())),
-            Value::MatrixF64(Matrix::DMatrix(dynamic.clone())),
+            LegacyValue::MatrixF64(Matrix::Matrix1(fixed.clone())),
+            LegacyValue::MatrixF64(Matrix::DMatrix(dynamic.clone())),
         ])
         .unwrap();
         assert!(fixed_dynamic.to_string().starts_with("AddM1MD"));
@@ -1214,8 +1227,8 @@ mod tests {
         assert_eq!(dynamic_values(fixed_dynamic.out()), vec![18.0]);
 
         let dynamic_fixed = specialize_math_add(&[
-            Value::MatrixF64(Matrix::DMatrix(dynamic)),
-            Value::MatrixF64(Matrix::Matrix1(fixed)),
+            LegacyValue::MatrixF64(Matrix::DMatrix(dynamic)),
+            LegacyValue::MatrixF64(Matrix::Matrix1(fixed)),
         ])
         .unwrap();
         assert!(dynamic_fixed.to_string().starts_with("AddMDM1"));
@@ -1283,7 +1296,7 @@ mod tests {
             .specializer(OperationId::from_name("math/add"))
             .unwrap()
             .specializer;
-        let arguments = [Value::from(1.5_f64), Value::from(2_i32)];
+        let arguments = [LegacyValue::from(1.5_f64), LegacyValue::from(2_i32)];
 
         assert_eq!(specializer.guard_safety(), GuardFunctionSafety::Unsupported);
         let fxn = specializer.specialize(&arguments).unwrap();
@@ -1294,8 +1307,8 @@ mod tests {
     #[cfg(all(feature = "source", feature = "f64"))]
     #[test]
     fn catalog_specializer_preserves_mutable_reference_behavior() {
-        let left = Value::MutableReference(Ref::new(Value::from(1.0_f64)));
-        let right = Value::MutableReference(Ref::new(Value::from(2.0_f64)));
+        let left = LegacyValue::MutableReference(Ref::new(LegacyValue::from(1.0_f64)));
+        let right = LegacyValue::MutableReference(Ref::new(LegacyValue::from(2.0_f64)));
         let arguments = vec![left, right];
 
         let function = FunctionSpecializer::specialize(&MathAdd {}, &arguments).unwrap();

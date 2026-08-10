@@ -368,15 +368,15 @@ fn validate_linear_solve(args: &FunctionArgs) -> MResult<()> {
 mod tests {
     use super::*;
     use crate::structures::Matrix;
-    use crate::{Ref, Value};
+    use crate::{LegacyValue, Ref};
     use nalgebra::{DMatrix, Matrix2};
 
-    fn dynamic(rows: usize, cols: usize) -> Value {
-        Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::zeros(rows, cols))))
+    fn dynamic(rows: usize, cols: usize) -> LegacyValue {
+        LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::zeros(rows, cols))))
     }
 
-    fn fixed2() -> Value {
-        Value::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::zeros())))
+    fn fixed2() -> LegacyValue {
+        LegacyValue::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::zeros())))
     }
 
     fn disallow(contract: RuntimeFunctionContract, args: FunctionArgs) -> crate::MechError {

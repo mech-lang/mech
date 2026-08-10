@@ -1,4 +1,4 @@
-use mech_core::{MResult, Ref, Value};
+use mech_core::{LegacyValue, MResult, OperationContractDeclaration, Ref};
 use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest};
 
 use crate::{SharedTimeSnapshot, TimeSnapshot, time_error, time_input_base_uri};
@@ -21,7 +21,7 @@ impl TimeResourceProvider {
         time_input_base_uri(&self.instance)
     }
 
-    fn value_for(snapshot: TimeSnapshot, path: &str) -> MResult<Value> {
+    fn value_for(snapshot: TimeSnapshot, path: &str) -> MResult<LegacyValue> {
         let value = match path {
             "unix-ms" => snapshot.unix_ms,
             "hour" => snapshot.hour,
@@ -35,7 +35,7 @@ impl TimeResourceProvider {
                 ));
             }
         };
-        Ok(Value::F64(Ref::new(value)))
+        Ok(LegacyValue::F64(Ref::new(value)))
     }
 }
 
@@ -48,7 +48,11 @@ impl RuntimeResourceProvider for TimeResourceProvider {
         vec![self.base_uri()]
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(mech_runtime::resource_observation_contract())
+    }
+
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri != self.base_uri() {
             return Err(time_error(
                 "TimeResourceProvider",
@@ -58,7 +62,7 @@ impl RuntimeResourceProvider for TimeResourceProvider {
         Self::value_for(TimeSnapshot::default(), &request.path)
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri != self.base_uri() {
             return Err(time_error(
                 "TimeResourceProvider",
@@ -86,9 +90,9 @@ mod tests {
         }
     }
 
-    fn f64_value(value: Value) -> f64 {
+    fn f64_value(value: LegacyValue) -> f64 {
         match value {
-            Value::F64(value) => *value.borrow(),
+            LegacyValue::F64(value) => *value.borrow(),
             value => panic!("expected F64, got {value:?}"),
         }
     }

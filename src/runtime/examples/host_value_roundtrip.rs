@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::sync::Arc;
 
-use mech_core::{MResult, Value};
+use mech_core::{LegacyValue, MResult};
 
 use mech_runtime::{
     BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
@@ -24,18 +24,18 @@ fn short(id: impl Display) -> String {
     short_text(&id.to_string())
 }
 
-fn display_value(value: &Value) -> String {
+fn display_value(value: &LegacyValue) -> String {
     match value {
-        Value::String(text) => {
+        LegacyValue::String(text) => {
             format!("String({:?})", text.borrow())
         }
-        Value::F64(value) => {
+        LegacyValue::F64(value) => {
             format!("F64({})", *value.borrow())
         }
-        Value::I64(value) => {
+        LegacyValue::I64(value) => {
             format!("I64({})", *value.borrow())
         }
-        Value::Bool(value) => {
+        LegacyValue::Bool(value) => {
             format!("Bool({})", *value.borrow())
         }
         other => {
@@ -44,9 +44,9 @@ fn display_value(value: &Value) -> String {
     }
 }
 
-fn assert_string(value: Value, expected: &str) {
+fn assert_string(value: LegacyValue, expected: &str) {
     match value {
-        Value::String(text) => {
+        LegacyValue::String(text) => {
             assert_eq!(&*text.borrow(), expected);
         }
         other => {

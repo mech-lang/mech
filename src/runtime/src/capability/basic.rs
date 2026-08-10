@@ -481,7 +481,7 @@ impl BasicSubject {
         Self::new(format!("runtime://{}", id))
     }
 
-    pub fn node(id: NodeId) -> Self {
+    pub fn node(id: crate::NodeId) -> Self {
         Self::new(format!("node://{}", id))
     }
 
@@ -533,7 +533,7 @@ impl BasicResource {
         Self::new(format!("runtime://{}", id))
     }
 
-    pub fn node(id: NodeId) -> Self {
+    pub fn node(id: crate::NodeId) -> Self {
         Self::new(format!("node://{}", id))
     }
 

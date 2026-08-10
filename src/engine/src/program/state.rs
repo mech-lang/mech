@@ -90,7 +90,7 @@ impl ProgramState {
     }
 
     #[cfg(feature = "symbol_table")]
-    pub fn get_symbol(&self, id: u64) -> Option<Ref<Value>> {
+    pub fn get_symbol(&self, id: u64) -> Option<Ref<LegacyValue>> {
         let syms = self.symbol_table.borrow();
         syms.get(id)
     }
@@ -124,7 +124,7 @@ impl ProgramState {
 
     /// Look up symbol in environment first, then in global symbol table.
     #[cfg(feature = "symbol_table")]
-    pub fn get_env_symbol(&self, id: u64) -> Option<Ref<Value>> {
+    pub fn get_env_symbol(&self, id: u64) -> Option<Ref<LegacyValue>> {
         if let Some(env) = &self.environment {
             let env_brrw = env.borrow();
             match env_brrw.get(id) {
@@ -146,7 +146,7 @@ impl ProgramState {
     }
 
     #[cfg(feature = "symbol_table")]
-    pub fn save_symbol(&self, id: u64, name: String, value: Value, mutable: bool) -> ValRef {
+    pub fn save_symbol(&self, id: u64, name: String, value: LegacyValue, mutable: bool) -> ValRef {
         let mut symbols_brrw = self.symbol_table.borrow_mut();
         let val_ref = symbols_brrw.insert(id, value, mutable);
         let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
@@ -155,7 +155,13 @@ impl ProgramState {
     }
 
     #[cfg(feature = "symbol_table")]
-    pub fn save_env_symbol(&self, id: u64, name: String, value: Value, mutable: bool) -> ValRef {
+    pub fn save_env_symbol(
+        &self,
+        id: u64,
+        name: String,
+        value: LegacyValue,
+        mutable: bool,
+    ) -> ValRef {
         if let Some(env) = &self.environment {
             let mut env_brrw = env.borrow_mut();
             let val_ref = env_brrw.insert(id, value, mutable);

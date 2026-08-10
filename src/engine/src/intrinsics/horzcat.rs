@@ -45,10 +45,10 @@ macro_rules! horizontal_concatenate {
         fn solve_result(&self) -> MResult<()> {
             Ok(())
         }
-        fn out(&self) -> Value { self.out.to_value() }
+        fn out(&self) -> LegacyValue { self.out.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
           Ok(self.reactive_output_values())
         }
       }
@@ -135,14 +135,14 @@ macro_rules! horzcat_two_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -240,14 +240,14 @@ macro_rules! horzcat_three_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -358,14 +358,14 @@ macro_rules! horzcat_four_args {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -453,14 +453,14 @@ where
         self.e1.copy_into(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -558,14 +558,14 @@ where
         self.e2.copy_into(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -675,14 +675,14 @@ where
         self.e3.copy_into(&self.out, offset);
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateFourArgs\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -799,14 +799,14 @@ where
         }
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateNArgs\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -892,14 +892,14 @@ where
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -996,14 +996,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateRDN\n{:#?}", self.out)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1258,7 +1258,8 @@ mod compiler_tests {
         let scalar = Ref::new(7.0_f64).to_value();
         let output = Ref::new(DMatrix::from_element(1, 4, 19.0));
         let output_value = output.to_value();
-        let matrix = Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_element(1, 1, 3.0))));
+        let matrix =
+            LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_element(1, 1, 3.0))));
 
         assert_type_mismatch(HorizontalConcatenateRD::<f64>::new(FunctionArgs::Nullary(
             scalar.clone(),
@@ -1285,7 +1286,7 @@ mod compiler_tests {
             ),
         ));
         assert_type_mismatch(HorizontalConcatenateNArgs::<f64>::new(
-            FunctionArgs::Variadic(output_value, vec![matrix, Value::Empty]),
+            FunctionArgs::Variadic(output_value, vec![matrix, LegacyValue::Empty]),
         ));
 
         assert_eq!(output.borrow().as_slice(), &[19.0; 4]);
@@ -1352,14 +1353,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1435,14 +1436,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1522,14 +1523,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1634,14 +1635,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1735,14 +1736,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1825,14 +1826,14 @@ where
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -1902,14 +1903,14 @@ macro_rules! horzcat_single {
             fn solve_result(&self) -> MResult<()> {
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -2017,14 +2018,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -2107,14 +2108,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -2195,14 +2196,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -2284,14 +2285,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -2389,14 +2390,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -2494,14 +2495,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -2599,14 +2600,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -2704,14 +2705,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -2796,14 +2797,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -2888,14 +2889,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -2982,14 +2983,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -3076,14 +3077,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -3170,14 +3171,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -3266,14 +3267,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -3362,14 +3363,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -3458,14 +3459,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -3552,14 +3553,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -3663,14 +3664,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -3757,14 +3758,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -3910,14 +3911,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -4006,14 +4007,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -4111,14 +4112,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -4207,14 +4208,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -4303,14 +4304,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -4399,14 +4400,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -4495,14 +4496,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -4600,14 +4601,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -4705,14 +4706,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -4810,14 +4811,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -4915,14 +4916,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -5020,14 +5021,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -5238,14 +5239,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -5343,14 +5344,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -5448,14 +5449,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -5552,14 +5553,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -5656,14 +5657,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -5995,104 +5996,104 @@ macro_rules! impl_horzcat_arms {
     {
 
       #[cfg(feature = "matrix")]
-      fn extract_matrix(arg: &Value) -> MResult<Box<dyn CopyMat<$kind>>> {
+      fn extract_matrix(arg: &LegacyValue) -> MResult<Box<dyn CopyMat<$kind>>> {
         match arg {
-          Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
-          Value::MutableReference(inner) => match &*inner.borrow() {
-            Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
+          LegacyValue::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
+          LegacyValue::MutableReference(inner) => match &*inner.borrow() {
+            LegacyValue::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
             _ => Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
           },
           _ => Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()},None).with_compiler_loc())
         }
       }
       #[cfg(feature = "row_vector2")] // get_r2
-      fn get_r2(value: &Value) -> Option<Ref<RowVector2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_r2(value: &LegacyValue) -> Option<Ref<RowVector2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "row_vector2"))]
-      fn get_r2(_value: &Value) -> Option<()> { None }
+      fn get_r2(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "row_vector3")] // get_r3
-      fn get_r3(value: &Value) -> Option<Ref<RowVector3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_r3(value: &LegacyValue) -> Option<Ref<RowVector3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "row_vector3"))]
-      fn get_r3(_value: &Value) -> Option<()> { None }
+      fn get_r3(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "row_vector4")] // get_r4
-      fn get_r4(value: &Value) -> Option<Ref<RowVector4<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_r4(value: &LegacyValue) -> Option<Ref<RowVector4<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "row_vector4"))]
-      fn get_r4(_value: &Value) -> Option<()> { None }
+      fn get_r4(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "vector2")] // get_v2
-      fn get_v2(value: &Value) -> Option<Ref<Vector2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_v2(value: &LegacyValue) -> Option<Ref<Vector2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "vector2"))]
-      fn get_v2(_value: &Value) -> Option<()> { None }
+      fn get_v2(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "vector3")] // get_v3
-      fn get_v3(value: &Value) -> Option<Ref<Vector3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_v3(value: &LegacyValue) -> Option<Ref<Vector3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "vector3"))]
-      fn get_v3(_value: &Value) -> Option<()> { None }
+      fn get_v3(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "vector4")] // get_v4
-      fn get_v4(value: &Value) -> Option<Ref<Vector4<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_v4(value: &LegacyValue) -> Option<Ref<Vector4<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "vector4"))]
-      fn get_v4(_value: &Value) -> Option<()> { None }
+      fn get_v4(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "matrixd")] // get_md
-      fn get_md(value: &Value) -> Option<Ref<DMatrix<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_md(value: &LegacyValue) -> Option<Ref<DMatrix<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "matrixd"))]
-      fn get_md(_value: &Value) -> Option<()> { None }
+      fn get_md(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "vectord")] // get_vd
-      fn get_vd(value: &Value) -> Option<Ref<DVector<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::DVector(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::DVector(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_vd(value: &LegacyValue) -> Option<Ref<DVector<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::DVector(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::DVector(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "vectord"))]
-      fn get_vd(_value: &Value) -> Option<()> { None }
+      fn get_vd(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "row_vectord")] // get_rd
-      fn get_rd(value: &Value) -> Option<Ref<RowDVector<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_rd(value: &LegacyValue) -> Option<Ref<RowDVector<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "row_vectord"))]
-      fn get_rd(_value: &Value) -> Option<()> { None }
+      fn get_rd(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "matrix3x2")] // get_m3x2
-      fn get_m3x2(value: &Value) -> Option<Ref<Matrix3x2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_m3x2(value: &LegacyValue) -> Option<Ref<Matrix3x2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "matrix3x2"))]
-      fn get_m3x2(_value: &Value) -> Option<()> { None }
+      fn get_m3x2(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "matrix2x3")] // get_m2x3
-      fn get_m2x3(value: &Value) -> Option<Ref<Matrix2x3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_m2x3(value: &LegacyValue) -> Option<Ref<Matrix2x3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "matrix2x3"))]
-      fn get_m2x3(_value: &Value) -> Option<()> { None }
+      fn get_m2x3(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "matrix1")] // get_m1
-      fn get_m1(value: &Value) -> Option<Ref<Matrix1<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_m1(value: &LegacyValue) -> Option<Ref<Matrix1<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "matrix1"))]
-      fn get_m1(_value: &Value) -> Option<()> { None }
+      fn get_m1(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "matrix2")] // get_m2
-      fn get_m2(value: &Value) -> Option<Ref<Matrix2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_m2(value: &LegacyValue) -> Option<Ref<Matrix2<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "matrix2"))]
-      fn get_m2(_value: &Value) -> Option<()> { None }
+      fn get_m2(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "matrix3")] // get_m3
-      fn get_m3(value: &Value) -> Option<Ref<Matrix3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_m3(value: &LegacyValue) -> Option<Ref<Matrix3<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "matrix3"))]
-      fn get_m3(_value: &Value) -> Option<()> { None }
+      fn get_m3(_value: &LegacyValue) -> Option<()> { None }
 
       #[cfg(feature = "matrix4")] // get_m4
-      fn get_m4(value: &Value) -> Option<Ref<Matrix4<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      fn get_m4(value: &LegacyValue) -> Option<Ref<Matrix4<$kind>>> { match value { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), LegacyValue::MutableReference(inner) => match &*inner.borrow() { LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
       #[cfg(not(feature = "matrix4"))]
-      fn get_m4(_value: &Value) -> Option<()> { None }
+      fn get_m4(_value: &LegacyValue) -> Option<()> { None }
 
-      fn get_s(value: &Value) -> Option<Ref<$kind>> {
+      fn get_s(value: &LegacyValue) -> Option<Ref<$kind>> {
         match value {
-          Value::[<$kind:camel>](v) => Some(v.clone()),
-          Value::Empty | Value::EmptyKind(_) => Some(Ref::new($kind::default())),
-          Value::Typed(inner, kind) => match (&**inner, kind) {
-            (Value::Empty, ValueKind::Option(option_kind))
+          LegacyValue::[<$kind:camel>](v) => Some(v.clone()),
+          LegacyValue::Empty | LegacyValue::EmptyKind(_) => Some(Ref::new($kind::default())),
+          LegacyValue::Typed(inner, kind) => match (&**inner, kind) {
+            (LegacyValue::Empty, ValueKind::Option(option_kind))
               if ValueKind::is_compatible((**option_kind).clone(), ValueKind::[<$kind:camel>]) =>
             {
               Some(Ref::new($kind::default()))
             }
             _ => None,
           },
-          Value::MutableReference(inner) => get_s(&inner.borrow()),
+          LegacyValue::MutableReference(inner) => get_s(&inner.borrow()),
           _ => None,
         }
       }
@@ -6354,17 +6355,17 @@ macro_rules! impl_horzcat_arms {
             let mut i = 0;
             for arg in arguments.iter() {
               match &arg {
-                Value::[<$kind:camel>](e0) => {
+                LegacyValue::[<$kind:camel>](e0) => {
                   scalar_args.push((e0.clone(),i));
                   i += 1;
                 }
-                Value::Empty | Value::EmptyKind(_) => {
+                LegacyValue::Empty | LegacyValue::EmptyKind(_) => {
                   scalar_args.push((Ref::new($kind::default()), i));
                   i += 1;
                 }
-                Value::Typed(inner, kind) => {
+                LegacyValue::Typed(inner, kind) => {
                   match (&**inner, kind) {
-                    (Value::Empty, ValueKind::Option(option_kind))
+                    (LegacyValue::Empty, ValueKind::Option(option_kind))
                       if ValueKind::is_compatible((**option_kind).clone(), ValueKind::[<$kind:camel>]) =>
                     {
                       scalar_args.push((Ref::new($kind::default()), i));
@@ -6373,17 +6374,17 @@ macro_rules! impl_horzcat_arms {
                     x => return Err(MechError::new(UnhandledFunctionArgumentKind1{arg: arg.kind(), fxn_name: "matrix/horzcat".to_string()}, None).with_compiler_loc()),
                   }
                 }
-                Value::[<Matrix $kind:camel>](e0) => {
+                LegacyValue::[<Matrix $kind:camel>](e0) => {
                   matrix_args.push((e0.get_copyable_matrix(),i));
                   i += e0.shape()[1];
                 }
-                Value::MutableReference(e0) => {
+                LegacyValue::MutableReference(e0) => {
                   match e0.borrow().clone() {
-                    Value::[<Matrix $kind:camel>](e0) => {
+                    LegacyValue::[<Matrix $kind:camel>](e0) => {
                       matrix_args.push((e0.get_copyable_matrix(),i));
                       i += e0.shape()[1];
                     }
-                    Value::[<$kind:camel>](e0) => {
+                    LegacyValue::[<$kind:camel>](e0) => {
                       scalar_args.push((e0.clone(),i));
                       i += 1;
                     }
@@ -6636,7 +6637,7 @@ macro_rules! impl_horzcat_arms {
         }
   }}}}
 
-pub(crate) fn impl_horzcat_fxn(arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+pub(crate) fn impl_horzcat_fxn(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
     // are they all the same?
     //let same = kinds.iter().all(|x| *x == target_kind);
     let kinds: Vec<ValueKind> = arguments
@@ -7245,7 +7246,7 @@ pub mod __mech_native {
 
 pub struct MatrixHorzCat {}
 impl FunctionSpecializer for MatrixHorzCat {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         impl_horzcat_fxn(arguments)
     }
 }

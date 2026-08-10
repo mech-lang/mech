@@ -6,7 +6,7 @@ use crate::{
     CapabilityId, HostCall, MechRuntime, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeCallContext, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
-use mech_core::{Ref, Value};
+use mech_core::{LegacyValue, Ref};
 
 use super::support::{PreviewLifecycleEffect, RecordingHostEffect};
 
@@ -18,13 +18,13 @@ fn staged_host_call_returns_value_before_effect_delivery() {
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                RuntimeValueSnapshot::try_capture(&Value::String(Ref::new(
+                RuntimeValueSnapshot::try_capture(&LegacyValue::String(Ref::new(
                     "provisional".to_string(),
                 )))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 Ok(RuntimePreparedHostCall {
-                    value: RuntimeValueSnapshot::try_capture(&Value::String(Ref::new(
+                    value: RuntimeValueSnapshot::try_capture(&LegacyValue::String(Ref::new(
                         "provisional".to_string(),
                     )))?,
                     effect: PreparedRuntimeEffect::AfterCommit(Box::new(RecordingHostEffect {
@@ -47,7 +47,7 @@ fn staged_host_call_returns_value_before_effect_delivery() {
 
     assert_eq!(
         value.to_value(),
-        Value::String(Ref::new("provisional".to_string())),
+        LegacyValue::String(Ref::new("provisional".to_string())),
     );
     assert!(log.lock().unwrap().is_empty());
 
@@ -64,11 +64,11 @@ fn staged_planning_does_not_create_effects() {
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged-lifecycle",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(1.0)))
+                RuntimeValueSnapshot::try_capture(&LegacyValue::F64(Ref::new(1.0)))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 Ok(RuntimePreparedHostCall {
-                    value: RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(1.0)))?,
+                    value: RuntimeValueSnapshot::try_capture(&LegacyValue::F64(Ref::new(1.0)))?,
                     effect: PreparedRuntimeEffect::Transactional(Box::new(
                         PreviewLifecycleEffect {
                             log: effect_log.clone(),

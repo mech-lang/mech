@@ -2,7 +2,7 @@ use super::super::{Plan, ReactiveNodeKind, ReactivePlan};
 use super::support::TestFunction;
 #[cfg(all(feature = "set", feature = "f64"))]
 use super::support::set_output;
-use crate::{ReactiveCellId, Ref, Value};
+use crate::{LegacyValue, ReactiveCellId, Ref};
 
 #[test]
 fn reactive_plan_push_creates_one_node() {
@@ -73,7 +73,7 @@ fn reactive_plan_records_output_cells() {
     let mut plan = ReactivePlan::new();
     plan.push(Box::new(TestFunction::with_output(
         "output",
-        Value::F64(output.clone()),
+        LegacyValue::F64(output.clone()),
     )));
 
     assert!(
@@ -120,7 +120,7 @@ fn register_records_outputs_and_kind() {
     let node_id = plan
         .register(
             Box::new(
-                TestFunction::with_output("register", Value::F64(output))
+                TestFunction::with_output("register", LegacyValue::F64(output))
                     .with_node_kind(ReactiveNodeKind::Register),
             ),
             &[],

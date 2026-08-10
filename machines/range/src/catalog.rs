@@ -1,6 +1,6 @@
 use mech_core::{
     FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, MechFunctionFactory,
-    RuntimeFunctionContract, RuntimeOutputAliasPolicy, Value, function_shape_contract_violation,
+    RuntimeFunctionContract, RuntimeOutputAliasPolicy, LegacyValue, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
@@ -99,32 +99,32 @@ enum RangeContractNumber {
     Float(f64),
 }
 
-fn range_numeric_value(value: &Value) -> Option<RangeContractNumber> {
+fn range_numeric_value(value: &LegacyValue) -> Option<RangeContractNumber> {
     match value {
         #[cfg(feature = "u8")]
-        Value::U8(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
+        LegacyValue::U8(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
         #[cfg(feature = "u16")]
-        Value::U16(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
+        LegacyValue::U16(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
         #[cfg(feature = "u32")]
-        Value::U32(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
+        LegacyValue::U32(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
         #[cfg(feature = "u64")]
-        Value::U64(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
+        LegacyValue::U64(value) => Some(RangeContractNumber::Unsigned(*value.borrow() as u128)),
         #[cfg(feature = "u128")]
-        Value::U128(value) => Some(RangeContractNumber::Unsigned(*value.borrow())),
+        LegacyValue::U128(value) => Some(RangeContractNumber::Unsigned(*value.borrow())),
         #[cfg(feature = "i8")]
-        Value::I8(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
+        LegacyValue::I8(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
         #[cfg(feature = "i16")]
-        Value::I16(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
+        LegacyValue::I16(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
         #[cfg(feature = "i32")]
-        Value::I32(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
+        LegacyValue::I32(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
         #[cfg(feature = "i64")]
-        Value::I64(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
+        LegacyValue::I64(value) => Some(RangeContractNumber::Signed(*value.borrow() as i128)),
         #[cfg(feature = "i128")]
-        Value::I128(value) => Some(RangeContractNumber::Signed(*value.borrow())),
+        LegacyValue::I128(value) => Some(RangeContractNumber::Signed(*value.borrow())),
         #[cfg(feature = "f32")]
-        Value::F32(value) => Some(RangeContractNumber::Float(*value.borrow() as f64)),
+        LegacyValue::F32(value) => Some(RangeContractNumber::Float(*value.borrow() as f64)),
         #[cfg(feature = "f64")]
-        Value::F64(value) => Some(RangeContractNumber::Float(*value.borrow())),
+        LegacyValue::F64(value) => Some(RangeContractNumber::Float(*value.borrow())),
         _ => None,
     }
 }
@@ -167,12 +167,12 @@ mod exact_range_contract_tests {
     use super::*;
     use mech_core::{Ref, matrix::Matrix};
 
-    fn u64_output(columns: usize) -> Value {
-        Value::MatrixU64(Matrix::from_vec(vec![0; columns], 1, columns))
+    fn u64_output(columns: usize) -> LegacyValue {
+        LegacyValue::MatrixU64(Matrix::from_vec(vec![0; columns], 1, columns))
     }
 
-    fn u128_output(columns: usize) -> Value {
-        Value::MatrixU128(Matrix::from_vec(vec![0; columns], 1, columns))
+    fn u128_output(columns: usize) -> LegacyValue {
+        LegacyValue::MatrixU128(Matrix::from_vec(vec![0; columns], 1, columns))
     }
 
     #[test]
@@ -180,15 +180,15 @@ mod exact_range_contract_tests {
         let from = 1_u64 << 60;
         validate_range_exclusive(&FunctionArgs::Binary(
             u64_output(2),
-            Value::U64(Ref::new(from)),
-            Value::U64(Ref::new(from + 2)),
+            LegacyValue::U64(Ref::new(from)),
+            LegacyValue::U64(Ref::new(from + 2)),
         ))
         .unwrap();
 
         validate_range_inclusive(&FunctionArgs::Binary(
             u128_output(2),
-            Value::U128(Ref::new(u128::MAX - 1)),
-            Value::U128(Ref::new(u128::MAX)),
+            LegacyValue::U128(Ref::new(u128::MAX - 1)),
+            LegacyValue::U128(Ref::new(u128::MAX)),
         ))
         .unwrap();
     }
@@ -198,24 +198,24 @@ mod exact_range_contract_tests {
         let from = 1_u64 << 60;
         validate_range_increment_exclusive(&FunctionArgs::Ternary(
             u64_output(2),
-            Value::U64(Ref::new(from)),
-            Value::U64(Ref::new(2)),
-            Value::U64(Ref::new(from + 4)),
+            LegacyValue::U64(Ref::new(from)),
+            LegacyValue::U64(Ref::new(2)),
+            LegacyValue::U64(Ref::new(from + 4)),
         ))
         .unwrap();
         validate_range_increment_inclusive(&FunctionArgs::Ternary(
             u64_output(3),
-            Value::U64(Ref::new(from)),
-            Value::U64(Ref::new(2)),
-            Value::U64(Ref::new(from + 4)),
+            LegacyValue::U64(Ref::new(from)),
+            LegacyValue::U64(Ref::new(2)),
+            LegacyValue::U64(Ref::new(from + 4)),
         ))
         .unwrap();
 
         let error = validate_range_increment_exclusive(&FunctionArgs::Ternary(
             u64_output(1),
-            Value::U64(Ref::new(from)),
-            Value::U64(Ref::new(2)),
-            Value::U64(Ref::new(from + 4)),
+            LegacyValue::U64(Ref::new(from)),
+            LegacyValue::U64(Ref::new(2)),
+            LegacyValue::U64(Ref::new(from + 4)),
         ))
         .unwrap_err();
         assert!(error.kind_message().contains("range requires 2"));

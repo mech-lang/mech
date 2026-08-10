@@ -5,7 +5,7 @@ use super::super::{
 #[cfg(feature = "set")]
 use super::support::set_output;
 use super::support::{TestFunction, scalar};
-use crate::{Ref, Value};
+use crate::{LegacyValue, Ref};
 
 #[cfg(feature = "f64")]
 #[test]
@@ -407,9 +407,9 @@ fn register_rejects_dependency_scope_arity_mismatch() {
 #[cfg(feature = "f64")]
 #[test]
 fn activation_registration_does_not_promote_preexisting_alias_cells() {
-    let trigger = Value::F64(Ref::new(0.0));
-    let sampled = Value::F64(Ref::new(1.0));
-    let local = Value::F64(Ref::new(2.0));
+    let trigger = LegacyValue::F64(Ref::new(0.0));
+    let sampled = LegacyValue::F64(Ref::new(1.0));
+    let local = LegacyValue::F64(Ref::new(2.0));
     let trigger_cell = trigger.reactive_root_cell_ids()[0];
     let sampled_cell = sampled.reactive_root_cell_ids()[0];
     let local_cell = local.reactive_root_cell_ids()[0];

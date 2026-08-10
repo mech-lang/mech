@@ -88,7 +88,7 @@ impl TableJoinFxn {
                 .collect();
         }
 
-        let mut out_rows: Vec<HashMap<u64, Value>> = vec![];
+        let mut out_rows: Vec<HashMap<u64, LegacyValue>> = vec![];
         let mut rhs_matched: Vec<bool> = vec![false; rhs.rows];
 
         for lhs_row in 1..=lhs.rows {
@@ -184,10 +184,10 @@ impl TableJoinFxn {
                                 .data
                                 .get(rhs_id)
                                 .map(|(_, col)| col.index1d(rhs_row))
-                                .unwrap_or(Value::Empty);
+                                .unwrap_or(LegacyValue::Empty);
                             row.insert(*lhs_id, value);
                         } else {
-                            row.insert(*lhs_id, Value::Empty);
+                            row.insert(*lhs_id, LegacyValue::Empty);
                         }
                     }
                     for (rhs_id, _) in rhs.data.iter() {
@@ -198,7 +198,7 @@ impl TableJoinFxn {
                             .data
                             .get(rhs_id)
                             .map(|(_, col)| col.index1d(rhs_row))
-                            .unwrap_or(Value::Empty);
+                            .unwrap_or(LegacyValue::Empty);
                         row.insert(*rhs_id, value);
                     }
                 }
@@ -207,13 +207,13 @@ impl TableJoinFxn {
             }
         }
 
-        let mut data: IndexMap<u64, (ValueKind, Matrix<Value>)> = IndexMap::new();
+        let mut data: IndexMap<u64, (ValueKind, Matrix<LegacyValue>)> = IndexMap::new();
         let mut col_names: HashMap<u64, String> = HashMap::new();
 
         for (col_id, kind, name) in &output_cols {
             let mut values = Vec::with_capacity(out_rows.len());
             for row in &out_rows {
-                values.push(row.get(col_id).cloned().unwrap_or(Value::Empty));
+                values.push(row.get(col_id).cloned().unwrap_or(LegacyValue::Empty));
             }
             data.insert(
                 *col_id,
@@ -285,14 +285,14 @@ impl MechFunctionImpl for TableJoinFxn {
         Ok(())
     }
 
-    fn out(&self) -> Value {
-        Value::Table(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Table(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -326,14 +326,14 @@ fn merge_rows(
     rhs_row: usize,
     common_rhs: &HashSet<u64>,
     rhs_empty: bool,
-) -> HashMap<u64, Value> {
+) -> HashMap<u64, LegacyValue> {
     let mut row = HashMap::new();
     for (lhs_id, _) in lhs.data.iter() {
         let value = lhs
             .data
             .get(lhs_id)
             .map(|(_, col)| col.index1d(lhs_row))
-            .unwrap_or(Value::Empty);
+            .unwrap_or(LegacyValue::Empty);
         row.insert(*lhs_id, value);
     }
     for (rhs_id, _) in rhs.data.iter() {
@@ -341,19 +341,19 @@ fn merge_rows(
             continue;
         }
         let value = if rhs_empty || rhs_row == 0 {
-            Value::Empty
+            LegacyValue::Empty
         } else {
             rhs.data
                 .get(rhs_id)
                 .map(|(_, col)| col.index1d(rhs_row))
-                .unwrap_or(Value::Empty)
+                .unwrap_or(LegacyValue::Empty)
         };
         row.insert(*rhs_id, value);
     }
     row
 }
 
-fn lhs_only_row(lhs: &MechTable, lhs_row: usize) -> HashMap<u64, Value> {
+fn lhs_only_row(lhs: &MechTable, lhs_row: usize) -> HashMap<u64, LegacyValue> {
     lhs.data
         .iter()
         .map(|(lhs_id, _)| {
@@ -361,13 +361,13 @@ fn lhs_only_row(lhs: &MechTable, lhs_row: usize) -> HashMap<u64, Value> {
                 .data
                 .get(lhs_id)
                 .map(|(_, col)| col.index1d(lhs_row))
-                .unwrap_or(Value::Empty);
+                .unwrap_or(LegacyValue::Empty);
             (*lhs_id, value)
         })
         .collect()
 }
 
-fn compile_table_join(arguments: &[Value], mode: JoinMode) -> MResult<Box<dyn MechFunction>> {
+fn compile_table_join(arguments: &[LegacyValue], mode: JoinMode) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
         return Err(MechError::new(
             IncorrectNumberOfArguments {
@@ -379,11 +379,11 @@ fn compile_table_join(arguments: &[Value], mode: JoinMode) -> MResult<Box<dyn Me
         .with_compiler_loc());
     }
 
-    let resolve = |v: &Value| -> Option<Ref<MechTable>> {
+    let resolve = |v: &LegacyValue| -> Option<Ref<MechTable>> {
         match v {
-            Value::Table(t) => Some(t.clone()),
-            Value::MutableReference(r) => match &*r.borrow() {
-                Value::Table(t) => Some(t.clone()),
+            LegacyValue::Table(t) => Some(t.clone()),
+            LegacyValue::MutableReference(r) => match &*r.borrow() {
+                LegacyValue::Table(t) => Some(t.clone()),
                 _ => None,
             },
             _ => None,
@@ -420,42 +420,42 @@ fn compile_table_join(arguments: &[Value], mode: JoinMode) -> MResult<Box<dyn Me
 
 pub struct TableInnerJoin {}
 impl FunctionSpecializer for TableInnerJoin {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::Inner)
     }
 }
 
 pub struct TableLeftOuterJoin {}
 impl FunctionSpecializer for TableLeftOuterJoin {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::LeftOuter)
     }
 }
 
 pub struct TableRightOuterJoin {}
 impl FunctionSpecializer for TableRightOuterJoin {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::RightOuter)
     }
 }
 
 pub struct TableFullOuterJoin {}
 impl FunctionSpecializer for TableFullOuterJoin {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::FullOuter)
     }
 }
 
 pub struct TableLeftSemiJoin {}
 impl FunctionSpecializer for TableLeftSemiJoin {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::LeftSemi)
     }
 }
 
 pub struct TableLeftAntiJoin {}
 impl FunctionSpecializer for TableLeftAntiJoin {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         compile_table_join(arguments, JoinMode::LeftAnti)
     }
 }

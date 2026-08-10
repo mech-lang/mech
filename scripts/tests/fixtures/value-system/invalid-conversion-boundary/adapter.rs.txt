@@ -1,0 +1,3 @@
+fn snapshot_from_legacy(value: &LegacyValue) -> MResult<snapshot::Value> {
+    convert_with_context(value)
+}

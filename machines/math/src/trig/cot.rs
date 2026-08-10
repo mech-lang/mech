@@ -49,7 +49,7 @@ impl_math_unop!(MathCot, f32, cotf);
 impl_math_unop!(MathCot, f64, cot);
 
 #[cfg(feature = "source")]
-fn impl_cot_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_cot_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathCot,
       (lhs_value),
@@ -63,7 +63,7 @@ pub struct MathCot {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathCot {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -78,7 +78,7 @@ impl FunctionSpecializer for MathCot {
         match impl_cot_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (input) {
-                (Value::MutableReference(input)) => impl_cot_fxn(input.borrow().clone()),
+                (LegacyValue::MutableReference(input)) => impl_cot_fxn(input.borrow().clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),

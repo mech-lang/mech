@@ -3,10 +3,10 @@ mod checkpoint_tests {
     use super::super::super::{
         BytecodeRegisterFile, Dictionary, ExtensionFunctionId, FunctionBinding,
         FunctionCatalogBuilder, FunctionDefine, FunctionDefinition, FunctionExport,
-        FunctionExposure, FunctionExtensionEntry, FunctionSpecializer, Interpreter, MResult,
-        MechFunction, MechSourceCode, ModuleManifestCatalog, OperationId, ProgramState,
-        ReactiveCellId, Ref, RuntimeContextBinding, ValRef, Value, ValueStateBorrowConflict,
-        hash_str, internal_pattern_value_identifier,
+        FunctionExposure, FunctionExtensionEntry, FunctionSpecializer, Interpreter, LegacyValue,
+        MResult, MechFunction, MechSourceCode, ModuleManifestCatalog, OperationId, ProgramState,
+        ReactiveCellId, Ref, RuntimeContextBinding, ValRef, ValueStateBorrowConflict, hash_str,
+        internal_pattern_value_identifier,
     };
     use std::collections::HashMap;
     use std::sync::Arc;
@@ -16,14 +16,14 @@ mod checkpoint_tests {
     #[cfg(feature = "state_machines")]
     use super::super::super::{FsmImplementation, FsmSpecification, Pattern};
 
-    fn f64_value(value: &Ref<f64>) -> Value {
-        Value::F64(value.clone())
+    fn f64_value(value: &Ref<f64>) -> LegacyValue {
+        LegacyValue::F64(value.clone())
     }
 
     struct CheckpointSpecializer(u8);
 
     impl FunctionSpecializer for CheckpointSpecializer {
-        fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             unreachable!("checkpoint store tests do not specialize marker {}", self.0)
         }
     }
@@ -42,9 +42,9 @@ mod checkpoint_tests {
         )
     }
 
-    fn index_payload(value: &Ref<Value>) -> usize {
+    fn index_payload(value: &Ref<LegacyValue>) -> usize {
         let value = value.borrow();
-        let Value::Index(index) = &*value else {
+        let LegacyValue::Index(index) = &*value else {
             panic!("expected retained index value, got {value:?}")
         };
         *index.borrow()
@@ -309,12 +309,12 @@ mod checkpoint_tests {
         let added_name = "user/added-after-checkpoint";
         let symbol_id = hash_str("retained");
         let mut definition = empty_user_function(function_name);
-        *definition.out.borrow_mut() = Value::Index(Ref::new(10));
-        let symbol =
-            definition
-                .symbols
-                .borrow_mut()
-                .insert(symbol_id, Value::Index(Ref::new(20)), true);
+        *definition.out.borrow_mut() = LegacyValue::Index(Ref::new(10));
+        let symbol = definition.symbols.borrow_mut().insert(
+            symbol_id,
+            LegacyValue::Index(Ref::new(20)),
+            true,
+        );
         let original_symbol_dictionary = definition.symbols.borrow().dictionary.clone();
         original_symbol_dictionary
             .borrow_mut()
@@ -335,8 +335,8 @@ mod checkpoint_tests {
 
         let checkpoint = interpreter.checkpoint().unwrap();
 
-        *original_out.borrow_mut() = Value::Index(Ref::new(99));
-        *symbol.borrow_mut() = Value::Index(Ref::new(98));
+        *original_out.borrow_mut() = LegacyValue::Index(Ref::new(99));
+        *symbol.borrow_mut() = LegacyValue::Index(Ref::new(98));
         {
             let mut symbols = original_symbols.borrow_mut();
             symbols.symbols.clear();
@@ -490,9 +490,9 @@ mod checkpoint_tests {
             );
         }
         #[cfg(feature = "invariant_define")]
-        let invariant_result = Ref::new(Value::Bool(Ref::new(true)));
+        let invariant_result = Ref::new(LegacyValue::Bool(Ref::new(true)));
         #[cfg(feature = "invariant_define")]
-        let invariant_rhs = Ref::new(Value::F64(Ref::new(2.0)));
+        let invariant_rhs = Ref::new(LegacyValue::F64(Ref::new(2.0)));
         #[cfg(feature = "invariant_define")]
         {
             let invariant_id = hash_str("checkpoint-invariant");
@@ -557,7 +557,7 @@ mod checkpoint_tests {
         root.bytecode_registers = BytecodeRegisterFile::new(0);
         root.constants.clear();
         root.code.push(MechSourceCode::String("after".to_string()));
-        root.out = Value::Empty;
+        root.out = LegacyValue::Empty;
         root.state = Ref::new(ProgramState::new());
         root.out_values = Ref::new(HashMap::new());
         root.inline_eval_counter = Ref::new(99);
@@ -581,10 +581,10 @@ mod checkpoint_tests {
         *grandchild_backing.borrow_mut() = 31.0;
         #[cfg(feature = "invariant_define")]
         {
-            if let Value::Bool(value) = &*invariant_result.borrow() {
+            if let LegacyValue::Bool(value) = &*invariant_result.borrow() {
                 *value.borrow_mut() = false;
             }
-            if let Value::F64(value) = &*invariant_rhs.borrow() {
+            if let LegacyValue::F64(value) = &*invariant_rhs.borrow() {
                 *value.borrow_mut() = 99.0;
             }
         }
@@ -690,12 +690,12 @@ mod checkpoint_tests {
                 constraint.rhs.as_ref().unwrap().addr(),
                 invariant_rhs.addr()
             );
-            if let Value::Bool(value) = &*constraint.result.borrow() {
+            if let LegacyValue::Bool(value) = &*constraint.result.borrow() {
                 assert!(*value.borrow());
             } else {
                 panic!("restored constraint result must remain bool");
             }
-            if let Value::F64(value) = &*constraint.rhs.as_ref().unwrap().borrow() {
+            if let LegacyValue::F64(value) = &*constraint.rhs.as_ref().unwrap().borrow() {
                 assert_eq!(*value.borrow(), 2.0);
             } else {
                 panic!("restored constraint rhs must remain f64");

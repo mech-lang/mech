@@ -4,9 +4,10 @@ use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::V
 use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    FunctionArgs, FunctionValueRepresentation, GuardFunctionSafety, MResult, MechError,
-    MechErrorKind, MechFunction, MechFunctionFactory, NativeValueFeature, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, Value, hash_str,
+    FunctionArgs, FunctionValueRepresentation, GuardFunctionSafety, LegacyValue, MResult,
+    MechError, MechErrorKind, MechFunction, MechFunctionFactory, NativeValueFeature,
+    OperationContractDeclaration, RuntimeFunctionContract, RuntimeFunctionSignature,
+    RuntimeOutputAliasPolicy, hash_str,
 };
 
 #[repr(transparent)]
@@ -93,7 +94,7 @@ impl NativeFunctionLinkage {
 }
 
 pub trait FunctionSpecializer: Send + Sync {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>>;
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>>;
 
     fn guard_safety(&self) -> GuardFunctionSafety {
         GuardFunctionSafety::Unsupported
@@ -107,6 +108,7 @@ pub struct RuntimeFunctionEntry {
     factory: RuntimeFunctionFactory,
     signature: RuntimeFunctionSignature,
     contract: RuntimeFunctionContract,
+    semantic_contract: Option<&'static OperationContractDeclaration>,
 
     #[cfg(feature = "native-plan")]
     pub native_linkage: Option<NativeFunctionLinkage>,
@@ -145,6 +147,10 @@ impl RuntimeFunctionEntry {
 
     pub fn output_alias_policy(&self) -> RuntimeOutputAliasPolicy {
         self.contract.output_alias
+    }
+
+    pub const fn semantic_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        self.semantic_contract
     }
 
     fn wrap_contract_error(&self, error: MechError) -> MechError {
@@ -229,6 +235,11 @@ impl FunctionCatalog {
 
     pub fn runtime_entry(&self, id: RuntimeFunctionId) -> Option<&RuntimeFunctionEntry> {
         self.runtime_factories.get(&id)
+    }
+
+    pub fn runtime_entry_by_raw(&self, raw: u64) -> Option<&RuntimeFunctionEntry> {
+        let function = RuntimeFunctionId::from_raw(raw);
+        self.runtime_entry(function)
     }
 
     pub fn runtime_entries(&self) -> impl ExactSizeIterator<Item = &RuntimeFunctionEntry> + '_ {
@@ -616,6 +627,30 @@ impl FunctionCatalogBuilder {
             factory: F::new,
             signature: F::SIGNATURE,
             contract,
+            semantic_contract: None,
+            #[cfg(feature = "native-plan")]
+            native_linkage: None,
+        })
+    }
+
+    pub fn insert_runtime_factory_with_semantic_contract<F>(
+        &mut self,
+        name: impl Into<String>,
+        contract: RuntimeFunctionContract,
+        semantic_contract: &'static OperationContractDeclaration,
+    ) -> MResult<()>
+    where
+        F: MechFunctionFactory,
+    {
+        let name = name.into();
+        let id = RuntimeFunctionId::from_name(&name);
+        self.insert_runtime_entry(RuntimeFunctionEntry {
+            id,
+            name,
+            factory: F::new,
+            signature: F::SIGNATURE,
+            contract,
+            semantic_contract: Some(semantic_contract),
             #[cfg(feature = "native-plan")]
             native_linkage: None,
         })
@@ -639,6 +674,31 @@ impl FunctionCatalogBuilder {
             factory: F::new,
             signature: F::SIGNATURE,
             contract,
+            semantic_contract: None,
+            native_linkage: Some(linkage),
+        })
+    }
+
+    #[cfg(feature = "native-plan")]
+    pub fn insert_runtime_factory_with_linkage_and_semantic_contract<F>(
+        &mut self,
+        name: impl Into<String>,
+        contract: RuntimeFunctionContract,
+        linkage: NativeFunctionLinkage,
+        semantic_contract: &'static OperationContractDeclaration,
+    ) -> MResult<()>
+    where
+        F: MechFunctionFactory,
+    {
+        let name = name.into();
+        let id = RuntimeFunctionId::from_name(&name);
+        self.insert_runtime_entry(RuntimeFunctionEntry {
+            id,
+            name,
+            factory: F::new,
+            signature: F::SIGNATURE,
+            contract,
+            semantic_contract: Some(semantic_contract),
             native_linkage: Some(linkage),
         })
     }
@@ -1335,7 +1395,7 @@ mod tests {
     struct TestSpecializer;
 
     impl FunctionSpecializer for TestSpecializer {
-        fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             unreachable!("catalog tests do not run specializers")
         }
     }
@@ -1396,6 +1456,7 @@ mod tests {
                 factory: TestFactory::new,
                 signature: TestFactory::SIGNATURE,
                 contract: test_runtime_contract(),
+                semantic_contract: None,
                 #[cfg(feature = "native-plan")]
                 native_linkage: None,
             })
@@ -1408,6 +1469,7 @@ mod tests {
                 factory: TestFactory::new,
                 signature: TestFactory::SIGNATURE,
                 contract: test_runtime_contract(),
+                semantic_contract: None,
                 #[cfg(feature = "native-plan")]
                 native_linkage: None,
             })
@@ -1467,7 +1529,7 @@ mod tests {
             .unwrap();
 
         let error = entry
-            .instantiate(FunctionArgs::Nullary(Value::Empty))
+            .instantiate(FunctionArgs::Nullary(LegacyValue::Empty))
             .err()
             .expect("rejecting factory must fail");
         assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
@@ -1969,6 +2031,11 @@ mod tests {
             catalog.runtime_entry(runtime_id).unwrap().name,
             "AddSS<f64>"
         );
+        assert!(std::ptr::eq(
+            catalog.runtime_entry_by_raw(runtime_id.raw()).unwrap(),
+            catalog.runtime_entry(runtime_id).unwrap(),
+        ));
+        assert!(catalog.runtime_entry_by_raw(u64::MAX).is_none());
         assert_eq!(
             catalog.specializer(operation).unwrap().canonical_name,
             "math/add"

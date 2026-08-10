@@ -66,14 +66,14 @@ macro_rules! impl_transpose {
                 $op!(arg_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -129,35 +129,35 @@ macro_rules! impl_transpose_match_arms {
         $(
           $(
             #[cfg(all(feature = "row_vector4", feature = "vector4", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::RowVector4(arg)) => Ok(Box::new(TransposeR4{arg: arg.clone(), out: Ref::new(Vector4::from_element($target_type::default())) })),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowVector4(arg)) => Ok(Box::new(TransposeR4{arg: arg.clone(), out: Ref::new(Vector4::from_element($target_type::default())) })),
             #[cfg(all(feature = "row_vector3", feature = "vector3", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::RowVector3(arg)) => Ok(Box::new(TransposeR3{arg: arg.clone(), out: Ref::new(Vector3::from_element($target_type::default())) })),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowVector3(arg)) => Ok(Box::new(TransposeR3{arg: arg.clone(), out: Ref::new(Vector3::from_element($target_type::default())) })),
             #[cfg(all(feature = "row_vector2", feature = "vector2", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::RowVector2(arg)) => Ok(Box::new(TransposeR2{arg: arg.clone(), out: Ref::new(Vector2::from_element($target_type::default())) })),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowVector2(arg)) => Ok(Box::new(TransposeR2{arg: arg.clone(), out: Ref::new(Vector2::from_element($target_type::default())) })),
             #[cfg(all(feature = "vector4", feature = "row_vector4", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::Vector4(arg))    => Ok(Box::new(TransposeV4{arg: arg.clone(), out: Ref::new(RowVector4::from_element($target_type::default())) })),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Vector4(arg))    => Ok(Box::new(TransposeV4{arg: arg.clone(), out: Ref::new(RowVector4::from_element($target_type::default())) })),
             #[cfg(all(feature = "vector3", feature = "row_vector3", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::Vector3(arg))    => Ok(Box::new(TransposeV3{arg: arg.clone(), out: Ref::new(RowVector3::from_element($target_type::default())) })),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Vector3(arg))    => Ok(Box::new(TransposeV3{arg: arg.clone(), out: Ref::new(RowVector3::from_element($target_type::default())) })),
             #[cfg(all(feature = "vector2", feature = "row_vector2", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::Vector2(arg))    => Ok(Box::new(TransposeV2{arg: arg.clone(), out: Ref::new(RowVector2::from_element($target_type::default())) })),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Vector2(arg))    => Ok(Box::new(TransposeV2{arg: arg.clone(), out: Ref::new(RowVector2::from_element($target_type::default())) })),
             #[cfg(all(feature = "matrix4", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix4(arg))    => Ok(Box::new(TransposeM4{arg: arg.clone(), out: Ref::new(Matrix4::from_element($target_type::default()))})),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix4(arg))    => Ok(Box::new(TransposeM4{arg: arg.clone(), out: Ref::new(Matrix4::from_element($target_type::default()))})),
             #[cfg(all(feature = "matrix3", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix3(arg))    => Ok(Box::new(TransposeM3{arg: arg.clone(), out: Ref::new(Matrix3::from_element($target_type::default()))})),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix3(arg))    => Ok(Box::new(TransposeM3{arg: arg.clone(), out: Ref::new(Matrix3::from_element($target_type::default()))})),
             #[cfg(all(feature = "matrix2", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix2(arg))    => Ok(Box::new(TransposeM2{arg: arg.clone(), out: Ref::new(Matrix2::from_element($target_type::default()))})),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix2(arg))    => Ok(Box::new(TransposeM2{arg: arg.clone(), out: Ref::new(Matrix2::from_element($target_type::default()))})),
             #[cfg(all(feature = "matrix1", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix1(arg))    => Ok(Box::new(TransposeM1{arg: arg.clone(), out: Ref::new(Matrix1::from_element($target_type::default()))})),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix1(arg))    => Ok(Box::new(TransposeM1{arg: arg.clone(), out: Ref::new(Matrix1::from_element($target_type::default()))})),
             #[cfg(all(feature = "matrix2x3", feature = "matrix3x2", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix2x3(arg))  => Ok(Box::new(TransposeM2x3{arg: arg.clone(), out: Ref::new(Matrix3x2::from_element($target_type::default()))})),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix2x3(arg))  => Ok(Box::new(TransposeM2x3{arg: arg.clone(), out: Ref::new(Matrix3x2::from_element($target_type::default()))})),
             #[cfg(all(feature = "matrix3x2", feature = "matrix2x3", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix3x2(arg))  => Ok(Box::new(TransposeM3x2{arg: arg.clone(), out: Ref::new(Matrix2x3::from_element($target_type::default()))})),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::Matrix3x2(arg))  => Ok(Box::new(TransposeM3x2{arg: arg.clone(), out: Ref::new(Matrix2x3::from_element($target_type::default()))})),
             #[cfg(all(feature = "vectord", feature = "row_vectord", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::DVector(arg))    => Ok(Box::new(TransposeVD{arg: arg.clone(), out: Ref::new(RowDVector::from_element(arg.borrow().len(),$target_type::default())) })),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::DVector(arg))    => Ok(Box::new(TransposeVD{arg: arg.clone(), out: Ref::new(RowDVector::from_element(arg.borrow().len(),$target_type::default())) })),
             #[cfg(all(feature = "vectord", feature = "row_vectord", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(TransposeRD{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().len(),$target_type::default())) })),
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(TransposeRD{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().len(),$target_type::default())) })),
             #[cfg(all(feature = "matrixd", feature = $value_string))]
-            Value::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) => {
+            LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) => {
               let (rows,cols) = {arg.borrow().shape()};
               Ok(Box::new(TransposeMD{arg, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
             },
@@ -174,7 +174,7 @@ macro_rules! impl_transpose_match_arms {
 }
 
 #[cfg(feature = "source")]
-fn impl_transpose_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_transpose_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_transpose_match_arms!(
       (lhs_value),
       Bool,   bool,   "bool";

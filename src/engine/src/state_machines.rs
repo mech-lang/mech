@@ -60,7 +60,7 @@ pub fn execute_fsm_pipe(
     fsm_pipe: &FsmPipe,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let fsm_id = fsm_pipe.start.name.hash();
     let fsm = {
         let fsms = p.user_state_machines.borrow();
@@ -130,10 +130,10 @@ pub fn execute_fsm_pipe(
 
 fn execute_fsm_pipe_impl(
     fsm: &FsmImplementation,
-    state: &mut Value,
+    state: &mut LegacyValue,
     call_env: &mut Environment,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     trace_println!(
         p,
         "{}",
@@ -255,7 +255,7 @@ fn execute_fsm_pipe_impl(
                             _ => {
                                 let cond = pattern_to_value(&guard.condition, &arm_env, p)?;
                                 match cond {
-                                    Value::Bool(x) => *x.borrow(),
+                                    LegacyValue::Bool(x) => *x.borrow(),
                                     other => {
                                         return Err(MechError::new(
                                             FsmGuardConditionKindMismatchError {
@@ -450,10 +450,10 @@ fn state_name_from_pattern(pattern: &Pattern) -> Option<String> {
 
 fn apply_transitions(
     transitions: &[Transition],
-    state: &mut Value,
+    state: &mut LegacyValue,
     env: &mut Environment,
     p: &InterpreterExecution<'_>,
-) -> MResult<Option<Value>> {
+) -> MResult<Option<LegacyValue>> {
     for transition in transitions {
         match transition {
             Transition::Next(next_pattern) | Transition::Async(next_pattern) => {

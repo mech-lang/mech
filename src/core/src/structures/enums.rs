@@ -5,7 +5,7 @@ use crate::*;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechEnum {
     pub id: u64,
-    pub variants: Vec<(u64, Option<Value>)>,
+    pub variants: Vec<(u64, Option<LegacyValue>)>,
     pub names: Ref<Dictionary>,
 }
 
@@ -60,7 +60,7 @@ impl MechEnum {
                     .unwrap_or(variant_name)
                     .to_string();
                 if let Some(value) = payload {
-                    if !matches!(value, Value::Kind(_)) {
+                    if !matches!(value, LegacyValue::Kind(_)) {
                         return ValueKind::Enum(
                             self.id,
                             format!("{}({})", short_variant_name, enum_payload_kind(value)),
@@ -123,9 +123,9 @@ impl MechErrorKind for UnknownEnumVariantError {
     }
 }
 
-fn enum_payload_kind(value: &Value) -> String {
+fn enum_payload_kind(value: &LegacyValue) -> String {
     match value {
-        Value::Enum(enum_value) => {
+        LegacyValue::Enum(enum_value) => {
             let enum_brrw = enum_value.borrow();
             if enum_brrw.variants.len() == 1 {
                 let (variant_id, payload) = &enum_brrw.variants[0];

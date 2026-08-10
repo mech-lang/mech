@@ -36,7 +36,7 @@ pub use self::interface::*;
 use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
 #[cfg(feature = "runtime")]
-use mech_core::{MResult, MechError, MechErrorKind, Value};
+use mech_core::{LegacyValue, MResult, MechError, MechErrorKind};
 
 #[cfg(feature = "runtime")]
 use crate::capability::{CapabilityRequest, Operation, Resource};
@@ -805,12 +805,12 @@ impl HostCallPolicy for DefaultHostCallPolicy {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HostCall {
     pub name: String,
-    pub args: Vec<Value>,
+    pub args: Vec<LegacyValue>,
 }
 
 #[cfg(feature = "runtime")]
 impl HostCall {
-    pub fn new(name: impl Into<String>, args: Vec<Value>) -> Self {
+    pub fn new(name: impl Into<String>, args: Vec<LegacyValue>) -> Self {
         Self {
             name: name.into(),
             args,
@@ -1054,14 +1054,14 @@ mod tests {
     fn empty_function(
         name: &'static str,
     ) -> DeterministicHostFunction<
-        impl Fn(&RuntimeCallContext, &[RuntimeValueSnapshot]) -> MResult<Value>,
-        impl Fn(&RuntimeCallContext, &[RuntimeValueSnapshot]) -> MResult<Value>,
-        Value,
+        impl Fn(&RuntimeCallContext, &[RuntimeValueSnapshot]) -> MResult<LegacyValue>,
+        impl Fn(&RuntimeCallContext, &[RuntimeValueSnapshot]) -> MResult<LegacyValue>,
+        LegacyValue,
     > {
         DeterministicHostFunction::new(
             name,
-            |_context, _arguments| Ok(Value::Empty),
-            |_context, _arguments| Ok(Value::Empty),
+            |_context, _arguments| Ok(LegacyValue::Empty),
+            |_context, _arguments| Ok(LegacyValue::Empty),
         )
     }
 
@@ -1126,10 +1126,10 @@ mod tests {
         let invocation_counter = invocations.clone();
         let function = DeterministicHostFunction::new(
             "host.counted",
-            |_context, _arguments| Ok(Value::Empty),
+            |_context, _arguments| Ok(LegacyValue::Empty),
             move |_context, _arguments| {
                 invocation_counter.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::Empty)
+                Ok(LegacyValue::Empty)
             },
         );
         let context = RuntimeContext::new(RuntimeId(1), "task:1");

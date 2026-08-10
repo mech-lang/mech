@@ -10,7 +10,7 @@ use mech_core::set::MechSet;
 
 #[derive(Debug)]
 pub(crate) struct SetNotElementOfFxn {
-    elem: Value,
+    elem: LegacyValue,
     set: Ref<MechSet>,
     out: Ref<bool>,
 }
@@ -58,14 +58,14 @@ impl MechFunctionImpl for SetNotElementOfFxn {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Bool(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Bool(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -87,9 +87,9 @@ impl MechFunctionCompiler for SetNotElementOfFxn {
 }
 
 #[cfg(feature = "source")]
-fn set_not_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFunction>> {
+fn set_not_element_of_fxn(elem: LegacyValue, set: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (elem, set) {
-        (elem, Value::Set(set)) => Ok(Box::new(SetNotElementOfFxn {
+        (elem, LegacyValue::Set(set)) => Ok(Box::new(SetNotElementOfFxn {
             elem: normalize_set_element(elem),
             set: set.clone(),
             out: Ref::new(false),
@@ -109,7 +109,7 @@ fn set_not_element_of_fxn(elem: Value, set: Value) -> MResult<Box<dyn MechFuncti
 pub struct SetNotElementOf {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for SetNotElementOf {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -125,13 +125,13 @@ impl FunctionSpecializer for SetNotElementOf {
         match set_not_element_of_fxn(elem.clone(), set.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (elem, set) {
-                (Value::MutableReference(elem), Value::MutableReference(set)) => {
+                (LegacyValue::MutableReference(elem), LegacyValue::MutableReference(set)) => {
                     set_not_element_of_fxn(elem.borrow().clone(), set.borrow().clone())
                 }
-                (elem, Value::MutableReference(set)) => {
+                (elem, LegacyValue::MutableReference(set)) => {
                     set_not_element_of_fxn(elem.clone(), set.borrow().clone())
                 }
-                (Value::MutableReference(elem), set) => {
+                (LegacyValue::MutableReference(elem), set) => {
                     set_not_element_of_fxn(elem.borrow().clone(), set.clone())
                 }
                 x => Err(MechError::new(

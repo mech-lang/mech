@@ -7,11 +7,11 @@ use crate::{
     PlannedRuntimeManagedHostFunction, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeCallContext, RuntimeHealth, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
-use mech_core::{Ref, Value};
+use mech_core::{LegacyValue, Ref};
 
 use super::support::RecordingHostEffect;
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
+fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -23,11 +23,13 @@ fn failed_later_operation_discards_only_its_staged_host_effect() {
         .host_function(PlannedStagedHostFunction::new(
             "demo/staged",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::String(Ref::new("provisional".to_string()))))
+                Ok(snapshot(LegacyValue::String(Ref::new(
+                    "provisional".to_string(),
+                ))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 Ok(RuntimePreparedHostCall {
-                    value: snapshot(Value::String(Ref::new("provisional".to_string()))),
+                    value: snapshot(LegacyValue::String(Ref::new("provisional".to_string()))),
                     effect: PreparedRuntimeEffect::AfterCommit(Box::new(RecordingHostEffect {
                         log: effect_log.clone(),
                         entry: "delivered".to_string(),
@@ -63,7 +65,7 @@ fn pure_host_panic_rolls_back_and_restores_program_and_guard() {
     let mut runtime = test_runtime_builder()
         .host_function(PlannedPureHostFunction::new(
             "sealed/pure-panic",
-            |_context, _arguments| Ok(snapshot(Value::F64(Ref::new(1.0)))),
+            |_context, _arguments| Ok(snapshot(LegacyValue::F64(Ref::new(1.0)))),
             |_context, _arguments| {
                 panic!("deliberate pure host panic");
             },
@@ -91,7 +93,7 @@ fn runtime_managed_host_panic_is_an_ordinary_rollback_failure() {
     let mut runtime = MechRuntime::builder()
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "sealed/managed-panic",
-            |_context, _arguments| Ok(snapshot(Value::F64(Ref::new(1.0)))),
+            |_context, _arguments| Ok(snapshot(LegacyValue::F64(Ref::new(1.0)))),
             |_services, _context, _arguments| {
                 panic!("deliberate runtime-managed host panic");
             },
@@ -116,7 +118,7 @@ fn staged_host_prepare_panic_stages_no_effect() {
     let mut runtime = MechRuntime::builder()
         .host_function(PlannedStagedHostFunction::new(
             "sealed/staged-panic",
-            |_context, _arguments| Ok(snapshot(Value::F64(Ref::new(1.0)))),
+            |_context, _arguments| Ok(snapshot(LegacyValue::F64(Ref::new(1.0)))),
             |_context, _arguments| {
                 panic!("deliberate staged host prepare panic");
             },

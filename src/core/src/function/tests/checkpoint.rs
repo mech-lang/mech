@@ -10,7 +10,7 @@ use super::support::TestFunction;
 use super::support::reg;
 #[cfg(feature = "compiler")]
 use crate::{BytecodeCompilerContext, Register};
-use crate::{MResult, ReactiveCellId, Ref, ToValue, Value};
+use crate::{LegacyValue, MResult, ReactiveCellId, Ref, ToValue};
 
 struct RetainedZstFunction;
 
@@ -18,14 +18,14 @@ impl MechFunctionImpl for RetainedZstFunction {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Empty
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Empty
     }
     fn to_string(&self) -> String {
         "retained-zst".into()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -39,8 +39,8 @@ impl MechFunctionCompiler for RetainedZstFunction {
 
 #[test]
 fn reactive_plan_rollback_truncates_nodes_and_rebuilds_consumers() {
-    let reactive_input = Value::Index(Ref::new(1));
-    let sampled_input = Value::Index(Ref::new(2));
+    let reactive_input = LegacyValue::Index(Ref::new(1));
+    let sampled_input = LegacyValue::Index(Ref::new(2));
     let reactive_cell = reactive_input.reactive_root_cell_ids()[0];
     let sampled_cell = sampled_input.reactive_root_cell_ids()[0];
     let mut plan = ReactivePlan::new();
@@ -84,7 +84,7 @@ fn reactive_plan_rollback_truncates_nodes_and_rebuilds_consumers() {
 
 #[test]
 fn plan_rollback_restores_full_structure_and_rebuilds_consumers() {
-    let input = Value::Index(Ref::new(1));
+    let input = LegacyValue::Index(Ref::new(1));
     let original_cell = input.reactive_root_cell_ids()[0];
     let replacement_cell = ReactiveCellId::new(99);
     let sampled_cell = ReactiveCellId::new(100);

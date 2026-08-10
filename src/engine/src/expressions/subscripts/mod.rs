@@ -1,6 +1,6 @@
 use super::variables::{addressed_identifier_hash, addressed_identifier_name};
 use super::{Environment, InvalidIndexKindError, factor, range};
-use crate::{InterpreterExecution, MResult, MechError, Slice, Subscript, ToValue, Value};
+use crate::{InterpreterExecution, LegacyValue, MResult, MechError, Slice, Subscript, ToValue};
 #[cfg(all(feature = "subscript", feature = "access"))]
 use crate::{MechFunction, OperationId};
 
@@ -17,7 +17,7 @@ mod string;
 fn catalog_access_function(
     p: &InterpreterExecution<'_>,
     canonical_name: &str,
-    arguments: &[Value],
+    arguments: &[LegacyValue],
 ) -> MResult<Box<dyn MechFunction>> {
     p.specialize_visible_operation_named(
         OperationId::from_name(canonical_name),
@@ -43,10 +43,10 @@ pub fn slice(
     slc: &Slice,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let id = addressed_identifier_hash(&slc.name, &slc.context);
     let name = addressed_identifier_name(&slc.name, &slc.context);
-    let val: Value = if let Some(env) = env {
+    let val: LegacyValue = if let Some(env) = env {
         if let Some(val) = env.get(&id) {
             val.clone()
         } else {
@@ -56,7 +56,7 @@ pub fn slice(
                 let symbols_brrw = symbols.borrow();
                 match symbols_brrw.get(id) {
                     Some(val) => match symbols_brrw.get_mutable(id) {
-                        Some(_) => Value::MutableReference(val.clone()),
+                        Some(_) => LegacyValue::MutableReference(val.clone()),
                         None => val.borrow().clone(),
                     },
                     None => {
@@ -78,7 +78,7 @@ pub fn slice(
         let symbols_brrw = symbols.borrow();
         match symbols_brrw.get(id) {
             Some(val) => match symbols_brrw.get_mutable(id) {
-                Some(_) => Value::MutableReference(val.clone()),
+                Some(_) => LegacyValue::MutableReference(val.clone()),
                 None => val.borrow().clone(),
             },
             None => {
@@ -106,7 +106,7 @@ pub fn subscript_formula(
     sbscrpt: &Subscript,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     match sbscrpt {
         Subscript::Formula(fctr) => factor(fctr, env, p),
         _ => unreachable!(),
@@ -118,7 +118,7 @@ pub fn subscript_formula_ix(
     sbscrpt: &Subscript,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     match sbscrpt {
         Subscript::Formula(fctr) => {
             let result = factor(fctr, env, p)?;
@@ -133,7 +133,7 @@ pub fn subscript_range(
     sbscrpt: &Subscript,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     match sbscrpt {
         Subscript::Range(rng) => {
             let result = range(rng, env, p)?;
@@ -156,10 +156,10 @@ pub fn subscript_range(
 #[cfg(all(feature = "subscript", feature = "access"))]
 pub fn subscript(
     sbscrpt: &Subscript,
-    val: &Value,
+    val: &LegacyValue,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let plan = p.plan();
     match sbscrpt {
         #[cfg(feature = "table")]

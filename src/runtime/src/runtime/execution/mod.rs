@@ -47,7 +47,7 @@ use crate::{
 #[cfg(all(test, feature = "compiler"))]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 #[cfg(test)]
-use mech_core::{MResult, MechFunctionImpl, MechSourceCode, Value, hash_str};
+use mech_core::{LegacyValue, MResult, MechFunctionImpl, MechSourceCode, hash_str};
 
 #[cfg(test)]
 mod tests;

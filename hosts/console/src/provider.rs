@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::{MResult, Value};
+use mech_core::{LegacyValue, MResult, OperationContractDeclaration};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
@@ -86,6 +86,14 @@ impl<B: ConsoleBackend + 'static> RuntimeResourceProvider for ConsoleResourcePro
         bases
     }
 
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Send)
+            .then(mech_runtime::provider_defined_effect_contract)
+    }
+
     fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
         if self.instance != "console" {
             return Vec::new();
@@ -94,7 +102,7 @@ impl<B: ConsoleBackend + 'static> RuntimeResourceProvider for ConsoleResourcePro
         vec![vec![self.base(), "console://output".to_string()]]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         Err(console_error(
             request.base_uri,
             "console output is send-only and cannot be read",
@@ -175,9 +183,9 @@ impl<B: ConsoleBackend> RuntimeAfterCommitEffect for ConsoleOutputEffect<B> {
     }
 }
 
-fn value_to_text(value: &Value) -> String {
+fn value_to_text(value: &LegacyValue) -> String {
     match value {
-        Value::String(value) => value.borrow().clone(),
+        LegacyValue::String(value) => value.borrow().clone(),
         other => format!("{}", other),
     }
 }

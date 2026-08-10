@@ -78,13 +78,13 @@ fn validate_assign_index(
         )
     };
     match input {
-        Value::Index(index) => {
+        LegacyValue::Index(index) => {
             let index = *index.borrow();
             if index == 0 || index > bound {
                 return Err(invalid(index));
             }
         }
-        Value::MatrixIndex(indices) => {
+        LegacyValue::MatrixIndex(indices) => {
             for index in indices.as_vec() {
                 if index == 0 || index > bound {
                     return Err(invalid(index));
@@ -2214,12 +2214,12 @@ mod tests {
     use super::*;
     use mech_core::{Ref, matrix::Matrix};
 
-    fn output() -> Value {
-        Value::MatrixU8(Matrix::from_vec(vec![0; 6], 2, 3))
+    fn output() -> LegacyValue {
+        LegacyValue::MatrixU8(Matrix::from_vec(vec![0; 6], 2, 3))
     }
 
-    fn source() -> Value {
-        Value::U8(Ref::new(7))
+    fn source() -> LegacyValue {
+        LegacyValue::U8(Ref::new(7))
     }
 
     #[test]
@@ -2228,7 +2228,7 @@ mod tests {
             validate_assign_linear_index(&FunctionArgs::Binary(
                 output(),
                 source(),
-                Value::Index(Ref::new(index)),
+                LegacyValue::Index(Ref::new(index)),
             ))
             .unwrap();
         }
@@ -2236,7 +2236,7 @@ mod tests {
             let error = validate_assign_linear_index(&FunctionArgs::Binary(
                 output(),
                 source(),
-                Value::Index(Ref::new(index)),
+                LegacyValue::Index(Ref::new(index)),
             ))
             .unwrap_err();
             assert!(error.kind_message().contains("expected 1..=6"));
@@ -2248,16 +2248,16 @@ mod tests {
         validate_assign_row_and_column_indices(&FunctionArgs::Ternary(
             output(),
             source(),
-            Value::MatrixIndex(Matrix::from_vec(vec![1, 2], 1, 2)),
-            Value::Index(Ref::new(3)),
+            LegacyValue::MatrixIndex(Matrix::from_vec(vec![1, 2], 1, 2)),
+            LegacyValue::Index(Ref::new(3)),
         ))
         .unwrap();
 
         let row_error = validate_assign_row_and_column_indices(&FunctionArgs::Ternary(
             output(),
             source(),
-            Value::MatrixIndex(Matrix::from_vec(vec![3], 1, 1)),
-            Value::Index(Ref::new(1)),
+            LegacyValue::MatrixIndex(Matrix::from_vec(vec![3], 1, 1)),
+            LegacyValue::Index(Ref::new(1)),
         ))
         .unwrap_err();
         assert!(row_error.kind_message().contains("row index 3"));
@@ -2265,8 +2265,8 @@ mod tests {
         let column_error = validate_assign_row_and_column_indices(&FunctionArgs::Ternary(
             output(),
             source(),
-            Value::Index(Ref::new(1)),
-            Value::Index(Ref::new(4)),
+            LegacyValue::Index(Ref::new(1)),
+            LegacyValue::Index(Ref::new(4)),
         ))
         .unwrap_err();
         assert!(column_error.kind_message().contains("column index 4"));

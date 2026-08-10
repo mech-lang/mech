@@ -1,5 +1,51 @@
 #[macro_use]
 use crate::*;
+use std::sync::LazyLock;
+
+static PURE_BINARY_FULL_WRITE_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_binary_full_write(ChangeDetectionPolicy::ExactScalar));
+static PURE_BINARY_FULL_WRITE_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_binary_full_write(ChangeDetectionPolicy::KernelReported));
+
+fn pure_binary_full_write(
+    change_detection: ChangeDetectionPolicy,
+) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+fn arithmetic_full_write_contract(
+    output: FunctionValueRepresentation,
+) -> &'static OperationContractDeclaration {
+    match output {
+        FunctionValueRepresentation::Matrix { .. } => &PURE_BINARY_FULL_WRITE_KERNEL_REPORTED,
+        _ => &PURE_BINARY_FULL_WRITE_EXACT_SCALAR,
+    }
+}
 
 /// Arithmetic used by retained native functions must have identical debug and
 /// release behavior. Integers therefore use checked operations while the
@@ -167,7 +213,7 @@ impl_checked_matrix_neg!(feature = "matrixd", DMatrix);
 /// macro computes into staged storage and may use `?`; output replacement only
 /// occurs after every element succeeds.
 macro_rules! impl_checked_arithmetic_binop {
-    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
         pub struct $struct_name<T> {
             pub lhs: Ref<$arg1_type>,
@@ -257,6 +303,7 @@ macro_rules! impl_checked_arithmetic_binop {
                 + One
                 + RuntimeCheckedArithmetic,
             Ref<$out_type>: ToValue,
+            $out_type: FunctionRuntimeType,
         {
             fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
@@ -266,15 +313,23 @@ macro_rules! impl_checked_arithmetic_binop {
                 Ok(())
             }
 
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
+            }
+
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                let contract: Option<&'static OperationContractDeclaration> = None;
+                $(let contract = Some($semantic_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ));)?
+                contract
             }
 
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }

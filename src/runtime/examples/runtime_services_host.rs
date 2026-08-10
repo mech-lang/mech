@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::sync::Arc;
 
-use mech_core::{MResult, Ref, Value};
+use mech_core::{LegacyValue, MResult, Ref};
 
 use mech_runtime::{
     ActorTurn, BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
@@ -120,7 +120,7 @@ fn main() -> MResult<()> {
         &mut context,
         HostCall::new(
             "actor/state/put",
-            vec![Value::String(Ref::new("count=1".to_string()))],
+            vec![LegacyValue::String(Ref::new("count=1".to_string()))],
         ),
     )?;
 

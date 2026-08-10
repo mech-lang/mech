@@ -32,32 +32,32 @@ macro_rules! impl_as_type {
           pub fn [<as_ $target_type>](&self) -> MResult<Ref<$target_type>> {
             match self {
               #[cfg(feature = "u8")]
-              Value::U8(v) => Ok(Ref::new(*v.borrow() as $target_type)),
+              LegacyValue::U8(v) => Ok(Ref::new(*v.borrow() as $target_type)),
               #[cfg(feature = "u16")]
-              Value::U16(v) => Ok(Ref::new(*v.borrow() as $target_type)),
+              LegacyValue::U16(v) => Ok(Ref::new(*v.borrow() as $target_type)),
               #[cfg(feature = "u32")]
-              Value::U32(v) => Ok(Ref::new(*v.borrow() as $target_type)),
+              LegacyValue::U32(v) => Ok(Ref::new(*v.borrow() as $target_type)),
               #[cfg(feature = "u64")]
-              Value::U64(v) => Ok(Ref::new(*v.borrow() as $target_type)),
+              LegacyValue::U64(v) => Ok(Ref::new(*v.borrow() as $target_type)),
               #[cfg(feature = "u128")]
-              Value::U128(v) => Ok(Ref::new(*v.borrow() as $target_type)),
+              LegacyValue::U128(v) => Ok(Ref::new(*v.borrow() as $target_type)),
               #[cfg(feature = "i8")]
-              Value::I8(v) => Ok(Ref::new(*v.borrow() as $target_type)),
+              LegacyValue::I8(v) => Ok(Ref::new(*v.borrow() as $target_type)),
               #[cfg(feature = "i16")]
-              Value::I16(v) => Ok(Ref::new(*v.borrow() as $target_type)),
+              LegacyValue::I16(v) => Ok(Ref::new(*v.borrow() as $target_type)),
               #[cfg(feature = "i32")]
-              Value::I32(v) => Ok(Ref::new(*v.borrow() as $target_type)),
+              LegacyValue::I32(v) => Ok(Ref::new(*v.borrow() as $target_type)),
               #[cfg(feature = "i64")]
-              Value::I64(v) => Ok(Ref::new(*v.borrow() as $target_type)),
+              LegacyValue::I64(v) => Ok(Ref::new(*v.borrow() as $target_type)),
               #[cfg(feature = "i128")]
-              Value::I128(v) => Ok(Ref::new(*v.borrow() as $target_type)),
+              LegacyValue::I128(v) => Ok(Ref::new(*v.borrow() as $target_type)),
               #[cfg(feature = "f32")]
-              Value::F32(v) => Ok(Ref::new((*v.borrow()) as $target_type)),
+              LegacyValue::F32(v) => Ok(Ref::new((*v.borrow()) as $target_type)),
               #[cfg(feature = "f64")]
-              Value::F64(v) => Ok(Ref::new((*v.borrow()) as $target_type)),
-              Value::Id(v) => Ok(Ref::new(*v as $target_type)),
-              Value::Typed(value, _) => value.[<as_ $target_type>](),
-              Value::MutableReference(val) => val.borrow().[<as_ $target_type>](),
+              LegacyValue::F64(v) => Ok(Ref::new((*v.borrow()) as $target_type)),
+              LegacyValue::Id(v) => Ok(Ref::new(*v as $target_type)),
+              LegacyValue::Typed(value, _) => value.[<as_ $target_type>](),
+              LegacyValue::MutableReference(val) => val.borrow().[<as_ $target_type>](),
               _ => Err(
                 MechError::new(
                   CannotConvertToTypeError { target_type: stringify!($target_type) },
@@ -217,135 +217,134 @@ impl ValueKind {
     }
 
     pub fn is_convertible_to(&self, other: &ValueKind) -> bool {
-        use ValueKind::*;
         match (self, other) {
             // Unsigned widening
-            (U8, U16)
-            | (U8, U32)
-            | (U8, U64)
-            | (U8, U128)
-            | (U16, U32)
-            | (U16, U64)
-            | (U16, U128)
-            | (U32, U64)
-            | (U32, U128)
-            | (U64, U128) => true,
+            (ValueKind::U8, ValueKind::U16)
+            | (ValueKind::U8, ValueKind::U32)
+            | (ValueKind::U8, ValueKind::U64)
+            | (ValueKind::U8, ValueKind::U128)
+            | (ValueKind::U16, ValueKind::U32)
+            | (ValueKind::U16, ValueKind::U64)
+            | (ValueKind::U16, ValueKind::U128)
+            | (ValueKind::U32, ValueKind::U64)
+            | (ValueKind::U32, ValueKind::U128)
+            | (ValueKind::U64, ValueKind::U128) => true,
 
             // Signed widening
-            (I8, I16)
-            | (I8, I32)
-            | (I8, I64)
-            | (I8, I128)
-            | (I16, I32)
-            | (I16, I64)
-            | (I16, I128)
-            | (I32, I64)
-            | (I32, I128)
-            | (I64, I128) => true,
+            (ValueKind::I8, ValueKind::I16)
+            | (ValueKind::I8, ValueKind::I32)
+            | (ValueKind::I8, ValueKind::I64)
+            | (ValueKind::I8, ValueKind::I128)
+            | (ValueKind::I16, ValueKind::I32)
+            | (ValueKind::I16, ValueKind::I64)
+            | (ValueKind::I16, ValueKind::I128)
+            | (ValueKind::I32, ValueKind::I64)
+            | (ValueKind::I32, ValueKind::I128)
+            | (ValueKind::I64, ValueKind::I128) => true,
 
             // Unsigned -> signed widening
-            (U8, I16)
-            | (U8, I32)
-            | (U8, I64)
-            | (U8, I128)
-            | (U16, I32)
-            | (U16, I64)
-            | (U16, I128)
-            | (U32, I64)
-            | (U32, I128)
-            | (U64, I128) => true,
+            (ValueKind::U8, ValueKind::I16)
+            | (ValueKind::U8, ValueKind::I32)
+            | (ValueKind::U8, ValueKind::I64)
+            | (ValueKind::U8, ValueKind::I128)
+            | (ValueKind::U16, ValueKind::I32)
+            | (ValueKind::U16, ValueKind::I64)
+            | (ValueKind::U16, ValueKind::I128)
+            | (ValueKind::U32, ValueKind::I64)
+            | (ValueKind::U32, ValueKind::I128)
+            | (ValueKind::U64, ValueKind::I128) => true,
 
             // Signed -> unsigned widening (runtime safety not enforced here)
-            (I8, U16)
-            | (I8, U32)
-            | (I8, U64)
-            | (I8, U128)
-            | (I16, U32)
-            | (I16, U64)
-            | (I16, U128)
-            | (I32, U64)
-            | (I32, U128)
-            | (I64, U128) => true,
+            (ValueKind::I8, ValueKind::U16)
+            | (ValueKind::I8, ValueKind::U32)
+            | (ValueKind::I8, ValueKind::U64)
+            | (ValueKind::I8, ValueKind::U128)
+            | (ValueKind::I16, ValueKind::U32)
+            | (ValueKind::I16, ValueKind::U64)
+            | (ValueKind::I16, ValueKind::U128)
+            | (ValueKind::I32, ValueKind::U64)
+            | (ValueKind::I32, ValueKind::U128)
+            | (ValueKind::I64, ValueKind::U128) => true,
 
             // Integer -> float
-            (U8, F32)
-            | (U8, F64)
-            | (U16, F32)
-            | (U16, F64)
-            | (U32, F32)
-            | (U32, F64)
-            | (U64, F32)
-            | (U64, F64)
-            | (U128, F32)
-            | (U128, F64)
-            | (I8, F32)
-            | (I8, F64)
-            | (I16, F32)
-            | (I16, F64)
-            | (I32, F32)
-            | (I32, F64)
-            | (I64, F32)
-            | (I64, F64)
-            | (I128, F32)
-            | (I128, F64) => true,
+            (ValueKind::U8, ValueKind::F32)
+            | (ValueKind::U8, ValueKind::F64)
+            | (ValueKind::U16, ValueKind::F32)
+            | (ValueKind::U16, ValueKind::F64)
+            | (ValueKind::U32, ValueKind::F32)
+            | (ValueKind::U32, ValueKind::F64)
+            | (ValueKind::U64, ValueKind::F32)
+            | (ValueKind::U64, ValueKind::F64)
+            | (ValueKind::U128, ValueKind::F32)
+            | (ValueKind::U128, ValueKind::F64)
+            | (ValueKind::I8, ValueKind::F32)
+            | (ValueKind::I8, ValueKind::F64)
+            | (ValueKind::I16, ValueKind::F32)
+            | (ValueKind::I16, ValueKind::F64)
+            | (ValueKind::I32, ValueKind::F32)
+            | (ValueKind::I32, ValueKind::F64)
+            | (ValueKind::I64, ValueKind::F32)
+            | (ValueKind::I64, ValueKind::F64)
+            | (ValueKind::I128, ValueKind::F32)
+            | (ValueKind::I128, ValueKind::F64) => true,
 
             // Float widening + narrowing
-            (F32, F64) | (F64, F32) => true,
+            (ValueKind::F32, ValueKind::F64) | (ValueKind::F64, ValueKind::F32) => true,
 
             // Float -> integer (allowed, but lossy)
-            (F32, I8)
-            | (F32, I16)
-            | (F32, I32)
-            | (F32, I64)
-            | (F32, I128)
-            | (F32, U8)
-            | (F32, U16)
-            | (F32, U32)
-            | (F32, U64)
-            | (F32, U128)
-            | (F64, I8)
-            | (F64, I16)
-            | (F64, I32)
-            | (F64, I64)
-            | (F64, I128)
-            | (F64, U8)
-            | (F64, U16)
-            | (F64, U32)
-            | (F64, U64)
-            | (F64, U128) => true,
+            (ValueKind::F32, ValueKind::I8)
+            | (ValueKind::F32, ValueKind::I16)
+            | (ValueKind::F32, ValueKind::I32)
+            | (ValueKind::F32, ValueKind::I64)
+            | (ValueKind::F32, ValueKind::I128)
+            | (ValueKind::F32, ValueKind::U8)
+            | (ValueKind::F32, ValueKind::U16)
+            | (ValueKind::F32, ValueKind::U32)
+            | (ValueKind::F32, ValueKind::U64)
+            | (ValueKind::F32, ValueKind::U128)
+            | (ValueKind::F64, ValueKind::I8)
+            | (ValueKind::F64, ValueKind::I16)
+            | (ValueKind::F64, ValueKind::I32)
+            | (ValueKind::F64, ValueKind::I64)
+            | (ValueKind::F64, ValueKind::I128)
+            | (ValueKind::F64, ValueKind::U8)
+            | (ValueKind::F64, ValueKind::U16)
+            | (ValueKind::F64, ValueKind::U32)
+            | (ValueKind::F64, ValueKind::U64)
+            | (ValueKind::F64, ValueKind::U128) => true,
 
             // Index conversions (both ways)
-            (Index, U8)
-            | (Index, U16)
-            | (Index, U32)
-            | (Index, U64)
-            | (Index, U128)
-            | (Index, I8)
-            | (Index, I16)
-            | (Index, I32)
-            | (Index, I64)
-            | (Index, I128)
-            | (Index, F32)
-            | (Index, F64)
-            | (U8, Index)
-            | (U16, Index)
-            | (U32, Index)
-            | (U64, Index)
-            | (U128, Index)
-            | (I8, Index)
-            | (I16, Index)
-            | (I32, Index)
-            | (I64, Index)
-            | (I128, Index) => true,
+            (ValueKind::Index, ValueKind::U8)
+            | (ValueKind::Index, ValueKind::U16)
+            | (ValueKind::Index, ValueKind::U32)
+            | (ValueKind::Index, ValueKind::U64)
+            | (ValueKind::Index, ValueKind::U128)
+            | (ValueKind::Index, ValueKind::I8)
+            | (ValueKind::Index, ValueKind::I16)
+            | (ValueKind::Index, ValueKind::I32)
+            | (ValueKind::Index, ValueKind::I64)
+            | (ValueKind::Index, ValueKind::I128)
+            | (ValueKind::Index, ValueKind::F32)
+            | (ValueKind::Index, ValueKind::F64)
+            | (ValueKind::U8, ValueKind::Index)
+            | (ValueKind::U16, ValueKind::Index)
+            | (ValueKind::U32, ValueKind::Index)
+            | (ValueKind::U64, ValueKind::Index)
+            | (ValueKind::U128, ValueKind::Index)
+            | (ValueKind::I8, ValueKind::Index)
+            | (ValueKind::I16, ValueKind::Index)
+            | (ValueKind::I32, ValueKind::Index)
+            | (ValueKind::I64, ValueKind::Index)
+            | (ValueKind::I128, ValueKind::Index) => true,
 
             // Matrix: element type convertible and shape matches.
             // An empty target shape (`[]`) is treated as a wildcard shape.
-            (Matrix(a, _ashape), Matrix(b, bshape))
+            (ValueKind::Matrix(a, _ashape), ValueKind::Matrix(b, bshape))
                 if bshape.is_empty() && a.as_ref().is_convertible_to(b.as_ref()) =>
             {
                 true
             }
-            (Matrix(a, ashape), Matrix(b, bshape))
+            (ValueKind::Matrix(a, ashape), ValueKind::Matrix(b, bshape))
                 if ashape.into_iter().product::<usize>()
                     == bshape.into_iter().product::<usize>()
                     && a.as_ref().is_convertible_to(b.as_ref()) =>
@@ -354,15 +353,23 @@ impl ValueKind {
             }
 
             // Option conversions
-            (x, Option(b)) if x.is_convertible_to(b.as_ref()) => true,
-            (Empty, Option(_)) => true,
-            (Option(a), Option(b)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
+            (x, ValueKind::Option(b)) if x.is_convertible_to(b.as_ref()) => true,
+            (ValueKind::Empty, ValueKind::Option(_)) => true,
+            (ValueKind::Option(a), ValueKind::Option(b))
+                if a.as_ref().is_convertible_to(b.as_ref()) =>
+            {
+                true
+            }
 
             // Reference conversions
-            (Reference(a), Reference(b)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
+            (ValueKind::Reference(a), ValueKind::Reference(b))
+                if a.as_ref().is_convertible_to(b.as_ref()) =>
+            {
+                true
+            }
 
             // Tuple conversions (element-wise)
-            (Tuple(a), Tuple(b))
+            (ValueKind::Tuple(a), ValueKind::Tuple(b))
                 if a.len() == b.len()
                     && a.iter().zip(b.iter()).all(|(x, y)| x.is_convertible_to(y)) =>
             {
@@ -370,10 +377,14 @@ impl ValueKind {
             }
 
             // Set conversions
-            (Set(a, _), Set(b, _)) if a.as_ref().is_convertible_to(b.as_ref()) => true,
+            (ValueKind::Set(a, _), ValueKind::Set(b, _))
+                if a.as_ref().is_convertible_to(b.as_ref()) =>
+            {
+                true
+            }
 
             // Map conversions
-            (Map(ak, av), Map(bk, bv))
+            (ValueKind::Map(ak, av), ValueKind::Map(bk, bv))
                 if ak.as_ref().is_convertible_to(bk.as_ref())
                     && av.as_ref().is_convertible_to(bv.as_ref()) =>
             {
@@ -381,7 +392,7 @@ impl ValueKind {
             }
 
             // Table conversions: allow source to have extra columns
-            (Table(acols, _), Table(bcols, _))
+            (ValueKind::Table(acols, _), ValueKind::Table(bcols, _))
                 if bcols.iter().all(|(bk, bv)| {
                     acols
                         .iter()
@@ -392,7 +403,7 @@ impl ValueKind {
             }
 
             // Record conversions: allow source to have extra fields
-            (Record(afields), Record(bfields))
+            (ValueKind::Record(afields), ValueKind::Record(bfields))
                 if bfields.iter().all(|(bk, bv)| {
                     afields
                         .iter()
@@ -611,7 +622,7 @@ impl_as_value_kind_for_matrix!(Matrix3x2<T>, vec![3, 2]);
 #[cfg(feature = "matrixd")]
 impl_as_value_kind_for_matrix!(DMatrix<T>, vec![0, 0]);
 
-impl AsValueKind for Value {
+impl AsValueKind for LegacyValue {
     fn as_value_kind() -> ValueKind {
         ValueKind::Any
     }
@@ -621,7 +632,7 @@ impl AsValueKind for Value {
 // ----------------------------------------------------------------------------
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Value {
+pub enum LegacyValue {
     #[cfg(feature = "u8")]
     U8(Ref<u8>),
     #[cfg(feature = "u16")]
@@ -687,7 +698,7 @@ pub enum Value {
     #[cfg(all(feature = "matrix", feature = "complex"))]
     MatrixC64(Matrix<C64>),
     #[cfg(feature = "matrix")]
-    MatrixValue(Matrix<Value>),
+    MatrixValue(Matrix<LegacyValue>),
     #[cfg(feature = "complex")]
     C64(Ref<C64>),
     #[cfg(feature = "rational")]
@@ -707,14 +718,14 @@ pub enum Value {
     Id(u64),
     Index(Ref<usize>),
     MutableReference(MutableReference),
-    Typed(Box<Value>, ValueKind),
+    Typed(Box<LegacyValue>, ValueKind),
     Kind(ValueKind),
     IndexAll,
     EmptyKind(ValueKind),
     Empty,
 }
 
-impl Eq for Value {}
+impl Eq for LegacyValue {}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 /// A process-local identity used by the reactive scheduler.
@@ -734,7 +745,7 @@ impl ReactiveCellId {
     }
 }
 
-impl fmt::Display for Value {
+impl fmt::Display for LegacyValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if cfg!(feature = "pretty_print") {
             #[cfg(feature = "pretty_print")]
@@ -746,81 +757,81 @@ impl fmt::Display for Value {
     }
 }
 
-impl Hash for Value {
+impl Hash for LegacyValue {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
             #[cfg(feature = "rational")]
-            Value::R64(x) => x.borrow().hash(state),
+            LegacyValue::R64(x) => x.borrow().hash(state),
             #[cfg(feature = "u8")]
-            Value::U8(x) => x.borrow().hash(state),
+            LegacyValue::U8(x) => x.borrow().hash(state),
             #[cfg(feature = "u16")]
-            Value::U16(x) => x.borrow().hash(state),
+            LegacyValue::U16(x) => x.borrow().hash(state),
             #[cfg(feature = "u32")]
-            Value::U32(x) => x.borrow().hash(state),
+            LegacyValue::U32(x) => x.borrow().hash(state),
             #[cfg(feature = "u64")]
-            Value::U64(x) => x.borrow().hash(state),
+            LegacyValue::U64(x) => x.borrow().hash(state),
             #[cfg(feature = "u128")]
-            Value::U128(x) => x.borrow().hash(state),
+            LegacyValue::U128(x) => x.borrow().hash(state),
             #[cfg(feature = "i8")]
-            Value::I8(x) => x.borrow().hash(state),
+            LegacyValue::I8(x) => x.borrow().hash(state),
             #[cfg(feature = "i16")]
-            Value::I16(x) => x.borrow().hash(state),
+            LegacyValue::I16(x) => x.borrow().hash(state),
             #[cfg(feature = "i32")]
-            Value::I32(x) => x.borrow().hash(state),
+            LegacyValue::I32(x) => x.borrow().hash(state),
             #[cfg(feature = "i64")]
-            Value::I64(x) => x.borrow().hash(state),
+            LegacyValue::I64(x) => x.borrow().hash(state),
             #[cfg(feature = "i128")]
-            Value::I128(x) => x.borrow().hash(state),
+            LegacyValue::I128(x) => x.borrow().hash(state),
             #[cfg(feature = "f32")]
-            Value::F32(x) => x.borrow().to_bits().hash(state),
+            LegacyValue::F32(x) => x.borrow().to_bits().hash(state),
             #[cfg(feature = "f64")]
-            Value::F64(x) => x.borrow().to_bits().hash(state),
+            LegacyValue::F64(x) => x.borrow().to_bits().hash(state),
             #[cfg(feature = "complex")]
-            Value::C64(x) => x.borrow().hash(state),
+            LegacyValue::C64(x) => x.borrow().hash(state),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(x) => x.borrow().hash(state),
+            LegacyValue::Bool(x) => x.borrow().hash(state),
             #[cfg(feature = "atom")]
-            Value::Atom(x) => x.borrow().hash(state),
+            LegacyValue::Atom(x) => x.borrow().hash(state),
             #[cfg(feature = "set")]
-            Value::Set(x) => x.borrow().hash(state),
+            LegacyValue::Set(x) => x.borrow().hash(state),
             #[cfg(feature = "map")]
-            Value::Map(x) => x.borrow().hash(state),
+            LegacyValue::Map(x) => x.borrow().hash(state),
             #[cfg(feature = "table")]
-            Value::Table(x) => x.borrow().hash(state),
+            LegacyValue::Table(x) => x.borrow().hash(state),
             #[cfg(feature = "tuple")]
-            Value::Tuple(x) => x.borrow().hash(state),
+            LegacyValue::Tuple(x) => x.borrow().hash(state),
             #[cfg(feature = "record")]
-            Value::Record(x) => x.borrow().hash(state),
+            LegacyValue::Record(x) => x.borrow().hash(state),
             #[cfg(feature = "enum")]
-            Value::Enum(x) => x.borrow().hash(state),
+            LegacyValue::Enum(x) => x.borrow().hash(state),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(x) => x.borrow().hash(state),
+            LegacyValue::String(x) => x.borrow().hash(state),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(x) => x.hash(state),
+            LegacyValue::MatrixBool(x) => x.hash(state),
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(x) => x.hash(state),
+            LegacyValue::MatrixIndex(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(x) => x.hash(state),
+            LegacyValue::MatrixU8(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(x) => x.hash(state),
+            LegacyValue::MatrixU16(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(x) => x.hash(state),
+            LegacyValue::MatrixU32(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(x) => x.hash(state),
+            LegacyValue::MatrixU64(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(x) => x.hash(state),
+            LegacyValue::MatrixU128(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(x) => x.hash(state),
+            LegacyValue::MatrixI8(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(x) => x.hash(state),
+            LegacyValue::MatrixI16(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(x) => x.hash(state),
+            LegacyValue::MatrixI32(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(x) => x.hash(state),
+            LegacyValue::MatrixI64(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(x) => x.hash(state),
+            LegacyValue::MatrixI128(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(x) => {
+            LegacyValue::MatrixF32(x) => {
                 core::mem::discriminant(x).hash(state);
                 x.shape().hash(state);
                 for value in x.as_vec() {
@@ -828,7 +839,7 @@ impl Hash for Value {
                 }
             }
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(x) => {
+            LegacyValue::MatrixF64(x) => {
                 core::mem::discriminant(x).hash(state);
                 x.shape().hash(state);
                 for value in x.as_vec() {
@@ -836,119 +847,119 @@ impl Hash for Value {
                 }
             }
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(x) => x.hash(state),
+            LegacyValue::MatrixString(x) => x.hash(state),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(x) => x.hash(state),
+            LegacyValue::MatrixValue(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(x) => x.hash(state),
+            LegacyValue::MatrixR64(x) => x.hash(state),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(x) => x.hash(state),
-            Value::Id(x) => x.hash(state),
-            Value::Kind(x) => x.hash(state),
-            Value::Typed(v, k) => {
+            LegacyValue::MatrixC64(x) => x.hash(state),
+            LegacyValue::Id(x) => x.hash(state),
+            LegacyValue::Kind(x) => x.hash(state),
+            LegacyValue::Typed(v, k) => {
                 v.hash(state);
                 k.hash(state);
             }
-            Value::Index(x) => x.borrow().hash(state),
-            Value::MutableReference(x) => x.borrow().hash(state),
-            Value::EmptyKind(k) => k.hash(state),
-            Value::Empty | Value::IndexAll => core::mem::discriminant(self).hash(state),
+            LegacyValue::Index(x) => x.borrow().hash(state),
+            LegacyValue::MutableReference(x) => x.borrow().hash(state),
+            LegacyValue::EmptyKind(k) => k.hash(state),
+            LegacyValue::Empty | LegacyValue::IndexAll => core::mem::discriminant(self).hash(state),
         }
     }
 }
-impl Value {
+impl LegacyValue {
     pub fn reactive_root_cell_ids(&self) -> Vec<ReactiveCellId> {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::U8(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "u16")]
-            Value::U16(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::U16(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "u32")]
-            Value::U32(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::U32(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "u64")]
-            Value::U64(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::U64(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "u128")]
-            Value::U128(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::U128(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "i8")]
-            Value::I8(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::I8(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "i16")]
-            Value::I16(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::I16(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "i32")]
-            Value::I32(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::I32(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "i64")]
-            Value::I64(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::I64(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "i128")]
-            Value::I128(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::I128(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "f32")]
-            Value::F32(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::F32(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "f64")]
-            Value::F64(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::F64(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::String(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::Bool(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "complex")]
-            Value::C64(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::C64(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "rational")]
-            Value::R64(v) => vec![ReactiveCellId::new(v.id())],
-            Value::Index(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::R64(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::Index(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "atom")]
-            Value::Atom(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::Atom(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "enum")]
-            Value::Enum(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::Enum(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "set")]
-            Value::Set(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::Set(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "map")]
-            Value::Map(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::Map(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "record")]
-            Value::Record(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::Record(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "table")]
-            Value::Table(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::Table(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "tuple")]
-            Value::Tuple(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::Tuple(v) => vec![ReactiveCellId::new(v.id())],
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixIndex(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixBool(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixU8(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixU16(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixU32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixU64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixU128(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixI8(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixI16(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixI32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixI64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixI128(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixF32(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixF64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixString(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixR64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MatrixC64(v) => vec![ReactiveCellId::new(v.addr() as u64)],
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(v) => vec![ReactiveCellId::new(v.addr() as u64)],
-            Value::MutableReference(v) => vec![ReactiveCellId::new(v.id())],
-            Value::Typed(value, _) => value.reactive_root_cell_ids(),
-            Value::Id(_)
-            | Value::Kind(_)
-            | Value::IndexAll
-            | Value::EmptyKind(_)
-            | Value::Empty => Vec::new(),
+            LegacyValue::MatrixValue(v) => vec![ReactiveCellId::new(v.addr() as u64)],
+            LegacyValue::MutableReference(v) => vec![ReactiveCellId::new(v.id())],
+            LegacyValue::Typed(value, _) => value.reactive_root_cell_ids(),
+            LegacyValue::Id(_)
+            | LegacyValue::Kind(_)
+            | LegacyValue::IndexAll
+            | LegacyValue::EmptyKind(_)
+            | LegacyValue::Empty => Vec::new(),
         }
     }
 
@@ -969,12 +980,12 @@ impl Value {
     /// storage does not become an extra reactive input.
     pub fn logical_reactive_cell_ids(&self) -> Vec<ReactiveCellId> {
         fn collect(
-            value: &Value,
+            value: &LegacyValue,
             ids: &mut Vec<ReactiveCellId>,
             seen_references: &mut HashSet<ReactiveCellId>,
         ) {
             match value {
-                Value::MutableReference(reference) => {
+                LegacyValue::MutableReference(reference) => {
                     let cell = ReactiveCellId::new(reference.id());
                     if !seen_references.insert(cell) {
                         if !ids.contains(&cell) {
@@ -984,7 +995,7 @@ impl Value {
                     }
                     collect(&reference.borrow(), ids, seen_references);
                 }
-                Value::Typed(value, _) => collect(value, ids, seen_references),
+                LegacyValue::Typed(value, _) => collect(value, ids, seen_references),
                 _ => {
                     for cell in value.reactive_cell_ids() {
                         if !ids.contains(&cell) {
@@ -1023,78 +1034,78 @@ impl Value {
     ) {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(v) => {
+            LegacyValue::U8(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "u16")]
-            Value::U16(v) => {
+            LegacyValue::U16(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "u32")]
-            Value::U32(v) => {
+            LegacyValue::U32(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "u64")]
-            Value::U64(v) => {
+            LegacyValue::U64(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "u128")]
-            Value::U128(v) => {
+            LegacyValue::U128(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "i8")]
-            Value::I8(v) => {
+            LegacyValue::I8(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "i16")]
-            Value::I16(v) => {
+            LegacyValue::I16(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "i32")]
-            Value::I32(v) => {
+            LegacyValue::I32(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "i64")]
-            Value::I64(v) => {
+            LegacyValue::I64(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "i128")]
-            Value::I128(v) => {
+            LegacyValue::I128(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "f32")]
-            Value::F32(v) => {
+            LegacyValue::F32(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "f64")]
-            Value::F64(v) => {
+            LegacyValue::F64(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(v) => {
+            LegacyValue::String(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(v) => {
+            LegacyValue::Bool(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "complex")]
-            Value::C64(v) => {
+            LegacyValue::C64(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "rational")]
-            Value::R64(v) => {
+            LegacyValue::R64(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
-            Value::Index(v) => {
+            LegacyValue::Index(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "atom")]
-            Value::Atom(v) => {
+            LegacyValue::Atom(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.id());
             }
             #[cfg(feature = "enum")]
-            Value::Enum(v) => {
+            LegacyValue::Enum(v) => {
                 if Self::push_reactive_cell_id(ids, seen, v.id()) {
                     let enum_brrw = v.borrow();
                     for (_, payload) in &enum_brrw.variants {
@@ -1105,7 +1116,7 @@ impl Value {
                 }
             }
             #[cfg(feature = "set")]
-            Value::Set(v) => {
+            LegacyValue::Set(v) => {
                 if Self::push_reactive_cell_id(ids, seen, v.id()) {
                     let set_brrw = v.borrow();
                     for value in &set_brrw.set {
@@ -1114,7 +1125,7 @@ impl Value {
                 }
             }
             #[cfg(feature = "map")]
-            Value::Map(v) => {
+            LegacyValue::Map(v) => {
                 if Self::push_reactive_cell_id(ids, seen, v.id()) {
                     let map_brrw = v.borrow();
                     for (key, value) in &map_brrw.map {
@@ -1124,7 +1135,7 @@ impl Value {
                 }
             }
             #[cfg(feature = "record")]
-            Value::Record(v) => {
+            LegacyValue::Record(v) => {
                 if Self::push_reactive_cell_id(ids, seen, v.id()) {
                     let record_brrw = v.borrow();
                     for value in record_brrw.data.values() {
@@ -1133,7 +1144,7 @@ impl Value {
                 }
             }
             #[cfg(feature = "table")]
-            Value::Table(v) => {
+            LegacyValue::Table(v) => {
                 if Self::push_reactive_cell_id(ids, seen, v.id()) {
                     let table_brrw = v.borrow();
                     for (_, column) in table_brrw.data.values() {
@@ -1146,7 +1157,7 @@ impl Value {
                 }
             }
             #[cfg(feature = "tuple")]
-            Value::Tuple(v) => {
+            LegacyValue::Tuple(v) => {
                 if Self::push_reactive_cell_id(ids, seen, v.id()) {
                     let tuple_brrw = v.borrow();
                     for value in &tuple_brrw.elements {
@@ -1155,92 +1166,92 @@ impl Value {
                 }
             }
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(v) => {
+            LegacyValue::MatrixIndex(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(v) => {
+            LegacyValue::MatrixBool(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(v) => {
+            LegacyValue::MatrixU8(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(v) => {
+            LegacyValue::MatrixU16(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(v) => {
+            LegacyValue::MatrixU32(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(v) => {
+            LegacyValue::MatrixU64(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(v) => {
+            LegacyValue::MatrixU128(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(v) => {
+            LegacyValue::MatrixI8(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(v) => {
+            LegacyValue::MatrixI16(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(v) => {
+            LegacyValue::MatrixI32(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(v) => {
+            LegacyValue::MatrixI64(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(v) => {
+            LegacyValue::MatrixI128(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(v) => {
+            LegacyValue::MatrixF32(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(v) => {
+            LegacyValue::MatrixF64(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(v) => {
+            LegacyValue::MatrixString(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(v) => {
+            LegacyValue::MatrixR64(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(v) => {
+            LegacyValue::MatrixC64(v) => {
                 Self::push_reactive_cell_id(ids, seen, v.addr() as u64);
             }
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(v) => {
+            LegacyValue::MatrixValue(v) => {
                 if Self::push_reactive_cell_id(ids, seen, v.addr() as u64) {
                     for value in v.as_vec().iter() {
                         value.collect_reactive_cell_ids(ids, seen);
                     }
                 }
             }
-            Value::MutableReference(v) => {
+            LegacyValue::MutableReference(v) => {
                 if Self::push_reactive_cell_id(ids, seen, v.id()) {
                     v.borrow().collect_reactive_cell_ids(ids, seen);
                 }
             }
-            Value::Typed(value, _) => value.collect_reactive_cell_ids(ids, seen),
-            Value::Id(_)
-            | Value::Kind(_)
-            | Value::IndexAll
-            | Value::EmptyKind(_)
-            | Value::Empty => {}
+            LegacyValue::Typed(value, _) => value.collect_reactive_cell_ids(ids, seen),
+            LegacyValue::Id(_)
+            | LegacyValue::Kind(_)
+            | LegacyValue::IndexAll
+            | LegacyValue::EmptyKind(_)
+            | LegacyValue::Empty => {}
         }
     }
 }
@@ -1249,7 +1260,7 @@ pub fn val_ref_reactive_cell_ids(value: &ValRef) -> Vec<ReactiveCellId> {
     let mut ids = Vec::new();
     let mut seen = HashSet::default();
 
-    Value::push_reactive_cell_id(&mut ids, &mut seen, value.id());
+    LegacyValue::push_reactive_cell_id(&mut ids, &mut seen, value.id());
 
     value
         .borrow()
@@ -1257,7 +1268,7 @@ pub fn val_ref_reactive_cell_ids(value: &ValRef) -> Vec<ReactiveCellId> {
 
     ids
 }
-impl Value {
+impl LegacyValue {
     /// Creates a detached copy of an acyclic value graph.
     ///
     /// Every reachable reference-backed cell is detached. Repeated source handles
@@ -1266,18 +1277,18 @@ impl Value {
     ///
     /// Cyclic graphs return `ValueSnapshotCycleUnsupported` before the detached
     /// clone phase begins.
-    pub fn try_deep_snapshot(&self) -> MResult<Value> {
+    pub fn try_deep_snapshot(&self) -> MResult<LegacyValue> {
         crate::value_snapshot::try_deep_snapshot(self)
     }
 
     #[cfg(feature = "matrix")]
-    fn infer_matrix_value_kind(matrix: &Matrix<Value>) -> ValueKind {
+    fn infer_matrix_value_kind(matrix: &Matrix<LegacyValue>) -> ValueKind {
         let mut base_kind: Option<ValueKind> = None;
         let mut saw_empty = false;
 
         for value in matrix.as_vec().iter() {
             match value {
-                Value::Empty | Value::EmptyKind(_) => {
+                LegacyValue::Empty | LegacyValue::EmptyKind(_) => {
                     saw_empty = true;
                 }
                 _ => {
@@ -1312,135 +1323,135 @@ impl Value {
     pub(crate) fn exact_ref_any(&self) -> Option<&dyn Any> {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(r) => Some(r),
+            LegacyValue::U8(r) => Some(r),
             #[cfg(feature = "u16")]
-            Value::U16(r) => Some(r),
+            LegacyValue::U16(r) => Some(r),
             #[cfg(feature = "u32")]
-            Value::U32(r) => Some(r),
+            LegacyValue::U32(r) => Some(r),
             #[cfg(feature = "u64")]
-            Value::U64(r) => Some(r),
+            LegacyValue::U64(r) => Some(r),
             #[cfg(feature = "u128")]
-            Value::U128(r) => Some(r),
+            LegacyValue::U128(r) => Some(r),
             #[cfg(feature = "i8")]
-            Value::I8(r) => Some(r),
+            LegacyValue::I8(r) => Some(r),
             #[cfg(feature = "i16")]
-            Value::I16(r) => Some(r),
+            LegacyValue::I16(r) => Some(r),
             #[cfg(feature = "i32")]
-            Value::I32(r) => Some(r),
+            LegacyValue::I32(r) => Some(r),
             #[cfg(feature = "i64")]
-            Value::I64(r) => Some(r),
+            LegacyValue::I64(r) => Some(r),
             #[cfg(feature = "i128")]
-            Value::I128(r) => Some(r),
+            LegacyValue::I128(r) => Some(r),
             #[cfg(feature = "f32")]
-            Value::F32(r) => Some(r),
+            LegacyValue::F32(r) => Some(r),
             #[cfg(feature = "f64")]
-            Value::F64(r) => Some(r),
+            LegacyValue::F64(r) => Some(r),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(r) => Some(r),
+            LegacyValue::String(r) => Some(r),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(r) => Some(r),
+            LegacyValue::Bool(r) => Some(r),
             #[cfg(feature = "rational")]
-            Value::R64(r) => Some(r),
+            LegacyValue::R64(r) => Some(r),
             #[cfg(feature = "complex")]
-            Value::C64(r) => Some(r),
+            LegacyValue::C64(r) => Some(r),
             #[cfg(all(feature = "f64", feature = "matrix"))]
-            Value::MatrixF64(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixF64(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "f32", feature = "matrix"))]
-            Value::MatrixF32(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixF32(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "i8", feature = "matrix"))]
-            Value::MatrixI8(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixI8(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "i16", feature = "matrix"))]
-            Value::MatrixI16(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixI16(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "i32", feature = "matrix"))]
-            Value::MatrixI32(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixI32(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "i64", feature = "matrix"))]
-            Value::MatrixI64(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixI64(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "i128", feature = "matrix"))]
-            Value::MatrixI128(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixI128(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "u8", feature = "matrix"))]
-            Value::MatrixU8(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixU8(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "u16", feature = "matrix"))]
-            Value::MatrixU16(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixU16(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "u32", feature = "matrix"))]
-            Value::MatrixU32(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixU32(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "u64", feature = "matrix"))]
-            Value::MatrixU64(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixU64(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "u128", feature = "matrix"))]
-            Value::MatrixU128(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixU128(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "bool", feature = "matrix"))]
-            Value::MatrixBool(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixBool(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "string", feature = "matrix"))]
-            Value::MatrixString(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixString(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "rational", feature = "matrix"))]
-            Value::MatrixR64(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixR64(r) => Some(r.exact_ref_any()),
             #[cfg(all(feature = "complex", feature = "matrix"))]
-            Value::MatrixC64(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixC64(r) => Some(r.exact_ref_any()),
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(r) => Some(r.exact_ref_any()),
+            LegacyValue::MatrixIndex(r) => Some(r.exact_ref_any()),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(r) => Some(r.exact_ref_any()),
-            Value::Index(r) => Some(r),
+            LegacyValue::MatrixValue(r) => Some(r.exact_ref_any()),
+            LegacyValue::Index(r) => Some(r),
             #[cfg(feature = "enum")]
-            Value::Enum(r) => Some(r),
+            LegacyValue::Enum(r) => Some(r),
             #[cfg(feature = "set")]
-            Value::Set(r) => Some(r),
+            LegacyValue::Set(r) => Some(r),
             #[cfg(feature = "table")]
-            Value::Table(r) => Some(r),
+            LegacyValue::Table(r) => Some(r),
             #[cfg(feature = "tuple")]
-            Value::Tuple(r) => Some(r),
+            LegacyValue::Tuple(r) => Some(r),
             #[cfg(feature = "record")]
-            Value::Record(r) => Some(r),
+            LegacyValue::Record(r) => Some(r),
             #[cfg(feature = "map")]
-            Value::Map(r) => Some(r),
+            LegacyValue::Map(r) => Some(r),
             #[cfg(feature = "atom")]
-            Value::Atom(r) => Some(r),
-            Value::MutableReference(r) => Some(r),
-            Value::Id(_)
-            | Value::Typed(_, _)
-            | Value::Kind(_)
-            | Value::IndexAll
-            | Value::EmptyKind(_)
-            | Value::Empty => None,
+            LegacyValue::Atom(r) => Some(r),
+            LegacyValue::MutableReference(r) => Some(r),
+            LegacyValue::Id(_)
+            | LegacyValue::Typed(_, _)
+            | LegacyValue::Kind(_)
+            | LegacyValue::IndexAll
+            | LegacyValue::EmptyKind(_)
+            | LegacyValue::Empty => None,
         }
     }
 
     #[cfg(feature = "matrix")]
     pub fn exact_matrix_any(&self) -> Option<&dyn Any> {
         match self {
-            Value::MatrixIndex(matrix) => Some(matrix),
+            LegacyValue::MatrixIndex(matrix) => Some(matrix),
             #[cfg(feature = "bool")]
-            Value::MatrixBool(matrix) => Some(matrix),
+            LegacyValue::MatrixBool(matrix) => Some(matrix),
             #[cfg(feature = "u8")]
-            Value::MatrixU8(matrix) => Some(matrix),
+            LegacyValue::MatrixU8(matrix) => Some(matrix),
             #[cfg(feature = "u16")]
-            Value::MatrixU16(matrix) => Some(matrix),
+            LegacyValue::MatrixU16(matrix) => Some(matrix),
             #[cfg(feature = "u32")]
-            Value::MatrixU32(matrix) => Some(matrix),
+            LegacyValue::MatrixU32(matrix) => Some(matrix),
             #[cfg(feature = "u64")]
-            Value::MatrixU64(matrix) => Some(matrix),
+            LegacyValue::MatrixU64(matrix) => Some(matrix),
             #[cfg(feature = "u128")]
-            Value::MatrixU128(matrix) => Some(matrix),
+            LegacyValue::MatrixU128(matrix) => Some(matrix),
             #[cfg(feature = "i8")]
-            Value::MatrixI8(matrix) => Some(matrix),
+            LegacyValue::MatrixI8(matrix) => Some(matrix),
             #[cfg(feature = "i16")]
-            Value::MatrixI16(matrix) => Some(matrix),
+            LegacyValue::MatrixI16(matrix) => Some(matrix),
             #[cfg(feature = "i32")]
-            Value::MatrixI32(matrix) => Some(matrix),
+            LegacyValue::MatrixI32(matrix) => Some(matrix),
             #[cfg(feature = "i64")]
-            Value::MatrixI64(matrix) => Some(matrix),
+            LegacyValue::MatrixI64(matrix) => Some(matrix),
             #[cfg(feature = "i128")]
-            Value::MatrixI128(matrix) => Some(matrix),
+            LegacyValue::MatrixI128(matrix) => Some(matrix),
             #[cfg(feature = "f32")]
-            Value::MatrixF32(matrix) => Some(matrix),
+            LegacyValue::MatrixF32(matrix) => Some(matrix),
             #[cfg(feature = "f64")]
-            Value::MatrixF64(matrix) => Some(matrix),
+            LegacyValue::MatrixF64(matrix) => Some(matrix),
             #[cfg(feature = "string")]
-            Value::MatrixString(matrix) => Some(matrix),
+            LegacyValue::MatrixString(matrix) => Some(matrix),
             #[cfg(feature = "rational")]
-            Value::MatrixR64(matrix) => Some(matrix),
+            LegacyValue::MatrixR64(matrix) => Some(matrix),
             #[cfg(feature = "complex")]
-            Value::MatrixC64(matrix) => Some(matrix),
-            Value::MatrixValue(matrix) => Some(matrix),
+            LegacyValue::MatrixC64(matrix) => Some(matrix),
+            LegacyValue::MatrixValue(matrix) => Some(matrix),
             _ => None,
         }
     }
@@ -1500,189 +1511,191 @@ impl Value {
     pub fn exact_runtime_representation_name(&self) -> String {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(_) => core::any::type_name::<Ref<u8>>().to_string(),
+            LegacyValue::U8(_) => core::any::type_name::<Ref<u8>>().to_string(),
             #[cfg(feature = "u16")]
-            Value::U16(_) => core::any::type_name::<Ref<u16>>().to_string(),
+            LegacyValue::U16(_) => core::any::type_name::<Ref<u16>>().to_string(),
             #[cfg(feature = "u32")]
-            Value::U32(_) => core::any::type_name::<Ref<u32>>().to_string(),
+            LegacyValue::U32(_) => core::any::type_name::<Ref<u32>>().to_string(),
             #[cfg(feature = "u64")]
-            Value::U64(_) => core::any::type_name::<Ref<u64>>().to_string(),
+            LegacyValue::U64(_) => core::any::type_name::<Ref<u64>>().to_string(),
             #[cfg(feature = "u128")]
-            Value::U128(_) => core::any::type_name::<Ref<u128>>().to_string(),
+            LegacyValue::U128(_) => core::any::type_name::<Ref<u128>>().to_string(),
             #[cfg(feature = "i8")]
-            Value::I8(_) => core::any::type_name::<Ref<i8>>().to_string(),
+            LegacyValue::I8(_) => core::any::type_name::<Ref<i8>>().to_string(),
             #[cfg(feature = "i16")]
-            Value::I16(_) => core::any::type_name::<Ref<i16>>().to_string(),
+            LegacyValue::I16(_) => core::any::type_name::<Ref<i16>>().to_string(),
             #[cfg(feature = "i32")]
-            Value::I32(_) => core::any::type_name::<Ref<i32>>().to_string(),
+            LegacyValue::I32(_) => core::any::type_name::<Ref<i32>>().to_string(),
             #[cfg(feature = "i64")]
-            Value::I64(_) => core::any::type_name::<Ref<i64>>().to_string(),
+            LegacyValue::I64(_) => core::any::type_name::<Ref<i64>>().to_string(),
             #[cfg(feature = "i128")]
-            Value::I128(_) => core::any::type_name::<Ref<i128>>().to_string(),
+            LegacyValue::I128(_) => core::any::type_name::<Ref<i128>>().to_string(),
             #[cfg(feature = "f32")]
-            Value::F32(_) => core::any::type_name::<Ref<f32>>().to_string(),
+            LegacyValue::F32(_) => core::any::type_name::<Ref<f32>>().to_string(),
             #[cfg(feature = "f64")]
-            Value::F64(_) => core::any::type_name::<Ref<f64>>().to_string(),
+            LegacyValue::F64(_) => core::any::type_name::<Ref<f64>>().to_string(),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(_) => core::any::type_name::<Ref<String>>().to_string(),
+            LegacyValue::String(_) => core::any::type_name::<Ref<String>>().to_string(),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(_) => core::any::type_name::<Ref<bool>>().to_string(),
+            LegacyValue::Bool(_) => core::any::type_name::<Ref<bool>>().to_string(),
             #[cfg(feature = "atom")]
-            Value::Atom(_) => core::any::type_name::<Ref<MechAtom>>().to_string(),
+            LegacyValue::Atom(_) => core::any::type_name::<Ref<MechAtom>>().to_string(),
             #[cfg(feature = "complex")]
-            Value::C64(_) => core::any::type_name::<Ref<C64>>().to_string(),
+            LegacyValue::C64(_) => core::any::type_name::<Ref<C64>>().to_string(),
             #[cfg(feature = "rational")]
-            Value::R64(_) => core::any::type_name::<Ref<R64>>().to_string(),
+            LegacyValue::R64(_) => core::any::type_name::<Ref<R64>>().to_string(),
             #[cfg(feature = "set")]
-            Value::Set(_) => core::any::type_name::<Ref<MechSet>>().to_string(),
+            LegacyValue::Set(_) => core::any::type_name::<Ref<MechSet>>().to_string(),
             #[cfg(feature = "map")]
-            Value::Map(_) => core::any::type_name::<Ref<MechMap>>().to_string(),
+            LegacyValue::Map(_) => core::any::type_name::<Ref<MechMap>>().to_string(),
             #[cfg(feature = "record")]
-            Value::Record(_) => core::any::type_name::<Ref<MechRecord>>().to_string(),
+            LegacyValue::Record(_) => core::any::type_name::<Ref<MechRecord>>().to_string(),
             #[cfg(feature = "table")]
-            Value::Table(_) => core::any::type_name::<Ref<MechTable>>().to_string(),
+            LegacyValue::Table(_) => core::any::type_name::<Ref<MechTable>>().to_string(),
             #[cfg(feature = "tuple")]
-            Value::Tuple(_) => core::any::type_name::<Ref<MechTuple>>().to_string(),
+            LegacyValue::Tuple(_) => core::any::type_name::<Ref<MechTuple>>().to_string(),
             #[cfg(feature = "enum")]
-            Value::Enum(_) => core::any::type_name::<Ref<MechEnum>>().to_string(),
-            Value::Index(_) => core::any::type_name::<Ref<usize>>().to_string(),
-            Value::MutableReference(_) => core::any::type_name::<Ref<Value>>().to_string(),
+            LegacyValue::Enum(_) => core::any::type_name::<Ref<MechEnum>>().to_string(),
+            LegacyValue::Index(_) => core::any::type_name::<Ref<usize>>().to_string(),
+            LegacyValue::MutableReference(_) => {
+                core::any::type_name::<Ref<LegacyValue>>().to_string()
+            }
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixIndex(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixBool(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixU8(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixU16(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixU32(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixU64(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixU128(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixI8(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixI16(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixI32(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixI64(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixI128(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixF32(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixF64(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixString(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixR64(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::MatrixC64(matrix) => matrix.exact_runtime_representation_name(),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(matrix) => matrix.exact_runtime_representation_name(),
-            Value::Id(_) => "u64 (direct ID value)".to_string(),
-            Value::Typed(_, _) => "Typed".to_string(),
-            Value::Kind(_) => "Kind".to_string(),
-            Value::IndexAll => "IndexAll".to_string(),
-            Value::EmptyKind(_) => "EmptyKind".to_string(),
-            Value::Empty => "Empty".to_string(),
+            LegacyValue::MatrixValue(matrix) => matrix.exact_runtime_representation_name(),
+            LegacyValue::Id(_) => "u64 (direct ID value)".to_string(),
+            LegacyValue::Typed(_, _) => "Typed".to_string(),
+            LegacyValue::Kind(_) => "Kind".to_string(),
+            LegacyValue::IndexAll => "IndexAll".to_string(),
+            LegacyValue::EmptyKind(_) => "EmptyKind".to_string(),
+            LegacyValue::Empty => "Empty".to_string(),
         }
     }
 
     pub fn addr(&self) -> usize {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(v) => v.addr(),
+            LegacyValue::U8(v) => v.addr(),
             #[cfg(feature = "u16")]
-            Value::U16(v) => v.addr(),
+            LegacyValue::U16(v) => v.addr(),
             #[cfg(feature = "u32")]
-            Value::U32(v) => v.addr(),
+            LegacyValue::U32(v) => v.addr(),
             #[cfg(feature = "u64")]
-            Value::U64(v) => v.addr(),
+            LegacyValue::U64(v) => v.addr(),
             #[cfg(feature = "u128")]
-            Value::U128(v) => v.addr(),
+            LegacyValue::U128(v) => v.addr(),
             #[cfg(feature = "i8")]
-            Value::I8(v) => v.addr(),
+            LegacyValue::I8(v) => v.addr(),
             #[cfg(feature = "i16")]
-            Value::I16(v) => v.addr(),
+            LegacyValue::I16(v) => v.addr(),
             #[cfg(feature = "i32")]
-            Value::I32(v) => v.addr(),
+            LegacyValue::I32(v) => v.addr(),
             #[cfg(feature = "i64")]
-            Value::I64(v) => v.addr(),
+            LegacyValue::I64(v) => v.addr(),
             #[cfg(feature = "i128")]
-            Value::I128(v) => v.addr(),
+            LegacyValue::I128(v) => v.addr(),
             #[cfg(feature = "f32")]
-            Value::F32(v) => v.addr(),
+            LegacyValue::F32(v) => v.addr(),
             #[cfg(feature = "f64")]
-            Value::F64(v) => v.addr(),
+            LegacyValue::F64(v) => v.addr(),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(v) => v.addr(),
+            LegacyValue::String(v) => v.addr(),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(v) => v.addr(),
+            LegacyValue::Bool(v) => v.addr(),
             #[cfg(feature = "complex")]
-            Value::C64(v) => v.addr(),
+            LegacyValue::C64(v) => v.addr(),
             #[cfg(feature = "rational")]
-            Value::R64(v) => v.addr(),
+            LegacyValue::R64(v) => v.addr(),
             #[cfg(feature = "record")]
-            Value::Record(v) => v.addr(),
+            LegacyValue::Record(v) => v.addr(),
             #[cfg(feature = "table")]
-            Value::Table(v) => v.addr(),
+            LegacyValue::Table(v) => v.addr(),
             #[cfg(feature = "map")]
-            Value::Map(v) => v.addr(),
+            LegacyValue::Map(v) => v.addr(),
             #[cfg(feature = "tuple")]
-            Value::Tuple(v) => v.addr(),
+            LegacyValue::Tuple(v) => v.addr(),
             #[cfg(feature = "set")]
-            Value::Set(v) => v.addr(),
+            LegacyValue::Set(v) => v.addr(),
             #[cfg(feature = "enum")]
-            Value::Enum(v) => v.addr(),
+            LegacyValue::Enum(v) => v.addr(),
             #[cfg(feature = "atom")]
-            Value::Atom(v) => v.addr(),
+            LegacyValue::Atom(v) => v.addr(),
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(v) => v.addr(),
+            LegacyValue::MatrixIndex(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(v) => v.addr(),
+            LegacyValue::MatrixBool(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(v) => v.addr(),
+            LegacyValue::MatrixU8(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(v) => v.addr(),
+            LegacyValue::MatrixU16(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(v) => v.addr(),
+            LegacyValue::MatrixU32(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(v) => v.addr(),
+            LegacyValue::MatrixU64(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(v) => v.addr(),
+            LegacyValue::MatrixU128(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(v) => v.addr(),
+            LegacyValue::MatrixI8(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(v) => v.addr(),
+            LegacyValue::MatrixI16(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(v) => v.addr(),
+            LegacyValue::MatrixI32(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(v) => v.addr(),
+            LegacyValue::MatrixI64(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(v) => v.addr(),
+            LegacyValue::MatrixI128(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(v) => v.addr(),
+            LegacyValue::MatrixF32(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(v) => v.addr(),
+            LegacyValue::MatrixF64(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(v) => v.addr(),
+            LegacyValue::MatrixString(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(v) => v.addr(),
+            LegacyValue::MatrixR64(v) => v.addr(),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(v) => v.addr(),
+            LegacyValue::MatrixC64(v) => v.addr(),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(v) => v.addr(),
-            Value::Index(v) => v.addr(),
-            Value::MutableReference(v) => v.addr(),
+            LegacyValue::MatrixValue(v) => v.addr(),
+            LegacyValue::Index(v) => v.addr(),
+            LegacyValue::MutableReference(v) => v.addr(),
             _ => todo!(),
         }
     }
 
-    pub fn convert_to(&self, other: &ValueKind) -> Option<Value> {
+    pub fn convert_to(&self, other: &ValueKind) -> Option<LegacyValue> {
         if self.kind() == *other {
             return Some(self.clone());
         }
@@ -1692,9 +1705,9 @@ impl Value {
         }
 
         match (self, other) {
-            (Value::Typed(value, _), target_kind) => value.convert_to(target_kind),
-            (Value::Empty, ValueKind::Option(_)) => Some(Value::Empty),
-            (Value::EmptyKind(_), ValueKind::Option(_)) => Some(Value::Empty),
+            (LegacyValue::Typed(value, _), target_kind) => value.convert_to(target_kind),
+            (LegacyValue::Empty, ValueKind::Option(_)) => Some(LegacyValue::Empty),
+            (LegacyValue::EmptyKind(_), ValueKind::Option(_)) => Some(LegacyValue::Empty),
             (value, ValueKind::Option(inner)) => value.convert_to(inner.as_ref()),
             (value, ValueKind::Matrix(_, target_shape))
                 if target_shape.is_empty() && matches!(value.kind(), ValueKind::Matrix(_, _)) =>
@@ -1703,288 +1716,532 @@ impl Value {
             }
             // ==== Unsigned widening and narrowing ====
             #[cfg(all(feature = "u8", feature = "u16"))]
-            (Value::U8(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
+            (LegacyValue::U8(v), ValueKind::U16) => {
+                Some(LegacyValue::U16(Ref::new((*v.borrow()) as u16)))
+            }
             #[cfg(all(feature = "u8", feature = "u32"))]
-            (Value::U8(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
+            (LegacyValue::U8(v), ValueKind::U32) => {
+                Some(LegacyValue::U32(Ref::new((*v.borrow()) as u32)))
+            }
             #[cfg(all(feature = "u8", feature = "u64"))]
-            (Value::U8(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
+            (LegacyValue::U8(v), ValueKind::U64) => {
+                Some(LegacyValue::U64(Ref::new((*v.borrow()) as u64)))
+            }
             #[cfg(all(feature = "u8", feature = "u128"))]
-            (Value::U8(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
+            (LegacyValue::U8(v), ValueKind::U128) => {
+                Some(LegacyValue::U128(Ref::new((*v.borrow()) as u128)))
+            }
             #[cfg(all(feature = "u8", feature = "i16"))]
-            (Value::U8(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
+            (LegacyValue::U8(v), ValueKind::I16) => {
+                Some(LegacyValue::I16(Ref::new((*v.borrow()) as i16)))
+            }
             #[cfg(all(feature = "u8", feature = "i32"))]
-            (Value::U8(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
+            (LegacyValue::U8(v), ValueKind::I32) => {
+                Some(LegacyValue::I32(Ref::new((*v.borrow()) as i32)))
+            }
             #[cfg(all(feature = "u8", feature = "i64"))]
-            (Value::U8(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
+            (LegacyValue::U8(v), ValueKind::I64) => {
+                Some(LegacyValue::I64(Ref::new((*v.borrow()) as i64)))
+            }
             #[cfg(all(feature = "u8", feature = "i128"))]
-            (Value::U8(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
+            (LegacyValue::U8(v), ValueKind::I128) => {
+                Some(LegacyValue::I128(Ref::new((*v.borrow()) as i128)))
+            }
             #[cfg(all(feature = "u8", feature = "f32"))]
-            (Value::U8(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
+            (LegacyValue::U8(v), ValueKind::F32) => {
+                Some(LegacyValue::F32(Ref::new((*v.borrow()) as f32)))
+            }
             #[cfg(all(feature = "u8", feature = "f64"))]
-            (Value::U8(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
+            (LegacyValue::U8(v), ValueKind::F64) => {
+                Some(LegacyValue::F64(Ref::new((*v.borrow()) as f64)))
+            }
 
             #[cfg(all(feature = "u16", feature = "u8"))]
-            (Value::U16(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
+            (LegacyValue::U16(v), ValueKind::U8) => {
+                Some(LegacyValue::U8(Ref::new((*v.borrow()) as u8)))
+            }
             #[cfg(all(feature = "u16", feature = "u32"))]
-            (Value::U16(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
+            (LegacyValue::U16(v), ValueKind::U32) => {
+                Some(LegacyValue::U32(Ref::new((*v.borrow()) as u32)))
+            }
             #[cfg(all(feature = "u16", feature = "u64"))]
-            (Value::U16(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
+            (LegacyValue::U16(v), ValueKind::U64) => {
+                Some(LegacyValue::U64(Ref::new((*v.borrow()) as u64)))
+            }
             #[cfg(all(feature = "u16", feature = "u128"))]
-            (Value::U16(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
+            (LegacyValue::U16(v), ValueKind::U128) => {
+                Some(LegacyValue::U128(Ref::new((*v.borrow()) as u128)))
+            }
             #[cfg(all(feature = "u16", feature = "i8"))]
-            (Value::U16(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
+            (LegacyValue::U16(v), ValueKind::I8) => {
+                Some(LegacyValue::I8(Ref::new((*v.borrow()) as i8)))
+            }
             #[cfg(all(feature = "u16", feature = "i32"))]
-            (Value::U16(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
+            (LegacyValue::U16(v), ValueKind::I32) => {
+                Some(LegacyValue::I32(Ref::new((*v.borrow()) as i32)))
+            }
             #[cfg(all(feature = "u16", feature = "i64"))]
-            (Value::U16(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
+            (LegacyValue::U16(v), ValueKind::I64) => {
+                Some(LegacyValue::I64(Ref::new((*v.borrow()) as i64)))
+            }
             #[cfg(all(feature = "u16", feature = "i128"))]
-            (Value::U16(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
+            (LegacyValue::U16(v), ValueKind::I128) => {
+                Some(LegacyValue::I128(Ref::new((*v.borrow()) as i128)))
+            }
             #[cfg(all(feature = "u16", feature = "f32"))]
-            (Value::U16(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
+            (LegacyValue::U16(v), ValueKind::F32) => {
+                Some(LegacyValue::F32(Ref::new((*v.borrow()) as f32)))
+            }
             #[cfg(all(feature = "u16", feature = "f64"))]
-            (Value::U16(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
+            (LegacyValue::U16(v), ValueKind::F64) => {
+                Some(LegacyValue::F64(Ref::new((*v.borrow()) as f64)))
+            }
 
             #[cfg(all(feature = "u32", feature = "u8"))]
-            (Value::U32(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
+            (LegacyValue::U32(v), ValueKind::U8) => {
+                Some(LegacyValue::U8(Ref::new((*v.borrow()) as u8)))
+            }
             #[cfg(all(feature = "u32", feature = "u16"))]
-            (Value::U32(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
+            (LegacyValue::U32(v), ValueKind::U16) => {
+                Some(LegacyValue::U16(Ref::new((*v.borrow()) as u16)))
+            }
             #[cfg(all(feature = "u32", feature = "u64"))]
-            (Value::U32(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
+            (LegacyValue::U32(v), ValueKind::U64) => {
+                Some(LegacyValue::U64(Ref::new((*v.borrow()) as u64)))
+            }
             #[cfg(all(feature = "u32", feature = "u128"))]
-            (Value::U32(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
+            (LegacyValue::U32(v), ValueKind::U128) => {
+                Some(LegacyValue::U128(Ref::new((*v.borrow()) as u128)))
+            }
             #[cfg(all(feature = "u32", feature = "i8"))]
-            (Value::U32(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
+            (LegacyValue::U32(v), ValueKind::I8) => {
+                Some(LegacyValue::I8(Ref::new((*v.borrow()) as i8)))
+            }
             #[cfg(all(feature = "u32", feature = "i16"))]
-            (Value::U32(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
+            (LegacyValue::U32(v), ValueKind::I16) => {
+                Some(LegacyValue::I16(Ref::new((*v.borrow()) as i16)))
+            }
             #[cfg(all(feature = "u32", feature = "i64"))]
-            (Value::U32(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
+            (LegacyValue::U32(v), ValueKind::I64) => {
+                Some(LegacyValue::I64(Ref::new((*v.borrow()) as i64)))
+            }
             #[cfg(all(feature = "u32", feature = "i128"))]
-            (Value::U32(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
+            (LegacyValue::U32(v), ValueKind::I128) => {
+                Some(LegacyValue::I128(Ref::new((*v.borrow()) as i128)))
+            }
             #[cfg(all(feature = "u32", feature = "f32"))]
-            (Value::U32(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
+            (LegacyValue::U32(v), ValueKind::F32) => {
+                Some(LegacyValue::F32(Ref::new((*v.borrow()) as f32)))
+            }
             #[cfg(all(feature = "u32", feature = "f64"))]
-            (Value::U32(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
+            (LegacyValue::U32(v), ValueKind::F64) => {
+                Some(LegacyValue::F64(Ref::new((*v.borrow()) as f64)))
+            }
 
             #[cfg(all(feature = "u64", feature = "u8"))]
-            (Value::U64(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
+            (LegacyValue::U64(v), ValueKind::U8) => {
+                Some(LegacyValue::U8(Ref::new((*v.borrow()) as u8)))
+            }
             #[cfg(all(feature = "u64", feature = "u16"))]
-            (Value::U64(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
+            (LegacyValue::U64(v), ValueKind::U16) => {
+                Some(LegacyValue::U16(Ref::new((*v.borrow()) as u16)))
+            }
             #[cfg(all(feature = "u64", feature = "u32"))]
-            (Value::U64(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
+            (LegacyValue::U64(v), ValueKind::U32) => {
+                Some(LegacyValue::U32(Ref::new((*v.borrow()) as u32)))
+            }
             #[cfg(all(feature = "u64", feature = "u128"))]
-            (Value::U64(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
+            (LegacyValue::U64(v), ValueKind::U128) => {
+                Some(LegacyValue::U128(Ref::new((*v.borrow()) as u128)))
+            }
             #[cfg(all(feature = "u64", feature = "i8"))]
-            (Value::U64(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
+            (LegacyValue::U64(v), ValueKind::I8) => {
+                Some(LegacyValue::I8(Ref::new((*v.borrow()) as i8)))
+            }
             #[cfg(all(feature = "u64", feature = "i16"))]
-            (Value::U64(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
+            (LegacyValue::U64(v), ValueKind::I16) => {
+                Some(LegacyValue::I16(Ref::new((*v.borrow()) as i16)))
+            }
             #[cfg(all(feature = "u64", feature = "i32"))]
-            (Value::U64(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
+            (LegacyValue::U64(v), ValueKind::I32) => {
+                Some(LegacyValue::I32(Ref::new((*v.borrow()) as i32)))
+            }
             #[cfg(all(feature = "u64", feature = "i128"))]
-            (Value::U64(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
+            (LegacyValue::U64(v), ValueKind::I128) => {
+                Some(LegacyValue::I128(Ref::new((*v.borrow()) as i128)))
+            }
             #[cfg(all(feature = "u64", feature = "f32"))]
-            (Value::U64(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
+            (LegacyValue::U64(v), ValueKind::F32) => {
+                Some(LegacyValue::F32(Ref::new((*v.borrow()) as f32)))
+            }
             #[cfg(all(feature = "u64", feature = "f64"))]
-            (Value::U64(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
+            (LegacyValue::U64(v), ValueKind::F64) => {
+                Some(LegacyValue::F64(Ref::new((*v.borrow()) as f64)))
+            }
 
             #[cfg(all(feature = "u128", feature = "u8"))]
-            (Value::U128(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
+            (LegacyValue::U128(v), ValueKind::U8) => {
+                Some(LegacyValue::U8(Ref::new((*v.borrow()) as u8)))
+            }
             #[cfg(all(feature = "u128", feature = "u16"))]
-            (Value::U128(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
+            (LegacyValue::U128(v), ValueKind::U16) => {
+                Some(LegacyValue::U16(Ref::new((*v.borrow()) as u16)))
+            }
             #[cfg(all(feature = "u128", feature = "u32"))]
-            (Value::U128(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
+            (LegacyValue::U128(v), ValueKind::U32) => {
+                Some(LegacyValue::U32(Ref::new((*v.borrow()) as u32)))
+            }
             #[cfg(all(feature = "u128", feature = "u64"))]
-            (Value::U128(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
+            (LegacyValue::U128(v), ValueKind::U64) => {
+                Some(LegacyValue::U64(Ref::new((*v.borrow()) as u64)))
+            }
             #[cfg(all(feature = "u128", feature = "i8"))]
-            (Value::U128(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
+            (LegacyValue::U128(v), ValueKind::I8) => {
+                Some(LegacyValue::I8(Ref::new((*v.borrow()) as i8)))
+            }
             #[cfg(all(feature = "u128", feature = "i16"))]
-            (Value::U128(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
+            (LegacyValue::U128(v), ValueKind::I16) => {
+                Some(LegacyValue::I16(Ref::new((*v.borrow()) as i16)))
+            }
             #[cfg(all(feature = "u128", feature = "i32"))]
-            (Value::U128(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
+            (LegacyValue::U128(v), ValueKind::I32) => {
+                Some(LegacyValue::I32(Ref::new((*v.borrow()) as i32)))
+            }
             #[cfg(all(feature = "u128", feature = "i64"))]
-            (Value::U128(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
+            (LegacyValue::U128(v), ValueKind::I64) => {
+                Some(LegacyValue::I64(Ref::new((*v.borrow()) as i64)))
+            }
             #[cfg(all(feature = "u128", feature = "f32"))]
-            (Value::U128(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
+            (LegacyValue::U128(v), ValueKind::F32) => {
+                Some(LegacyValue::F32(Ref::new((*v.borrow()) as f32)))
+            }
             #[cfg(all(feature = "u128", feature = "f64"))]
-            (Value::U128(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
+            (LegacyValue::U128(v), ValueKind::F64) => {
+                Some(LegacyValue::F64(Ref::new((*v.borrow()) as f64)))
+            }
 
             // ==== Signed widening and narrowing ====
             #[cfg(all(feature = "i8", feature = "i16"))]
-            (Value::I8(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
+            (LegacyValue::I8(v), ValueKind::I16) => {
+                Some(LegacyValue::I16(Ref::new((*v.borrow()) as i16)))
+            }
             #[cfg(all(feature = "i8", feature = "i32"))]
-            (Value::I8(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
+            (LegacyValue::I8(v), ValueKind::I32) => {
+                Some(LegacyValue::I32(Ref::new((*v.borrow()) as i32)))
+            }
             #[cfg(all(feature = "i8", feature = "i64"))]
-            (Value::I8(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
+            (LegacyValue::I8(v), ValueKind::I64) => {
+                Some(LegacyValue::I64(Ref::new((*v.borrow()) as i64)))
+            }
             #[cfg(all(feature = "i8", feature = "i128"))]
-            (Value::I8(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
+            (LegacyValue::I8(v), ValueKind::I128) => {
+                Some(LegacyValue::I128(Ref::new((*v.borrow()) as i128)))
+            }
             #[cfg(all(feature = "i8", feature = "u16"))]
-            (Value::I8(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
+            (LegacyValue::I8(v), ValueKind::U16) => {
+                Some(LegacyValue::U16(Ref::new((*v.borrow()) as u16)))
+            }
             #[cfg(all(feature = "i8", feature = "u32"))]
-            (Value::I8(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
+            (LegacyValue::I8(v), ValueKind::U32) => {
+                Some(LegacyValue::U32(Ref::new((*v.borrow()) as u32)))
+            }
             #[cfg(all(feature = "i8", feature = "u64"))]
-            (Value::I8(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
+            (LegacyValue::I8(v), ValueKind::U64) => {
+                Some(LegacyValue::U64(Ref::new((*v.borrow()) as u64)))
+            }
             #[cfg(all(feature = "i8", feature = "u128"))]
-            (Value::I8(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
+            (LegacyValue::I8(v), ValueKind::U128) => {
+                Some(LegacyValue::U128(Ref::new((*v.borrow()) as u128)))
+            }
             #[cfg(all(feature = "i8", feature = "f32"))]
-            (Value::I8(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
+            (LegacyValue::I8(v), ValueKind::F32) => {
+                Some(LegacyValue::F32(Ref::new((*v.borrow()) as f32)))
+            }
             #[cfg(all(feature = "i8", feature = "f64"))]
-            (Value::I8(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
+            (LegacyValue::I8(v), ValueKind::F64) => {
+                Some(LegacyValue::F64(Ref::new((*v.borrow()) as f64)))
+            }
 
             #[cfg(all(feature = "i16", feature = "i8"))]
-            (Value::I16(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
+            (LegacyValue::I16(v), ValueKind::I8) => {
+                Some(LegacyValue::I8(Ref::new((*v.borrow()) as i8)))
+            }
             #[cfg(all(feature = "i16", feature = "i32"))]
-            (Value::I16(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
+            (LegacyValue::I16(v), ValueKind::I32) => {
+                Some(LegacyValue::I32(Ref::new((*v.borrow()) as i32)))
+            }
             #[cfg(all(feature = "i16", feature = "i64"))]
-            (Value::I16(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
+            (LegacyValue::I16(v), ValueKind::I64) => {
+                Some(LegacyValue::I64(Ref::new((*v.borrow()) as i64)))
+            }
             #[cfg(all(feature = "i16", feature = "i128"))]
-            (Value::I16(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
+            (LegacyValue::I16(v), ValueKind::I128) => {
+                Some(LegacyValue::I128(Ref::new((*v.borrow()) as i128)))
+            }
             #[cfg(all(feature = "i16", feature = "u8"))]
-            (Value::I16(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
+            (LegacyValue::I16(v), ValueKind::U8) => {
+                Some(LegacyValue::U8(Ref::new((*v.borrow()) as u8)))
+            }
             #[cfg(all(feature = "i16", feature = "u32"))]
-            (Value::I16(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
+            (LegacyValue::I16(v), ValueKind::U32) => {
+                Some(LegacyValue::U32(Ref::new((*v.borrow()) as u32)))
+            }
             #[cfg(all(feature = "i16", feature = "u64"))]
-            (Value::I16(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
+            (LegacyValue::I16(v), ValueKind::U64) => {
+                Some(LegacyValue::U64(Ref::new((*v.borrow()) as u64)))
+            }
             #[cfg(all(feature = "i16", feature = "u128"))]
-            (Value::I16(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
+            (LegacyValue::I16(v), ValueKind::U128) => {
+                Some(LegacyValue::U128(Ref::new((*v.borrow()) as u128)))
+            }
             #[cfg(all(feature = "i16", feature = "f32"))]
-            (Value::I16(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
+            (LegacyValue::I16(v), ValueKind::F32) => {
+                Some(LegacyValue::F32(Ref::new((*v.borrow()) as f32)))
+            }
             #[cfg(all(feature = "i16", feature = "f64"))]
-            (Value::I16(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
+            (LegacyValue::I16(v), ValueKind::F64) => {
+                Some(LegacyValue::F64(Ref::new((*v.borrow()) as f64)))
+            }
 
             #[cfg(all(feature = "i32", feature = "i8"))]
-            (Value::I32(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
+            (LegacyValue::I32(v), ValueKind::I8) => {
+                Some(LegacyValue::I8(Ref::new((*v.borrow()) as i8)))
+            }
             #[cfg(all(feature = "i32", feature = "i16"))]
-            (Value::I32(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
+            (LegacyValue::I32(v), ValueKind::I16) => {
+                Some(LegacyValue::I16(Ref::new((*v.borrow()) as i16)))
+            }
             #[cfg(all(feature = "i32", feature = "i64"))]
-            (Value::I32(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
+            (LegacyValue::I32(v), ValueKind::I64) => {
+                Some(LegacyValue::I64(Ref::new((*v.borrow()) as i64)))
+            }
             #[cfg(all(feature = "i32", feature = "i128"))]
-            (Value::I32(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
+            (LegacyValue::I32(v), ValueKind::I128) => {
+                Some(LegacyValue::I128(Ref::new((*v.borrow()) as i128)))
+            }
             #[cfg(all(feature = "i32", feature = "u8"))]
-            (Value::I32(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
+            (LegacyValue::I32(v), ValueKind::U8) => {
+                Some(LegacyValue::U8(Ref::new((*v.borrow()) as u8)))
+            }
             #[cfg(all(feature = "i32", feature = "u16"))]
-            (Value::I32(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
+            (LegacyValue::I32(v), ValueKind::U16) => {
+                Some(LegacyValue::U16(Ref::new((*v.borrow()) as u16)))
+            }
             #[cfg(all(feature = "i32", feature = "u64"))]
-            (Value::I32(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
+            (LegacyValue::I32(v), ValueKind::U64) => {
+                Some(LegacyValue::U64(Ref::new((*v.borrow()) as u64)))
+            }
             #[cfg(all(feature = "i32", feature = "u128"))]
-            (Value::I32(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
+            (LegacyValue::I32(v), ValueKind::U128) => {
+                Some(LegacyValue::U128(Ref::new((*v.borrow()) as u128)))
+            }
             #[cfg(all(feature = "i32", feature = "f32"))]
-            (Value::I32(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
+            (LegacyValue::I32(v), ValueKind::F32) => {
+                Some(LegacyValue::F32(Ref::new((*v.borrow()) as f32)))
+            }
             #[cfg(all(feature = "i32", feature = "f64"))]
-            (Value::I32(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
+            (LegacyValue::I32(v), ValueKind::F64) => {
+                Some(LegacyValue::F64(Ref::new((*v.borrow()) as f64)))
+            }
 
             #[cfg(all(feature = "i64", feature = "i8"))]
-            (Value::I64(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
+            (LegacyValue::I64(v), ValueKind::I8) => {
+                Some(LegacyValue::I8(Ref::new((*v.borrow()) as i8)))
+            }
             #[cfg(all(feature = "i64", feature = "i16"))]
-            (Value::I64(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
+            (LegacyValue::I64(v), ValueKind::I16) => {
+                Some(LegacyValue::I16(Ref::new((*v.borrow()) as i16)))
+            }
             #[cfg(all(feature = "i64", feature = "i32"))]
-            (Value::I64(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
+            (LegacyValue::I64(v), ValueKind::I32) => {
+                Some(LegacyValue::I32(Ref::new((*v.borrow()) as i32)))
+            }
             #[cfg(all(feature = "i64", feature = "i128"))]
-            (Value::I64(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
+            (LegacyValue::I64(v), ValueKind::I128) => {
+                Some(LegacyValue::I128(Ref::new((*v.borrow()) as i128)))
+            }
             #[cfg(all(feature = "i64", feature = "u8"))]
-            (Value::I64(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
+            (LegacyValue::I64(v), ValueKind::U8) => {
+                Some(LegacyValue::U8(Ref::new((*v.borrow()) as u8)))
+            }
             #[cfg(all(feature = "i64", feature = "u16"))]
-            (Value::I64(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
+            (LegacyValue::I64(v), ValueKind::U16) => {
+                Some(LegacyValue::U16(Ref::new((*v.borrow()) as u16)))
+            }
             #[cfg(all(feature = "i64", feature = "u32"))]
-            (Value::I64(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
+            (LegacyValue::I64(v), ValueKind::U32) => {
+                Some(LegacyValue::U32(Ref::new((*v.borrow()) as u32)))
+            }
             #[cfg(all(feature = "i64", feature = "u128"))]
-            (Value::I64(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
+            (LegacyValue::I64(v), ValueKind::U128) => {
+                Some(LegacyValue::U128(Ref::new((*v.borrow()) as u128)))
+            }
             #[cfg(all(feature = "i64", feature = "f32"))]
-            (Value::I64(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
+            (LegacyValue::I64(v), ValueKind::F32) => {
+                Some(LegacyValue::F32(Ref::new((*v.borrow()) as f32)))
+            }
             #[cfg(all(feature = "i64", feature = "f64"))]
-            (Value::I64(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
+            (LegacyValue::I64(v), ValueKind::F64) => {
+                Some(LegacyValue::F64(Ref::new((*v.borrow()) as f64)))
+            }
 
             #[cfg(all(feature = "i128", feature = "i8"))]
-            (Value::I128(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
+            (LegacyValue::I128(v), ValueKind::I8) => {
+                Some(LegacyValue::I8(Ref::new((*v.borrow()) as i8)))
+            }
             #[cfg(all(feature = "i128", feature = "i16"))]
-            (Value::I128(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
+            (LegacyValue::I128(v), ValueKind::I16) => {
+                Some(LegacyValue::I16(Ref::new((*v.borrow()) as i16)))
+            }
             #[cfg(all(feature = "i128", feature = "i32"))]
-            (Value::I128(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
+            (LegacyValue::I128(v), ValueKind::I32) => {
+                Some(LegacyValue::I32(Ref::new((*v.borrow()) as i32)))
+            }
             #[cfg(all(feature = "i128", feature = "i64"))]
-            (Value::I128(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
+            (LegacyValue::I128(v), ValueKind::I64) => {
+                Some(LegacyValue::I64(Ref::new((*v.borrow()) as i64)))
+            }
             #[cfg(all(feature = "i128", feature = "u8"))]
-            (Value::I128(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
+            (LegacyValue::I128(v), ValueKind::U8) => {
+                Some(LegacyValue::U8(Ref::new((*v.borrow()) as u8)))
+            }
             #[cfg(all(feature = "i128", feature = "u16"))]
-            (Value::I128(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
+            (LegacyValue::I128(v), ValueKind::U16) => {
+                Some(LegacyValue::U16(Ref::new((*v.borrow()) as u16)))
+            }
             #[cfg(all(feature = "i128", feature = "u32"))]
-            (Value::I128(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
+            (LegacyValue::I128(v), ValueKind::U32) => {
+                Some(LegacyValue::U32(Ref::new((*v.borrow()) as u32)))
+            }
             #[cfg(all(feature = "i128", feature = "u64"))]
-            (Value::I128(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
+            (LegacyValue::I128(v), ValueKind::U64) => {
+                Some(LegacyValue::U64(Ref::new((*v.borrow()) as u64)))
+            }
             #[cfg(all(feature = "i128", feature = "f32"))]
-            (Value::I128(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
+            (LegacyValue::I128(v), ValueKind::F32) => {
+                Some(LegacyValue::F32(Ref::new((*v.borrow()) as f32)))
+            }
             #[cfg(all(feature = "i128", feature = "f64"))]
-            (Value::I128(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
+            (LegacyValue::I128(v), ValueKind::F64) => {
+                Some(LegacyValue::F64(Ref::new((*v.borrow()) as f64)))
+            }
 
             // ==== Float widening and narrowing ====
             #[cfg(all(feature = "f32", feature = "f64"))]
-            (Value::F32(v), ValueKind::F64) => Some(Value::F64(Ref::new((*v.borrow()) as f64))),
+            (LegacyValue::F32(v), ValueKind::F64) => {
+                Some(LegacyValue::F64(Ref::new((*v.borrow()) as f64)))
+            }
             #[cfg(all(feature = "f32", feature = "f64"))]
-            (Value::F64(v), ValueKind::F32) => Some(Value::F32(Ref::new((*v.borrow()) as f32))),
+            (LegacyValue::F64(v), ValueKind::F32) => {
+                Some(LegacyValue::F32(Ref::new((*v.borrow()) as f32)))
+            }
 
             // ==== Float to integer conversions (truncate) ====
             #[cfg(all(feature = "f32", feature = "i8"))]
-            (Value::F32(v), ValueKind::I8) => Some(Value::I8(Ref::new(*v.borrow() as i8))),
+            (LegacyValue::F32(v), ValueKind::I8) => {
+                Some(LegacyValue::I8(Ref::new(*v.borrow() as i8)))
+            }
             #[cfg(all(feature = "f32", feature = "i16"))]
-            (Value::F32(v), ValueKind::I16) => Some(Value::I16(Ref::new(*v.borrow() as i16))),
+            (LegacyValue::F32(v), ValueKind::I16) => {
+                Some(LegacyValue::I16(Ref::new(*v.borrow() as i16)))
+            }
             #[cfg(all(feature = "f32", feature = "i32"))]
-            (Value::F32(v), ValueKind::I32) => Some(Value::I32(Ref::new(*v.borrow() as i32))),
+            (LegacyValue::F32(v), ValueKind::I32) => {
+                Some(LegacyValue::I32(Ref::new(*v.borrow() as i32)))
+            }
             #[cfg(all(feature = "f32", feature = "i64"))]
-            (Value::F32(v), ValueKind::I64) => Some(Value::I64(Ref::new(*v.borrow() as i64))),
+            (LegacyValue::F32(v), ValueKind::I64) => {
+                Some(LegacyValue::I64(Ref::new(*v.borrow() as i64)))
+            }
             #[cfg(all(feature = "f32", feature = "i128"))]
-            (Value::F32(v), ValueKind::I128) => Some(Value::I128(Ref::new(*v.borrow() as i128))),
+            (LegacyValue::F32(v), ValueKind::I128) => {
+                Some(LegacyValue::I128(Ref::new(*v.borrow() as i128)))
+            }
             #[cfg(all(feature = "f32", feature = "u8"))]
-            (Value::F32(v), ValueKind::U8) => Some(Value::U8(Ref::new(*v.borrow() as u8))),
+            (LegacyValue::F32(v), ValueKind::U8) => {
+                Some(LegacyValue::U8(Ref::new(*v.borrow() as u8)))
+            }
             #[cfg(all(feature = "f32", feature = "u16"))]
-            (Value::F32(v), ValueKind::U16) => Some(Value::U16(Ref::new(*v.borrow() as u16))),
+            (LegacyValue::F32(v), ValueKind::U16) => {
+                Some(LegacyValue::U16(Ref::new(*v.borrow() as u16)))
+            }
             #[cfg(all(feature = "f32", feature = "u32"))]
-            (Value::F32(v), ValueKind::U32) => Some(Value::U32(Ref::new(*v.borrow() as u32))),
+            (LegacyValue::F32(v), ValueKind::U32) => {
+                Some(LegacyValue::U32(Ref::new(*v.borrow() as u32)))
+            }
             #[cfg(all(feature = "f32", feature = "u64"))]
-            (Value::F32(v), ValueKind::U64) => Some(Value::U64(Ref::new(*v.borrow() as u64))),
+            (LegacyValue::F32(v), ValueKind::U64) => {
+                Some(LegacyValue::U64(Ref::new(*v.borrow() as u64)))
+            }
             #[cfg(all(feature = "f32", feature = "u128"))]
-            (Value::F32(v), ValueKind::U128) => Some(Value::U128(Ref::new(*v.borrow() as u128))),
+            (LegacyValue::F32(v), ValueKind::U128) => {
+                Some(LegacyValue::U128(Ref::new(*v.borrow() as u128)))
+            }
             #[cfg(all(feature = "f64", feature = "i8"))]
-            (Value::F64(v), ValueKind::I8) => Some(Value::I8(Ref::new(*v.borrow() as i8))),
+            (LegacyValue::F64(v), ValueKind::I8) => {
+                Some(LegacyValue::I8(Ref::new(*v.borrow() as i8)))
+            }
             #[cfg(all(feature = "f64", feature = "i16"))]
-            (Value::F64(v), ValueKind::I16) => Some(Value::I16(Ref::new(*v.borrow() as i16))),
+            (LegacyValue::F64(v), ValueKind::I16) => {
+                Some(LegacyValue::I16(Ref::new(*v.borrow() as i16)))
+            }
             #[cfg(all(feature = "f64", feature = "i32"))]
-            (Value::F64(v), ValueKind::I32) => Some(Value::I32(Ref::new(*v.borrow() as i32))),
+            (LegacyValue::F64(v), ValueKind::I32) => {
+                Some(LegacyValue::I32(Ref::new(*v.borrow() as i32)))
+            }
             #[cfg(all(feature = "f64", feature = "i64"))]
-            (Value::F64(v), ValueKind::I64) => Some(Value::I64(Ref::new(*v.borrow() as i64))),
+            (LegacyValue::F64(v), ValueKind::I64) => {
+                Some(LegacyValue::I64(Ref::new(*v.borrow() as i64)))
+            }
             #[cfg(all(feature = "f64", feature = "i128"))]
-            (Value::F64(v), ValueKind::I128) => Some(Value::I128(Ref::new(*v.borrow() as i128))),
+            (LegacyValue::F64(v), ValueKind::I128) => {
+                Some(LegacyValue::I128(Ref::new(*v.borrow() as i128)))
+            }
             #[cfg(all(feature = "f64", feature = "u8"))]
-            (Value::F64(v), ValueKind::U8) => Some(Value::U8(Ref::new(*v.borrow() as u8))),
+            (LegacyValue::F64(v), ValueKind::U8) => {
+                Some(LegacyValue::U8(Ref::new(*v.borrow() as u8)))
+            }
             #[cfg(all(feature = "f64", feature = "u16"))]
-            (Value::F64(v), ValueKind::U16) => Some(Value::U16(Ref::new(*v.borrow() as u16))),
+            (LegacyValue::F64(v), ValueKind::U16) => {
+                Some(LegacyValue::U16(Ref::new(*v.borrow() as u16)))
+            }
             #[cfg(all(feature = "f64", feature = "u32"))]
-            (Value::F64(v), ValueKind::U32) => Some(Value::U32(Ref::new(*v.borrow() as u32))),
+            (LegacyValue::F64(v), ValueKind::U32) => {
+                Some(LegacyValue::U32(Ref::new(*v.borrow() as u32)))
+            }
             #[cfg(all(feature = "f64", feature = "u64"))]
-            (Value::F64(v), ValueKind::U64) => Some(Value::U64(Ref::new(*v.borrow() as u64))),
+            (LegacyValue::F64(v), ValueKind::U64) => {
+                Some(LegacyValue::U64(Ref::new(*v.borrow() as u64)))
+            }
             #[cfg(all(feature = "f64", feature = "u128"))]
-            (Value::F64(v), ValueKind::U128) => Some(Value::U128(Ref::new(*v.borrow() as u128))),
+            (LegacyValue::F64(v), ValueKind::U128) => {
+                Some(LegacyValue::U128(Ref::new(*v.borrow() as u128)))
+            }
 
             /*
             // ==== INDEX conversions ====
-            (Value::Index(i), U32) => Some(Value::U32(Ref::new((*i.borrow()) as u32))),
-            (Value::U32(v), Index) => Some(Value::Index(Ref::new((*v.borrow()) as usize))),
+            (LegacyValue::Index(i), U32) => Some(LegacyValue::U32(Ref::new((*i.borrow()) as u32))),
+            (LegacyValue::U32(v), Index) => Some(LegacyValue::Index(Ref::new((*v.borrow()) as usize))),
 
 
             // ==== MATRIX conversions (element-wise) ====
-            (Value::MatrixU8(m), MatrixU16) => Some(Value::MatrixU16(m.map(|x| *x as u16))),
-            (Value::MatrixI32(m), MatrixF64) => Some(Value::MatrixF64(m.map(|x| (*x) as f64))),
+            (LegacyValue::MatrixU8(m), MatrixU16) => Some(LegacyValue::MatrixU16(m.map(|x| *x as u16))),
+            (LegacyValue::MatrixI32(m), MatrixF64) => Some(LegacyValue::MatrixF64(m.map(|x| (*x) as f64))),
             // You can expand other matrix conversions similarly...
 
             // ==== COMPLEX TYPES (stubs) ====
-            (Value::Set(set), Set(_)) => Some(Value::Set(set.clone())), // TODO: element-wise convert
-            (Value::Map(map), Map(_)) => Some(Value::Map(map.clone())), // TODO: key/value convert
-            (Value::Record(r), Record(_)) => Some(Value::Record(r.clone())), // TODO: field convert
-            (Value::Table(t), Table(_)) => Some(Value::Table(t.clone())), // TODO: column convert
+            (LegacyValue::Set(set), Set(_)) => Some(LegacyValue::Set(set.clone())), // TODO: element-wise convert
+            (LegacyValue::Map(map), Map(_)) => Some(LegacyValue::Map(map.clone())), // TODO: key/value convert
+            (LegacyValue::Record(r), Record(_)) => Some(LegacyValue::Record(r.clone())), // TODO: field convert
+            (LegacyValue::Table(t), Table(_)) => Some(LegacyValue::Table(t.clone())), // TODO: column convert
 
             // ==== ENUM, KIND ====
-            (Value::Enum(e), Enum(_)) => Some(Value::Enum(e.clone())),
-            (Value::Kind(k), Kind(_)) => Some(Value::Kind(k.clone())),
+            (LegacyValue::Enum(e), Enum(_)) => Some(LegacyValue::Enum(e.clone())),
+            (LegacyValue::Kind(k), Kind(_)) => Some(LegacyValue::Kind(k.clone())),
 
             // ==== SPECIAL CASES ====
-            (Value::IndexAll, IndexAll) => Some(Value::IndexAll),
-            (Value::Empty, Empty) => Some(Value::Empty),
+            (LegacyValue::IndexAll, IndexAll) => Some(LegacyValue::IndexAll),
+            (LegacyValue::Empty, Empty) => Some(LegacyValue::Empty),
             */
             // ==== FALLBACK ====
             _ => None,
@@ -1994,95 +2251,95 @@ impl Value {
     pub fn size_of(&self) -> usize {
         match self {
             #[cfg(feature = "rational")]
-            Value::R64(x) => 16,
+            LegacyValue::R64(x) => 16,
             #[cfg(feature = "u8")]
-            Value::U8(x) => 1,
+            LegacyValue::U8(x) => 1,
             #[cfg(feature = "u16")]
-            Value::U16(x) => 2,
+            LegacyValue::U16(x) => 2,
             #[cfg(feature = "u32")]
-            Value::U32(x) => 4,
+            LegacyValue::U32(x) => 4,
             #[cfg(feature = "u64")]
-            Value::U64(x) => 8,
+            LegacyValue::U64(x) => 8,
             #[cfg(feature = "u128")]
-            Value::U128(x) => 16,
+            LegacyValue::U128(x) => 16,
             #[cfg(feature = "i8")]
-            Value::I8(x) => 1,
+            LegacyValue::I8(x) => 1,
             #[cfg(feature = "i16")]
-            Value::I16(x) => 2,
+            LegacyValue::I16(x) => 2,
             #[cfg(feature = "i32")]
-            Value::I32(x) => 4,
+            LegacyValue::I32(x) => 4,
             #[cfg(feature = "i64")]
-            Value::I64(x) => 8,
+            LegacyValue::I64(x) => 8,
             #[cfg(feature = "i128")]
-            Value::I128(x) => 16,
+            LegacyValue::I128(x) => 16,
             #[cfg(feature = "f32")]
-            Value::F32(x) => 4,
+            LegacyValue::F32(x) => 4,
             #[cfg(feature = "f64")]
-            Value::F64(x) => 8,
+            LegacyValue::F64(x) => 8,
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(x) => 1,
+            LegacyValue::Bool(x) => 1,
             #[cfg(feature = "complex")]
-            Value::C64(x) => 16,
+            LegacyValue::C64(x) => 16,
             #[cfg(all(feature = "matrix"))]
-            Value::MatrixIndex(x) => x.size_of(),
+            LegacyValue::MatrixIndex(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(x) => x.size_of(),
+            LegacyValue::MatrixBool(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(x) => x.size_of(),
+            LegacyValue::MatrixU8(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(x) => x.size_of(),
+            LegacyValue::MatrixU16(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(x) => x.size_of(),
+            LegacyValue::MatrixU32(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(x) => x.size_of(),
+            LegacyValue::MatrixU64(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(x) => x.size_of(),
+            LegacyValue::MatrixU128(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(x) => x.size_of(),
+            LegacyValue::MatrixI8(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(x) => x.size_of(),
+            LegacyValue::MatrixI16(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(x) => x.size_of(),
+            LegacyValue::MatrixI32(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(x) => x.size_of(),
+            LegacyValue::MatrixI64(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(x) => x.size_of(),
+            LegacyValue::MatrixI128(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(x) => x.size_of(),
+            LegacyValue::MatrixF32(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(x) => x.size_of(),
+            LegacyValue::MatrixF64(x) => x.size_of(),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(x) => x.size_of(),
+            LegacyValue::MatrixValue(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(x) => x.size_of(),
+            LegacyValue::MatrixString(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(x) => x.size_of(),
+            LegacyValue::MatrixR64(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(x) => x.size_of(),
+            LegacyValue::MatrixC64(x) => x.size_of(),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(x) => x.borrow().len(),
+            LegacyValue::String(x) => x.borrow().len(),
             #[cfg(feature = "atom")]
-            Value::Atom(x) => 8,
+            LegacyValue::Atom(x) => 8,
             #[cfg(feature = "set")]
-            Value::Set(x) => x.borrow().size_of(),
+            LegacyValue::Set(x) => x.borrow().size_of(),
             #[cfg(feature = "map")]
-            Value::Map(x) => x.borrow().size_of(),
+            LegacyValue::Map(x) => x.borrow().size_of(),
             #[cfg(feature = "table")]
-            Value::Table(x) => x.borrow().size_of(),
+            LegacyValue::Table(x) => x.borrow().size_of(),
             #[cfg(feature = "record")]
-            Value::Record(x) => x.borrow().size_of(),
+            LegacyValue::Record(x) => x.borrow().size_of(),
             #[cfg(feature = "tuple")]
-            Value::Tuple(x) => x.borrow().size_of(),
+            LegacyValue::Tuple(x) => x.borrow().size_of(),
             #[cfg(feature = "enum")]
-            Value::Enum(x) => x.borrow().size_of(),
-            Value::MutableReference(x) => x.borrow().size_of(),
-            Value::Id(_) => 8,
-            Value::Index(x) => 8,
-            Value::Kind(_) => 0, // Kind is not a value, so it has no size
-            Value::Typed(value, _) => value.size_of(),
-            Value::EmptyKind(_) => 0,
-            Value::Empty => 0,
-            Value::IndexAll => 0, // IndexAll is a special value, so it has no size
+            LegacyValue::Enum(x) => x.borrow().size_of(),
+            LegacyValue::MutableReference(x) => x.borrow().size_of(),
+            LegacyValue::Id(_) => 8,
+            LegacyValue::Index(x) => 8,
+            LegacyValue::Kind(_) => 0, // Kind is not a value, so it has no size
+            LegacyValue::Typed(value, _) => value.size_of(),
+            LegacyValue::EmptyKind(_) => 0,
+            LegacyValue::Empty => 0,
+            LegacyValue::IndexAll => 0, // IndexAll is a special value, so it has no size
         }
     }
 
@@ -2090,98 +2347,100 @@ impl Value {
     pub fn to_html(&self) -> String {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::U8(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "u16")]
-            Value::U16(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::U16(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "u32")]
-            Value::U32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::U32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "u64")]
-            Value::U64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::U64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "u128")]
-            Value::U128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::U128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "i8")]
-            Value::I8(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::I8(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "i128")]
-            Value::I128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::I128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "i16")]
-            Value::I16(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::I16(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "i32")]
-            Value::I32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::I32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "i64")]
-            Value::I64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::I64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "i128")]
-            Value::I128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::I128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "f32")]
-            Value::F32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::F32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "f64")]
-            Value::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+            LegacyValue::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(s) => format!(
+            LegacyValue::String(s) => format!(
                 "<span class='mech-string'>\"{}\"</span>",
                 escape_html_text(&s.borrow())
             ),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(b) => format!("<span class='mech-boolean'>{}</span>", b.borrow()),
+            LegacyValue::Bool(b) => format!("<span class='mech-boolean'>{}</span>", b.borrow()),
             #[cfg(feature = "complex")]
-            Value::C64(c) => c.borrow().to_html(),
+            LegacyValue::C64(c) => c.borrow().to_html(),
             #[cfg(feature = "rational")]
-            Value::R64(r) => r.borrow().to_html(),
+            LegacyValue::R64(r) => r.borrow().to_html(),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(m) => m.to_html(),
+            LegacyValue::MatrixU8(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(m) => m.to_html(),
+            LegacyValue::MatrixU16(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(m) => m.to_html(),
+            LegacyValue::MatrixU32(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(m) => m.to_html(),
+            LegacyValue::MatrixU64(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(m) => m.to_html(),
+            LegacyValue::MatrixU128(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(m) => m.to_html(),
+            LegacyValue::MatrixI8(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(m) => m.to_html(),
+            LegacyValue::MatrixI16(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(m) => m.to_html(),
+            LegacyValue::MatrixI32(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(m) => m.to_html(),
+            LegacyValue::MatrixI64(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(m) => m.to_html(),
+            LegacyValue::MatrixI128(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(m) => m.to_html(),
+            LegacyValue::MatrixF64(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(m) => m.to_html(),
+            LegacyValue::MatrixF32(m) => m.to_html(),
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(m) => m.to_html(),
+            LegacyValue::MatrixIndex(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(m) => m.to_html(),
+            LegacyValue::MatrixBool(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(m) => m.to_html(),
+            LegacyValue::MatrixString(m) => m.to_html(),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(m) => m.to_html(),
+            LegacyValue::MatrixValue(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(m) => m.to_html(),
+            LegacyValue::MatrixR64(m) => m.to_html(),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(m) => m.to_html(),
+            LegacyValue::MatrixC64(m) => m.to_html(),
             #[cfg(feature = "atom")]
-            Value::Atom(a) => a.borrow().to_html(),
+            LegacyValue::Atom(a) => a.borrow().to_html(),
             #[cfg(feature = "set")]
-            Value::Set(s) => s.borrow().to_html(),
+            LegacyValue::Set(s) => s.borrow().to_html(),
             #[cfg(feature = "map")]
-            Value::Map(m) => m.borrow().to_html(),
+            LegacyValue::Map(m) => m.borrow().to_html(),
             #[cfg(feature = "table")]
-            Value::Table(t) => t.borrow().to_html(),
+            LegacyValue::Table(t) => t.borrow().to_html(),
             #[cfg(feature = "record")]
-            Value::Record(r) => r.borrow().to_html(),
+            LegacyValue::Record(r) => r.borrow().to_html(),
             #[cfg(feature = "tuple")]
-            Value::Tuple(t) => t.borrow().to_html(),
+            LegacyValue::Tuple(t) => t.borrow().to_html(),
             #[cfg(feature = "enum")]
-            Value::Enum(e) => e.borrow().to_html(),
-            Value::Empty | Value::EmptyKind(_) => "<span class='mech-empty'>_</span>".to_string(),
-            Value::MutableReference(m) => {
+            LegacyValue::Enum(e) => e.borrow().to_html(),
+            LegacyValue::Empty | LegacyValue::EmptyKind(_) => {
+                "<span class='mech-empty'>_</span>".to_string()
+            }
+            LegacyValue::MutableReference(m) => {
                 let inner = m.borrow();
                 format!("<span class='mech-reference'>{}</span>", inner.to_html())
             }
-            Value::Typed(value, _) => value.to_html(),
+            LegacyValue::Typed(value, _) => value.to_html(),
             _ => "???".to_string(),
         }
     }
@@ -2189,77 +2448,77 @@ impl Value {
     pub fn format_value_inline(&self) -> String {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(n) => format!("{}", n.borrow()),
+            LegacyValue::U8(n) => format!("{}", n.borrow()),
             #[cfg(feature = "u16")]
-            Value::U16(n) => format!("{}", n.borrow()),
+            LegacyValue::U16(n) => format!("{}", n.borrow()),
             #[cfg(feature = "u32")]
-            Value::U32(n) => format!("{}", n.borrow()),
+            LegacyValue::U32(n) => format!("{}", n.borrow()),
             #[cfg(feature = "u64")]
-            Value::U64(n) => format!("{}", n.borrow()),
+            LegacyValue::U64(n) => format!("{}", n.borrow()),
             #[cfg(feature = "u128")]
-            Value::U128(n) => format!("{}", n.borrow()),
+            LegacyValue::U128(n) => format!("{}", n.borrow()),
             #[cfg(feature = "i8")]
-            Value::I8(n) => format!("{}", n.borrow()),
+            LegacyValue::I8(n) => format!("{}", n.borrow()),
             #[cfg(feature = "i16")]
-            Value::I16(n) => format!("{}", n.borrow()),
+            LegacyValue::I16(n) => format!("{}", n.borrow()),
             #[cfg(feature = "i32")]
-            Value::I32(n) => format!("{}", n.borrow()),
+            LegacyValue::I32(n) => format!("{}", n.borrow()),
             #[cfg(feature = "i64")]
-            Value::I64(n) => format!("{}", n.borrow()),
+            LegacyValue::I64(n) => format!("{}", n.borrow()),
             #[cfg(feature = "i128")]
-            Value::I128(n) => format!("{}", n.borrow()),
+            LegacyValue::I128(n) => format!("{}", n.borrow()),
             #[cfg(feature = "f32")]
-            Value::F32(n) => format!("{}", n.borrow()),
+            LegacyValue::F32(n) => format!("{}", n.borrow()),
             #[cfg(feature = "f64")]
-            Value::F64(n) => format!("{}", n.borrow()),
+            LegacyValue::F64(n) => format!("{}", n.borrow()),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(s) => format!("\"{}\"", s.borrow()),
+            LegacyValue::String(s) => format!("\"{}\"", s.borrow()),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(b) => format!("{}", b.borrow()),
+            LegacyValue::Bool(b) => format!("{}", b.borrow()),
             #[cfg(feature = "complex")]
-            Value::C64(c) => format!("{}", c.borrow()),
+            LegacyValue::C64(c) => format!("{}", c.borrow()),
             #[cfg(feature = "rational")]
-            Value::R64(r) => format!("{}", r.borrow()),
+            LegacyValue::R64(r) => format!("{}", r.borrow()),
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixIndex(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixBool(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU8(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU16(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU32(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU64(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU128(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI8(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI16(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI32(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI64(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI128(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixF32(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixF64(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixString(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixR64(m) => Self::format_matrix_inline(m),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixC64(m) => Self::format_matrix_inline(m),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixValue(m) => Self::format_matrix_inline(m),
             #[cfg(feature = "atom")]
-            Value::Atom(a) => format!("{}", a.borrow()),
+            LegacyValue::Atom(a) => format!("{}", a.borrow()),
             #[cfg(feature = "set")]
-            Value::Set(s) => {
+            LegacyValue::Set(s) => {
                 let vals = s
                     .borrow()
                     .set
@@ -2269,7 +2528,7 @@ impl Value {
                 format!("{{{}}}", vals.join(", "))
             }
             #[cfg(feature = "map")]
-            Value::Map(m) => {
+            LegacyValue::Map(m) => {
                 let vals = m
                     .borrow()
                     .map
@@ -2281,7 +2540,7 @@ impl Value {
                 format!("{{{}}}", vals.join(", "))
             }
             #[cfg(feature = "record")]
-            Value::Record(r) => {
+            LegacyValue::Record(r) => {
                 let record = r.borrow();
                 let vals = record
                     .data
@@ -2298,7 +2557,7 @@ impl Value {
                 format!("{{{}}}", vals.join(", "))
             }
             #[cfg(feature = "tuple")]
-            Value::Tuple(t) => {
+            LegacyValue::Tuple(t) => {
                 let vals = t
                     .borrow()
                     .elements
@@ -2308,7 +2567,7 @@ impl Value {
                 format!("({})", vals.join(", "))
             }
             #[cfg(feature = "enum")]
-            Value::Enum(e) => {
+            LegacyValue::Enum(e) => {
                 let enm = e.borrow();
                 let dict = enm.names.borrow();
                 if enm.variants.len() == 1 {
@@ -2345,7 +2604,7 @@ impl Value {
                 format!(":{}{{{}}}", name, vals.join(" | "))
             }
             #[cfg(feature = "table")]
-            Value::Table(t) => {
+            LegacyValue::Table(t) => {
                 let table = t.borrow();
                 let headers = table
                     .data
@@ -2373,14 +2632,14 @@ impl Value {
                     .join("; ");
                 format!("|{}| {}", headers, rows)
             }
-            Value::Id(x) => format!("{}", humanize(x)),
-            Value::Index(x) => format!("{}", x.borrow()),
-            Value::Kind(k) => format!("<{}>", k),
-            Value::Typed(value, _) => value.format_value_inline(),
-            Value::MutableReference(m) => m.borrow().format_value_inline(),
-            Value::IndexAll => ":".to_string(),
-            Value::EmptyKind(_) => "_".to_string(),
-            Value::Empty => "_".to_string(),
+            LegacyValue::Id(x) => format!("{}", humanize(x)),
+            LegacyValue::Index(x) => format!("{}", x.borrow()),
+            LegacyValue::Kind(k) => format!("<{}>", k),
+            LegacyValue::Typed(value, _) => value.format_value_inline(),
+            LegacyValue::MutableReference(m) => m.borrow().format_value_inline(),
+            LegacyValue::IndexAll => ":".to_string(),
+            LegacyValue::EmptyKind(_) => "_".to_string(),
+            LegacyValue::Empty => "_".to_string(),
         }
     }
 
@@ -2406,100 +2665,100 @@ impl Value {
     pub fn shape(&self) -> Vec<usize> {
         match self {
             #[cfg(feature = "rational")]
-            Value::R64(x) => vec![1, 1],
+            LegacyValue::R64(x) => vec![1, 1],
             #[cfg(feature = "complex")]
-            Value::C64(x) => vec![1, 1],
+            LegacyValue::C64(x) => vec![1, 1],
             #[cfg(feature = "u8")]
-            Value::U8(x) => vec![1, 1],
+            LegacyValue::U8(x) => vec![1, 1],
             #[cfg(feature = "u16")]
-            Value::U16(x) => vec![1, 1],
+            LegacyValue::U16(x) => vec![1, 1],
             #[cfg(feature = "u32")]
-            Value::U32(x) => vec![1, 1],
+            LegacyValue::U32(x) => vec![1, 1],
             #[cfg(feature = "u64")]
-            Value::U64(x) => vec![1, 1],
+            LegacyValue::U64(x) => vec![1, 1],
             #[cfg(feature = "u128")]
-            Value::U128(x) => vec![1, 1],
+            LegacyValue::U128(x) => vec![1, 1],
             #[cfg(feature = "i8")]
-            Value::I8(x) => vec![1, 1],
+            LegacyValue::I8(x) => vec![1, 1],
             #[cfg(feature = "i16")]
-            Value::I16(x) => vec![1, 1],
+            LegacyValue::I16(x) => vec![1, 1],
             #[cfg(feature = "i32")]
-            Value::I32(x) => vec![1, 1],
+            LegacyValue::I32(x) => vec![1, 1],
             #[cfg(feature = "i64")]
-            Value::I64(x) => vec![1, 1],
+            LegacyValue::I64(x) => vec![1, 1],
             #[cfg(feature = "i128")]
-            Value::I128(x) => vec![1, 1],
+            LegacyValue::I128(x) => vec![1, 1],
             #[cfg(feature = "f32")]
-            Value::F32(x) => vec![1, 1],
+            LegacyValue::F32(x) => vec![1, 1],
             #[cfg(feature = "f64")]
-            Value::F64(x) => vec![1, 1],
+            LegacyValue::F64(x) => vec![1, 1],
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(x) => vec![1, 1],
+            LegacyValue::String(x) => vec![1, 1],
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(x) => vec![1, 1],
+            LegacyValue::Bool(x) => vec![1, 1],
             #[cfg(feature = "atom")]
-            Value::Atom(x) => vec![1, 1],
+            LegacyValue::Atom(x) => vec![1, 1],
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(x) => x.shape(),
+            LegacyValue::MatrixIndex(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(x) => x.shape(),
+            LegacyValue::MatrixBool(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(x) => x.shape(),
+            LegacyValue::MatrixU8(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(x) => x.shape(),
+            LegacyValue::MatrixU16(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(x) => x.shape(),
+            LegacyValue::MatrixU32(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(x) => x.shape(),
+            LegacyValue::MatrixU64(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(x) => x.shape(),
+            LegacyValue::MatrixU128(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(x) => x.shape(),
+            LegacyValue::MatrixI8(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(x) => x.shape(),
+            LegacyValue::MatrixI16(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(x) => x.shape(),
+            LegacyValue::MatrixI32(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(x) => x.shape(),
+            LegacyValue::MatrixI64(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(x) => x.shape(),
+            LegacyValue::MatrixI128(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(x) => x.shape(),
+            LegacyValue::MatrixF32(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(x) => x.shape(),
+            LegacyValue::MatrixF64(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(x) => x.shape(),
+            LegacyValue::MatrixString(x) => x.shape(),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(x) => x.shape(),
+            LegacyValue::MatrixValue(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(x) => x.shape(),
+            LegacyValue::MatrixR64(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(x) => x.shape(),
+            LegacyValue::MatrixC64(x) => x.shape(),
             #[cfg(feature = "enum")]
-            Value::Enum(x) => vec![1, 1],
+            LegacyValue::Enum(x) => vec![1, 1],
             #[cfg(feature = "table")]
-            Value::Table(x) => x.borrow().shape(),
+            LegacyValue::Table(x) => x.borrow().shape(),
             #[cfg(feature = "set")]
-            Value::Set(x) => vec![1, x.borrow().set.len()],
+            LegacyValue::Set(x) => vec![1, x.borrow().set.len()],
             #[cfg(feature = "map")]
-            Value::Map(x) => vec![1, x.borrow().map.len()],
+            LegacyValue::Map(x) => vec![1, x.borrow().map.len()],
             #[cfg(feature = "record")]
-            Value::Record(x) => x.borrow().shape(),
+            LegacyValue::Record(x) => x.borrow().shape(),
             #[cfg(feature = "tuple")]
-            Value::Tuple(x) => vec![1, x.borrow().size()],
-            Value::Index(x) => vec![1, 1],
-            Value::MutableReference(x) => x.borrow().shape(),
-            Value::Typed(x, _) => x.shape(),
-            Value::Empty | Value::EmptyKind(_) => vec![1, 1],
-            Value::IndexAll => vec![0, 0],
-            Value::Kind(_) => vec![0, 0],
-            Value::Id(x) => vec![0, 0],
+            LegacyValue::Tuple(x) => vec![1, x.borrow().size()],
+            LegacyValue::Index(x) => vec![1, 1],
+            LegacyValue::MutableReference(x) => x.borrow().shape(),
+            LegacyValue::Typed(x, _) => x.shape(),
+            LegacyValue::Empty | LegacyValue::EmptyKind(_) => vec![1, 1],
+            LegacyValue::IndexAll => vec![0, 0],
+            LegacyValue::Kind(_) => vec![0, 0],
+            LegacyValue::Id(x) => vec![0, 0],
         }
     }
 
     pub fn deref_kind(&self) -> ValueKind {
         match self {
-            Value::MutableReference(x) => x.borrow().kind(),
+            LegacyValue::MutableReference(x) => x.borrow().kind(),
             x => x.kind(),
         }
     }
@@ -2507,97 +2766,99 @@ impl Value {
     pub fn kind(&self) -> ValueKind {
         match self {
             #[cfg(feature = "complex")]
-            Value::C64(_) => ValueKind::C64,
+            LegacyValue::C64(_) => ValueKind::C64,
             #[cfg(feature = "rational")]
-            Value::R64(_) => ValueKind::R64,
+            LegacyValue::R64(_) => ValueKind::R64,
             #[cfg(feature = "u8")]
-            Value::U8(_) => ValueKind::U8,
+            LegacyValue::U8(_) => ValueKind::U8,
             #[cfg(feature = "u16")]
-            Value::U16(_) => ValueKind::U16,
+            LegacyValue::U16(_) => ValueKind::U16,
             #[cfg(feature = "u32")]
-            Value::U32(_) => ValueKind::U32,
+            LegacyValue::U32(_) => ValueKind::U32,
             #[cfg(feature = "u64")]
-            Value::U64(_) => ValueKind::U64,
+            LegacyValue::U64(_) => ValueKind::U64,
             #[cfg(feature = "u128")]
-            Value::U128(_) => ValueKind::U128,
+            LegacyValue::U128(_) => ValueKind::U128,
             #[cfg(feature = "i8")]
-            Value::I8(_) => ValueKind::I8,
+            LegacyValue::I8(_) => ValueKind::I8,
             #[cfg(feature = "i16")]
-            Value::I16(_) => ValueKind::I16,
+            LegacyValue::I16(_) => ValueKind::I16,
             #[cfg(feature = "i32")]
-            Value::I32(_) => ValueKind::I32,
+            LegacyValue::I32(_) => ValueKind::I32,
             #[cfg(feature = "i64")]
-            Value::I64(_) => ValueKind::I64,
+            LegacyValue::I64(_) => ValueKind::I64,
             #[cfg(feature = "i128")]
-            Value::I128(_) => ValueKind::I128,
+            LegacyValue::I128(_) => ValueKind::I128,
             #[cfg(feature = "f32")]
-            Value::F32(_) => ValueKind::F32,
+            LegacyValue::F32(_) => ValueKind::F32,
             #[cfg(feature = "f64")]
-            Value::F64(_) => ValueKind::F64,
+            LegacyValue::F64(_) => ValueKind::F64,
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(_) => ValueKind::String,
+            LegacyValue::String(_) => ValueKind::String,
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(_) => ValueKind::Bool,
+            LegacyValue::Bool(_) => ValueKind::Bool,
             #[cfg(feature = "atom")]
-            Value::Atom(x) => ValueKind::Atom(x.borrow().id(), x.borrow().name().clone()),
+            LegacyValue::Atom(x) => ValueKind::Atom(x.borrow().id(), x.borrow().name().clone()),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(x) => {
+            LegacyValue::MatrixValue(x) => {
                 ValueKind::Matrix(Box::new(Self::infer_matrix_value_kind(x)), x.shape())
             }
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index), x.shape()),
+            LegacyValue::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index), x.shape()),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(x) => ValueKind::Matrix(Box::new(ValueKind::Bool), x.shape()),
+            LegacyValue::MatrixBool(x) => ValueKind::Matrix(Box::new(ValueKind::Bool), x.shape()),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8), x.shape()),
+            LegacyValue::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8), x.shape()),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16), x.shape()),
+            LegacyValue::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16), x.shape()),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(x) => ValueKind::Matrix(Box::new(ValueKind::U32), x.shape()),
+            LegacyValue::MatrixU32(x) => ValueKind::Matrix(Box::new(ValueKind::U32), x.shape()),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(x) => ValueKind::Matrix(Box::new(ValueKind::U64), x.shape()),
+            LegacyValue::MatrixU64(x) => ValueKind::Matrix(Box::new(ValueKind::U64), x.shape()),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(x) => ValueKind::Matrix(Box::new(ValueKind::U128), x.shape()),
+            LegacyValue::MatrixU128(x) => ValueKind::Matrix(Box::new(ValueKind::U128), x.shape()),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(x) => ValueKind::Matrix(Box::new(ValueKind::I8), x.shape()),
+            LegacyValue::MatrixI8(x) => ValueKind::Matrix(Box::new(ValueKind::I8), x.shape()),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(x) => ValueKind::Matrix(Box::new(ValueKind::I16), x.shape()),
+            LegacyValue::MatrixI16(x) => ValueKind::Matrix(Box::new(ValueKind::I16), x.shape()),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(x) => ValueKind::Matrix(Box::new(ValueKind::I32), x.shape()),
+            LegacyValue::MatrixI32(x) => ValueKind::Matrix(Box::new(ValueKind::I32), x.shape()),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(x) => ValueKind::Matrix(Box::new(ValueKind::I64), x.shape()),
+            LegacyValue::MatrixI64(x) => ValueKind::Matrix(Box::new(ValueKind::I64), x.shape()),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::I128), x.shape()),
+            LegacyValue::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::I128), x.shape()),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32), x.shape()),
+            LegacyValue::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32), x.shape()),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64), x.shape()),
+            LegacyValue::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64), x.shape()),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(x) => ValueKind::Matrix(Box::new(ValueKind::String), x.shape()),
+            LegacyValue::MatrixString(x) => {
+                ValueKind::Matrix(Box::new(ValueKind::String), x.shape())
+            }
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(x) => ValueKind::Matrix(Box::new(ValueKind::R64), x.shape()),
+            LegacyValue::MatrixR64(x) => ValueKind::Matrix(Box::new(ValueKind::R64), x.shape()),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(x) => ValueKind::Matrix(Box::new(ValueKind::C64), x.shape()),
+            LegacyValue::MatrixC64(x) => ValueKind::Matrix(Box::new(ValueKind::C64), x.shape()),
             #[cfg(feature = "table")]
-            Value::Table(x) => x.borrow().kind(),
+            LegacyValue::Table(x) => x.borrow().kind(),
             #[cfg(feature = "set")]
-            Value::Set(x) => x.borrow().kind(),
+            LegacyValue::Set(x) => x.borrow().kind(),
             #[cfg(feature = "map")]
-            Value::Map(x) => x.borrow().kind(),
+            LegacyValue::Map(x) => x.borrow().kind(),
             #[cfg(feature = "record")]
-            Value::Record(x) => x.borrow().kind(),
+            LegacyValue::Record(x) => x.borrow().kind(),
             #[cfg(feature = "tuple")]
-            Value::Tuple(x) => x.borrow().kind(),
+            LegacyValue::Tuple(x) => x.borrow().kind(),
             #[cfg(feature = "enum")]
-            Value::Enum(x) => x.borrow().kind(),
-            Value::MutableReference(x) => ValueKind::Reference(Box::new(x.borrow().kind())),
-            Value::Typed(_, kind) => kind.clone(),
-            Value::EmptyKind(k) => k.clone(),
-            Value::Empty => ValueKind::Empty,
-            Value::IndexAll => ValueKind::Empty,
-            Value::Id(x) => ValueKind::Id,
-            Value::Index(x) => ValueKind::Index,
-            Value::Kind(x) => x.clone(),
+            LegacyValue::Enum(x) => x.borrow().kind(),
+            LegacyValue::MutableReference(x) => ValueKind::Reference(Box::new(x.borrow().kind())),
+            LegacyValue::Typed(_, kind) => kind.clone(),
+            LegacyValue::EmptyKind(k) => k.clone(),
+            LegacyValue::Empty => ValueKind::Empty,
+            LegacyValue::IndexAll => ValueKind::Empty,
+            LegacyValue::Id(x) => ValueKind::Id,
+            LegacyValue::Index(x) => ValueKind::Index,
+            LegacyValue::Kind(x) => x.clone(),
         }
     }
 
@@ -2605,41 +2866,41 @@ impl Value {
     pub fn is_matrix(&self) -> bool {
         match self {
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(_) => true,
+            LegacyValue::MatrixIndex(_) => true,
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(_) => true,
+            LegacyValue::MatrixBool(_) => true,
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(_) => true,
+            LegacyValue::MatrixU8(_) => true,
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(_) => true,
+            LegacyValue::MatrixU16(_) => true,
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(_) => true,
+            LegacyValue::MatrixU32(_) => true,
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(_) => true,
+            LegacyValue::MatrixU64(_) => true,
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(_) => true,
+            LegacyValue::MatrixU128(_) => true,
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(_) => true,
+            LegacyValue::MatrixI8(_) => true,
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(_) => true,
+            LegacyValue::MatrixI16(_) => true,
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(_) => true,
+            LegacyValue::MatrixI32(_) => true,
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(_) => true,
+            LegacyValue::MatrixI64(_) => true,
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(_) => true,
+            LegacyValue::MatrixI128(_) => true,
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(_) => true,
+            LegacyValue::MatrixF32(_) => true,
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(_) => true,
+            LegacyValue::MatrixF64(_) => true,
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(_) => true,
+            LegacyValue::MatrixString(_) => true,
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(_) => true,
+            LegacyValue::MatrixR64(_) => true,
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(_) => true,
+            LegacyValue::MatrixC64(_) => true,
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(_) => true,
+            LegacyValue::MatrixValue(_) => true,
             _ => false,
         }
     }
@@ -2647,45 +2908,45 @@ impl Value {
     pub fn is_scalar(&self) -> bool {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(_) => true,
+            LegacyValue::U8(_) => true,
             #[cfg(feature = "u16")]
-            Value::U16(_) => true,
+            LegacyValue::U16(_) => true,
             #[cfg(feature = "u32")]
-            Value::U32(_) => true,
+            LegacyValue::U32(_) => true,
             #[cfg(feature = "u64")]
-            Value::U64(_) => true,
+            LegacyValue::U64(_) => true,
             #[cfg(feature = "u128")]
-            Value::U128(_) => true,
+            LegacyValue::U128(_) => true,
             #[cfg(feature = "i8")]
-            Value::I8(_) => true,
+            LegacyValue::I8(_) => true,
             #[cfg(feature = "i16")]
-            Value::I16(_) => true,
+            LegacyValue::I16(_) => true,
             #[cfg(feature = "i32")]
-            Value::I32(_) => true,
+            LegacyValue::I32(_) => true,
             #[cfg(feature = "i64")]
-            Value::I64(_) => true,
+            LegacyValue::I64(_) => true,
             #[cfg(feature = "i128")]
-            Value::I128(_) => true,
+            LegacyValue::I128(_) => true,
             #[cfg(feature = "f32")]
-            Value::F32(_) => true,
+            LegacyValue::F32(_) => true,
             #[cfg(feature = "f64")]
-            Value::F64(_) => true,
+            LegacyValue::F64(_) => true,
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(_) => true,
+            LegacyValue::Bool(_) => true,
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(_) => true,
+            LegacyValue::String(_) => true,
             #[cfg(feature = "atom")]
-            Value::Atom(_) => true,
-            Value::Index(_) => true,
+            LegacyValue::Atom(_) => true,
+            LegacyValue::Index(_) => true,
             _ => false,
         }
     }
 
     #[cfg(any(feature = "bool", feature = "variable_define"))]
     pub fn as_bool(&self) -> MResult<Ref<bool>> {
-        if let Value::Bool(v) = self {
+        if let LegacyValue::Bool(v) = self {
             Ok(v.clone())
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_bool()
         } else {
             Err(MechError::new(UnhandledFunctionArgumentKindError, None).with_compiler_loc())
@@ -2706,10 +2967,10 @@ impl Value {
     pub fn is_string(&self) -> bool {
         match self {
             #[cfg(feature = "string")]
-            Value::String(_) => true,
+            LegacyValue::String(_) => true,
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(_) => true,
-            Value::MutableReference(val) => val.borrow().is_string(),
+            LegacyValue::MatrixString(_) => true,
+            LegacyValue::MutableReference(val) => val.borrow().is_string(),
             _ => false,
         }
     }
@@ -2717,38 +2978,38 @@ impl Value {
     #[cfg(any(feature = "string", feature = "variable_define"))]
     pub fn as_string(&self) -> MResult<Ref<String>> {
         match self {
-            Value::String(v) => Ok(v.clone()),
+            LegacyValue::String(v) => Ok(v.clone()),
             #[cfg(feature = "u8")]
-            Value::U8(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::U8(v) => Ok(Ref::new(v.borrow().to_string())),
             #[cfg(feature = "u16")]
-            Value::U16(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::U16(v) => Ok(Ref::new(v.borrow().to_string())),
             #[cfg(feature = "u32")]
-            Value::U32(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::U32(v) => Ok(Ref::new(v.borrow().to_string())),
             #[cfg(feature = "u64")]
-            Value::U64(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::U64(v) => Ok(Ref::new(v.borrow().to_string())),
             #[cfg(feature = "u128")]
-            Value::U128(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::U128(v) => Ok(Ref::new(v.borrow().to_string())),
             #[cfg(feature = "i8")]
-            Value::I8(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::I8(v) => Ok(Ref::new(v.borrow().to_string())),
             #[cfg(feature = "i16")]
-            Value::I16(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::I16(v) => Ok(Ref::new(v.borrow().to_string())),
             #[cfg(feature = "i32")]
-            Value::I32(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::I32(v) => Ok(Ref::new(v.borrow().to_string())),
             #[cfg(feature = "i64")]
-            Value::I64(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::I64(v) => Ok(Ref::new(v.borrow().to_string())),
             #[cfg(feature = "i128")]
-            Value::I128(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::I128(v) => Ok(Ref::new(v.borrow().to_string())),
             #[cfg(feature = "f32")]
-            Value::F32(v) => Ok(Ref::new(format!("{}", v.borrow()))),
+            LegacyValue::F32(v) => Ok(Ref::new(format!("{}", v.borrow()))),
             #[cfg(feature = "f64")]
-            Value::F64(v) => Ok(Ref::new(format!("{}", v.borrow()))),
+            LegacyValue::F64(v) => Ok(Ref::new(format!("{}", v.borrow()))),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(v) => Ok(Ref::new(format!("{}", v.borrow()))),
+            LegacyValue::Bool(v) => Ok(Ref::new(format!("{}", v.borrow()))),
             #[cfg(feature = "rational")]
-            Value::R64(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::R64(v) => Ok(Ref::new(v.borrow().to_string())),
             #[cfg(feature = "complex")]
-            Value::C64(v) => Ok(Ref::new(v.borrow().to_string())),
-            Value::MutableReference(val) => val.borrow().as_string(),
+            LegacyValue::C64(v) => Ok(Ref::new(v.borrow().to_string())),
+            LegacyValue::MutableReference(val) => val.borrow().as_string(),
             _ => Err(MechError::new(
                 CannotConvertToTypeError {
                     target_type: "string",
@@ -2762,32 +3023,32 @@ impl Value {
     #[cfg(feature = "r64")]
     pub fn as_r64(&self) -> MResult<Ref<R64>> {
         match self {
-            Value::R64(v) => Ok(v.clone()),
+            LegacyValue::R64(v) => Ok(v.clone()),
             #[cfg(feature = "f32")]
-            Value::F32(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::F32(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
             #[cfg(feature = "f64")]
-            Value::F64(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::F64(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
             #[cfg(feature = "u8")]
-            Value::U8(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::U8(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
             #[cfg(feature = "u16")]
-            Value::U16(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::U16(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
             #[cfg(feature = "u32")]
-            Value::U32(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::U32(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
             #[cfg(feature = "u64")]
-            Value::U64(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::U64(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
             #[cfg(feature = "u128")]
-            Value::U128(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::U128(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
             #[cfg(feature = "i8")]
-            Value::I8(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::I8(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
             #[cfg(feature = "i16")]
-            Value::I16(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::I16(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
             #[cfg(feature = "i32")]
-            Value::I32(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::I32(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
             #[cfg(feature = "i64")]
-            Value::I64(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::I64(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
             #[cfg(feature = "i128")]
-            Value::I128(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
-            Value::MutableReference(val) => val.borrow().as_r64(),
+            LegacyValue::I128(v) => Ok(Ref::new(R64::new(*v.borrow() as i64, 1))),
+            LegacyValue::MutableReference(val) => val.borrow().as_r64(),
             _ => Err(
                 MechError::new(CannotConvertToTypeError { target_type: "r64" }, None)
                     .with_compiler_loc(),
@@ -2798,32 +3059,32 @@ impl Value {
     #[cfg(feature = "c64")]
     pub fn as_c64(&self) -> MResult<Ref<C64>> {
         match self {
-            Value::C64(v) => Ok(v.clone()),
+            LegacyValue::C64(v) => Ok(v.clone()),
             #[cfg(feature = "f32")]
-            Value::F32(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
+            LegacyValue::F32(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
             #[cfg(feature = "f64")]
-            Value::F64(v) => Ok(Ref::new(C64::new(*v.borrow(), 0.0))),
+            LegacyValue::F64(v) => Ok(Ref::new(C64::new(*v.borrow(), 0.0))),
             #[cfg(feature = "u8")]
-            Value::U8(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
+            LegacyValue::U8(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
             #[cfg(feature = "u16")]
-            Value::U16(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
+            LegacyValue::U16(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
             #[cfg(feature = "u32")]
-            Value::U32(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
+            LegacyValue::U32(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
             #[cfg(feature = "u64")]
-            Value::U64(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
+            LegacyValue::U64(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
             #[cfg(feature = "u128")]
-            Value::U128(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
+            LegacyValue::U128(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
             #[cfg(feature = "i8")]
-            Value::I8(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
+            LegacyValue::I8(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
             #[cfg(feature = "i16")]
-            Value::I16(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
+            LegacyValue::I16(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
             #[cfg(feature = "i32")]
-            Value::I32(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
+            LegacyValue::I32(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
             #[cfg(feature = "i64")]
-            Value::I64(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
+            LegacyValue::I64(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
             #[cfg(feature = "i128")]
-            Value::I128(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
-            Value::MutableReference(val) => val.borrow().as_c64(),
+            LegacyValue::I128(v) => Ok(Ref::new(C64::new(*v.borrow() as f64, 0.0))),
+            LegacyValue::MutableReference(val) => val.borrow().as_c64(),
             _ => Err(
                 MechError::new(CannotConvertToTypeError { target_type: "c64" }, None)
                     .with_compiler_loc(),
@@ -2835,29 +3096,29 @@ impl Value {
     pub fn as_f32(&self) -> MResult<Ref<f32>> {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(v) => Ok(Ref::new(*v.borrow() as f32)),
+            LegacyValue::U8(v) => Ok(Ref::new(*v.borrow() as f32)),
             #[cfg(feature = "u16")]
-            Value::U16(v) => Ok(Ref::new(*v.borrow() as f32)),
+            LegacyValue::U16(v) => Ok(Ref::new(*v.borrow() as f32)),
             #[cfg(feature = "u32")]
-            Value::U32(v) => Ok(Ref::new(*v.borrow() as f32)),
+            LegacyValue::U32(v) => Ok(Ref::new(*v.borrow() as f32)),
             #[cfg(feature = "u64")]
-            Value::U64(v) => Ok(Ref::new(*v.borrow() as f32)),
+            LegacyValue::U64(v) => Ok(Ref::new(*v.borrow() as f32)),
             #[cfg(feature = "u128")]
-            Value::U128(v) => Ok(Ref::new(*v.borrow() as f32)),
+            LegacyValue::U128(v) => Ok(Ref::new(*v.borrow() as f32)),
             #[cfg(feature = "i8")]
-            Value::I8(v) => Ok(Ref::new(*v.borrow() as f32)),
+            LegacyValue::I8(v) => Ok(Ref::new(*v.borrow() as f32)),
             #[cfg(feature = "i16")]
-            Value::I16(v) => Ok(Ref::new(*v.borrow() as f32)),
+            LegacyValue::I16(v) => Ok(Ref::new(*v.borrow() as f32)),
             #[cfg(feature = "i32")]
-            Value::I32(v) => Ok(Ref::new(*v.borrow() as f32)),
+            LegacyValue::I32(v) => Ok(Ref::new(*v.borrow() as f32)),
             #[cfg(feature = "i64")]
-            Value::I64(v) => Ok(Ref::new(*v.borrow() as f32)),
+            LegacyValue::I64(v) => Ok(Ref::new(*v.borrow() as f32)),
             #[cfg(feature = "i128")]
-            Value::I128(v) => Ok(Ref::new(*v.borrow() as f32)),
-            Value::F32(v) => Ok(v.clone()),
+            LegacyValue::I128(v) => Ok(Ref::new(*v.borrow() as f32)),
+            LegacyValue::F32(v) => Ok(v.clone()),
             #[cfg(feature = "f64")]
-            Value::F64(v) => Ok(Ref::new((*v.borrow()) as f32)),
-            Value::MutableReference(val) => val.borrow().as_f32(),
+            LegacyValue::F64(v) => Ok(Ref::new((*v.borrow()) as f32)),
+            LegacyValue::MutableReference(val) => val.borrow().as_f32(),
             _ => Err(
                 MechError::new(CannotConvertToTypeError { target_type: "f32" }, None)
                     .with_compiler_loc(),
@@ -2869,29 +3130,29 @@ impl Value {
     pub fn as_f64(&self) -> MResult<Ref<f64>> {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(v) => Ok(Ref::new(*v.borrow() as f64)),
+            LegacyValue::U8(v) => Ok(Ref::new(*v.borrow() as f64)),
             #[cfg(feature = "u16")]
-            Value::U16(v) => Ok(Ref::new(*v.borrow() as f64)),
+            LegacyValue::U16(v) => Ok(Ref::new(*v.borrow() as f64)),
             #[cfg(feature = "u32")]
-            Value::U32(v) => Ok(Ref::new(*v.borrow() as f64)),
+            LegacyValue::U32(v) => Ok(Ref::new(*v.borrow() as f64)),
             #[cfg(feature = "u64")]
-            Value::U64(v) => Ok(Ref::new(*v.borrow() as f64)),
+            LegacyValue::U64(v) => Ok(Ref::new(*v.borrow() as f64)),
             #[cfg(feature = "u128")]
-            Value::U128(v) => Ok(Ref::new(*v.borrow() as f64)),
+            LegacyValue::U128(v) => Ok(Ref::new(*v.borrow() as f64)),
             #[cfg(feature = "i8")]
-            Value::I8(v) => Ok(Ref::new(*v.borrow() as f64)),
+            LegacyValue::I8(v) => Ok(Ref::new(*v.borrow() as f64)),
             #[cfg(feature = "i16")]
-            Value::I16(v) => Ok(Ref::new(*v.borrow() as f64)),
+            LegacyValue::I16(v) => Ok(Ref::new(*v.borrow() as f64)),
             #[cfg(feature = "i32")]
-            Value::I32(v) => Ok(Ref::new(*v.borrow() as f64)),
+            LegacyValue::I32(v) => Ok(Ref::new(*v.borrow() as f64)),
             #[cfg(feature = "i64")]
-            Value::I64(v) => Ok(Ref::new(*v.borrow() as f64)),
+            LegacyValue::I64(v) => Ok(Ref::new(*v.borrow() as f64)),
             #[cfg(feature = "i128")]
-            Value::I128(v) => Ok(Ref::new(*v.borrow() as f64)),
+            LegacyValue::I128(v) => Ok(Ref::new(*v.borrow() as f64)),
             #[cfg(feature = "f32")]
-            Value::F32(v) => Ok(Ref::new((*v.borrow()) as f64)),
-            Value::F64(v) => Ok(v.clone()),
-            Value::MutableReference(val) => val.borrow().as_f64(),
+            LegacyValue::F32(v) => Ok(Ref::new((*v.borrow()) as f64)),
+            LegacyValue::F64(v) => Ok(v.clone()),
+            LegacyValue::MutableReference(val) => val.borrow().as_f64(),
             _ => Err(
                 MechError::new(CannotConvertToTypeError { target_type: "f64" }, None)
                     .with_compiler_loc(),
@@ -2901,11 +3162,11 @@ impl Value {
 
     #[cfg(all(feature = "matrix", feature = "bool"))]
     pub fn as_vecbool(&self) -> MResult<Vec<bool>> {
-        if let Value::MatrixBool(v) = self {
+        if let LegacyValue::MatrixBool(v) = self {
             Ok(v.as_vec())
-        } else if let Value::Bool(v) = self {
+        } else if let LegacyValue::Bool(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_vecbool()
         } else {
             Err(MechError::new(
@@ -2919,11 +3180,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "f64"))]
     pub fn as_vecf64(&self) -> MResult<Vec<f64>> {
-        if let Value::MatrixF64(v) = self {
+        if let LegacyValue::MatrixF64(v) = self {
             Ok(v.as_vec())
-        } else if let Value::F64(v) = self {
+        } else if let LegacyValue::F64(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_vecf64()
         } else if let Ok(v) = self.as_f64() {
             Ok(vec![v.borrow().clone()])
@@ -2936,11 +3197,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "f32"))]
     pub fn as_vecf32(&self) -> MResult<Vec<f32>> {
-        if let Value::MatrixF32(v) = self {
+        if let LegacyValue::MatrixF32(v) = self {
             Ok(v.as_vec())
-        } else if let Value::F32(v) = self {
+        } else if let LegacyValue::F32(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_vecf32()
         } else if let Ok(v) = self.as_f32() {
             Ok(vec![v.borrow().clone()])
@@ -2953,11 +3214,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "u8"))]
     pub fn as_vecu8(&self) -> MResult<Vec<u8>> {
-        if let Value::MatrixU8(v) = self {
+        if let LegacyValue::MatrixU8(v) = self {
             Ok(v.as_vec())
-        } else if let Value::U8(v) = self {
+        } else if let LegacyValue::U8(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_vecu8()
         } else if let Ok(v) = self.as_u8() {
             Ok(vec![v.borrow().clone()])
@@ -2970,11 +3231,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "u16"))]
     pub fn as_vecu16(&self) -> MResult<Vec<u16>> {
-        if let Value::MatrixU16(v) = self {
+        if let LegacyValue::MatrixU16(v) = self {
             Ok(v.as_vec())
-        } else if let Value::U16(v) = self {
+        } else if let LegacyValue::U16(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_vecu16()
         } else if let Ok(v) = self.as_u16() {
             Ok(vec![v.borrow().clone()])
@@ -2987,11 +3248,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "u32"))]
     pub fn as_vecu32(&self) -> MResult<Vec<u32>> {
-        if let Value::MatrixU32(v) = self {
+        if let LegacyValue::MatrixU32(v) = self {
             Ok(v.as_vec())
-        } else if let Value::U32(v) = self {
+        } else if let LegacyValue::U32(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_vecu32()
         } else if let Ok(v) = self.as_u32() {
             Ok(vec![v.borrow().clone()])
@@ -3004,11 +3265,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "u64"))]
     pub fn as_vecu64(&self) -> MResult<Vec<u64>> {
-        if let Value::MatrixU64(v) = self {
+        if let LegacyValue::MatrixU64(v) = self {
             Ok(v.as_vec())
-        } else if let Value::U64(v) = self {
+        } else if let LegacyValue::U64(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_vecu64()
         } else if let Ok(v) = self.as_u64() {
             Ok(vec![v.borrow().clone()])
@@ -3021,11 +3282,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "u128"))]
     pub fn as_vecu128(&self) -> MResult<Vec<u128>> {
-        if let Value::MatrixU128(v) = self {
+        if let LegacyValue::MatrixU128(v) = self {
             Ok(v.as_vec())
-        } else if let Value::U128(v) = self {
+        } else if let LegacyValue::U128(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_vecu128()
         } else if let Ok(v) = self.as_u128() {
             Ok(vec![v.borrow().clone()])
@@ -3041,11 +3302,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "i8"))]
     pub fn as_veci8(&self) -> MResult<Vec<i8>> {
-        if let Value::MatrixI8(v) = self {
+        if let LegacyValue::MatrixI8(v) = self {
             Ok(v.as_vec())
-        } else if let Value::I8(v) = self {
+        } else if let LegacyValue::I8(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_veci8()
         } else if let Ok(v) = self.as_i8() {
             Ok(vec![v.borrow().clone()])
@@ -3058,11 +3319,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "i16"))]
     pub fn as_veci16(&self) -> MResult<Vec<i16>> {
-        if let Value::MatrixI16(v) = self {
+        if let LegacyValue::MatrixI16(v) = self {
             Ok(v.as_vec())
-        } else if let Value::I16(v) = self {
+        } else if let LegacyValue::I16(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_veci16()
         } else if let Ok(v) = self.as_i16() {
             Ok(vec![v.borrow().clone()])
@@ -3075,11 +3336,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "i32"))]
     pub fn as_veci32(&self) -> MResult<Vec<i32>> {
-        if let Value::MatrixI32(v) = self {
+        if let LegacyValue::MatrixI32(v) = self {
             Ok(v.as_vec())
-        } else if let Value::I32(v) = self {
+        } else if let LegacyValue::I32(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_veci32()
         } else if let Ok(v) = self.as_i32() {
             Ok(vec![v.borrow().clone()])
@@ -3092,11 +3353,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "i64"))]
     pub fn as_veci64(&self) -> MResult<Vec<i64>> {
-        if let Value::MatrixI64(v) = self {
+        if let LegacyValue::MatrixI64(v) = self {
             Ok(v.as_vec())
-        } else if let Value::I64(v) = self {
+        } else if let LegacyValue::I64(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_veci64()
         } else if let Ok(v) = self.as_i64() {
             Ok(vec![v.borrow().clone()])
@@ -3109,11 +3370,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "i128"))]
     pub fn as_veci128(&self) -> MResult<Vec<i128>> {
-        if let Value::MatrixI128(v) = self {
+        if let LegacyValue::MatrixI128(v) = self {
             Ok(v.as_vec())
-        } else if let Value::I128(v) = self {
+        } else if let LegacyValue::I128(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_veci128()
         } else if let Ok(v) = self.as_i128() {
             Ok(vec![v.borrow().clone()])
@@ -3129,11 +3390,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "string"))]
     pub fn as_vecstring(&self) -> MResult<Vec<String>> {
-        if let Value::MatrixString(v) = self {
+        if let LegacyValue::MatrixString(v) = self {
             Ok(v.as_vec())
-        } else if let Value::String(v) = self {
+        } else if let LegacyValue::String(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_vecstring()
         } else {
             Err(MechError::new(
@@ -3147,11 +3408,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "r64"))]
     pub fn as_vecr64(&self) -> MResult<Vec<R64>> {
-        if let Value::MatrixR64(v) = self {
+        if let LegacyValue::MatrixR64(v) = self {
             Ok(v.as_vec())
-        } else if let Value::R64(v) = self {
+        } else if let LegacyValue::R64(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_vecr64()
         } else {
             Err(
@@ -3162,11 +3423,11 @@ impl Value {
     }
     #[cfg(all(feature = "matrix", feature = "c64"))]
     pub fn as_vecc64(&self) -> MResult<Vec<C64>> {
-        if let Value::MatrixC64(v) = self {
+        if let LegacyValue::MatrixC64(v) = self {
             Ok(v.as_vec())
-        } else if let Value::C64(v) = self {
+        } else if let LegacyValue::C64(v) = self {
             Ok(vec![v.borrow().clone()])
-        } else if let Value::MutableReference(val) = self {
+        } else if let LegacyValue::MutableReference(val) = self {
             val.borrow().as_vecc64()
         } else {
             Err(
@@ -3179,105 +3440,105 @@ impl Value {
     pub fn as_vecusize(&self) -> MResult<Vec<usize>> {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(v) => Ok(vec![*v.borrow() as usize]),
+            LegacyValue::U8(v) => Ok(vec![*v.borrow() as usize]),
             #[cfg(feature = "u16")]
-            Value::U16(v) => Ok(vec![*v.borrow() as usize]),
+            LegacyValue::U16(v) => Ok(vec![*v.borrow() as usize]),
             #[cfg(feature = "u32")]
-            Value::U32(v) => Ok(vec![*v.borrow() as usize]),
+            LegacyValue::U32(v) => Ok(vec![*v.borrow() as usize]),
             #[cfg(feature = "u64")]
-            Value::U64(v) => Ok(vec![*v.borrow() as usize]),
+            LegacyValue::U64(v) => Ok(vec![*v.borrow() as usize]),
             #[cfg(feature = "u128")]
-            Value::U128(v) => Ok(vec![*v.borrow() as usize]),
+            LegacyValue::U128(v) => Ok(vec![*v.borrow() as usize]),
             #[cfg(feature = "i8")]
-            Value::I8(v) => Ok(vec![*v.borrow() as usize]),
+            LegacyValue::I8(v) => Ok(vec![*v.borrow() as usize]),
             #[cfg(feature = "i16")]
-            Value::I16(v) => Ok(vec![*v.borrow() as usize]),
+            LegacyValue::I16(v) => Ok(vec![*v.borrow() as usize]),
             #[cfg(feature = "i32")]
-            Value::I32(v) => Ok(vec![*v.borrow() as usize]),
+            LegacyValue::I32(v) => Ok(vec![*v.borrow() as usize]),
             #[cfg(feature = "i64")]
-            Value::I64(v) => Ok(vec![*v.borrow() as usize]),
+            LegacyValue::I64(v) => Ok(vec![*v.borrow() as usize]),
             #[cfg(feature = "i128")]
-            Value::I128(v) => Ok(vec![*v.borrow() as usize]),
+            LegacyValue::I128(v) => Ok(vec![*v.borrow() as usize]),
             #[cfg(feature = "f32")]
-            Value::F32(v) => Ok(vec![(*v.borrow()) as usize]),
+            LegacyValue::F32(v) => Ok(vec![(*v.borrow()) as usize]),
             #[cfg(feature = "f64")]
-            Value::F64(v) => Ok(vec![(*v.borrow()) as usize]),
+            LegacyValue::F64(v) => Ok(vec![(*v.borrow()) as usize]),
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(v) => Ok(v.as_vec()),
+            LegacyValue::MatrixIndex(v) => Ok(v.as_vec()),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(v) => Ok(v
+            LegacyValue::MatrixF64(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| (*x) as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(v) => Ok(v
+            LegacyValue::MatrixF32(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| (*x) as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(v) => Ok(v
+            LegacyValue::MatrixU8(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| *x as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(v) => Ok(v
+            LegacyValue::MatrixU16(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| *x as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(v) => Ok(v
+            LegacyValue::MatrixU32(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| *x as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(v) => Ok(v
+            LegacyValue::MatrixU64(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| *x as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(v) => Ok(v
+            LegacyValue::MatrixU128(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| *x as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(v) => Ok(v
+            LegacyValue::MatrixI8(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| *x as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(v) => Ok(v
+            LegacyValue::MatrixI16(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| *x as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(v) => Ok(v
+            LegacyValue::MatrixI32(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| *x as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(v) => Ok(v
+            LegacyValue::MatrixI128(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| *x as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(v) => Ok(v
+            LegacyValue::MatrixI64(v) => Ok(v
                 .as_vec()
                 .iter()
                 .map(|x| *x as usize)
                 .collect::<Vec<usize>>()),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(_) => Err(MechError::new(
+            LegacyValue::MatrixBool(_) => Err(MechError::new(
                 CannotConvertToTypeError {
                     target_type: "[usize]",
                 },
@@ -3285,14 +3546,14 @@ impl Value {
             )
             .with_compiler_loc()),
             #[cfg(any(feature = "bool", feature = "[usize]"))]
-            Value::Bool(_) => Err(MechError::new(
+            LegacyValue::Bool(_) => Err(MechError::new(
                 CannotConvertToTypeError {
                     target_type: "[usize]",
                 },
                 None,
             )
             .with_compiler_loc()),
-            Value::MutableReference(x) => x.borrow().as_vecusize(),
+            LegacyValue::MutableReference(x) => x.borrow().as_vecusize(),
             _ => Err(MechError::new(
                 CannotConvertToTypeError {
                     target_type: "[usize]",
@@ -3303,15 +3564,15 @@ impl Value {
         }
     }
 
-    pub fn as_index(&self) -> MResult<Value> {
+    pub fn as_index(&self) -> MResult<LegacyValue> {
         match self.as_usize() {
-            Ok(ix) => Ok(Value::Index(Ref::new(ix))),
+            Ok(ix) => Ok(LegacyValue::Index(Ref::new(ix))),
             #[cfg(feature = "matrix")]
             Err(_) => match self.as_vecusize() {
                 #[cfg(feature = "matrix")]
                 Ok(x) => {
                     let shape = self.shape();
-                    let out = Value::MatrixIndex(usize::to_matrix(x, shape[0] * shape[1], 1));
+                    let out = LegacyValue::MatrixIndex(usize::to_matrix(x, shape[0] * shape[1], 1));
                     Ok(out)
                 }
                 #[cfg(all(feature = "matrix", feature = "bool"))]
@@ -3319,25 +3580,25 @@ impl Value {
                     Ok(x) => {
                         let shape = self.shape();
                         let out = match (shape[0], shape[1]) {
-                            (1, 1) => Value::Bool(Ref::new(x[0])),
+                            (1, 1) => LegacyValue::Bool(Ref::new(x[0])),
                             #[cfg(all(feature = "vectord", feature = "bool"))]
-                            (1, n) => {
-                                Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x))))
-                            }
+                            (1, n) => LegacyValue::MatrixBool(Matrix::DVector(Ref::new(
+                                DVector::from_vec(x),
+                            ))),
                             #[cfg(all(feature = "vectord", feature = "bool"))]
-                            (m, 1) => {
-                                Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x))))
-                            }
+                            (m, 1) => LegacyValue::MatrixBool(Matrix::DVector(Ref::new(
+                                DVector::from_vec(x),
+                            ))),
                             #[cfg(all(feature = "vectord", feature = "bool"))]
-                            (m, n) => {
-                                Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x))))
-                            }
+                            (m, n) => LegacyValue::MatrixBool(Matrix::DVector(Ref::new(
+                                DVector::from_vec(x),
+                            ))),
                             _ => todo!(),
                         };
                         Ok(out)
                     }
                     Err(_) => match self.as_bool() {
-                        Ok(x) => Ok(Value::Bool(x)),
+                        Ok(x) => Ok(LegacyValue::Bool(x)),
                         Err(_) => Err(MechError::new(
                             CannotConvertToTypeError { target_type: "ix" },
                             None,
@@ -3356,32 +3617,32 @@ impl Value {
 
     pub fn as_usize(&self) -> MResult<usize> {
         match self {
-            Value::Index(v) => Ok(*v.borrow()),
+            LegacyValue::Index(v) => Ok(*v.borrow()),
             #[cfg(feature = "u8")]
-            Value::U8(v) => Ok(*v.borrow() as usize),
+            LegacyValue::U8(v) => Ok(*v.borrow() as usize),
             #[cfg(feature = "u16")]
-            Value::U16(v) => Ok(*v.borrow() as usize),
+            LegacyValue::U16(v) => Ok(*v.borrow() as usize),
             #[cfg(feature = "u32")]
-            Value::U32(v) => Ok(*v.borrow() as usize),
+            LegacyValue::U32(v) => Ok(*v.borrow() as usize),
             #[cfg(feature = "u64")]
-            Value::U64(v) => Ok(*v.borrow() as usize),
+            LegacyValue::U64(v) => Ok(*v.borrow() as usize),
             #[cfg(feature = "u128")]
-            Value::U128(v) => Ok(*v.borrow() as usize),
+            LegacyValue::U128(v) => Ok(*v.borrow() as usize),
             #[cfg(feature = "i8")]
-            Value::I8(v) => Ok(*v.borrow() as usize),
+            LegacyValue::I8(v) => Ok(*v.borrow() as usize),
             #[cfg(feature = "i16")]
-            Value::I16(v) => Ok(*v.borrow() as usize),
+            LegacyValue::I16(v) => Ok(*v.borrow() as usize),
             #[cfg(feature = "i32")]
-            Value::I32(v) => Ok(*v.borrow() as usize),
+            LegacyValue::I32(v) => Ok(*v.borrow() as usize),
             #[cfg(feature = "i64")]
-            Value::I64(v) => Ok(*v.borrow() as usize),
+            LegacyValue::I64(v) => Ok(*v.borrow() as usize),
             #[cfg(feature = "i128")]
-            Value::I128(v) => Ok(*v.borrow() as usize),
+            LegacyValue::I128(v) => Ok(*v.borrow() as usize),
             #[cfg(feature = "f32")]
-            Value::F32(v) => Ok((*v.borrow()) as usize),
+            LegacyValue::F32(v) => Ok((*v.borrow()) as usize),
             #[cfg(feature = "f64")]
-            Value::F64(v) => Ok((*v.borrow()) as usize),
-            Value::MutableReference(v) => v.borrow().as_usize(),
+            LegacyValue::F64(v) => Ok((*v.borrow()) as usize),
+            LegacyValue::MutableReference(v) => v.borrow().as_usize(),
             _ => Err(MechError::new(
                 CannotConvertToTypeError {
                     target_type: "usize",
@@ -3395,8 +3656,8 @@ impl Value {
     #[cfg(feature = "u8")]
     pub fn expect_u8(&self) -> MResult<Ref<u8>> {
         match self {
-            Value::U8(v) => Ok(v.clone()),
-            Value::MutableReference(v) => v.borrow().expect_u8(),
+            LegacyValue::U8(v) => Ok(v.clone()),
+            LegacyValue::MutableReference(v) => v.borrow().expect_u8(),
             _ => Err(
                 MechError::new(CannotConvertToTypeError { target_type: "u8" }, None)
                     .with_compiler_loc(),
@@ -3407,8 +3668,8 @@ impl Value {
     #[cfg(feature = "f64")]
     pub fn expect_f64(&self) -> MResult<Ref<f64>> {
         match self {
-            Value::F64(v) => Ok(v.clone()),
-            Value::MutableReference(v) => v.borrow().expect_f64(),
+            LegacyValue::F64(v) => Ok(v.clone()),
+            LegacyValue::MutableReference(v) => v.borrow().expect_f64(),
             _ => Err(
                 MechError::new(CannotConvertToTypeError { target_type: "f64" }, None)
                     .with_compiler_loc(),
@@ -3418,100 +3679,100 @@ impl Value {
 }
 
 #[cfg(feature = "pretty_print")]
-impl PrettyPrint for Value {
+impl PrettyPrint for LegacyValue {
     fn pretty_print(&self) -> String {
         match self {
             #[cfg(feature = "u8")]
-            Value::U8(x) => format!("{}", x.borrow()),
+            LegacyValue::U8(x) => format!("{}", x.borrow()),
             #[cfg(feature = "u16")]
-            Value::U16(x) => format!("{}", x.borrow()),
+            LegacyValue::U16(x) => format!("{}", x.borrow()),
             #[cfg(feature = "u32")]
-            Value::U32(x) => format!("{}", x.borrow()),
+            LegacyValue::U32(x) => format!("{}", x.borrow()),
             #[cfg(feature = "u64")]
-            Value::U64(x) => format!("{}", x.borrow()),
+            LegacyValue::U64(x) => format!("{}", x.borrow()),
             #[cfg(feature = "u128")]
-            Value::U128(x) => format!("{}", x.borrow()),
+            LegacyValue::U128(x) => format!("{}", x.borrow()),
             #[cfg(feature = "i8")]
-            Value::I8(x) => format!("{}", x.borrow()),
+            LegacyValue::I8(x) => format!("{}", x.borrow()),
             #[cfg(feature = "i16")]
-            Value::I16(x) => format!("{}", x.borrow()),
+            LegacyValue::I16(x) => format!("{}", x.borrow()),
             #[cfg(feature = "i32")]
-            Value::I32(x) => format!("{}", x.borrow()),
+            LegacyValue::I32(x) => format!("{}", x.borrow()),
             #[cfg(feature = "i64")]
-            Value::I64(x) => format!("{}", x.borrow()),
+            LegacyValue::I64(x) => format!("{}", x.borrow()),
             #[cfg(feature = "i128")]
-            Value::I128(x) => format!("{}", x.borrow()),
+            LegacyValue::I128(x) => format!("{}", x.borrow()),
             #[cfg(feature = "f32")]
-            Value::F32(x) => format!("{}", x.borrow()),
+            LegacyValue::F32(x) => format!("{}", x.borrow()),
             #[cfg(feature = "f64")]
-            Value::F64(x) => format!("{}", x.borrow()),
+            LegacyValue::F64(x) => format!("{}", x.borrow()),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(x) => format!("{}", x.borrow()),
+            LegacyValue::Bool(x) => format!("{}", x.borrow()),
             #[cfg(feature = "complex")]
-            Value::C64(x) => x.borrow().pretty_print(),
+            LegacyValue::C64(x) => x.borrow().pretty_print(),
             #[cfg(feature = "rational")]
-            Value::R64(x) => format!("{}", x.borrow().pretty_print()),
+            LegacyValue::R64(x) => format!("{}", x.borrow().pretty_print()),
             #[cfg(feature = "atom")]
-            Value::Atom(x) => format!("{}", x.borrow()),
+            LegacyValue::Atom(x) => format!("{}", x.borrow()),
             #[cfg(feature = "set")]
-            Value::Set(x) => x.borrow().pretty_print(),
+            LegacyValue::Set(x) => x.borrow().pretty_print(),
             #[cfg(feature = "map")]
-            Value::Map(x) => x.borrow().pretty_print(),
+            LegacyValue::Map(x) => x.borrow().pretty_print(),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(x) => format!("\"{}\"", x.borrow().escape_default()),
+            LegacyValue::String(x) => format!("\"{}\"", x.borrow().escape_default()),
             #[cfg(feature = "table")]
-            Value::Table(x) => x.borrow().pretty_print(),
+            LegacyValue::Table(x) => x.borrow().pretty_print(),
             #[cfg(feature = "tuple")]
-            Value::Tuple(x) => x.borrow().pretty_print(),
+            LegacyValue::Tuple(x) => x.borrow().pretty_print(),
             #[cfg(feature = "record")]
-            Value::Record(x) => x.borrow().pretty_print(),
+            LegacyValue::Record(x) => x.borrow().pretty_print(),
             #[cfg(feature = "enum")]
-            Value::Enum(x) => x.borrow().pretty_print(),
+            LegacyValue::Enum(x) => x.borrow().pretty_print(),
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(x) => x.pretty_print(),
+            LegacyValue::MatrixIndex(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(x) => x.pretty_print(),
+            LegacyValue::MatrixBool(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(x) => x.pretty_print(),
+            LegacyValue::MatrixU8(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(x) => x.pretty_print(),
+            LegacyValue::MatrixU16(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(x) => x.pretty_print(),
+            LegacyValue::MatrixU32(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(x) => x.pretty_print(),
+            LegacyValue::MatrixU64(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(x) => x.pretty_print(),
+            LegacyValue::MatrixU128(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(x) => x.pretty_print(),
+            LegacyValue::MatrixI8(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(x) => x.pretty_print(),
+            LegacyValue::MatrixI16(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(x) => x.pretty_print(),
+            LegacyValue::MatrixI32(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(x) => x.pretty_print(),
+            LegacyValue::MatrixI64(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(x) => x.pretty_print(),
+            LegacyValue::MatrixI128(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(x) => x.pretty_print(),
+            LegacyValue::MatrixF32(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(x) => x.pretty_print(),
+            LegacyValue::MatrixF64(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "any"))]
-            Value::MatrixValue(x) => x.pretty_print(),
+            LegacyValue::MatrixValue(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(x) => x.pretty_print(),
+            LegacyValue::MatrixString(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(x) => x.pretty_print(),
+            LegacyValue::MatrixR64(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(x) => x.pretty_print(),
+            LegacyValue::MatrixC64(x) => x.pretty_print(),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(x) => x.pretty_print(),
-            Value::Index(x) => format!("{}", x.borrow()),
-            Value::MutableReference(x) => x.borrow().pretty_print(),
-            Value::Typed(x, _) => x.pretty_print(),
-            Value::Empty | Value::EmptyKind(_) => "_".to_string(),
-            Value::IndexAll => ":".to_string(),
-            Value::Id(x) => format!("{}", humanize(x)),
-            Value::Kind(x) => format!("<{}>", x),
+            LegacyValue::MatrixValue(x) => x.pretty_print(),
+            LegacyValue::Index(x) => format!("{}", x.borrow()),
+            LegacyValue::MutableReference(x) => x.borrow().pretty_print(),
+            LegacyValue::Typed(x, _) => x.pretty_print(),
+            LegacyValue::Empty | LegacyValue::EmptyKind(_) => "_".to_string(),
+            LegacyValue::IndexAll => ":".to_string(),
+            LegacyValue::Id(x) => format!("{}", humanize(x)),
+            LegacyValue::Kind(x) => format!("<{}>", x),
             x => {
                 todo!("{x:#?}");
             }
@@ -3520,12 +3781,12 @@ impl PrettyPrint for Value {
 }
 
 pub trait ToIndex {
-    fn to_index(&self) -> Value;
+    fn to_index(&self) -> LegacyValue;
 }
 
 #[cfg(feature = "matrix")]
 impl ToIndex for Ref<Vec<i64>> {
-    fn to_index(&self) -> Value {
+    fn to_index(&self) -> LegacyValue {
         (*self.borrow())
             .iter()
             .map(|x| *x as usize)
@@ -3535,249 +3796,257 @@ impl ToIndex for Ref<Vec<i64>> {
 }
 
 pub trait ToValue {
-    fn to_value(&self) -> Value;
+    fn to_value(&self) -> LegacyValue;
 }
 
 #[cfg(feature = "matrix")]
 impl ToValue for Vec<usize> {
-    fn to_value(&self) -> Value {
+    fn to_value(&self) -> LegacyValue {
         match self.len() {
-            1 => Value::Index(Ref::new(self[0].clone())),
+            1 => LegacyValue::Index(Ref::new(self[0].clone())),
             #[cfg(feature = "vector2")]
-            2 => Value::MatrixIndex(Matrix::Vector2(Ref::new(Vector2::from_vec(self.clone())))),
+            2 => {
+                LegacyValue::MatrixIndex(Matrix::Vector2(Ref::new(Vector2::from_vec(self.clone()))))
+            }
             #[cfg(feature = "vector3")]
-            3 => Value::MatrixIndex(Matrix::Vector3(Ref::new(Vector3::from_vec(self.clone())))),
+            3 => {
+                LegacyValue::MatrixIndex(Matrix::Vector3(Ref::new(Vector3::from_vec(self.clone()))))
+            }
             #[cfg(feature = "vector4")]
-            4 => Value::MatrixIndex(Matrix::Vector4(Ref::new(Vector4::from_vec(self.clone())))),
+            4 => {
+                LegacyValue::MatrixIndex(Matrix::Vector4(Ref::new(Vector4::from_vec(self.clone()))))
+            }
             #[cfg(feature = "vectord")]
-            n => Value::MatrixIndex(Matrix::DVector(Ref::new(DVector::from_vec(self.clone())))),
+            n => {
+                LegacyValue::MatrixIndex(Matrix::DVector(Ref::new(DVector::from_vec(self.clone()))))
+            }
             _ => todo!(),
         }
     }
 }
 
 impl ToValue for Ref<usize> {
-    fn to_value(&self) -> Value {
-        Value::Index(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::Index(self.clone())
     }
 }
 #[cfg(feature = "u8")]
 impl ToValue for Ref<u8> {
-    fn to_value(&self) -> Value {
-        Value::U8(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::U8(self.clone())
     }
 }
 #[cfg(feature = "u16")]
 impl ToValue for Ref<u16> {
-    fn to_value(&self) -> Value {
-        Value::U16(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::U16(self.clone())
     }
 }
 #[cfg(feature = "u32")]
 impl ToValue for Ref<u32> {
-    fn to_value(&self) -> Value {
-        Value::U32(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::U32(self.clone())
     }
 }
 #[cfg(feature = "u64")]
 impl ToValue for Ref<u64> {
-    fn to_value(&self) -> Value {
-        Value::U64(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::U64(self.clone())
     }
 }
 #[cfg(feature = "u128")]
 impl ToValue for Ref<u128> {
-    fn to_value(&self) -> Value {
-        Value::U128(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::U128(self.clone())
     }
 }
 #[cfg(feature = "i8")]
 impl ToValue for Ref<i8> {
-    fn to_value(&self) -> Value {
-        Value::I8(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::I8(self.clone())
     }
 }
 #[cfg(feature = "i16")]
 impl ToValue for Ref<i16> {
-    fn to_value(&self) -> Value {
-        Value::I16(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::I16(self.clone())
     }
 }
 #[cfg(feature = "i32")]
 impl ToValue for Ref<i32> {
-    fn to_value(&self) -> Value {
-        Value::I32(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::I32(self.clone())
     }
 }
 #[cfg(feature = "i64")]
 impl ToValue for Ref<i64> {
-    fn to_value(&self) -> Value {
-        Value::I64(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::I64(self.clone())
     }
 }
 #[cfg(feature = "i128")]
 impl ToValue for Ref<i128> {
-    fn to_value(&self) -> Value {
-        Value::I128(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::I128(self.clone())
     }
 }
 #[cfg(feature = "f32")]
 impl ToValue for Ref<f32> {
-    fn to_value(&self) -> Value {
-        Value::F32(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::F32(self.clone())
     }
 }
 #[cfg(feature = "f64")]
 impl ToValue for Ref<f64> {
-    fn to_value(&self) -> Value {
-        Value::F64(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::F64(self.clone())
     }
 }
 #[cfg(any(feature = "bool", feature = "variable_define"))]
 impl ToValue for Ref<bool> {
-    fn to_value(&self) -> Value {
-        Value::Bool(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::Bool(self.clone())
     }
 }
 #[cfg(any(feature = "string", feature = "variable_define"))]
 impl ToValue for Ref<String> {
-    fn to_value(&self) -> Value {
-        Value::String(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::String(self.clone())
     }
 }
 #[cfg(feature = "rational")]
 impl ToValue for Ref<R64> {
-    fn to_value(&self) -> Value {
-        Value::R64(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::R64(self.clone())
     }
 }
 #[cfg(feature = "complex")]
 impl ToValue for Ref<C64> {
-    fn to_value(&self) -> Value {
-        Value::C64(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::C64(self.clone())
     }
 }
 #[cfg(feature = "atom")]
 impl ToValue for Ref<MechAtom> {
-    fn to_value(&self) -> Value {
-        Value::Atom(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::Atom(self.clone())
     }
 }
 #[cfg(feature = "enum")]
 impl ToValue for Ref<MechEnum> {
-    fn to_value(&self) -> Value {
-        Value::Enum(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::Enum(self.clone())
     }
 }
 
-impl ToValue for Ref<Value> {
-    fn to_value(&self) -> Value {
+impl ToValue for Ref<LegacyValue> {
+    fn to_value(&self) -> LegacyValue {
         (*self.borrow()).clone()
     }
 }
 
 #[cfg(feature = "u8")]
-impl From<u8> for Value {
+impl From<u8> for LegacyValue {
     fn from(val: u8) -> Self {
-        Value::U8(Ref::new(val))
+        LegacyValue::U8(Ref::new(val))
     }
 }
 
 #[cfg(feature = "u16")]
-impl From<u16> for Value {
+impl From<u16> for LegacyValue {
     fn from(val: u16) -> Self {
-        Value::U16(Ref::new(val))
+        LegacyValue::U16(Ref::new(val))
     }
 }
 
 #[cfg(feature = "u32")]
-impl From<u32> for Value {
+impl From<u32> for LegacyValue {
     fn from(val: u32) -> Self {
-        Value::U32(Ref::new(val))
+        LegacyValue::U32(Ref::new(val))
     }
 }
 
 #[cfg(feature = "u64")]
-impl From<u64> for Value {
+impl From<u64> for LegacyValue {
     fn from(val: u64) -> Self {
-        Value::U64(Ref::new(val))
+        LegacyValue::U64(Ref::new(val))
     }
 }
 
 #[cfg(feature = "u128")]
-impl From<u128> for Value {
+impl From<u128> for LegacyValue {
     fn from(val: u128) -> Self {
-        Value::U128(Ref::new(val))
+        LegacyValue::U128(Ref::new(val))
     }
 }
 
 #[cfg(feature = "i8")]
-impl From<i8> for Value {
+impl From<i8> for LegacyValue {
     fn from(val: i8) -> Self {
-        Value::I8(Ref::new(val))
+        LegacyValue::I8(Ref::new(val))
     }
 }
 
 #[cfg(feature = "i16")]
-impl From<i16> for Value {
+impl From<i16> for LegacyValue {
     fn from(val: i16) -> Self {
-        Value::I16(Ref::new(val))
+        LegacyValue::I16(Ref::new(val))
     }
 }
 
 #[cfg(feature = "i32")]
-impl From<i32> for Value {
+impl From<i32> for LegacyValue {
     fn from(val: i32) -> Self {
-        Value::I32(Ref::new(val))
+        LegacyValue::I32(Ref::new(val))
     }
 }
 
 #[cfg(feature = "i64")]
-impl From<i64> for Value {
+impl From<i64> for LegacyValue {
     fn from(val: i64) -> Self {
-        Value::I64(Ref::new(val))
+        LegacyValue::I64(Ref::new(val))
     }
 }
 
 #[cfg(feature = "i128")]
-impl From<i128> for Value {
+impl From<i128> for LegacyValue {
     fn from(val: i128) -> Self {
-        Value::I128(Ref::new(val))
+        LegacyValue::I128(Ref::new(val))
     }
 }
 
 #[cfg(feature = "f32")]
-impl From<f32> for Value {
+impl From<f32> for LegacyValue {
     fn from(val: f32) -> Self {
-        Value::F32(Ref::new(val))
+        LegacyValue::F32(Ref::new(val))
     }
 }
 
 #[cfg(feature = "f64")]
-impl From<f64> for Value {
+impl From<f64> for LegacyValue {
     fn from(val: f64) -> Self {
-        Value::F64(Ref::new(val))
+        LegacyValue::F64(Ref::new(val))
     }
 }
 
 #[cfg(any(feature = "bool", feature = "variable_define"))]
-impl From<bool> for Value {
+impl From<bool> for LegacyValue {
     fn from(val: bool) -> Self {
-        Value::Bool(Ref::new(val))
+        LegacyValue::Bool(Ref::new(val))
     }
 }
 
 #[cfg(any(feature = "string", feature = "variable_define"))]
-impl From<String> for Value {
+impl From<String> for LegacyValue {
     fn from(val: String) -> Self {
-        Value::String(Ref::new(val))
+        LegacyValue::String(Ref::new(val))
     }
 }
 
 #[cfg(feature = "rational")]
-impl From<R64> for Value {
+impl From<R64> for LegacyValue {
     fn from(val: R64) -> Self {
-        Value::R64(Ref::new(val))
+        LegacyValue::R64(Ref::new(val))
     }
 }
 
@@ -3829,36 +4098,36 @@ impl_to_usize_for!(f32);
 
 #[cfg(feature = "table")]
 impl ToValue for Ref<MechTable> {
-    fn to_value(&self) -> Value {
-        Value::Table(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::Table(self.clone())
     }
 }
 
 #[cfg(feature = "set")]
 impl ToValue for Ref<MechSet> {
-    fn to_value(&self) -> Value {
-        Value::Set(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::Set(self.clone())
     }
 }
 
 #[cfg(feature = "map")]
 impl ToValue for Ref<MechMap> {
-    fn to_value(&self) -> Value {
-        Value::Map(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::Map(self.clone())
     }
 }
 
 #[cfg(feature = "tuple")]
 impl ToValue for Ref<MechTuple> {
-    fn to_value(&self) -> Value {
-        Value::Tuple(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::Tuple(self.clone())
     }
 }
 
 #[cfg(feature = "record")]
 impl ToValue for Ref<MechRecord> {
-    fn to_value(&self) -> Value {
-        Value::Record(self.clone())
+    fn to_value(&self) -> LegacyValue {
+        LegacyValue::Record(self.clone())
     }
 }
 
@@ -3875,7 +4144,7 @@ mod reactive_cell_tests {
     #[test]
     fn scalar_reactive_cell_identity_is_stable() {
         let scalar = Ref::new(1.0);
-        let value = Value::F64(scalar.clone());
+        let value = LegacyValue::F64(scalar.clone());
 
         let first = value.reactive_cell_ids();
         let second = value.reactive_cell_ids();
@@ -3887,7 +4156,7 @@ mod reactive_cell_tests {
     #[cfg(feature = "f64")]
     #[test]
     fn scalar_display_is_distribution_neutral() {
-        assert_eq!(Value::F64(Ref::new(3.0)).to_string(), "3");
+        assert_eq!(LegacyValue::F64(Ref::new(3.0)).to_string(), "3");
     }
 
     #[cfg(all(feature = "f64", feature = "matrixd"))]
@@ -3898,7 +4167,10 @@ mod reactive_cell_tests {
             2,
             &[1.0, 2.0, 3.0, 4.0],
         )));
-        assert_eq!(Value::MatrixF64(matrix).format_value_inline(), "[1 2; 3 4]");
+        assert_eq!(
+            LegacyValue::MatrixF64(matrix).format_value_inline(),
+            "[1 2; 3 4]"
+        );
     }
 
     #[cfg(all(feature = "f64", feature = "matrixd"))]
@@ -3906,7 +4178,7 @@ mod reactive_cell_tests {
     fn matrix_value_addr_uses_backing_matrix_identity() {
         let matrix = Matrix::DMatrix(Ref::new(na::DMatrix::from_element(2, 2, 1.0)));
 
-        assert_eq!(Value::MatrixF64(matrix.clone()).addr(), matrix.addr());
+        assert_eq!(LegacyValue::MatrixF64(matrix.clone()).addr(), matrix.addr());
     }
 
     #[cfg(all(feature = "f64", feature = "matrix2", feature = "matrixd"))]
@@ -3918,10 +4190,10 @@ mod reactive_cell_tests {
                 cols,
                 (0..rows * cols).map(|value| value as f64).collect(),
             ));
-            let value = Value::MatrixF64(Matrix::DMatrix(source.clone()));
+            let value = LegacyValue::MatrixF64(Matrix::DMatrix(source.clone()));
 
             let snapshot = value.try_deep_snapshot().expect("acyclic matrix fixture");
-            let Value::MatrixF64(Matrix::DMatrix(snapshot)) = snapshot else {
+            let LegacyValue::MatrixF64(Matrix::DMatrix(snapshot)) = snapshot else {
                 panic!("snapshot changed the dynamic {rows}x{cols} matrix storage class");
             };
 
@@ -3938,21 +4210,21 @@ mod reactive_cell_tests {
             2,
             2,
             vec![
-                Value::F64(live.clone()),
-                Value::F64(Ref::new(2.0)),
-                Value::F64(Ref::new(3.0)),
-                Value::F64(Ref::new(4.0)),
+                LegacyValue::F64(live.clone()),
+                LegacyValue::F64(Ref::new(2.0)),
+                LegacyValue::F64(Ref::new(3.0)),
+                LegacyValue::F64(Ref::new(4.0)),
             ],
         )));
 
-        let snapshot = Value::MatrixValue(source)
+        let snapshot = LegacyValue::MatrixValue(source)
             .try_deep_snapshot()
             .expect("acyclic value-matrix fixture");
-        let Value::MatrixValue(Matrix::DMatrix(snapshot)) = snapshot else {
+        let LegacyValue::MatrixValue(Matrix::DMatrix(snapshot)) = snapshot else {
             panic!("snapshot changed the dynamic value-matrix storage class");
         };
         let snapshot = snapshot.borrow();
-        let Value::F64(first) = &snapshot[0] else {
+        let LegacyValue::F64(first) = &snapshot[0] else {
             panic!("expected scalar matrix element");
         };
 
@@ -3964,7 +4236,7 @@ mod reactive_cell_tests {
     #[test]
     fn typed_value_reuses_inner_cell_identity() {
         let scalar = Ref::new(1.0);
-        let value = Value::Typed(Box::new(Value::F64(scalar.clone())), ValueKind::F64);
+        let value = LegacyValue::Typed(Box::new(LegacyValue::F64(scalar.clone())), ValueKind::F64);
 
         assert_eq!(value.reactive_cell_ids(), cell_ids(&[scalar.id()]));
     }
@@ -3973,8 +4245,8 @@ mod reactive_cell_tests {
     #[test]
     fn mutable_reference_includes_outer_and_inner_cells() {
         let scalar = Ref::new(1.0);
-        let outer = Ref::new(Value::F64(scalar.clone()));
-        let value = Value::MutableReference(outer.clone());
+        let outer = Ref::new(LegacyValue::F64(scalar.clone()));
+        let value = LegacyValue::MutableReference(outer.clone());
 
         assert_eq!(
             value.reactive_cell_ids(),
@@ -3988,15 +4260,15 @@ mod reactive_cell_tests {
         let first = Ref::new(1.0);
         let second = Ref::new(2.0);
         let mut members = IndexSet::new();
-        members.insert(Value::F64(first.clone()));
-        members.insert(Value::F64(second.clone()));
+        members.insert(LegacyValue::F64(first.clone()));
+        members.insert(LegacyValue::F64(second.clone()));
         let set = Ref::new(MechSet {
             kind: ValueKind::F64,
             max_elements: Some(2),
             num_elements: 2,
             set: members,
         });
-        let value = Value::Set(set.clone());
+        let value = LegacyValue::Set(set.clone());
 
         assert_eq!(value.reactive_root_cell_ids(), cell_ids(&[set.id()]));
         assert_eq!(
@@ -4009,8 +4281,8 @@ mod reactive_cell_tests {
     #[test]
     fn mutable_reference_root_cell_is_outer_only() {
         let scalar = Ref::new(1.0);
-        let outer = Ref::new(Value::F64(scalar.clone()));
-        let value = Value::MutableReference(outer.clone());
+        let outer = Ref::new(LegacyValue::F64(scalar.clone()));
+        let value = LegacyValue::MutableReference(outer.clone());
 
         assert_eq!(value.reactive_root_cell_ids(), cell_ids(&[outer.id()]));
         assert_eq!(
@@ -4022,9 +4294,9 @@ mod reactive_cell_tests {
 
     #[test]
     fn logical_reactive_cells_terminate_reference_cycles() {
-        let reference = Ref::new(Value::Empty);
-        *reference.borrow_mut() = Value::MutableReference(reference.clone());
-        let value = Value::MutableReference(reference.clone());
+        let reference = Ref::new(LegacyValue::Empty);
+        *reference.borrow_mut() = LegacyValue::MutableReference(reference.clone());
+        let value = LegacyValue::MutableReference(reference.clone());
 
         assert_eq!(
             value.logical_reactive_cell_ids(),
@@ -4039,10 +4311,16 @@ mod reactive_cell_tests {
         let b = Ref::new(2.0);
         let c = Ref::new(3.0);
         let d = Ref::new(4.0);
-        let first_column =
-            Matrix::from_vec(vec![Value::F64(a.clone()), Value::F64(b.clone())], 2, 1);
-        let second_column =
-            Matrix::from_vec(vec![Value::F64(c.clone()), Value::F64(d.clone())], 2, 1);
+        let first_column = Matrix::from_vec(
+            vec![LegacyValue::F64(a.clone()), LegacyValue::F64(b.clone())],
+            2,
+            1,
+        );
+        let second_column = Matrix::from_vec(
+            vec![LegacyValue::F64(c.clone()), LegacyValue::F64(d.clone())],
+            2,
+            1,
+        );
         let first_column_id = first_column.addr() as u64;
         let second_column_id = second_column.addr() as u64;
         let mut data = IndexMap::new();
@@ -4056,7 +4334,7 @@ mod reactive_cell_tests {
         });
 
         assert_eq!(
-            Value::Table(table.clone()).reactive_cell_ids(),
+            LegacyValue::Table(table.clone()).reactive_cell_ids(),
             cell_ids(&[
                 table.id(),
                 first_column_id,
@@ -4076,12 +4354,12 @@ mod reactive_cell_tests {
         let b = Ref::new(2.0);
         let tuple = Ref::new(MechTuple {
             elements: vec![
-                Box::new(Value::F64(a.clone())),
-                Box::new(Value::F64(b.clone())),
+                Box::new(LegacyValue::F64(a.clone())),
+                Box::new(LegacyValue::F64(b.clone())),
             ],
         });
         let mut data = IndexMap::new();
-        data.insert(hash_str("tuple"), Value::Tuple(tuple.clone()));
+        data.insert(hash_str("tuple"), LegacyValue::Tuple(tuple.clone()));
         let record = Ref::new(MechRecord {
             cols: 1,
             kinds: vec![ValueKind::Tuple(vec![ValueKind::F64, ValueKind::F64])],
@@ -4090,7 +4368,7 @@ mod reactive_cell_tests {
         });
 
         assert_eq!(
-            Value::Record(record.clone()).reactive_cell_ids(),
+            LegacyValue::Record(record.clone()).reactive_cell_ids(),
             cell_ids(&[record.id(), tuple.id(), a.id(), b.id()])
         );
     }
@@ -4099,29 +4377,30 @@ mod reactive_cell_tests {
     #[test]
     fn deep_snapshot_detaches_nested_record_and_tuple_cells() {
         let live = Ref::new(1.0);
-        let value = Value::Record(Ref::new(MechRecord::new(vec![(
+        let value = LegacyValue::Record(Ref::new(MechRecord::new(vec![(
             "position",
-            Value::Tuple(Ref::new(MechTuple::from_vec(vec![
-                Value::F64(live.clone()),
-                Value::F64(Ref::new(2.0)),
+            LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
+                LegacyValue::F64(live.clone()),
+                LegacyValue::F64(Ref::new(2.0)),
             ]))),
         )])));
 
         let snapshot = value.try_deep_snapshot().expect("acyclic fixture");
         *live.borrow_mut() = 9.0;
 
-        let Value::Record(snapshot) = snapshot else {
+        let LegacyValue::Record(snapshot) = snapshot else {
             panic!("expected record snapshot");
         };
         let position = {
             let snapshot = snapshot.borrow();
-            let Value::Tuple(position) = snapshot.data.get(&hash_str("position")).unwrap() else {
+            let LegacyValue::Tuple(position) = snapshot.data.get(&hash_str("position")).unwrap()
+            else {
                 panic!("expected tuple field");
             };
             position.clone()
         };
         let position = position.borrow();
-        let Value::F64(x) = position.elements[0].as_ref() else {
+        let LegacyValue::F64(x) = position.elements[0].as_ref() else {
             panic!("expected scalar tuple element");
         };
         assert_eq!(*x.borrow(), 1.0);
@@ -4136,8 +4415,14 @@ mod reactive_cell_tests {
         let key2 = Ref::new(3.0);
         let value2 = Ref::new(4.0);
         let mut map_data = IndexMap::new();
-        map_data.insert(Value::F64(key1.clone()), Value::F64(value1.clone()));
-        map_data.insert(Value::F64(key2.clone()), Value::F64(value2.clone()));
+        map_data.insert(
+            LegacyValue::F64(key1.clone()),
+            LegacyValue::F64(value1.clone()),
+        );
+        map_data.insert(
+            LegacyValue::F64(key2.clone()),
+            LegacyValue::F64(value2.clone()),
+        );
         let map = Ref::new(MechMap {
             key_kind: ValueKind::F64,
             value_kind: ValueKind::F64,
@@ -4145,15 +4430,15 @@ mod reactive_cell_tests {
             map: map_data,
         });
         assert_eq!(
-            Value::Map(map.clone()).reactive_cell_ids(),
+            LegacyValue::Map(map.clone()).reactive_cell_ids(),
             cell_ids(&[map.id(), key1.id(), value1.id(), key2.id(), value2.id()])
         );
 
         let set1 = Ref::new(5.0);
         let set2 = Ref::new(6.0);
         let mut set_data = IndexSet::new();
-        set_data.insert(Value::F64(set1.clone()));
-        set_data.insert(Value::F64(set2.clone()));
+        set_data.insert(LegacyValue::F64(set1.clone()));
+        set_data.insert(LegacyValue::F64(set2.clone()));
         let set = Ref::new(MechSet {
             kind: ValueKind::F64,
             max_elements: Some(2),
@@ -4161,7 +4446,7 @@ mod reactive_cell_tests {
             set: set_data,
         });
         assert_eq!(
-            Value::Set(set.clone()).reactive_cell_ids(),
+            LegacyValue::Set(set.clone()).reactive_cell_ids(),
             cell_ids(&[set.id(), set1.id(), set2.id()])
         );
     }
@@ -4174,11 +4459,11 @@ mod reactive_cell_tests {
         let dictionary_id = dictionary.id();
         let enum_value = Ref::new(MechEnum {
             id: hash_str("example"),
-            variants: vec![(hash_str("payload"), Some(Value::F64(payload.clone())))],
+            variants: vec![(hash_str("payload"), Some(LegacyValue::F64(payload.clone())))],
             names: dictionary,
         });
 
-        let ids = Value::Enum(enum_value.clone()).reactive_cell_ids();
+        let ids = LegacyValue::Enum(enum_value.clone()).reactive_cell_ids();
         assert_eq!(ids, cell_ids(&[enum_value.id(), payload.id()]));
         assert!(!ids.contains(&ReactiveCellId::new(dictionary_id)));
     }
@@ -4187,7 +4472,7 @@ mod reactive_cell_tests {
     #[test]
     fn val_ref_helper_includes_program_cell() {
         let inner = Ref::new(1.0);
-        let cell = Ref::new(Value::F64(inner.clone()));
+        let cell = Ref::new(LegacyValue::F64(inner.clone()));
 
         assert_eq!(
             val_ref_reactive_cell_ids(&cell),

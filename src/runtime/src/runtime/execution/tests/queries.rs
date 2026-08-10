@@ -1,10 +1,10 @@
-use super::super::{MechRuntime, RuntimeConfig, Value};
+use super::super::{LegacyValue, MechRuntime, RuntimeConfig};
 use mech_core::hash_str;
 use mech_syntax::parser;
 
-fn f64_value(value: &Value) -> f64 {
+fn f64_value(value: &LegacyValue) -> f64 {
     match value {
-        Value::F64(value) => *value.borrow(),
+        LegacyValue::F64(value) => *value.borrow(),
         other => panic!("expected f64, got {other:?}"),
     }
 }

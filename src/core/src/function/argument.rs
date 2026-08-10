@@ -7,7 +7,7 @@ use core::any::type_name;
 
 #[cfg(feature = "matrix")]
 use crate::structures::Matrix;
-use crate::{MResult, MechError, MechErrorKind, ReactiveCellId, Ref, Value};
+use crate::{LegacyValue, MResult, MechError, MechErrorKind, ReactiveCellId, Ref};
 
 /// Identifies the argument whose exact runtime representation was rejected.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -113,49 +113,49 @@ where
     }
 }
 
-impl Value {
+impl LegacyValue {
     pub fn function_matrix_descriptor(
         &self,
         role: FunctionArgumentRole,
     ) -> MResult<Option<FunctionMatrixDescriptor>> {
         let descriptor = match self {
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixIndex(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixBool(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixU8(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixU16(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixU32(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixU64(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixU128(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixI8(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixI16(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixI32(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixI64(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixI128(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixF32(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixF64(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixString(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixR64(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::MatrixC64(matrix) => Some(matrix_descriptor(matrix)),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(matrix) => Some(matrix_descriptor(matrix)),
-            Value::Typed(_, _) | Value::MutableReference(_) => {
+            LegacyValue::MatrixValue(matrix) => Some(matrix_descriptor(matrix)),
+            LegacyValue::Typed(_, _) | LegacyValue::MutableReference(_) => {
                 return Err(MechError::new(
                     FunctionArgumentTypeMismatch {
                         role,
@@ -191,7 +191,7 @@ impl MechErrorKind for FunctionArgumentTypeMismatch {
 /// This deliberately performs no scalar conversion, matrix reshaping, or
 /// unwrapping of `Typed` and `MutableReference` values.
 pub fn require_function_ref<T: 'static>(
-    value: &Value,
+    value: &LegacyValue,
     role: FunctionArgumentRole,
 ) -> MResult<Ref<T>> {
     value
@@ -228,7 +228,7 @@ mod tests {
         #[cfg(feature = "i8")]
         {
             let error = require_function_ref::<f64>(
-                &Value::I8(Ref::new(1)),
+                &LegacyValue::I8(Ref::new(1)),
                 FunctionArgumentRole::Input(0),
             )
             .unwrap_err();
@@ -244,12 +244,14 @@ mod tests {
     #[test]
     fn wrappers_are_not_implicitly_unwrapped() {
         let scalar = Ref::new(2.0_f64).to_value();
-        let typed = Value::Typed(Box::new(scalar), crate::ValueKind::F64);
+        let typed = LegacyValue::Typed(Box::new(scalar), crate::ValueKind::F64);
         assert!(require_function_ref::<f64>(&typed, FunctionArgumentRole::Output).is_err());
 
-        let mutable = Value::MutableReference(Ref::new(Ref::new(2.0_f64).to_value()));
+        let mutable = LegacyValue::MutableReference(Ref::new(Ref::new(2.0_f64).to_value()));
         assert!(require_function_ref::<f64>(&mutable, FunctionArgumentRole::Output).is_err());
-        assert!(require_function_ref::<Value>(&mutable, FunctionArgumentRole::Output).is_ok());
+        assert!(
+            require_function_ref::<LegacyValue>(&mutable, FunctionArgumentRole::Output).is_ok()
+        );
     }
 
     #[cfg(all(
@@ -263,8 +265,8 @@ mod tests {
         use crate::matrix::Matrix;
         use nalgebra::{DMatrix, Matrix2};
 
-        let fixed = Value::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::identity())));
-        let dynamic = Value::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
+        let fixed = LegacyValue::MatrixF64(Matrix::Matrix2(Ref::new(Matrix2::identity())));
+        let dynamic = LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::identity(2, 2))));
 
         assert!(require_function_ref::<Matrix2<f64>>(&fixed, FunctionArgumentRole::Output).is_ok());
         assert!(

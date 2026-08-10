@@ -1,4 +1,4 @@
-use mech_core::{Ref, Value};
+use mech_core::{LegacyValue, Ref};
 use mech_runtime::{
     CapabilityId, FileSourceResolver, InMemoryDocsProvider, ModuleBuildOptions,
     PreparedRuntimeEffect, ResourcePathCapability, RuntimeCapabilityOperation, RuntimeConfigSpec,
@@ -17,7 +17,7 @@ fn write_case(root: &std::path::Path, name: &str, source: &str) -> std::path::Pa
     case_root
 }
 
-fn docs_provider_with(path: &str, value: Value) -> InMemoryDocsProvider {
+fn docs_provider_with(path: &str, value: LegacyValue) -> InMemoryDocsProvider {
     InMemoryDocsProvider::new()
         .with_value("docs://manual", path, value)
         .unwrap()
@@ -118,7 +118,7 @@ fn main() {
             path: "intro/title".to_string(),
             context_name: "manual".to_string(),
             operation: RuntimeCapabilityOperation::Write,
-            value: Value::Bool(Ref::new(true)),
+            value: LegacyValue::Bool(Ref::new(true)),
             intent: RuntimeResourceWriteIntent::Assign,
         })
         .unwrap();
@@ -137,7 +137,7 @@ fn main() {
         })
         .unwrap();
     match value {
-        Value::Bool(value) => println!("  read result: Bool({})", value.borrow()),
+        LegacyValue::Bool(value) => println!("  read result: Bool({})", value.borrow()),
         other => println!("  read result: {:?}", other),
     }
     println!();
@@ -156,7 +156,7 @@ fn main() {
         "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
         Some(docs_provider_with(
             "intro/title",
-            Value::Bool(Ref::new(true)),
+            LegacyValue::Bool(Ref::new(true)),
         )),
         None,
         true,
@@ -169,7 +169,7 @@ fn main() {
         Some(
             RuntimeConfigSpec::new().with_resource(RuntimeResourceConfigSpec::InMemoryDocs(
                 RuntimeInMemoryDocsResourceSpec::new("docs://manual")
-                    .with_entry("intro/title", Value::Bool(Ref::new(true))),
+                    .with_entry("intro/title", LegacyValue::Bool(Ref::new(true))),
             )),
         ),
         true,
@@ -180,7 +180,7 @@ fn main() {
         "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
         Some(docs_provider_with(
             "intro/title",
-            Value::Bool(Ref::new(true)),
+            LegacyValue::Bool(Ref::new(true)),
         )),
         None,
         false,
@@ -207,7 +207,7 @@ fn main() {
         "@manual := docs://manual{:read(other/path)}\n\nresult := @manual/intro/title\n",
         Some(docs_provider_with(
             "intro/title",
-            Value::Bool(Ref::new(true)),
+            LegacyValue::Bool(Ref::new(true)),
         )),
         None,
         true,
@@ -218,7 +218,7 @@ fn main() {
         "~~~mech:foo\n@manual := docs://manual{:read(intro/title)}\nresult := @manual/intro/title\n~~~\n",
         Some(docs_provider_with(
             "intro/title",
-            Value::Bool(Ref::new(true)),
+            LegacyValue::Bool(Ref::new(true)),
         )),
         None,
         true,

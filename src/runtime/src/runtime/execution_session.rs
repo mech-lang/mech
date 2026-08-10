@@ -16,8 +16,8 @@ use crate::{
     RuntimeTransactionNotFoundError, RuntimeValueSnapshot, default_host_capability_request,
 };
 use mech_core::{
-    ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult, MechError,
-    MechExecutionServices, ResourceIntent, ValRef, Value,
+    ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechError,
+    MechExecutionServices, ResourceIntent, ValRef,
 };
 use mech_engine::MechProgram;
 use std::collections::BTreeMap;
@@ -140,7 +140,10 @@ impl RuntimeSessionServices<'_> {
         self.check_capability(&request)
     }
 
-    fn read_external_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+    fn read_external_resource(
+        &mut self,
+        request: &ExecutionResourceRequest,
+    ) -> MResult<LegacyValue> {
         self.validate_context()?;
         if request.intent != ResourceIntent::Read {
             return Err(MechError::new(
@@ -181,7 +184,7 @@ impl RuntimeSessionServices<'_> {
     fn write_external_resource(
         &mut self,
         request: &ExecutionResourceRequest,
-        value: &Value,
+        value: &LegacyValue,
     ) -> MResult<()> {
         self.validate_context()?;
         let intent = match request.intent {
@@ -291,7 +294,7 @@ impl RuntimeSessionServices<'_> {
         effect: PreparedRuntimeEffect,
         resource_identity: String,
         path: String,
-        value: Value,
+        value: LegacyValue,
     ) -> MResult<RuntimeEffectId> {
         self.validate_context()?;
         let (metadata, protocol) = catch_extension("prepared runtime effect", "metadata", || {
@@ -403,8 +406,8 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
     fn invoke_host_function(
         &mut self,
         request: &ExecutionHostFunctionRequest,
-        arguments: &[Value],
-    ) -> MResult<Value> {
+        arguments: &[LegacyValue],
+    ) -> MResult<LegacyValue> {
         let Self {
             runtime_id,
             execution_mode,
@@ -463,7 +466,7 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         };
 
         let call_context = RuntimeCallContext::capture(services.context);
-        let result = (|| -> MResult<Value> {
+        let result = (|| -> MResult<LegacyValue> {
             let arguments = arguments
                 .iter()
                 .map(RuntimeValueSnapshot::try_capture)
@@ -536,7 +539,7 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         result
     }
 
-    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
         let Self {
             runtime_id,
             execution_mode,
@@ -565,7 +568,11 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         .read_external_resource(request)
     }
 
-    fn write_resource(&mut self, request: &ExecutionResourceRequest, value: &Value) -> MResult<()> {
+    fn write_resource(
+        &mut self,
+        request: &ExecutionResourceRequest,
+        value: &LegacyValue,
+    ) -> MResult<()> {
         let Self {
             runtime_id,
             execution_mode,

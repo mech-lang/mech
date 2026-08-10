@@ -142,14 +142,14 @@ macro_rules! impl_binop_solve {
                 $op!(lhs_ptr, rhs_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -218,7 +218,7 @@ macro_rules! impl_solve_match_arms {
       $(
         $(
           #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
-          (Value::$matrix_kind(Matrix::DMatrix(lhs)), Value::$matrix_kind(Matrix::DVector(rhs))) => {
+          (LegacyValue::$matrix_kind(Matrix::DMatrix(lhs)), LegacyValue::$matrix_kind(Matrix::DVector(rhs))) => {
             let (a_rows, a_cols) = lhs.borrow().shape();
             let (b_rows, b_cols) = rhs.borrow().shape();
             if b_cols != 1 {
@@ -236,7 +236,7 @@ macro_rules! impl_solve_match_arms {
             Ok(Box::new(MatrixSolveMDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DVector::from_element(a_rows, $target_type::zero())) }))
           },
           #[cfg(feature = $value_string)]
-          (Value::$matrix_kind(lhs), Value::$matrix_kind(rhs)) => {
+          (LegacyValue::$matrix_kind(lhs), LegacyValue::$matrix_kind(rhs)) => {
             let lhs_shape = lhs.shape();
             let rhs_shape = rhs.shape();
             return Err(MechError::new(
@@ -255,7 +255,7 @@ macro_rules! impl_solve_match_arms {
 }
 
 #[cfg(feature = "source")]
-fn impl_solve_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_solve_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_solve_match_arms!(
       (lhs_value, rhs_value),
       MatrixF32,  f32,  "f32";

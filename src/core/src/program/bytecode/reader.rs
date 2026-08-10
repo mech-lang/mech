@@ -11,7 +11,7 @@ use std::fs;
 #[cfg(not(feature = "no_std"))]
 use std::path::Path;
 
-use crate::{MResult, MechError, Value, hash_str};
+use crate::{LegacyValue, MResult, MechError, hash_str};
 
 use super::*;
 
@@ -27,6 +27,7 @@ pub struct ParsedProgram {
     pub instructions: Vec<BytecodeInstruction>,
     pub dictionary: BTreeMap<u64, String>,
     pub requirements: Vec<ApplicationRequirement>,
+    pub artifact: BytecodeArtifactSections,
 }
 
 impl ParsedProgram {
@@ -38,7 +39,7 @@ impl ParsedProgram {
         parse_program(bytes, &limits)
     }
 
-    pub fn decode_constants(&self) -> MResult<Vec<Value>> {
+    pub fn decode_constants(&self) -> MResult<Vec<LegacyValue>> {
         decode_constants(&self.types, &self.constants, &self.constant_blob)
     }
 
@@ -162,6 +163,56 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         return invalid("application requirements are not strictly sorted and deduplicated");
     }
 
+    let artifact_kinds = [
+        BytecodeSectionKind::ArtifactSchemas,
+        BytecodeSectionKind::ArtifactConstants,
+        BytecodeSectionKind::ArtifactInputs,
+        BytecodeSectionKind::ArtifactSlots,
+        BytecodeSectionKind::ArtifactProducers,
+        BytecodeSectionKind::ArtifactNodes,
+        BytecodeSectionKind::ArtifactBindings,
+        BytecodeSectionKind::ArtifactOutputs,
+        BytecodeSectionKind::ArtifactIntegrityConstraints,
+        BytecodeSectionKind::ArtifactOperations,
+        BytecodeSectionKind::ArtifactOperationContracts,
+    ];
+    let mut artifact_bytes = Vec::with_capacity(artifact_kinds.len());
+    let mut total_artifact_bytes = 0_usize;
+    for kind in artifact_kinds {
+        let entry = section(kind);
+        let bytes = section_bytes(bytes, entry)?;
+        if bytes.len() > limits.max_artifact_section_bytes {
+            return invalid("ProgramArtifact section exceeds read limit");
+        }
+        total_artifact_bytes = total_artifact_bytes
+            .checked_add(bytes.len())
+            .ok_or_else(|| invalid::<()>("ProgramArtifact byte count overflow").unwrap_err())?;
+        if total_artifact_bytes > limits.max_artifact_bytes {
+            return invalid("ProgramArtifact sections exceed total read limit");
+        }
+        if entry.item_count != u32::from(!bytes.is_empty()) {
+            return invalid("ProgramArtifact section item count must describe presence");
+        }
+        artifact_bytes.push(bytes.to_vec());
+    }
+    let mut artifact_bytes = artifact_bytes.into_iter();
+    let artifact = BytecodeArtifactSections {
+        schemas: artifact_bytes.next().unwrap(),
+        constants: artifact_bytes.next().unwrap(),
+        inputs: artifact_bytes.next().unwrap(),
+        slots: artifact_bytes.next().unwrap(),
+        producers: artifact_bytes.next().unwrap(),
+        nodes: artifact_bytes.next().unwrap(),
+        bindings: artifact_bytes.next().unwrap(),
+        outputs: artifact_bytes.next().unwrap(),
+        integrity_constraints: artifact_bytes.next().unwrap(),
+        operations: artifact_bytes.next().unwrap(),
+        operation_contracts: artifact_bytes.next().unwrap(),
+    };
+    if artifact.ordered().iter().any(|section| section.is_empty()) && !artifact.is_empty() {
+        return invalid("ProgramArtifact bytecode sections must be all present or all absent");
+    }
+
     for (id, _) in &symbols {
         let name = dictionary.get(id).ok_or_else(|| {
             invalid::<()>("symbol is missing its exact dictionary name").unwrap_err()
@@ -175,8 +226,13 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
             "dictionary entry {id} is not referenced by a symbol"
         ));
     }
-    let initialized =
-        validate_instructions(&instructions, &header, constants.len(), requirements.len())?;
+    let initialized = validate_instructions(
+        &instructions,
+        &header,
+        constants.len(),
+        requirements.len(),
+        !artifact.is_empty(),
+    )?;
     validate_composite_packs(
         &instructions,
         header.register_count as usize,
@@ -219,6 +275,7 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         instructions,
         dictionary,
         requirements,
+        artifact,
     })
 }
 
@@ -236,7 +293,7 @@ fn validate_composite_packs(
         return Ok(());
     }
     let values = decode_constants(types, constants, blob)?;
-    let mut registers = vec![None::<Value>; register_count];
+    let mut registers = vec![None::<LegacyValue>; register_count];
     for instruction in instructions {
         match instruction {
             BytecodeInstruction::ConstLoad { dst, constant } => {
@@ -1002,7 +1059,11 @@ fn validate_instructions(
     header: &BytecodeHeader,
     constant_count: usize,
     requirement_count: usize,
+    artifact_present: bool,
 ) -> MResult<Vec<bool>> {
+    if instructions.is_empty() && artifact_present && header.register_count == 0 {
+        return Ok(Vec::new());
+    }
     let register = |instruction: usize, value: u32| {
         if value < header.register_count {
             Ok(value as usize)

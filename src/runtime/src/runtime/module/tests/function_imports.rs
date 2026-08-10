@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
-use mech_core::{FunctionSpecializer, MechSourceCode, Ref, Value};
+use mech_core::{FunctionSpecializer, MechSourceCode, Ref, LegacyValue};
 use mech_engine::FunctionBinding;
 
 use crate::runtime::test_support::capabilities::{CapabilityUseProbe, grant_host_call};
@@ -28,7 +28,7 @@ struct HostHarness {
     capability_uses: CapabilityUseProbe,
 }
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
+fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -72,11 +72,11 @@ fn runtime_with_colliding_host(
             host_name,
             move |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
                 plans_for_host.fetch_add(1, Ordering::SeqCst);
-                Ok(snapshot(Value::F64(Ref::new(sentinel))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(sentinel))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 invocations_for_host.fetch_add(1, Ordering::SeqCst);
-                Ok(snapshot(Value::F64(Ref::new(sentinel))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(sentinel))))
             },
         ))
         .unwrap()
@@ -97,9 +97,9 @@ fn runtime_with_colliding_host(
 
 fn snapshot_f64(snapshot: RuntimeValueSnapshot) -> f64 {
     match snapshot.into_value() {
-        Value::F64(value) => *value.borrow(),
-        Value::MutableReference(value) => match &*value.borrow() {
-            Value::F64(value) => *value.borrow(),
+        LegacyValue::F64(value) => *value.borrow(),
+        LegacyValue::MutableReference(value) => match &*value.borrow() {
+            LegacyValue::F64(value) => *value.borrow(),
             other => panic!("expected f64 mutable reference, got {other:?}"),
         },
         other => panic!("expected f64 result, got {other:?}"),

@@ -1,5 +1,5 @@
+use crate::legacy_value::*;
 use crate::nodes::*;
-use crate::value::*;
 use crate::*;
 
 #[cfg(feature = "no_std")]
@@ -117,8 +117,8 @@ impl<T: PartialEq> PartialEq for Ref<T> {
 }
 impl<T: PartialEq> Eq for Ref<T> {}
 
-pub type MutableReference = Ref<Value>;
-pub type ValRef = Ref<Value>;
+pub type MutableReference = Ref<LegacyValue>;
+pub type ValRef = Ref<LegacyValue>;
 
 pub type MResult<T> = Result<T, MechError>;
 

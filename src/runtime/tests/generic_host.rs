@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::{FunctionCatalogBuilder, MResult, MechError, MechErrorKind, Ref, Value};
+use mech_core::{FunctionCatalogBuilder, LegacyValue, MResult, MechError, MechErrorKind, Ref};
 use mech_runtime::*;
 
 fn runtime_builder_with_intrinsics() -> RuntimeBuilder {
@@ -114,7 +114,7 @@ impl RuntimeResourceProvider for FakeRobotProvider {
     fn base_uris(&self) -> Vec<String> {
         vec![self.commands_base()]
     }
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         Err(fake_error(
             "fake robot state reads are not implemented in this test",
         ))
@@ -202,8 +202,8 @@ impl RuntimeResourceProvider for AliasProvider {
     fn base_uris(&self) -> Vec<String> {
         self.bases.clone()
     }
-    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
-        Ok(Value::String(Ref::new("ok".to_string())))
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        Ok(LegacyValue::String(Ref::new("ok".to_string())))
     }
 }
 
@@ -408,13 +408,13 @@ fn in_memory_docs_bases_are_not_implicit_aliases() {
     docs.insert(
         "docs://manual",
         "title",
-        Value::String(Ref::new("manual".to_string())),
+        LegacyValue::String(Ref::new("manual".to_string())),
     )
     .unwrap();
     docs.insert(
         "docs://guide",
         "title",
-        Value::String(Ref::new("guide".to_string())),
+        LegacyValue::String(Ref::new("guide".to_string())),
     )
     .unwrap();
 
@@ -558,24 +558,24 @@ impl RuntimeResourceProvider for PlotterProvider {
     fn base_uris(&self) -> Vec<String> {
         vec![self.base()]
     }
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri != self.base() {
             return Err(fake_error("unknown plotter base URI"));
         }
         match request.path.as_str() {
-            "read" => Ok(Value::String(Ref::new("ok".to_string()))),
+            "read" => Ok(LegacyValue::String(Ref::new("ok".to_string()))),
             _ => Err(fake_error(
                 "plotter read path is not implemented in this test",
             )),
         }
     }
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri != self.base() || request.path != "read" {
             return Err(fake_error(
                 "plotter planning read is not implemented for this path",
             ));
         }
-        Ok(Value::String(Ref::new(String::new())))
+        Ok(LegacyValue::String(Ref::new(String::new())))
     }
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
         if request.base_uri != self.base() {

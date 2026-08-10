@@ -1,14 +1,14 @@
-use crate::{BytecodeValidationError, MResult, MechError, Ref, Value, ValueKind};
+use crate::{BytecodeValidationError, LegacyValue, MResult, MechError, Ref, ValueKind};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, format, vec, vec::Vec};
 
 /// Direct children whose producer cells define a composite's reactive topology.
 /// This ordering is the canonical `CompositePack` argument ordering.
-pub fn bytecode_composite_children(value: &Value) -> Option<Vec<Value>> {
+pub fn bytecode_composite_children(value: &LegacyValue) -> Option<Vec<LegacyValue>> {
     match value {
         #[cfg(feature = "tuple")]
-        Value::Tuple(value) => Some(
+        LegacyValue::Tuple(value) => Some(
             value
                 .borrow()
                 .elements
@@ -17,9 +17,9 @@ pub fn bytecode_composite_children(value: &Value) -> Option<Vec<Value>> {
                 .collect(),
         ),
         #[cfg(feature = "record")]
-        Value::Record(value) => Some(value.borrow().data.values().cloned().collect()),
+        LegacyValue::Record(value) => Some(value.borrow().data.values().cloned().collect()),
         #[cfg(feature = "map")]
-        Value::Map(value) => Some(
+        LegacyValue::Map(value) => Some(
             value
                 .borrow()
                 .map
@@ -28,9 +28,9 @@ pub fn bytecode_composite_children(value: &Value) -> Option<Vec<Value>> {
                 .collect(),
         ),
         #[cfg(feature = "set")]
-        Value::Set(value) => Some(value.borrow().set.iter().cloned().collect()),
+        LegacyValue::Set(value) => Some(value.borrow().set.iter().cloned().collect()),
         #[cfg(feature = "table")]
-        Value::Table(value) => Some(
+        LegacyValue::Table(value) => Some(
             value
                 .borrow()
                 .data
@@ -39,7 +39,7 @@ pub fn bytecode_composite_children(value: &Value) -> Option<Vec<Value>> {
                 .collect(),
         ),
         #[cfg(feature = "enum")]
-        Value::Enum(value) => Some(
+        LegacyValue::Enum(value) => Some(
             value
                 .borrow()
                 .variants
@@ -48,8 +48,8 @@ pub fn bytecode_composite_children(value: &Value) -> Option<Vec<Value>> {
                 .collect(),
         ),
         #[cfg(feature = "matrix")]
-        Value::MatrixValue(value) => Some(value.as_vec()),
-        Value::Typed(value, _) => Some(vec![(**value).clone()]),
+        LegacyValue::MatrixValue(value) => Some(value.as_vec()),
+        LegacyValue::Typed(value, _) => Some(vec![(**value).clone()]),
         _ => None,
     }
 }
@@ -76,7 +76,7 @@ fn duplicate_hashed_child(kind: &str) -> MechError {
     .with_compiler_loc()
 }
 
-fn compiled_child_kind(value: &Value) -> ValueKind {
+fn compiled_child_kind(value: &LegacyValue) -> ValueKind {
     let mut kind = value.kind();
     while let ValueKind::Reference(inner) = kind {
         kind = *inner;
@@ -99,7 +99,10 @@ fn wrong_child_kind(index: usize, expected: &ValueKind, actual: &ValueKind) -> M
 
 /// Validates the exact child schema shared by bytecode reading, contract
 /// planning, and runtime reconstruction.
-pub fn validate_bytecode_composite_children(template: &Value, children: &[Value]) -> MResult<()> {
+pub fn validate_bytecode_composite_children(
+    template: &LegacyValue,
+    children: &[LegacyValue],
+) -> MResult<()> {
     let expected = bytecode_composite_children(template).ok_or_else(|| {
         MechError::new(
             BytecodeValidationError {
@@ -126,19 +129,24 @@ pub fn validate_bytecode_composite_children(template: &Value, children: &[Value]
 }
 
 /// Rebuilds one composite layer from a constant template and live child values.
-pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MResult<Value> {
+pub fn rebuild_bytecode_composite(
+    template: &LegacyValue,
+    children: Vec<LegacyValue>,
+) -> MResult<LegacyValue> {
     validate_bytecode_composite_children(template, &children)?;
     match template {
         #[cfg(feature = "tuple")]
-        Value::Tuple(value) => {
+        LegacyValue::Tuple(value) => {
             let expected = value.borrow().elements.len();
             if children.len() != expected {
                 return Err(wrong_arity("Tuple", expected, children.len()));
             }
-            Ok(Value::Tuple(Ref::new(crate::MechTuple::from_vec(children))))
+            Ok(LegacyValue::Tuple(Ref::new(crate::MechTuple::from_vec(
+                children,
+            ))))
         }
         #[cfg(feature = "record")]
-        Value::Record(value) => {
+        LegacyValue::Record(value) => {
             let value = value.borrow();
             if children.len() != value.data.len() {
                 return Err(wrong_arity("Record", value.data.len(), children.len()));
@@ -156,14 +164,12 @@ pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MRe
                     )
                 })
                 .collect();
-            Ok(Value::Record(Ref::new(crate::MechRecord::from_parts(
-                value.cols,
-                value.kinds.clone(),
-                fields,
-            ))))
+            Ok(LegacyValue::Record(Ref::new(
+                crate::MechRecord::from_parts(value.cols, value.kinds.clone(), fields),
+            )))
         }
         #[cfg(feature = "map")]
-        Value::Map(value) => {
+        LegacyValue::Map(value) => {
             let value = value.borrow();
             let expected = value
                 .map
@@ -196,10 +202,10 @@ pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MRe
             if rebuilt.map.len() != entry_count {
                 return Err(duplicate_hashed_child("Map"));
             }
-            Ok(Value::Map(Ref::new(rebuilt)))
+            Ok(LegacyValue::Map(Ref::new(rebuilt)))
         }
         #[cfg(feature = "set")]
-        Value::Set(value) => {
+        LegacyValue::Set(value) => {
             let value = value.borrow();
             if children.len() != value.set.len() {
                 return Err(wrong_arity("Set", value.set.len(), children.len()));
@@ -209,7 +215,7 @@ pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MRe
             let expected = children.len();
             let children = children
                 .iter()
-                .map(Value::try_deep_snapshot)
+                .map(LegacyValue::try_deep_snapshot)
                 .collect::<MResult<Vec<_>>>()?;
             let mut rebuilt = crate::MechSet::from_vec(children);
             if rebuilt.set.len() != expected {
@@ -218,10 +224,10 @@ pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MRe
             rebuilt.kind = value.kind.clone();
             rebuilt.max_elements = value.max_elements;
             rebuilt.num_elements = value.num_elements;
-            Ok(Value::Set(Ref::new(rebuilt)))
+            Ok(LegacyValue::Set(Ref::new(rebuilt)))
         }
         #[cfg(feature = "table")]
-        Value::Table(value) => {
+        LegacyValue::Table(value) => {
             let value = value.borrow();
             let expected = value
                 .data
@@ -247,7 +253,7 @@ pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MRe
                     )
                 })
                 .collect();
-            Ok(Value::Table(Ref::new(crate::MechTable::from_parts(
+            Ok(LegacyValue::Table(Ref::new(crate::MechTable::from_parts(
                 value.rows,
                 value.cols,
                 columns,
@@ -259,7 +265,7 @@ pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MRe
             ))))
         }
         #[cfg(feature = "enum")]
-        Value::Enum(value) => {
+        LegacyValue::Enum(value) => {
             let value = value.borrow();
             let expected = value
                 .variants
@@ -270,7 +276,7 @@ pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MRe
                 return Err(wrong_arity("Enum", expected, children.len()));
             }
             let mut children = children.into_iter();
-            Ok(Value::Enum(Ref::new(crate::MechEnum {
+            Ok(LegacyValue::Enum(Ref::new(crate::MechEnum {
                 id: value.id,
                 variants: value
                     .variants
@@ -281,22 +287,22 @@ pub fn rebuild_bytecode_composite(template: &Value, children: Vec<Value>) -> MRe
             })))
         }
         #[cfg(feature = "matrix")]
-        Value::MatrixValue(value) => {
+        LegacyValue::MatrixValue(value) => {
             let expected = value.rows().saturating_mul(value.cols());
             if children.len() != expected {
                 return Err(wrong_arity("MatrixValue", expected, children.len()));
             }
-            Ok(Value::MatrixValue(value.rebuild_with_same_storage(
+            Ok(LegacyValue::MatrixValue(value.rebuild_with_same_storage(
                 children,
                 value.rows(),
                 value.cols(),
             )))
         }
-        Value::Typed(_, kind) => {
+        LegacyValue::Typed(_, kind) => {
             if children.len() != 1 {
                 return Err(wrong_arity("Typed", 1, children.len()));
             }
-            Ok(Value::Typed(
+            Ok(LegacyValue::Typed(
                 Box::new(children.into_iter().next().unwrap()),
                 kind.clone(),
             ))

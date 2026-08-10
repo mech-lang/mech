@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mech-lang.org/schemas/frozen-semantic-targets-v1.json",
+  "additionalProperties": false,
+  "properties": {
+    "occurrence_targets": {
+      "items": { "$ref": "#/$defs/occurrenceTarget" },
+      "minItems": 1,
+      "type": "array"
+    },
+    "schema_version": { "const": 1 },
+    "targets": {
+      "items": { "$ref": "#/$defs/target" },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": ["schema_version", "targets", "occurrence_targets"],
+  "type": "object",
+  "$defs": {
+    "applicability": {
+      "additionalProperties": false,
+      "properties": {
+        "enum": { "enum": ["LegacyValue", "ValueKind", "Kind"] },
+        "variants": {
+          "items": { "minLength": 1, "type": "string" },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": ["enum", "variants"],
+      "type": "object"
+    },
+    "occurrenceSite": {
+      "additionalProperties": false,
+      "properties": {
+        "column": { "minimum": 1, "type": "integer" },
+        "line": { "minimum": 1, "type": "integer" }
+      },
+      "required": ["line", "column"],
+      "type": "object"
+    },
+    "occurrenceTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "enum": { "enum": ["LegacyValue", "ValueKind", "Kind"] },
+        "path": { "minLength": 1, "type": "string" },
+        "sites": {
+          "items": { "$ref": "#/$defs/occurrenceSite" },
+          "minItems": 1,
+          "type": "array"
+        },
+        "target": { "pattern": "^[a-z0-9][a-z0-9/-]*$", "type": "string" },
+        "variant": { "minLength": 1, "type": "string" }
+      },
+      "required": ["enum", "variant", "path", "sites", "target"],
+      "type": "object"
+    },
+    "target": {
+      "additionalProperties": false,
+      "properties": {
+        "applies_to": {
+          "items": { "$ref": "#/$defs/applicability" },
+          "minItems": 1,
+          "type": "array"
+        },
+        "id": { "pattern": "^[a-z0-9][a-z0-9/-]*$", "type": "string" },
+        "implementation_gate": {
+          "enum": ["C1", "C2", "C3", "C4", "D", "final-cutover"]
+        },
+        "key_semantics": { "minLength": 1, "type": "string" },
+        "representation": { "minLength": 1, "type": "string" },
+        "runtime_storage": { "minLength": 1, "type": "string" },
+        "semantic_category": {
+          "enum": [
+            "immutable-snapshot",
+            "reified-type-snapshot",
+            "kind-expression",
+            "schema",
+            "binding-contract",
+            "selection-ir",
+            "execution-control",
+            "runtime-slot-state",
+            "compiler-shape-hole",
+            "compiler-construction-ir",
+            "legacy-dispatch",
+            "rejected-legacy-form"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "applies_to",
+        "semantic_category",
+        "representation",
+        "implementation_gate",
+        "key_semantics",
+        "runtime_storage"
+      ],
+      "type": "object"
+    }
+  }
+}

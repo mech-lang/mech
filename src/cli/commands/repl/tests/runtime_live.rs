@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use mech_core::{GenericError, MResult, MechError, Ref, Value};
+use mech_core::{GenericError, LegacyValue, MResult, MechError, Ref};
 use mech_runtime::{
     ConfigValue, HostContextManifest, HostInstanceConfig, HostManifestConfig,
     InMemorySourceResolver, MechRuntime, RunResourceGrantConfig, RuntimeBuilder,
@@ -91,9 +91,9 @@ impl RuntimeResourceProvider for TestProvider {
         vec![TEST_BASE_URI.to_string()]
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri == TEST_BASE_URI && request.path == TEST_PATH {
-            return Ok(Value::F64(Ref::new(0.0)));
+            return Ok(LegacyValue::F64(Ref::new(0.0)));
         }
         Err(MechError::new(
             GenericError {
@@ -106,9 +106,9 @@ impl RuntimeResourceProvider for TestProvider {
         ))
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri == TEST_BASE_URI && request.path == TEST_PATH {
-            return Ok(Value::F64(Ref::new(1.0)));
+            return Ok(LegacyValue::F64(Ref::new(1.0)));
         }
         Err(MechError::new(
             GenericError {

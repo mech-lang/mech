@@ -1,5 +1,5 @@
 use crate::intrinsics::define::VarDefine;
-use crate::{FunctionSpecializer, Plan, ReactiveCellId, Ref, Value};
+use crate::{FunctionSpecializer, LegacyValue, Plan, ReactiveCellId, Ref};
 
 #[test]
 fn var_define_registration_has_no_reactive_inputs() {
@@ -7,9 +7,9 @@ fn var_define_registration_has_no_reactive_inputs() {
     let value = Ref::new(1.0);
     let value_cell = ReactiveCellId::new(value.id());
     let arguments = vec![
-        Value::F64(value),
-        Value::String(Ref::new("defined value".to_string())),
-        Value::Bool(Ref::new(false)),
+        LegacyValue::F64(value),
+        LegacyValue::String(Ref::new("defined value".to_string())),
+        LegacyValue::Bool(Ref::new(false)),
     ];
     let function = VarDefine {}.specialize(&arguments).unwrap();
 

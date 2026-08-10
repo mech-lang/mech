@@ -8,7 +8,7 @@ pub use resource_write::*;
 
 #[cfg(feature = "compiler")]
 use mech_core::{
-    BytecodeCompilerContext, MResult, Register, ValRef, Value, compile_value_register,
+    BytecodeCompilerContext, LegacyValue, MResult, Register, ValRef, compile_value_register,
 };
 
 #[cfg(feature = "compiler")]
@@ -22,7 +22,7 @@ pub(super) fn compile_external_output(
 
 #[cfg(feature = "compiler")]
 pub(super) fn compile_external_value(
-    value: &Value,
+    value: &LegacyValue,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
     compile_external_value_with_fallback(value, std::ptr::from_ref(value).addr(), context)
@@ -30,7 +30,7 @@ pub(super) fn compile_external_value(
 
 #[cfg(feature = "compiler")]
 fn compile_external_value_with_fallback(
-    value: &Value,
+    value: &LegacyValue,
     fallback: usize,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
@@ -43,8 +43,8 @@ mod tests {
     use mech_bytecode::CompileCtx;
     use mech_core::{
         ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError, InitialSolvePolicy,
-        MResult, MechError, MechExecutionServices, MechFunctionImpl, Ref, ResourceDelivery,
-        ResourceIntent, ValRef, Value,
+        LegacyValue, MResult, MechError, MechExecutionServices, MechFunctionImpl, Ref,
+        ResourceDelivery, ResourceIntent, ValRef,
     };
 
     #[derive(Default)]
@@ -69,13 +69,13 @@ mod tests {
         fn invoke_host_function(
             &mut self,
             _request: &ExecutionHostFunctionRequest,
-            _arguments: &[Value],
-        ) -> MResult<Value> {
+            _arguments: &[LegacyValue],
+        ) -> MResult<LegacyValue> {
             self.host_calls += 1;
             Err(Self::error("host call"))
         }
 
-        fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<Value> {
+        fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
             self.resource_reads += 1;
             Err(Self::error("resource read"))
         }
@@ -83,7 +83,7 @@ mod tests {
         fn write_resource(
             &mut self,
             _request: &ExecutionResourceRequest,
-            _value: &Value,
+            _value: &LegacyValue,
         ) -> MResult<()> {
             self.resource_writes += 1;
             Err(Self::error("resource write"))
@@ -119,9 +119,9 @@ mod tests {
     fn typed_external_values_do_not_share_bare_registers_in_either_order() {
         for typed_first in [false, true] {
             let scalar = Ref::new(7.0);
-            let bare = Value::F64(scalar.clone());
-            let typed = Value::Typed(
-                Box::new(Value::F64(scalar)),
+            let bare = LegacyValue::F64(scalar.clone());
+            let typed = LegacyValue::Typed(
+                Box::new(LegacyValue::F64(scalar)),
                 mech_core::ValueKind::Option(Box::new(mech_core::ValueKind::F64)),
             );
             let typed_clone = typed.clone();
@@ -159,9 +159,9 @@ mod tests {
     #[test]
     fn typed_external_outputs_do_not_share_argument_registers() {
         let scalar = Ref::new(7.0);
-        let bare_argument = Value::F64(scalar.clone());
-        let typed_output = Ref::new(Value::Typed(
-            Box::new(Value::F64(scalar)),
+        let bare_argument = LegacyValue::F64(scalar.clone());
+        let typed_output = Ref::new(LegacyValue::Typed(
+            Box::new(LegacyValue::F64(scalar)),
             mech_core::ValueKind::Option(Box::new(mech_core::ValueKind::F64)),
         ));
         let mut context = CompileCtx::new();
@@ -183,7 +183,7 @@ mod tests {
 
     #[test]
     fn host_call_failure_propagates_without_publishing_a_stale_output() {
-        let output = Ref::new(Value::F64(Ref::new(41.0)));
+        let output = Ref::new(LegacyValue::F64(Ref::new(41.0)));
         let function = ExternalHostCallFunction {
             request: ExecutionHostFunctionRequest {
                 name: "test/fail".into(),
@@ -198,17 +198,18 @@ mod tests {
 
         assert!(error.full_chain_message().contains("host call failure"));
         assert_eq!(services.host_calls, 1);
-        assert!(matches!(&*output.borrow(), Value::F64(value) if *value.borrow() == 41.0));
+        assert!(matches!(&*output.borrow(), LegacyValue::F64(value) if *value.borrow() == 41.0));
     }
 
     #[test]
     fn resource_read_failure_propagates_without_publishing_a_stale_output() {
-        let output = Ref::new(Value::F64(Ref::new(42.0)));
+        let output = Ref::new(LegacyValue::F64(Ref::new(42.0)));
         let function = ExternalResourceReadFunction {
             interpreter_id: 7,
             request: resource_request(ResourceIntent::Read),
             output: output.clone(),
             initial_solve_policy: InitialSolvePolicy::Solve,
+            semantic_contract: None,
         };
         let mut services = FailingServices::default();
 
@@ -216,17 +217,18 @@ mod tests {
 
         assert!(error.full_chain_message().contains("resource read failure"));
         assert_eq!(services.resource_reads, 1);
-        assert!(matches!(&*output.borrow(), Value::F64(value) if *value.borrow() == 42.0));
+        assert!(matches!(&*output.borrow(), LegacyValue::F64(value) if *value.borrow() == 42.0));
     }
 
     #[test]
     fn resource_write_failure_propagates_without_changing_its_output() {
-        let output = Ref::new(Value::Empty);
+        let output = Ref::new(LegacyValue::Empty);
         let function = ExternalResourceWriteFunction {
             request: resource_request(ResourceIntent::Assign),
-            input: Value::F64(Ref::new(43.0)),
+            input: LegacyValue::F64(Ref::new(43.0)),
             output: output.clone(),
             initial_solve_policy: InitialSolvePolicy::Solve,
+            semantic_contract: None,
         };
         let mut services = FailingServices::default();
 
@@ -238,6 +240,6 @@ mod tests {
                 .contains("resource write failure")
         );
         assert_eq!(services.resource_writes, 1);
-        assert_eq!(*output.borrow(), Value::Empty);
+        assert_eq!(*output.borrow(), LegacyValue::Empty);
     }
 }

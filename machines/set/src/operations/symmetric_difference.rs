@@ -69,14 +69,14 @@ impl MechFunctionImpl for SetSymDifferenceFxn {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Set(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Set(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -90,9 +90,9 @@ impl MechFunctionCompiler for SetSymDifferenceFxn {
 }
 
 #[cfg(feature = "source")]
-fn set_sym_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunction>> {
+fn set_sym_difference_fxn(lhs: LegacyValue, rhs: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (lhs, rhs) {
-        (Value::Set(lhs), Value::Set(rhs)) => Ok(Box::new(SetSymDifferenceFxn {
+        (LegacyValue::Set(lhs), LegacyValue::Set(rhs)) => Ok(Box::new(SetSymDifferenceFxn {
             lhs: lhs.clone(),
             rhs: rhs.clone(),
             out: Ref::new(MechSet::new(
@@ -115,7 +115,7 @@ fn set_sym_difference_fxn(lhs: Value, rhs: Value) -> MResult<Box<dyn MechFunctio
 pub struct SetSymmetricDifference {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for SetSymmetricDifference {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -131,13 +131,13 @@ impl FunctionSpecializer for SetSymmetricDifference {
         match set_sym_difference_fxn(lhs.clone(), rhs.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (lhs, rhs) {
-                (Value::MutableReference(lhs), Value::MutableReference(rhs)) => {
+                (LegacyValue::MutableReference(lhs), LegacyValue::MutableReference(rhs)) => {
                     set_sym_difference_fxn(lhs.borrow().clone(), rhs.borrow().clone())
                 }
-                (lhs, Value::MutableReference(rhs)) => {
+                (lhs, LegacyValue::MutableReference(rhs)) => {
                     set_sym_difference_fxn(lhs.clone(), rhs.borrow().clone())
                 }
-                (Value::MutableReference(lhs), rhs) => {
+                (LegacyValue::MutableReference(lhs), rhs) => {
                     set_sym_difference_fxn(lhs.borrow().clone(), rhs.clone())
                 }
                 x => Err(MechError::new(

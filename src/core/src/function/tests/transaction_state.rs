@@ -3,17 +3,17 @@ use super::super::MechFunctionCompiler;
 use super::super::{MechFunctionImpl, Plan, TransactionStateUnsupportedError};
 #[cfg(feature = "compiler")]
 use crate::{BytecodeCompilerContext, Register};
-use crate::{MResult, MechError, Ref, ValRef, Value};
+use crate::{LegacyValue, MResult, MechError, Ref, ValRef};
 
 struct UnsupportedStateFunction;
 impl MechFunctionImpl for UnsupportedStateFunction {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Empty
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Empty
     }
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Err(MechError::new(
             TransactionStateUnsupportedError {
                 function: self.to_string(),
@@ -40,14 +40,14 @@ impl MechFunctionImpl for MisleadingRuntimeHostNameFunction {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::MutableReference(self.output.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::MutableReference(self.output.clone())
     }
     fn to_string(&self) -> String {
         "ExternalHostCallFunction::misleading-name".to_string()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -65,17 +65,17 @@ impl MechFunctionImpl for UnschedulableOutputFunction {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::MutableReference(self.state.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::MutableReference(self.state.clone())
     }
-    fn reactive_output_values(&self) -> Vec<Value> {
+    fn reactive_output_values(&self) -> Vec<LegacyValue> {
         Vec::new()
     }
     fn to_string(&self) -> String {
         "unschedulable-output".to_string()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -96,7 +96,7 @@ fn transaction_state_unsupported_error_is_structured() {
 #[test]
 fn host_like_display_name_does_not_change_checkpoint_behavior() {
     let plan = Plan::new();
-    let output = Ref::new(Value::Index(Ref::new(42)));
+    let output = Ref::new(LegacyValue::Index(Ref::new(42)));
     plan.add_function(Box::new(MisleadingRuntimeHostNameFunction {
         output: output.clone(),
     }));
@@ -105,13 +105,13 @@ fn host_like_display_name_does_not_change_checkpoint_behavior() {
 
     assert!(values.iter().any(|value| matches!(
       value,
-      Value::MutableReference(cell) if cell.same_handle(&output)
+      LegacyValue::MutableReference(cell) if cell.same_handle(&output)
     ),));
 }
 
 #[test]
 fn plan_transaction_state_retains_outputs_excluded_from_scheduling() {
-    let state = Ref::new(Value::Index(Ref::new(1)));
+    let state = Ref::new(LegacyValue::Index(Ref::new(1)));
     let plan = Plan::new();
     plan.add_function(Box::new(UnschedulableOutputFunction {
         state: state.clone(),
@@ -120,6 +120,6 @@ fn plan_transaction_state_retains_outputs_excluded_from_scheduling() {
     let values = plan.transaction_state_values().unwrap();
 
     assert!(values.iter().any(
-        |value| matches!(value, Value::MutableReference(cell) if cell.addr() == state.addr())
+        |value| matches!(value, LegacyValue::MutableReference(cell) if cell.addr() == state.addr())
     ));
 }

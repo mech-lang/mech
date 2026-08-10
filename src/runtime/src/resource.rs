@@ -1,9 +1,9 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
-use mech_core::{MResult, MechError, MechErrorKind, Value};
+use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration};
 
-use crate::extension::{catch_extension, invoke_extension};
+use crate::extension::{catch_extension, invoke_extension, invoke_extension_value};
 use crate::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeCompensatableEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
@@ -37,7 +37,7 @@ pub struct RuntimeResourceWriteRequest {
     pub path: String,
     pub context_name: String,
     pub operation: RuntimeCapabilityOperation,
-    pub value: Value,
+    pub value: LegacyValue,
     pub intent: RuntimeResourceWriteIntent,
 }
 
@@ -48,13 +48,24 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
         Vec::new()
     }
 
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        None
+    }
+
+    fn semantic_write_contract(
+        &self,
+        _intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static OperationContractDeclaration> {
+        None
+    }
+
     /// Declares sets of provider base URIs that identify the same protected
     /// resource. This is compatibility metadata, not general URI rewriting.
     fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
         Vec::new()
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         Err(MechError::new(
             RuntimeResourceReadNotPlannable {
                 scheme: self.scheme().to_string(),
@@ -65,7 +76,7 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
         ))
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value>;
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue>;
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
         Err(MechError::new(
@@ -265,7 +276,50 @@ impl RuntimeResourceRegistry {
             })
     }
 
-    pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    pub(crate) fn semantic_read_contract(
+        &self,
+        base_uri: &str,
+    ) -> MResult<Option<&'static OperationContractDeclaration>> {
+        let scheme = resource_uri_scheme(base_uri)?.to_string();
+        let Some(entry) = self.provider_entry_for(&scheme, base_uri) else {
+            return Err(MechError::new(
+                RuntimeResourceProviderNotFound {
+                    scheme,
+                    uri: base_uri.to_owned(),
+                },
+                None,
+            ));
+        };
+        invoke_extension_value(
+            format!("resource provider `{scheme}`"),
+            "semantic_read_contract",
+            || entry.provider.semantic_read_contract(),
+        )
+    }
+
+    pub(crate) fn semantic_write_contract(
+        &self,
+        base_uri: &str,
+        intent: RuntimeResourceWriteIntent,
+    ) -> MResult<Option<&'static OperationContractDeclaration>> {
+        let scheme = resource_uri_scheme(base_uri)?.to_string();
+        let Some(entry) = self.provider_entry_for(&scheme, base_uri) else {
+            return Err(MechError::new(
+                RuntimeResourceProviderNotFound {
+                    scheme,
+                    uri: base_uri.to_owned(),
+                },
+                None,
+            ));
+        };
+        invoke_extension_value(
+            format!("resource provider `{scheme}`"),
+            "semantic_write_contract",
+            || entry.provider.semantic_write_contract(intent),
+        )
+    }
+
+    pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
             return Err(MechError::new(
@@ -281,7 +335,7 @@ impl RuntimeResourceRegistry {
         })
     }
 
-    pub(crate) fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    pub(crate) fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
             return Err(MechError::new(
@@ -342,7 +396,7 @@ impl RuntimeResourceRegistry {
 
 #[derive(Clone, Debug, Default)]
 pub struct InMemoryDocsProvider {
-    documents: Arc<Mutex<HashMap<String, HashMap<String, Value>>>>,
+    documents: Arc<Mutex<HashMap<String, HashMap<String, LegacyValue>>>>,
 }
 
 impl InMemoryDocsProvider {
@@ -354,7 +408,7 @@ impl InMemoryDocsProvider {
         &mut self,
         base_uri: impl Into<String>,
         path: impl Into<String>,
-        value: Value,
+        value: LegacyValue,
     ) -> MResult<()> {
         let base_uri = base_uri.into();
         let path = path.into();
@@ -390,13 +444,13 @@ impl InMemoryDocsProvider {
         mut self,
         base_uri: impl Into<String>,
         path: impl Into<String>,
-        value: Value,
+        value: LegacyValue,
     ) -> MResult<Self> {
         self.insert(base_uri, path, value)?;
         Ok(self)
     }
 
-    fn snapshot_value(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn snapshot_value(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         let documents = self
             .documents
             .lock()
@@ -435,11 +489,23 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
             .unwrap_or_default()
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(crate::resource_observation_contract())
+    }
+
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Assign)
+            .then(crate::prepare_commit_compensate_contract)
+    }
+
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         self.snapshot_value(request)
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         // In-memory documents are deterministic build inputs. Planning reads a
         // detached snapshot directly from the configured document set without
         // entering the provider's runtime `read` operation.
@@ -510,11 +576,11 @@ impl RuntimeResourceProvider for InMemoryDocsProvider {
 
 #[derive(Debug)]
 struct InMemoryDocsWriteEffect {
-    documents: Arc<Mutex<HashMap<String, HashMap<String, Value>>>>,
+    documents: Arc<Mutex<HashMap<String, HashMap<String, LegacyValue>>>>,
     base_uri: String,
     path: String,
-    value: Value,
-    previous: Option<Value>,
+    value: LegacyValue,
+    previous: Option<LegacyValue>,
     base_existed: bool,
     applied: bool,
 }
@@ -902,9 +968,9 @@ mod tests {
             "default-plan"
         }
 
-        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
             self.reads.fetch_add(1, Ordering::SeqCst);
-            Ok(Value::F64(Ref::new(1.0)))
+            Ok(LegacyValue::F64(Ref::new(1.0)))
         }
     }
 
@@ -949,16 +1015,16 @@ mod tests {
             vec!["synthetic-live://clock/clock".to_string()]
         }
 
-        fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
             assert_eq!(request.path, "value");
             self.counters.planned_reads.fetch_add(1, Ordering::SeqCst);
-            Ok(Value::F64(Ref::new(0.0)))
+            Ok(LegacyValue::F64(Ref::new(0.0)))
         }
 
-        fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+        fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
             assert_eq!(request.path, "value");
             self.counters.reads.fetch_add(1, Ordering::SeqCst);
-            Ok(Value::F64(Ref::new(7.0)))
+            Ok(LegacyValue::F64(Ref::new(7.0)))
         }
 
         fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
@@ -1012,7 +1078,7 @@ mod tests {
             })
             .unwrap()
             .to_value();
-        assert_eq!(planned, Value::F64(Ref::new(0.0)));
+        assert_eq!(planned, LegacyValue::F64(Ref::new(0.0)));
 
         runtime
             .write_resource(RuntimeResourceWriteRequest {
@@ -1020,7 +1086,7 @@ mod tests {
                 path: "value".to_string(),
                 context_name: "clock".to_string(),
                 operation: RuntimeCapabilityOperation::Write,
-                value: Value::F64(Ref::new(9.0)),
+                value: LegacyValue::F64(Ref::new(9.0)),
                 intent: RuntimeResourceWriteIntent::Assign,
             })
             .unwrap();
@@ -1031,7 +1097,7 @@ mod tests {
                 path: "value".to_string(),
                 context_name: "clock".to_string(),
                 operation: RuntimeCapabilityOperation::Write,
-                value: Value::F64(Ref::new(10.0)),
+                value: LegacyValue::F64(Ref::new(10.0)),
                 intent: RuntimeResourceWriteIntent::Send,
             })
             .unwrap();
@@ -1062,8 +1128,8 @@ mod tests {
             self.groups.clone()
         }
 
-        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
-            Ok(Value::Empty)
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+            Ok(LegacyValue::Empty)
         }
     }
 
@@ -1164,8 +1230,8 @@ mod tests {
         );
     }
 
-    fn bool_value(value: bool) -> Value {
-        Value::Bool(Ref::new(value))
+    fn bool_value(value: bool) -> LegacyValue {
+        LegacyValue::Bool(Ref::new(value))
     }
 
     fn write_request(path: &str, value: bool) -> RuntimeResourceWriteRequest {
@@ -1211,7 +1277,7 @@ mod tests {
             vec!["panic://provider".to_string()]
         }
 
-        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
             panic!("deliberate provider read panic");
         }
 

@@ -5,7 +5,7 @@ use std::fs;
 use mech_build::selected_planning_host_factory;
 use mech_core::{
     BytecodeInstruction, ModuleManifestConfig, ModuleManifestExportConfig,
-    ModuleManifestExportKind, ParsedProgram, Ref, Value,
+    ModuleManifestExportKind, ParsedProgram, Ref, LegacyValue,
 };
 use mech_engine::{MechProgram, MechProgramConfig};
 use mech_native_live_host_fixture::{
@@ -175,7 +175,7 @@ fn actor_builder() -> RuntimeBuilder {
         .host_function(PlannedPureHostFunction::new(
             "actor/state/id",
             |_context, _arguments| {
-                RuntimeValueSnapshot::try_capture(&Value::String(Ref::new(String::new())))
+                RuntimeValueSnapshot::try_capture(&LegacyValue::String(Ref::new(String::new())))
             },
             |_context, _arguments| panic!("actor/state/id executed while planning"),
         ))

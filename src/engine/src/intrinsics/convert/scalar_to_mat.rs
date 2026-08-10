@@ -28,14 +28,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -62,7 +62,7 @@ macro_rules! impl_conversion_scalar_to_mat_match_arms {
         $(
           $(
             #[cfg(all(feature = "matrix", feature = $type_string))]
-            (Value::$input_type(v), ValueKind::Matrix(target_kind, dims)) if matches!(target_kind.as_ref(), ValueKind::$target_type) => {
+            (LegacyValue::$input_type(v), ValueKind::Matrix(target_kind, dims)) if matches!(target_kind.as_ref(), ValueKind::$target_type) => {
               match dims[..] {
                 #[cfg(feature = "matrix1")]
                 [1,1] => {let out = Matrix1::from_element(v.borrow().clone());      return Ok(Box::new(ConvertScalarToMat2{arg: v, out: Ref::new(out)}));},
@@ -114,7 +114,7 @@ macro_rules! impl_conversion_scalar_to_mat_match_arms {
 }
 
 fn impl_conversion_scalar_to_mat_fxn(
-    source_value: Value,
+    source_value: LegacyValue,
     target_kind: ValueKind,
 ) -> MResult<Box<dyn MechFunction>> {
     impl_conversion_scalar_to_mat_match_arms!(
@@ -141,7 +141,7 @@ fn impl_conversion_scalar_to_mat_fxn(
 pub struct ConvertScalarToMat {}
 
 impl FunctionSpecializer for ConvertScalarToMat {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -158,7 +158,7 @@ impl FunctionSpecializer for ConvertScalarToMat {
         match impl_conversion_scalar_to_mat_fxn(source_value.clone(), target_kind.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match source_value {
-                Value::MutableReference(rhs) => {
+                LegacyValue::MutableReference(rhs) => {
                     impl_conversion_scalar_to_mat_fxn(rhs.borrow().clone(), target_kind.clone())
                 }
                 x => Err(MechError::new(

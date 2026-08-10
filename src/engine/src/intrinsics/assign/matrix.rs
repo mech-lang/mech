@@ -6,6 +6,44 @@ use nalgebra::{
 };
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::sync::LazyLock;
+
+static PURE_MATRIX_ELEMENT_ASSIGNMENT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::ReadWrite,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::SingleElement,
+            },
+            alias: AliasPolicy::MayAlias { input: 0 },
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 // Assign -----------------------------------------------------------------
 
@@ -124,14 +162,14 @@ macro_rules! impl_set_all_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -271,14 +309,14 @@ macro_rules! impl_assign_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -306,9 +344,9 @@ impl_assign_fxn_s!(Assign1DB, assign_1d_scalar_b, bool);
 impl_assign_scalar_fxn_v!(Assign1DVB, assign_1d_scalar_vb, bool);
 
 fn impl_assign_scalar_fxn(
-    sink: Value,
-    source: Value,
-    ixes: Vec<Value>,
+    sink: LegacyValue,
+    source: LegacyValue,
+    ixes: Vec<LegacyValue>,
 ) -> MResult<Box<dyn MechFunction>> {
     let arg = (sink.clone(), ixes.as_slice(), source.clone());
     impl_assign_fxn!(impl_assign_scalar_arms, Assign1D, arg, u8, "u8")
@@ -361,7 +399,7 @@ fn impl_assign_scalar_fxn(
 
 pub struct MatrixAssignScalar {}
 impl FunctionSpecializer for MatrixAssignScalar {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -372,13 +410,13 @@ impl FunctionSpecializer for MatrixAssignScalar {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match impl_assign_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match sink {
-                Value::MutableReference(sink) => {
+                LegacyValue::MutableReference(sink) => {
                     impl_assign_scalar_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
                 sink => Err(MechError::new(
@@ -450,9 +488,9 @@ impl_all_fxn_v!(Assign1DRV, set_1d_range_vec, usize);
 impl_all_fxn_v!(Assign1DRVB, set_1d_range_vec_b, bool);
 
 fn impl_assign_range_fxn(
-    sink: Value,
-    source: Value,
-    ixes: Vec<Value>,
+    sink: LegacyValue,
+    source: LegacyValue,
+    ixes: Vec<LegacyValue>,
 ) -> MResult<Box<dyn MechFunction>> {
     let arg = (sink.clone(), ixes.as_slice(), source.clone());
     impl_assign_fxn!(impl_set_range_arms, Assign1DR, arg, u8, "u8")
@@ -505,7 +543,7 @@ fn impl_assign_range_fxn(
 
 pub struct MatrixAssignRange {}
 impl FunctionSpecializer for MatrixAssignRange {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -516,23 +554,23 @@ impl FunctionSpecializer for MatrixAssignRange {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match impl_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (sink.clone(), &ixes, source.clone()) {
-                (Value::MutableReference(sink), _, Value::MutableReference(source)) => {
+                (LegacyValue::MutableReference(sink), _, LegacyValue::MutableReference(source)) => {
                     impl_assign_range_fxn(
                         sink.borrow().clone(),
                         source.borrow().clone(),
                         ixes.clone(),
                     )
                 }
-                (sink, _, Value::MutableReference(source)) => {
+                (sink, _, LegacyValue::MutableReference(source)) => {
                     impl_assign_range_fxn(sink.clone(), source.borrow().clone(), ixes.clone())
                 }
-                (Value::MutableReference(sink), _, source) => {
+                (LegacyValue::MutableReference(sink), _, source) => {
                     impl_assign_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
                 (sink, ixes, source) => Err(MechError::new(
@@ -628,14 +666,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -656,9 +694,9 @@ where
 }
 
 fn impl_assign_all_fxn(
-    sink: Value,
-    source: Value,
-    ixes: Vec<Value>,
+    sink: LegacyValue,
+    source: LegacyValue,
+    ixes: Vec<LegacyValue>,
 ) -> MResult<Box<dyn MechFunction>> {
     let arg = (sink.clone(), ixes.as_slice(), source.clone());
     impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, u8, "u8")
@@ -695,7 +733,7 @@ fn impl_assign_all_fxn(
 
 pub struct MatrixAssignAll {}
 impl FunctionSpecializer for MatrixAssignAll {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -706,13 +744,13 @@ impl FunctionSpecializer for MatrixAssignAll {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match impl_assign_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
-                Value::MutableReference(sink) => {
+                LegacyValue::MutableReference(sink) => {
                     impl_assign_all_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
                 _ => Err(MechError::new(
@@ -813,14 +851,17 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_MATRIX_ELEMENT_ASSIGNMENT_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -841,9 +882,9 @@ where
 }
 
 fn impl_assign_scalar_scalar_fxn(
-    sink: Value,
-    source: Value,
-    ixes: Vec<Value>,
+    sink: LegacyValue,
+    source: LegacyValue,
+    ixes: Vec<LegacyValue>,
 ) -> MResult<Box<dyn MechFunction>> {
     let arg = (sink.clone(), ixes.as_slice(), source.clone());
     impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, u8, "u8")
@@ -928,7 +969,7 @@ fn impl_assign_scalar_scalar_fxn(
 
 pub struct MatrixAssignScalarScalar {}
 impl FunctionSpecializer for MatrixAssignScalarScalar {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -939,13 +980,13 @@ impl FunctionSpecializer for MatrixAssignScalarScalar {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match impl_assign_scalar_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
-                Value::MutableReference(sink) => impl_assign_scalar_scalar_fxn(
+                LegacyValue::MutableReference(sink) => impl_assign_scalar_scalar_fxn(
                     sink.borrow().clone(),
                     source.clone(),
                     ixes.clone(),
@@ -1080,14 +1121,14 @@ macro_rules! impl_assign_scalar_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -1117,9 +1158,9 @@ impl_assign_fxn_s!(Assign2DASS, assign_2d_all_scalar, usize);
 impl_assign_scalar_fxn_v!(Assign2DASV, assign_2d_all_vector, usize);
 
 fn impl_assign_all_scalar_fxn(
-    sink: Value,
-    source: Value,
-    ixes: Vec<Value>,
+    sink: LegacyValue,
+    source: LegacyValue,
+    ixes: Vec<LegacyValue>,
 ) -> MResult<Box<dyn MechFunction>> {
     let arg = (sink.clone(), ixes.as_slice(), source.clone());
     impl_assign_all_scalar_arms!(Assign2DAS, &arg, u8, "u8")
@@ -1156,7 +1197,7 @@ fn impl_assign_all_scalar_fxn(
 
 pub struct MatrixAssignAllScalar {}
 impl FunctionSpecializer for MatrixAssignAllScalar {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -1167,13 +1208,13 @@ impl FunctionSpecializer for MatrixAssignAllScalar {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match impl_assign_all_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match sink {
-                Value::MutableReference(sink) => {
+                LegacyValue::MutableReference(sink) => {
                     impl_assign_all_scalar_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
                 sink => Err(MechError::new(
@@ -1215,9 +1256,9 @@ impl_assign_fxn_s!(Assign2DSAS, assign_2d_scalar_all_scalar, usize);
 impl_assign_scalar_fxn_v!(Assign2DSAV, assign_2d_scalar_all_vector, usize);
 
 fn impl_assign_scalar_all_fxn(
-    sink: Value,
-    source: Value,
-    ixes: Vec<Value>,
+    sink: LegacyValue,
+    source: LegacyValue,
+    ixes: Vec<LegacyValue>,
 ) -> MResult<Box<dyn MechFunction>> {
     let arg = (sink.clone(), ixes.as_slice(), source.clone());
     impl_assign_scalar_all_arms!(Assign2DSA, &arg, u8, "u8")
@@ -1254,7 +1295,7 @@ fn impl_assign_scalar_all_fxn(
 
 pub struct MatrixAssignScalarAll {}
 impl FunctionSpecializer for MatrixAssignScalarAll {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -1265,13 +1306,13 @@ impl FunctionSpecializer for MatrixAssignScalarAll {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match impl_assign_scalar_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
-                Value::MutableReference(sink) => {
+                LegacyValue::MutableReference(sink) => {
                     impl_assign_scalar_all_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
                 _ => Err(MechError::new(
@@ -1431,14 +1472,14 @@ macro_rules! impl_assign_range_scalar_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -1574,14 +1615,14 @@ macro_rules! impl_assign_range_scalar_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -1617,9 +1658,9 @@ impl_assign_range_scalar_fxn_v!(Assign2DRSV, assign_2d_range_scalar_v, usize);
 impl_assign_range_scalar_fxn_v!(Assign2DRSVB, assign_2d_range_scalar_vb, bool);
 
 fn impl_assign_range_scalar_fxn(
-    sink: Value,
-    source: Value,
-    ixes: Vec<Value>,
+    sink: LegacyValue,
+    source: LegacyValue,
+    ixes: Vec<LegacyValue>,
 ) -> MResult<Box<dyn MechFunction>> {
     let arg = (sink.clone(), ixes.as_slice(), source.clone());
     impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, u8, "u8")
@@ -1744,7 +1785,7 @@ fn impl_assign_range_scalar_fxn(
 
 pub struct MatrixAssignRangeScalar {}
 impl FunctionSpecializer for MatrixAssignRangeScalar {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -1755,13 +1796,13 @@ impl FunctionSpecializer for MatrixAssignRangeScalar {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match impl_assign_range_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
-                Value::MutableReference(sink) => impl_assign_range_scalar_fxn(
+                LegacyValue::MutableReference(sink) => impl_assign_range_scalar_fxn(
                     sink.borrow().clone(),
                     source.clone(),
                     ixes.clone(),
@@ -1921,14 +1962,14 @@ macro_rules! impl_assign_scalar_range_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -2064,14 +2105,14 @@ macro_rules! impl_assign_scalar_range_fxn_v {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -2105,9 +2146,9 @@ impl_assign_scalar_range_fxn_v!(Assign2DSRV, assign_2d_scalar_range_v, usize);
 impl_assign_scalar_range_fxn_v!(Assign2DSRVB, assign_2d_scalar_range_vb, bool);
 
 fn impl_assign_scalar_range_fxn(
-    sink: Value,
-    source: Value,
-    ixes: Vec<Value>,
+    sink: LegacyValue,
+    source: LegacyValue,
+    ixes: Vec<LegacyValue>,
 ) -> MResult<Box<dyn MechFunction>> {
     let arg = (sink.clone(), ixes.as_slice(), source.clone());
     impl_assign_fxn!(impl_assign_scalar_range_arms, Assign2DSR, arg, u8, "u8")
@@ -2232,7 +2273,7 @@ fn impl_assign_scalar_range_fxn(
 
 pub struct MatrixAssignScalarRange {}
 impl FunctionSpecializer for MatrixAssignScalarRange {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -2243,13 +2284,13 @@ impl FunctionSpecializer for MatrixAssignScalarRange {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match impl_assign_scalar_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
-                Value::MutableReference(sink) => impl_assign_scalar_range_fxn(
+                LegacyValue::MutableReference(sink) => impl_assign_scalar_range_fxn(
                     sink.borrow().clone(),
                     source.clone(),
                     ixes.clone(),
@@ -2493,14 +2534,14 @@ macro_rules! impl_assign_range_range_fxn_s {
                 };
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -2541,9 +2582,9 @@ impl_assign_range_range_fxn_s!(Assign2DRRUB, assign_2d_range_range_ub, usize, bo
 impl_range_range_fxn_v!(Assign2DRRVUB, assign_2d_range_range_vub, usize, bool);
 
 fn impl_assign_range_range_fxn(
-    sink: Value,
-    source: Value,
-    ixes: Vec<Value>,
+    sink: LegacyValue,
+    source: LegacyValue,
+    ixes: Vec<LegacyValue>,
 ) -> MResult<Box<dyn MechFunction>> {
     let arg = (sink.clone(), ixes.as_slice(), source.clone());
     impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, u8, "u8")
@@ -2670,7 +2711,7 @@ fn impl_assign_range_range_fxn(
 
 pub struct MatrixAssignRangeRange {}
 impl FunctionSpecializer for MatrixAssignRangeRange {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -2681,13 +2722,13 @@ impl FunctionSpecializer for MatrixAssignRangeRange {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match impl_assign_range_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match sink {
-                Value::MutableReference(sink) => {
+                LegacyValue::MutableReference(sink) => {
                     impl_assign_range_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
                 _ => Err(MechError::new(
@@ -2769,7 +2810,7 @@ impl_all_fxn_v!(Set2DARVB, assign_2d_all_range_vb, bool);
 macro_rules! matrix_assign_all_range_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
     paste::paste! {
-      fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      fn $op_fxn_name(sink: LegacyValue, source: LegacyValue, ixes: Vec<LegacyValue>) -> MResult<Box<dyn MechFunction>> {
         let arg = (sink.clone(), ixes.as_slice(), source.clone());
                      impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u8, "u8")
         .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u16, "u16"))
@@ -2818,7 +2859,7 @@ matrix_assign_all_range_fxn!(impl_assign_all_range_fxn, Set2DAR);
 
 pub struct MatrixAssignAllRange {}
 impl FunctionSpecializer for MatrixAssignAllRange {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -2829,23 +2870,25 @@ impl FunctionSpecializer for MatrixAssignAllRange {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match impl_assign_all_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (sink.clone(), ixes.clone(), source.clone()) {
-                (Value::MutableReference(sink), ixes, Value::MutableReference(source)) => {
-                    impl_assign_all_range_fxn(
-                        sink.borrow().clone(),
-                        source.borrow().clone(),
-                        ixes.clone(),
-                    )
-                }
-                (sink, ixes, Value::MutableReference(source)) => {
+                (
+                    LegacyValue::MutableReference(sink),
+                    ixes,
+                    LegacyValue::MutableReference(source),
+                ) => impl_assign_all_range_fxn(
+                    sink.borrow().clone(),
+                    source.borrow().clone(),
+                    ixes.clone(),
+                ),
+                (sink, ixes, LegacyValue::MutableReference(source)) => {
                     impl_assign_all_range_fxn(sink.clone(), source.borrow().clone(), ixes.clone())
                 }
-                (Value::MutableReference(sink), ixes, source) => {
+                (LegacyValue::MutableReference(sink), ixes, source) => {
                     impl_assign_all_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
                 (sink, ixes, source) => Err(MechError::new(
@@ -2925,7 +2968,7 @@ impl_all_fxn_v!(Set2DRAVB, assign_2d_range_all_vb, bool);
 macro_rules! matrix_assign_range_all_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
     paste::paste! {
-      fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+      fn $op_fxn_name(sink: LegacyValue, source: LegacyValue, ixes: Vec<LegacyValue>) -> MResult<Box<dyn MechFunction>> {
         let arg = (sink.clone(), ixes.as_slice(), source.clone());
                      impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u8, "u8")
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u16, "u16"))
@@ -2973,7 +3016,7 @@ matrix_assign_range_all_fxn!(impl_assign_range_all_fxn, Set2DRA);
 
 pub struct MatrixAssignRangeAll {}
 impl FunctionSpecializer for MatrixAssignRangeAll {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -2984,23 +3027,25 @@ impl FunctionSpecializer for MatrixAssignRangeAll {
             )
             .with_compiler_loc());
         }
-        let sink: Value = arguments[0].clone();
-        let source: Value = arguments[1].clone();
+        let sink: LegacyValue = arguments[0].clone();
+        let source: LegacyValue = arguments[1].clone();
         let ixes = arguments[2..].to_vec();
         match impl_assign_range_all_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (sink.clone(), ixes.clone(), source.clone()) {
-                (Value::MutableReference(sink), ixes, Value::MutableReference(source)) => {
-                    impl_assign_range_all_fxn(
-                        sink.borrow().clone(),
-                        source.borrow().clone(),
-                        ixes.clone(),
-                    )
-                }
-                (sink, ixes, Value::MutableReference(source)) => {
+                (
+                    LegacyValue::MutableReference(sink),
+                    ixes,
+                    LegacyValue::MutableReference(source),
+                ) => impl_assign_range_all_fxn(
+                    sink.borrow().clone(),
+                    source.borrow().clone(),
+                    ixes.clone(),
+                ),
+                (sink, ixes, LegacyValue::MutableReference(source)) => {
                     impl_assign_range_all_fxn(sink.clone(), source.borrow().clone(), ixes.clone())
                 }
-                (Value::MutableReference(sink), ixes, source) => {
+                (LegacyValue::MutableReference(sink), ixes, source) => {
                     impl_assign_range_all_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
                 x => Err(MechError::new(

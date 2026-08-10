@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::sync::Arc;
 
-use mech_core::{MResult, Value};
+use mech_core::{LegacyValue, MResult};
 
 use mech_runtime::{
     BasicCapability, BasicCapabilityKernel, BasicOperation, BasicResource, BasicSubject,
@@ -35,9 +35,9 @@ fn run_example(runtime: &mut MechRuntime, source: &str) -> MResult<RuntimeValueS
     runtime.run_string_with_context(&mut context, source)
 }
 
-fn assert_string(value: Value, expected: &str) {
+fn assert_string(value: LegacyValue, expected: &str) {
     match value {
-        Value::String(text) => {
+        LegacyValue::String(text) => {
             assert_eq!(&*text.borrow(), expected);
         }
         other => {
@@ -46,7 +46,7 @@ fn assert_string(value: Value, expected: &str) {
     }
 }
 
-fn assert_f64(value: Value, expected: f64) {
+fn assert_f64(value: LegacyValue, expected: f64) {
     let actual = *value
         .as_f64()
         .expect("expected f64-compatible value")
@@ -60,9 +60,9 @@ fn assert_f64(value: Value, expected: f64) {
     );
 }
 
-fn assert_bool(value: Value, expected: bool) {
+fn assert_bool(value: LegacyValue, expected: bool) {
     match value {
-        Value::Bool(actual) => {
+        LegacyValue::Bool(actual) => {
             assert_eq!(*actual.borrow(), expected);
         }
         other => {

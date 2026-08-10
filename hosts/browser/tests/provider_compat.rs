@@ -7,7 +7,7 @@ use mech_browser::{
     BrowserDomManifestEntry, BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserOperation,
     BrowserResource, BrowserResourceProvider,
 };
-use mech_core::{MResult, Ref, Value};
+use mech_core::{LegacyValue, MResult, Ref};
 use mech_runtime::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
@@ -121,7 +121,7 @@ fn browser_dom_write_is_deferred_until_delivery() {
             path: "body/header/title".to_string(),
             context_name: "ui".to_string(),
             operation: RuntimeCapabilityOperation::Write,
-            value: Value::String(Ref::new("deferred".to_string())),
+            value: LegacyValue::String(Ref::new("deferred".to_string())),
             intent: RuntimeResourceWriteIntent::Assign,
         })
         .unwrap();

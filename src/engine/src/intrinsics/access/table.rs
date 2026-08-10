@@ -8,7 +8,7 @@ macro_rules! impl_col_access_fxn {
   ($fxn_name:ident, $vector_size:ident, $out_type:ty) => {
     #[derive(Debug)]
     struct $fxn_name {
-      source: Matrix<Value>,
+      source: Matrix<LegacyValue>,
       out: Ref<$vector_size<$out_type>>,
     }
     impl MechFunctionImpl for $fxn_name {
@@ -24,10 +24,10 @@ macro_rules! impl_col_access_fxn {
       ;
           Ok(())
       }
-      fn out(&self) -> Value { self.out.to_value() }
+      fn out(&self) -> LegacyValue { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
 
-      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
       }
     }
@@ -102,7 +102,7 @@ macro_rules! impl_access_column_table_match_arms {
   ($arg:expr, $($lhs_type:ident, $($default:expr, $type_string:tt),+);+ $(;)?) => {
     paste!{
       match $arg {
-        (Value::Table(tbl),Value::Id(k)) => {
+        (LegacyValue::Table(tbl),LegacyValue::Id(k)) => {
           let tbl_brrw = tbl.borrow();
           match (tbl_brrw.get(&k),tbl_brrw.rows()) {
             $(
@@ -129,12 +129,15 @@ macro_rules! impl_access_column_table_match_arms {
   }
 }
 
-fn impl_access_column_table_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
-    if let (Value::Table(tbl), Value::Id(k)) = (&source, &key) {
+fn impl_access_column_table_fxn(
+    source: LegacyValue,
+    key: LegacyValue,
+) -> MResult<Box<dyn MechFunction>> {
+    if let (LegacyValue::Table(tbl), LegacyValue::Id(k)) = (&source, &key) {
         let tbl_brrw = tbl.borrow();
         if let Some((ValueKind::Option(_), value)) = tbl_brrw.get(k) {
             return Ok(Box::new(TableAccessSwizzle {
-                out: Value::MatrixValue(value.clone()),
+                out: LegacyValue::MatrixValue(value.clone()),
             }));
         }
     }
@@ -161,7 +164,7 @@ fn impl_access_column_table_fxn(source: Value, key: Value) -> MResult<Box<dyn Me
 
 pub struct TableAccessColumn {}
 impl FunctionSpecializer for TableAccessColumn {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -177,7 +180,7 @@ impl FunctionSpecializer for TableAccessColumn {
         match impl_access_column_table_fxn(tbl.clone(), key.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (tbl.clone(), &key) {
-                (Value::MutableReference(tbl), _) => {
+                (LegacyValue::MutableReference(tbl), _) => {
                     impl_access_column_table_fxn(tbl.borrow().clone(), key.clone())
                 }
                 x => Err(MechError::new(
@@ -197,7 +200,7 @@ impl FunctionSpecializer for TableAccessColumn {
 
 #[derive(Debug)]
 pub struct TableAccessSwizzle {
-    pub out: Value,
+    pub out: LegacyValue,
 }
 
 impl MechFunctionImpl for TableAccessSwizzle {
@@ -205,14 +208,14 @@ impl MechFunctionImpl for TableAccessSwizzle {
         ();
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.clone()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -246,14 +249,14 @@ impl MechFunctionImpl for TableAccessScalarF {
         }
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Record(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Record(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -280,7 +283,7 @@ impl MechFunctionCompiler for TableAccessScalarF {
 pub struct TableAccessScalar {}
 
 impl FunctionSpecializer for TableAccessScalar {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -295,7 +298,7 @@ impl FunctionSpecializer for TableAccessScalar {
         let ix1 = arguments[1].clone();
         match (tbl.clone(), ix1.clone()) {
             #[cfg(feature = "table")]
-            (Value::Table(source), Value::Index(ix)) => {
+            (LegacyValue::Table(source), LegacyValue::Index(ix)) => {
                 let record = match source.borrow().get_record(*ix.borrow()) {
                     Some(record) => record,
                     None => {
@@ -315,11 +318,11 @@ impl FunctionSpecializer for TableAccessScalar {
                     out: Ref::new(record),
                 }))
             }
-            (Value::MutableReference(src_ref), Value::Index(ix)) => {
+            (LegacyValue::MutableReference(src_ref), LegacyValue::Index(ix)) => {
                 let src_ref_brrw = src_ref.borrow();
                 match &*src_ref_brrw {
                     #[cfg(feature = "table")]
-                    Value::Table(source) => {
+                    LegacyValue::Table(source) => {
                         let record = match source.borrow().get_record(*ix.borrow()) {
                             Some(record) => record,
                             None => {
@@ -385,14 +388,14 @@ impl MechFunctionImpl for TableAccessRangeIndex {
         }
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Table(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Table(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -435,7 +438,7 @@ impl MechFunctionImpl for TableAccessRangeBool {
             let (_out_kind, out_matrix) = out_table.data.get_mut(key).unwrap();
 
             // Resize output to match number of true entries
-            out_matrix.resize_vertically(true_count, Value::Empty);
+            out_matrix.resize_vertically(true_count, LegacyValue::Empty);
 
             // Fill with contiguous values
             let mut push_index = 0;
@@ -450,14 +453,14 @@ impl MechFunctionImpl for TableAccessRangeBool {
         out_table.rows = true_count;
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Table(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Table(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -484,7 +487,7 @@ impl MechFunctionCompiler for TableAccessRangeBool {
 pub struct TableAccessRange {}
 
 impl FunctionSpecializer for TableAccessRange {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -499,7 +502,7 @@ impl FunctionSpecializer for TableAccessRange {
         let tbl = arguments[0].clone();
         match (tbl.clone(), ixes.as_slice()) {
             #[cfg(all(feature = "table", feature = "matrix"))]
-            (Value::Table(source), [Value::MatrixIndex(Matrix::DVector(ix))]) => {
+            (LegacyValue::Table(source), [LegacyValue::MatrixIndex(Matrix::DVector(ix))]) => {
                 let out_table = source.borrow().empty_table(ix.borrow().len());
                 Ok(Box::new(TableAccessRangeIndex {
                     source: source.clone(),
@@ -508,7 +511,7 @@ impl FunctionSpecializer for TableAccessRange {
                 }))
             }
             #[cfg(all(feature = "matrix", feature = "table", feature = "logical_indexing"))]
-            (Value::Table(source), [Value::MatrixBool(Matrix::DVector(ix))]) => {
+            (LegacyValue::Table(source), [LegacyValue::MatrixBool(Matrix::DVector(ix))]) => {
                 let out_table = source.borrow().empty_table(ix.borrow().len());
                 Ok(Box::new(TableAccessRangeBool {
                     source: source.clone(),
@@ -517,10 +520,13 @@ impl FunctionSpecializer for TableAccessRange {
                 }))
             }
             #[cfg(all(feature = "table", feature = "matrix"))]
-            (Value::MutableReference(src_ref), [Value::MatrixIndex(Matrix::DVector(ix))]) => {
+            (
+                LegacyValue::MutableReference(src_ref),
+                [LegacyValue::MatrixIndex(Matrix::DVector(ix))],
+            ) => {
                 let src_ref_brrw = src_ref.borrow();
                 match &*src_ref_brrw {
-                    Value::Table(source) => {
+                    LegacyValue::Table(source) => {
                         let out_table = source.borrow().empty_table(ix.borrow().len());
                         Ok(Box::new(TableAccessRangeIndex {
                             source: source.clone(),
@@ -539,10 +545,13 @@ impl FunctionSpecializer for TableAccessRange {
                 }
             }
             #[cfg(all(feature = "matrix", feature = "table", feature = "logical_indexing"))]
-            (Value::MutableReference(src_ref), [Value::MatrixBool(Matrix::DVector(ix))]) => {
+            (
+                LegacyValue::MutableReference(src_ref),
+                [LegacyValue::MatrixBool(Matrix::DVector(ix))],
+            ) => {
                 let src_ref_brrw = src_ref.borrow();
                 match &*src_ref_brrw {
-                    Value::Table(source) => {
+                    LegacyValue::Table(source) => {
                         let out_table = source.borrow().empty_table(ix.borrow().len());
                         Ok(Box::new(TableAccessRangeBool {
                             source: source.clone(),

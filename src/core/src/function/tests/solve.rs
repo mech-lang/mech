@@ -9,7 +9,7 @@ use super::support::reg;
 #[cfg(feature = "compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{
-    FunctionDefine, GenericError, MResult, MechError, Ref, ToValue, Value, hash_str,
+    FunctionDefine, GenericError, LegacyValue, MResult, MechError, Ref, ToValue, hash_str,
     internal_pattern_value_identifier,
 };
 use std::{cell::RefCell, rc::Rc};
@@ -17,7 +17,7 @@ use std::{cell::RefCell, rc::Rc};
 #[cfg(feature = "f64")]
 struct SchedulerFunction {
     label: &'static str,
-    output: Value,
+    output: LegacyValue,
     kind: ReactiveNodeKind,
     status: ReactiveSolveStatus,
     count: Rc<RefCell<usize>>,
@@ -43,7 +43,7 @@ impl MechFunctionImpl for SchedulerFunction {
             Ok(self.status)
         }
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.output.clone()
     }
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
@@ -53,7 +53,7 @@ impl MechFunctionImpl for SchedulerFunction {
         self.label.into()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -68,13 +68,13 @@ impl MechFunctionCompiler for SchedulerFunction {
 fn scheduler_node(
     plan: &mut ReactivePlan,
     label: &'static str,
-    inputs: &[Value],
+    inputs: &[LegacyValue],
     kind: ReactiveNodeKind,
     status: ReactiveSolveStatus,
     log: Rc<RefCell<Vec<&'static str>>>,
     error: bool,
-) -> (ReactiveNodeId, Value, Rc<RefCell<usize>>) {
-    let output = Value::F64(Ref::new(0.0));
+) -> (ReactiveNodeId, LegacyValue, Rc<RefCell<usize>>) {
+    let output = LegacyValue::F64(Ref::new(0.0));
     let count = Rc::new(RefCell::new(0));
     let function = SchedulerFunction {
         label,
@@ -92,8 +92,8 @@ fn scheduler_node(
     )
 }
 #[cfg(feature = "f64")]
-fn scheduler_source() -> Value {
-    Value::F64(Ref::new(0.0))
+fn scheduler_source() -> LegacyValue {
+    LegacyValue::F64(Ref::new(0.0))
 }
 
 struct Comb {
@@ -129,7 +129,7 @@ impl MechFunctionImpl for FalliblePlanStep {
         Ok(())
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.output.to_value()
     }
 
@@ -137,7 +137,7 @@ impl MechFunctionImpl for FalliblePlanStep {
         self.label.into()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -207,14 +207,14 @@ impl MechFunctionImpl for Comb {
         *self.sink.borrow_mut() = *self.source.borrow() + self.add;
         Ok(ReactiveSolveStatus::Changed)
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.to_value()
     }
     fn to_string(&self) -> String {
         "test combinational".into()
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }

@@ -13,7 +13,7 @@ use std::collections::{HashMap, HashSet};
 pub struct MechTable {
     pub rows: usize,
     pub cols: usize,
-    pub data: IndexMap<u64, (ValueKind, Matrix<Value>)>,
+    pub data: IndexMap<u64, (ValueKind, Matrix<LegacyValue>)>,
     pub col_names: HashMap<u64, String>,
 }
 
@@ -63,7 +63,7 @@ impl MechTable {
     pub fn from_parts(
         rows: usize,
         cols: usize,
-        columns: Vec<(u64, ValueKind, Matrix<Value>)>,
+        columns: Vec<(u64, ValueKind, Matrix<LegacyValue>)>,
         column_names: Vec<(u64, String)>,
     ) -> MechTable {
         MechTable {
@@ -88,7 +88,7 @@ impl MechTable {
         let rows = records.len();
         let cols = first.cols;
 
-        let mut col_data: IndexMap<u64, Vec<Value>> = IndexMap::new();
+        let mut col_data: IndexMap<u64, Vec<LegacyValue>> = IndexMap::new();
 
         for (&col_id, value) in &first.data {
             col_data.insert(col_id, vec![value.clone()]);
@@ -111,7 +111,7 @@ impl MechTable {
             }
         }
 
-        let data: IndexMap<u64, (ValueKind, Matrix<Value>)> = col_data
+        let data: IndexMap<u64, (ValueKind, Matrix<LegacyValue>)> = col_data
             .into_iter()
             .map(|(col_id, values)| {
                 let kind = kinds[&col_id].clone();
@@ -135,7 +135,7 @@ impl MechTable {
                 let mut col_names = HashMap::new();
                 for (col_id, col_kind) in &tbl {
                     let matrix =
-                        Matrix::DVector(Ref::new(DVector::from_vec(vec![Value::Empty; sze])));
+                        Matrix::DVector(Ref::new(DVector::from_vec(vec![LegacyValue::Empty; sze])));
                     col_names.insert(hash_str(col_id), col_id.clone());
                     data.insert(hash_str(&col_id), (col_kind.clone(), matrix));
                 }
@@ -157,8 +157,8 @@ impl MechTable {
         let mut data = IndexMap::new();
         for col in self.data.iter() {
             let (key, (kind, matrix)) = col;
-            // make a new vector the length of ix with values Value::Empty
-            let elements = vec![Value::Empty; rows];
+            // make a new vector the length of ix with values LegacyValue::Empty
+            let elements = vec![LegacyValue::Empty; rows];
             let new_matrix = Matrix::DVector(Ref::new(DVector::from_vec(elements)));
             data.insert(*key, (kind.clone(), new_matrix));
         }
@@ -310,7 +310,7 @@ impl MechTable {
             return None;
         }
 
-        let mut data: IndexMap<u64, Value> = IndexMap::new();
+        let mut data: IndexMap<u64, LegacyValue> = IndexMap::new();
         data = self
             .data
             .iter()
@@ -391,7 +391,7 @@ impl MechTable {
     pub fn new_table(
         names: Vec<String>,
         kinds: Vec<ValueKind>,
-        cols: Vec<Vec<Value>>,
+        cols: Vec<Vec<LegacyValue>>,
     ) -> MechTable {
         let col_count = names.len();
         let row_count = if !cols.is_empty() { cols[0].len() } else { 0 };
@@ -418,7 +418,7 @@ impl MechTable {
     pub fn new(
         rows: usize,
         cols: usize,
-        data: IndexMap<u64, (ValueKind, Matrix<Value>)>,
+        data: IndexMap<u64, (ValueKind, Matrix<LegacyValue>)>,
         col_names: HashMap<u64, String>,
     ) -> MechTable {
         MechTable {
@@ -453,7 +453,7 @@ impl MechTable {
         self.cols
     }
 
-    pub fn get(&self, key: &u64) -> Option<&(ValueKind, Matrix<Value>)> {
+    pub fn get(&self, key: &u64) -> Option<&(ValueKind, Matrix<LegacyValue>)> {
         self.data.get(key)
     }
 

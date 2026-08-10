@@ -21,14 +21,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.sink.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -45,12 +45,12 @@ where
 }
 
 fn impl_set_map_value_fxn(
-    sink: Value,
-    source: Value,
-    key: Value,
+    sink: LegacyValue,
+    source: LegacyValue,
+    key: LegacyValue,
 ) -> MResult<Box<dyn MechFunction>> {
     match &sink {
-        Value::Map(map_ref) => {
+        LegacyValue::Map(map_ref) => {
             let mut map = map_ref.borrow_mut();
 
             // Key kind check
@@ -75,28 +75,30 @@ fn impl_set_map_value_fxn(
             // Dispatch by concrete value type
             match (&value, &source) {
                 #[cfg(feature = "bool")]
-                (Value::Bool(sink), Value::Bool(source)) => Ok(Box::new(MapAssign {
+                (LegacyValue::Bool(sink), LegacyValue::Bool(source)) => Ok(Box::new(MapAssign {
                     sink: sink.clone(),
                     source: source.clone(),
                 })),
 
                 #[cfg(feature = "i64")]
-                (Value::I64(sink), Value::I64(source)) => Ok(Box::new(MapAssign {
+                (LegacyValue::I64(sink), LegacyValue::I64(source)) => Ok(Box::new(MapAssign {
                     sink: sink.clone(),
                     source: source.clone(),
                 })),
 
                 #[cfg(feature = "f64")]
-                (Value::F64(sink), Value::F64(source)) => Ok(Box::new(MapAssign {
+                (LegacyValue::F64(sink), LegacyValue::F64(source)) => Ok(Box::new(MapAssign {
                     sink: sink.clone(),
                     source: source.clone(),
                 })),
 
                 #[cfg(feature = "string")]
-                (Value::String(sink), Value::String(source)) => Ok(Box::new(MapAssign {
-                    sink: sink.clone(),
-                    source: source.clone(),
-                })),
+                (LegacyValue::String(sink), LegacyValue::String(source)) => {
+                    Ok(Box::new(MapAssign {
+                        sink: sink.clone(),
+                        source: source.clone(),
+                    }))
+                }
 
                 _ => Err(MechError::new(
                     MapValueKindMismatchError {
@@ -123,7 +125,7 @@ fn impl_set_map_value_fxn(
 pub struct MapAssignScalar {}
 
 impl FunctionSpecializer for MapAssignScalar {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -143,7 +145,7 @@ impl FunctionSpecializer for MapAssignScalar {
             Ok(fxn) => Ok(fxn),
 
             Err(_) => match &sink {
-                Value::MutableReference(sink_ref) => {
+                LegacyValue::MutableReference(sink_ref) => {
                     impl_set_map_value_fxn(sink_ref.borrow().clone(), source, key)
                 }
                 _ => Err(MechError::new(

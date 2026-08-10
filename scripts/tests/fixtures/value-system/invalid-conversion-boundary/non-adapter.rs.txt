@@ -1,0 +1,3 @@
+fn convert(value: &LegacyValue) -> snapshot::Value {
+    todo!()
+}

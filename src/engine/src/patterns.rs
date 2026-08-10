@@ -23,7 +23,7 @@ pub struct PatternBinding {
     pub id: u64,
     pub name: String,
     pub kind: ValueKind,
-    pub value: Value,
+    pub value: LegacyValue,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -500,9 +500,13 @@ impl PatternCompiler {
                             })?;
                         let payload = match (tuple_struct.patterns.as_slice(), declared_payload) {
                             ([], None) => None,
-                            ([payload_pattern], Some(Value::Kind(payload_kind))) => Some(Box::new(
-                                self.compile(payload_pattern, Some(&payload_kind), interpreter)?,
-                            )),
+                            ([payload_pattern], Some(LegacyValue::Kind(payload_kind))) => {
+                                Some(Box::new(self.compile(
+                                    payload_pattern,
+                                    Some(&payload_kind),
+                                    interpreter,
+                                )?))
+                            }
                             _ => {
                                 return Err(self.error(
                     pattern,
@@ -584,12 +588,12 @@ enum PatternExpressionSource<'a, 'execution> {
         env: &'a Environment,
         interpreter: &'a InterpreterExecution<'execution>,
     },
-    Sampled(&'a [Value]),
+    Sampled(&'a [LegacyValue]),
 }
 
 struct PatternMatchState<'a, 'execution> {
     binding_specs: Vec<PatternBindingSpec>,
-    proposed: Vec<Option<Value>>,
+    proposed: Vec<Option<LegacyValue>>,
     expression_source: PatternExpressionSource<'a, 'execution>,
 }
 
@@ -598,7 +602,7 @@ impl PatternMatchState<'_, '_> {
         &self,
         expression_index: usize,
         expression_node: &Expression,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         match &self.expression_source {
             PatternExpressionSource::Interpreter { env, interpreter } => {
                 // Expression patterns read the arm's outer environment. Proposed
@@ -621,7 +625,7 @@ impl PatternMatchState<'_, '_> {
         }
     }
 
-    fn matches(&mut self, pattern: &CompiledPattern, value: &Value) -> MResult<bool> {
+    fn matches(&mut self, pattern: &CompiledPattern, value: &LegacyValue) -> MResult<bool> {
         let value = deep_detach_value(value);
         match pattern {
             CompiledPattern::Wildcard => Ok(true),
@@ -643,7 +647,7 @@ impl PatternMatchState<'_, '_> {
             }
             CompiledPattern::Tuple { elements } => {
                 #[cfg(feature = "tuple")]
-                if let Value::Tuple(tuple) = value {
+                if let LegacyValue::Tuple(tuple) = value {
                     let tuple = tuple.borrow();
                     if tuple.elements.len() != elements.len() {
                         return Ok(false);
@@ -704,7 +708,7 @@ impl PatternMatchState<'_, '_> {
                 payload,
             } => {
                 #[cfg(feature = "enum")]
-                if let Value::Enum(enum_value) = value {
+                if let LegacyValue::Enum(enum_value) = value {
                     let enum_value = enum_value.borrow();
                     if enum_id.is_some_and(|expected| expected != enum_value.id)
                         || enum_value.variants.len() != 1
@@ -725,7 +729,7 @@ impl PatternMatchState<'_, '_> {
             }
             CompiledPattern::AtomTuple { tag_id, payload } => {
                 #[cfg(feature = "enum")]
-                if let Value::Enum(enum_value) = &value {
+                if let LegacyValue::Enum(enum_value) = &value {
                     let enum_value = enum_value.borrow();
                     if enum_value.variants.len() != 1 {
                         return Ok(false);
@@ -741,13 +745,13 @@ impl PatternMatchState<'_, '_> {
                     };
                 }
                 #[cfg(all(feature = "tuple", feature = "atom"))]
-                if let Value::Tuple(tuple) = &value {
+                if let LegacyValue::Tuple(tuple) = &value {
                     let tuple = tuple.borrow();
                     if tuple.elements.len() != payload.len() + 1 {
                         return Ok(false);
                     }
                     let tag = deep_detach_value(&tuple.elements[0]);
-                    let Value::Atom(tag) = tag else {
+                    let LegacyValue::Atom(tag) = tag else {
                         return Ok(false);
                     };
                     if tag.borrow().id() != *tag_id {
@@ -792,7 +796,7 @@ impl PatternMatchState<'_, '_> {
 
 pub fn match_compiled_pattern(
     pattern: &CompiledPattern,
-    value: &Value,
+    value: &LegacyValue,
     env: &Environment,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<PatternMatch> {
@@ -805,7 +809,7 @@ pub fn match_compiled_pattern(
 /// earlier qualifier.
 pub fn match_compiled_pattern_with_environment_constraints(
     pattern: &CompiledPattern,
-    value: &Value,
+    value: &LegacyValue,
     env: &Environment,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<PatternMatch> {
@@ -814,7 +818,7 @@ pub fn match_compiled_pattern_with_environment_constraints(
 
 fn match_compiled_pattern_with_environment(
     pattern: &CompiledPattern,
-    value: &Value,
+    value: &LegacyValue,
     env: &Environment,
     interpreter: &InterpreterExecution<'_>,
     seed_existing_bindings: bool,
@@ -839,8 +843,8 @@ fn match_compiled_pattern_with_environment(
 
 pub fn match_compiled_pattern_with_values(
     pattern: &CompiledPattern,
-    value: &Value,
-    expression_values: &[Value],
+    value: &LegacyValue,
+    expression_values: &[LegacyValue],
 ) -> MResult<PatternMatch> {
     let specs = pattern.binding_specs();
     let mut state = PatternMatchState {
@@ -879,7 +883,7 @@ impl PatternBindingSink for EnvironmentBindingSink<'_> {
 
 pub fn pattern_matches_arguments(
     pattern: &Pattern,
-    args: &Vec<Value>,
+    args: &Vec<LegacyValue>,
     env: &mut Environment,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<bool> {
@@ -891,7 +895,7 @@ pub fn pattern_matches_arguments(
     }
     #[cfg(feature = "tuple")]
     {
-        let arguments = Value::Tuple(Ref::new(MechTuple::from_vec(args.clone())));
+        let arguments = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(args.clone())));
         return pattern_matches_value(pattern, &arguments, env, interpreter);
     }
     #[cfg(not(feature = "tuple"))]
@@ -902,7 +906,7 @@ pub fn pattern_matches_arguments(
 
 pub fn pattern_matches_value(
     pattern: &Pattern,
-    value: &Value,
+    value: &LegacyValue,
     env: &mut Environment,
     interpreter: &InterpreterExecution<'_>,
 ) -> MResult<bool> {
@@ -928,9 +932,9 @@ pub fn pattern_to_value(
     pattern: &Pattern,
     env: &Environment,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     match pattern {
-        Pattern::Wildcard => Ok(Value::Empty),
+        Pattern::Wildcard => Ok(LegacyValue::Empty),
         Pattern::Expression(expr) => expression(expr, Some(env), p),
         #[cfg(feature = "tuple")]
         Pattern::Tuple(pattern_tuple) => {
@@ -938,7 +942,7 @@ pub fn pattern_to_value(
             for inner in &pattern_tuple.0 {
                 values.push(pattern_to_value(inner, env, p)?);
             }
-            return Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))));
+            return Ok(LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values))));
         }
         #[cfg(feature = "matrix")]
         Pattern::Array(array) => {
@@ -993,7 +997,7 @@ pub fn pattern_to_value(
                         variants: vec![(variant_id, payload)],
                         names: enum_def.names.clone(),
                     };
-                    return Ok(Value::Enum(Ref::new(enm)));
+                    return Ok(LegacyValue::Enum(Ref::new(enm)));
                 }
             }
             let mut values = Vec::with_capacity(pattern_tuple_struct.patterns.len() + 1);
@@ -1006,18 +1010,18 @@ pub fn pattern_to_value(
             for inner in &pattern_tuple_struct.patterns {
                 values.push(pattern_to_value(inner, env, p)?);
             }
-            return Ok(Value::Tuple(Ref::new(MechTuple::from_vec(values))));
+            return Ok(LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values))));
         }
         _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
     }
 }
 
-// Mutable reference unwrapper. Recursively follows Value::MutableReference
+// Mutable reference unwrapper. Recursively follows LegacyValue::MutableReference
 // chains until it reaches a plain value, then clones it. Ensures the pattern
 // matcher always works on an owned, non-reference value.
-fn deep_detach_value(value: &Value) -> Value {
+fn deep_detach_value(value: &LegacyValue) -> LegacyValue {
     match value {
-        Value::MutableReference(reference) => deep_detach_value(&reference.borrow()),
+        LegacyValue::MutableReference(reference) => deep_detach_value(&reference.borrow()),
         _ => value.clone(),
     }
 }
@@ -1060,165 +1064,193 @@ fn collect_pattern_variable_ids(pattern: &Pattern, ids: &mut Vec<u64>) {
 }
 
 #[cfg(feature = "matrix")]
-fn capture_middle_matrix(value: &Value, start: usize, end: usize) -> Value {
+fn capture_middle_matrix(value: &LegacyValue, start: usize, end: usize) -> LegacyValue {
     let cols = end.saturating_sub(start);
     match value {
         #[cfg(feature = "matrix")]
-        Value::MatrixIndex(matrix) => Value::MatrixIndex(Matrix::from_vec(
+        LegacyValue::MatrixIndex(matrix) => LegacyValue::MatrixIndex(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "bool"))]
-        Value::MatrixBool(matrix) => Value::MatrixBool(Matrix::from_vec(
+        LegacyValue::MatrixBool(matrix) => LegacyValue::MatrixBool(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "u8"))]
-        Value::MatrixU8(matrix) => Value::MatrixU8(Matrix::from_vec(
+        LegacyValue::MatrixU8(matrix) => LegacyValue::MatrixU8(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "u16"))]
-        Value::MatrixU16(matrix) => Value::MatrixU16(Matrix::from_vec(
+        LegacyValue::MatrixU16(matrix) => LegacyValue::MatrixU16(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "u32"))]
-        Value::MatrixU32(matrix) => Value::MatrixU32(Matrix::from_vec(
+        LegacyValue::MatrixU32(matrix) => LegacyValue::MatrixU32(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "u64"))]
-        Value::MatrixU64(matrix) => Value::MatrixU64(Matrix::from_vec(
+        LegacyValue::MatrixU64(matrix) => LegacyValue::MatrixU64(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "u128"))]
-        Value::MatrixU128(matrix) => Value::MatrixU128(Matrix::from_vec(
+        LegacyValue::MatrixU128(matrix) => LegacyValue::MatrixU128(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "i8"))]
-        Value::MatrixI8(matrix) => Value::MatrixI8(Matrix::from_vec(
+        LegacyValue::MatrixI8(matrix) => LegacyValue::MatrixI8(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "i16"))]
-        Value::MatrixI16(matrix) => Value::MatrixI16(Matrix::from_vec(
+        LegacyValue::MatrixI16(matrix) => LegacyValue::MatrixI16(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "i32"))]
-        Value::MatrixI32(matrix) => Value::MatrixI32(Matrix::from_vec(
+        LegacyValue::MatrixI32(matrix) => LegacyValue::MatrixI32(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "i64"))]
-        Value::MatrixI64(matrix) => Value::MatrixI64(Matrix::from_vec(
+        LegacyValue::MatrixI64(matrix) => LegacyValue::MatrixI64(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "i128"))]
-        Value::MatrixI128(matrix) => Value::MatrixI128(Matrix::from_vec(
+        LegacyValue::MatrixI128(matrix) => LegacyValue::MatrixI128(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "f32"))]
-        Value::MatrixF32(matrix) => Value::MatrixF32(Matrix::from_vec(
+        LegacyValue::MatrixF32(matrix) => LegacyValue::MatrixF32(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "f64"))]
-        Value::MatrixF64(matrix) => Value::MatrixF64(Matrix::from_vec(
+        LegacyValue::MatrixF64(matrix) => LegacyValue::MatrixF64(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "string"))]
-        Value::MatrixString(matrix) => Value::MatrixString(Matrix::from_vec(
+        LegacyValue::MatrixString(matrix) => LegacyValue::MatrixString(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "rational"))]
-        Value::MatrixR64(matrix) => Value::MatrixR64(Matrix::from_vec(
+        LegacyValue::MatrixR64(matrix) => LegacyValue::MatrixR64(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(all(feature = "matrix", feature = "complex"))]
-        Value::MatrixC64(matrix) => Value::MatrixC64(Matrix::from_vec(
+        LegacyValue::MatrixC64(matrix) => LegacyValue::MatrixC64(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         #[cfg(feature = "matrix")]
-        Value::MatrixValue(matrix) => Value::MatrixValue(Matrix::from_vec(
+        LegacyValue::MatrixValue(matrix) => LegacyValue::MatrixValue(Matrix::from_vec(
             matrix.as_vec()[start..end].to_vec(),
             1,
             cols,
         )),
         _ => {
             let values = matrix_like_values(value).unwrap_or_default();
-            Value::MatrixValue(Matrix::from_vec(values[start..end].to_vec(), 1, cols))
+            LegacyValue::MatrixValue(Matrix::from_vec(values[start..end].to_vec(), 1, cols))
         }
     }
 }
 
 // Used by the Array pattern arm to get a uniform element list regardless of the matrix's concrete numeric type.
-pub(crate) fn matrix_like_values(value: &Value) -> Option<Vec<Value>> {
+pub(crate) fn matrix_like_values(value: &LegacyValue) -> Option<Vec<LegacyValue>> {
     match value {
         #[cfg(feature = "matrix")]
-        Value::MatrixIndex(matrix) => Some(
+        LegacyValue::MatrixIndex(matrix) => Some(
             matrix
                 .as_vec()
                 .into_iter()
-                .map(|value| Value::Index(Ref::new(value)))
+                .map(|value| LegacyValue::Index(Ref::new(value)))
                 .collect(),
         ),
         #[cfg(all(feature = "matrix", feature = "bool"))]
-        Value::MatrixBool(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixBool(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "u8"))]
-        Value::MatrixU8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU8(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "u16"))]
-        Value::MatrixU16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU16(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "u32"))]
-        Value::MatrixU32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU32(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "u64"))]
-        Value::MatrixU64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU64(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "u128"))]
-        Value::MatrixU128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU128(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "i8"))]
-        Value::MatrixI8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI8(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "i16"))]
-        Value::MatrixI16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI16(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "i32"))]
-        Value::MatrixI32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI32(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "i64"))]
-        Value::MatrixI64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI64(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "i128"))]
-        Value::MatrixI128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI128(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "f32"))]
-        Value::MatrixF32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixF32(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "f64"))]
-        Value::MatrixF64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixF64(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "string"))]
-        Value::MatrixString(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixString(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(all(feature = "matrix", feature = "rational"))]
-        Value::MatrixR64(matrix) => Some(
+        LegacyValue::MatrixR64(matrix) => Some(
             matrix
                 .as_vec()
                 .into_iter()
@@ -1226,7 +1258,7 @@ pub(crate) fn matrix_like_values(value: &Value) -> Option<Vec<Value>> {
                 .collect(),
         ),
         #[cfg(all(feature = "matrix", feature = "complex"))]
-        Value::MatrixC64(matrix) => Some(
+        LegacyValue::MatrixC64(matrix) => Some(
             matrix
                 .as_vec()
                 .into_iter()
@@ -1234,26 +1266,29 @@ pub(crate) fn matrix_like_values(value: &Value) -> Option<Vec<Value>> {
                 .collect(),
         ),
         #[cfg(feature = "matrix")]
-        Value::MatrixValue(matrix) => Some(matrix.as_vec()),
+        LegacyValue::MatrixValue(matrix) => Some(matrix.as_vec()),
         _ => None,
     }
 }
 
 #[cfg(feature = "matrix")]
-fn build_row_matrix_from_values(values: Vec<Value>) -> Value {
+fn build_row_matrix_from_values(values: Vec<LegacyValue>) -> LegacyValue {
     let cols = values.len();
     #[cfg(feature = "u64")]
-    if values.iter().all(|value| matches!(value, Value::U64(_))) {
+    if values
+        .iter()
+        .all(|value| matches!(value, LegacyValue::U64(_)))
+    {
         let data = values
             .iter()
             .map(|value| match value {
-                Value::U64(x) => *x.borrow(),
+                LegacyValue::U64(x) => *x.borrow(),
                 _ => unreachable!(),
             })
             .collect::<Vec<u64>>();
-        return Value::MatrixU64(Matrix::from_vec(data, 1, cols));
+        return LegacyValue::MatrixU64(Matrix::from_vec(data, 1, cols));
     }
-    Value::MatrixValue(Matrix::from_vec(values, 1, cols))
+    LegacyValue::MatrixValue(Matrix::from_vec(values, 1, cols))
 }
 
 pub(crate) fn pattern_var_is_binding(var: &Var) -> bool {
@@ -1284,21 +1319,21 @@ fn extract_pattern_variable_from_term(factor: &Factor) -> Option<&Var> {
 }
 
 // TODO: This needs to be expanded to handle all types.
-fn values_match(expected: &Value, actual: &Value) -> bool {
+fn values_match(expected: &LegacyValue, actual: &LegacyValue) -> bool {
     if expected == actual {
         return true;
     }
     match (expected, actual) {
         #[cfg(all(feature = "atom", feature = "enum"))]
-        (Value::Atom(atom), Value::Enum(enum_value))
-        | (Value::Enum(enum_value), Value::Atom(atom)) => {
+        (LegacyValue::Atom(atom), LegacyValue::Enum(enum_value))
+        | (LegacyValue::Enum(enum_value), LegacyValue::Atom(atom)) => {
             let enum_value = enum_value.borrow();
             return enum_value.variants.len() == 1
                 && enum_value.variants[0].0 == atom.borrow().id()
                 && enum_value.variants[0].1.is_none();
         }
         #[cfg(all(feature = "u64", feature = "f64"))]
-        (Value::F64(x), Value::U64(y)) => {
+        (LegacyValue::F64(x), LegacyValue::U64(y)) => {
             let x = *x.borrow();
             return x.is_finite()
                 && x >= 0.0
@@ -1307,7 +1342,7 @@ fn values_match(expected: &Value, actual: &Value) -> bool {
                 && (x as u64) == *y.borrow();
         }
         #[cfg(all(feature = "u64", feature = "f64"))]
-        (Value::U64(x), Value::F64(y)) => {
+        (LegacyValue::U64(x), LegacyValue::F64(y)) => {
             let y = *y.borrow();
             return y.is_finite()
                 && y >= 0.0
@@ -1336,9 +1371,9 @@ mod tests {
         let pattern = CompiledPattern::Tuple {
             elements: vec![binding.clone(), binding],
         };
-        let value = Value::Tuple(Ref::new(MechTuple::from_vec(vec![
-            Value::U64(Ref::new(1)),
-            Value::U64(Ref::new(2)),
+        let value = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
+            LegacyValue::U64(Ref::new(1)),
+            LegacyValue::U64(Ref::new(2)),
         ])));
 
         let pattern_match = match_compiled_pattern_with_values(&pattern, &value, &[]).unwrap();
@@ -1346,11 +1381,11 @@ mod tests {
         assert!(pattern_match.bindings.is_empty());
 
         let mut env = Environment::new();
-        env.insert(id, Value::U64(Ref::new(9)));
+        env.insert(id, LegacyValue::U64(Ref::new(9)));
         EnvironmentBindingSink::new(&mut env)
             .commit(&pattern_match)
             .unwrap();
-        assert_eq!(env.get(&id), Some(&Value::U64(Ref::new(9))));
+        assert_eq!(env.get(&id), Some(&LegacyValue::U64(Ref::new(9))));
     }
 
     #[test]
@@ -1376,11 +1411,11 @@ mod tests {
         let interpreter = Interpreter::new(0, 10_000);
         let mut services = NoMechExecutionServices;
         let execution = InterpreterExecution::new(&interpreter, &mut services);
-        let mut env = Environment::from([(x_id, Value::U64(Ref::new(1)))]);
+        let mut env = Environment::from([(x_id, LegacyValue::U64(Ref::new(1)))]);
 
-        let mismatch = Value::Tuple(Ref::new(MechTuple::from_vec(vec![
-            Value::U64(Ref::new(2)),
-            Value::U64(Ref::new(3)),
+        let mismatch = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
+            LegacyValue::U64(Ref::new(2)),
+            LegacyValue::U64(Ref::new(3)),
         ])));
         let pattern_match = match_compiled_pattern_with_environment_constraints(
             &pattern, &mismatch, &env, &execution,
@@ -1391,11 +1426,14 @@ mod tests {
         EnvironmentBindingSink::new(&mut env)
             .commit(&pattern_match)
             .unwrap();
-        assert_eq!(env, Environment::from([(x_id, Value::U64(Ref::new(1)))]));
+        assert_eq!(
+            env,
+            Environment::from([(x_id, LegacyValue::U64(Ref::new(1)))])
+        );
 
-        let match_value = Value::Tuple(Ref::new(MechTuple::from_vec(vec![
-            Value::U64(Ref::new(1)),
-            Value::U64(Ref::new(3)),
+        let match_value = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
+            LegacyValue::U64(Ref::new(1)),
+            LegacyValue::U64(Ref::new(3)),
         ])));
         let pattern_match = match_compiled_pattern_with_environment_constraints(
             &pattern,
@@ -1408,8 +1446,8 @@ mod tests {
         EnvironmentBindingSink::new(&mut env)
             .commit(&pattern_match)
             .unwrap();
-        assert_eq!(env.get(&x_id), Some(&Value::U64(Ref::new(1))));
-        assert_eq!(env.get(&y_id), Some(&Value::U64(Ref::new(3))));
+        assert_eq!(env.get(&x_id), Some(&LegacyValue::U64(Ref::new(1))));
+        assert_eq!(env.get(&y_id), Some(&LegacyValue::U64(Ref::new(3))));
     }
 
     #[test]

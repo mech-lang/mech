@@ -53,7 +53,7 @@ impl ReactiveInstance {
         let working_epoch = self
             .next_epoch
             .ok_or(ResidentExecutionError::EpochExhausted)?;
-        self.next_epoch = working_epoch.checked_next();
+        self.next_epoch = working_epoch.checked_next().ok();
         let base_epoch = InstanceEpoch(self.published_epoch.load(Ordering::Acquire));
         let (published_buffer, candidate_buffer) =
             self.state.begin_candidate(base_epoch, working_epoch);

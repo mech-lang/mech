@@ -154,7 +154,7 @@ macro_rules! max_row_mat_op {
 impl_compare_fxns2!(Max);
 
 #[cfg(feature = "source")]
-fn impl_max_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_max_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Max,
       (lhs_value, rhs_value),

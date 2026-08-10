@@ -886,7 +886,7 @@ fn config_string_list(value: Option<&ConfigValue>, field: &'static str) -> MResu
 mod tests {
     use super::*;
     use crate::BrowserResourceKind;
-    use mech_core::Value;
+    use mech_core::LegacyValue;
     use mech_runtime::{
         ConfigProfileOptions, RuntimeHostFactory, RuntimeHostInstallation, RuntimeResourceProvider,
         RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
@@ -2328,7 +2328,7 @@ config := {
             vec![format!("browser://{}/dom", self.instance)]
         }
 
-        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
             panic!("configured browser instance test does not read")
         }
 
@@ -2350,7 +2350,7 @@ config := {
                 operation: request.operation.clone(),
                 intent: request.intent,
             })?;
-            let Value::String(value) = request.value else {
+            let LegacyValue::String(value) = request.value else {
                 panic!("configured browser instance test writes a string")
             };
             Ok(mech_runtime::PreparedRuntimeEffect::AfterCommit(Box::new(

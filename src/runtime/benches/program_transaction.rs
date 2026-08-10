@@ -1,5 +1,5 @@
 use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
-use mech_core::{MResult, MechSourceCode, MechTuple, Ref, Value};
+use mech_core::{LegacyValue, MResult, MechSourceCode, MechTuple, Ref};
 use mech_runtime::{
     BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, CapabilityRequest,
     HostCall, InMemoryDocsProvider, InMemorySourceResolver, MechRuntime, ModuleBuildOptions,
@@ -149,9 +149,11 @@ fn execution_session_host_fixture() -> MechRuntime {
     let mut runtime = support::source_runtime_builder()
         .host_function(PlannedRuntimeManagedHostFunction::new(
             "bench/execution-session",
-            |_context, _arguments| RuntimeValueSnapshot::try_capture(&Value::Bool(Ref::new(true))),
+            |_context, _arguments| {
+                RuntimeValueSnapshot::try_capture(&LegacyValue::Bool(Ref::new(true)))
+            },
             |_services, _context, _arguments| {
-                RuntimeValueSnapshot::try_capture(&Value::Bool(Ref::new(true)))
+                RuntimeValueSnapshot::try_capture(&LegacyValue::Bool(Ref::new(true)))
             },
         ))
         .unwrap()
@@ -172,7 +174,7 @@ fn execution_session_host_fixture() -> MechRuntime {
 fn provider_preparation_fixture() -> InMemoryDocsProvider {
     let mut provider = InMemoryDocsProvider::new();
     provider
-        .insert("docs://benchmark", "value", Value::F64(Ref::new(1.0)))
+        .insert("docs://benchmark", "value", LegacyValue::F64(Ref::new(1.0)))
         .unwrap();
     provider
 }
@@ -258,7 +260,7 @@ fn program_transaction_benchmarks(c: &mut Criterion) {
     let mut group = c.benchmark_group("runtime_program_transaction");
 
     group.bench_function("detached_scalar_snapshot", |b| {
-        let value = Value::F64(Ref::new(42.0));
+        let value = LegacyValue::F64(Ref::new(42.0));
         b.iter(|| {
             black_box(
                 RuntimeValueSnapshot::try_capture(black_box(&value)).expect("acyclic fixture"),
@@ -267,11 +269,11 @@ fn program_transaction_benchmarks(c: &mut Criterion) {
     });
 
     group.bench_function("detached_nested_value_snapshot", |b| {
-        let value = Value::Tuple(Ref::new(MechTuple::from_vec(vec![
-            Value::F64(Ref::new(1.0)),
-            Value::Tuple(Ref::new(MechTuple::from_vec(vec![
-                Value::F64(Ref::new(2.0)),
-                Value::Bool(Ref::new(true)),
+        let value = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
+            LegacyValue::F64(Ref::new(1.0)),
+            LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
+                LegacyValue::F64(Ref::new(2.0)),
+                LegacyValue::Bool(Ref::new(true)),
             ]))),
         ])));
         b.iter(|| {
@@ -307,7 +309,7 @@ fn program_transaction_benchmarks(c: &mut Criterion) {
                             path: "value".to_string(),
                             context_name: "benchmark".to_string(),
                             operation: RuntimeCapabilityOperation::Write,
-                            value: Value::F64(Ref::new(2.0)),
+                            value: LegacyValue::F64(Ref::new(2.0)),
                             intent: RuntimeResourceWriteIntent::Assign,
                         })
                         .unwrap(),

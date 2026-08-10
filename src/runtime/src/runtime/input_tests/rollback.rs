@@ -3,7 +3,7 @@ use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
-use mech_core::{MechError, Ref, Value, hash_str};
+use mech_core::{LegacyValue, MechError, Ref, hash_str};
 
 use super::scheduling::{
     activation_plan_snapshot, apply_f64_input, only_reactive_turn, recorded_f64,
@@ -28,7 +28,7 @@ use crate::{
 
 const TEST_CLOCK_BASE_URI: &str = "test://clock/ticks";
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
+fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -43,7 +43,7 @@ fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
         PlannedPureHostFunction::new(
             "demo/fails-after-first",
             |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::F64(Ref::new(
+                Ok(snapshot(LegacyValue::F64(Ref::new(
                     host_f64_argument(&args[0]) + 1.0,
                 ))))
             },
@@ -53,7 +53,7 @@ fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
                     return Err(MechError::new(DeliberateHostCallError, None));
                 }
                 let input = host_f64_argument(&args[0]);
-                Ok(snapshot(Value::F64(Ref::new(input + 1.0))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(input + 1.0))))
             },
         ),
     );
@@ -73,7 +73,7 @@ fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
         .get(hash_str("host-result"))
         .unwrap();
     let host_result_pointer = match &*host_result.borrow() {
-        Value::F64(value) => value.as_ptr(),
+        LegacyValue::F64(value) => value.as_ptr(),
         other => panic!("expected f64 host result, got {other:?}"),
     };
     let plan_before = plan_snapshot(&runtime);
@@ -101,7 +101,7 @@ fn runtime_reactive_host_input_turn_failure_restores_admitted_inputs() {
         .get(hash_str("host-result"))
         .unwrap();
     match &*host_result.borrow() {
-        Value::F64(value) => assert_eq!(value.as_ptr(), host_result_pointer),
+        LegacyValue::F64(value) => assert_eq!(value.as_ptr(), host_result_pointer),
         other => panic!("expected f64 host result, got {other:?}"),
     };
     assert_eq!(f64_value(&symbol_value(&runtime, "host-result")), 2.0);
@@ -229,7 +229,7 @@ fn activation_send_duration_failure_does_not_release_fixed_or_patterned_effects(
     let provider = TestResourceProvider::new().with_value(
         "test://render/timer",
         "tick",
-        Value::F64(Ref::new(0.0)),
+        LegacyValue::F64(Ref::new(0.0)),
     );
     let (mut runtime, output) =
         test_runtime_with_output_host(provider, sleep_host("demo/activation-duration-sleep"));
@@ -287,8 +287,16 @@ render-tick := @tick/tick
 #[test]
 fn patterned_activation_register_batch_failure_does_not_leak_or_replay_send() {
     let provider = TestResourceProvider::new()
-        .with_value("test://render/timer", "tick", Value::F64(Ref::new(0.0)))
-        .with_value("test://other/timer", "tick", Value::F64(Ref::new(0.0)));
+        .with_value(
+            "test://render/timer",
+            "tick",
+            LegacyValue::F64(Ref::new(0.0)),
+        )
+        .with_value(
+            "test://other/timer",
+            "tick",
+            LegacyValue::F64(Ref::new(0.0)),
+        );
     let (mut runtime, output) = test_runtime_with_output(provider);
     grant_read(&mut runtime, "test://render/timer", "tick");
     grant_read(&mut runtime, "test://other/timer", "tick");
@@ -346,21 +354,33 @@ other-value := other-tick
 #[test]
 fn failed_patterned_body_does_not_replay_send_on_unrelated_turn() {
     let provider = TestResourceProvider::new()
-        .with_value("test://render/timer", "tick", Value::F64(Ref::new(0.0)))
-        .with_value("test://other/timer", "tick", Value::F64(Ref::new(0.0)));
+        .with_value(
+            "test://render/timer",
+            "tick",
+            LegacyValue::F64(Ref::new(0.0)),
+        )
+        .with_value(
+            "test://other/timer",
+            "tick",
+            LegacyValue::F64(Ref::new(0.0)),
+        );
     let calls = Arc::new(AtomicUsize::new(0));
     let host_calls = calls.clone();
     let host = PlannedPureHostFunction::new(
         "demo/patterned-body-fail-second",
         |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-            Ok(snapshot(Value::F64(Ref::new(host_f64_argument(&args[0])))))
+            Ok(snapshot(LegacyValue::F64(Ref::new(host_f64_argument(
+                &args[0],
+            )))))
         },
         move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
             let call = host_calls.fetch_add(1, Ordering::SeqCst) + 1;
             if call == 1 {
                 return Err(MechError::new(DeliberateHostCallError, None));
             }
-            Ok(snapshot(Value::F64(Ref::new(host_f64_argument(&args[0])))))
+            Ok(snapshot(LegacyValue::F64(Ref::new(host_f64_argument(
+                &args[0],
+            )))))
         },
     );
     let (mut runtime, output) = test_runtime_with_output_host(provider, host);
@@ -424,7 +444,7 @@ fn activation_send_reactive_failure_produces_no_writes() {
     let provider = TestResourceProvider::new().with_value(
         "test://render/timer",
         "tick",
-        Value::F64(Ref::new(0.0)),
+        LegacyValue::F64(Ref::new(0.0)),
     );
     let calls = Arc::new(AtomicUsize::new(0));
     let host_calls = calls.clone();
@@ -433,14 +453,18 @@ fn activation_send_reactive_failure_produces_no_writes() {
         PlannedPureHostFunction::new(
             "demo/activation-fail-second",
             |_context: &RuntimeCallContext, args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::F64(Ref::new(host_f64_argument(&args[0])))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(host_f64_argument(
+                    &args[0],
+                )))))
             },
             move |_context: &RuntimeCallContext, args: Vec<RuntimeValueSnapshot>| {
                 let call_number = host_calls.fetch_add(1, Ordering::SeqCst) + 1;
                 if call_number == 1 {
                     return Err(MechError::new(DeliberateHostCallError, None));
                 }
-                Ok(snapshot(Value::F64(Ref::new(host_f64_argument(&args[0])))))
+                Ok(snapshot(LegacyValue::F64(Ref::new(host_f64_argument(
+                    &args[0],
+                )))))
             },
         ),
     );
@@ -502,11 +526,11 @@ fn patterned_activation_guard_rejects_runtime_host_before_elaboration() {
         PlannedPureHostFunction::new(
             "demo/audit",
             |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(Value::Bool(Ref::new(true))))
+                Ok(snapshot(LegacyValue::Bool(Ref::new(true))))
             },
             move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
                 host_calls.fetch_add(1, Ordering::SeqCst);
-                Ok(snapshot(Value::Bool(Ref::new(true))))
+                Ok(snapshot(LegacyValue::Bool(Ref::new(true))))
             },
         ),
     );
@@ -580,7 +604,7 @@ fn patterned_activation_snapshots_effects_before_commit_and_releases_after_succe
     let provider = TestResourceProvider::new().with_value(
         "test://render/timer",
         "tick",
-        Value::F64(Ref::new(0.0)),
+        LegacyValue::F64(Ref::new(0.0)),
     );
     let (mut runtime, output) = test_runtime_with_output(provider);
     grant_read(&mut runtime, "test://render/timer", "tick");

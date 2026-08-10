@@ -3,7 +3,7 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 
-use mech_core::{MResult, Ref, Value};
+use mech_core::{LegacyValue, MResult, Ref};
 
 use super::super::RuntimeHealth;
 use crate::runtime::test_support::{
@@ -28,7 +28,7 @@ use crate::{
 const TEST_CLOCK_BASE_URI: &str = "test://clock/ticks";
 const TEST_OUTPUT_BASE_URI: &str = "test://effects/output";
 
-fn snapshot(value: Value) -> RuntimeValueSnapshot {
+fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
@@ -36,12 +36,12 @@ fn target_safety_host() -> PlannedPureHostFunction {
     PlannedPureHostFunction::new(
         "test/target-safe",
         |_context, arguments| {
-            Ok(snapshot(Value::Bool(Ref::new(
+            Ok(snapshot(LegacyValue::Bool(Ref::new(
                 host_f64_argument(&arguments[0]) <= 120.0,
             ))))
         },
         |_context, arguments| {
-            Ok(snapshot(Value::Bool(Ref::new(
+            Ok(snapshot(LegacyValue::Bool(Ref::new(
                 host_f64_argument(&arguments[0]) <= 120.0,
             ))))
         },
@@ -236,7 +236,7 @@ fn integrity_invalid_host_input_aborts_staged_receiver_before_commit() {
         "test/receiver-send",
         |_context: &RuntimeCallContext, arguments: &[RuntimeValueSnapshot]| {
             let payload = host_f64_argument(&arguments[0]);
-            Ok(snapshot(Value::F64(Ref::new(payload))))
+            Ok(snapshot(LegacyValue::F64(Ref::new(payload))))
         },
         move |_context: &RuntimeCallContext, arguments: Vec<RuntimeValueSnapshot>| {
             let payload = host_f64_argument(&arguments[0]);
@@ -249,7 +249,7 @@ fn integrity_invalid_host_input_aborts_staged_receiver_before_commit() {
                 .unwrap()
                 .push(payload);
             Ok(RuntimePreparedHostCall {
-                value: snapshot(Value::F64(Ref::new(payload))),
+                value: snapshot(LegacyValue::F64(Ref::new(payload))),
                 effect: PreparedRuntimeEffect::Transactional(Box::new(
                     ReceiverTransactionalEffect {
                         payload,
@@ -265,7 +265,7 @@ fn integrity_invalid_host_input_aborts_staged_receiver_before_commit() {
     let provider = TestResourceProvider::new().with_value(
         TEST_CLOCK_BASE_URI,
         "value",
-        Value::F64(Ref::new(90.0)),
+        LegacyValue::F64(Ref::new(90.0)),
     );
     let mut runtime = test_runtime_builder()
         .store(store)

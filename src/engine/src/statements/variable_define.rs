@@ -30,7 +30,7 @@ use super::UnableToConvertRecordError;
 use super::enums::value_matches_enum_variant;
 #[cfg(feature = "variable_define")]
 use super::{AddressedAssignmentUnsupported, VariableAlreadyDefinedError};
-use crate::Value;
+use crate::LegacyValue;
 #[cfg(feature = "variable_define")]
 use crate::{
     InterpreterExecution, MResult, MechError, OperationId, Ref, VariableDefine,
@@ -49,7 +49,10 @@ use crate::{
 };
 
 #[cfg(feature = "variable_define")]
-pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn variable_define(
+    var_def: &VariableDefine,
+    p: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
     if var_def.var.context.is_some() {
         return Err(MechError::new(AddressedAssignmentUnsupported, None)
             .with_compiler_loc()
@@ -84,7 +87,10 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
         match (&result, &target_knd) {
             // Atom is a variant of an enum
             #[cfg(all(feature = "atom", feature = "enum"))]
-            (Value::Atom(atom_variant), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
+            (
+                LegacyValue::Atom(atom_variant),
+                ValueKind::Enum(enum_id, target_enum_variant_name),
+            ) => {
                 let atom_name = atom_variant.borrow().name();
                 if !value_matches_enum_variant(&result, *enum_id, p) {
                     return Err(MechError::new(
@@ -99,7 +105,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
                 }
             }
             #[cfg(all(feature = "tuple", feature = "atom", feature = "enum"))]
-            (Value::Tuple(tuple_val), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
+            (LegacyValue::Tuple(tuple_val), ValueKind::Enum(enum_id, target_enum_variant_name)) => {
                 let atom_name = format!("{:?}", tuple_val);
                 if !value_matches_enum_variant(&result, *enum_id, p) {
                     return Err(MechError::new(
@@ -115,7 +121,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
             }
             // Atoms can't convert into anything else.
             #[cfg(feature = "atom")]
-            (Value::Atom(given_variant_id), target_kind) => {
+            (LegacyValue::Atom(given_variant_id), target_kind) => {
                 return Err(MechError::new(
                     UnableToConvertAtomError {
                         atom_id: given_variant_id.borrow().0.0,
@@ -126,7 +132,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
                 .with_tokens(var_def.expression.tokens()));
             }
             #[cfg(feature = "record")]
-            (Value::Record(rec), ref target_kind @ ValueKind::Record(target_rec_knd)) => {
+            (LegacyValue::Record(rec), ref target_kind @ ValueKind::Record(target_rec_knd)) => {
                 let rec_brrw = rec.borrow();
                 let rec_knd = rec_brrw.kind();
                 if &rec_knd != *target_kind {
@@ -142,14 +148,14 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
                 }
             }
             #[cfg(feature = "matrix")]
-            (Value::MutableReference(v), ValueKind::Matrix(target_matrix_knd, _)) => {
+            (LegacyValue::MutableReference(v), ValueKind::Matrix(target_matrix_knd, _)) => {
                 let value = v.borrow().clone();
                 if value.is_matrix() {
                     result = execute_catalog_operation(
                         p,
                         &plan,
                         "convert/kind",
-                        vec![result.clone(), Value::Kind(target_knd.clone())],
+                        vec![result.clone(), LegacyValue::Kind(target_knd.clone())],
                     )?;
                 } else {
                     let value_kind = value.kind();
@@ -162,7 +168,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
                             "convert/kind",
                             vec![
                                 result.clone(),
-                                Value::Kind(target_matrix_knd.as_ref().clone()),
+                                LegacyValue::Kind(target_matrix_knd.as_ref().clone()),
                             ],
                         )?;
                     };
@@ -170,7 +176,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
                         p,
                         &plan,
                         "convert/kind",
-                        vec![result.clone(), Value::Kind(target_knd.clone())],
+                        vec![result.clone(), LegacyValue::Kind(target_knd.clone())],
                     )?;
                 }
             }
@@ -181,7 +187,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
                         p,
                         &plan,
                         "convert/kind",
-                        vec![result.clone(), Value::Kind(target_knd.clone())],
+                        vec![result.clone(), LegacyValue::Kind(target_knd.clone())],
                     )?;
                 } else {
                     let value_kind = value.kind();
@@ -194,7 +200,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
                             "convert/kind",
                             vec![
                                 result.clone(),
-                                Value::Kind(target_matrix_knd.as_ref().clone()),
+                                LegacyValue::Kind(target_matrix_knd.as_ref().clone()),
                             ],
                         )?;
                     };
@@ -202,7 +208,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
                         p,
                         &plan,
                         "convert/kind",
-                        vec![result.clone(), Value::Kind(target_knd.clone())],
+                        vec![result.clone(), LegacyValue::Kind(target_knd.clone())],
                     )?;
                 }
             }
@@ -212,7 +218,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
                     p,
                     &plan,
                     "convert/kind",
-                    vec![result.clone(), Value::Kind(target_knd)],
+                    vec![result.clone(), LegacyValue::Kind(target_knd)],
                 )?;
             }
         };
@@ -233,8 +239,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
         // Add variable define step to plan
         let var_define_arguments = vec![
             detached_result.clone(),
-            Value::String(Ref::new(var_name.clone())),
-            Value::Bool(Ref::new(var_def.mutable)),
+            LegacyValue::String(Ref::new(var_name.clone())),
+            LegacyValue::Bool(Ref::new(var_def.mutable)),
         ];
         let var_def_fxn = p.specialize_visible_operation_named(
             OperationId::from_name("var/define"),
@@ -261,8 +267,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
     // Add variable define step to plan
     let var_define_arguments = vec![
         detached_result.clone(),
-        Value::String(Ref::new(var_name.clone())),
-        Value::Bool(Ref::new(var_def.mutable)),
+        LegacyValue::String(Ref::new(var_name.clone())),
+        LegacyValue::Bool(Ref::new(var_def.mutable)),
     ];
     let var_def_fxn = p.specialize_visible_operation_named(
         OperationId::from_name("var/define"),
@@ -273,9 +279,9 @@ pub fn variable_define(var_def: &VariableDefine, p: &InterpreterExecution<'_>) -
     return Ok(detached_result);
 }
 
-pub(super) fn detach_variable_value(value: &Value) -> Value {
+pub(super) fn detach_variable_value(value: &LegacyValue) -> LegacyValue {
     match value {
-        Value::MutableReference(reference) => detach_variable_value(&reference.borrow()),
+        LegacyValue::MutableReference(reference) => detach_variable_value(&reference.borrow()),
         _ => value.clone(),
     }
 }

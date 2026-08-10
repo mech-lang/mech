@@ -1,6 +1,6 @@
 //! Canonical fixed-width and UTF-8 scalar decoding for bytecode-v1 constants.
 
-use crate::{MResult, Ref, Value};
+use crate::{LegacyValue, MResult, Ref};
 
 use super::super::owned_utf8;
 use super::{RuntimeType, invalid};
@@ -16,7 +16,9 @@ macro_rules! fixed {
                 ))
                 .unwrap_err()
             })?;
-            Ok(Value::$variant(Ref::new(<$primitive>::from_le_bytes(raw))))
+            Ok(LegacyValue::$variant(Ref::new(
+                <$primitive>::from_le_bytes(raw),
+            )))
         }
         #[cfg(not(feature = $feature))]
         {
@@ -39,7 +41,7 @@ macro_rules! float {
                 ))
                 .unwrap_err()
             })?;
-            Ok(Value::$variant(Ref::new(<$primitive>::from_bits(
+            Ok(LegacyValue::$variant(Ref::new(<$primitive>::from_bits(
                 <$bits>::from_le_bytes(raw),
             ))))
         }
@@ -54,7 +56,7 @@ macro_rules! float {
 }
 
 /// Decode a scalar type, returning `None` for composite runtime types.
-pub(super) fn decode(ty: &RuntimeType, bytes: &[u8]) -> Option<MResult<Value>> {
+pub(super) fn decode(ty: &RuntimeType, bytes: &[u8]) -> Option<MResult<LegacyValue>> {
     if !matches!(
         ty,
         RuntimeType::Empty
@@ -80,11 +82,11 @@ pub(super) fn decode(ty: &RuntimeType, bytes: &[u8]) -> Option<MResult<Value>> {
         return None;
     }
 
-    Some((|| -> MResult<Value> {
+    Some((|| -> MResult<LegacyValue> {
         match ty {
             RuntimeType::Empty => {
                 if bytes.is_empty() {
-                    Ok(Value::Empty)
+                    Ok(LegacyValue::Empty)
                 } else {
                     invalid("Empty constant must have zero payload bytes")
                 }
@@ -93,8 +95,8 @@ pub(super) fn decode(ty: &RuntimeType, bytes: &[u8]) -> Option<MResult<Value>> {
                 #[cfg(any(feature = "bool", feature = "variable_define"))]
                 {
                     match bytes {
-                        [0] => Ok(Value::Bool(Ref::new(false))),
-                        [1] => Ok(Value::Bool(Ref::new(true))),
+                        [0] => Ok(LegacyValue::Bool(Ref::new(false))),
+                        [1] => Ok(LegacyValue::Bool(Ref::new(true))),
                         _ => invalid("Bool constant must be exactly 0x00 or 0x01"),
                     }
                 }
@@ -108,7 +110,7 @@ pub(super) fn decode(ty: &RuntimeType, bytes: &[u8]) -> Option<MResult<Value>> {
                 {
                     let value = owned_utf8(bytes, "String constant")
                         .map_err(|_| invalid::<()>("invalid UTF-8 String constant").unwrap_err())?;
-                    Ok(Value::String(Ref::new(value)))
+                    Ok(LegacyValue::String(Ref::new(value)))
                 }
                 #[cfg(not(any(feature = "string", feature = "variable_define")))]
                 {
@@ -131,7 +133,7 @@ pub(super) fn decode(ty: &RuntimeType, bytes: &[u8]) -> Option<MResult<Value>> {
                 let raw: [u8; 8] = bytes.try_into().map_err(|_| {
                     invalid::<()>("Id constant must contain eight bytes").unwrap_err()
                 })?;
-                Ok(Value::Id(u64::from_le_bytes(raw)))
+                Ok(LegacyValue::Id(u64::from_le_bytes(raw)))
             }
             RuntimeType::Index => {
                 let raw: [u8; 8] = bytes.try_into().map_err(|_| {
@@ -139,7 +141,7 @@ pub(super) fn decode(ty: &RuntimeType, bytes: &[u8]) -> Option<MResult<Value>> {
                 })?;
                 let value = usize::try_from(u64::from_le_bytes(raw))
                     .map_err(|_| invalid::<()>("Index constant exceeds usize").unwrap_err())?;
-                Ok(Value::Index(Ref::new(value)))
+                Ok(LegacyValue::Index(Ref::new(value)))
             }
             RuntimeType::C64 => {
                 #[cfg(feature = "complex")]
@@ -147,7 +149,7 @@ pub(super) fn decode(ty: &RuntimeType, bytes: &[u8]) -> Option<MResult<Value>> {
                     let raw: [u8; 16] = bytes.try_into().map_err(|_| {
                         invalid::<()>("C64 constant must contain sixteen bytes").unwrap_err()
                     })?;
-                    Ok(Value::C64(Ref::new(crate::C64::new(
+                    Ok(LegacyValue::C64(Ref::new(crate::C64::new(
                         f64::from_bits(u64::from_le_bytes(raw[..8].try_into().unwrap())),
                         f64::from_bits(u64::from_le_bytes(raw[8..].try_into().unwrap())),
                     ))))
@@ -172,7 +174,7 @@ pub(super) fn decode(ty: &RuntimeType, bytes: &[u8]) -> Option<MResult<Value>> {
                     if *value.numer() != numerator || *value.denom() != denominator {
                         return invalid("R64 constant is not reduced");
                     }
-                    Ok(Value::R64(Ref::new(value)))
+                    Ok(LegacyValue::R64(Ref::new(value)))
                 }
                 #[cfg(not(feature = "rational"))]
                 {

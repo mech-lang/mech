@@ -83,33 +83,33 @@ macro_rules! impl_dot_match_arms {
       $(
         $(
           #[cfg(feature = $value_string)]
-          (Value::$lhs_type(lhs), Value::$lhs_type(rhs)) => Ok(Box::new(DotScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (LegacyValue::$lhs_type(lhs), LegacyValue::$lhs_type(rhs)) => Ok(Box::new(DotScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
 
           #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector2"))]
-          (Value::$matrix_kind(Matrix::Vector2(lhs)), Value::$matrix_kind(Matrix::Vector2(rhs))) => Ok(Box::new(DotV2V2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (LegacyValue::$matrix_kind(Matrix::Vector2(lhs)), LegacyValue::$matrix_kind(Matrix::Vector2(rhs))) => Ok(Box::new(DotV2V2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
           #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "row_vector2"))]
-          (Value::$matrix_kind(Matrix::RowVector2(lhs)), Value::$matrix_kind(Matrix::RowVector2(rhs))) => Ok(Box::new(DotR2R2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (LegacyValue::$matrix_kind(Matrix::RowVector2(lhs)), LegacyValue::$matrix_kind(Matrix::RowVector2(rhs))) => Ok(Box::new(DotR2R2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
 
           #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector3"))]
-          (Value::$matrix_kind(Matrix::Vector3(lhs)), Value::$matrix_kind(Matrix::Vector3(rhs))) => Ok(Box::new(DotV3V3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (LegacyValue::$matrix_kind(Matrix::Vector3(lhs)), LegacyValue::$matrix_kind(Matrix::Vector3(rhs))) => Ok(Box::new(DotV3V3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
           #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "row_vector3"))]
-          (Value::$matrix_kind(Matrix::RowVector3(lhs)), Value::$matrix_kind(Matrix::RowVector3(rhs))) => Ok(Box::new(DotR3R3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (LegacyValue::$matrix_kind(Matrix::RowVector3(lhs)), LegacyValue::$matrix_kind(Matrix::RowVector3(rhs))) => Ok(Box::new(DotR3R3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
 
           #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector4"))]
-          (Value::$matrix_kind(Matrix::Vector4(lhs)), Value::$matrix_kind(Matrix::Vector4(rhs))) => Ok(Box::new(DotV4V4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (LegacyValue::$matrix_kind(Matrix::Vector4(lhs)), LegacyValue::$matrix_kind(Matrix::Vector4(rhs))) => Ok(Box::new(DotV4V4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
           #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "row_vector4"))]
-          (Value::$matrix_kind(Matrix::RowVector4(lhs)), Value::$matrix_kind(Matrix::RowVector4(rhs))) => Ok(Box::new(DotR4R4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (LegacyValue::$matrix_kind(Matrix::RowVector4(lhs)), LegacyValue::$matrix_kind(Matrix::RowVector4(rhs))) => Ok(Box::new(DotR4R4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
 
           #[cfg(all(feature = $value_string, feature = "matrix1", feature = "matrix1"))]
-          (Value::$matrix_kind(Matrix::Matrix1(lhs)), Value::$matrix_kind(Matrix::Matrix1(rhs))) => Ok(Box::new(DotM1M1 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (LegacyValue::$matrix_kind(Matrix::Matrix1(lhs)), LegacyValue::$matrix_kind(Matrix::Matrix1(rhs))) => Ok(Box::new(DotM1M1 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
           #[cfg(all(feature = $value_string, feature = "matrix2", feature = "matrix2"))]
-          (Value::$matrix_kind(Matrix::Matrix2(lhs)), Value::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new(DotM2M2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (LegacyValue::$matrix_kind(Matrix::Matrix2(lhs)), LegacyValue::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new(DotM2M2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
           #[cfg(all(feature = $value_string, feature = "matrix3", feature = "matrix3"))]
-          (Value::$matrix_kind(Matrix::Matrix3(lhs)), Value::$matrix_kind(Matrix::Matrix3(rhs))) => Ok(Box::new(DotM3M3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (LegacyValue::$matrix_kind(Matrix::Matrix3(lhs)), LegacyValue::$matrix_kind(Matrix::Matrix3(rhs))) => Ok(Box::new(DotM3M3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
           #[cfg(all(feature = $value_string, feature = "matrix4", feature = "matrix4"))]
-          (Value::$matrix_kind(Matrix::Matrix4(lhs)), Value::$matrix_kind(Matrix::Matrix4(rhs))) => Ok(Box::new(DotM4M4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
+          (LegacyValue::$matrix_kind(Matrix::Matrix4(lhs)), LegacyValue::$matrix_kind(Matrix::Matrix4(rhs))) => Ok(Box::new(DotM4M4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) })),
           #[cfg(all(feature = $value_string, feature = "matrixd", feature = "matrixd"))]
-          (Value::$matrix_kind(Matrix::DMatrix(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => {
+          (LegacyValue::$matrix_kind(Matrix::DMatrix(lhs)), LegacyValue::$matrix_kind(Matrix::DMatrix(rhs))) => {
             let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
             let (rhs_rows,rhs_cols) = {rhs.borrow().shape()};
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
@@ -123,7 +123,7 @@ macro_rules! impl_dot_match_arms {
             Ok(Box::new(DotMDMD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
           },
           #[cfg(all(feature = $value_string, feature = "vectord", feature = "vectord"))]
-          (Value::$matrix_kind(Matrix::DVector(lhs)), Value::$matrix_kind(Matrix::DVector(rhs))) => {
+          (LegacyValue::$matrix_kind(Matrix::DVector(lhs)), LegacyValue::$matrix_kind(Matrix::DVector(rhs))) => {
             let lhs_len = {lhs.borrow().len()};
             let rhs_len = {rhs.borrow().len()};
             if lhs_len != rhs_len {
@@ -135,7 +135,7 @@ macro_rules! impl_dot_match_arms {
             Ok(Box::new(DotVDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::default()) }))
           },
           #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "row_vectord"))]
-          (Value::$matrix_kind(Matrix::RowDVector(lhs)), Value::$matrix_kind(Matrix::RowDVector(rhs))) => {
+          (LegacyValue::$matrix_kind(Matrix::RowDVector(lhs)), LegacyValue::$matrix_kind(Matrix::RowDVector(rhs))) => {
             let lhs_len = {lhs.borrow().len()};
             let rhs_len = {rhs.borrow().len()};
             if lhs_len != rhs_len {
@@ -158,7 +158,7 @@ macro_rules! impl_dot_match_arms {
 }
 
 #[cfg(feature = "source")]
-fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_dot_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_dot_match_arms!(
       (lhs_value, rhs_value),
       I8,   MatrixI8,   i8,   "i8";

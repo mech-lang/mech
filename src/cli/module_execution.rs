@@ -370,9 +370,9 @@ mod tests {
 
     fn assert_f64(value: RuntimeValueSnapshot, expected: f64) {
         match value.into_value() {
-            Value::F64(value) => assert_eq!(*value.borrow(), expected),
-            Value::MutableReference(value) => match &*value.borrow() {
-                Value::F64(value) => assert_eq!(*value.borrow(), expected),
+            LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
+            LegacyValue::MutableReference(value) => match &*value.borrow() {
+                LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
                 other => panic!("expected f64 value, got {other:?}"),
             },
             other => panic!("expected f64 value, got {other:?}"),
@@ -382,9 +382,9 @@ mod tests {
     #[cfg(feature = "build")]
     fn assert_string(value: RuntimeValueSnapshot, expected: &str) {
         match value.into_value() {
-            Value::String(value) => assert_eq!(value.borrow().as_str(), expected),
-            Value::MutableReference(value) => match &*value.borrow() {
-                Value::String(value) => assert_eq!(value.borrow().as_str(), expected),
+            LegacyValue::String(value) => assert_eq!(value.borrow().as_str(), expected),
+            LegacyValue::MutableReference(value) => match &*value.borrow() {
+                LegacyValue::String(value) => assert_eq!(value.borrow().as_str(), expected),
                 other => panic!("expected string value, got {other:?}"),
             },
             other => panic!("expected string value, got {other:?}"),
@@ -418,9 +418,11 @@ mod tests {
             .unwrap()
             .into_value()
         {
-            Value::String(value) => assert!(value.borrow().starts_with("planning-state-put-")),
-            Value::MutableReference(value) => match &*value.borrow() {
-                Value::String(value) => {
+            LegacyValue::String(value) => {
+                assert!(value.borrow().starts_with("planning-state-put-"))
+            }
+            LegacyValue::MutableReference(value) => match &*value.borrow() {
+                LegacyValue::String(value) => {
                     assert!(value.borrow().starts_with("planning-state-put-"))
                 }
                 other => panic!("expected string value, got {other:?}"),

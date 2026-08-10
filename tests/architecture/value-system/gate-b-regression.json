@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "reference_commit": "d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10",
+  "evidence_path": "benchmarks/runtime/gate-b/b2-resident-turn.json",
+  "evidence_commit": "b9ee8d1be7633f8b434947b748a810843bbd2144",
+  "evidence_sha256": "c124e090d70ad032f27032dd1ae2e0b86dd149d0b250025869203b7fdac32d23",
+  "protected_paths": {
+    "exact": [
+      "Cargo.toml",
+      "Cargo.lock",
+      "rust-toolchain",
+      "rust-toolchain.toml",
+      ".cargo/config",
+      ".cargo/config.toml",
+      "src/core/Cargo.toml",
+      "src/engine/Cargo.toml",
+      "src/runtime/Cargo.toml",
+      "src/core/build.rs",
+      "src/engine/build.rs",
+      "src/runtime/build.rs",
+      "src/core/src/lib.rs",
+      "src/engine/src/lib.rs",
+      "src/runtime/src/lib.rs",
+      "src/core/src/resident_execution.rs",
+      "src/runtime/src/resident_gate_b.rs",
+      "src/runtime/src/turn_record.rs",
+      "src/runtime/benches/resident_ekf.rs",
+      "src/engine/tests/resident_ekf_contract.rs",
+      "src/runtime/tests/resident_gate_b_contract.rs",
+      "scripts/run-gate-b-benchmarks.py",
+    "scripts/check-gate-b-contract.py",
+    "scripts/generate-gate-b-ekf-trace.py",
+      "scripts/generate-value-system-inventory.py",
+      "scripts/value_system_legacy_scanner_v2.py",
+      "scripts/tests/canonical_encoding_v1_reference.py",
+      "benchmarks/runtime/gate-b/result-schema.json",
+      "benchmarks/runtime/gate-b/ekf-v1.json",
+      "benchmarks/runtime/gate-b/b0-controls.json",
+      "benchmarks/runtime/gate-b/ekf-input-v1.bin",
+      "benchmarks/runtime/gate-b/ekf-input-v1.sha256",
+      "benchmarks/runtime/gate-b/numpy/ekf_v1.py",
+    "benchmarks/runtime/gate-b/README.md",
+    "tests/architecture/value-system/canonical-encoding-v1-schema.json",
+    "tests/architecture/value-system/canonical-encoding-v1-vectors-schema.json",
+    "tests/architecture/value-system/canonical-encoding-v1-vectors.json",
+    "tests/architecture/value-system/canonical-encoding-v1.json",
+    "tests/architecture/value-system/legacy-growth-baseline-schema.json",
+    "tests/architecture/value-system/legacy-growth-baseline.json"
+    ],
+  "prefixes": [
+    ".cargo/",
+    "src/core/src/",
+    "src/engine/src/resident/",
+      "src/runtime/src/ledger/",
+      "src/runtime/benches/support/gate_b/"
+    ]
+  },
+  "thresholds": {
+    "raw_epoch_ratio_max": 1.25,
+    "legacy_gap_closure_min": 0.8,
+    "history_1k_ratio_max": 1.05,
+    "history_100k_ratio_max": 1.05,
+    "high_epoch_ratio_max": 1.05,
+    "steady_state_allocation_count": 0,
+    "publication_store_count": 1,
+    "full_write_candidate_seed_bytes": 0,
+    "published_buffer_copy_bytes": 0,
+    "post_publication_append_infallible": true
+  },
+  "validation_policy": {
+    "documentation_only": "validate-committed-exact-b2-evidence",
+    "semantic_core_or_resident_hot_path": "rerun-required-gate-b-lanes-in-one-controlled-session",
+    "required_rerun_lanes": [
+      "rust-epoch",
+      "mech-resident-kernel",
+      "mech-resident-scheduled",
+      "mech-resident-turn"
+    ],
+    "hard_gate_regression": "block-owning-pr"
+  }
+}

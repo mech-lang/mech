@@ -5,12 +5,15 @@ use super::variable_define::detach_variable_value;
 #[cfg(feature = "invariant_define")]
 use crate::{
     ComparisonOp, Expression, Factor, FormulaOperator, IntegrityConstraint, InterpreterExecution,
-    InvariantDefine, Literal, MResult, MechError, OperationId, Ref, Token, ValRef, Value,
+    InvariantDefine, LegacyValue, Literal, MResult, MechError, OperationId, Ref, Token, ValRef,
     expression, literal,
 };
 
 #[cfg(feature = "invariant_define")]
-pub fn invariant_define(inv_def: &InvariantDefine, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn invariant_define(
+    inv_def: &InvariantDefine,
+    p: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
     let invariant_id = inv_def.name.hash();
     let invariant_name = inv_def.name.to_string();
     let invariant_expression = tokens_to_string(&inv_def.expression.tokens());
@@ -39,8 +42,8 @@ pub fn invariant_define(inv_def: &InvariantDefine, p: &InterpreterExecution<'_>)
 
     let var_define_arguments = vec![
         detached_result,
-        Value::String(Ref::new(invariant_name.clone())),
-        Value::Bool(Ref::new(false)),
+        LegacyValue::String(Ref::new(invariant_name.clone())),
+        LegacyValue::Bool(Ref::new(false)),
     ];
     let var_def_fxn = p.specialize_visible_operation_named(
         OperationId::from_name("var/define"),
@@ -75,9 +78,9 @@ fn tokens_to_string(tokens: &[Token]) -> String {
 }
 
 #[cfg(feature = "invariant_define")]
-fn value_to_ref(value: Value) -> ValRef {
+fn value_to_ref(value: LegacyValue) -> ValRef {
     match value {
-        Value::MutableReference(r) => r.clone(),
+        LegacyValue::MutableReference(r) => r.clone(),
         other => Ref::new(other),
     }
 }

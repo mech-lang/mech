@@ -6,7 +6,7 @@ mod limits;
 mod matrix;
 mod scalar;
 
-use crate::{MResult, Ref, Value};
+use crate::{LegacyValue, MResult, Ref};
 
 #[cfg(feature = "no_std")]
 use alloc::{collections::BTreeSet, vec::Vec};
@@ -70,7 +70,7 @@ impl ConstantCodecContext {
         }
     }
 
-    fn decode_child(&mut self, ty: &RuntimeType, bytes: &[u8]) -> MResult<Value> {
+    fn decode_child(&mut self, ty: &RuntimeType, bytes: &[u8]) -> MResult<LegacyValue> {
         if self.depth >= MAX_CONSTANT_NESTING {
             return Err(super::depth_exceeded(MAX_CONSTANT_NESTING));
         }
@@ -85,7 +85,7 @@ pub fn decode_constants(
     types: &[RuntimeType],
     entries: &[ConstantEntry],
     blob: &[u8],
-) -> MResult<Vec<Value>> {
+) -> MResult<Vec<LegacyValue>> {
     let mut values = Vec::new();
     values
         .try_reserve_exact(entries.len())
@@ -608,7 +608,7 @@ fn decode_value_payload(
     ty: &RuntimeType,
     bytes: &[u8],
     context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     if let Some(value) = scalar::decode(ty, bytes) {
         return value;
     }
@@ -634,21 +634,23 @@ fn decode_value_payload(
         RuntimeType::Atom { id, name } => decode_atom_constant(*id, name, bytes),
         RuntimeType::Kind(kind) => {
             if bytes.is_empty() {
-                Ok(Value::Kind(kind::value_kind_from_semantic_kind(kind)?))
+                Ok(LegacyValue::Kind(kind::value_kind_from_semantic_kind(
+                    kind,
+                )?))
             } else {
                 invalid("Kind constants must have zero payload bytes")
             }
         }
         RuntimeType::Any => {
             if bytes.is_empty() {
-                Ok(Value::EmptyKind(crate::ValueKind::Any))
+                Ok(LegacyValue::EmptyKind(crate::ValueKind::Any))
             } else {
                 invalid("Any constants must have zero payload bytes")
             }
         }
         RuntimeType::None => {
             if bytes.is_empty() {
-                Ok(Value::EmptyKind(crate::ValueKind::None))
+                Ok(LegacyValue::EmptyKind(crate::ValueKind::None))
             } else {
                 invalid("None constants must have zero payload bytes")
             }
@@ -752,12 +754,16 @@ fn runtime_type_to_value_kind(ty: &RuntimeType) -> MResult<crate::ValueKind> {
     })
 }
 
+pub fn value_kind_from_runtime_type(ty: &RuntimeType) -> MResult<crate::ValueKind> {
+    runtime_type_to_value_kind(ty)
+}
+
 #[cfg(feature = "tuple")]
 fn decode_tuple_constant(
     types: &[RuntimeType],
     bytes: &[u8],
     context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let mut reader = ByteReader::new(bytes);
     let count = checked_usize(
         u64::from(reader.read_u32("tuple element count")?),
@@ -776,7 +782,9 @@ fn decode_tuple_constant(
     if !reader.is_empty() {
         return invalid("tuple constant has trailing bytes");
     }
-    Ok(Value::Tuple(Ref::new(crate::MechTuple::from_vec(values))))
+    Ok(LegacyValue::Tuple(Ref::new(crate::MechTuple::from_vec(
+        values,
+    ))))
 }
 
 #[cfg(not(feature = "tuple"))]
@@ -784,7 +792,7 @@ fn decode_tuple_constant(
     _types: &[RuntimeType],
     _bytes: &[u8],
     _context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     invalid("Tuple constants are unavailable in this runtime")
 }
 
@@ -793,7 +801,7 @@ fn decode_record_constant(
     fields: &[(String, RuntimeType)],
     bytes: &[u8],
     context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let mut reader = ByteReader::new(bytes);
     let count = checked_usize(
         u64::from(reader.read_u32("record field count")?),
@@ -816,7 +824,9 @@ fn decode_record_constant(
     if !reader.is_empty() {
         return invalid("record constant has trailing bytes");
     }
-    Ok(Value::Record(Ref::new(crate::MechRecord::from_vec(values))))
+    Ok(LegacyValue::Record(Ref::new(crate::MechRecord::from_vec(
+        values,
+    ))))
 }
 
 #[cfg(not(feature = "record"))]
@@ -824,7 +834,7 @@ fn decode_record_constant(
     _fields: &[(String, RuntimeType)],
     _bytes: &[u8],
     _context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     invalid("Record constants are unavailable in this runtime")
 }
 
@@ -834,7 +844,7 @@ fn decode_map_constant(
     value_type: &RuntimeType,
     bytes: &[u8],
     context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let mut reader = ByteReader::new(bytes);
     let count = checked_usize(
         u64::from(reader.read_u32("map entry count")?),
@@ -858,7 +868,7 @@ fn decode_map_constant(
     if !reader.is_empty() {
         return invalid("map constant has trailing bytes");
     }
-    Ok(Value::Map(Ref::new(crate::MechMap {
+    Ok(LegacyValue::Map(Ref::new(crate::MechMap {
         key_kind: runtime_type_to_value_kind(key_type)?,
         value_kind: runtime_type_to_value_kind(value_type)?,
         num_elements: count,
@@ -872,7 +882,7 @@ fn decode_map_constant(
     _value_type: &RuntimeType,
     _bytes: &[u8],
     _context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     invalid("Map constants are unavailable in this runtime")
 }
 
@@ -882,7 +892,7 @@ fn decode_set_constant(
     max_len: Option<u32>,
     bytes: &[u8],
     context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let mut reader = ByteReader::new(bytes);
     let count = checked_usize(
         u64::from(reader.read_u32("set element count")?),
@@ -909,7 +919,7 @@ fn decode_set_constant(
     let max_elements = max_len
         .map(|limit| checked_usize(u64::from(limit), "set maximum length"))
         .transpose()?;
-    Ok(Value::Set(Ref::new(crate::MechSet {
+    Ok(LegacyValue::Set(Ref::new(crate::MechSet {
         kind: runtime_type_to_value_kind(element_type)?,
         max_elements,
         num_elements: max_elements.unwrap_or(0),
@@ -923,7 +933,7 @@ fn decode_set_constant(
     _max_len: Option<u32>,
     _bytes: &[u8],
     _context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     invalid("Set constants are unavailable in this runtime")
 }
 
@@ -933,7 +943,7 @@ fn decode_table_constant(
     primary_key: u32,
     bytes: &[u8],
     context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let mut reader = ByteReader::new(bytes);
     let rows = checked_usize(
         u64::from(reader.read_u32("table row count")?),
@@ -980,7 +990,7 @@ fn decode_table_constant(
         );
         names.insert(id, name.clone());
     }
-    Ok(Value::Table(Ref::new(crate::MechTable::new(
+    Ok(LegacyValue::Table(Ref::new(crate::MechTable::new(
         rows, count, data, names,
     ))))
 }
@@ -991,7 +1001,7 @@ fn decode_table_constant(
     _primary_key: u32,
     _bytes: &[u8],
     _context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     invalid("Table constants require the dynamic vector feature")
 }
 
@@ -999,7 +1009,7 @@ fn decode_reference_constant(
     child_type: &RuntimeType,
     bytes: &[u8],
     context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let mut reader = ByteReader::new(bytes);
     let child = context.decode_child(
         child_type,
@@ -1008,22 +1018,22 @@ fn decode_reference_constant(
     if !reader.is_empty() {
         return invalid("reference constant has trailing bytes");
     }
-    Ok(Value::MutableReference(Ref::new(child)))
+    Ok(LegacyValue::MutableReference(Ref::new(child)))
 }
 
 fn decode_option_constant(
     inner: &RuntimeType,
     bytes: &[u8],
     context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let mut reader = ByteReader::new(bytes);
     let kind = crate::ValueKind::Option(Box::new(runtime_type_to_value_kind(inner)?));
     let value = match reader.read_u8("option presence")? {
-        0 => Value::EmptyKind(kind),
+        0 => LegacyValue::EmptyKind(kind),
         1 => {
             let child =
                 context.decode_child(inner, read_child_payload(&mut reader, "option child")?)?;
-            Value::Typed(Box::new(child), kind)
+            LegacyValue::Typed(Box::new(child), kind)
         }
         _ => return invalid("option presence must be exactly 0x00 or 0x01"),
     };
@@ -1034,18 +1044,20 @@ fn decode_option_constant(
 }
 
 #[cfg(feature = "atom")]
-fn decode_atom_constant(id: u64, name: &str, bytes: &[u8]) -> MResult<Value> {
+fn decode_atom_constant(id: u64, name: &str, bytes: &[u8]) -> MResult<LegacyValue> {
     if !bytes.is_empty() {
         return invalid("Atom constants must have zero payload bytes");
     }
     if crate::hash_str(name) != id {
         return invalid("Atom RuntimeType name does not match its stable ID");
     }
-    Ok(Value::Atom(Ref::new(crate::MechAtom::from_name(name))))
+    Ok(LegacyValue::Atom(Ref::new(crate::MechAtom::from_name(
+        name,
+    ))))
 }
 
 #[cfg(not(feature = "atom"))]
-fn decode_atom_constant(_id: u64, _name: &str, _bytes: &[u8]) -> MResult<Value> {
+fn decode_atom_constant(_id: u64, _name: &str, _bytes: &[u8]) -> MResult<LegacyValue> {
     invalid("Atom constants are unavailable in this runtime")
 }
 
@@ -1055,7 +1067,7 @@ fn decode_enum_constant(
     name: &str,
     bytes: &[u8],
     context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     if crate::hash_str(name) != id {
         return invalid("Enum RuntimeType name does not match its stable ID");
     }
@@ -1100,7 +1112,7 @@ fn decode_enum_constant(
     if !reader.is_empty() {
         return invalid("enum constant has trailing bytes");
     }
-    Ok(Value::Enum(Ref::new(crate::MechEnum {
+    Ok(LegacyValue::Enum(Ref::new(crate::MechEnum {
         id,
         variants,
         names,
@@ -1113,11 +1125,15 @@ fn decode_enum_constant(
     _name: &str,
     _bytes: &[u8],
     _context: &mut ConstantCodecContext,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     invalid("Enum constants are unavailable in this runtime")
 }
 
-fn decode_constant(types: &[RuntimeType], entry: &ConstantEntry, blob: &[u8]) -> MResult<Value> {
+fn decode_constant(
+    types: &[RuntimeType],
+    entry: &ConstantEntry,
+    blob: &[u8],
+) -> MResult<LegacyValue> {
     if entry.encoding != 1 {
         return invalid("unsupported bytecode constant encoding");
     }
@@ -1154,7 +1170,7 @@ fn decode_matrix_constant(
     rows: u32,
     cols: u32,
     bytes: &[u8],
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     #[cfg(feature = "matrix")]
     validate_matrix_payload_feasibility(element, rows, cols, bytes)?;
     #[cfg(feature = "matrix")]
@@ -1167,27 +1183,27 @@ fn decode_matrix_constant(
                 _ => invalid("Bool matrix elements must be exactly 0x00 or 0x01"),
             }
         })
-        .map(Value::MatrixBool),
+        .map(LegacyValue::MatrixBool),
         #[cfg(feature = "u8")]
         RuntimeType::U8 => decode_matrix(storage, rows, cols, bytes, |reader| {
             reader.read_u8("U8 matrix element")
         })
-        .map(Value::MatrixU8),
+        .map(LegacyValue::MatrixU8),
         #[cfg(feature = "u16")]
         RuntimeType::U16 => decode_matrix(storage, rows, cols, bytes, |reader| {
             reader.read_u16("U16 matrix element")
         })
-        .map(Value::MatrixU16),
+        .map(LegacyValue::MatrixU16),
         #[cfg(feature = "u32")]
         RuntimeType::U32 => decode_matrix(storage, rows, cols, bytes, |reader| {
             reader.read_u32("U32 matrix element")
         })
-        .map(Value::MatrixU32),
+        .map(LegacyValue::MatrixU32),
         #[cfg(feature = "u64")]
         RuntimeType::U64 => decode_matrix(storage, rows, cols, bytes, |reader| {
             reader.read_u64("U64 matrix element")
         })
-        .map(Value::MatrixU64),
+        .map(LegacyValue::MatrixU64),
         #[cfg(feature = "u128")]
         RuntimeType::U128 => decode_matrix(storage, rows, cols, bytes, |reader| {
             Ok(u128::from_le_bytes(
@@ -1197,7 +1213,7 @@ fn decode_matrix_constant(
                     .unwrap(),
             ))
         })
-        .map(Value::MatrixU128),
+        .map(LegacyValue::MatrixU128),
         #[cfg(feature = "i8")]
         RuntimeType::I8 => decode_matrix(storage, rows, cols, bytes, |reader| {
             Ok(i8::from_le_bytes(
@@ -1207,7 +1223,7 @@ fn decode_matrix_constant(
                     .unwrap(),
             ))
         })
-        .map(Value::MatrixI8),
+        .map(LegacyValue::MatrixI8),
         #[cfg(feature = "i16")]
         RuntimeType::I16 => decode_matrix(storage, rows, cols, bytes, |reader| {
             Ok(i16::from_le_bytes(
@@ -1217,7 +1233,7 @@ fn decode_matrix_constant(
                     .unwrap(),
             ))
         })
-        .map(Value::MatrixI16),
+        .map(LegacyValue::MatrixI16),
         #[cfg(feature = "i32")]
         RuntimeType::I32 => decode_matrix(storage, rows, cols, bytes, |reader| {
             Ok(i32::from_le_bytes(
@@ -1227,7 +1243,7 @@ fn decode_matrix_constant(
                     .unwrap(),
             ))
         })
-        .map(Value::MatrixI32),
+        .map(LegacyValue::MatrixI32),
         #[cfg(feature = "i64")]
         RuntimeType::I64 => decode_matrix(storage, rows, cols, bytes, |reader| {
             Ok(i64::from_le_bytes(
@@ -1237,7 +1253,7 @@ fn decode_matrix_constant(
                     .unwrap(),
             ))
         })
-        .map(Value::MatrixI64),
+        .map(LegacyValue::MatrixI64),
         #[cfg(feature = "i128")]
         RuntimeType::I128 => decode_matrix(storage, rows, cols, bytes, |reader| {
             Ok(i128::from_le_bytes(
@@ -1247,17 +1263,17 @@ fn decode_matrix_constant(
                     .unwrap(),
             ))
         })
-        .map(Value::MatrixI128),
+        .map(LegacyValue::MatrixI128),
         #[cfg(feature = "f32")]
         RuntimeType::F32 => decode_matrix(storage, rows, cols, bytes, |reader| {
             Ok(f32::from_bits(reader.read_u32("F32 matrix element")?))
         })
-        .map(Value::MatrixF32),
+        .map(LegacyValue::MatrixF32),
         #[cfg(feature = "f64")]
         RuntimeType::F64 => decode_matrix(storage, rows, cols, bytes, |reader| {
             Ok(f64::from_bits(reader.read_u64("F64 matrix element")?))
         })
-        .map(Value::MatrixF64),
+        .map(LegacyValue::MatrixF64),
         #[cfg(feature = "string")]
         RuntimeType::String => decode_matrix(storage, rows, cols, bytes, |reader| {
             let length = checked_usize(
@@ -1266,7 +1282,7 @@ fn decode_matrix_constant(
             )?;
             reader.read_utf8(length, "String matrix element")
         })
-        .map(Value::MatrixString),
+        .map(LegacyValue::MatrixString),
         #[cfg(feature = "rational")]
         RuntimeType::R64 => decode_matrix(storage, rows, cols, bytes, |reader| {
             let raw = reader.read_exact(16, "R64 matrix element")?;
@@ -1281,7 +1297,7 @@ fn decode_matrix_constant(
             }
             Ok(value)
         })
-        .map(Value::MatrixR64),
+        .map(LegacyValue::MatrixR64),
         #[cfg(feature = "complex")]
         RuntimeType::C64 => decode_matrix(storage, rows, cols, bytes, |reader| {
             let raw = reader.read_exact(16, "C64 matrix element")?;
@@ -1290,13 +1306,13 @@ fn decode_matrix_constant(
                 f64::from_bits(u64::from_le_bytes(raw[8..].try_into().unwrap())),
             ))
         })
-        .map(Value::MatrixC64),
+        .map(LegacyValue::MatrixC64),
         RuntimeType::Index => decode_matrix(storage, rows, cols, bytes, |reader| {
             let value = reader.read_u64("Index matrix element")?;
             usize::try_from(value)
                 .map_err(|_| invalid::<()>("Index matrix element exceeds usize").unwrap_err())
         })
-        .map(Value::MatrixIndex),
+        .map(LegacyValue::MatrixIndex),
         _ => invalid(format!(
             "matrix constants do not support element type {element:?} in this runtime"
         )),

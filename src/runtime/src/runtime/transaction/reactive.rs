@@ -8,8 +8,8 @@ use crate::runtime::MechRuntime;
 use crate::runtime::state::ScopedRuntimeState;
 use crate::{RuntimeContext, RuntimeInvalidOperationError, TransactionId};
 use mech_core::{
-    ExecutionHostFunctionRequest, ExecutionResourceRequest, MResult, MechError,
-    MechExecutionServices, ValRef, Value,
+    ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechError,
+    MechExecutionServices, ValRef,
 };
 use mech_engine::{
     ExecutionServicesBorrowConflict, MechProgram, ProgramCellDuplicateTarget, ProgramCellUpdate,
@@ -75,8 +75,8 @@ impl MechExecutionServices for RuntimeCoordinatedExecutionServices<'_, '_> {
     fn invoke_host_function(
         &mut self,
         request: &ExecutionHostFunctionRequest,
-        arguments: &[Value],
-    ) -> MResult<Value> {
+        arguments: &[LegacyValue],
+    ) -> MResult<LegacyValue> {
         let mut turn = self
             .turn
             .try_borrow_mut()
@@ -94,7 +94,7 @@ impl MechExecutionServices for RuntimeCoordinatedExecutionServices<'_, '_> {
         })
     }
 
-    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
         let mut turn = self
             .turn
             .try_borrow_mut()
@@ -105,7 +105,11 @@ impl MechExecutionServices for RuntimeCoordinatedExecutionServices<'_, '_> {
         runtime.with_runtime_execution_session(context, |session| session.read_resource(request))
     }
 
-    fn write_resource(&mut self, request: &ExecutionResourceRequest, value: &Value) -> MResult<()> {
+    fn write_resource(
+        &mut self,
+        request: &ExecutionResourceRequest,
+        value: &LegacyValue,
+    ) -> MResult<()> {
         let mut turn = self
             .turn
             .try_borrow_mut()

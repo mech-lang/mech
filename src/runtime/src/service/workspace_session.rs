@@ -407,7 +407,10 @@ mod tests {
         .unwrap();
 
         let result = session.runtime_mut().run_string("result := true").unwrap();
-        assert!(matches!(result.into_value(), mech_core::Value::Bool(_)));
+        assert!(matches!(
+            result.into_value(),
+            mech_core::LegacyValue::Bool(_)
+        ));
     }
 
     #[test]

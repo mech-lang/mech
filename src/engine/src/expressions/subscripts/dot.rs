@@ -1,19 +1,19 @@
 use super::super::environment::expression_solves_deferred;
 use super::super::registration::register_initialized_expression_function;
 use super::catalog_access_function;
-use crate::{InterpreterExecution, MResult, Subscript, Value, ValueKind, real};
+use crate::{InterpreterExecution, LegacyValue, MResult, Subscript, ValueKind, real};
 
 pub(super) fn access(
     sbscrpt: &Subscript,
-    val: &Value,
+    val: &LegacyValue,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let plan = p.plan();
     match sbscrpt {
         #[cfg(feature = "table")]
         Subscript::Dot(x) => {
             let key = x.hash();
-            let fxn_input: Vec<Value> = vec![val.clone(), Value::Id(key)];
+            let fxn_input: Vec<LegacyValue> = vec![val.clone(), LegacyValue::Id(key)];
             #[cfg(feature = "record")]
             if matches!(val.deref_kind(), ValueKind::Record(..)) {
                 let function = catalog_access_function(p, "access/column", &fxn_input)?;
@@ -61,9 +61,9 @@ pub(super) fn access(
         Subscript::Swizzle(x) => {
             let mut keys = x
                 .iter()
-                .map(|x| Value::Id(x.hash()))
-                .collect::<Vec<Value>>();
-            let mut fxn_input: Vec<Value> = vec![val.clone()];
+                .map(|x| LegacyValue::Id(x.hash()))
+                .collect::<Vec<LegacyValue>>();
+            let mut fxn_input: Vec<LegacyValue> = vec![val.clone()];
             fxn_input.append(&mut keys);
             let new_fxn = catalog_access_function(p, "access/swizzle", &fxn_input)?;
             if !expression_solves_deferred(p) {

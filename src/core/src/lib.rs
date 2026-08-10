@@ -121,9 +121,14 @@ pub mod reactive_transaction;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub mod resident_execution;
+pub mod snapshot;
 pub mod state_journal;
 pub mod structures;
-pub mod value;
+// The physical path remains value.rs during migration so the frozen
+// legacy-site inventory retains stable source paths. Final cutover
+// deletes this file.
+#[path = "value.rs"]
+pub mod legacy_value;
 mod value_snapshot;
 pub use self::value_snapshot::{
     ValueSnapshotBorrowConflict, ValueSnapshotCollectionCollision, ValueSnapshotCycleUnsupported,
@@ -132,6 +137,7 @@ pub use self::value_snapshot::{
 #[cfg(feature = "mika")]
 pub mod mika;
 pub mod program;
+pub mod read_source;
 pub mod stdlib;
 pub mod types;
 
@@ -141,20 +147,45 @@ pub use self::execution::*;
 #[cfg(feature = "functions")]
 pub use self::function::*;
 pub use self::kind::*;
+pub use self::legacy_value::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
 pub use self::nodes::*;
 pub use self::program::*;
 #[cfg(feature = "functions")]
 pub use self::reactive_transaction::*;
+pub use self::read_source::ReadSource;
 #[cfg(feature = "resident-execution")]
 #[doc(hidden)]
 pub use self::resident_execution::*;
+pub use self::schema::*;
+pub use self::semantic_error::*;
+pub use self::semantic_identity::*;
+pub use self::snapshot::{
+    ConstantHandle, ConstantStore, ConstantStoreBuilder, SnapshotValueError, Value, ValueData,
+    ValueDataDraft, ValueDraft,
+};
 pub use self::state_journal::*;
 pub use self::stdlib::*;
 pub use self::structures::*;
 pub use self::types::*;
-pub use self::value::*;
+
+pub mod dimension;
+pub mod kind_expr;
+pub mod kind_scheme;
+pub mod legacy_adapter;
+pub mod nominal;
+pub mod operation_contract;
+pub mod schema;
+pub mod semantic_error;
+pub mod semantic_identity;
+
+pub use self::dimension::*;
+pub use self::kind_expr::*;
+pub use self::kind_scheme::*;
+pub use self::legacy_adapter::*;
+pub use self::nominal::*;
+pub use self::operation_contract::*;
 
 // Mech Source Code
 // ---------------------------------------------------------------------------

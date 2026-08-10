@@ -7,7 +7,9 @@ use std::{collections::BTreeSet, string::String};
 use crate::RuntimeType;
 #[cfg(feature = "matrix")]
 use crate::structures::Matrix as MechMatrix;
-use crate::{FunctionArgumentRole, FunctionMatrixRepresentation, MechError, MechErrorKind, Value};
+use crate::{
+    FunctionArgumentRole, FunctionMatrixRepresentation, LegacyValue, MechError, MechErrorKind,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FunctionMatrixElement {
@@ -239,7 +241,7 @@ impl FunctionRuntimeType for crate::R64 {
     const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::R64;
 }
 
-impl FunctionRuntimeType for Value {
+impl FunctionRuntimeType for LegacyValue {
     const REPRESENTATION: FunctionValueRepresentation = FunctionValueRepresentation::AnyValue;
 }
 
@@ -646,151 +648,151 @@ impl MechErrorKind for FunctionSignatureViolation {
 }
 
 impl FunctionValueRepresentation {
-    pub fn from_value(value: &Value) -> Self {
+    pub fn from_value(value: &LegacyValue) -> Self {
         let matrix = |element, representation| Self::Matrix {
             element,
             storage: FunctionMatrixStoragePattern::Exact(representation),
         };
         match value {
             #[cfg(feature = "u8")]
-            Value::U8(_) => Self::U8,
+            LegacyValue::U8(_) => Self::U8,
             #[cfg(feature = "u16")]
-            Value::U16(_) => Self::U16,
+            LegacyValue::U16(_) => Self::U16,
             #[cfg(feature = "u32")]
-            Value::U32(_) => Self::U32,
+            LegacyValue::U32(_) => Self::U32,
             #[cfg(feature = "u64")]
-            Value::U64(_) => Self::U64,
+            LegacyValue::U64(_) => Self::U64,
             #[cfg(feature = "u128")]
-            Value::U128(_) => Self::U128,
+            LegacyValue::U128(_) => Self::U128,
             #[cfg(feature = "i8")]
-            Value::I8(_) => Self::I8,
+            LegacyValue::I8(_) => Self::I8,
             #[cfg(feature = "i16")]
-            Value::I16(_) => Self::I16,
+            LegacyValue::I16(_) => Self::I16,
             #[cfg(feature = "i32")]
-            Value::I32(_) => Self::I32,
+            LegacyValue::I32(_) => Self::I32,
             #[cfg(feature = "i64")]
-            Value::I64(_) => Self::I64,
+            LegacyValue::I64(_) => Self::I64,
             #[cfg(feature = "i128")]
-            Value::I128(_) => Self::I128,
+            LegacyValue::I128(_) => Self::I128,
             #[cfg(feature = "f32")]
-            Value::F32(_) => Self::F32,
+            LegacyValue::F32(_) => Self::F32,
             #[cfg(feature = "f64")]
-            Value::F64(_) => Self::F64,
+            LegacyValue::F64(_) => Self::F64,
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(_) => Self::String,
+            LegacyValue::String(_) => Self::String,
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(_) => Self::Bool,
+            LegacyValue::Bool(_) => Self::Bool,
             #[cfg(feature = "complex")]
-            Value::C64(_) => Self::C64,
+            LegacyValue::C64(_) => Self::C64,
             #[cfg(feature = "rational")]
-            Value::R64(_) => Self::R64,
+            LegacyValue::R64(_) => Self::R64,
             #[cfg(feature = "atom")]
-            Value::Atom(_) => Self::Atom,
+            LegacyValue::Atom(_) => Self::Atom,
             #[cfg(feature = "enum")]
-            Value::Enum(_) => Self::Enum,
+            LegacyValue::Enum(_) => Self::Enum,
             #[cfg(feature = "record")]
-            Value::Record(_) => Self::Record,
+            LegacyValue::Record(_) => Self::Record,
             #[cfg(feature = "map")]
-            Value::Map(_) => Self::Map,
+            LegacyValue::Map(_) => Self::Map,
             #[cfg(feature = "set")]
-            Value::Set(_) => Self::Set,
+            LegacyValue::Set(_) => Self::Set,
             #[cfg(feature = "table")]
-            Value::Table(_) => Self::Table,
+            LegacyValue::Table(_) => Self::Table,
             #[cfg(feature = "tuple")]
-            Value::Tuple(_) => Self::Tuple,
-            Value::Id(_) => Self::Id,
-            Value::Index(_) | Value::IndexAll => Self::Index,
-            Value::MutableReference(_) => Self::MutableValueCell,
-            Value::Kind(_) => Self::Kind,
-            Value::Empty | Value::EmptyKind(_) => Self::Empty,
-            Value::Typed(_, _) => Self::AnyValue,
+            LegacyValue::Tuple(_) => Self::Tuple,
+            LegacyValue::Id(_) => Self::Id,
+            LegacyValue::Index(_) | LegacyValue::IndexAll => Self::Index,
+            LegacyValue::MutableReference(_) => Self::MutableValueCell,
+            LegacyValue::Kind(_) => Self::Kind,
+            LegacyValue::Empty | LegacyValue::EmptyKind(_) => Self::Empty,
+            LegacyValue::Typed(_, _) => Self::AnyValue,
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(value) => matrix(
+            LegacyValue::MatrixIndex(value) => matrix(
                 FunctionMatrixElement::Index,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(value) => matrix(
+            LegacyValue::MatrixBool(value) => matrix(
                 FunctionMatrixElement::Bool,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(value) => matrix(
+            LegacyValue::MatrixU8(value) => matrix(
                 FunctionMatrixElement::U8,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(value) => matrix(
+            LegacyValue::MatrixU16(value) => matrix(
                 FunctionMatrixElement::U16,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(value) => matrix(
+            LegacyValue::MatrixU32(value) => matrix(
                 FunctionMatrixElement::U32,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(value) => matrix(
+            LegacyValue::MatrixU64(value) => matrix(
                 FunctionMatrixElement::U64,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(value) => matrix(
+            LegacyValue::MatrixU128(value) => matrix(
                 FunctionMatrixElement::U128,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(value) => matrix(
+            LegacyValue::MatrixI8(value) => matrix(
                 FunctionMatrixElement::I8,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(value) => matrix(
+            LegacyValue::MatrixI16(value) => matrix(
                 FunctionMatrixElement::I16,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(value) => matrix(
+            LegacyValue::MatrixI32(value) => matrix(
                 FunctionMatrixElement::I32,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(value) => matrix(
+            LegacyValue::MatrixI64(value) => matrix(
                 FunctionMatrixElement::I64,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(value) => matrix(
+            LegacyValue::MatrixI128(value) => matrix(
                 FunctionMatrixElement::I128,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(value) => matrix(
+            LegacyValue::MatrixF32(value) => matrix(
                 FunctionMatrixElement::F32,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(value) => matrix(
+            LegacyValue::MatrixF64(value) => matrix(
                 FunctionMatrixElement::F64,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(value) => matrix(
+            LegacyValue::MatrixString(value) => matrix(
                 FunctionMatrixElement::String,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(value) => matrix(
+            LegacyValue::MatrixR64(value) => matrix(
                 FunctionMatrixElement::R64,
                 matrix_storage_representation(value),
             ),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(value) => matrix(
+            LegacyValue::MatrixC64(value) => matrix(
                 FunctionMatrixElement::C64,
                 matrix_storage_representation(value),
             ),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(value) => matrix(
+            LegacyValue::MatrixValue(value) => matrix(
                 FunctionMatrixElement::Value,
                 matrix_storage_representation(value),
             ),
@@ -978,7 +980,7 @@ pub fn native_features_for_runtime_type(
 pub(crate) fn signature_violation(
     role: FunctionArgumentRole,
     expected: FunctionValueRepresentation,
-    value: &Value,
+    value: &LegacyValue,
 ) -> MechError {
     MechError::new(
         FunctionSignatureViolation {

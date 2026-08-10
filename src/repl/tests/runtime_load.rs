@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use mech_core::{MResult, MechSourceCode, Value};
+use mech_core::{LegacyValue, MResult, MechSourceCode};
 use mech_runtime::{
     FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FileSourceResolver, HostFilesystemAuthority,
     InMemorySourceResolver, MECH_TOOL_SUBJECT, MechRuntime, ResolvedSource, RuntimeBuilder,
@@ -113,11 +113,11 @@ fn runtime(repl: &MechRepl) -> &MechRuntime {
 
 fn assert_f64(value: RuntimeValueSnapshot, expected: f64, label: &str) {
     match value.into_value() {
-        Value::F64(value) => {
+        LegacyValue::F64(value) => {
             assert_eq!(*value.borrow(), expected, "{label}");
         }
-        Value::MutableReference(value) => match &*value.borrow() {
-            Value::F64(value) => {
+        LegacyValue::MutableReference(value) => match &*value.borrow() {
+            LegacyValue::F64(value) => {
                 assert_eq!(*value.borrow(), expected, "{label}");
             }
             other => {

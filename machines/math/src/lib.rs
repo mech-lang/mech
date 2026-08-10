@@ -165,37 +165,37 @@ macro_rules! impl_urnop_match_arms2 {
         $(
           $(
             #[cfg(feature = $value_string)]
-            (Value::$lhs_type(arg)) => Ok(Box::new([<$lib $lhs_type:camel S>]{arg: arg.clone(), out: Ref::new($default) })),
+            (LegacyValue::$lhs_type(arg)) => Ok(Box::new([<$lib $lhs_type:camel S>]{arg: arg.clone(), out: Ref::new($default) })),
             #[cfg(all(feature = $value_string, feature = "matrix1"))]
-            (Value::$matrix_kind(Matrix::Matrix1(arg))) => Ok(Box::new([<$lib $lhs_type:camel M1>]{arg, out: Ref::new(Matrix1::from_element($default))})),
+            (LegacyValue::$matrix_kind(Matrix::Matrix1(arg))) => Ok(Box::new([<$lib $lhs_type:camel M1>]{arg, out: Ref::new(Matrix1::from_element($default))})),
             #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (Value::$matrix_kind(Matrix::Matrix2(arg))) => Ok(Box::new([<$lib $lhs_type:camel M2>]{arg, out: Ref::new(Matrix2::from_element($default))})),
+            (LegacyValue::$matrix_kind(Matrix::Matrix2(arg))) => Ok(Box::new([<$lib $lhs_type:camel M2>]{arg, out: Ref::new(Matrix2::from_element($default))})),
             #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (Value::$matrix_kind(Matrix::Matrix3(arg))) => Ok(Box::new([<$lib $lhs_type:camel M3>]{arg, out: Ref::new(Matrix3::from_element($default))})),
+            (LegacyValue::$matrix_kind(Matrix::Matrix3(arg))) => Ok(Box::new([<$lib $lhs_type:camel M3>]{arg, out: Ref::new(Matrix3::from_element($default))})),
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(arg))) => Ok(Box::new([<$lib $lhs_type:camel M4>]{arg, out: Ref::new(Matrix4::from_element($default))})),
+            (LegacyValue::$matrix_kind(Matrix::Matrix4(arg))) => Ok(Box::new([<$lib $lhs_type:camel M4>]{arg, out: Ref::new(Matrix4::from_element($default))})),
             #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(arg))) => Ok(Box::new([<$lib $lhs_type:camel M2x3>]{arg, out: Ref::new(Matrix2x3::from_element($default))})),
+            (LegacyValue::$matrix_kind(Matrix::Matrix2x3(arg))) => Ok(Box::new([<$lib $lhs_type:camel M2x3>]{arg, out: Ref::new(Matrix2x3::from_element($default))})),
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(arg))) => Ok(Box::new([<$lib $lhs_type:camel M3x2>]{arg, out: Ref::new(Matrix3x2::from_element($default))})),
+            (LegacyValue::$matrix_kind(Matrix::Matrix3x2(arg))) => Ok(Box::new([<$lib $lhs_type:camel M3x2>]{arg, out: Ref::new(Matrix3x2::from_element($default))})),
             #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-            (Value::$matrix_kind(Matrix::RowVector2(arg))) => Ok(Box::new([<$lib $lhs_type:camel R2>]{arg: arg.clone(), out: Ref::new(RowVector2::from_element($default)) })),
+            (LegacyValue::$matrix_kind(Matrix::RowVector2(arg))) => Ok(Box::new([<$lib $lhs_type:camel R2>]{arg: arg.clone(), out: Ref::new(RowVector2::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-            (Value::$matrix_kind(Matrix::RowVector3(arg))) => Ok(Box::new([<$lib $lhs_type:camel R3>]{arg: arg.clone(), out: Ref::new(RowVector3::from_element($default)) })),
+            (LegacyValue::$matrix_kind(Matrix::RowVector3(arg))) => Ok(Box::new([<$lib $lhs_type:camel R3>]{arg: arg.clone(), out: Ref::new(RowVector3::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-            (Value::$matrix_kind(Matrix::RowVector4(arg))) => Ok(Box::new([<$lib $lhs_type:camel R4>]{arg: arg.clone(), out: Ref::new(RowVector4::from_element($default)) })),
+            (LegacyValue::$matrix_kind(Matrix::RowVector4(arg))) => Ok(Box::new([<$lib $lhs_type:camel R4>]{arg: arg.clone(), out: Ref::new(RowVector4::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-            (Value::$matrix_kind(Matrix::RowDVector(arg))) => Ok(Box::new([<$lib $lhs_type:camel RD>]{arg: arg.clone(), out: Ref::new(RowDVector::from_element(arg.borrow().len(),$default))})),
+            (LegacyValue::$matrix_kind(Matrix::RowDVector(arg))) => Ok(Box::new([<$lib $lhs_type:camel RD>]{arg: arg.clone(), out: Ref::new(RowDVector::from_element(arg.borrow().len(),$default))})),
             #[cfg(all(feature = $value_string, feature = "vector2"))]
-            (Value::$matrix_kind(Matrix::Vector2(arg))) => Ok(Box::new([<$lib $lhs_type:camel V2>]{arg: arg.clone(), out: Ref::new(Vector2::from_element($default)) })),
+            (LegacyValue::$matrix_kind(Matrix::Vector2(arg))) => Ok(Box::new([<$lib $lhs_type:camel V2>]{arg: arg.clone(), out: Ref::new(Vector2::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "vector3"))]
-            (Value::$matrix_kind(Matrix::Vector3(arg))) => Ok(Box::new([<$lib $lhs_type:camel V3>]{arg: arg.clone(), out: Ref::new(Vector3::from_element($default)) })),
+            (LegacyValue::$matrix_kind(Matrix::Vector3(arg))) => Ok(Box::new([<$lib $lhs_type:camel V3>]{arg: arg.clone(), out: Ref::new(Vector3::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "vector4"))]
-            (Value::$matrix_kind(Matrix::Vector4(arg))) => Ok(Box::new([<$lib $lhs_type:camel V4>]{arg: arg.clone(), out: Ref::new(Vector4::from_element($default)) })),
+            (LegacyValue::$matrix_kind(Matrix::Vector4(arg))) => Ok(Box::new([<$lib $lhs_type:camel V4>]{arg: arg.clone(), out: Ref::new(Vector4::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "vectord"))]
-            (Value::$matrix_kind(Matrix::DVector(arg))) => Ok(Box::new([<$lib $lhs_type:camel VD>]{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().len(),$default))})),
+            (LegacyValue::$matrix_kind(Matrix::DVector(arg))) => Ok(Box::new([<$lib $lhs_type:camel VD>]{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().len(),$default))})),
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::$matrix_kind(Matrix::DMatrix(arg))) => {
+            (LegacyValue::$matrix_kind(Matrix::DMatrix(arg))) => {
               let (rows,cols) = {arg.borrow().shape()};
               Ok(Box::new([<$lib $lhs_type:camel MD>]{arg, out: Ref::new(DMatrix::from_element(rows,cols,$default))}))},
           )+

@@ -3,32 +3,32 @@ use mech_core::*;
 
 #[derive(Debug)]
 pub struct StrictEqValue {
-    pub lhs: Value,
-    pub rhs: Value,
+    pub lhs: LegacyValue,
+    pub rhs: LegacyValue,
     pub out: Ref<bool>,
 }
 
 impl MechFunctionImpl for StrictEqValue {
     fn solve_result(&self) -> MResult<()> {
         let lhs = match &self.lhs {
-            Value::MutableReference(v) => v.borrow().clone(),
+            LegacyValue::MutableReference(v) => v.borrow().clone(),
             v => v.clone(),
         };
         let rhs = match &self.rhs {
-            Value::MutableReference(v) => v.borrow().clone(),
+            LegacyValue::MutableReference(v) => v.borrow().clone(),
             v => v.clone(),
         };
         *self.out.borrow_mut() = lhs == rhs;
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -72,7 +72,7 @@ impl MechFunctionCompiler for StrictEqValue {
 }
 
 #[cfg(feature = "source")]
-fn impl_seq_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_seq_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     Ok(Box::new(StrictEqValue {
         lhs: lhs_value,
         rhs: rhs_value,

@@ -1,4 +1,4 @@
-use mech_core::{ExecutionHostFunctionRequest, InitialSolvePolicy, Ref, Value};
+use mech_core::{ExecutionHostFunctionRequest, InitialSolvePolicy, LegacyValue, Ref};
 use mech_engine::{ExternalHostCallFunction, MechProgram, MechProgramConfig};
 
 #[cfg(feature = "compiler")]
@@ -19,7 +19,7 @@ use std::sync::{
 fn external_host_function_output_round_trips_through_program_checkpoint() {
     let mut program = MechProgram::new(MechProgramConfig::default());
     let plan = program.interpreter().plan();
-    let value = Ref::new(Value::Empty);
+    let value = Ref::new(LegacyValue::Empty);
     let value_address = value.addr();
     plan.add_function(Box::new(ExternalHostCallFunction {
         request: ExecutionHostFunctionRequest {
@@ -30,13 +30,13 @@ fn external_host_function_output_round_trips_through_program_checkpoint() {
         initial_solve_policy: InitialSolvePolicy::Solve,
     }));
     let checkpoint = program.checkpoint().unwrap();
-    let replacement = Ref::new(Value::Index(Ref::new(99)));
-    *value.borrow_mut() = Value::MutableReference(replacement);
+    let replacement = Ref::new(LegacyValue::Index(Ref::new(99)));
+    *value.borrow_mut() = LegacyValue::MutableReference(replacement);
 
     program.restore(checkpoint).unwrap();
 
     assert_eq!(value.addr(), value_address);
-    assert_eq!(*value.borrow(), Value::Empty);
+    assert_eq!(*value.borrow(), LegacyValue::Empty);
     assert!(program.checkpoint().is_ok());
 }
 
@@ -52,11 +52,11 @@ fn source_host_function_compiles_and_reconstructed_bytecode_invokes_once() {
             "test/bytecode-host",
             move |_context: &RuntimeCallContext, _arguments: &[RuntimeValueSnapshot]| {
                 plan_count.fetch_add(1, Ordering::SeqCst);
-                RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(1.0)))
+                RuntimeValueSnapshot::try_capture(&LegacyValue::F64(Ref::new(1.0)))
             },
             move |_context: &RuntimeCallContext, _arguments: Vec<RuntimeValueSnapshot>| {
                 invocation_count.fetch_add(1, Ordering::SeqCst);
-                RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(2.0)))
+                RuntimeValueSnapshot::try_capture(&LegacyValue::F64(Ref::new(2.0)))
             },
         ))
         .unwrap()
@@ -74,7 +74,7 @@ fn source_host_function_compiles_and_reconstructed_bytecode_invokes_once() {
             .program
             .root_symbol_value("bytecode-host-result")
             .unwrap(),
-        Value::F64(Ref::new(2.0)),
+        LegacyValue::F64(Ref::new(2.0)),
     );
 
     let bytecode = runtime.compile_program_bytecode().unwrap();
@@ -90,7 +90,7 @@ fn source_host_function_compiles_and_reconstructed_bytecode_invokes_once() {
     let output = runtime
         .install_bytecode_with_context(&mut context, &bytecode)
         .unwrap();
-    assert_eq!(output.to_value(), Value::F64(Ref::new(2.0)));
+    assert_eq!(output.to_value(), LegacyValue::F64(Ref::new(2.0)));
     assert_eq!(plans.load(Ordering::SeqCst), 1);
     assert_eq!(invocations.load(Ordering::SeqCst), 2);
 }
@@ -104,11 +104,11 @@ fn one_shot_bytecode_host_call_uses_runtime_services() {
         .host_function(PlannedPureHostFunction::new(
             "test/one-shot-host",
             |_context: &RuntimeCallContext, _arguments: &[RuntimeValueSnapshot]| {
-                RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(1.0)))
+                RuntimeValueSnapshot::try_capture(&LegacyValue::F64(Ref::new(1.0)))
             },
             move |_context: &RuntimeCallContext, _arguments: Vec<RuntimeValueSnapshot>| {
                 invocation_count.fetch_add(1, Ordering::SeqCst);
-                RuntimeValueSnapshot::try_capture(&Value::F64(Ref::new(2.0)))
+                RuntimeValueSnapshot::try_capture(&LegacyValue::F64(Ref::new(2.0)))
             },
         ))
         .unwrap()
@@ -125,6 +125,6 @@ fn one_shot_bytecode_host_call_uses_runtime_services() {
         .evaluate_bytecode_once_with_context(&mut context, &bytecode)
         .unwrap();
 
-    assert_eq!(output.to_value(), Value::F64(Ref::new(2.0)));
+    assert_eq!(output.to_value(), LegacyValue::F64(Ref::new(2.0)));
     assert_eq!(invocations.load(Ordering::SeqCst), 2);
 }

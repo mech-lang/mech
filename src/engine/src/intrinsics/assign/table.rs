@@ -15,7 +15,7 @@ macro_rules! impl_col_set_fxn {
     #[derive(Debug)]
     struct $fxn_name {
       source: Ref<$vector_size_in<$out_type>>,
-      sink: Ref<$vector_size_out<Value>>,
+      sink: Ref<$vector_size_out<LegacyValue>>,
     }
     impl MechFunctionImpl for $fxn_name {
       fn solve_result(&self) -> MResult<()> {
@@ -24,17 +24,17 @@ macro_rules! impl_col_set_fxn {
         unsafe {
           for i in 0..(*source_ptr).len() {
             paste! {
-              (&mut (*sink_ptr))[i] = Value::[<$out_type:camel>](Ref::new((*source_ptr).index(i).clone()));
+              (&mut (*sink_ptr))[i] = LegacyValue::[<$out_type:camel>](Ref::new((*source_ptr).index(i).clone()));
             }
           }
         }
       ;
           Ok(())
       }
-      fn out(&self) -> Value { Value::MatrixValue(Matrix::$vector_size_out(self.sink.clone())) }
+      fn out(&self) -> LegacyValue { LegacyValue::MatrixValue(Matrix::$vector_size_out(self.sink.clone())) }
       fn to_string(&self) -> String { format!("{:#?}", self) }
 
-      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
       }
     }
@@ -42,11 +42,11 @@ macro_rules! impl_col_set_fxn {
     impl MechFunctionCompiler for $fxn_name
     where
       $vector_size_in<$out_type>: CompileConst + ConstElem + AsValueKind,
-      $vector_size_out<Value>: CompileConst + ConstElem + AsValueKind,
+      $vector_size_out<LegacyValue>: CompileConst + ConstElem + AsValueKind,
       $out_type: CompileConst + ConstElem + AsValueKind,
     {
       fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("{}<{},{}>", stringify!($fxn_name), $vector_size_in::<$out_type>::as_value_kind(), $vector_size_out::<Value>::as_value_kind());
+        let name = format!("{}<{},{}>", stringify!($fxn_name), $vector_size_in::<$out_type>::as_value_kind(), $vector_size_out::<LegacyValue>::as_value_kind());
         compile_unop!(name, self.sink, self.source, ctx );
       }
     }
@@ -115,28 +115,28 @@ macro_rules! impl_set_column_match_arms {
   ($arg:expr, $($lhs_type:ident, $type_ident:ident, $type_feature:literal);+ $(;)?) => {
     paste::paste! {
       match $arg {
-        (Value::Table(tbl), source, Value::Id(k)) => {
+        (LegacyValue::Table(tbl), source, LegacyValue::Id(k)) => {
           let tbl_brrw = tbl.borrow();
           match (tbl_brrw.get(&k), tbl_brrw.rows(), source) {
             $(
               #[cfg(all(feature = $type_feature, feature = "matrix1"))]
-              (Some((ValueKind::$lhs_type, Matrix::Matrix1(sink))), 1, Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) =>Ok(Box::new([<TableSetCol $lhs_type M1>]{ source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type, Matrix::Matrix1(sink))), 1, LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix1(source))) =>Ok(Box::new([<TableSetCol $lhs_type M1>]{ source: source.clone(), sink: sink.clone() })),
               #[cfg(all(feature = $type_feature, feature = "vector2"))]
-              (Some((ValueKind::$lhs_type, Matrix::Vector2(sink))), 2, Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) =>Ok(Box::new([<TableSetCol $lhs_type V2>]{ source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type, Matrix::Vector2(sink))), 2, LegacyValue::[<Matrix $lhs_type>](Matrix::Vector2(source))) =>Ok(Box::new([<TableSetCol $lhs_type V2>]{ source: source.clone(), sink: sink.clone() })),
               #[cfg(all(feature = $type_feature, feature = "vector3"))]
-              (Some((ValueKind::$lhs_type, Matrix::Vector3(sink))), 3, Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) =>Ok(Box::new([<TableSetCol $lhs_type V3>]{ source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type, Matrix::Vector3(sink))), 3, LegacyValue::[<Matrix $lhs_type>](Matrix::Vector3(source))) =>Ok(Box::new([<TableSetCol $lhs_type V3>]{ source: source.clone(), sink: sink.clone() })),
               #[cfg(all(feature = $type_feature, feature = "vector4"))]
-              (Some((ValueKind::$lhs_type, Matrix::Vector4(sink))), 4, Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) =>Ok(Box::new([<TableSetCol $lhs_type V4>]{ source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type, Matrix::Vector4(sink))), 4, LegacyValue::[<Matrix $lhs_type>](Matrix::Vector4(source))) =>Ok(Box::new([<TableSetCol $lhs_type V4>]{ source: source.clone(), sink: sink.clone() })),
               #[cfg(all(feature = $type_feature, feature = "vectord"))]
-              (Some((ValueKind::$lhs_type, Matrix::DVector(sink))), n, Value::[<Matrix $lhs_type>](Matrix::DVector(source))) =>Ok(Box::new([<TableSetCol $lhs_type VD>]{ source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type, Matrix::DVector(sink))), n, LegacyValue::[<Matrix $lhs_type>](Matrix::DVector(source))) =>Ok(Box::new([<TableSetCol $lhs_type VD>]{ source: source.clone(), sink: sink.clone() })),
               #[cfg(all(feature = $type_feature, feature = "vectord", feature = "vector4"))]
-              (Some((ValueKind::$lhs_type, Matrix::DVector(sink))), n, Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) =>Ok(Box::new([<TableSetCol $lhs_type VDV4>]{ source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type, Matrix::DVector(sink))), n, LegacyValue::[<Matrix $lhs_type>](Matrix::Vector4(source))) =>Ok(Box::new([<TableSetCol $lhs_type VDV4>]{ source: source.clone(), sink: sink.clone() })),
               #[cfg(all(feature = $type_feature, feature = "vectord", feature = "vector3"))]
-              (Some((ValueKind::$lhs_type, Matrix::DVector(sink))), n, Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) =>Ok(Box::new([<TableSetCol $lhs_type VDV3>]{ source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type, Matrix::DVector(sink))), n, LegacyValue::[<Matrix $lhs_type>](Matrix::Vector3(source))) =>Ok(Box::new([<TableSetCol $lhs_type VDV3>]{ source: source.clone(), sink: sink.clone() })),
               #[cfg(all(feature = $type_feature, feature = "vectord", feature = "vector2"))]
-              (Some((ValueKind::$lhs_type, Matrix::DVector(sink))), n, Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) =>Ok(Box::new([<TableSetCol $lhs_type VDV2>]{ source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type, Matrix::DVector(sink))), n, LegacyValue::[<Matrix $lhs_type>](Matrix::Vector2(source))) =>Ok(Box::new([<TableSetCol $lhs_type VDV2>]{ source: source.clone(), sink: sink.clone() })),
               #[cfg(all(feature = $type_feature, feature = "vectord", feature = "matrix1"))]
-              (Some((ValueKind::$lhs_type, Matrix::DVector(sink))), n, Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) =>Ok(Box::new([<TableSetCol $lhs_type VDM1>]{ source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type, Matrix::DVector(sink))), n, LegacyValue::[<Matrix $lhs_type>](Matrix::Matrix1(source))) =>Ok(Box::new([<TableSetCol $lhs_type VDM1>]{ source: source.clone(), sink: sink.clone() })),
             )+
             x => return Err(MechError::new(
               UndefinedTableColumnError { id: k.clone() }, None).with_compiler_loc()
@@ -153,7 +153,11 @@ macro_rules! impl_set_column_match_arms {
   }
 }
 
-fn impl_set_column_fxn(sink: Value, source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_set_column_fxn(
+    sink: LegacyValue,
+    source: LegacyValue,
+    key: LegacyValue,
+) -> MResult<Box<dyn MechFunction>> {
     impl_set_column_match_arms!(
       (sink,source,key),
       Bool, bool, "bool";
@@ -177,7 +181,7 @@ fn impl_set_column_fxn(sink: Value, source: Value, key: Value) -> MResult<Box<dy
 
 pub struct AssignTableColumn {}
 impl FunctionSpecializer for AssignTableColumn {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() < 3 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -194,7 +198,7 @@ impl FunctionSpecializer for AssignTableColumn {
         match impl_set_column_fxn(sink.clone(), source.clone(), key.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (&sink, &source, &key) {
-                (Value::MutableReference(sink), _, _) => {
+                (LegacyValue::MutableReference(sink), _, _) => {
                     impl_set_column_fxn(sink.borrow().clone(), source.clone(), key.clone())
                 }
                 (sink, source, key) => Err(MechError::new(
@@ -226,14 +230,14 @@ impl MechFunctionImpl for TableAppendRecord {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Table(self.sink.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Table(self.sink.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -259,14 +263,14 @@ impl MechFunctionImpl for TableAppendTable {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Table(self.sink.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Table(self.sink.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -278,16 +282,19 @@ impl MechFunctionCompiler for TableAppendTable {
     }
 }
 
-pub fn add_assign_table_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
+pub fn add_assign_table_fxn(
+    sink: LegacyValue,
+    source: LegacyValue,
+) -> MResult<Box<dyn MechFunction>> {
     match (sink.clone(), source.clone()) {
-        (Value::Table(tbl), Value::Record(rcrd)) => {
+        (LegacyValue::Table(tbl), LegacyValue::Record(rcrd)) => {
             tbl.borrow().check_record_schema(&rcrd.borrow())?;
             return Ok(Box::new(TableAppendRecord {
                 sink: tbl,
                 source: rcrd,
             }));
         }
-        (Value::Table(tbl_sink), Value::Table(tbl_src)) => {
+        (LegacyValue::Table(tbl_sink), LegacyValue::Table(tbl_src)) => {
             tbl_sink.borrow().check_table_schema(&tbl_src.borrow())?;
             return Ok(Box::new(TableAppendTable {
                 sink: tbl_sink,
@@ -309,7 +316,7 @@ pub fn add_assign_table_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechF
 
 pub struct AddAssignTable {}
 impl FunctionSpecializer for AddAssignTable {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() <= 1 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -325,13 +332,13 @@ impl FunctionSpecializer for AddAssignTable {
         match add_assign_table_fxn(sink.clone(), source.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(x) => match (sink, source) {
-                (Value::MutableReference(sink), Value::MutableReference(source)) => {
+                (LegacyValue::MutableReference(sink), LegacyValue::MutableReference(source)) => {
                     add_assign_table_fxn(sink.borrow().clone(), source.borrow().clone())
                 }
-                (sink, Value::MutableReference(source)) => {
+                (sink, LegacyValue::MutableReference(source)) => {
                     add_assign_table_fxn(sink.clone(), source.borrow().clone())
                 }
-                (Value::MutableReference(sink), source) => {
+                (LegacyValue::MutableReference(sink), source) => {
                     add_assign_table_fxn(sink.borrow().clone(), source.clone())
                 }
                 (sink, source) => Err(MechError::new(

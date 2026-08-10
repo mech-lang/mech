@@ -7,16 +7,16 @@ use super::string::{
 use super::{
     Environment, catalog_access_function, subscript_formula, subscript_formula_ix, subscript_range,
 };
-use crate::{InterpreterExecution, MResult, Subscript, Value, ValueKind};
+use crate::{InterpreterExecution, LegacyValue, MResult, Subscript, ValueKind};
 #[cfg(feature = "subscript_formula")]
 use crate::{StringAccessCompileMode, set_next_string_access_compile_mode};
 
 pub(super) fn access(
     sbscrpt: &Subscript,
-    val: &Value,
+    val: &LegacyValue,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let plan = p.plan();
     match sbscrpt {
         #[cfg(feature = "subscript_slice")]
@@ -38,8 +38,8 @@ pub(super) fn access(
                         raw_index.as_index()?
                     };
                     if matches!(val.deref_kind(), ValueKind::String)
-                        && matches!(fxn_input.first(), Some(Value::String(_)))
-                        && matches!(&index_arg, Value::Index(_))
+                        && matches!(fxn_input.first(), Some(LegacyValue::String(_)))
+                        && matches!(&index_arg, LegacyValue::Index(_))
                     {
                         let mode = if current_string_access_expression_live(p)
                             || string_source_is_live
@@ -88,7 +88,7 @@ pub(super) fn access(
                         .push(catalog_access_function(p, "access/range", &fxn_input)?);
                 }
                 [Subscript::All] => {
-                    fxn_input.push(Value::IndexAll);
+                    fxn_input.push(LegacyValue::IndexAll);
                     #[cfg(feature = "matrix")]
                     plan.borrow_mut().push(catalog_access_function(
                         p,
@@ -153,7 +153,7 @@ pub(super) fn access(
                 }
                 #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
                 [Subscript::All, Subscript::Formula(ix2)] => {
-                    fxn_input.push(Value::IndexAll);
+                    fxn_input.push(LegacyValue::IndexAll);
                     let result = subscript_formula_ix(&subs[1], env, p)?;
                     let shape = result.shape();
                     fxn_input.push(result);
@@ -190,7 +190,7 @@ pub(super) fn access(
                     let result = subscript_formula_ix(&subs[0], env, p)?;
                     let shape = result.shape();
                     fxn_input.push(result);
-                    fxn_input.push(Value::IndexAll);
+                    fxn_input.push(LegacyValue::IndexAll);
                     match &shape[..] {
                         #[cfg(feature = "matrix")]
                         [1, 1] => {
@@ -291,7 +291,7 @@ pub(super) fn access(
                 }
                 #[cfg(feature = "subscript_range")]
                 [Subscript::All, Subscript::Range(ix2)] => {
-                    fxn_input.push(Value::IndexAll);
+                    fxn_input.push(LegacyValue::IndexAll);
                     let result = subscript_range(&subs[1], env, p)?;
                     fxn_input.push(result);
                     #[cfg(feature = "matrix")]
@@ -302,7 +302,7 @@ pub(super) fn access(
                 [Subscript::Range(ix1), Subscript::All] => {
                     let result = subscript_range(&subs[0], env, p)?;
                     fxn_input.push(result);
-                    fxn_input.push(Value::IndexAll);
+                    fxn_input.push(LegacyValue::IndexAll);
                     #[cfg(feature = "matrix")]
                     plan.borrow_mut()
                         .push(catalog_access_function(p, "access/range", &fxn_input)?);

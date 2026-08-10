@@ -28,9 +28,9 @@ pub enum Kind {
 
 impl Kind {
     #[cfg(feature = "kind_annotation")]
-    pub fn to_value(&self, kinds: &KindTable) -> MResult<Value> {
+    pub fn to_value(&self, kinds: &KindTable) -> MResult<LegacyValue> {
         let value_kind = self.to_value_kind(kinds)?;
-        Ok(Value::Kind(value_kind))
+        Ok(LegacyValue::Kind(value_kind))
     }
 
     #[cfg(feature = "kind_annotation")]

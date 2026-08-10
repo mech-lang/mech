@@ -125,90 +125,90 @@ impl ValueStateHashedCycleDetector {
             .map_err(|_| self.borrow_conflict::<T>())
     }
 
-    fn validate_value(&mut self, value: &Value) -> MResult<()> {
+    fn validate_value(&mut self, value: &LegacyValue) -> MResult<()> {
         match value {
             #[cfg(feature = "u8")]
-            Value::U8(value) => self.visit_leaf(value),
+            LegacyValue::U8(value) => self.visit_leaf(value),
             #[cfg(feature = "u16")]
-            Value::U16(value) => self.visit_leaf(value),
+            LegacyValue::U16(value) => self.visit_leaf(value),
             #[cfg(feature = "u32")]
-            Value::U32(value) => self.visit_leaf(value),
+            LegacyValue::U32(value) => self.visit_leaf(value),
             #[cfg(feature = "u64")]
-            Value::U64(value) => self.visit_leaf(value),
+            LegacyValue::U64(value) => self.visit_leaf(value),
             #[cfg(feature = "u128")]
-            Value::U128(value) => self.visit_leaf(value),
+            LegacyValue::U128(value) => self.visit_leaf(value),
             #[cfg(feature = "i8")]
-            Value::I8(value) => self.visit_leaf(value),
+            LegacyValue::I8(value) => self.visit_leaf(value),
             #[cfg(feature = "i16")]
-            Value::I16(value) => self.visit_leaf(value),
+            LegacyValue::I16(value) => self.visit_leaf(value),
             #[cfg(feature = "i32")]
-            Value::I32(value) => self.visit_leaf(value),
+            LegacyValue::I32(value) => self.visit_leaf(value),
             #[cfg(feature = "i64")]
-            Value::I64(value) => self.visit_leaf(value),
+            LegacyValue::I64(value) => self.visit_leaf(value),
             #[cfg(feature = "i128")]
-            Value::I128(value) => self.visit_leaf(value),
+            LegacyValue::I128(value) => self.visit_leaf(value),
             #[cfg(feature = "f32")]
-            Value::F32(value) => self.visit_leaf(value),
+            LegacyValue::F32(value) => self.visit_leaf(value),
             #[cfg(feature = "f64")]
-            Value::F64(value) => self.visit_leaf(value),
+            LegacyValue::F64(value) => self.visit_leaf(value),
             #[cfg(feature = "complex")]
-            Value::C64(value) => self.visit_leaf(value),
+            LegacyValue::C64(value) => self.visit_leaf(value),
             #[cfg(feature = "rational")]
-            Value::R64(value) => self.visit_leaf(value),
+            LegacyValue::R64(value) => self.visit_leaf(value),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(value) => self.visit_leaf(value),
+            LegacyValue::String(value) => self.visit_leaf(value),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(value) => self.visit_leaf(value),
+            LegacyValue::Bool(value) => self.visit_leaf(value),
             #[cfg(feature = "atom")]
-            Value::Atom(value) => {
+            LegacyValue::Atom(value) => {
                 self.visit_ref(value, |detector, atom| detector.visit_leaf(&atom.0.1))
             }
-            Value::Index(value) => self.visit_leaf(value),
+            LegacyValue::Index(value) => self.visit_leaf(value),
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixIndex(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixBool(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixU8(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixU16(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixU32(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixU64(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixU128(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixI8(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixI16(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixI32(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixI64(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixI128(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixF32(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixF64(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixString(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixR64(matrix) => self.validate_matrix(matrix),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(matrix) => self.validate_matrix(matrix),
+            LegacyValue::MatrixC64(matrix) => self.validate_matrix(matrix),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(matrix) => self.validate_value_matrix(matrix),
+            LegacyValue::MatrixValue(matrix) => self.validate_value_matrix(matrix),
             #[cfg(feature = "set")]
-            Value::Set(value) => self.visit_ref(value, |detector, set| {
+            LegacyValue::Set(value) => self.visit_ref(value, |detector, set| {
                 for value in &set.set {
                     detector.validate_value(value)?;
                 }
                 Ok(())
             }),
             #[cfg(feature = "map")]
-            Value::Map(value) => self.visit_ref(value, |detector, map| {
+            LegacyValue::Map(value) => self.visit_ref(value, |detector, map| {
                 for (key, value) in &map.map {
                     detector.validate_value(key)?;
                     detector.validate_value(value)?;
@@ -216,28 +216,28 @@ impl ValueStateHashedCycleDetector {
                 Ok(())
             }),
             #[cfg(feature = "record")]
-            Value::Record(value) => self.visit_ref(value, |detector, record| {
+            LegacyValue::Record(value) => self.visit_ref(value, |detector, record| {
                 for value in record.data.values() {
                     detector.validate_value(value)?;
                 }
                 Ok(())
             }),
             #[cfg(feature = "table")]
-            Value::Table(value) => self.visit_ref(value, |detector, table| {
+            LegacyValue::Table(value) => self.visit_ref(value, |detector, table| {
                 for (_, matrix) in table.data.values() {
                     detector.validate_value_matrix(matrix)?;
                 }
                 Ok(())
             }),
             #[cfg(feature = "tuple")]
-            Value::Tuple(value) => self.visit_ref(value, |detector, tuple| {
+            LegacyValue::Tuple(value) => self.visit_ref(value, |detector, tuple| {
                 for value in &tuple.elements {
                     detector.validate_value(value)?;
                 }
                 Ok(())
             }),
             #[cfg(feature = "enum")]
-            Value::Enum(value) => self.visit_ref(value, |detector, enum_value| {
+            LegacyValue::Enum(value) => self.visit_ref(value, |detector, enum_value| {
                 detector.visit_leaf(&enum_value.names)?;
                 for (_, payload) in &enum_value.variants {
                     if let Some(payload) = payload {
@@ -246,15 +246,15 @@ impl ValueStateHashedCycleDetector {
                 }
                 Ok(())
             }),
-            Value::MutableReference(value) => {
+            LegacyValue::MutableReference(value) => {
                 self.visit_ref(value, |detector, value| detector.validate_value(value))
             }
-            Value::Typed(value, _) => self.validate_value(value),
-            Value::Id(_)
-            | Value::Kind(_)
-            | Value::IndexAll
-            | Value::EmptyKind(_)
-            | Value::Empty => Ok(()),
+            LegacyValue::Typed(value, _) => self.validate_value(value),
+            LegacyValue::Id(_)
+            | LegacyValue::Kind(_)
+            | LegacyValue::IndexAll
+            | LegacyValue::EmptyKind(_)
+            | LegacyValue::Empty => Ok(()),
         }
     }
 
@@ -300,7 +300,7 @@ impl ValueStateHashedCycleDetector {
     }
 
     #[cfg(feature = "matrix")]
-    fn validate_value_matrix(&mut self, matrix: &Matrix<Value>) -> MResult<()> {
+    fn validate_value_matrix(&mut self, matrix: &Matrix<LegacyValue>) -> MResult<()> {
         macro_rules! validate_backing {
             ($value:expr) => {
                 self.visit_ref($value, |detector, values| {
@@ -441,7 +441,7 @@ impl CaptureSide {
 
 #[derive(Clone)]
 enum ValueStateRoot {
-    Value(Value),
+    Value(LegacyValue),
     ValRef(ValRef),
 }
 
@@ -565,7 +565,7 @@ impl ValueStateJournal {
     }
 
     /// Adds a root [`Value`] and captures every currently reachable live cell.
-    pub fn capture_value(&mut self, value: &Value) -> MResult<()> {
+    pub fn capture_value(&mut self, value: &LegacyValue) -> MResult<()> {
         self.ensure_open()?;
 
         let mut preflight_seen = HashSet::default();
@@ -869,86 +869,88 @@ impl ValueStateJournal {
 
     fn preflight_value(
         &self,
-        value: &Value,
+        value: &LegacyValue,
         side: CaptureSide,
         seen: &mut HashSet<ValueStateKey>,
     ) -> MResult<()> {
         match value {
             #[cfg(feature = "u8")]
-            Value::U8(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::U8(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "u16")]
-            Value::U16(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::U16(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "u32")]
-            Value::U32(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::U32(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "u64")]
-            Value::U64(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::U64(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "u128")]
-            Value::U128(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::U128(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "i8")]
-            Value::I8(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::I8(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "i16")]
-            Value::I16(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::I16(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "i32")]
-            Value::I32(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::I32(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "i64")]
-            Value::I64(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::I64(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "i128")]
-            Value::I128(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::I128(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "f32")]
-            Value::F32(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::F32(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "f64")]
-            Value::F64(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::F64(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "complex")]
-            Value::C64(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::C64(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "rational")]
-            Value::R64(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::R64(value) => self.preflight_leaf(value, side, seen),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::String(value) => self.preflight_leaf(value, side, seen),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::Bool(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "atom")]
-            Value::Atom(value) => self.preflight_ref(value, side, seen, |journal, atom, seen| {
-                journal.preflight_leaf(&atom.0.1, side, seen)
-            }),
-            Value::Index(value) => self.preflight_leaf(value, side, seen),
+            LegacyValue::Atom(value) => {
+                self.preflight_ref(value, side, seen, |journal, atom, seen| {
+                    journal.preflight_leaf(&atom.0.1, side, seen)
+                })
+            }
+            LegacyValue::Index(value) => self.preflight_leaf(value, side, seen),
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixIndex(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixBool(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixU8(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixU16(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixU32(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixU64(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixU128(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixI8(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixI16(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixI32(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixI64(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixI128(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixF32(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixF64(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixString(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixR64(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(matrix) => self.preflight_matrix(matrix, side, seen),
+            LegacyValue::MatrixC64(matrix) => self.preflight_matrix(matrix, side, seen),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(matrix) => self.preflight_value_matrix(matrix, side, seen),
+            LegacyValue::MatrixValue(matrix) => self.preflight_value_matrix(matrix, side, seen),
             #[cfg(feature = "set")]
-            Value::Set(value) => self.preflight_ref_with_snapshot(
+            LegacyValue::Set(value) => self.preflight_ref_with_snapshot(
                 value,
                 side,
                 seen,
@@ -961,7 +963,7 @@ impl ValueStateJournal {
                 },
             ),
             #[cfg(feature = "map")]
-            Value::Map(value) => self.preflight_ref_with_snapshot(
+            LegacyValue::Map(value) => self.preflight_ref_with_snapshot(
                 value,
                 side,
                 seen,
@@ -975,7 +977,7 @@ impl ValueStateJournal {
                 },
             ),
             #[cfg(feature = "record")]
-            Value::Record(value) => {
+            LegacyValue::Record(value) => {
                 self.preflight_ref(value, side, seen, |journal, record, seen| {
                     for value in record.data.values() {
                         journal.preflight_value(value, side, seen)?;
@@ -984,21 +986,25 @@ impl ValueStateJournal {
                 })
             }
             #[cfg(feature = "table")]
-            Value::Table(value) => self.preflight_ref(value, side, seen, |journal, table, seen| {
-                for (_, matrix) in table.data.values() {
-                    journal.preflight_value_matrix(matrix, side, seen)?;
-                }
-                Ok(())
-            }),
+            LegacyValue::Table(value) => {
+                self.preflight_ref(value, side, seen, |journal, table, seen| {
+                    for (_, matrix) in table.data.values() {
+                        journal.preflight_value_matrix(matrix, side, seen)?;
+                    }
+                    Ok(())
+                })
+            }
             #[cfg(feature = "tuple")]
-            Value::Tuple(value) => self.preflight_ref(value, side, seen, |journal, tuple, seen| {
-                for value in &tuple.elements {
-                    journal.preflight_value(value, side, seen)?;
-                }
-                Ok(())
-            }),
+            LegacyValue::Tuple(value) => {
+                self.preflight_ref(value, side, seen, |journal, tuple, seen| {
+                    for value in &tuple.elements {
+                        journal.preflight_value(value, side, seen)?;
+                    }
+                    Ok(())
+                })
+            }
             #[cfg(feature = "enum")]
-            Value::Enum(value) => {
+            LegacyValue::Enum(value) => {
                 self.preflight_ref(value, side, seen, |journal, enum_value, seen| {
                     journal.preflight_leaf(&enum_value.names, side, seen)?;
                     for (_, payload) in &enum_value.variants {
@@ -1009,102 +1015,102 @@ impl ValueStateJournal {
                     Ok(())
                 })
             }
-            Value::MutableReference(value) => {
+            LegacyValue::MutableReference(value) => {
                 self.preflight_ref(value, side, seen, |journal, value, seen| {
                     journal.preflight_value(value, side, seen)
                 })
             }
-            Value::Typed(value, _) => self.preflight_value(value, side, seen),
-            Value::Id(_)
-            | Value::Kind(_)
-            | Value::IndexAll
-            | Value::EmptyKind(_)
-            | Value::Empty => Ok(()),
+            LegacyValue::Typed(value, _) => self.preflight_value(value, side, seen),
+            LegacyValue::Id(_)
+            | LegacyValue::Kind(_)
+            | LegacyValue::IndexAll
+            | LegacyValue::EmptyKind(_)
+            | LegacyValue::Empty => Ok(()),
         }
     }
 
     fn visit_value(
         &mut self,
-        value: &Value,
+        value: &LegacyValue,
         side: CaptureSide,
         seen: &mut HashSet<ValueStateKey>,
     ) -> MResult<()> {
         match value {
             #[cfg(feature = "u8")]
-            Value::U8(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::U8(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "u16")]
-            Value::U16(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::U16(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "u32")]
-            Value::U32(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::U32(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "u64")]
-            Value::U64(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::U64(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "u128")]
-            Value::U128(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::U128(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "i8")]
-            Value::I8(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::I8(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "i16")]
-            Value::I16(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::I16(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "i32")]
-            Value::I32(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::I32(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "i64")]
-            Value::I64(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::I64(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "i128")]
-            Value::I128(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::I128(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "f32")]
-            Value::F32(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::F32(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "f64")]
-            Value::F64(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::F64(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "complex")]
-            Value::C64(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::C64(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "rational")]
-            Value::R64(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::R64(value) => self.visit_leaf(value, side, seen),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            Value::String(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::String(value) => self.visit_leaf(value, side, seen),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            Value::Bool(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::Bool(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "atom")]
-            Value::Atom(value) => self.visit_ref(value, side, seen, |journal, atom, seen| {
+            LegacyValue::Atom(value) => self.visit_ref(value, side, seen, |journal, atom, seen| {
                 journal.visit_leaf(&atom.0.1, side, seen)
             }),
-            Value::Index(value) => self.visit_leaf(value, side, seen),
+            LegacyValue::Index(value) => self.visit_leaf(value, side, seen),
             #[cfg(feature = "matrix")]
-            Value::MatrixIndex(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixIndex(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            Value::MatrixBool(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixBool(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            Value::MatrixU8(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixU8(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            Value::MatrixU16(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixU16(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            Value::MatrixU32(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixU32(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            Value::MatrixU64(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixU64(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            Value::MatrixU128(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixU128(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            Value::MatrixI8(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixI8(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            Value::MatrixI16(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixI16(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            Value::MatrixI32(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixI32(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            Value::MatrixI64(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixI64(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            Value::MatrixI128(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixI128(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            Value::MatrixF32(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixF32(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            Value::MatrixF64(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixF64(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            Value::MatrixString(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixString(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            Value::MatrixR64(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixR64(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            Value::MatrixC64(matrix) => self.visit_matrix(matrix, side, seen),
+            LegacyValue::MatrixC64(matrix) => self.visit_matrix(matrix, side, seen),
             #[cfg(feature = "matrix")]
-            Value::MatrixValue(matrix) => self.visit_value_matrix(matrix, side, seen),
+            LegacyValue::MatrixValue(matrix) => self.visit_value_matrix(matrix, side, seen),
             #[cfg(feature = "set")]
-            Value::Set(value) => self.visit_ref_with_snapshot(
+            LegacyValue::Set(value) => self.visit_ref_with_snapshot(
                 value,
                 side,
                 seen,
@@ -1117,7 +1123,7 @@ impl ValueStateJournal {
                 },
             ),
             #[cfg(feature = "map")]
-            Value::Map(value) => self.visit_ref_with_snapshot(
+            LegacyValue::Map(value) => self.visit_ref_with_snapshot(
                 value,
                 side,
                 seen,
@@ -1131,47 +1137,55 @@ impl ValueStateJournal {
                 },
             ),
             #[cfg(feature = "record")]
-            Value::Record(value) => self.visit_ref(value, side, seen, |journal, record, seen| {
-                for value in record.data.values() {
-                    journal.visit_value(value, side, seen)?;
-                }
-                Ok(())
-            }),
-            #[cfg(feature = "table")]
-            Value::Table(value) => self.visit_ref(value, side, seen, |journal, table, seen| {
-                for (_, matrix) in table.data.values() {
-                    journal.visit_value_matrix(matrix, side, seen)?;
-                }
-                Ok(())
-            }),
-            #[cfg(feature = "tuple")]
-            Value::Tuple(value) => self.visit_ref(value, side, seen, |journal, tuple, seen| {
-                for value in &tuple.elements {
-                    journal.visit_value(value, side, seen)?;
-                }
-                Ok(())
-            }),
-            #[cfg(feature = "enum")]
-            Value::Enum(value) => self.visit_ref(value, side, seen, |journal, enum_value, seen| {
-                journal.visit_leaf(&enum_value.names, side, seen)?;
-                for (_, payload) in &enum_value.variants {
-                    if let Some(payload) = payload {
-                        journal.visit_value(payload, side, seen)?;
+            LegacyValue::Record(value) => {
+                self.visit_ref(value, side, seen, |journal, record, seen| {
+                    for value in record.data.values() {
+                        journal.visit_value(value, side, seen)?;
                     }
-                }
-                Ok(())
-            }),
-            Value::MutableReference(value) => {
+                    Ok(())
+                })
+            }
+            #[cfg(feature = "table")]
+            LegacyValue::Table(value) => {
+                self.visit_ref(value, side, seen, |journal, table, seen| {
+                    for (_, matrix) in table.data.values() {
+                        journal.visit_value_matrix(matrix, side, seen)?;
+                    }
+                    Ok(())
+                })
+            }
+            #[cfg(feature = "tuple")]
+            LegacyValue::Tuple(value) => {
+                self.visit_ref(value, side, seen, |journal, tuple, seen| {
+                    for value in &tuple.elements {
+                        journal.visit_value(value, side, seen)?;
+                    }
+                    Ok(())
+                })
+            }
+            #[cfg(feature = "enum")]
+            LegacyValue::Enum(value) => {
+                self.visit_ref(value, side, seen, |journal, enum_value, seen| {
+                    journal.visit_leaf(&enum_value.names, side, seen)?;
+                    for (_, payload) in &enum_value.variants {
+                        if let Some(payload) = payload {
+                            journal.visit_value(payload, side, seen)?;
+                        }
+                    }
+                    Ok(())
+                })
+            }
+            LegacyValue::MutableReference(value) => {
                 self.visit_ref(value, side, seen, |journal, value, seen| {
                     journal.visit_value(value, side, seen)
                 })
             }
-            Value::Typed(value, _) => self.visit_value(value, side, seen),
-            Value::Id(_)
-            | Value::Kind(_)
-            | Value::IndexAll
-            | Value::EmptyKind(_)
-            | Value::Empty => Ok(()),
+            LegacyValue::Typed(value, _) => self.visit_value(value, side, seen),
+            LegacyValue::Id(_)
+            | LegacyValue::Kind(_)
+            | LegacyValue::IndexAll
+            | LegacyValue::EmptyKind(_)
+            | LegacyValue::Empty => Ok(()),
         }
     }
 
@@ -1290,7 +1304,7 @@ impl ValueStateJournal {
     #[cfg(feature = "matrix")]
     fn preflight_value_matrix(
         &self,
-        matrix: &Matrix<Value>,
+        matrix: &Matrix<LegacyValue>,
         side: CaptureSide,
         seen: &mut HashSet<ValueStateKey>,
     ) -> MResult<()> {
@@ -1341,7 +1355,7 @@ impl ValueStateJournal {
     #[cfg(feature = "matrix")]
     fn visit_value_matrix(
         &mut self,
-        matrix: &Matrix<Value>,
+        matrix: &Matrix<LegacyValue>,
         side: CaptureSide,
         seen: &mut HashSet<ValueStateKey>,
     ) -> MResult<()> {

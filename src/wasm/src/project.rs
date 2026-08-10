@@ -1534,9 +1534,9 @@ mod tests {
 
     fn assert_f64(value: mech_runtime::RuntimeValueSnapshot, expected: f64) {
         match value.into_value() {
-            mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),
-            mech_core::Value::MutableReference(value) => match &*value.borrow() {
-                mech_core::Value::F64(value) => assert_eq!(*value.borrow(), expected),
+            mech_core::LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
+            mech_core::LegacyValue::MutableReference(value) => match &*value.borrow() {
+                mech_core::LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
                 other => panic!("expected f64 value, got {other:?}"),
             },
             other => panic!("expected f64 value, got {other:?}"),
@@ -2246,9 +2246,9 @@ mod browser_tests {
         fn read(
             &self,
             request: mech_runtime::RuntimeResourceReadRequest,
-        ) -> mech_core::MResult<mech_core::Value> {
+        ) -> mech_core::MResult<mech_core::LegacyValue> {
             if request.base_uri == DOCUMENT_TEST_INPUT_BASE_URI && request.path == "value" {
-                return Ok(mech_core::Value::F64(mech_core::Ref::new(0.0)));
+                return Ok(mech_core::LegacyValue::F64(mech_core::Ref::new(0.0)));
             }
             Err(MechError::new(
                 ProjectError {
@@ -2261,9 +2261,9 @@ mod browser_tests {
         fn plan_read(
             &self,
             request: mech_runtime::RuntimeResourceReadRequest,
-        ) -> mech_core::MResult<mech_core::Value> {
+        ) -> mech_core::MResult<mech_core::LegacyValue> {
             if request.base_uri == DOCUMENT_TEST_INPUT_BASE_URI && request.path == "value" {
-                return Ok(mech_core::Value::F64(mech_core::Ref::new(0.0)));
+                return Ok(mech_core::LegacyValue::F64(mech_core::Ref::new(0.0)));
             }
             Err(MechError::new(
                 ProjectError {

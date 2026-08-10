@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use mech_core::{MResult, MechRecord, MechTable, Value, hash_str};
+use mech_core::{LegacyValue, MResult, MechRecord, MechTable, hash_str};
 
 use crate::scene_error;
 
@@ -42,11 +42,11 @@ pub struct SceneSnapshot {
 }
 
 impl SceneSnapshot {
-    pub fn from_value(value: &Value) -> MResult<Self> {
-        if let Value::MutableReference(value) = value {
+    pub fn from_value(value: &LegacyValue) -> MResult<Self> {
+        if let LegacyValue::MutableReference(value) = value {
             return Self::from_value(&value.borrow());
         }
-        let Value::Record(record) = value else {
+        let LegacyValue::Record(record) = value else {
             return Err(scene_error("SceneSchema", "scene must be a record"));
         };
         let record = record.borrow();
@@ -266,17 +266,17 @@ fn finite_number(value: f64, label: &str) -> MResult<f64> {
     Ok(value)
 }
 
-fn elements_from_value<T: FromRecord>(value: &Value) -> MResult<Vec<T>> {
+fn elements_from_value<T: FromRecord>(value: &LegacyValue) -> MResult<Vec<T>> {
     match value {
-        Value::MutableReference(value) => elements_from_value::<T>(&value.borrow()),
-        Value::Tuple(tuple) => tuple
+        LegacyValue::MutableReference(value) => elements_from_value::<T>(&value.borrow()),
+        LegacyValue::Tuple(tuple) => tuple
             .borrow()
             .elements
             .iter()
             .map(|value| record_element::<T>(value.as_ref()))
             .collect(),
-        Value::Table(table) => table_rows::<T>(&table.borrow()),
-        Value::Empty => Ok(Vec::new()),
+        LegacyValue::Table(table) => table_rows::<T>(&table.borrow()),
+        LegacyValue::Empty => Ok(Vec::new()),
         other => Err(scene_error(
             "SceneSchema",
             format!("scene elements must be a tuple or table, got {other:?}"),
@@ -284,11 +284,11 @@ fn elements_from_value<T: FromRecord>(value: &Value) -> MResult<Vec<T>> {
     }
 }
 
-fn record_element<T: FromRecord>(value: &Value) -> MResult<T> {
-    if let Value::MutableReference(value) = value {
+fn record_element<T: FromRecord>(value: &LegacyValue) -> MResult<T> {
+    if let LegacyValue::MutableReference(value) = value {
         return record_element::<T>(&value.borrow());
     }
-    let Value::Record(record) = value else {
+    let LegacyValue::Record(record) = value else {
         return Err(scene_error("SceneSchema", "scene element must be a record"));
     };
     T::from_record(&record.borrow())
@@ -346,18 +346,22 @@ fn table_rows<T: FromRecord>(table: &MechTable) -> MResult<Vec<T>> {
     Ok(out)
 }
 
-fn record_value<'a>(record: &'a MechRecord, field: &str) -> Option<&'a Value> {
+fn record_value<'a>(record: &'a MechRecord, field: &str) -> Option<&'a LegacyValue> {
     record.get(&hash_str(field))
 }
-fn required_value<'a>(record: &'a MechRecord, field: &str, label: &str) -> MResult<&'a Value> {
+fn required_value<'a>(
+    record: &'a MechRecord,
+    field: &str,
+    label: &str,
+) -> MResult<&'a LegacyValue> {
     record_value(record, field)
         .ok_or_else(|| scene_error("SceneSchema", format!("missing required field `{label}`")))
 }
 fn required_string(record: &MechRecord, field: &str, label: &str) -> MResult<String> {
     match required_value(record, field, label)? {
-        Value::String(value) => Ok(value.borrow().clone()),
-        Value::MutableReference(value) => match &*value.borrow() {
-            Value::String(value) => Ok(value.borrow().clone()),
+        LegacyValue::String(value) => Ok(value.borrow().clone()),
+        LegacyValue::MutableReference(value) => match &*value.borrow() {
+            LegacyValue::String(value) => Ok(value.borrow().clone()),
             _ => Err(scene_error(
                 "SceneSchema",
                 format!("field `{label}` must be a string"),

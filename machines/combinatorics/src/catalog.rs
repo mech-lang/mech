@@ -163,7 +163,7 @@ mod tests {
 #[cfg(all(test, feature = "n_choose_k", feature = "f64"))]
 mod scalar_runtime_contract_tests {
     use super::*;
-    use mech_core::{FunctionArgs, Ref, RuntimeFunctionId, Value};
+    use mech_core::{FunctionArgs, Ref, RuntimeFunctionId, LegacyValue};
 
     #[test]
     fn installed_f64_factory_rejects_non_finite_selection_before_instantiation() {
@@ -175,9 +175,9 @@ mod scalar_runtime_contract_tests {
             .unwrap();
         let error = entry
             .validate_args(&FunctionArgs::Binary(
-                Value::F64(Ref::new(0.0)),
-                Value::F64(Ref::new(10.0)),
-                Value::F64(Ref::new(f64::INFINITY)),
+                LegacyValue::F64(Ref::new(0.0)),
+                LegacyValue::F64(Ref::new(10.0)),
+                LegacyValue::F64(Ref::new(f64::INFINITY)),
             ))
             .unwrap_err();
 

@@ -49,7 +49,7 @@ impl_math_unop!(MathAtan, f32, atanf);
 impl_math_unop!(MathAtan, f64, atan);
 
 #[cfg(feature = "source")]
-fn impl_atan_fxn(lhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_atan_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathAtan,
       (lhs_value),
@@ -63,13 +63,13 @@ pub struct MathAtan {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathAtan {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() == 1 {
             let input = arguments[0].clone();
             match impl_atan_fxn(input.clone()) {
                 Ok(fxn) => Ok(fxn),
                 Err(_) => match (input) {
-                    (Value::MutableReference(input)) => impl_atan_fxn(input.borrow().clone()),
+                    (LegacyValue::MutableReference(input)) => impl_atan_fxn(input.borrow().clone()),
                     x => Err(MechError::new(
                         UnhandledFunctionArgumentKind1 {
                             arg: x.kind(),
@@ -86,13 +86,13 @@ impl FunctionSpecializer for MathAtan {
             match impl_atan2_fxn(arg1.clone(), arg2.clone()) {
                 Ok(fxn) => Ok(fxn),
                 Err(_) => match (arg1, arg2) {
-                    (Value::MutableReference(arg1), Value::MutableReference(arg2)) => {
+                    (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2)) => {
                         impl_atan2_fxn(arg1.borrow().clone(), arg2.borrow().clone())
                     }
-                    (Value::MutableReference(arg1), arg2) => {
+                    (LegacyValue::MutableReference(arg1), arg2) => {
                         impl_atan2_fxn(arg1.borrow().clone(), arg2.clone())
                     }
-                    (arg1, Value::MutableReference(arg2)) => {
+                    (arg1, LegacyValue::MutableReference(arg2)) => {
                         impl_atan2_fxn(arg1.clone(), arg2.borrow().clone())
                     }
                     (arg1, arg2) => Err(MechError::new(

@@ -28,10 +28,10 @@ pub enum FrameState {
 #[derive(Clone)]
 pub struct Frame {
     plan: Plan,
-    ip: usize,              // index of the next instruction to execute
-    locals: SymbolTableRef, // variables local to this invocation
-    out: Option<Value>,     // value yielded by a coroutine, if any
-    state: FrameState,      // Running / Suspended / Completed
+    ip: usize,                // index of the next instruction to execute
+    locals: SymbolTableRef,   // variables local to this invocation
+    out: Option<LegacyValue>, // value yielded by a coroutine, if any
+    state: FrameState,        // Running / Suspended / Completed
 }
 
 impl Frame {
@@ -43,7 +43,7 @@ impl Frame {
         self.locals.clone()
     }
 
-    pub(crate) fn checkpoint_out(&self) -> Option<Value> {
+    pub(crate) fn checkpoint_out(&self) -> Option<LegacyValue> {
         self.out.clone()
     }
 }
@@ -102,9 +102,9 @@ mod source_only {
     // pushes it onto the reactive plan so it re-runs when its inputs change.
     pub fn execute_function_specializer(
         specializer: Arc<dyn FunctionSpecializer>,
-        input_arg_values: &Vec<Value>,
+        input_arg_values: &Vec<LegacyValue>,
         p: &InterpreterExecution<'_>,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         let new_fxn = specializer.specialize(input_arg_values)?;
         execute_specialized_function(new_fxn, input_arg_values, p)
     }
@@ -113,9 +113,9 @@ mod source_only {
     /// program-local function extension.
     pub fn execute_specialized_function(
         new_fxn: Box<dyn MechFunction>,
-        input_arg_values: &Vec<Value>,
+        input_arg_values: &Vec<LegacyValue>,
         p: &InterpreterExecution<'_>,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         let plan = p.plan();
         trace_println!(
             p,
@@ -151,9 +151,9 @@ mod source_only {
         p: &InterpreterExecution<'_>,
         plan: &Plan,
         compiler: &dyn FunctionSpecializer,
-        compile_arguments: Vec<Value>,
-        registration_arguments: Vec<Value>,
-    ) -> MResult<Value> {
+        compile_arguments: Vec<LegacyValue>,
+        registration_arguments: Vec<LegacyValue>,
+    ) -> MResult<LegacyValue> {
         let function = compiler.specialize(&compile_arguments)?;
         solve_specialized_initial_output(function.as_ref(), plan, p)?;
         let output = function.out();
@@ -165,8 +165,8 @@ mod source_only {
         p: &InterpreterExecution<'_>,
         plan: &Plan,
         compiler: &dyn FunctionSpecializer,
-        arguments: Vec<Value>,
-    ) -> MResult<Value> {
+        arguments: Vec<LegacyValue>,
+    ) -> MResult<LegacyValue> {
         let registration_arguments = arguments.clone();
         execute_initialized_indexed_compiler_with_registration_arguments(
             p,
@@ -181,9 +181,9 @@ mod source_only {
         p: &InterpreterExecution<'_>,
         plan: &Plan,
         canonical_name: &str,
-        compile_arguments: Vec<Value>,
-        registration_arguments: Vec<Value>,
-    ) -> MResult<Value> {
+        compile_arguments: Vec<LegacyValue>,
+        registration_arguments: Vec<LegacyValue>,
+    ) -> MResult<LegacyValue> {
         let operation = OperationId::from_name(canonical_name);
         let function = p.specialize_visible_operation_named(
             operation,
@@ -200,8 +200,8 @@ mod source_only {
         p: &InterpreterExecution<'_>,
         plan: &Plan,
         canonical_name: &str,
-        arguments: Vec<Value>,
-    ) -> MResult<Value> {
+        arguments: Vec<LegacyValue>,
+    ) -> MResult<LegacyValue> {
         let registration_arguments = arguments.clone();
         execute_catalog_operation_with_registration_arguments(
             p,
@@ -237,9 +237,9 @@ mod source_only {
     // Logs entry/exit (or failure) via the trace machinery.
     pub(crate) fn execute_user_function(
         fxn_def: &FunctionDefinition,
-        input_arg_values: &Vec<Value>,
+        input_arg_values: &Vec<LegacyValue>,
         p: &InterpreterExecution<'_>,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         // Reject calls with the wrong number of arguments before doing anything else.
         if input_arg_values.len() != fxn_def.input.len() {
             return Err(MechError::new(
@@ -278,7 +278,7 @@ mod source_only {
             // Match-arm body: loop to support tail-call optimisation. Each iteration
             // opens a fresh scope, binds the current arguments, runs the arms, then
             // either returns the result or loops with a new argument set.
-            let mut current_args: Vec<Value> = input_arg_values.clone();
+            let mut current_args: Vec<LegacyValue> = input_arg_values.clone();
             loop {
                 let scope = FunctionScope::enter(p);
                 bind_function_inputs(fxn_def, &current_args, p)?;
@@ -336,8 +336,8 @@ mod source_only {
     // The outcome of executing one match arm. Either we have a final value, or
     // we identified a tail call and carry its new arguments for the next iteration.
     enum FunctionCallStep {
-        Return(Value),
-        TailCall(Vec<Value>),
+        Return(LegacyValue),
+        TailCall(Vec<LegacyValue>),
     }
 
     // If the function is single-input / single-output with matching scalar kinds,
@@ -348,9 +348,9 @@ mod source_only {
     #[cfg(feature = "matrix")]
     fn try_broadcast_user_function(
         fxn_def: &FunctionDefinition,
-        input_arg_values: &Vec<Value>,
+        input_arg_values: &Vec<LegacyValue>,
         p: &InterpreterExecution<'_>,
-    ) -> MResult<Option<Value>> {
+    ) -> MResult<Option<LegacyValue>> {
         if input_arg_values.len() != 1
             || fxn_def.code.output.len() != 1
             || fxn_def.code.input.len() != 1
@@ -409,13 +409,13 @@ mod source_only {
     #[cfg(feature = "matrix")]
     fn build_typed_matrix_from_values(
         output_kind: &ValueKind,
-        outputs: Vec<Value>,
+        outputs: Vec<LegacyValue>,
         rows: usize,
         cols: usize,
-    ) -> Value {
+    ) -> LegacyValue {
         match output_kind {
             #[cfg(feature = "f64")]
-            ValueKind::F64 => Value::MatrixF64(f64::to_matrix(
+            ValueKind::F64 => LegacyValue::MatrixF64(f64::to_matrix(
                 outputs
                     .into_iter()
                     .map(|value| {
@@ -429,7 +429,7 @@ mod source_only {
                 rows,
                 cols,
             )),
-            _ => Value::MatrixValue(Value::to_matrix(outputs, rows, cols)),
+            _ => LegacyValue::MatrixValue(LegacyValue::to_matrix(outputs, rows, cols)),
         }
     }
 
@@ -440,7 +440,7 @@ mod source_only {
     // Returns an error if no arm matched.
     fn execute_function_match_arms(
         fxn_def: &FunctionDefinition,
-        input_arg_values: &Vec<Value>,
+        input_arg_values: &Vec<LegacyValue>,
         p: &InterpreterExecution<'_>,
     ) -> MResult<FunctionCallStep> {
         // Exhaustiveness check: when the single input is an enum type and there is
@@ -594,10 +594,10 @@ mod source_only {
     // If no output annotation exists, or conversion fails, the value is returned as-is.
     #[cfg(feature = "kind_annotation")]
     fn coerce_function_output_kind(
-        value: Value,
+        value: LegacyValue,
         fxn_def: &FunctionDefinition,
         p: &InterpreterExecution<'_>,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         if fxn_def.output.is_empty() {
             return Ok(value);
         }
@@ -686,7 +686,7 @@ mod source_only {
     // special handling for enum types where coercion rules differ.
     fn bind_function_inputs(
         fxn_def: &FunctionDefinition,
-        input_arg_values: &Vec<Value>,
+        input_arg_values: &Vec<LegacyValue>,
         p: &InterpreterExecution<'_>,
     ) -> MResult<()> {
         let scoped_state = p.state.borrow();
@@ -786,7 +786,7 @@ mod source_only {
     // Returns true if `value` is a valid member of the enum identified by `enum_id`.
     // Handles bare atom variants and tuple-struct variants (atom tag + payload).
     #[cfg(all(feature = "enum", feature = "atom"))]
-    fn enum_value_matches(value: Value, enum_id: u64, state: &ProgramState) -> bool {
+    fn enum_value_matches(value: LegacyValue, enum_id: u64, state: &ProgramState) -> bool {
         let enum_def = match state.enums.get(&enum_id) {
             Some(enm) => enm,
             None => return false,
@@ -805,7 +805,7 @@ mod source_only {
             short_variant == short_atom
         };
         match value {
-            Value::Enum(enum_value) => {
+            LegacyValue::Enum(enum_value) => {
                 let enum_value_brrw = enum_value.borrow();
                 if enum_value_brrw.id != enum_id {
                     return false;
@@ -824,7 +824,7 @@ mod source_only {
                 };
                 match (payload, declared_payload_kind) {
                     (None, None) => true,
-                    (Some(payload_value), Some(Value::Kind(expected_kind))) => {
+                    (Some(payload_value), Some(LegacyValue::Kind(expected_kind))) => {
                         match expected_kind {
                             ValueKind::Enum(inner_enum_id, _) => {
                                 enum_value_matches(payload_value.clone(), *inner_enum_id, state)
@@ -839,7 +839,7 @@ mod source_only {
                 }
             }
             // Bare atom: check that the atom's id is a known payload-less variant.
-            Value::Atom(atom) => {
+            LegacyValue::Atom(atom) => {
                 let atom_brrw = atom.borrow();
                 let variant_id = atom_brrw.id();
                 let atom_name = atom_brrw.name();
@@ -855,13 +855,13 @@ mod source_only {
             // The tag must match a known variant and the payload must satisfy the
             // declared payload kind, recursing for nested enums.
             #[cfg(feature = "tuple")]
-            Value::Tuple(tuple_val) => {
+            LegacyValue::Tuple(tuple_val) => {
                 let tuple_brrw = tuple_val.borrow();
                 if tuple_brrw.elements.len() != 2 {
                     return false;
                 }
                 let (tag, tag_name) = match tuple_brrw.elements[0].as_ref() {
-                    Value::Atom(atom) => {
+                    LegacyValue::Atom(atom) => {
                         let atom_brrw = atom.borrow();
                         (atom_brrw.id(), atom_brrw.name())
                     }
@@ -876,7 +876,7 @@ mod source_only {
                         None => return false,
                     };
                 match declared_payload_kind {
-                    Some(Value::Kind(expected_kind)) => match expected_kind {
+                    Some(LegacyValue::Kind(expected_kind)) => match expected_kind {
                         // Nested enum payload: recurse.
                         ValueKind::Enum(inner_enum_id, _) => {
                             enum_value_matches(payload, *inner_enum_id, state)
@@ -900,7 +900,7 @@ mod source_only {
     fn collect_function_output(
         p: &InterpreterExecution<'_>,
         fxn_def: &FunctionDefinition,
-    ) -> MResult<Value> {
+    ) -> MResult<LegacyValue> {
         let symbols = p.symbols();
         let symbols_brrw = symbols.borrow();
         let mut outputs = vec![];
@@ -920,10 +920,10 @@ mod source_only {
         }
 
         Ok(match outputs.len() {
-            0 => Value::Empty,
+            0 => LegacyValue::Empty,
             1 => outputs.remove(0),
             #[cfg(feature = "tuple")]
-            _ => Value::Tuple(Ref::new(MechTuple::from_vec(outputs))),
+            _ => LegacyValue::Tuple(Ref::new(MechTuple::from_vec(outputs))),
             #[cfg(not(feature = "tuple"))]
             _ => {
                 return Err(MechError::new(FeatureNotEnabledError, None)
@@ -936,9 +936,9 @@ mod source_only {
     // Peels off any MutableReference wrappers to get to the underlying value.
     // Used before storing arguments or returning results so callers always see
     // plain owned values, not live references into other cells.
-    pub(crate) fn detach_value(value: &Value) -> Value {
+    pub(crate) fn detach_value(value: &LegacyValue) -> LegacyValue {
         match value {
-            Value::MutableReference(reference) => detach_value(&reference.borrow()),
+            LegacyValue::MutableReference(reference) => detach_value(&reference.borrow()),
             _ => value.clone(),
         }
     }
@@ -1016,15 +1016,15 @@ mod source_only {
         struct NativeDependencyTestCompiler;
 
         impl FunctionSpecializer for NativeDependencyTestCompiler {
-            fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            fn specialize(&self, _arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
                 Ok(Box::new(NativeDependencyTestFunction {
-                    output: Value::F64(Ref::new(2.0)),
+                    output: LegacyValue::F64(Ref::new(2.0)),
                 }))
             }
         }
 
         struct NativeDependencyTestFunction {
-            output: Value,
+            output: LegacyValue,
         }
 
         impl MechFunctionImpl for NativeDependencyTestFunction {
@@ -1032,7 +1032,7 @@ mod source_only {
                 Ok(())
             }
 
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.output.clone()
             }
 
@@ -1040,7 +1040,7 @@ mod source_only {
                 "native-dependency-test".to_string()
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -1058,14 +1058,14 @@ mod source_only {
         }
 
         struct IndexedInitializedFunction {
-            output: Value,
+            output: LegacyValue,
             solve_calls: Arc<AtomicUsize>,
         }
 
         impl FunctionSpecializer for IndexedInitializedCompiler {
-            fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            fn specialize(&self, _arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
                 Ok(Box::new(IndexedInitializedFunction {
-                    output: Value::F64(Ref::new(self.output)),
+                    output: LegacyValue::F64(Ref::new(self.output)),
                     solve_calls: self.solve_calls.clone(),
                 }))
             }
@@ -1077,7 +1077,7 @@ mod source_only {
                 Ok(())
             }
 
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.output.clone()
             }
 
@@ -1085,7 +1085,7 @@ mod source_only {
                 "indexed-initialized-test".to_string()
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -1114,7 +1114,7 @@ mod source_only {
                     output: 2.0,
                     solve_calls: solve_calls.clone(),
                 },
-                vec![Value::F64(input)],
+                vec![LegacyValue::F64(input)],
             )
             .unwrap();
 
@@ -1158,14 +1158,14 @@ mod source_only {
             solve_result_calls: Arc<std::sync::atomic::AtomicUsize>,
         }
         struct DeferredNativeSolveFunction {
-            output: Value,
+            output: LegacyValue,
             solve_result_calls: Arc<std::sync::atomic::AtomicUsize>,
         }
 
         impl FunctionSpecializer for DeferredNativeSolveCompiler {
-            fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            fn specialize(&self, _arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
                 Ok(Box::new(DeferredNativeSolveFunction {
-                    output: Value::F64(Ref::new(2.0)),
+                    output: LegacyValue::F64(Ref::new(2.0)),
                     solve_result_calls: self.solve_result_calls.clone(),
                 }))
             }
@@ -1176,14 +1176,14 @@ mod source_only {
                     .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 Err(MechError::new(DeferredNativeSolveError, None))
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.output.clone()
             }
             fn to_string(&self) -> String {
                 "deferred-native-solve".to_string()
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -1201,7 +1201,7 @@ mod source_only {
             let execution = InterpreterExecution::new(&interpreter, &mut services);
             let input = Ref::new(1.0);
             let input_cell = ReactiveCellId::new(input.id());
-            let arguments = vec![Value::F64(input)];
+            let arguments = vec![LegacyValue::F64(input)];
             let solve_result_calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
             let plan = interpreter.plan();
             plan.push_activation_registration_scope(vec![input_cell]);
@@ -1252,7 +1252,7 @@ mod source_only {
             let execution = InterpreterExecution::new(&interpreter, &mut services);
             let input = Ref::new(1.0);
             let input_cell = ReactiveCellId::new(input.id());
-            let arguments = vec![Value::F64(input)];
+            let arguments = vec![LegacyValue::F64(input)];
 
             let result = execute_function_specializer(
                 Arc::new(NativeDependencyTestCompiler),
@@ -1262,7 +1262,7 @@ mod source_only {
             .unwrap();
 
             let output_cell = match result {
-                Value::F64(output) => ReactiveCellId::new(output.id()),
+                LegacyValue::F64(output) => ReactiveCellId::new(output.id()),
                 other => panic!("expected f64 output, found {:?}", other),
             };
 
@@ -1301,7 +1301,7 @@ mod source_only {
         }
 
         impl FunctionSpecializer for FailingInitializationCompiler {
-            fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+            fn specialize(&self, _arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
                 Ok(Box::new(FailingInitializationFunction {
                     solve_result_calls: self.solve_result_calls.clone(),
                     preserved_initialization_calls: self.preserved_initialization_calls.clone(),
@@ -1335,15 +1335,15 @@ mod source_only {
                 Ok(())
             }
 
-            fn out(&self) -> Value {
-                Value::F64(self.output.clone())
+            fn out(&self) -> LegacyValue {
+                LegacyValue::F64(self.output.clone())
             }
 
             fn to_string(&self) -> String {
                 "failing-initialization-test".to_string()
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -1368,7 +1368,7 @@ mod source_only {
             let interpreter = Interpreter::new(0, 100);
             let mut services = NoMechExecutionServices;
             let execution = InterpreterExecution::new(&interpreter, &mut services);
-            let arguments = vec![Value::F64(Ref::new(1.0))];
+            let arguments = vec![LegacyValue::F64(Ref::new(1.0))];
             let solve_result_calls = Arc::new(AtomicUsize::new(0));
             let plan_len = interpreter.plan().len();
 
@@ -1394,7 +1394,7 @@ mod source_only {
             let mut services = NoMechExecutionServices;
             let execution = InterpreterExecution::new(&interpreter, &mut services);
             let input = Ref::new(1.0);
-            let arguments = vec![Value::F64(input.clone())];
+            let arguments = vec![LegacyValue::F64(input.clone())];
             let solve_result_calls = Arc::new(AtomicUsize::new(0));
             let plan = interpreter.plan();
             let plan_len = plan.len();
@@ -1417,7 +1417,7 @@ mod source_only {
             let interpreter = Interpreter::new(0, 100);
             let mut services = NoMechExecutionServices;
             let execution = InterpreterExecution::new(&interpreter, &mut services);
-            let arguments = vec![Value::F64(Ref::new(1.0))];
+            let arguments = vec![LegacyValue::F64(Ref::new(1.0))];
             let solve_result_calls = Arc::new(AtomicUsize::new(0));
             let preserved_initialization_calls = Arc::new(AtomicUsize::new(0));
             let plan = interpreter.plan();
@@ -1434,7 +1434,7 @@ mod source_only {
             )
             .expect("the planned output must be preserved without calling solve_result");
 
-            assert!(matches!(result, Value::F64(_)));
+            assert!(matches!(result, LegacyValue::F64(_)));
             assert_eq!(solve_result_calls.load(Ordering::SeqCst), 0);
             assert_eq!(preserved_initialization_calls.load(Ordering::SeqCst), 1);
             assert_eq!(plan.len(), plan_len + 1);

@@ -7,7 +7,7 @@ use crate::{
     HostCall, HostFunctionPlan, InMemoryHostRegistry, MechRuntime, MessageId, MessageRecord,
     ObjectRecord, RuntimeCallContext, RuntimeContext, RuntimeEventKind,
 };
-use mech_core::{MResult, Ref, Value};
+use mech_core::{LegacyValue, MResult, Ref};
 
 #[derive(Debug)]
 struct PanickingActorBehaviorDriver;
@@ -94,7 +94,7 @@ fn runtime_managed_actor_identity_transitions_commit() {
             &mut context,
             HostCall::new(
                 "actor/state/put",
-                vec![Value::String(Ref::new("after".to_string()))],
+                vec![LegacyValue::String(Ref::new("after".to_string()))],
             ),
         )
         .unwrap();
@@ -158,7 +158,7 @@ fn actor_state_put_followed_by_failure_aborts_state_and_acknowledgement() {
             &mut context,
             HostCall::new(
                 "actor/state/put",
-                vec![Value::String(Ref::new("after".to_string()))],
+                vec![LegacyValue::String(Ref::new("after".to_string()))],
             ),
         )
         .unwrap();
@@ -222,7 +222,7 @@ fn actor_state_get_plan_and_invoke_keep_string_shape_for_dangling_state() {
         .unwrap()
         .into_value();
     match planned {
-        Value::String(value) => assert!(value.borrow().is_empty()),
+        LegacyValue::String(value) => assert!(value.borrow().is_empty()),
         other => panic!("expected planned empty string for dangling actor state, got {other:?}"),
     }
     assert!(runtime.get_object(dangling_state).unwrap().is_none());
@@ -232,7 +232,7 @@ fn actor_state_get_plan_and_invoke_keep_string_shape_for_dangling_state() {
         .unwrap()
         .into_value();
     match invoked {
-        Value::String(value) => assert!(value.borrow().is_empty()),
+        LegacyValue::String(value) => assert!(value.borrow().is_empty()),
         other => panic!("expected invoked empty string for dangling actor state, got {other:?}"),
     }
 }

@@ -40,12 +40,15 @@ jobs:
     needs: impact
     if: needs.impact.outputs.static_contracts_required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # Temporary headroom while the C1 architecture suite is stabilized.
+    timeout-minutes: 15
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
       - name: Install formatting and contract tools
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
@@ -62,6 +65,18 @@ jobs:
           python3 scripts/check-runtime-factory-safety.py
           python3 scripts/check-value-execution-boundary.py
           python3 -B -m unittest scripts/tests/test_check_value_execution_boundary.py
+          python3 scripts/generate-value-system-inventory.py --check
+          python3 scripts/generate-value-system-inventory.py \
+            --git-ref d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10 \
+            --check-legacy-baseline
+          python3 scripts/check-value-system-contract.py
+          python3 scripts/check-program-artifact-contract.py
+          python3 scripts/check-operation-contract.py
+          python3 -B -m unittest \
+            scripts/tests/test_generate_value_system_inventory.py \
+            scripts/tests/test_check_value_system_contract.py \
+            scripts/tests/test_check_program_artifact_contract.py \
+            scripts/tests/test_check_operation_contract.py
           python3 -B -m unittest scripts/tests/test_run_gate_a_benchmarks.py
           python3 scripts/check-bytecode-v1-format.py
           cargo +nightly-2026-03-03 fetch --locked

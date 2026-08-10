@@ -146,7 +146,7 @@ mod checked_arithmetic_tests {
 }
 
 #[cfg(feature = "source")]
-fn impl_sub_fxn(lhs_value: Value, rhs_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_sub_fxn(lhs_value: LegacyValue, rhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_binop_match_arms!(
       Sub,
       (lhs_value, rhs_value),

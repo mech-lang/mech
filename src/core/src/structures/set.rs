@@ -14,7 +14,7 @@ pub struct MechSet {
     /// from `Some(0)`.
     pub max_elements: Option<usize>,
     pub num_elements: usize,
-    pub set: IndexSet<Value>,
+    pub set: IndexSet<LegacyValue>,
 }
 
 impl MechSet {
@@ -59,7 +59,7 @@ impl MechSet {
         self.set.iter().map(|x| x.size_of()).sum()
     }
 
-    pub fn from_vec(vec: Vec<Value>) -> MechSet {
+    pub fn from_vec(vec: Vec<LegacyValue>) -> MechSet {
         let mut set = IndexSet::new();
         for v in vec {
             set.insert(v);
@@ -77,7 +77,7 @@ impl MechSet {
         }
     }
 
-    pub fn from_set(set: IndexSet<Value>) -> MechSet {
+    pub fn from_set(set: IndexSet<LegacyValue>) -> MechSet {
         let kind = if set.len() > 0 {
             set.iter().next().unwrap().kind()
         } else {

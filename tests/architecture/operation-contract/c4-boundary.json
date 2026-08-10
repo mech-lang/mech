@@ -1,0 +1,97 @@
+{
+  "$schema": "./c4-boundary-schema.json",
+  "contract": "mech-operation-contract-c4-v1",
+  "base_commit": "15d06dd6ad1b19d874c7c512dd92acfd367fd45d",
+  "bytecode_version": 1,
+  "contract_types": [
+    "OperationContractId",
+    "OperationContractDeclaration",
+    "InputPortLayout",
+    "InputPortPolicy",
+    "OutputPortPolicy",
+    "AccessMode",
+    "DeliveryMode",
+    "OutputConstruction",
+    "ShapeRule",
+    "ShapeContractReference",
+    "RegionPolicy",
+    "AliasPolicy",
+    "ChangeDetectionPolicy",
+    "ExternalInteraction",
+    "ObservationContract",
+    "ObservationReplayPolicy",
+    "EffectContract",
+    "EffectDeliveryPolicy",
+    "IdempotencyRequirement",
+    "TransactionalExternalContract",
+    "TransactionalEffectProtocol",
+    "ResolvedOperationContract",
+    "DeclaredOperationContract",
+    "ResolvedInputPort",
+    "ResolvedOutputPort",
+    "LegacyOpaqueOperationContract",
+    "OperationContractTable",
+    "OperationContractTableBuilder"
+  ],
+  "artifact_contract_fields": {
+    "ProgramArtifact": "contracts: OperationContractTable",
+    "NodeDeclaration": "contract: OperationContractId",
+    "IntegrityConstraintDeclaration": "contract: OperationContractId"
+  },
+  "bytecode_section": "ArtifactOperationContracts",
+  "representative_declarations": [
+    {
+      "path": "machines/math/src/ops/mod.rs",
+      "markers": ["PURE_BINARY_FULL_WRITE_EXACT_SCALAR", "OutputConstruction::FullWrite", "ChangeDetectionPolicy::ExactScalar"]
+    },
+    {
+      "path": "machines/matrix/src/lib.rs",
+      "markers": ["PURE_MATRIX_PRODUCT_CONTRACT", "ShapeRule::MatrixProduct", "ChangeDetectionPolicy::KernelReported"]
+    },
+    {
+      "path": "src/engine/src/intrinsics/assign/matrix.rs",
+      "markers": ["PURE_MATRIX_ELEMENT_ASSIGNMENT_CONTRACT", "OutputConstruction::ReadModifyWrite", "RegionPolicy::SingleElement", "AliasPolicy::MayAlias"]
+    },
+    {
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "markers": ["matrix_selection_contract", "OutputConstruction::Build", "logical-mask-output", "scalar-index-output", "all-elements-output"]
+    },
+    {
+      "path": "src/engine/src/intrinsics/assign/mod.rs",
+      "markers": ["PURE_STATE_REGISTER_CONTRACT", "OutputConstruction::Replace", "ChangeDetectionPolicy::KernelReported"]
+    },
+    {
+      "path": "machines/set/src/modify/insert.rs",
+      "markers": ["PURE_SET_INSERT_CONTRACT", "RegionPolicy::CollectionEntry", "AliasPolicy::NoAlias"]
+    },
+    {
+      "path": "src/engine/src/function/external/resource_read.rs",
+      "markers": ["RESOURCE_OBSERVATION_CONTRACT", "ExternalInteraction::Observation", "ObservationReplayPolicy::CaptureAsInputFact"]
+    },
+    {
+      "path": "src/engine/src/function/external/resource_write.rs",
+      "markers": ["RESOURCE_EFFECT_CONTRACT", "ExternalInteraction::Effect", "EffectDeliveryPolicy::ProviderDefined"]
+    },
+    {
+      "path": "src/runtime/src/resource_contract.rs",
+      "markers": ["PREPARE_COMMIT_COMPENSATE", "ExternalInteraction::TransactionalExternal", "TransactionalEffectProtocol::PrepareCommitCompensate"]
+    }
+  ],
+  "protected_execution_paths": [
+    "src/engine/src/interpreter",
+    "src/engine/src/resident",
+    "src/engine/src/program",
+    "src/runtime/src"
+  ],
+  "allowed_protected_changes": [
+    "src/engine/src/interpreter/mod.rs",
+    "src/engine/src/interpreter/tests/bytecode.rs",
+    "src/engine/src/program/instance.rs",
+    "src/runtime/src/lib.rs",
+    "src/runtime/src/resource.rs",
+    "src/runtime/src/resource_contract.rs",
+    "src/runtime/src/runtime/execution/context_preflight.rs",
+    "src/runtime/src/runtime/execution/tests/source.rs",
+    "src/runtime/src/runtime/external.rs"
+  ]
+}

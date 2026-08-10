@@ -106,9 +106,9 @@ pub fn structure(
     strct: &Structure,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     match strct {
-        Structure::Empty => Ok(Value::Empty),
+        Structure::Empty => Ok(LegacyValue::Empty),
         #[cfg(feature = "record")]
         Structure::Record(x) => record(&x, env, p),
         #[cfg(feature = "matrix")]
@@ -136,14 +136,14 @@ pub fn tuple(
     tpl: &Tuple,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let mut elements = vec![];
     for el in &tpl.elements {
         let result = expression(el, env, p)?;
         elements.push(Box::new(result));
     }
     let mech_tuple = Ref::new(MechTuple { elements });
-    Ok(Value::Tuple(mech_tuple))
+    Ok(LegacyValue::Tuple(mech_tuple))
 }
 
 #[cfg(all(feature = "tuple", feature = "atom"))]
@@ -151,7 +151,7 @@ pub fn tuple_struct(
     tpl: &TupleStruct,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let payload = expression(&tpl.value, env, p)?;
     let variant_id = tpl.name.hash();
     let state_brrw = p.state.borrow();
@@ -166,7 +166,7 @@ pub fn tuple_struct(
             variants,
             names: enum_def.names.clone(),
         };
-        return Ok(Value::Enum(Ref::new(enm)));
+        return Ok(LegacyValue::Enum(Ref::new(enm)));
     }
     drop(state_brrw);
     let mut elements = vec![];
@@ -178,11 +178,15 @@ pub fn tuple_struct(
     );
     elements.push(Box::new(atom_value));
     elements.push(Box::new(payload));
-    Ok(Value::Tuple(Ref::new(MechTuple { elements })))
+    Ok(LegacyValue::Tuple(Ref::new(MechTuple { elements })))
 }
 
 #[cfg(feature = "map")]
-pub fn map(mp: &Map, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn map(
+    mp: &Map,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
     let mut m = IndexMap::new();
     for b in &mp.elements {
         let key = expression(&b.key, env, p)?;
@@ -219,7 +223,7 @@ pub fn map(mp: &Map, env: Option<&Environment>, p: &InterpreterExecution<'_>) ->
             .with_compiler_loc());
         }
     }
-    Ok(Value::Map(Ref::new(MechMap {
+    Ok(LegacyValue::Map(Ref::new(MechMap {
         num_elements: m.len(),
         key_kind,
         value_kind,
@@ -232,9 +236,9 @@ pub fn record(
     rcrd: &Record,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let plan = p.plan();
-    let mut data: IndexMap<u64, Value> = IndexMap::new();
+    let mut data: IndexMap<u64, LegacyValue> = IndexMap::new();
     let cols: usize = rcrd.bindings.len();
     let mut kinds: Vec<ValueKind> = Vec::new();
     let mut field_names: HashMap<u64, String> = HashMap::new();
@@ -250,7 +254,7 @@ pub fn record(
         kinds.push(knd.clone());
         #[cfg(feature = "convert")]
         if knd != val.kind() {
-            let arguments = vec![val.clone(), Value::Kind(knd.clone())];
+            let arguments = vec![val.clone(), LegacyValue::Kind(knd.clone())];
             match execute_catalog_operation(p, &plan, "convert/kind", arguments) {
                 Ok(converted_result) => {
                     data.insert(name_hash, converted_result);
@@ -286,7 +290,7 @@ pub fn record(
         }
         field_names.insert(name_hash, name_str);
     }
-    Ok(Value::Record(Ref::new(MechRecord {
+    Ok(LegacyValue::Record(Ref::new(MechRecord {
         cols,
         kinds,
         data,
@@ -304,10 +308,10 @@ pub struct SetDefine {}
 #[cfg(feature = "set")]
 #[cfg(feature = "functions")]
 impl FunctionSpecializer for SetDefine {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         let mut element_kind = arguments
             .first()
-            .map(Value::kind)
+            .map(LegacyValue::kind)
             .unwrap_or(ValueKind::Empty);
         for element in arguments {
             let actual_kind = element.kind();
@@ -333,7 +337,11 @@ impl FunctionSpecializer for SetDefine {
 #[cfg(feature = "set")]
 #[cfg(feature = "functions")]
 #[cfg(feature = "set")]
-pub fn set(m: &Set, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn set(
+    m: &Set,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
     let plan = p.plan();
     let mut elements = Vec::new();
     for el in &m.elements {
@@ -372,7 +380,7 @@ pub fn set(m: &Set, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> 
     {
         let mut set = MechSet::from_vec(elements);
         set.kind = element_kind;
-        Ok(Value::Set(Ref::new(set)))
+        Ok(LegacyValue::Set(Ref::new(set)))
     }
 }
 
@@ -403,7 +411,7 @@ macro_rules! handle_value_kind {
             id,
             (
                 $value_kind.clone(),
-                Value::to_matrixd(vals.clone(), vals.len(), 1),
+                LegacyValue::to_matrixd(vals.clone(), vals.len(), 1),
             ),
         );
     }};
@@ -413,8 +421,8 @@ macro_rules! handle_value_kind {
 fn handle_column_kind(
     kind: ValueKind,
     id: u64,
-    val: Matrix<Value>,
-    data_map: &mut IndexMap<u64, (ValueKind, Matrix<Value>)>,
+    val: Matrix<LegacyValue>,
+    data_map: &mut IndexMap<u64, (ValueKind, Matrix<LegacyValue>)>,
 ) -> MResult<()> {
     match kind {
         #[cfg(feature = "i8")]
@@ -455,7 +463,7 @@ fn handle_column_kind(
 
         #[cfg(feature = "bool")]
         ValueKind::Bool => {
-            let vals: Vec<Value> = val
+            let vals: Vec<LegacyValue> = val
                 .as_vec()
                 .iter()
                 .map(|x| x.as_bool().unwrap().to_value())
@@ -464,17 +472,17 @@ fn handle_column_kind(
                 id,
                 (
                     ValueKind::Bool,
-                    Value::to_matrix(vals.clone(), vals.len(), 1),
+                    LegacyValue::to_matrix(vals.clone(), vals.len(), 1),
                 ),
             );
         }
         ValueKind::Any => {
-            let vals: Vec<Value> = val.as_vec().iter().map(|x| x.clone()).collect();
+            let vals: Vec<LegacyValue> = val.as_vec().iter().map(|x| x.clone()).collect();
             data_map.insert(
                 id,
                 (
                     ValueKind::Any,
-                    Value::to_matrix(vals.clone(), vals.len(), 1),
+                    LegacyValue::to_matrix(vals.clone(), vals.len(), 1),
                 ),
             );
         }
@@ -489,7 +497,11 @@ fn handle_column_kind(
 }
 
 #[cfg(feature = "table")]
-pub fn table(t: &Table, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn table(
+    t: &Table,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
     let mut rows = vec![];
     let headings = table_header(&t.header, env, p)?;
     let mut cols = 0;
@@ -502,7 +514,7 @@ pub fn table(t: &Table, env: Option<&Environment>, p: &InterpreterExecution<'_>)
     }
 
     // Allocate columns
-    let mut data = vec![Vec::<Value>::new(); cols];
+    let mut data = vec![Vec::<LegacyValue>::new(); cols];
 
     // Populate columns
     for row in rows {
@@ -512,7 +524,7 @@ pub fn table(t: &Table, env: Option<&Environment>, p: &InterpreterExecution<'_>)
     }
 
     // Build table
-    let mut data_map: IndexMap<u64, (ValueKind, Matrix<Value>)> = IndexMap::new();
+    let mut data_map: IndexMap<u64, (ValueKind, Matrix<LegacyValue>)> = IndexMap::new();
 
     for ((id, knd, _name), column) in headings.iter().zip(data.iter()) {
         let id_u64 = id.as_u64().unwrap().borrow().clone();
@@ -529,7 +541,7 @@ pub fn table(t: &Table, env: Option<&Environment>, p: &InterpreterExecution<'_>)
         };
 
         // Convert column to matrix
-        let val = Value::to_matrix(column.clone(), column.len(), 1);
+        let val = LegacyValue::to_matrix(column.clone(), column.len(), 1);
 
         // Dispatch conversion
         handle_column_kind(actual_kind, id_u64, val, &mut data_map)?;
@@ -542,7 +554,7 @@ pub fn table(t: &Table, env: Option<&Environment>, p: &InterpreterExecution<'_>)
         .collect();
 
     let tbl = MechTable::new(t.rows.len(), cols, data_map.clone(), names);
-    Ok(Value::Table(Ref::new(tbl)))
+    Ok(LegacyValue::Table(Ref::new(tbl)))
 }
 
 #[cfg(feature = "kind_annotation")]
@@ -550,8 +562,8 @@ pub fn table_header(
     fields: &TableHeader,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Vec<(Value, ValueKind, Identifier)>> {
-    let mut headings: Vec<(Value, ValueKind, Identifier)> = Vec::new();
+) -> MResult<Vec<(LegacyValue, ValueKind, Identifier)>> {
+    let mut headings: Vec<(LegacyValue, ValueKind, Identifier)> = Vec::new();
     for f in &fields.0 {
         let id = f.name.hash();
         let kind = match &f.kind {
@@ -559,7 +571,7 @@ pub fn table_header(
             None => Kind::None,
         };
         headings.push((
-            Value::Id(id),
+            LegacyValue::Id(id),
             kind.to_value_kind(&p.state.borrow().kinds)?,
             f.name.clone(),
         ));
@@ -571,8 +583,8 @@ pub fn table_row(
     r: &TableRow,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Vec<Value>> {
-    let mut row: Vec<Value> = Vec::new();
+) -> MResult<Vec<LegacyValue>> {
+    let mut row: Vec<LegacyValue> = Vec::new();
     for col in &r.columns {
         let result = table_column(col, env, p)?;
         row.push(result);
@@ -584,7 +596,7 @@ pub fn table_column(
     r: &TableColumn,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     expression(&r.element, env, p)
 }
 
@@ -592,28 +604,32 @@ pub fn table_column(
 // ----------------------------------------------------------------------------
 
 #[cfg(feature = "matrix")]
-fn is_composite_matrix_cell(value: &Value) -> bool {
+fn is_composite_matrix_cell(value: &LegacyValue) -> bool {
     match value {
         #[cfg(feature = "record")]
-        Value::Record(_) => true,
+        LegacyValue::Record(_) => true,
         #[cfg(feature = "map")]
-        Value::Map(_) => true,
+        LegacyValue::Map(_) => true,
         #[cfg(feature = "tuple")]
-        Value::Tuple(_) => true,
+        LegacyValue::Tuple(_) => true,
         #[cfg(feature = "set")]
-        Value::Set(_) => true,
+        LegacyValue::Set(_) => true,
         #[cfg(feature = "table")]
-        Value::Table(_) => true,
-        Value::MatrixValue(_) => true,
+        LegacyValue::Table(_) => true,
+        LegacyValue::MatrixValue(_) => true,
         _ => false,
     }
 }
 
 #[cfg(feature = "matrix")]
-pub fn matrix(m: &Mat, env: Option<&Environment>, p: &InterpreterExecution<'_>) -> MResult<Value> {
+pub fn matrix(
+    m: &Mat,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
     let plan = p.plan();
     let mut shape = vec![0, 0];
-    let mut col: Vec<Value> = Vec::new();
+    let mut col: Vec<LegacyValue> = Vec::new();
     #[cfg(feature = "matrix_horzcat")]
     {
         for row in &m.rows {
@@ -634,7 +650,7 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &InterpreterExecution<'_>) 
             }
         }
         if col.is_empty() {
-            return Ok(Value::MatrixValue(Matrix::from_vec(vec![], 0, 0)));
+            return Ok(LegacyValue::MatrixValue(Matrix::from_vec(vec![], 0, 0)));
         } else if col.len() == 1 {
             return Ok(col[0].clone());
         }
@@ -643,7 +659,7 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &InterpreterExecution<'_>) 
     {
         if col
             .iter()
-            .any(|value| matches!(value, Value::MatrixValue(_)))
+            .any(|value| matches!(value, LegacyValue::MatrixValue(_)))
         {
             let mut values = Vec::new();
             let mut expected_cols: Option<usize> = None;
@@ -651,7 +667,7 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &InterpreterExecution<'_>) 
 
             for row_value in col {
                 let row_matrix = match row_value {
-                    Value::MatrixValue(matrix) => matrix,
+                    LegacyValue::MatrixValue(matrix) => matrix,
                     other => Matrix::from_vec(vec![other], 1, 1),
                 };
                 let row_shape = row_matrix.shape();
@@ -676,7 +692,7 @@ pub fn matrix(m: &Mat, env: Option<&Environment>, p: &InterpreterExecution<'_>) 
             }
 
             let cols = expected_cols.unwrap_or(0);
-            return Ok(Value::MatrixValue(Matrix::from_vec(
+            return Ok(LegacyValue::MatrixValue(Matrix::from_vec(
                 values, row_count, cols,
             )));
         }
@@ -695,9 +711,9 @@ pub fn matrix_row(
     r: &MatrixRow,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let plan = p.plan();
-    let mut row: Vec<Value> = Vec::new();
+    let mut row: Vec<LegacyValue> = Vec::new();
     let mut shape = vec![0, 0];
     let mut saw_empty = false;
     for col in &r.columns {
@@ -720,10 +736,10 @@ pub fn matrix_row(
     }
     if row.iter().any(is_composite_matrix_cell) {
         let cols = row.len();
-        return Ok(Value::MatrixValue(Matrix::from_vec(row, 1, cols)));
+        return Ok(LegacyValue::MatrixValue(Matrix::from_vec(row, 1, cols)));
     }
     if saw_empty && row.iter().all(|value| value.shape() == vec![1, 1]) {
-        return Ok(Value::MatrixValue(Matrix::from_vec(
+        return Ok(LegacyValue::MatrixValue(Matrix::from_vec(
             row,
             1,
             r.columns.len(),
@@ -735,7 +751,7 @@ pub fn matrix_column(
     r: &MatrixColumn,
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     expression(&r.element, env, p)
 }
 
@@ -750,10 +766,10 @@ pub fn matrix_column(
 mod matrix_dependency_tests {
     use super::*;
 
-    fn scalar(value: f64) -> (Value, ReactiveCellId) {
+    fn scalar(value: f64) -> (LegacyValue, ReactiveCellId) {
         let reference = Ref::new(value);
         let cell = ReactiveCellId::new(reference.id());
-        (Value::F64(reference), cell)
+        (LegacyValue::F64(reference), cell)
     }
 
     fn assert_matrix_literal_chain(plan: &Plan) {
@@ -898,7 +914,7 @@ mod matrix_dependency_tests {
         let output = interpreter.interpret(&tree).unwrap();
 
         match output {
-            Value::MatrixF64(matrix) => {
+            LegacyValue::MatrixF64(matrix) => {
                 assert_eq!(matrix.shape(), vec![2, 2]);
                 assert_eq!(matrix.as_vec(), vec![1.0, 3.0, 2.0, 4.0]);
             }
@@ -919,25 +935,25 @@ mod matrix_dependency_tests {
 mod set_dependency_tests {
     use super::*;
 
-    fn scalar(value: f64) -> (Value, ReactiveCellId) {
+    fn scalar(value: f64) -> (LegacyValue, ReactiveCellId) {
         let reference = Ref::new(value);
         let cell = ReactiveCellId::new(reference.id());
-        (Value::F64(reference), cell)
+        (LegacyValue::F64(reference), cell)
     }
 
-    fn set_members(value: &Value) -> Vec<ReactiveCellId> {
+    fn set_members(value: &LegacyValue) -> Vec<ReactiveCellId> {
         match value {
-            Value::Set(set) => set
+            LegacyValue::Set(set) => set
                 .borrow()
                 .set
                 .iter()
-                .flat_map(Value::reactive_root_cell_ids)
+                .flat_map(LegacyValue::reactive_root_cell_ids)
                 .collect(),
             other => panic!("expected set, found {:?}", other),
         }
     }
 
-    fn assert_structural_set_node(plan: &Plan, output: &Value) {
+    fn assert_structural_set_node(plan: &Plan, output: &LegacyValue) {
         let output_cell = output.reactive_root_cell_ids()[0];
         let member_cells = set_members(output);
         let plan = plan.borrow();

@@ -65,14 +65,14 @@ macro_rules! impl_two_arg_fxn {
                 $op!(arg1_ptr, arg2_ptr, out_ptr);
                 Ok(())
             }
-            fn out(&self) -> Value {
+            fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
 
-            fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
                 Ok(self.reactive_output_values())
             }
         }
@@ -334,16 +334,16 @@ impl_two_arg_fxn!(
 impl_two_arg_fxn!(RemainderF64, f64, f64, f64, remainder_op);
 
 #[cfg(feature = "source")]
-fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_remainder_fxn(arg1_value: LegacyValue, arg2_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (arg1_value, arg2_value) {
         #[cfg(feature = "f32")]
-        (Value::F32(arg1), Value::F32(arg2)) => Ok(Box::new(RemainderF32 {
+        (LegacyValue::F32(arg1), LegacyValue::F32(arg2)) => Ok(Box::new(RemainderF32 {
             arg1,
             arg2,
             out: Ref::new(f32::zero()),
         })),
         #[cfg(all(feature = "matrix1", feature = "f32"))]
-        (Value::MatrixF32(Matrix::Matrix1(arg1)), Value::MatrixF32(Matrix::Matrix1(arg2))) => {
+        (LegacyValue::MatrixF32(Matrix::Matrix1(arg1)), LegacyValue::MatrixF32(Matrix::Matrix1(arg2))) => {
             Ok(Box::new(RemainderM1F32 {
                 arg1,
                 arg2,
@@ -351,7 +351,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrix2", feature = "f32"))]
-        (Value::MatrixF32(Matrix::Matrix2(arg1)), Value::MatrixF32(Matrix::Matrix2(arg2))) => {
+        (LegacyValue::MatrixF32(Matrix::Matrix2(arg1)), LegacyValue::MatrixF32(Matrix::Matrix2(arg2))) => {
             Ok(Box::new(RemainderM2F32 {
                 arg1,
                 arg2,
@@ -359,7 +359,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrix3", feature = "f32"))]
-        (Value::MatrixF32(Matrix::Matrix3(arg1)), Value::MatrixF32(Matrix::Matrix3(arg2))) => {
+        (LegacyValue::MatrixF32(Matrix::Matrix3(arg1)), LegacyValue::MatrixF32(Matrix::Matrix3(arg2))) => {
             Ok(Box::new(RemainderM3F32 {
                 arg1,
                 arg2,
@@ -367,7 +367,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrix2x3", feature = "f32"))]
-        (Value::MatrixF32(Matrix::Matrix2x3(arg1)), Value::MatrixF32(Matrix::Matrix2x3(arg2))) => {
+        (LegacyValue::MatrixF32(Matrix::Matrix2x3(arg1)), LegacyValue::MatrixF32(Matrix::Matrix2x3(arg2))) => {
             Ok(Box::new(RemainderM2x3F32 {
                 arg1,
                 arg2,
@@ -375,7 +375,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrix3", feature = "f32"))]
-        (Value::MatrixF32(Matrix::Matrix3x2(arg1)), Value::MatrixF32(Matrix::Matrix3x2(arg2))) => {
+        (LegacyValue::MatrixF32(Matrix::Matrix3x2(arg1)), LegacyValue::MatrixF32(Matrix::Matrix3x2(arg2))) => {
             Ok(Box::new(RemainderM3x2F32 {
                 arg1,
                 arg2,
@@ -383,7 +383,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrix4", feature = "f32"))]
-        (Value::MatrixF32(Matrix::Matrix4(arg1)), Value::MatrixF32(Matrix::Matrix4(arg2))) => {
+        (LegacyValue::MatrixF32(Matrix::Matrix4(arg1)), LegacyValue::MatrixF32(Matrix::Matrix4(arg2))) => {
             Ok(Box::new(RemainderM4F32 {
                 arg1,
                 arg2,
@@ -391,7 +391,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "vector2", feature = "f32"))]
-        (Value::MatrixF32(Matrix::Vector2(arg1)), Value::MatrixF32(Matrix::Vector2(arg2))) => {
+        (LegacyValue::MatrixF32(Matrix::Vector2(arg1)), LegacyValue::MatrixF32(Matrix::Vector2(arg2))) => {
             Ok(Box::new(RemainderV2F32 {
                 arg1,
                 arg2,
@@ -399,7 +399,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "vector3", feature = "f32"))]
-        (Value::MatrixF32(Matrix::Vector3(arg1)), Value::MatrixF32(Matrix::Vector3(arg2))) => {
+        (LegacyValue::MatrixF32(Matrix::Vector3(arg1)), LegacyValue::MatrixF32(Matrix::Vector3(arg2))) => {
             Ok(Box::new(RemainderV3F32 {
                 arg1,
                 arg2,
@@ -407,7 +407,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "vector4", feature = "f32"))]
-        (Value::MatrixF32(Matrix::Vector4(arg1)), Value::MatrixF32(Matrix::Vector4(arg2))) => {
+        (LegacyValue::MatrixF32(Matrix::Vector4(arg1)), LegacyValue::MatrixF32(Matrix::Vector4(arg2))) => {
             Ok(Box::new(RemainderV4F32 {
                 arg1,
                 arg2,
@@ -416,8 +416,8 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
         }
         #[cfg(all(feature = "row_vector2", feature = "f32"))]
         (
-            Value::MatrixF32(Matrix::RowVector2(arg1)),
-            Value::MatrixF32(Matrix::RowVector2(arg2)),
+            LegacyValue::MatrixF32(Matrix::RowVector2(arg1)),
+            LegacyValue::MatrixF32(Matrix::RowVector2(arg2)),
         ) => Ok(Box::new(RemainderR2F32 {
             arg1,
             arg2,
@@ -425,8 +425,8 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
         })),
         #[cfg(all(feature = "row_vector3", feature = "f32"))]
         (
-            Value::MatrixF32(Matrix::RowVector3(arg1)),
-            Value::MatrixF32(Matrix::RowVector3(arg2)),
+            LegacyValue::MatrixF32(Matrix::RowVector3(arg1)),
+            LegacyValue::MatrixF32(Matrix::RowVector3(arg2)),
         ) => Ok(Box::new(RemainderR3F32 {
             arg1,
             arg2,
@@ -434,8 +434,8 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
         })),
         #[cfg(all(feature = "row_vector4", feature = "f32"))]
         (
-            Value::MatrixF32(Matrix::RowVector4(arg1)),
-            Value::MatrixF32(Matrix::RowVector4(arg2)),
+            LegacyValue::MatrixF32(Matrix::RowVector4(arg1)),
+            LegacyValue::MatrixF32(Matrix::RowVector4(arg2)),
         ) => Ok(Box::new(RemainderR4F32 {
             arg1,
             arg2,
@@ -443,15 +443,15 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
         })),
         #[cfg(all(feature = "row_vectord", feature = "f32"))]
         (
-            Value::MatrixF32(Matrix::RowDVector(arg1)),
-            Value::MatrixF32(Matrix::RowDVector(arg2)),
+            LegacyValue::MatrixF32(Matrix::RowDVector(arg1)),
+            LegacyValue::MatrixF32(Matrix::RowDVector(arg2)),
         ) => Ok(Box::new(RemainderRDF32 {
             arg1: arg1.clone(),
             arg2,
             out: Ref::new(RowDVector::from_element(arg1.borrow().ncols(), f32::zero())),
         })),
         #[cfg(all(feature = "vectord", feature = "f32"))]
-        (Value::MatrixF32(Matrix::DVector(arg1)), Value::MatrixF32(Matrix::DVector(arg2))) => {
+        (LegacyValue::MatrixF32(Matrix::DVector(arg1)), LegacyValue::MatrixF32(Matrix::DVector(arg2))) => {
             Ok(Box::new(RemainderVDF32 {
                 arg1: arg1.clone(),
                 arg2,
@@ -459,7 +459,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrixd", feature = "f32"))]
-        (Value::MatrixF32(Matrix::DMatrix(arg1)), Value::MatrixF32(Matrix::DMatrix(arg2))) => {
+        (LegacyValue::MatrixF32(Matrix::DMatrix(arg1)), LegacyValue::MatrixF32(Matrix::DMatrix(arg2))) => {
             let rows = arg1.borrow().nrows();
             let cols = arg1.borrow().ncols();
             Ok(Box::new(RemainderMDF32 {
@@ -469,13 +469,13 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(feature = "f64")]
-        (Value::F64(arg1), Value::F64(arg2)) => Ok(Box::new(RemainderF64 {
+        (LegacyValue::F64(arg1), LegacyValue::F64(arg2)) => Ok(Box::new(RemainderF64 {
             arg1,
             arg2,
             out: Ref::new(f64::zero()),
         })),
         #[cfg(all(feature = "matrix1", feature = "f64"))]
-        (Value::MatrixF64(Matrix::Matrix1(arg1)), Value::MatrixF64(Matrix::Matrix1(arg2))) => {
+        (LegacyValue::MatrixF64(Matrix::Matrix1(arg1)), LegacyValue::MatrixF64(Matrix::Matrix1(arg2))) => {
             Ok(Box::new(RemainderM1F64 {
                 arg1,
                 arg2,
@@ -483,7 +483,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrix2", feature = "f64"))]
-        (Value::MatrixF64(Matrix::Matrix2(arg1)), Value::MatrixF64(Matrix::Matrix2(arg2))) => {
+        (LegacyValue::MatrixF64(Matrix::Matrix2(arg1)), LegacyValue::MatrixF64(Matrix::Matrix2(arg2))) => {
             Ok(Box::new(RemainderM2F64 {
                 arg1,
                 arg2,
@@ -491,7 +491,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrix3", feature = "f64"))]
-        (Value::MatrixF64(Matrix::Matrix3(arg1)), Value::MatrixF64(Matrix::Matrix3(arg2))) => {
+        (LegacyValue::MatrixF64(Matrix::Matrix3(arg1)), LegacyValue::MatrixF64(Matrix::Matrix3(arg2))) => {
             Ok(Box::new(RemainderM3F64 {
                 arg1,
                 arg2,
@@ -499,7 +499,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrix2x3", feature = "f64"))]
-        (Value::MatrixF64(Matrix::Matrix2x3(arg1)), Value::MatrixF64(Matrix::Matrix2x3(arg2))) => {
+        (LegacyValue::MatrixF64(Matrix::Matrix2x3(arg1)), LegacyValue::MatrixF64(Matrix::Matrix2x3(arg2))) => {
             Ok(Box::new(RemainderM2x3F64 {
                 arg1,
                 arg2,
@@ -507,7 +507,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrix3", feature = "f64"))]
-        (Value::MatrixF64(Matrix::Matrix3x2(arg1)), Value::MatrixF64(Matrix::Matrix3x2(arg2))) => {
+        (LegacyValue::MatrixF64(Matrix::Matrix3x2(arg1)), LegacyValue::MatrixF64(Matrix::Matrix3x2(arg2))) => {
             Ok(Box::new(RemainderM3x2F64 {
                 arg1,
                 arg2,
@@ -515,7 +515,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrix4", feature = "f64"))]
-        (Value::MatrixF64(Matrix::Matrix4(arg1)), Value::MatrixF64(Matrix::Matrix4(arg2))) => {
+        (LegacyValue::MatrixF64(Matrix::Matrix4(arg1)), LegacyValue::MatrixF64(Matrix::Matrix4(arg2))) => {
             Ok(Box::new(RemainderM4F64 {
                 arg1,
                 arg2,
@@ -523,7 +523,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "vector2", feature = "f64"))]
-        (Value::MatrixF64(Matrix::Vector2(arg1)), Value::MatrixF64(Matrix::Vector2(arg2))) => {
+        (LegacyValue::MatrixF64(Matrix::Vector2(arg1)), LegacyValue::MatrixF64(Matrix::Vector2(arg2))) => {
             Ok(Box::new(RemainderV2F64 {
                 arg1,
                 arg2,
@@ -531,7 +531,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "vector3", feature = "f64"))]
-        (Value::MatrixF64(Matrix::Vector3(arg1)), Value::MatrixF64(Matrix::Vector3(arg2))) => {
+        (LegacyValue::MatrixF64(Matrix::Vector3(arg1)), LegacyValue::MatrixF64(Matrix::Vector3(arg2))) => {
             Ok(Box::new(RemainderV3F64 {
                 arg1,
                 arg2,
@@ -539,7 +539,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "vector4", feature = "f64"))]
-        (Value::MatrixF64(Matrix::Vector4(arg1)), Value::MatrixF64(Matrix::Vector4(arg2))) => {
+        (LegacyValue::MatrixF64(Matrix::Vector4(arg1)), LegacyValue::MatrixF64(Matrix::Vector4(arg2))) => {
             Ok(Box::new(RemainderV4F64 {
                 arg1,
                 arg2,
@@ -548,8 +548,8 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
         }
         #[cfg(all(feature = "row_vector2", feature = "f64"))]
         (
-            Value::MatrixF64(Matrix::RowVector2(arg1)),
-            Value::MatrixF64(Matrix::RowVector2(arg2)),
+            LegacyValue::MatrixF64(Matrix::RowVector2(arg1)),
+            LegacyValue::MatrixF64(Matrix::RowVector2(arg2)),
         ) => Ok(Box::new(RemainderR2F64 {
             arg1,
             arg2,
@@ -557,8 +557,8 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
         })),
         #[cfg(all(feature = "row_vector3", feature = "f64"))]
         (
-            Value::MatrixF64(Matrix::RowVector3(arg1)),
-            Value::MatrixF64(Matrix::RowVector3(arg2)),
+            LegacyValue::MatrixF64(Matrix::RowVector3(arg1)),
+            LegacyValue::MatrixF64(Matrix::RowVector3(arg2)),
         ) => Ok(Box::new(RemainderR3F64 {
             arg1,
             arg2,
@@ -566,8 +566,8 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
         })),
         #[cfg(all(feature = "row_vector4", feature = "f64"))]
         (
-            Value::MatrixF64(Matrix::RowVector4(arg1)),
-            Value::MatrixF64(Matrix::RowVector4(arg2)),
+            LegacyValue::MatrixF64(Matrix::RowVector4(arg1)),
+            LegacyValue::MatrixF64(Matrix::RowVector4(arg2)),
         ) => Ok(Box::new(RemainderR4F64 {
             arg1,
             arg2,
@@ -575,15 +575,15 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
         })),
         #[cfg(all(feature = "row_vectord", feature = "f64"))]
         (
-            Value::MatrixF64(Matrix::RowDVector(arg1)),
-            Value::MatrixF64(Matrix::RowDVector(arg2)),
+            LegacyValue::MatrixF64(Matrix::RowDVector(arg1)),
+            LegacyValue::MatrixF64(Matrix::RowDVector(arg2)),
         ) => Ok(Box::new(RemainderRDF64 {
             arg1: arg1.clone(),
             arg2,
             out: Ref::new(RowDVector::from_element(arg1.borrow().ncols(), f64::zero())),
         })),
         #[cfg(all(feature = "vectord", feature = "f64"))]
-        (Value::MatrixF64(Matrix::DVector(arg1)), Value::MatrixF64(Matrix::DVector(arg2))) => {
+        (LegacyValue::MatrixF64(Matrix::DVector(arg1)), LegacyValue::MatrixF64(Matrix::DVector(arg2))) => {
             Ok(Box::new(RemainderVDF64 {
                 arg1: arg1.clone(),
                 arg2,
@@ -591,7 +591,7 @@ fn impl_remainder_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn M
             }))
         }
         #[cfg(all(feature = "matrixd", feature = "f64"))]
-        (Value::MatrixF64(Matrix::DMatrix(arg1)), Value::MatrixF64(Matrix::DMatrix(arg2))) => {
+        (LegacyValue::MatrixF64(Matrix::DMatrix(arg1)), LegacyValue::MatrixF64(Matrix::DMatrix(arg2))) => {
             let rows = arg1.borrow().nrows();
             let cols = arg1.borrow().ncols();
             Ok(Box::new(RemainderMDF64 {
@@ -616,7 +616,7 @@ pub struct MathRemainder {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathRemainder {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -632,13 +632,13 @@ impl FunctionSpecializer for MathRemainder {
         match impl_remainder_fxn(arg1.clone(), arg2.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (arg1, arg2) {
-                (Value::MutableReference(arg1), Value::MutableReference(arg2)) => {
+                (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2)) => {
                     impl_remainder_fxn(arg1.borrow().clone(), arg2.borrow().clone())
                 }
-                (Value::MutableReference(arg1), arg2) => {
+                (LegacyValue::MutableReference(arg1), arg2) => {
                     impl_remainder_fxn(arg1.borrow().clone(), arg2.clone())
                 }
-                (arg1, Value::MutableReference(arg2)) => {
+                (arg1, LegacyValue::MutableReference(arg2)) => {
                     impl_remainder_fxn(arg1.clone(), arg2.borrow().clone())
                 }
                 (arg1, arg2) => Err(MechError::new(

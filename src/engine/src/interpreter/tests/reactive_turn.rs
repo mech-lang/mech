@@ -142,9 +142,9 @@ mod compact_reactive_turn_checkpoint_tests {
     #[cfg(feature = "compiler")]
     use super::super::super::{BytecodeCompilerContext, MechFunctionCompiler, Register};
     use super::super::super::{
-        GenericError, Interpreter, MResult, MechError, MechFunction, MechFunctionImpl,
+        GenericError, Interpreter, LegacyValue, MResult, MechError, MechFunction, MechFunctionImpl,
         NoMechExecutionServices, Plan, ReactiveJournalAutomaticRollbackFailed, ReactiveNodeId,
-        ReactiveNodeKind, ReactiveSolveStatus, Ref, Value, with_reactive_journal_participant,
+        ReactiveNodeKind, ReactiveSolveStatus, Ref, with_reactive_journal_participant,
     };
     use std::{cell::RefCell, rc::Rc};
 
@@ -207,13 +207,13 @@ mod compact_reactive_turn_checkpoint_tests {
             Ok(ReactiveSolveStatus::Changed)
         }
 
-        fn out(&self) -> Value {
-            Value::Index(self.output.clone())
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Index(self.output.clone())
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             *self.captures.borrow_mut() += 1;
-            Ok(vec![Value::Index(self.output.clone())])
+            Ok(vec![LegacyValue::Index(self.output.clone())])
         }
 
         fn to_string(&self) -> String {
@@ -250,7 +250,7 @@ mod compact_reactive_turn_checkpoint_tests {
             .plan()
             .0
             .borrow_mut()
-            .register(Box::new(function), &[Value::Index(input.clone())])
+            .register(Box::new(function), &[LegacyValue::Index(input.clone())])
             .unwrap()
     }
 
@@ -449,7 +449,7 @@ mod compact_reactive_turn_checkpoint_tests {
             let mut services = NoMechExecutionServices;
             interpreter
                 .advance_reactive_turn_participating(
-                    &Value::Index(input).reactive_root_cell_ids(),
+                    &LegacyValue::Index(input).reactive_root_cell_ids(),
                     &mut participant,
                     &mut services,
                 )
@@ -473,7 +473,7 @@ mod compact_reactive_turn_checkpoint_tests {
         add_reactive(&interpreter, function, &input);
 
         interpreter
-            .advance_reactive_turn(&Value::Index(input).reactive_root_cell_ids())
+            .advance_reactive_turn(&LegacyValue::Index(input).reactive_root_cell_ids())
             .unwrap_err();
 
         assert_eq!(*output.borrow(), 4);

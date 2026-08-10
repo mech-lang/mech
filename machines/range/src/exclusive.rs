@@ -112,14 +112,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -175,7 +175,7 @@ macro_rules! impl_range_exclusive_match_arms {
       match ($arg1, $arg2) {
         $(
           #[cfg(feature = $feat)]
-          (Value::[<$ty:camel>](from), Value::[<$ty:camel>](to))  => {
+          (LegacyValue::[<$ty:camel>](from), LegacyValue::[<$ty:camel>](to))  => {
             let from_val = *from.borrow();
             let to_val = *to.borrow();
             let diff = to_val - from_val;
@@ -230,8 +230,8 @@ macro_rules! impl_range_exclusive_match_arms {
 
 #[cfg(feature = "source")]
 fn impl_range_exclusive_fxn(
-    arg1_value: Value,
-    arg2_value: Value,
+    arg1_value: LegacyValue,
+    arg2_value: LegacyValue,
 ) -> MResult<Box<dyn MechFunction>> {
     impl_range_exclusive_match_arms!(RangeExclusiveScalar, arg1_value, arg2_value,
       f32, "f32";
@@ -254,7 +254,7 @@ pub struct RangeExclusive {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for RangeExclusive {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -270,13 +270,13 @@ impl FunctionSpecializer for RangeExclusive {
         match impl_range_exclusive_fxn(arg1.clone(), arg2.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (arg1, arg2) {
-                (Value::MutableReference(arg1), Value::MutableReference(arg2)) => {
+                (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2)) => {
                     impl_range_exclusive_fxn(arg1.borrow().clone(), arg2.borrow().clone())
                 }
-                (Value::MutableReference(arg1), arg2) => {
+                (LegacyValue::MutableReference(arg1), arg2) => {
                     impl_range_exclusive_fxn(arg1.borrow().clone(), arg2.clone())
                 }
-                (arg1, Value::MutableReference(arg2)) => {
+                (arg1, LegacyValue::MutableReference(arg2)) => {
                     impl_range_exclusive_fxn(arg1.clone(), arg2.borrow().clone())
                 }
                 (arg1, arg2) => Err(MechError::new(

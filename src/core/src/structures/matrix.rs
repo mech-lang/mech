@@ -71,7 +71,7 @@ macro_rules! impl_to_matrix {
 
 impl_to_matrix!(usize);
 
-impl_to_matrix!(Value);
+impl_to_matrix!(LegacyValue);
 #[cfg(feature = "bool")]
 impl_to_matrix!(bool);
 #[cfg(feature = "u8")]
@@ -1497,14 +1497,14 @@ where
 macro_rules! impl_to_value_for_matrix {
     ($t:ty, $variant:ident) => {
         impl ToValue for Matrix<$t> {
-            fn to_value(&self) -> Value {
-                Value::$variant(self.clone())
+            fn to_value(&self) -> LegacyValue {
+                LegacyValue::$variant(self.clone())
             }
         }
     };
 }
 
-impl_to_value_for_matrix!(Value, MatrixValue);
+impl_to_value_for_matrix!(LegacyValue, MatrixValue);
 #[cfg(feature = "f64")]
 impl_to_value_for_matrix!(f64, MatrixF64);
 #[cfg(feature = "f32")]
@@ -1543,8 +1543,8 @@ macro_rules! to_value_ndmatrix {
     $(
       #[cfg(all(feature = "matrix", feature = $type_string))]
       impl ToValue for Ref<$nd_matrix_kind<$base_type>> {
-        fn to_value(&self) -> Value {
-          Value::$matrix_kind(Matrix::<$base_type>::$nd_matrix_kind(self.clone()))
+        fn to_value(&self) -> LegacyValue {
+          LegacyValue::$matrix_kind(Matrix::<$base_type>::$nd_matrix_kind(self.clone()))
         }
       }
     )+

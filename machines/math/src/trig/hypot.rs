@@ -54,10 +54,10 @@ macro_rules! impl_two_arg_fxn {
       ;
           Ok(())
       }
-      fn out(&self) -> Value { self.out.to_value() }
+      fn out(&self) -> LegacyValue { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
 
-      fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+      fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
       }
     }
@@ -137,82 +137,82 @@ impl_two_arg_fxn!(HypotMDF64, DMatrix<f64>, DMatrix<f64>, DMatrix<f64>, hypot_ve
 impl_two_arg_fxn!(HypotF64, F64, F64, F64, hypot_op);
 
 #[cfg(feature = "source")]
-fn impl_hypot_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_hypot_fxn(arg1_value: LegacyValue, arg2_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
   match (arg1_value,arg2_value) {
     #[cfg(feature = "f32")]
-    (Value::F32(arg1),Value::F32(arg2)) => Ok(Box::new(HypotF32{arg1, arg2, out: Ref::new(f32::zero())})),
+    (LegacyValue::F32(arg1),LegacyValue::F32(arg2)) => Ok(Box::new(HypotF32{arg1, arg2, out: Ref::new(f32::zero())})),
     #[cfg(all(feature = "matrix1", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix1(arg1)),Value::MatrixF32(Matrix::Matrix1(arg2))) => Ok(Box::new(HypotM1F32{arg1, arg2, out: Ref::new(Matrix1::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::Matrix1(arg1)),LegacyValue::MatrixF32(Matrix::Matrix1(arg2))) => Ok(Box::new(HypotM1F32{arg1, arg2, out: Ref::new(Matrix1::from_element(f32::zero()))})),
     #[cfg(all(feature = "matrix2", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix2(arg1)),Value::MatrixF32(Matrix::Matrix2(arg2))) => Ok(Box::new(HypotM2F32{arg1, arg2, out: Ref::new(Matrix2::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::Matrix2(arg1)),LegacyValue::MatrixF32(Matrix::Matrix2(arg2))) => Ok(Box::new(HypotM2F32{arg1, arg2, out: Ref::new(Matrix2::from_element(f32::zero()))})),
     #[cfg(all(feature = "matrix3", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix3(arg1)),Value::MatrixF32(Matrix::Matrix3(arg2))) => Ok(Box::new(HypotM3F32{arg1, arg2, out: Ref::new(Matrix3::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::Matrix3(arg1)),LegacyValue::MatrixF32(Matrix::Matrix3(arg2))) => Ok(Box::new(HypotM3F32{arg1, arg2, out: Ref::new(Matrix3::from_element(f32::zero()))})),
     #[cfg(all(feature = "matrix2x3", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix2x3(arg1)),Value::MatrixF32(Matrix::Matrix2x3(arg2))) => Ok(Box::new(HypotM2x3F32{arg1, arg2, out: Ref::new(Matrix2x3::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::Matrix2x3(arg1)),LegacyValue::MatrixF32(Matrix::Matrix2x3(arg2))) => Ok(Box::new(HypotM2x3F32{arg1, arg2, out: Ref::new(Matrix2x3::from_element(f32::zero()))})),
     #[cfg(all(feature = "matrix3", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix3x2(arg1)),Value::MatrixF32(Matrix::Matrix3x2(arg2))) => Ok(Box::new(HypotM3x2F32{arg1, arg2, out: Ref::new(Matrix3x2::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::Matrix3x2(arg1)),LegacyValue::MatrixF32(Matrix::Matrix3x2(arg2))) => Ok(Box::new(HypotM3x2F32{arg1, arg2, out: Ref::new(Matrix3x2::from_element(f32::zero()))})),
     #[cfg(all(feature = "matrix4", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix4(arg1)),Value::MatrixF32(Matrix::Matrix4(arg2))) => Ok(Box::new(HypotM4F32{arg1, arg2, out: Ref::new(Matrix4::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::Matrix4(arg1)),LegacyValue::MatrixF32(Matrix::Matrix4(arg2))) => Ok(Box::new(HypotM4F32{arg1, arg2, out: Ref::new(Matrix4::from_element(f32::zero()))})),
     #[cfg(all(feature = "vector2", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Vector2(arg1)),Value::MatrixF32(Matrix::Vector2(arg2))) => Ok(Box::new(HypotV2F32{arg1, arg2, out: Ref::new(Vector2::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::Vector2(arg1)),LegacyValue::MatrixF32(Matrix::Vector2(arg2))) => Ok(Box::new(HypotV2F32{arg1, arg2, out: Ref::new(Vector2::from_element(f32::zero()))})),
     #[cfg(all(feature = "vector3", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Vector3(arg1)),Value::MatrixF32(Matrix::Vector3(arg2))) => Ok(Box::new(HypotV3F32{arg1, arg2, out: Ref::new(Vector3::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::Vector3(arg1)),LegacyValue::MatrixF32(Matrix::Vector3(arg2))) => Ok(Box::new(HypotV3F32{arg1, arg2, out: Ref::new(Vector3::from_element(f32::zero()))})),
     #[cfg(all(feature = "vector4", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Vector4(arg1)),Value::MatrixF32(Matrix::Vector4(arg2))) => Ok(Box::new(HypotV4F32{arg1, arg2, out: Ref::new(Vector4::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::Vector4(arg1)),LegacyValue::MatrixF32(Matrix::Vector4(arg2))) => Ok(Box::new(HypotV4F32{arg1, arg2, out: Ref::new(Vector4::from_element(f32::zero()))})),
     #[cfg(all(feature = "row_vector2", feature = "f32"))]
-    (Value::MatrixF32(Matrix::RowVector2(arg1)),Value::MatrixF32(Matrix::RowVector2(arg2))) => Ok(Box::new(HypotR2F32{arg1, arg2, out: Ref::new(RowVector2::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::RowVector2(arg1)),LegacyValue::MatrixF32(Matrix::RowVector2(arg2))) => Ok(Box::new(HypotR2F32{arg1, arg2, out: Ref::new(RowVector2::from_element(f32::zero()))})),
     #[cfg(all(feature = "row_vector3", feature = "f32"))]
-    (Value::MatrixF32(Matrix::RowVector3(arg1)),Value::MatrixF32(Matrix::RowVector3(arg2))) => Ok(Box::new(HypotR3F32{arg1, arg2, out: Ref::new(RowVector3::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::RowVector3(arg1)),LegacyValue::MatrixF32(Matrix::RowVector3(arg2))) => Ok(Box::new(HypotR3F32{arg1, arg2, out: Ref::new(RowVector3::from_element(f32::zero()))})),
     #[cfg(all(feature = "row_vector4", feature = "f32"))]
-    (Value::MatrixF32(Matrix::RowVector4(arg1)),Value::MatrixF32(Matrix::RowVector4(arg2))) => Ok(Box::new(HypotR4F32{arg1, arg2, out: Ref::new(RowVector4::from_element(f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::RowVector4(arg1)),LegacyValue::MatrixF32(Matrix::RowVector4(arg2))) => Ok(Box::new(HypotR4F32{arg1, arg2, out: Ref::new(RowVector4::from_element(f32::zero()))})),
     #[cfg(all(feature = "row_vectord", feature = "f32"))]
-    (Value::MatrixF32(Matrix::RowDVector(arg1)),Value::MatrixF32(Matrix::RowDVector(arg2))) => Ok(Box::new(HypotRDF32{arg1: arg1.clone(), arg2, out: Ref::new(RowDVector::from_element(arg1.borrow().ncols(),f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::RowDVector(arg1)),LegacyValue::MatrixF32(Matrix::RowDVector(arg2))) => Ok(Box::new(HypotRDF32{arg1: arg1.clone(), arg2, out: Ref::new(RowDVector::from_element(arg1.borrow().ncols(),f32::zero()))})),
     #[cfg(all(feature = "vectord", feature = "f32"))]
-    (Value::MatrixF32(Matrix::DVector(arg1)),Value::MatrixF32(Matrix::DVector(arg2))) => Ok(Box::new(HypotVDF32{arg1: arg1.clone(), arg2, out: Ref::new(DVector::from_element(arg1.borrow().nrows(),f32::zero()))})),
+    (LegacyValue::MatrixF32(Matrix::DVector(arg1)),LegacyValue::MatrixF32(Matrix::DVector(arg2))) => Ok(Box::new(HypotVDF32{arg1: arg1.clone(), arg2, out: Ref::new(DVector::from_element(arg1.borrow().nrows(),f32::zero()))})),
     #[cfg(all(feature = "matrixd", feature = "f32"))]
-    (Value::MatrixF32(Matrix::DMatrix(arg1)),Value::MatrixF32(Matrix::DMatrix(arg2))) => {
+    (LegacyValue::MatrixF32(Matrix::DMatrix(arg1)),LegacyValue::MatrixF32(Matrix::DMatrix(arg2))) => {
       let rows = arg1.borrow().nrows();
       let cols = arg1.borrow().ncols();
       Ok(Box::new(HypotMDF32{arg1, arg2, out: Ref::new(DMatrix::from_element(rows,cols,f32::zero()))}))
     },
     #[cfg(feature = "f64")]
-    (Value::F64(arg1),Value::F64(arg2)) => Ok(Box::new(HypotF64{arg1, arg2, out: Ref::new(f64::zero())})),
+    (LegacyValue::F64(arg1),LegacyValue::F64(arg2)) => Ok(Box::new(HypotF64{arg1, arg2, out: Ref::new(f64::zero())})),
     #[cfg(all(feature = "matrix1", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix1(arg1)),Value::MatrixF64(Matrix::Matrix1(arg2))) => Ok(Box::new(HypotM1F64{arg1, arg2, out: Ref::new(Matrix1::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::Matrix1(arg1)),LegacyValue::MatrixF64(Matrix::Matrix1(arg2))) => Ok(Box::new(HypotM1F64{arg1, arg2, out: Ref::new(Matrix1::from_element(f64::zero()))})),
     #[cfg(all(feature = "matrix2", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix2(arg1)),Value::MatrixF64(Matrix::Matrix2(arg2))) => Ok(Box::new(HypotM2F64{arg1, arg2, out: Ref::new(Matrix2::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::Matrix2(arg1)),LegacyValue::MatrixF64(Matrix::Matrix2(arg2))) => Ok(Box::new(HypotM2F64{arg1, arg2, out: Ref::new(Matrix2::from_element(f64::zero()))})),
     #[cfg(all(feature = "matrix3", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix3(arg1)),Value::MatrixF64(Matrix::Matrix3(arg2))) => Ok(Box::new(HypotM3F64{arg1, arg2, out: Ref::new(Matrix3::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::Matrix3(arg1)),LegacyValue::MatrixF64(Matrix::Matrix3(arg2))) => Ok(Box::new(HypotM3F64{arg1, arg2, out: Ref::new(Matrix3::from_element(f64::zero()))})),
     #[cfg(all(feature = "matrix2x3", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix2x3(arg1)),Value::MatrixF64(Matrix::Matrix2x3(arg2))) => Ok(Box::new(HypotM2x3F64{arg1, arg2, out: Ref::new(Matrix2x3::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::Matrix2x3(arg1)),LegacyValue::MatrixF64(Matrix::Matrix2x3(arg2))) => Ok(Box::new(HypotM2x3F64{arg1, arg2, out: Ref::new(Matrix2x3::from_element(f64::zero()))})),
     #[cfg(all(feature = "matrix3", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix3x2(arg1)),Value::MatrixF64(Matrix::Matrix3x2(arg2))) => Ok(Box::new(HypotM3x2F64{arg1, arg2, out: Ref::new(Matrix3x2::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::Matrix3x2(arg1)),LegacyValue::MatrixF64(Matrix::Matrix3x2(arg2))) => Ok(Box::new(HypotM3x2F64{arg1, arg2, out: Ref::new(Matrix3x2::from_element(f64::zero()))})),
     #[cfg(all(feature = "matrix4", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix4(arg1)),Value::MatrixF64(Matrix::Matrix4(arg2))) => Ok(Box::new(HypotM4F64{arg1, arg2, out: Ref::new(Matrix4::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::Matrix4(arg1)),LegacyValue::MatrixF64(Matrix::Matrix4(arg2))) => Ok(Box::new(HypotM4F64{arg1, arg2, out: Ref::new(Matrix4::from_element(f64::zero()))})),
     #[cfg(all(feature = "vector2", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Vector2(arg1)),Value::MatrixF64(Matrix::Vector2(arg2))) => Ok(Box::new(HypotV2F64{arg1, arg2, out: Ref::new(Vector2::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::Vector2(arg1)),LegacyValue::MatrixF64(Matrix::Vector2(arg2))) => Ok(Box::new(HypotV2F64{arg1, arg2, out: Ref::new(Vector2::from_element(f64::zero()))})),
     #[cfg(all(feature = "vector3", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Vector3(arg1)),Value::MatrixF64(Matrix::Vector3(arg2))) => Ok(Box::new(HypotV3F64{arg1, arg2, out: Ref::new(Vector3::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::Vector3(arg1)),LegacyValue::MatrixF64(Matrix::Vector3(arg2))) => Ok(Box::new(HypotV3F64{arg1, arg2, out: Ref::new(Vector3::from_element(f64::zero()))})),
     #[cfg(all(feature = "vector4", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Vector4(arg1)),Value::MatrixF64(Matrix::Vector4(arg2))) => Ok(Box::new(HypotV4F64{arg1, arg2, out: Ref::new(Vector4::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::Vector4(arg1)),LegacyValue::MatrixF64(Matrix::Vector4(arg2))) => Ok(Box::new(HypotV4F64{arg1, arg2, out: Ref::new(Vector4::from_element(f64::zero()))})),
     #[cfg(all(feature = "row_vector2", feature = "f64"))]
-    (Value::MatrixF64(Matrix::RowVector2(arg1)),Value::MatrixF64(Matrix::RowVector2(arg2))) => Ok(Box::new(HypotR2F64{arg1, arg2, out: Ref::new(RowVector2::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::RowVector2(arg1)),LegacyValue::MatrixF64(Matrix::RowVector2(arg2))) => Ok(Box::new(HypotR2F64{arg1, arg2, out: Ref::new(RowVector2::from_element(f64::zero()))})),
     #[cfg(all(feature = "row_vector3", feature = "f64"))]
-    (Value::MatrixF64(Matrix::RowVector3(arg1)),Value::MatrixF64(Matrix::RowVector3(arg2))) => Ok(Box::new(HypotR3F64{arg1, arg2, out: Ref::new(RowVector3::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::RowVector3(arg1)),LegacyValue::MatrixF64(Matrix::RowVector3(arg2))) => Ok(Box::new(HypotR3F64{arg1, arg2, out: Ref::new(RowVector3::from_element(f64::zero()))})),
     #[cfg(all(feature = "row_vector4", feature = "f64"))]
-    (Value::MatrixF64(Matrix::RowVector4(arg1)),Value::MatrixF64(Matrix::RowVector4(arg2))) => Ok(Box::new(HypotR4F64{arg1, arg2, out: Ref::new(RowVector4::from_element(f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::RowVector4(arg1)),LegacyValue::MatrixF64(Matrix::RowVector4(arg2))) => Ok(Box::new(HypotR4F64{arg1, arg2, out: Ref::new(RowVector4::from_element(f64::zero()))})),
     #[cfg(all(feature = "row_vectord", feature = "f64"))]
-    (Value::MatrixF64(Matrix::RowDVector(arg1)),Value::MatrixF64(Matrix::RowDVector(arg2))) => Ok(Box::new(HypotRDF64{arg1: arg1.clone(), arg2, out: Ref::new(RowDVector::from_element(arg1.borrow().ncols(),f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::RowDVector(arg1)),LegacyValue::MatrixF64(Matrix::RowDVector(arg2))) => Ok(Box::new(HypotRDF64{arg1: arg1.clone(), arg2, out: Ref::new(RowDVector::from_element(arg1.borrow().ncols(),f64::zero()))})),
     #[cfg(all(feature = "vectord", feature = "f64"))]
-    (Value::MatrixF64(Matrix::DVector(arg1)),Value::MatrixF64(Matrix::DVector(arg2))) => Ok(Box::new(HypotVDF64{arg1: arg1.clone(), arg2, out: Ref::new(DVector::from_element(arg1.borrow().nrows(),f64::zero()))})),
+    (LegacyValue::MatrixF64(Matrix::DVector(arg1)),LegacyValue::MatrixF64(Matrix::DVector(arg2))) => Ok(Box::new(HypotVDF64{arg1: arg1.clone(), arg2, out: Ref::new(DVector::from_element(arg1.borrow().nrows(),f64::zero()))})),
     #[cfg(all(feature = "matrixd", feature = "f64"))]
-    (Value::MatrixF64(Matrix::DMatrix(arg1)),Value::MatrixF64(Matrix::DMatrix(arg2))) => {
+    (LegacyValue::MatrixF64(Matrix::DMatrix(arg1)),LegacyValue::MatrixF64(Matrix::DMatrix(arg2))) => {
       let rows = arg1.borrow().nrows();
       let cols = arg1.borrow().ncols();
       Ok(Box::new(HypotMDF64{arg1, arg2, out: Ref::new(DMatrix::from_element(rows,cols,f64::zero()))}))
     },
     x => Err(MechError::new(
-        UnhandledFunctionArgumentKind1 { arg: Value::Tuple(vec![x.0.clone(), x.1.clone()]), fxn_name: "math/hypot".to_string() },
+        UnhandledFunctionArgumentKind1 { arg: LegacyValue::Tuple(vec![x.0.clone(), x.1.clone()]), fxn_name: "math/hypot".to_string() },
         None
       ).with_compiler_loc()
     ),
@@ -224,7 +224,7 @@ pub struct MathHypot {}
 
 #[cfg(feature = "source")]
 impl FunctionSpecializer for MathHypot {
-  fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+  fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError::new(IncorrectNumberOfArguments { expected: 1, found: arguments.len() },None).with_compiler_loc());
     }
@@ -234,9 +234,9 @@ impl FunctionSpecializer for MathHypot {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match (arg1,arg2) {
-          (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_hypot_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
-          (Value::MutableReference(arg1),arg2) => {impl_hypot_fxn(arg1.borrow().clone(),arg2.clone())}
-          (arg1,Value::MutableReference(arg2)) => {impl_hypot_fxn(arg1.clone(),arg2.borrow().clone())}
+          (LegacyValue::MutableReference(arg1),LegacyValue::MutableReference(arg2)) => {impl_hypot_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
+          (LegacyValue::MutableReference(arg1),arg2) => {impl_hypot_fxn(arg1.borrow().clone(),arg2.clone())}
+          (arg1,LegacyValue::MutableReference(arg2)) => {impl_hypot_fxn(arg1.clone(),arg2.borrow().clone())}
           (arg1, arg2) => Err(MechError::new(
               UnhandledFunctionArgumentKind1 { arg: (arg1, arg2), fxn_name: "math/hypot".to_string() },
               None

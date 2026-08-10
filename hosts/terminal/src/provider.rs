@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, Mutex, MutexGuard},
 };
 
-use mech_core::{MResult, MechError, MechErrorKind, Ref, Value};
+use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
@@ -111,7 +111,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         ]
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if self.matches_base(&request.base_uri, "env") {
             validate_env_key(&request.path)?;
             let value = self
@@ -128,7 +128,7 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                         None,
                     )
                 })?;
-            Ok(Value::String(Ref::new(value)))
+            Ok(LegacyValue::String(Ref::new(value)))
         } else if self.matches_base(&request.base_uri, "stdout")
             || self.matches_base(&request.base_uri, "stderr")
         {
@@ -141,10 +141,10 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
         }
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if self.matches_base(&request.base_uri, "env") {
             validate_env_key(&request.path)?;
-            return Ok(Value::String(Ref::new(String::new())));
+            return Ok(LegacyValue::String(Ref::new(String::new())));
         }
         Err(MechError::new(
             RuntimeResourceReadNotPlannable {
@@ -280,9 +280,9 @@ fn validate_env_key(key: &str) -> MResult<()> {
     Ok(())
 }
 
-fn value_to_text(value: &Value) -> String {
+fn value_to_text(value: &LegacyValue) -> String {
     match value {
-        Value::String(s) => s.borrow().clone(),
+        LegacyValue::String(s) => s.borrow().clone(),
         other => format!("{}", other),
     }
 }

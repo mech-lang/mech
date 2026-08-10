@@ -366,7 +366,7 @@ pub fn render_engine_main_source() -> String {
     String::from(
         r#"mod catalog;
 
-use mech_core::{MResult, Value};
+use mech_core::{LegacyValue, MResult};
 use mech_engine::{
     MechProgram,
     MechProgramConfig,
@@ -402,7 +402,7 @@ fn run(_once: bool) -> MResult<()> {
 
     let value = program.run_bytecode(PROGRAM)?;
 
-    if !matches!(value, Value::Empty) {
+    if !matches!(value, LegacyValue::Empty) {
         println!("{value}");
     }
 

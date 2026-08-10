@@ -6,8 +6,8 @@ use std::sync::{Arc, Mutex};
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
     FunctionCatalog, FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer,
-    MResult, MechFunction, MechFunctionImpl, MechSourceCode, ModuleManifestConfig,
-    ModuleManifestExportConfig, ModuleManifestExportKind, Ref, Value, hash_str,
+    LegacyValue, MResult, MechFunction, MechFunctionImpl, MechSourceCode, ModuleManifestConfig,
+    ModuleManifestExportConfig, ModuleManifestExportKind, Ref, hash_str,
 };
 #[cfg(feature = "compiler")]
 use mech_engine::{MechProgram, MechProgramConfig};
@@ -93,11 +93,11 @@ impl MechFunctionImpl for ConstantF64Function {
         Ok(())
     }
 
-    fn out(&self) -> Value {
-        Value::F64(self.output.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::F64(self.output.clone())
     }
 
-    fn transaction_state_values(&self) -> mech_core::MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> mech_core::MResult<Vec<LegacyValue>> {
         Ok(Vec::new())
     }
 
@@ -119,7 +119,7 @@ struct ConstantF64Specializer {
 }
 
 impl FunctionSpecializer for ConstantF64Specializer {
-    fn specialize(&self, _arguments: &[Value]) -> mech_core::MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, _arguments: &[LegacyValue]) -> mech_core::MResult<Box<dyn MechFunction>> {
         Ok(Box::new(ConstantF64Function {
             name: self.name,
             output: Ref::new(self.value),
@@ -203,19 +203,19 @@ impl MechFunctionImpl for ModuleTestBinaryFunction {
         Ok(())
     }
 
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         match self {
-            Self::F64Add { out, .. } => Value::F64(out.clone()),
-            Self::F64AddAssign { sink, .. } => Value::F64(sink.clone()),
-            Self::StringAdd { out, .. } => Value::String(out.clone()),
+            Self::F64Add { out, .. } => LegacyValue::F64(out.clone()),
+            Self::F64AddAssign { sink, .. } => LegacyValue::F64(sink.clone()),
+            Self::StringAdd { out, .. } => LegacyValue::String(out.clone()),
             Self::StringEqual { out, .. }
             | Self::F64GreaterThan { out, .. }
             | Self::F64LessThan { out, .. }
-            | Self::BoolAnd { out, .. } => Value::Bool(out.clone()),
+            | Self::BoolAnd { out, .. } => LegacyValue::Bool(out.clone()),
         }
     }
 
-    fn transaction_state_values(&self) -> mech_core::MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> mech_core::MResult<Vec<LegacyValue>> {
         Ok(vec![self.out()])
     }
 
@@ -235,58 +235,66 @@ struct ModuleTestBinarySpecializer {
     operation: ModuleTestBinaryOperation,
 }
 
-fn dereference_module_test_value(value: &Value) -> Value {
+fn dereference_module_test_value(value: &LegacyValue) -> LegacyValue {
     match value {
-        Value::MutableReference(value) => dereference_module_test_value(&value.borrow()),
+        LegacyValue::MutableReference(value) => dereference_module_test_value(&value.borrow()),
         value => value.clone(),
     }
 }
 
 impl FunctionSpecializer for ModuleTestBinarySpecializer {
-    fn specialize(&self, arguments: &[Value]) -> mech_core::MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> mech_core::MResult<Box<dyn MechFunction>> {
         assert_eq!(arguments.len(), 2, "module test binary fixture arity");
         let lhs = dereference_module_test_value(&arguments[0]);
         let rhs = dereference_module_test_value(&arguments[1]);
         let function = match (self.operation, lhs, rhs) {
-            (ModuleTestBinaryOperation::Add, Value::F64(lhs), Value::F64(rhs)) => {
+            (ModuleTestBinaryOperation::Add, LegacyValue::F64(lhs), LegacyValue::F64(rhs)) => {
                 ModuleTestBinaryFunction::F64Add {
                     lhs,
                     rhs,
                     out: Ref::new(0.0),
                 }
             }
-            (ModuleTestBinaryOperation::AddAssign, Value::F64(sink), Value::F64(source)) => {
-                ModuleTestBinaryFunction::F64AddAssign { sink, source }
-            }
-            (ModuleTestBinaryOperation::Add, Value::String(lhs), Value::String(rhs)) => {
-                ModuleTestBinaryFunction::StringAdd {
-                    lhs,
-                    rhs,
-                    out: Ref::new(String::new()),
-                }
-            }
-            (ModuleTestBinaryOperation::Equal, Value::String(lhs), Value::String(rhs)) => {
-                ModuleTestBinaryFunction::StringEqual {
-                    lhs,
-                    rhs,
-                    out: Ref::new(false),
-                }
-            }
-            (ModuleTestBinaryOperation::GreaterThan, Value::F64(lhs), Value::F64(rhs)) => {
-                ModuleTestBinaryFunction::F64GreaterThan {
-                    lhs,
-                    rhs,
-                    out: Ref::new(false),
-                }
-            }
-            (ModuleTestBinaryOperation::LessThan, Value::F64(lhs), Value::F64(rhs)) => {
+            (
+                ModuleTestBinaryOperation::AddAssign,
+                LegacyValue::F64(sink),
+                LegacyValue::F64(source),
+            ) => ModuleTestBinaryFunction::F64AddAssign { sink, source },
+            (
+                ModuleTestBinaryOperation::Add,
+                LegacyValue::String(lhs),
+                LegacyValue::String(rhs),
+            ) => ModuleTestBinaryFunction::StringAdd {
+                lhs,
+                rhs,
+                out: Ref::new(String::new()),
+            },
+            (
+                ModuleTestBinaryOperation::Equal,
+                LegacyValue::String(lhs),
+                LegacyValue::String(rhs),
+            ) => ModuleTestBinaryFunction::StringEqual {
+                lhs,
+                rhs,
+                out: Ref::new(false),
+            },
+            (
+                ModuleTestBinaryOperation::GreaterThan,
+                LegacyValue::F64(lhs),
+                LegacyValue::F64(rhs),
+            ) => ModuleTestBinaryFunction::F64GreaterThan {
+                lhs,
+                rhs,
+                out: Ref::new(false),
+            },
+            (ModuleTestBinaryOperation::LessThan, LegacyValue::F64(lhs), LegacyValue::F64(rhs)) => {
                 ModuleTestBinaryFunction::F64LessThan {
                     lhs,
                     rhs,
                     out: Ref::new(false),
                 }
             }
-            (ModuleTestBinaryOperation::And, Value::Bool(lhs), Value::Bool(rhs)) => {
+            (ModuleTestBinaryOperation::And, LegacyValue::Bool(lhs), LegacyValue::Bool(rhs)) => {
                 ModuleTestBinaryFunction::BoolAnd {
                     lhs,
                     rhs,
@@ -399,7 +407,7 @@ fn runtime_with_root_and_browser_manifest(root: &std::path::Path) -> mech_runtim
         .unwrap()
 }
 
-fn docs_provider_with(base_uri: &str, path: &str, value: Value) -> InMemoryDocsProvider {
+fn docs_provider_with(base_uri: &str, path: &str, value: LegacyValue) -> InMemoryDocsProvider {
     InMemoryDocsProvider::new()
         .with_value(base_uri, path, value)
         .unwrap()
@@ -724,18 +732,18 @@ fn context_for_subject(
 fn run_module_as_main(
     runtime: &mut MechRuntime,
     version: ModuleVersionId,
-) -> mech_core::MResult<Value> {
+) -> mech_core::MResult<LegacyValue> {
     let mut context = context_for_subject(runtime, "task://main")?;
     runtime
         .run_module_with_context(&mut context, version)
         .map(|result| result.result.into_value())
 }
 
-fn bool_value(value: bool) -> Value {
-    Value::Bool(Ref::new(value))
+fn bool_value(value: bool) -> LegacyValue {
+    LegacyValue::Bool(Ref::new(value))
 }
 
-fn docs_entry(path: &str, value: Value) -> RuntimeDocsEntrySpec {
+fn docs_entry(path: &str, value: LegacyValue) -> RuntimeDocsEntrySpec {
     RuntimeDocsEntrySpec {
         path: path.to_string(),
         value,
@@ -747,46 +755,46 @@ fn module_options() -> ModuleBuildOptions<'static> {
 }
 
 trait IntoTestValue {
-    fn into_test_value(self) -> Value;
+    fn into_test_value(self) -> LegacyValue;
 }
 
-impl IntoTestValue for Value {
-    fn into_test_value(self) -> Value {
+impl IntoTestValue for LegacyValue {
+    fn into_test_value(self) -> LegacyValue {
         self
     }
 }
 
 impl IntoTestValue for RuntimeValueSnapshot {
-    fn into_test_value(self) -> Value {
+    fn into_test_value(self) -> LegacyValue {
         self.into_value()
     }
 }
 
 impl IntoTestValue for RuntimeModuleResult {
-    fn into_test_value(self) -> Value {
+    fn into_test_value(self) -> LegacyValue {
         self.result.into_value()
     }
 }
 
 fn assert_bool_true(result: impl IntoTestValue, label: &str) {
     match result.into_test_value() {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!("expected bool result from {label}, got {:?}", other),
     }
 }
 
 fn assert_bool_false(result: impl IntoTestValue, label: &str) {
     match result.into_test_value() {
-        Value::Bool(value) => assert!(!*value.borrow()),
+        LegacyValue::Bool(value) => assert!(!*value.borrow()),
         other => panic!("expected bool result from {label}, got {:?}", other),
     }
 }
 
 fn assert_f64(result: impl IntoTestValue, expected: f64, label: &str) {
     match result.into_test_value() {
-        Value::F64(value) => assert_eq!(*value.borrow(), expected, "{label}"),
-        Value::MutableReference(value) => match &*value.borrow() {
-            Value::F64(value) => assert_eq!(*value.borrow(), expected, "{label}"),
+        LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected, "{label}"),
+        LegacyValue::MutableReference(value) => match &*value.borrow() {
+            LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected, "{label}"),
             other => panic!(
                 "expected f64 mutable reference result from {label}, got {:?}",
                 other
@@ -957,7 +965,11 @@ fn retained_root_dependency_context_read_does_not_create_live_binding() {
         "@numbers := docs://numbers{:read(increment)}\nvalue := @numbers/increment\n<+ value\n",
     )
     .unwrap();
-    let provider = docs_provider_with("docs://numbers", "increment", Value::F64(Ref::new(41.0)));
+    let provider = docs_provider_with(
+        "docs://numbers",
+        "increment",
+        LegacyValue::F64(Ref::new(41.0)),
+    );
     let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(provider)
@@ -987,7 +999,11 @@ fn retained_root_context_read_creates_live_binding_and_recomputes() {
         "retained-root-live",
         "@numbers := docs://numbers{:read(increment)}\noutput := @numbers/increment + 1\noutput\n",
     );
-    let provider = docs_provider_with("docs://numbers", "increment", Value::F64(Ref::new(2.0)));
+    let provider = docs_provider_with(
+        "docs://numbers",
+        "increment",
+        LegacyValue::F64(Ref::new(2.0)),
+    );
     let builder = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(provider);
@@ -1033,7 +1049,11 @@ fn failed_retained_root_restores_live_state_and_imported_environment() {
         "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n",
     )
     .unwrap();
-    let provider = docs_provider_with("docs://numbers", "increment", Value::F64(Ref::new(1.0)));
+    let provider = docs_provider_with(
+        "docs://numbers",
+        "increment",
+        LegacyValue::F64(Ref::new(1.0)),
+    );
     let mut runtime = runtime_with_module_test_catalog()
         .source_resolver(FileSourceResolver::new(&root))
         .in_memory_docs(provider)
@@ -1218,7 +1238,7 @@ impl RuntimeResourceProvider for ReadOnlyDocsProvider {
     fn scheme(&self) -> &str {
         "docs"
     }
-    fn read(&self, _request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+    fn read(&self, _request: RuntimeResourceReadRequest) -> mech_core::MResult<LegacyValue> {
         unreachable!("read is not needed for the default write behavior test")
     }
 }
@@ -1301,7 +1321,7 @@ fn repeated_interpreter_fences_merge_before_resolution_and_execution() {
         .unwrap();
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::F64(value) => assert_eq!(*value.borrow(), 2.0),
+        LegacyValue::F64(value) => assert_eq!(*value.borrow(), 2.0),
         other => panic!("expected merged interpreter result, got {:?}", other),
     }
 }
@@ -1809,7 +1829,7 @@ fn registered_module_manifest_context_import_still_resolves() {
         .unwrap()
         .unwrap();
     let result = match runtime.run_module(version).unwrap().result.into_value() {
-        Value::MutableReference(value) => value.borrow().clone(),
+        LegacyValue::MutableReference(value) => value.borrow().clone(),
         other => other,
     };
     assert_bool_true(result, "registered module manifest context import");
@@ -2277,7 +2297,7 @@ fn direct_runtime_derived_context_read_uses_alias() {
         .resource_provider(Box::new(docs_provider_with(
             "docs://manual",
             "intro/title",
-            Value::String(Ref::new("Hello".to_string())),
+            LegacyValue::String(Ref::new("Hello".to_string())),
         )))
         .build()
         .unwrap();
@@ -2290,7 +2310,7 @@ fn direct_runtime_derived_context_read_uses_alias() {
         .unwrap();
     let result = runtime.run_string("@base := docs://manual{:read(intro/title)}\n@docs := @base\nresult := @docs/intro/title\n").unwrap().into_value();
     match result {
-        Value::String(value) => assert_eq!(&*value.borrow(), "Hello"),
+        LegacyValue::String(value) => assert_eq!(&*value.borrow(), "Hello"),
         other => panic!("expected docs title string, got {other:?}"),
     }
 }
@@ -2345,7 +2365,7 @@ fn interpreter_scope_imports_work() {
         .result
         .into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!(
             "expected bool result from module scope run, got {:?}",
             other
@@ -2393,7 +2413,7 @@ fn program_cannot_see_fenced_import_but_interpreter_can() {
         .result
         .into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!(
             "expected bool result from module scope run, got {:?}",
             other
@@ -2438,7 +2458,7 @@ fn interpreter_scope_exports_only_interpreter_exports() {
 
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(!*value.borrow()),
+        LegacyValue::Bool(value) => assert!(!*value.borrow()),
         other => panic!("expected bool result from module run, got {:?}", other),
     }
 
@@ -2448,7 +2468,7 @@ fn interpreter_scope_exports_only_interpreter_exports() {
         .result
         .into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!(
             "expected bool result from module scope run, got {:?}",
             other
@@ -2486,7 +2506,7 @@ fn interpreter_scope_executes_only_matching_import_edges() {
         .result
         .into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!(
             "expected bool result from module scope run, got {:?}",
             other
@@ -2543,7 +2563,7 @@ fn program_reads_interpreter_export_by_indexed_address() {
         .unwrap();
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!(
             "expected bool result from addressed interpreter export, got {:?}",
             other
@@ -2568,7 +2588,7 @@ fn program_reads_interpreter_export_by_address_with_interpreter_import() {
         .unwrap();
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!(
             "expected bool result from addressed interpreter export with import, got {:?}",
             other
@@ -2635,7 +2655,7 @@ fn program_reads_only_requested_interpreter_export() {
         .unwrap();
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!(
             "expected bool result from requested addressed export, got {:?}",
             other
@@ -2901,7 +2921,7 @@ fn program_scope_imports_still_work() {
 
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!("expected bool result from module run, got {:?}", other),
     }
 }
@@ -3006,7 +3026,7 @@ fn program_and_fenced_imports_do_not_mix() {
 
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!("expected bool result from module run, got {:?}", other),
     }
 }
@@ -3062,7 +3082,7 @@ fn program_and_fenced_can_import_same_module_without_duplicate_program_binding()
 
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!("expected bool result from module run, got {:?}", other),
     }
 }
@@ -3168,7 +3188,7 @@ fn module_records_keep_flat_metadata_for_compatibility() {
 
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!("expected bool result from module run, got {:?}", other),
     }
 }
@@ -3211,7 +3231,7 @@ fn run_module() {
     let result = runtime.run_module(version);
     assert!(result.is_ok());
     match result.unwrap().result.into_value() {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!("expected bool result from module run, got {:?}", other),
     }
 }
@@ -3230,7 +3250,7 @@ fn file_import_exposes_exports_under_file_stem_namespace() {
         .unwrap();
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!("expected bool result from module run, got {:?}", other),
     }
 }
@@ -3287,7 +3307,7 @@ fn namespace_import_exposes_exports_under_module_namespace() {
         .unwrap();
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!("expected bool result from module run, got {:?}", other),
     }
 }
@@ -3306,7 +3326,7 @@ fn single_import_exposes_export_unqualified() {
         .unwrap();
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!("expected bool result from module run, got {:?}", other),
     }
 }
@@ -3325,7 +3345,7 @@ fn wildcard_import_exposes_all_exports_unqualified() {
         .unwrap();
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(value) => assert!(*value.borrow()),
+        LegacyValue::Bool(value) => assert!(*value.borrow()),
         other => panic!("expected bool result from module run, got {:?}", other),
     }
 }
@@ -3405,7 +3425,7 @@ fn re_export_works() {
         .unwrap();
     let result = runtime.run_module(version).unwrap().result.into_value();
     match result {
-        Value::Bool(v) => assert!(*v.borrow()),
+        LegacyValue::Bool(v) => assert!(*v.borrow()),
         other => panic!("expected bool got {:?}", other),
     }
 }
@@ -3467,7 +3487,7 @@ fn module_version_records_multiple_import_edges_in_order() {
     assert!(main.dependencies.contains(&main.import_edges[0].dependency));
     assert!(main.dependencies.contains(&main.import_edges[1].dependency));
     match runtime.run_module(version).unwrap().result.into_value() {
-        Value::Bool(v) => assert!(*v.borrow()),
+        LegacyValue::Bool(v) => assert!(*v.borrow()),
         other => panic!("expected bool got {:?}", other),
     }
 }
@@ -3600,10 +3620,10 @@ fn module_host_call_works_inside_isolated_execution() {
         .source_resolver(FileSourceResolver::new(&root))
         .host_function(DeterministicHostFunction::new(
             "demo/value",
-            |_context, _arguments| Ok(Value::F64(Ref::new(0.0))),
+            |_context, _arguments| Ok(LegacyValue::F64(Ref::new(0.0))),
             move |_context, _arguments| {
                 invocation_count.fetch_add(1, Ordering::SeqCst);
-                Ok(Value::F64(Ref::new(42.0)))
+                Ok(LegacyValue::F64(Ref::new(42.0)))
             },
         ))
         .unwrap()
@@ -3629,7 +3649,7 @@ fn module_host_call_works_inside_isolated_execution() {
         .result
         .into_value();
     match result {
-        Value::Bool(v) => assert!(*v.borrow()),
+        LegacyValue::Bool(v) => assert!(*v.borrow()),
         other => panic!("expected bool got {:?}", other),
     }
     assert_eq!(
@@ -3655,7 +3675,7 @@ fn repeated_run_module_is_not_stale() {
     std::fs::write(root.join("math.mec"), "tau := 5.0\n<+ tau\n").unwrap();
     let second = runtime.run_module(version).unwrap().result.into_value();
     match (first, second) {
-        (Value::Bool(a), Value::Bool(b)) => {
+        (LegacyValue::Bool(a), LegacyValue::Bool(b)) => {
             assert!(*a.borrow());
             assert!(*b.borrow());
         }
@@ -3686,13 +3706,13 @@ fn missing_dependency_fails_module_build() {
     assert!(error.contains("RuntimeModuleDependencyMissing"));
 }
 
-fn docs_config(path: &str, value: Value) -> RuntimeConfigSpec {
+fn docs_config(path: &str, value: LegacyValue) -> RuntimeConfigSpec {
     RuntimeConfigSpec::new().with_resource(RuntimeResourceConfigSpec::InMemoryDocs(
         RuntimeInMemoryDocsResourceSpec::new("docs://manual").with_entry(path, value),
     ))
 }
 
-fn run_docs_config_read(spec: RuntimeConfigSpec) -> Result<Value, mech_core::MechError> {
+fn run_docs_config_read(spec: RuntimeConfigSpec) -> Result<LegacyValue, mech_core::MechError> {
     let root = setup_modules(
         "@manual := docs://manual{:read(intro/title)}\n\nresult := @manual/intro/title\n",
     );
@@ -4041,7 +4061,7 @@ fn workspace_load_relative_target_uses_workspace_root() {
         .result
         .into_value();
     match result {
-        Value::Bool(value) => assert!(!*value.borrow()),
+        LegacyValue::Bool(value) => assert!(!*value.borrow()),
         other => panic!(
             "expected false bool result from workspace root target, got {:?}",
             other
@@ -4436,7 +4456,7 @@ result := @foo/ok\n",
     let result = runtime.run_module(version).unwrap().result.into_value();
 
     match result {
-        Value::Bool(value) => assert_eq!(*value.borrow(), true),
+        LegacyValue::Bool(value) => assert_eq!(*value.borrow(), true),
         other => panic!("expected faux tilde fence to be ignored, got {:?}", other),
     }
 }
@@ -4467,7 +4487,7 @@ result := @foo/ok\n",
     let result = runtime.run_module(version).unwrap().result.into_value();
 
     match result {
-        Value::Bool(value) => assert_eq!(*value.borrow(), true),
+        LegacyValue::Bool(value) => assert_eq!(*value.borrow(), true),
         other => panic!(
             "expected faux backtick fence to be ignored, got {:?}",
             other
@@ -4583,7 +4603,7 @@ fn direct_runtime_normal_import_is_not_dropped() {
         .into_value();
 
     match result {
-        Value::F64(value) => assert_eq!(*value.borrow(), 0.0),
+        LegacyValue::F64(value) => assert_eq!(*value.borrow(), 0.0),
         other => panic!("expected sin(0) to return 0.0, got {other:?}"),
     }
 }
@@ -5394,11 +5414,11 @@ fn cli_manifest_env_import_reads_through_runtime() {
         .unwrap();
 
     let result = match result.into_value() {
-        Value::MutableReference(value) => value.borrow().clone(),
+        LegacyValue::MutableReference(value) => value.borrow().clone(),
         other => other,
     };
     match result {
-        Value::String(value) => assert_eq!(&*value.borrow(), "/tmp/home"),
+        LegacyValue::String(value) => assert_eq!(&*value.borrow(), "/tmp/home"),
         other => panic!("expected HOME string from cli env, got {:?}", other),
     }
 
@@ -5565,7 +5585,7 @@ fn cli_host_env_manifest_import_reads_with_runtime_grant() {
         .unwrap();
     let value = runtime.root_symbol_value("home").unwrap().into_value();
     match value {
-        Value::String(value) => assert_eq!(&*value.borrow(), "/tmp/mech-home"),
+        LegacyValue::String(value) => assert_eq!(&*value.borrow(), "/tmp/mech-home"),
         other => panic!("expected string home, got {other:?}"),
     }
     assert_eq!(&*calls.lock().unwrap(), &["env:HOME".to_string()]);
@@ -6263,7 +6283,7 @@ wrappedMismatch
     );
 
     let bool_provider = InMemoryDocsProvider::new()
-        .with_value("docs://manual", "flag", Value::Bool(Ref::new(false)))
+        .with_value("docs://manual", "flag", LegacyValue::Bool(Ref::new(false)))
         .unwrap();
     let mut bool_runtime = runtime_with_module_test_catalog()
         .in_memory_docs(bool_provider)
@@ -6298,7 +6318,7 @@ matched
         .unwrap();
 
     let bool_matching = match bool_matching.into_value() {
-        Value::MutableReference(value) => value.borrow().clone(),
+        LegacyValue::MutableReference(value) => value.borrow().clone(),
         other => other,
     };
     assert_bool_true(
@@ -6319,7 +6339,7 @@ mismatched
         .unwrap();
 
     let bool_mismatching = match bool_mismatching.into_value() {
-        Value::MutableReference(value) => value.borrow().clone(),
+        LegacyValue::MutableReference(value) => value.borrow().clone(),
         other => other,
     };
     assert_bool_false(
@@ -6528,11 +6548,11 @@ fn cli_context_module_read_exports_value() {
         .unwrap();
     let result = runtime.run_module(version).unwrap().result.into_value();
     let result = match result {
-        Value::MutableReference(value) => value.borrow().clone(),
+        LegacyValue::MutableReference(value) => value.borrow().clone(),
         other => other,
     };
     match result {
-        Value::String(value) => assert_eq!(&*value.borrow(), "/tmp/module-home"),
+        LegacyValue::String(value) => assert_eq!(&*value.borrow(), "/tmp/module-home"),
         other => panic!("expected string home, got {other:?}"),
     }
     assert_eq!(&*calls.lock().unwrap(), &["env:HOME".to_string()]);
@@ -6569,8 +6589,8 @@ struct RecordingResourceProvider {
     scheme: &'static str,
     bases: Vec<String>,
     equivalent_base_uri_groups: Vec<Vec<String>>,
-    values: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Value>>>,
-    writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String, Value)>>>,
+    values: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, LegacyValue>>>,
+    writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String, LegacyValue)>>>,
 }
 
 #[derive(Debug)]
@@ -6578,10 +6598,10 @@ struct RecordingResourceWriteEffect {
     scheme: String,
     base_uri: String,
     path: String,
-    value: Value,
-    values: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Value>>>,
-    writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String, Value)>>>,
-    previous: Option<Option<Value>>,
+    value: LegacyValue,
+    values: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, LegacyValue>>>,
+    writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String, LegacyValue)>>>,
+    previous: Option<Option<LegacyValue>>,
     previous_writes_len: Option<usize>,
 }
 
@@ -6642,7 +6662,7 @@ impl RecordingResourceProvider {
         self
     }
 
-    fn with_value(self, base: &str, path: &str, value: Value) -> Self {
+    fn with_value(self, base: &str, path: &str, value: LegacyValue) -> Self {
         self.values
             .lock()
             .unwrap()
@@ -6671,11 +6691,11 @@ impl RuntimeResourceProvider for RecordingResourceProvider {
         Ok(())
     }
 
-    fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+    fn read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<LegacyValue> {
         self.planned_value(request)
     }
 
-    fn plan_read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<LegacyValue> {
         self.planned_value(request)
     }
 
@@ -6699,7 +6719,10 @@ impl RuntimeResourceProvider for RecordingResourceProvider {
 }
 
 impl RecordingResourceProvider {
-    fn planned_value(&self, request: RuntimeResourceReadRequest) -> mech_core::MResult<Value> {
+    fn planned_value(
+        &self,
+        request: RuntimeResourceReadRequest,
+    ) -> mech_core::MResult<LegacyValue> {
         self.values
             .lock()
             .unwrap()
@@ -6719,11 +6742,11 @@ impl RecordingResourceProvider {
 
 fn assert_string_value(value: impl IntoTestValue, expected: &str) {
     let value = match value.into_test_value() {
-        Value::MutableReference(value) => value.borrow().clone(),
+        LegacyValue::MutableReference(value) => value.borrow().clone(),
         other => other,
     };
     match value {
-        Value::String(value) => assert_eq!(&*value.borrow(), expected),
+        LegacyValue::String(value) => assert_eq!(&*value.borrow(), expected),
         other => panic!("expected string value `{expected}`, got {other:?}"),
     }
 }
@@ -6858,7 +6881,7 @@ fn browser_context_subroot_normalizes_to_provider_base_path() {
     let provider = RecordingResourceProvider::new("browser", &["browser://dom"]).with_value(
         "browser://dom",
         "counter/text",
-        Value::String(Ref::new("count".to_string())),
+        LegacyValue::String(Ref::new("count".to_string())),
     );
     let mut runtime = runtime_with_module_test_catalog()
         .resource_provider(Box::new(provider))
@@ -6883,7 +6906,7 @@ fn docs_context_subroot_normalizes_to_provider_base_path() {
     let provider = RecordingResourceProvider::new("docs", &["docs://manual"]).with_value(
         "docs://manual",
         "intro/title",
-        Value::String(Ref::new("Manual".to_string())),
+        LegacyValue::String(Ref::new("Manual".to_string())),
     );
     let mut runtime = runtime_with_module_test_catalog()
         .resource_provider(Box::new(provider))
@@ -7070,7 +7093,7 @@ fn module_context_read_after_context_write_uses_execution_order() {
     let provider = RecordingResourceProvider::new("docs", &["docs://manual"]).with_value(
         "docs://manual",
         "intro/title",
-        Value::String(Ref::new("planned".to_string())),
+        LegacyValue::String(Ref::new("planned".to_string())),
     );
     let writes = provider.writes.clone();
     let mut runtime = runtime_with_module_test_catalog()
@@ -7114,7 +7137,7 @@ fn module_context_read_after_context_write_ignores_stale_provider_value() {
     let provider = RecordingResourceProvider::new("docs", &["docs://manual"]).with_value(
         "docs://manual",
         "intro/title",
-        Value::String(Ref::new("old".to_string())),
+        LegacyValue::String(Ref::new("old".to_string())),
     );
     let writes = provider.writes.clone();
     let mut runtime = runtime_with_module_test_catalog()
@@ -7161,12 +7184,12 @@ fn staged_resource_aliases_share_read_your_writes_identity() {
         .with_value(
             canonical,
             first_path,
-            Value::String(Ref::new("old-canonical".to_string())),
+            LegacyValue::String(Ref::new("old-canonical".to_string())),
         )
         .with_value(
             alias,
             second_path,
-            Value::String(Ref::new("old-alias".to_string())),
+            LegacyValue::String(Ref::new("old-alias".to_string())),
         );
     let writes = provider.writes.clone();
     let mut runtime = RuntimeBuilder::new()
@@ -7195,7 +7218,7 @@ fn staged_resource_aliases_share_read_your_writes_identity() {
                 path: first_path.to_string(),
                 context_name: "legacy".to_string(),
                 operation: RuntimeCapabilityOperation::Write,
-                value: Value::String(Ref::new("new-from-alias".to_string())),
+                value: LegacyValue::String(Ref::new("new-from-alias".to_string())),
                 intent: RuntimeResourceWriteIntent::Assign,
             },
         )
@@ -7219,7 +7242,7 @@ fn staged_resource_aliases_share_read_your_writes_identity() {
                 path: second_path.to_string(),
                 context_name: "canonical".to_string(),
                 operation: RuntimeCapabilityOperation::Write,
-                value: Value::String(Ref::new("new-from-canonical".to_string())),
+                value: LegacyValue::String(Ref::new("new-from-canonical".to_string())),
                 intent: RuntimeResourceWriteIntent::Assign,
             },
         )
@@ -7253,7 +7276,7 @@ fn context_resource_aliases_share_staged_read_your_writes_identity() {
         .with_value(
             canonical,
             path,
-            Value::String(Ref::new("stale".to_string())),
+            LegacyValue::String(Ref::new("stale".to_string())),
         );
     let writes = provider.writes.clone();
     let mut runtime = runtime_with_module_test_catalog()
@@ -7291,7 +7314,7 @@ fn direct_context_read_resolves_inside_op_assign() {
     let provider = RecordingResourceProvider::new("docs", &["docs://numbers"]).with_value(
         "docs://numbers",
         "increment",
-        Value::F64(Ref::new(2.0)),
+        LegacyValue::F64(Ref::new(2.0)),
     );
     let mut runtime = runtime_with_module_test_catalog()
         .resource_provider(Box::new(provider))
@@ -7702,7 +7725,11 @@ fn context_assignment_inside_function_body_fails_runtime_preflight() {
 #[test]
 fn top_level_context_assignment_still_writes_and_reads() {
     let provider = InMemoryDocsProvider::new()
-        .with_value("docs://manual", "intro/title", Value::Bool(Ref::new(false)))
+        .with_value(
+            "docs://manual",
+            "intro/title",
+            LegacyValue::Bool(Ref::new(false)),
+        )
         .unwrap();
     let inspection = provider.clone();
     let mut runtime = runtime_with_module_test_catalog()

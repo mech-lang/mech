@@ -1,6 +1,6 @@
 //! Explicit services supplied while Mech functions execute.
 
-use crate::{MResult, MechError, MechErrorKind, ValRef, Value};
+use crate::{LegacyValue, MResult, MechError, MechErrorKind, ValRef};
 
 #[cfg(feature = "no_std")]
 use alloc::{format, string::String};
@@ -70,12 +70,16 @@ pub trait MechExecutionServices {
     fn invoke_host_function(
         &mut self,
         request: &ExecutionHostFunctionRequest,
-        arguments: &[Value],
-    ) -> MResult<Value>;
+        arguments: &[LegacyValue],
+    ) -> MResult<LegacyValue>;
 
-    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value>;
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue>;
 
-    fn write_resource(&mut self, request: &ExecutionResourceRequest, value: &Value) -> MResult<()>;
+    fn write_resource(
+        &mut self,
+        request: &ExecutionResourceRequest,
+        value: &LegacyValue,
+    ) -> MResult<()>;
 
     /// Retains a live delivery target. Repeating the same interpreter, request,
     /// and target binding must be idempotent.
@@ -94,8 +98,8 @@ impl MechExecutionServices for NoMechExecutionServices {
     fn invoke_host_function(
         &mut self,
         request: &ExecutionHostFunctionRequest,
-        _arguments: &[Value],
-    ) -> MResult<Value> {
+        _arguments: &[LegacyValue],
+    ) -> MResult<LegacyValue> {
         Err(MechError::new(
             HostFunctionExecutionUnsupported {
                 request: request.clone(),
@@ -104,7 +108,7 @@ impl MechExecutionServices for NoMechExecutionServices {
         ))
     }
 
-    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<Value> {
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
         Err(MechError::new(
             ResourceReadExecutionUnsupported {
                 request: request.clone(),
@@ -116,7 +120,7 @@ impl MechExecutionServices for NoMechExecutionServices {
     fn write_resource(
         &mut self,
         request: &ExecutionResourceRequest,
-        _value: &Value,
+        _value: &LegacyValue,
     ) -> MResult<()> {
         Err(MechError::new(
             ResourceWriteExecutionUnsupported {
@@ -262,7 +266,7 @@ mod tests {
         );
 
         let write_error = services
-            .write_resource(&resource_request, &Value::Empty)
+            .write_resource(&resource_request, &LegacyValue::Empty)
             .unwrap_err();
         assert_eq!(write_error.kind_name(), "ResourceWriteExecutionUnsupported");
         assert_eq!(
@@ -274,7 +278,7 @@ mod tests {
         );
 
         let bind_error = services
-            .bind_live_resource(17, &resource_request, Ref::new(Value::Empty))
+            .bind_live_resource(17, &resource_request, Ref::new(LegacyValue::Empty))
             .unwrap_err();
         assert_eq!(bind_error.kind_name(), "LiveResourceBindingUnsupported");
         let binding = bind_error

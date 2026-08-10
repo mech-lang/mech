@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use mech_core::{MechError, MechErrorKind, MechRecord, MechTable, MechTuple, Ref, Value};
+use mech_core::{LegacyValue, MechError, MechErrorKind, MechRecord, MechTable, MechTuple, Ref};
 #[cfg(feature = "native")]
 use mech_runtime::RuntimeHostFactory;
 use mech_runtime::{
@@ -19,27 +19,27 @@ fn deliver_write(
     }
 }
 
-fn f(value: f64) -> Value {
-    Value::F64(Ref::new(value))
+fn f(value: f64) -> LegacyValue {
+    LegacyValue::F64(Ref::new(value))
 }
-fn s(value: &str) -> Value {
-    Value::String(Ref::new(value.to_string()))
+fn s(value: &str) -> LegacyValue {
+    LegacyValue::String(Ref::new(value.to_string()))
 }
-fn record(fields: Vec<(&str, Value)>) -> Value {
-    Value::Record(Ref::new(MechRecord::new(fields)))
+fn record(fields: Vec<(&str, LegacyValue)>) -> LegacyValue {
+    LegacyValue::Record(Ref::new(MechRecord::new(fields)))
 }
-fn tuple(values: Vec<Value>) -> Value {
-    Value::Tuple(Ref::new(MechTuple::from_vec(values)))
+fn tuple(values: Vec<LegacyValue>) -> LegacyValue {
+    LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values)))
 }
-fn table(records: Vec<Value>) -> Value {
+fn table(records: Vec<LegacyValue>) -> LegacyValue {
     let records: Vec<MechRecord> = records
         .into_iter()
         .map(|value| match value {
-            Value::Record(record) => record.borrow().clone(),
+            LegacyValue::Record(record) => record.borrow().clone(),
             other => panic!("expected record, got {other:?}"),
         })
         .collect();
-    Value::Table(Ref::new(MechTable::from_records(records).unwrap()))
+    LegacyValue::Table(Ref::new(MechTable::from_records(records).unwrap()))
 }
 
 fn settings(renderer: &str) -> ConfigValue {
@@ -54,7 +54,7 @@ fn settings(renderer: &str) -> ConfigValue {
     );
     ConfigValue::Map(map)
 }
-fn empty_scene() -> Value {
+fn empty_scene() -> LegacyValue {
     record(vec![
         ("width", f(100.0)),
         ("height", f(50.0)),
@@ -63,7 +63,7 @@ fn empty_scene() -> Value {
         ("lines", tuple(vec![])),
     ])
 }
-fn circle(id: &str) -> Value {
+fn circle(id: &str) -> LegacyValue {
     record(vec![
         ("id", s(id)),
         ("x", f(1.0)),
@@ -75,7 +75,7 @@ fn circle(id: &str) -> Value {
         ("opacity", f(1.0)),
     ])
 }
-fn line(id: &str) -> Value {
+fn line(id: &str) -> LegacyValue {
     record(vec![
         ("id", s(id)),
         ("x1", f(0.0)),
@@ -173,14 +173,14 @@ fn invalid_opacity() {
 #[test]
 fn valid_empty_circle_table() {
     let base = match table(vec![circle("template")]) {
-        Value::Table(table) => table.borrow().empty_table(0),
+        LegacyValue::Table(table) => table.borrow().empty_table(0),
         _ => unreachable!(),
     };
     let scene = record(vec![
         ("width", f(100.0)),
         ("height", f(50.0)),
         ("background", s("#000")),
-        ("circles", Value::Table(Ref::new(base))),
+        ("circles", LegacyValue::Table(Ref::new(base))),
         ("lines", tuple(vec![])),
     ]);
     assert_eq!(SceneSnapshot::from_value(&scene).unwrap().circles.len(), 0);
@@ -285,7 +285,7 @@ fn table_unknown_column_is_rejected() {
 #[test]
 fn table_column_length_mismatch_is_rejected() {
     let mut table = match table(vec![circle("c1")]) {
-        Value::Table(table) => table.borrow().clone(),
+        LegacyValue::Table(table) => table.borrow().clone(),
         _ => unreachable!(),
     };
     table.rows = 2;
@@ -293,7 +293,7 @@ fn table_column_length_mismatch_is_rejected() {
         ("width", f(100.0)),
         ("height", f(50.0)),
         ("background", s("#000")),
-        ("circles", Value::Table(Ref::new(table))),
+        ("circles", LegacyValue::Table(Ref::new(table))),
         ("lines", tuple(vec![])),
     ]);
     assert!(SceneSnapshot::from_value(&scene).is_err());

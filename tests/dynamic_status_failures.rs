@@ -4,25 +4,25 @@
 mod intrinsic_catalog;
 
 use mech::{MechProgram, ProgramInputId, ProgramInputUpdate};
-use mech_core::{Ref, Value, hash_str, structures::matrix::Matrix};
+use mech_core::{LegacyValue, Ref, hash_str, structures::matrix::Matrix};
 
-fn unwrap_value(value: Value) -> Value {
+fn unwrap_value(value: LegacyValue) -> LegacyValue {
     match value {
-        Value::MutableReference(reference) => unwrap_value(reference.borrow().clone()),
-        Value::Typed(value, _) => unwrap_value(*value),
+        LegacyValue::MutableReference(reference) => unwrap_value(reference.borrow().clone()),
+        LegacyValue::Typed(value, _) => unwrap_value(*value),
         value => value,
     }
 }
 
-fn f64_output(value: Value) -> f64 {
+fn f64_output(value: LegacyValue) -> f64 {
     match unwrap_value(value) {
-        Value::F64(value) => *value.borrow(),
+        LegacyValue::F64(value) => *value.borrow(),
         value => panic!("expected f64 output, got {value:?}"),
     }
 }
 
-fn assert_matrix_output(value: Value, expected: &[f64], rows: usize, cols: usize) {
-    let Value::MatrixF64(matrix) = unwrap_value(value) else {
+fn assert_matrix_output(value: LegacyValue, expected: &[f64], rows: usize, cols: usize) {
+    let LegacyValue::MatrixF64(matrix) = unwrap_value(value) else {
         panic!("expected f64 matrix output");
     };
 
@@ -35,17 +35,17 @@ fn assert_matrix_output(value: Value, expected: &[f64], rows: usize, cols: usize
     );
 }
 
-fn matrix_value(values: Vec<f64>, rows: usize, cols: usize) -> Value {
-    Value::MatrixF64(Matrix::from_vec(values, rows, cols))
+fn matrix_value(values: Vec<f64>, rows: usize, cols: usize) -> LegacyValue {
+    LegacyValue::MatrixF64(Matrix::from_vec(values, rows, cols))
 }
 
-fn ensure_input(program: &mut MechProgram, name: &str, value: Value) -> ProgramInputId {
+fn ensure_input(program: &mut MechProgram, name: &str, value: LegacyValue) -> ProgramInputId {
     program
         .ensure_input(program.interpreter().id, hash_str(name), name, value)
         .unwrap()
 }
 
-fn symbol_value(program: &MechProgram, name: &str) -> Value {
+fn symbol_value(program: &MechProgram, name: &str) -> LegacyValue {
     let symbols = program.interpreter().symbols();
     let value = symbols
         .borrow()
@@ -135,7 +135,7 @@ y",
 #[test]
 fn unary_scalar_input_rolls_back_on_failure() {
     let mut program = intrinsic_catalog::program();
-    let input = ensure_input(&mut program, "x", Value::F64(Ref::new(1.0)));
+    let input = ensure_input(&mut program, "x", LegacyValue::F64(Ref::new(1.0)));
     program
         .run_string(
             "+> status-test/unary
@@ -148,7 +148,7 @@ y",
     let error = program
         .update_inputs_and_advance_turn(&[ProgramInputUpdate {
             input,
-            value: Value::F64(Ref::new(2.0)),
+            value: LegacyValue::F64(Ref::new(2.0)),
         }])
         .expect_err("a failed reactive unary kernel must return an error");
 
@@ -165,7 +165,7 @@ y",
 #[test]
 fn binary_scalar_input_rolls_back_on_failure() {
     let mut program = intrinsic_catalog::program();
-    let input = ensure_input(&mut program, "x", Value::F64(Ref::new(1.0)));
+    let input = ensure_input(&mut program, "x", LegacyValue::F64(Ref::new(1.0)));
     program
         .run_string(
             "+> status-test/binary
@@ -178,7 +178,7 @@ y",
     let error = program
         .update_inputs_and_advance_turn(&[ProgramInputUpdate {
             input,
-            value: Value::F64(Ref::new(2.0)),
+            value: LegacyValue::F64(Ref::new(2.0)),
         }])
         .expect_err("a failed reactive binary kernel must return an error");
 

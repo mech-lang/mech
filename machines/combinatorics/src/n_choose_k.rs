@@ -114,58 +114,58 @@ impl RuntimeNChooseK for C64 {
     }
 }
 
-fn scalar_integer_result_max(value: &Value) -> Option<u128> {
+fn scalar_integer_result_max(value: &LegacyValue) -> Option<u128> {
     match value {
         #[cfg(feature = "u8")]
-        Value::U8(_) => Some(u8::MAX.into()),
+        LegacyValue::U8(_) => Some(u8::MAX.into()),
         #[cfg(feature = "u16")]
-        Value::U16(_) => Some(u16::MAX.into()),
+        LegacyValue::U16(_) => Some(u16::MAX.into()),
         #[cfg(feature = "u32")]
-        Value::U32(_) => Some(u32::MAX.into()),
+        LegacyValue::U32(_) => Some(u32::MAX.into()),
         #[cfg(feature = "u64")]
-        Value::U64(_) => Some(u64::MAX.into()),
+        LegacyValue::U64(_) => Some(u64::MAX.into()),
         #[cfg(feature = "u128")]
-        Value::U128(_) => Some(u128::MAX),
+        LegacyValue::U128(_) => Some(u128::MAX),
         #[cfg(feature = "i8")]
-        Value::I8(_) => Some(i8::MAX as u128),
+        LegacyValue::I8(_) => Some(i8::MAX as u128),
         #[cfg(feature = "i16")]
-        Value::I16(_) => Some(i16::MAX as u128),
+        LegacyValue::I16(_) => Some(i16::MAX as u128),
         #[cfg(feature = "i32")]
-        Value::I32(_) => Some(i32::MAX as u128),
+        LegacyValue::I32(_) => Some(i32::MAX as u128),
         #[cfg(feature = "i64")]
-        Value::I64(_) => Some(i64::MAX as u128),
+        LegacyValue::I64(_) => Some(i64::MAX as u128),
         #[cfg(feature = "i128")]
-        Value::I128(_) => Some(i128::MAX as u128),
+        LegacyValue::I128(_) => Some(i128::MAX as u128),
         #[cfg(feature = "rational")]
-        Value::R64(_) => Some(i64::MAX as u128),
+        LegacyValue::R64(_) => Some(i64::MAX as u128),
         _ => None,
     }
 }
 
-fn scalar_selection_count(value: &Value) -> Option<u128> {
+fn scalar_selection_count(value: &LegacyValue) -> Option<u128> {
     match value {
         #[cfg(feature = "u8")]
-        Value::U8(value) => Some(u128::from(*value.borrow())),
+        LegacyValue::U8(value) => Some(u128::from(*value.borrow())),
         #[cfg(feature = "u16")]
-        Value::U16(value) => Some(u128::from(*value.borrow())),
+        LegacyValue::U16(value) => Some(u128::from(*value.borrow())),
         #[cfg(feature = "u32")]
-        Value::U32(value) => Some(u128::from(*value.borrow())),
+        LegacyValue::U32(value) => Some(u128::from(*value.borrow())),
         #[cfg(feature = "u64")]
-        Value::U64(value) => Some(u128::from(*value.borrow())),
+        LegacyValue::U64(value) => Some(u128::from(*value.borrow())),
         #[cfg(feature = "u128")]
-        Value::U128(value) => Some(*value.borrow()),
+        LegacyValue::U128(value) => Some(*value.borrow()),
         #[cfg(feature = "i8")]
-        Value::I8(value) => u128::try_from(*value.borrow()).ok(),
+        LegacyValue::I8(value) => u128::try_from(*value.borrow()).ok(),
         #[cfg(feature = "i16")]
-        Value::I16(value) => u128::try_from(*value.borrow()).ok(),
+        LegacyValue::I16(value) => u128::try_from(*value.borrow()).ok(),
         #[cfg(feature = "i32")]
-        Value::I32(value) => u128::try_from(*value.borrow()).ok(),
+        LegacyValue::I32(value) => u128::try_from(*value.borrow()).ok(),
         #[cfg(feature = "i64")]
-        Value::I64(value) => u128::try_from(*value.borrow()).ok(),
+        LegacyValue::I64(value) => u128::try_from(*value.borrow()).ok(),
         #[cfg(feature = "i128")]
-        Value::I128(value) => u128::try_from(*value.borrow()).ok(),
+        LegacyValue::I128(value) => u128::try_from(*value.borrow()).ok(),
         #[cfg(feature = "f32")]
-        Value::F32(value) => {
+        LegacyValue::F32(value) => {
             let value = *value.borrow();
             (value.is_finite()
                 && value >= 0.0
@@ -174,7 +174,7 @@ fn scalar_selection_count(value: &Value) -> Option<u128> {
                 .then_some(value as u128)
         }
         #[cfg(feature = "f64")]
-        Value::F64(value) => {
+        LegacyValue::F64(value) => {
             let value = *value.borrow();
             (value.is_finite()
                 && value >= 0.0
@@ -183,12 +183,12 @@ fn scalar_selection_count(value: &Value) -> Option<u128> {
                 .then_some(value as u128)
         }
         #[cfg(feature = "r64")]
-        Value::R64(value) => {
+        LegacyValue::R64(value) => {
             let value = value.borrow();
             (*value.denom() == 1).then(|| u128::try_from(*value.numer()).ok()).flatten()
         }
         #[cfg(feature = "c64")]
-        Value::C64(value) => {
+        LegacyValue::C64(value) => {
             let value = value.borrow().0;
             (value.re.is_finite()
                 && value.im.is_finite()
@@ -202,7 +202,7 @@ fn scalar_selection_count(value: &Value) -> Option<u128> {
     }
 }
 
-fn validate_n_choose_k_scalar_values(n: &Value, k: &Value) -> MResult<()> {
+fn validate_n_choose_k_scalar_values(n: &LegacyValue, k: &LegacyValue) -> MResult<()> {
     let contract = "n_choose_k_scalar";
     let result_maximum = scalar_integer_result_max(n);
     let n = scalar_selection_count(n).ok_or_else(|| {
@@ -260,9 +260,9 @@ fn checked_combination_count(n: usize, k: usize) -> Option<usize> {
 }
 
 #[cfg(all(feature = "matrix", feature = "matrixd"))]
-fn matrix_selection_size(value: &Value) -> Option<usize> {
+fn matrix_selection_size(value: &LegacyValue) -> Option<usize> {
     match value {
-        Value::Index(value) => Some(*value.borrow()),
+        LegacyValue::Index(value) => Some(*value.borrow()),
         _ => usize::try_from(scalar_selection_count(value)?).ok(),
     }
 }
@@ -494,14 +494,14 @@ where
         *self.out.borrow_mut() = next;
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -512,9 +512,9 @@ mod scalar_contract_tests {
 
     fn args(n: f64, k: f64) -> FunctionArgs {
         FunctionArgs::Binary(
-            Value::F64(Ref::new(0.0)),
-            Value::F64(Ref::new(n)),
-            Value::F64(Ref::new(k)),
+            LegacyValue::F64(Ref::new(0.0)),
+            LegacyValue::F64(Ref::new(n)),
+            LegacyValue::F64(Ref::new(k)),
         )
     }
 
@@ -700,10 +700,10 @@ where
         *self.out.borrow_mut() = next;
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
     fn to_string(&self) -> String {
@@ -858,120 +858,120 @@ where
 }
 
 #[cfg(feature = "source")]
-fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn MechFunction>> {
+fn impl_combinatorics_n_choose_k_fxn(n: LegacyValue, k: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     match (n, k) {
         #[cfg(feature = "u8")]
-        (Value::U8(n), Value::U8(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::U8(n), LegacyValue::U8(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(u8::default()),
         })),
         #[cfg(feature = "u16")]
-        (Value::U16(n), Value::U16(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::U16(n), LegacyValue::U16(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(u16::default()),
         })),
         #[cfg(feature = "u32")]
-        (Value::U32(n), Value::U32(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::U32(n), LegacyValue::U32(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(u32::default()),
         })),
         #[cfg(feature = "u64")]
-        (Value::U64(n), Value::U64(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::U64(n), LegacyValue::U64(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(u64::default()),
         })),
         #[cfg(feature = "u128")]
-        (Value::U128(n), Value::U128(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::U128(n), LegacyValue::U128(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(u128::default()),
         })),
         #[cfg(feature = "i8")]
-        (Value::I8(n), Value::I8(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::I8(n), LegacyValue::I8(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(i8::default()),
         })),
         #[cfg(feature = "i16")]
-        (Value::I16(n), Value::I16(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::I16(n), LegacyValue::I16(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(i16::default()),
         })),
         #[cfg(feature = "i32")]
-        (Value::I32(n), Value::I32(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::I32(n), LegacyValue::I32(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(i32::default()),
         })),
         #[cfg(feature = "i64")]
-        (Value::I64(n), Value::I64(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::I64(n), LegacyValue::I64(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(i64::default()),
         })),
         #[cfg(feature = "i128")]
-        (Value::I128(n), Value::I128(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::I128(n), LegacyValue::I128(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(i128::default()),
         })),
         #[cfg(feature = "f32")]
-        (Value::F32(n), Value::F32(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::F32(n), LegacyValue::F32(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(f32::default()),
         })),
         #[cfg(feature = "f64")]
-        (Value::F64(n), Value::F64(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::F64(n), LegacyValue::F64(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(f64::default()),
         })),
         #[cfg(feature = "rational")]
-        (Value::R64(n), Value::R64(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::R64(n), LegacyValue::R64(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(R64::default()),
         })),
         #[cfg(feature = "complex")]
-        (Value::C64(n), Value::C64(k)) => Ok(Box::new(NChooseK {
+        (LegacyValue::C64(n), LegacyValue::C64(k)) => Ok(Box::new(NChooseK {
             n: n,
             k: k,
             out: Ref::new(C64::default()),
         })),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u8"))]
-        (Value::MatrixU8(n), Value::U8(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixU8(n), LegacyValue::U8(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u16"))]
-        (Value::MatrixU16(n), Value::U16(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixU16(n), LegacyValue::U16(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u32"))]
-        (Value::MatrixU32(n), Value::U32(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixU32(n), LegacyValue::U32(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u64"))]
-        (Value::MatrixU64(n), Value::U64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixU64(n), LegacyValue::U64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "u128"))]
-        (Value::MatrixU128(n), Value::U128(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixU128(n), LegacyValue::U128(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i8"))]
-        (Value::MatrixI8(n), Value::I8(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixI8(n), LegacyValue::I8(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i16"))]
-        (Value::MatrixI16(n), Value::I16(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixI16(n), LegacyValue::I16(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i32"))]
-        (Value::MatrixI32(n), Value::I32(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixI32(n), LegacyValue::I32(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i64"))]
-        (Value::MatrixI64(n), Value::I64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixI64(n), LegacyValue::I64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "i128"))]
-        (Value::MatrixI128(n), Value::I128(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixI128(n), LegacyValue::I128(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "f32"))]
-        (Value::MatrixF32(n), Value::F32(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixF32(n), LegacyValue::F32(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "f64"))]
-        (Value::MatrixF64(n), Value::F64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixF64(n), LegacyValue::F64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "rational"))]
-        (Value::MatrixR64(n), Value::R64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixR64(n), LegacyValue::R64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         #[cfg(all(feature = "matrix", feature = "matrixd", feature = "complex"))]
-        (Value::MatrixC64(n), Value::C64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
+        (LegacyValue::MatrixC64(n), LegacyValue::C64(k)) => Ok(n_choose_k_matrix_specialization(n, k)),
         (n, k) => Err(MechError::new(
             UnhandledFunctionArgumentKind2 {
                 arg: (n.kind(), k.kind()),
@@ -987,7 +987,7 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> MResult<Box<dyn Mech
 pub struct CombinatoricsNChooseK {}
 #[cfg(feature = "source")]
 impl FunctionSpecializer for CombinatoricsNChooseK {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -1004,16 +1004,16 @@ impl FunctionSpecializer for CombinatoricsNChooseK {
         match impl_combinatorics_n_choose_k_fxn(n.clone(), k.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => match (n, k) {
-                (Value::MutableReference(n), Value::MutableReference(k)) => {
+                (LegacyValue::MutableReference(n), LegacyValue::MutableReference(k)) => {
                     let n_brrw = n.borrow();
                     let k_brrw = k.borrow();
                     impl_combinatorics_n_choose_k_fxn(n_brrw.clone(), k_brrw.clone())
                 }
-                (n, Value::MutableReference(k)) => {
+                (n, LegacyValue::MutableReference(k)) => {
                     let k_brrw = k.borrow();
                     impl_combinatorics_n_choose_k_fxn(n.clone(), k_brrw.clone())
                 }
-                (Value::MutableReference(n), k) => {
+                (LegacyValue::MutableReference(n), k) => {
                     let n_brrw = n.borrow();
                     impl_combinatorics_n_choose_k_fxn(n_brrw.clone(), k.clone())
                 }

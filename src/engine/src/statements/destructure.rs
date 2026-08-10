@@ -2,22 +2,22 @@
 use super::VariableAlreadyDefinedError;
 #[cfg(feature = "tuple")]
 use crate::{
-    DestructureExpectedTupleError, InterpreterExecution, MResult, MechError, TupleDestructure,
-    TupleDestructureTooManyVarsError, Value, expression,
+    DestructureExpectedTupleError, InterpreterExecution, LegacyValue, MResult, MechError,
+    TupleDestructure, TupleDestructureTooManyVarsError, expression,
 };
 
 #[cfg(feature = "tuple")]
 pub fn tuple_destructure(
     tpl_dstrct: &TupleDestructure,
     p: &InterpreterExecution<'_>,
-) -> MResult<Value> {
+) -> MResult<LegacyValue> {
     let source = expression(&tpl_dstrct.expression, None, p)?;
     let tpl = match &source {
-        Value::Tuple(tpl) => tpl,
-        Value::MutableReference(r) => {
+        LegacyValue::Tuple(tpl) => tpl,
+        LegacyValue::MutableReference(r) => {
             let r_brrw = r.borrow();
             &match &*r_brrw {
-                Value::Tuple(tpl) => tpl.clone(),
+                LegacyValue::Tuple(tpl) => tpl.clone(),
                 _ => {
                     return Err(MechError::new(
                         DestructureExpectedTupleError {

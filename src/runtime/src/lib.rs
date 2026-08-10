@@ -15,6 +15,7 @@ mod outbox;
 #[cfg(all(feature = "runtime", feature = "runtime_bench_gate_b"))]
 mod resident_gate_b;
 mod resource;
+mod resource_contract;
 #[cfg(feature = "runtime")]
 mod snapshot;
 
@@ -58,6 +59,7 @@ pub use self::id::*;
 pub use self::input::*;
 pub use self::operation::*;
 pub use self::resource::*;
+pub use self::resource_contract::*;
 #[cfg(feature = "runtime")]
 pub use self::snapshot::*;
 

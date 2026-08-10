@@ -2,7 +2,7 @@ use crate::event::RuntimeEventKind;
 use crate::runtime::MechRuntime;
 use crate::runtime::live_state::LiveRegistrationMode;
 use crate::{ResourceBudgetExceededError, RuntimeContext, RuntimeValueSnapshot};
-use mech_core::{MResult, MechError, Value};
+use mech_core::{LegacyValue, MResult, MechError};
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
@@ -23,7 +23,7 @@ impl MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         bytecode: &[u8],
-        finish: impl FnOnce(Value) -> MResult<T>,
+        finish: impl FnOnce(LegacyValue) -> MResult<T>,
     ) -> MResult<T> {
         let turn_started = Instant::now();
         let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
@@ -62,7 +62,7 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         bytecode: &[u8],
         turn_started: Instant,
-        finish: impl FnOnce(Value) -> MResult<T>,
+        finish: impl FnOnce(LegacyValue) -> MResult<T>,
     ) -> MResult<T> {
         self.validate_context_for_runtime(context)?;
         context.charge_step()?;

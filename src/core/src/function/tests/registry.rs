@@ -4,7 +4,7 @@ use super::super::{
 #[cfg(feature = "f64")]
 use super::support::scalar;
 use crate::{
-    FunctionDefine, FunctionSpecializer, MResult, Value, hash_str,
+    FunctionDefine, FunctionSpecializer, LegacyValue, MResult, hash_str,
     internal_pattern_value_identifier,
 };
 
@@ -25,7 +25,7 @@ fn user_definition(name: &str) -> FunctionDefinition {
 struct DefaultTestSpecializer;
 
 impl FunctionSpecializer for DefaultTestSpecializer {
-    fn specialize(&self, _arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, _arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         unreachable!("safety metadata test must not specialize the function")
     }
 }
@@ -48,7 +48,7 @@ fn function_args_returns_only_inputs() {
 
     assert_eq!(
         FunctionArgs::Nullary(out.clone()).input_values(),
-        Vec::<Value>::new()
+        Vec::<LegacyValue>::new()
     );
     assert_eq!(
         FunctionArgs::Unary(out.clone(), a.clone()).input_values(),

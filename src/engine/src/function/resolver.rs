@@ -4,7 +4,7 @@ use crate::function::extensions::{
 };
 use mech_core::{
     FunctionCatalog, FunctionDefinition, FunctionOperationUnavailable, FunctionSpecializerEntry,
-    MResult, MechError, MechFunction, OperationId, UserFunctionTable, Value, hash_str,
+    LegacyValue, MResult, MechError, MechFunction, OperationId, UserFunctionTable, hash_str,
 };
 
 /// A named source function could not be resolved in the current environment.
@@ -90,7 +90,7 @@ impl<'a> FunctionResolver<'a> {
     pub fn specialize_operation(
         &self,
         operation: OperationId,
-        arguments: &[Value],
+        arguments: &[LegacyValue],
     ) -> MResult<Box<dyn MechFunction>> {
         self.specialize_operation_named(operation, None, arguments)
     }
@@ -99,7 +99,7 @@ impl<'a> FunctionResolver<'a> {
         &self,
         operation: OperationId,
         canonical_name: Option<&str>,
-        arguments: &[Value],
+        arguments: &[LegacyValue],
     ) -> MResult<Box<dyn MechFunction>> {
         let entry = self
             .catalog
@@ -123,7 +123,7 @@ impl<'a> FunctionResolver<'a> {
     pub fn specialize_named_extension(
         &self,
         extension: ExtensionFunctionId,
-        arguments: &[Value],
+        arguments: &[LegacyValue],
     ) -> MResult<Box<dyn MechFunction>> {
         let entry = self
             .extensions
@@ -162,11 +162,11 @@ mod tests {
             Ok(())
         }
 
-        fn out(&self) -> Value {
-            Value::Empty
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Empty
         }
 
-        fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
             Ok(Vec::new())
         }
 
@@ -185,7 +185,7 @@ mod tests {
     struct TestSpecializer(&'static str);
 
     impl FunctionSpecializer for TestSpecializer {
-        fn specialize(&self, _: &[Value]) -> MResult<Box<dyn MechFunction>> {
+        fn specialize(&self, _: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
             Ok(Box::new(TestFunction(self.0)))
         }
     }

@@ -35,14 +35,14 @@ impl MechFunctionImpl for ConvertSEnum {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Enum(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Enum(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -55,7 +55,7 @@ impl MechFunctionCompiler for ConvertSEnum {
 }
 #[derive(Debug)]
 struct ConvertSEmpty {
-    out: Ref<Value>,
+    out: Ref<LegacyValue>,
 }
 
 impl MechFunctionFactory for ConvertSEmpty {
@@ -65,7 +65,7 @@ impl MechFunctionFactory for ConvertSEmpty {
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
             FunctionArgs::Nullary(out) => {
-                let out: Ref<Value> = out.try_function_ref(FunctionArgumentRole::Output)?;
+                let out: Ref<LegacyValue> = out.try_function_ref(FunctionArgumentRole::Output)?;
                 Ok(Box::new(Self { out }))
             }
             _ => Err(MechError::new(
@@ -108,11 +108,11 @@ impl MechFunctionImpl for ConvertSEmpty {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.borrow().clone()
     }
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
-        Ok(vec![Value::MutableReference(self.out.clone())])
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(vec![LegacyValue::MutableReference(self.out.clone())])
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
@@ -147,12 +147,12 @@ mod empty_transaction_state_tests {
 
     #[test]
     fn convert_scalar_empty_exposes_original_outer_value_cell() {
-        let out = Ref::new(Value::Empty);
+        let out = Ref::new(LegacyValue::Empty);
         let function = ConvertSEmpty { out: out.clone() };
         let values = function.transaction_state_values().unwrap();
         assert_eq!(values.len(), 1);
         match &values[0] {
-            Value::MutableReference(value) => assert_eq!(value.addr(), out.addr()),
+            LegacyValue::MutableReference(value) => assert_eq!(value.addr(), out.addr()),
             value => panic!("expected mutable-reference transaction state, got {value:?}"),
         }
     }
@@ -168,7 +168,7 @@ struct ConvertMat2Table<T> {
 #[cfg(all(feature = "matrix", feature = "table"))]
 impl<T> MechFunctionImpl for ConvertMat2Table<T>
 where
-    T: Debug + Clone + PartialEq + Into<Value> + 'static,
+    T: Debug + Clone + PartialEq + Into<LegacyValue> + 'static,
 {
     fn solve_result(&self) -> MResult<()> {
         let arg = &self.arg;
@@ -184,14 +184,14 @@ where
         }
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Table(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Table(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -238,46 +238,74 @@ fn resolve_table_column_kinds(
 }
 
 #[cfg(all(feature = "matrix", feature = "set"))]
-fn matrix_to_values(value: &Value) -> Option<Vec<Value>> {
+fn matrix_to_values(value: &LegacyValue) -> Option<Vec<LegacyValue>> {
     match value {
-        Value::MutableReference(reference) => matrix_to_values(&reference.borrow()),
-        Value::MatrixIndex(matrix) => Some(
+        LegacyValue::MutableReference(reference) => matrix_to_values(&reference.borrow()),
+        LegacyValue::MatrixIndex(matrix) => Some(
             matrix
                 .as_vec()
                 .into_iter()
-                .map(|value| Value::Index(Ref::new(value)))
+                .map(|value| LegacyValue::Index(Ref::new(value)))
                 .collect(),
         ),
         #[cfg(feature = "bool")]
-        Value::MatrixBool(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixBool(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "u8")]
-        Value::MatrixU8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU8(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "u16")]
-        Value::MatrixU16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU16(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "u32")]
-        Value::MatrixU32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU32(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "u64")]
-        Value::MatrixU64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU64(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "u128")]
-        Value::MatrixU128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixU128(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "i8")]
-        Value::MatrixI8(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI8(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "i16")]
-        Value::MatrixI16(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI16(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "i32")]
-        Value::MatrixI32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI32(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "i64")]
-        Value::MatrixI64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI64(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "i128")]
-        Value::MatrixI128(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixI128(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "f32")]
-        Value::MatrixF32(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixF32(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "f64")]
-        Value::MatrixF64(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixF64(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "string")]
-        Value::MatrixString(matrix) => Some(matrix.as_vec().into_iter().map(Value::from).collect()),
+        LegacyValue::MatrixString(matrix) => {
+            Some(matrix.as_vec().into_iter().map(LegacyValue::from).collect())
+        }
         #[cfg(feature = "rational")]
-        Value::MatrixR64(matrix) => Some(
+        LegacyValue::MatrixR64(matrix) => Some(
             matrix
                 .as_vec()
                 .into_iter()
@@ -285,14 +313,14 @@ fn matrix_to_values(value: &Value) -> Option<Vec<Value>> {
                 .collect(),
         ),
         #[cfg(feature = "complex")]
-        Value::MatrixC64(matrix) => Some(
+        LegacyValue::MatrixC64(matrix) => Some(
             matrix
                 .as_vec()
                 .into_iter()
                 .map(|value| value.to_value())
                 .collect(),
         ),
-        Value::MatrixValue(matrix) => Some(matrix.as_vec()),
+        LegacyValue::MatrixValue(matrix) => Some(matrix.as_vec()),
         _ => None,
     }
 }
@@ -300,7 +328,7 @@ fn matrix_to_values(value: &Value) -> Option<Vec<Value>> {
 #[cfg(all(feature = "matrix", feature = "set"))]
 #[derive(Debug)]
 struct ConvertMatToSet {
-    arg: Value,
+    arg: LegacyValue,
     target_kind: ValueKind,
     out: Ref<MechSet>,
 }
@@ -323,14 +351,14 @@ impl MechFunctionImpl for ConvertMatToSet {
         *self.out.borrow_mut() = MechSet::from_vec(converted_values);
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::Set(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Set(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -359,14 +387,14 @@ impl MechFunctionImpl for ConvertSRationalToF64 {
         };
         Ok(())
     }
-    fn out(&self) -> Value {
-        Value::F64(self.out.clone())
+    fn out(&self) -> LegacyValue {
+        LegacyValue::F64(self.out.clone())
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -382,11 +410,11 @@ macro_rules! impl_conversion_match_arms {
   ($arg:expr, $($input_type:ident, $input_type_string:tt => $($target_type:ident, $target_type_string:tt),+);+ $(;)?) => {
     paste!{
       match $arg {
-        (Value::Typed(inner, option_kind), Value::Kind(target_kind))
+        (LegacyValue::Typed(inner, option_kind), LegacyValue::Kind(target_kind))
           if matches!(&option_kind, ValueKind::Option(inner_kind) if inner_kind.as_ref().is_convertible_to(&target_kind)) =>
         {
           let converted = match inner.as_ref() {
-            Value::Empty | Value::EmptyKind(_) => {
+            LegacyValue::Empty | LegacyValue::EmptyKind(_) => {
               return Err(MechError::new(
                 UnsupportedConversionError {
                   from: option_kind.clone(),
@@ -409,7 +437,7 @@ macro_rules! impl_conversion_match_arms {
         }
         $(
           #[cfg(all(feature = "matrix", feature = "table", feature = $input_type_string))]
-          (Value::[<Matrix $input_type:camel>](mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
+          (LegacyValue::[<Matrix $input_type:camel>](mat), LegacyValue::Kind(ValueKind::Table(tbl, sze))) => {
             let in_shape = mat.shape();
             let tbl_cols = tbl.len();
             let mat_knd = ValueKind::[<$input_type:camel>];
@@ -428,15 +456,15 @@ macro_rules! impl_conversion_match_arms {
           }
           $(
             #[cfg(all(feature = $input_type_string, feature = $target_type_string))]
-            (Value::[<$input_type:camel>](arg), Value::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new(ConvertScalarToScalarBasic{arg: arg.clone(), out: Ref::new($target_type::default())}))},
+            (LegacyValue::[<$input_type:camel>](arg), LegacyValue::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new(ConvertScalarToScalarBasic{arg: arg.clone(), out: Ref::new($target_type::default())}))},
           )+
         )+
         #[cfg(feature = "rational")]
-        (Value::R64(ref rat), Value::Kind(ValueKind::F64)) => {
+        (LegacyValue::R64(ref rat), LegacyValue::Kind(ValueKind::F64)) => {
           Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(f64::default())}))
         }
         #[cfg(all(feature = "atom", feature = "enum"))]
-        (Value::Atom(atom), Value::Kind(ValueKind::Enum(enum_id, _))) => {
+        (LegacyValue::Atom(atom), LegacyValue::Kind(ValueKind::Enum(enum_id, _))) => {
           let atom_brrw = atom.borrow();
           let variant_id = atom_brrw.id();
           let variants = vec![(variant_id,None)];
@@ -446,7 +474,7 @@ macro_rules! impl_conversion_match_arms {
           Ok(Box::new(ConvertSEnum{out: val}))
         }
         #[cfg(feature = "enum")]
-        (Value::Enum(enm), Value::Kind(ValueKind::Enum(enum_id, _))) => {
+        (LegacyValue::Enum(enm), LegacyValue::Kind(ValueKind::Enum(enum_id, _))) => {
           let enum_brrw = enm.borrow();
           if enum_brrw.id != enum_id {
             return Err(MechError::new(
@@ -459,12 +487,12 @@ macro_rules! impl_conversion_match_arms {
           }
           Ok(Box::new(ConvertSEnum{out: enm.clone()}))
         }
-        (Value::Empty, Value::Kind(ValueKind::Empty)) => {
-          Ok(Box::new(ConvertSEmpty { out: Ref::new(Value::Empty) }))
+        (LegacyValue::Empty, LegacyValue::Kind(ValueKind::Empty)) => {
+          Ok(Box::new(ConvertSEmpty { out: Ref::new(LegacyValue::Empty) }))
         }
-        (value, Value::Kind(ValueKind::Option(inner_kind))) => {
-          let converted = if value == Value::Empty {
-            Value::Empty
+        (value, LegacyValue::Kind(ValueKind::Option(inner_kind))) => {
+          let converted = if value == LegacyValue::Empty {
+            LegacyValue::Empty
           } else {
             value
               .convert_to(inner_kind.as_ref())
@@ -507,14 +535,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -556,14 +584,14 @@ where
         };
         Ok(())
     }
-    fn out(&self) -> Value {
+    fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
 
-    fn transaction_state_values(&self) -> MResult<Vec<Value>> {
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
 }
@@ -583,13 +611,16 @@ where
     }
 }
 
-fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>> {
-    if let (Value::Typed(inner, declared_kind), Value::Kind(target_vk)) =
+fn impl_conversion_fxn(
+    source_value: LegacyValue,
+    target_kind: LegacyValue,
+) -> MResult<Box<dyn MechFunction>> {
+    if let (LegacyValue::Typed(inner, declared_kind), LegacyValue::Kind(target_vk)) =
         (&source_value, &target_kind)
     {
         if declared_kind == target_vk {
             return Ok(Box::new(ConvertSEmpty {
-                out: Ref::new(Value::Typed(inner.clone(), declared_kind.clone())),
+                out: Ref::new(LegacyValue::Typed(inner.clone(), declared_kind.clone())),
             }));
         }
         return impl_conversion_fxn((**inner).clone(), target_kind);
@@ -597,7 +628,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
 
     match (&source_value, &target_kind) {
         #[cfg(all(feature = "matrix", feature = "set"))]
-        (source, Value::Kind(ValueKind::Set(target_kind, _))) => {
+        (source, LegacyValue::Kind(ValueKind::Set(target_kind, _))) => {
             if let Some(values) = matrix_to_values(source) {
                 let converted_values = values
                     .into_iter()
@@ -613,14 +644,14 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
             }
         }
         #[cfg(all(feature = "rational", feature = "f64"))]
-        (Value::R64(r), Value::Kind(ValueKind::F64)) => {
+        (LegacyValue::R64(r), LegacyValue::Kind(ValueKind::F64)) => {
             return Ok(Box::new(ConvertScalarToScalar {
                 arg: r.clone(),
                 out: Ref::new(f64::default()),
             }));
         }
         #[cfg(all(feature = "matrix", feature = "table", feature = "string"))]
-        (Value::MatrixString(mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
+        (LegacyValue::MatrixString(mat), LegacyValue::Kind(ValueKind::Table(tbl, sze))) => {
             let in_shape = mat.shape();
             // Verify the table has the correct number of columns
             if in_shape[1] != tbl.len() {
@@ -643,7 +674,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
             }));
         }
         #[cfg(all(feature = "matrix", feature = "table", feature = "bool"))]
-        (Value::MatrixBool(mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
+        (LegacyValue::MatrixBool(mat), LegacyValue::Kind(ValueKind::Table(tbl, sze))) => {
             let in_shape = mat.shape();
             // Verify the table has the correct number of columns
             if in_shape[1] != tbl.len() {
@@ -666,7 +697,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
             }));
         }
         #[cfg(all(feature = "matrix", feature = "table"))]
-        (Value::Table(table), Value::Kind(ValueKind::Matrix(target_kind, dims))) => {
+        (LegacyValue::Table(table), LegacyValue::Kind(ValueKind::Matrix(target_kind, dims))) => {
             let table = table.borrow();
             let rows = table.rows();
             let cols = table.cols();
@@ -704,7 +735,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
                 .with_compiler_loc());
             }
 
-            let matrix = Value::MatrixValue(Matrix::from_vec(elements, rows, cols));
+            let matrix = LegacyValue::MatrixValue(Matrix::from_vec(elements, rows, cols));
             return Ok(Box::new(ConvertSEmpty {
                 out: Ref::new(matrix),
             }));
@@ -734,7 +765,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
 pub struct ConvertKind {}
 
 impl FunctionSpecializer for ConvertKind {
-    fn specialize(&self, arguments: &[Value]) -> MResult<Box<dyn MechFunction>> {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
@@ -751,7 +782,7 @@ impl FunctionSpecializer for ConvertKind {
         match impl_conversion_fxn(source_value.clone(), target_kind.clone()) {
             Ok(fxn) => Ok(fxn),
             Err(_) => {
-                if let Value::MutableReference(rhs) = &source_value {
+                if let LegacyValue::MutableReference(rhs) = &source_value {
                     if let Ok(fxn) = impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone())
                     {
                         return Ok(fxn);
@@ -759,9 +790,9 @@ impl FunctionSpecializer for ConvertKind {
                 }
 
                 #[cfg(feature = "matrix")]
-                if matches!(&target_kind, Value::Kind(ValueKind::Matrix(_, _))) {
+                if matches!(&target_kind, LegacyValue::Kind(ValueKind::Matrix(_, _))) {
                     let source_kind = match &source_value {
-                        Value::MutableReference(source) => source.borrow().kind(),
+                        LegacyValue::MutableReference(source) => source.borrow().kind(),
                         source => source.kind(),
                     };
                     if matches!(source_kind, ValueKind::Matrix(_, _)) {
@@ -771,59 +802,59 @@ impl FunctionSpecializer for ConvertKind {
                 }
 
                 match source_value {
-                    Value::MutableReference(rhs) => {
+                    LegacyValue::MutableReference(rhs) => {
                         impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone())
                     }
                     #[cfg(feature = "atom")]
-                    Value::Atom(ref atom_id) => {
+                    LegacyValue::Atom(ref atom_id) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "u8"))]
-                    Value::MatrixU8(ref mat) => {
+                    LegacyValue::MatrixU8(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "u16"))]
-                    Value::MatrixU16(ref mat) => {
+                    LegacyValue::MatrixU16(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "u32"))]
-                    Value::MatrixU32(ref mat) => {
+                    LegacyValue::MatrixU32(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "u64"))]
-                    Value::MatrixU64(ref mat) => {
+                    LegacyValue::MatrixU64(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "u128"))]
-                    Value::MatrixU128(ref mat) => {
+                    LegacyValue::MatrixU128(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "i8"))]
-                    Value::MatrixI8(ref mat) => {
+                    LegacyValue::MatrixI8(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "i16"))]
-                    Value::MatrixI16(ref mat) => {
+                    LegacyValue::MatrixI16(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "i32"))]
-                    Value::MatrixI32(ref mat) => {
+                    LegacyValue::MatrixI32(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "i64"))]
-                    Value::MatrixI64(ref mat) => {
+                    LegacyValue::MatrixI64(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "i128"))]
-                    Value::MatrixI128(ref mat) => {
+                    LegacyValue::MatrixI128(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "f32"))]
-                    Value::MatrixF32(ref mat) => {
+                    LegacyValue::MatrixF32(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "f64"))]
-                    Value::MatrixF64(ref mat) => {
+                    LegacyValue::MatrixF64(ref mat) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     x => Err(MechError::new(
