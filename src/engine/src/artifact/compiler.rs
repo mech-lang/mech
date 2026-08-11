@@ -953,31 +953,15 @@ pub fn compile_executable_program_artifact(
                 });
                 if kind == CompiledNodeKind::Combinational
                     && is_literal_constructor_operation(&semantics.operation)
-                    && (register_state_indexes[dst as usize].is_some()
-                        || prior
-                            .is_some_and(|value| matches!(value.source, SourceValue::Constant(_))))
+                    && register_state_indexes[dst as usize].is_some()
                 {
-                    if register_state_indexes[dst as usize].is_some() {
-                        continue;
-                    }
-                    let constructor_inputs = semantic_input_registers(&semantics, declaration)?
-                        .iter()
-                        .map(|input| {
-                            register(&registers, *input)?
-                                .map(|value| value.source)
-                                .ok_or(ArtifactBuildError::MissingRegisterSource {
-                                    instruction: instruction_id,
-                                    register: *input,
-                                    role: "literal constructor input",
-                                })
-                        })
-                        .collect::<Result<Vec<_>, ArtifactBuildError>>()?;
-                    if constructor_inputs
-                        .iter()
-                        .all(|source| matches!(source, SourceValue::Constant(_)))
-                    {
-                        continue;
-                    }
+                    // State declaration snapshots are authoritative. Immutable
+                    // literal constructors must remain explicit: inside an
+                    // untriggered activation their destination buffer still
+                    // contains its zero/default template, not the constructed
+                    // value. Resident activation will evaluate constant-only
+                    // constructors once and retain the result.
+                    continue;
                 }
                 let node_index = checked_u32(nodes.len(), "NodeId")?;
                 let state_index = if register_state_indexes[dst as usize].is_some()

@@ -264,7 +264,7 @@ pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> 
     #[cfg(feature = "access")]
     crate::intrinsics::access::install_native_plan(builder)?;
 
-    #[cfg(feature = "assign")]
+    #[cfg(all(feature = "assign", not(feature = "compiler")))]
     crate::intrinsics::assign::catalog::install_native_plan(builder)?;
 
     #[cfg(feature = "variable_define_matrix1")]

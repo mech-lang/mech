@@ -326,7 +326,7 @@ macro_rules! impl_binop {
 
 #[macro_export]
 macro_rules! impl_unop {
-    ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
+    ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
         pub(crate) struct $struct_name {
             arg: Ref<$arg_type>,
@@ -367,6 +367,13 @@ macro_rules! impl_unop {
             }
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
+            }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                let contract: Option<&'static OperationContractDeclaration> = None;
+                $(let contract = Some($semantic_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ));)?
+                contract
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)

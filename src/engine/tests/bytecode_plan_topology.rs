@@ -655,6 +655,24 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
 }
 
 #[test]
+fn constant_matrix_inside_event_remains_an_explicit_artifact_constructor() -> MResult<()> {
+    let (artifact, bytecode_artifact) = compile_artifact_fixture(include_str!(
+        "fixtures/program-artifact/event-constant-matrix.mec"
+    ))?;
+    for artifact in [&artifact, &bytecode_artifact] {
+        assert!(
+            artifact.nodes().iter().any(|node| {
+                node.operation
+                    .operation_name
+                    .starts_with("VerticalConcatenate")
+            }),
+            "an immutable literal inside an event must be constructed during activation"
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn equal_interned_constants_keep_distinct_register_roles() -> MResult<()> {
     let (artifact, decoded) =
         compile_artifact_fixture("input := 1.0\n~state := 1.0\nstate = input\noutput := state")?;

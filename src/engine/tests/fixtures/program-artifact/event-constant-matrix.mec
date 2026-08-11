@@ -1,0 +1,9 @@
+pulse := 1.0
+~state := [0.0; 0.0; 0.0]
+
+~> pulse {
+  next := [0.0; 0.0; 1.0]
+  state = next
+}
+
+state

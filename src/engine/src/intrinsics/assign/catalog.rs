@@ -237,6 +237,7 @@ macro_rules! declare_assign_value_matrix_shape {
                 contract: RuntimeFunctionContract::same_shape(
                     RuntimeOutputAliasPolicy::AllowInputAlias,
                 ),
+                semantic_contract: &PURE_STATE_REGISTER_CONTRACT,
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!(
                     "mech_engine::__mech_native::",
@@ -2148,6 +2149,30 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 
     #[cfg(feature = "matrix")]
     install_matrix_runtime(builder)?;
+
+    #[cfg(feature = "compiler")]
+    install_compiled_state_runtime(builder)?;
+    Ok(())
+}
+
+#[cfg(feature = "compiler")]
+fn install_compiled_state_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register_assign_value_matrix_for_scalar!(builder, u8, "u8");
+    register_assign_value_matrix_for_scalar!(builder, u16, "u16");
+    register_assign_value_matrix_for_scalar!(builder, u32, "u32");
+    register_assign_value_matrix_for_scalar!(builder, u64, "u64");
+    register_assign_value_matrix_for_scalar!(builder, u128, "u128");
+    register_assign_value_matrix_for_scalar!(builder, i8, "i8");
+    register_assign_value_matrix_for_scalar!(builder, i16, "i16");
+    register_assign_value_matrix_for_scalar!(builder, i32, "i32");
+    register_assign_value_matrix_for_scalar!(builder, i64, "i64");
+    register_assign_value_matrix_for_scalar!(builder, i128, "i128");
+    register_assign_value_matrix_for_scalar!(builder, f32, "f32");
+    register_assign_value_matrix_for_scalar!(builder, f64, "f64");
+    register_assign_value_matrix_for_scalar!(builder, bool, "bool");
+    register_assign_value_matrix_for_scalar!(builder, string, "string");
+    register_assign_value_matrix_for_scalar!(builder, r64, "r64");
+    register_assign_value_matrix_for_scalar!(builder, c64, "c64");
     Ok(())
 }
 

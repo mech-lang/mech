@@ -30,6 +30,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         bind_add_indexed_rows,
     )?;
     register(builder, &runtime, "AddAssignVV<[f64]:0,0>", bind_add_assign)?;
+    register(builder, &runtime, "AddMDMD<f64>", bind_add)?;
+    register(builder, &runtime, "AddSS<f64>", bind_add)?;
+    register(builder, &runtime, "AddVDVD<f64>", bind_add)?;
     register(
         builder,
         &runtime,
@@ -52,6 +55,18 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "MulMDVD<f64>", bind_mul_rows)?;
     register(builder, &runtime, "MulSS<f64>", bind_mul)?;
     register(builder, &runtime, "MulSVD<f64>", bind_mul)?;
+    register(builder, &runtime, "MulVDS<f64>", bind_mul)?;
+    register(builder, &runtime, "Atan2F64", bind_atan2)?;
+    register(builder, &runtime, "DivSS<f64>", bind_div)?;
+    register(builder, &runtime, "DivVDS<f64>", bind_div)?;
+    register(builder, &runtime, "DotRDRD<f64>", bind_dot)?;
+    register(builder, &runtime, "DotVDVD<f64>", bind_dot)?;
+    register(builder, &runtime, "MatMulMDMD<f64>", bind_matmul)?;
+    register(builder, &runtime, "MatMulMDVD<f64>", bind_matmul)?;
+    register(builder, &runtime, "MatMulRDMD<f64>", bind_matmul)?;
+    register(builder, &runtime, "MatMulVDRD<f64>", bind_matmul)?;
+    register(builder, &runtime, "MathCosF64S", bind_cos)?;
+    register(builder, &runtime, "MathSinF64S", bind_sin)?;
     register(builder, &runtime, "NChooseKMatrix<f64>", bind_n_choose_k)?;
     register(builder, &runtime, "NegateS<f64>", bind_negate)?;
     register(builder, &runtime, "PowMDS<f64>", bind_pow)?;
@@ -71,14 +86,42 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         bind_sub_indexed_rows,
     )?;
     register(builder, &runtime, "SubMDMD<f64>", bind_sub)?;
+    register(builder, &runtime, "SubSS<f64>", bind_sub)?;
+    register(builder, &runtime, "SubVDVD<f64>", bind_sub)?;
     register(builder, &runtime, "TransposeMD<f64>", bind_transpose)?;
     register(builder, &runtime, "TransposeRD<f64>", bind_transpose)?;
+    register(builder, &runtime, "TransposeVD<f64>", bind_transpose)?;
     register(
         builder,
         &runtime,
         "VerticalConcatenateVDN<f64>",
         bind_vertical,
     )?;
+    register(
+        builder,
+        &runtime,
+        "VerticalConcatenateTwoArgs<f64>",
+        bind_vertical,
+    )?;
+    register(
+        builder,
+        &runtime,
+        "VerticalConcatenateThreeArgs<f64>",
+        bind_vertical,
+    )?;
+    register(
+        builder,
+        &runtime,
+        "VerticalConcatenateVD2<f64>",
+        bind_vertical,
+    )?;
+    register(
+        builder,
+        &runtime,
+        "VerticalConcatenateVD3<f64>",
+        bind_vertical,
+    )?;
+    register(builder, &runtime, "Assign<f64>", bind_assign)?;
     register(builder, &runtime, "Assign<f64DVector>", bind_assign)?;
     register(builder, &runtime, "Assign<f64DMatrix>", bind_assign)?;
 
@@ -598,7 +641,33 @@ fn bind_assign(
     if request.inputs[0].shape != request.output.shape {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(assign, Vec::<u64>::new().into_boxed_slice())
+    Ok(BoundResidentKernel::new_f64_1(assign_f64, Box::new([])))
+}
+
+fn bind_scalar_unary(
+    request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelF64Executor1,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::SameAsInput { input: 0 },
+        ChangeDetectionPolicy::ExactScalar,
+    )?;
+    require_f64_lengths(request, &[1], 1)?;
+    Ok(BoundResidentKernel::new_f64_1(executor, Box::new([])))
+}
+
+fn bind_sin(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_scalar_unary(request, sin_f64)
+}
+
+fn bind_cos(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_scalar_unary(request, cos_f64)
 }
 
 fn bind_negate(
@@ -620,18 +689,36 @@ fn bind_negate(
 fn bind_sub(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary(request, subtract)
+    bind_binary(request, subtract_f64)
+}
+
+fn bind_add(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, add_f64)
 }
 
 fn bind_mul(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary(request, multiply)
+    bind_binary(request, multiply_f64)
+}
+
+fn bind_div(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, divide_f64)
+}
+
+fn bind_atan2(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, atan2_f64)
 }
 
 fn bind_binary(
     request: &ResidentKernelBindRequest<'_>,
-    executor: mech_core::ResidentKernelExecutor,
+    executor: mech_core::ResidentKernelF64Executor2,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let change = if request.output.shape == ResidentShape::SCALAR {
         ChangeDetectionPolicy::ExactScalar
@@ -657,7 +744,63 @@ fn bind_binary(
     }) {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(executor, Vec::<u64>::new().into_boxed_slice())
+    Ok(BoundResidentKernel::new_f64_2(executor, Box::new([])))
+}
+
+fn bind_dot(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::ExactScalar,
+    )?;
+    require_kind(
+        request,
+        &[ResidentValueKind::F64, ResidentValueKind::F64],
+        ResidentValueKind::F64,
+    )?;
+    if request.inputs[0].shape != request.inputs[1].shape
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(BoundResidentKernel::new_f64_2(dot_f64, Box::new([])))
+}
+
+fn bind_matmul(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::MatrixProduct { lhs: 0, rhs: 1 },
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    require_kind(
+        request,
+        &[ResidentValueKind::F64, ResidentValueKind::F64],
+        ResidentValueKind::F64,
+    )?;
+    let [left, right] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if left.shape.columns != right.shape.rows
+        || request.output.shape.rows != left.shape.rows
+        || request.output.shape.columns != right.shape.columns
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(BoundResidentKernel::new_f64_2(
+        matmul_f64,
+        vec![
+            left.shape.rows as u64,
+            left.shape.columns as u64,
+            right.shape.columns as u64,
+        ]
+        .into_boxed_slice(),
+    ))
 }
 
 fn bind_mul_rows(
@@ -695,7 +838,7 @@ fn bind_mul_rows(
 fn bind_pow(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary(request, power)
+    bind_binary(request, power_f64)
 }
 
 fn bind_add_assign(
@@ -733,10 +876,10 @@ fn bind_transpose(
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(
-        transpose,
+    Ok(BoundResidentKernel::new_f64_1(
+        transpose_f64,
         vec![input.shape.rows as u64, input.shape.columns as u64].into_boxed_slice(),
-    )
+    ))
 }
 
 fn bind_sum_columns(
@@ -1144,15 +1287,11 @@ fn write_bool(output: ResidentValueMut<'_>, next: bool) -> Result<bool, Resident
     Ok(changed)
 }
 
-fn assign(
+fn assign_f64(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    source: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    if inputs.len() != 1 {
-        return Err(ResidentKernelError::InvalidInput);
-    }
-    let source = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
     if source.len() != output.len() {
         return Err(ResidentKernelError::InvalidShape);
@@ -1163,6 +1302,181 @@ fn assign(
         .any(|(left, right)| left.to_bits() != right.to_bits());
     output.copy_from_slice(source);
     Ok(changed)
+}
+
+fn unary_scalar_f64(
+    input: &[f64],
+    output: ResidentValueMut<'_>,
+    operation: impl FnOnce(f64) -> f64,
+) -> Result<bool, ResidentKernelError> {
+    let [input] = input else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let output = f64_output(output)?;
+    let [output] = output else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let next = operation(*input);
+    let changed = output.to_bits() != next.to_bits();
+    *output = next;
+    Ok(changed)
+}
+
+fn sin_f64(
+    _kernel: &BoundResidentKernel,
+    input: &[f64],
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    unary_scalar_f64(input, output, f64::sin)
+}
+
+fn cos_f64(
+    _kernel: &BoundResidentKernel,
+    input: &[f64],
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    unary_scalar_f64(input, output, f64::cos)
+}
+
+fn binary_f64_slices(
+    left: &[f64],
+    right: &[f64],
+    output: ResidentValueMut<'_>,
+    operation: impl Fn(f64, f64) -> f64,
+) -> Result<bool, ResidentKernelError> {
+    let output = f64_output(output)?;
+    let output_len = output.len();
+    let pick = |values: &[f64], index: usize| match values.len() {
+        1 => Some(values[0]),
+        len if len == output_len => Some(values[index]),
+        _ => None,
+    };
+    if pick(left, 0).is_none() || pick(right, 0).is_none() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(replace_f64(output, |index| {
+        operation(pick(left, index).unwrap(), pick(right, index).unwrap())
+    }))
+}
+
+fn add_f64(
+    _kernel: &BoundResidentKernel,
+    left: &[f64],
+    right: &[f64],
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64_slices(left, right, output, |left, right| left + right)
+}
+
+fn subtract_f64(
+    _kernel: &BoundResidentKernel,
+    left: &[f64],
+    right: &[f64],
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64_slices(left, right, output, |left, right| left - right)
+}
+
+fn multiply_f64(
+    _kernel: &BoundResidentKernel,
+    left: &[f64],
+    right: &[f64],
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64_slices(left, right, output, |left, right| left * right)
+}
+
+fn divide_f64(
+    _kernel: &BoundResidentKernel,
+    left: &[f64],
+    right: &[f64],
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64_slices(left, right, output, |left, right| left / right)
+}
+
+fn power_f64(
+    _kernel: &BoundResidentKernel,
+    left: &[f64],
+    right: &[f64],
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64_slices(left, right, output, f64::powf)
+}
+
+fn atan2_f64(
+    _kernel: &BoundResidentKernel,
+    left: &[f64],
+    right: &[f64],
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64_slices(left, right, output, f64::atan2)
+}
+
+fn dot_f64(
+    _kernel: &BoundResidentKernel,
+    left: &[f64],
+    right: &[f64],
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if left.len() != right.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let output = f64_output(output)?;
+    let [output] = output else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let next: f64 = left
+        .iter()
+        .zip(right)
+        .map(|(left, right)| left * right)
+        .sum();
+    let changed = output.to_bits() != next.to_bits();
+    *output = next;
+    Ok(changed)
+}
+
+fn matmul_f64(
+    kernel: &BoundResidentKernel,
+    left: &[f64],
+    right: &[f64],
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let rows = kernel.parameters()[0] as usize;
+    let inner = kernel.parameters()[1] as usize;
+    let columns = kernel.parameters()[2] as usize;
+    let output = f64_output(output)?;
+    if left.len() != rows * inner
+        || right.len() != inner * columns
+        || output.len() != rows * columns
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(replace_f64(output, |index| {
+        let row = index % rows;
+        let column = index / rows;
+        (0..inner)
+            .map(|term| left[row + term * rows] * right[term + column * inner])
+            .sum()
+    }))
+}
+
+fn transpose_f64(
+    kernel: &BoundResidentKernel,
+    input: &[f64],
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let output = f64_output(output)?;
+    let rows = kernel.parameters()[0] as usize;
+    let columns = kernel.parameters()[1] as usize;
+    if input.len() != rows * columns || output.len() != input.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(replace_f64(output, |index| {
+        let output_row = index % columns;
+        let output_column = index / columns;
+        input[output_column + output_row * rows]
+    }))
 }
 
 fn ekf_trig(
@@ -1443,55 +1757,6 @@ fn negate(
     Ok(replace_f64(output, |index| -input[index]))
 }
 
-fn binary_f64(
-    inputs: &dyn ResidentKernelInputs,
-    output: ResidentValueMut<'_>,
-    operation: impl Fn(f64, f64) -> f64,
-) -> Result<bool, ResidentKernelError> {
-    if inputs.len() != 2 {
-        return Err(ResidentKernelError::InvalidInput);
-    }
-    let left = f64_input(inputs, 0)?;
-    let right = f64_input(inputs, 1)?;
-    let output = f64_output(output)?;
-    let output_len = output.len();
-    let pick = |values: &[f64], index: usize| match values.len() {
-        1 => Some(values[0]),
-        len if len == output_len => Some(values[index]),
-        _ => None,
-    };
-    if pick(left, 0).is_none() || pick(right, 0).is_none() {
-        return Err(ResidentKernelError::InvalidShape);
-    }
-    Ok(replace_f64(output, |index| {
-        operation(pick(left, index).unwrap(), pick(right, index).unwrap())
-    }))
-}
-
-fn subtract(
-    _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
-    output: ResidentValueMut<'_>,
-) -> Result<bool, ResidentKernelError> {
-    binary_f64(inputs, output, |left, right| left - right)
-}
-
-fn multiply(
-    _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
-    output: ResidentValueMut<'_>,
-) -> Result<bool, ResidentKernelError> {
-    binary_f64(inputs, output, |left, right| left * right)
-}
-
-fn power(
-    _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
-    output: ResidentValueMut<'_>,
-) -> Result<bool, ResidentKernelError> {
-    binary_f64(inputs, output, f64::powf)
-}
-
 fn multiply_rows(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -1532,28 +1797,6 @@ fn add_assign(
         *target = next;
     }
     Ok(changed)
-}
-
-fn transpose(
-    kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
-    output: ResidentValueMut<'_>,
-) -> Result<bool, ResidentKernelError> {
-    if inputs.len() != 1 {
-        return Err(ResidentKernelError::InvalidInput);
-    }
-    let input = f64_input(inputs, 0)?;
-    let output = f64_output(output)?;
-    let rows = kernel.parameters()[0] as usize;
-    let columns = kernel.parameters()[1] as usize;
-    if input.len() != rows * columns || output.len() != input.len() {
-        return Err(ResidentKernelError::InvalidShape);
-    }
-    Ok(replace_f64(output, |index| {
-        let output_row = index % columns;
-        let output_column = index / columns;
-        input[output_column + output_row * rows]
-    }))
 }
 
 fn sum_columns(

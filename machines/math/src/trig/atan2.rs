@@ -97,6 +97,11 @@ macro_rules! impl_two_arg_fxn {
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(math_binary_contract(
+                    <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -255,7 +260,10 @@ macro_rules! impl_binop_atan2 {
 }
 
 #[cfg(feature = "source")]
-pub fn impl_atan2_fxn(arg1_value: LegacyValue, arg2_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
+pub fn impl_atan2_fxn(
+    arg1_value: LegacyValue,
+    arg2_value: LegacyValue,
+) -> MResult<Box<dyn MechFunction>> {
     impl_binop_atan2!(Atan2, arg1_value, arg2_value,
       F32, f32::default(), "f32";
       F64, f64::default(), "f64";

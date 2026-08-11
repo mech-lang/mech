@@ -74,10 +74,10 @@ pub struct FrozenEkfOutputClosure {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FrozenEkfConstantClosure {
-    pub dt: ConstantId,
-    pub landmark: ConstantId,
-    pub process_covariance: ConstantId,
-    pub measurement_covariance: ConstantId,
+    pub dt: ArtifactSource,
+    pub landmark: ArtifactSource,
+    pub process_covariance: ArtifactSource,
+    pub measurement_covariance: ArtifactSource,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -168,8 +168,12 @@ impl FrozenEkfArtifactClosure {
         let mut predicates = Vec::with_capacity(3);
         let mut state_updates = Vec::with_capacity(2);
         let mut output_by_operation = std::collections::BTreeMap::new();
+        let activation_constants = validate_activation_constants(artifact)?;
 
         for node in artifact.nodes() {
+            if activation_constants.nodes.contains(&node.node) {
+                continue;
+            }
             let declared = declared_contract(artifact, node.node, node.contract)?;
             let inputs = node_inputs(artifact, node)?;
             let outputs = node_outputs(artifact, node)?;
@@ -295,7 +299,7 @@ impl FrozenEkfArtifactClosure {
         validate_state_update_sources(&state_updates, &output_by_operation)?;
         let output = validate_output(artifact, &state_updates)?;
         validate_initializers(artifact, &state_updates, &output)?;
-        let constants = validate_constants(artifact, &kernels)?;
+        let constants = validate_constants(artifact, &kernels, &activation_constants.values)?;
         validate_operation_wiring(
             &kernels,
             &predicates,
@@ -315,10 +319,150 @@ impl FrozenEkfArtifactClosure {
             constraints,
             constants,
             observation_adapter_nodes: Box::new([]),
-            structural_alias_nodes: Box::new([]),
+            structural_alias_nodes: activation_constants.nodes,
             output,
         })
     }
+}
+
+struct ActivationConstantClosure {
+    nodes: Box<[NodeId]>,
+    values: std::collections::BTreeMap<CellSlotId, Vec<f64>>,
+}
+
+fn validate_activation_constants(
+    artifact: &ProgramArtifact,
+) -> Result<ActivationConstantClosure, FrozenEkfArtifactClosureError> {
+    let mut nodes = Vec::new();
+    let mut values = std::collections::BTreeMap::new();
+    for node in artifact.nodes() {
+        let name = node.operation.operation_name.as_str();
+        if node.operation.module_path.as_ref() != ["runtime"]
+            || !(name.starts_with("HorizontalConcatenate")
+                || name.starts_with("VerticalConcatenate"))
+        {
+            continue;
+        }
+        let contract = declared_contract(artifact, node.node, node.contract)?;
+        let inputs = node_inputs(artifact, node)?;
+        let outputs = node_outputs(artifact, node)?;
+        let valid_contract = contract.interaction == ExternalInteraction::Pure
+            && contract.inputs.len() == inputs.len()
+            && contract.inputs.iter().all(|input| {
+                input.access == AccessMode::Read && input.delivery == DeliveryMode::Signal
+            })
+            && contract.outputs.len() == 1
+            && contract.outputs[0].access == AccessMode::Write
+            && contract.outputs[0].delivery == DeliveryMode::Signal
+            && matches!(
+                contract.outputs[0].construction,
+                OutputConstruction::Build { .. }
+            )
+            && contract.outputs[0].alias == AliasPolicy::NoAlias
+            && contract.outputs[0].change_detection == ChangeDetectionPolicy::KernelReported
+            && outputs.len() == 1
+            && artifact.slots()[outputs[0].get() as usize].role == crate::SlotRole::Derived;
+        if !valid_contract {
+            continue;
+        }
+        let Some(parts) = inputs
+            .iter()
+            .copied()
+            .map(|source| static_f64_value(artifact, &values, source))
+            .collect::<Option<Vec<_>>>()
+        else {
+            continue;
+        };
+        let Some(output_shape) = f64_shape(artifact, slot_schema(artifact, outputs[0])?) else {
+            continue;
+        };
+        let output = if name.starts_with("HorizontalConcatenate") {
+            concatenate_horizontal(&parts, output_shape)
+        } else {
+            concatenate_vertical(&parts, output_shape)
+        };
+        let Some(output) = output else {
+            continue;
+        };
+        values.insert(outputs[0], output);
+        nodes.push(node.node);
+    }
+    Ok(ActivationConstantClosure {
+        nodes: nodes.into_boxed_slice(),
+        values,
+    })
+}
+
+fn static_f64_value(
+    artifact: &ProgramArtifact,
+    activation_values: &std::collections::BTreeMap<CellSlotId, Vec<f64>>,
+    source: ArtifactSource,
+) -> Option<((usize, usize), Vec<f64>)> {
+    let schema = source_schema(artifact, source).ok()?;
+    let shape = f64_shape(artifact, schema)?;
+    let values = match source {
+        ArtifactSource::Constant(constant) => value_f64s(artifact, constant)?,
+        ArtifactSource::Slot(slot) => activation_values.get(&slot)?.clone(),
+    };
+    (values.len() == shape.0 * shape.1).then_some((shape, values))
+}
+
+fn f64_shape(artifact: &ProgramArtifact, schema: SchemaId) -> Option<(usize, usize)> {
+    match artifact.schemas().get(schema)?.body() {
+        SchemaBody::FloatingPoint(FloatWidth::W64) => Some((1, 1)),
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W64)) => {
+            let [
+                DimensionExpr::Constant(rows),
+                DimensionExpr::Constant(columns),
+            ] = dimensions.as_ref()
+            else {
+                return None;
+            };
+            Some(((*rows).try_into().ok()?, (*columns).try_into().ok()?))
+        }
+        _ => None,
+    }
+}
+
+fn concatenate_horizontal(
+    parts: &[((usize, usize), Vec<f64>)],
+    output_shape: (usize, usize),
+) -> Option<Vec<f64>> {
+    let rows = parts.first()?.0.0;
+    if parts.iter().any(|part| part.0.0 != rows)
+        || output_shape != (rows, parts.iter().map(|part| part.0.1).sum())
+    {
+        return None;
+    }
+    Some(
+        parts
+            .iter()
+            .flat_map(|part| part.1.iter().copied())
+            .collect(),
+    )
+}
+
+fn concatenate_vertical(
+    parts: &[((usize, usize), Vec<f64>)],
+    output_shape: (usize, usize),
+) -> Option<Vec<f64>> {
+    let columns = parts.first()?.0.1;
+    if parts.iter().any(|part| part.0.1 != columns)
+        || output_shape != (parts.iter().map(|part| part.0.0).sum(), columns)
+    {
+        return None;
+    }
+    let mut output = Vec::with_capacity(output_shape.0 * output_shape.1);
+    for column in 0..columns {
+        for ((rows, _), values) in parts {
+            let start = column * rows;
+            output.extend_from_slice(&values[start..start + rows]);
+        }
+    }
+    Some(output)
 }
 
 fn declared_contract<'a>(
@@ -656,24 +800,26 @@ fn validate_initializers(
 fn validate_constants(
     artifact: &ProgramArtifact,
     kernels: &[FrozenEkfKernelNode],
+    activation_values: &std::collections::BTreeMap<CellSlotId, Vec<f64>>,
 ) -> Result<FrozenEkfConstantClosure, FrozenEkfArtifactClosureError> {
     let constant = |operation: EkfKernel, input: usize, expected: &[f64]| {
         let node = kernels
             .iter()
             .find(|node| node.operation == operation)
             .ok_or(FrozenEkfArtifactClosureError::InvalidConstantBinding)?;
-        let ArtifactSource::Constant(constant) = node
+        let source = node
             .inputs
             .get(input)
             .copied()
-            .ok_or(FrozenEkfArtifactClosureError::InvalidConstantBinding)?
-        else {
-            return Err(FrozenEkfArtifactClosureError::InvalidConstantBinding);
-        };
-        if value_f64s(artifact, constant).as_deref() != Some(expected) {
+            .ok_or(FrozenEkfArtifactClosureError::InvalidConstantBinding)?;
+        if static_f64_value(artifact, activation_values, source)
+            .map(|(_, values)| values)
+            .as_deref()
+            != Some(expected)
+        {
             return Err(FrozenEkfArtifactClosureError::InvalidConstantBinding);
         }
-        Ok(constant)
+        Ok(source)
     };
     let dt = constant(EkfKernel::MotionJacobian, 3, &[0.05])?;
     let landmark = constant(EkfKernel::LandmarkDeltaAndRange, 1, &[25.0, -10.0])?;
@@ -688,11 +834,8 @@ fn validate_constants(
     if kernels
         .iter()
         .flat_map(|node| node.inputs.iter())
-        .filter_map(|source| match source {
-            ArtifactSource::Constant(constant) => Some(*constant),
-            ArtifactSource::Slot(_) => None,
-        })
-        .any(|constant| !allowed.contains(&constant))
+        .filter(|source| static_f64_value(artifact, activation_values, **source).is_some())
+        .any(|source| !allowed.contains(source))
     {
         return Err(FrozenEkfArtifactClosureError::InvalidConstantBinding);
     }
@@ -733,8 +876,6 @@ fn validate_operation_wiring(
     let state_source = ArtifactSource::Slot(state.target);
     let covariance_source = ArtifactSource::Slot(covariance.target);
     let observation_source = ArtifactSource::Slot(observation);
-    let constant = ArtifactSource::Constant;
-
     for node in kernels {
         let expected = match node.operation {
             EkfKernel::TrigonometricState => vec![state_source],
@@ -742,27 +883,26 @@ fn validate_operation_wiring(
                 state_source,
                 observation_source,
                 kernel_output(EkfKernel::TrigonometricState)?,
-                constant(constants.dt),
+                constants.dt,
             ],
-            EkfKernel::ControlJacobian => vec![
-                kernel_output(EkfKernel::TrigonometricState)?,
-                constant(constants.dt),
-            ],
+            EkfKernel::ControlJacobian => {
+                vec![kernel_output(EkfKernel::TrigonometricState)?, constants.dt]
+            }
             EkfKernel::PredictedState => vec![
                 state_source,
                 observation_source,
                 kernel_output(EkfKernel::TrigonometricState)?,
-                constant(constants.dt),
+                constants.dt,
             ],
             EkfKernel::PredictedCovariance => vec![
                 covariance_source,
                 kernel_output(EkfKernel::MotionJacobian)?,
                 kernel_output(EkfKernel::ControlJacobian)?,
-                constant(constants.process_covariance),
+                constants.process_covariance,
             ],
             EkfKernel::LandmarkDeltaAndRange => vec![
                 kernel_output(EkfKernel::PredictedState)?,
-                constant(constants.landmark),
+                constants.landmark,
             ],
             EkfKernel::PredictedMeasurement => vec![
                 kernel_output(EkfKernel::PredictedState)?,
@@ -774,7 +914,7 @@ fn validate_operation_wiring(
             EkfKernel::InnovationCovariance => vec![
                 kernel_output(EkfKernel::PredictedCovariance)?,
                 kernel_output(EkfKernel::MeasurementJacobian)?,
-                constant(constants.measurement_covariance),
+                constants.measurement_covariance,
             ],
             EkfKernel::Solve2x2 => vec![kernel_output(EkfKernel::InnovationCovariance)?],
             EkfKernel::KalmanGain => vec![
@@ -795,7 +935,7 @@ fn validate_operation_wiring(
                 kernel_output(EkfKernel::PredictedCovariance)?,
                 kernel_output(EkfKernel::MeasurementJacobian)?,
                 kernel_output(EkfKernel::KalmanGain)?,
-                constant(constants.measurement_covariance),
+                constants.measurement_covariance,
             ],
             EkfKernel::CovarianceSymmetrization => {
                 vec![kernel_output(EkfKernel::JosephCovarianceUpdate)?]

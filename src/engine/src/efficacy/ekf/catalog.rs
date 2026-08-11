@@ -576,7 +576,6 @@ impl MechFunctionCompiler for FrozenF64NegateFunction {
 pub fn frozen_ekf_compiler_catalog() -> MResult<Arc<FunctionCatalog>> {
     let mut builder = FunctionCatalogBuilder::new();
     crate::intrinsics::catalog::install_runtime(&mut builder)?;
-    crate::intrinsics::assign::install_frozen_ekf_state_runtime(&mut builder)?;
     crate::intrinsics::catalog::install_source(&mut builder)?;
     install_runtime(&mut builder)?;
     install_source(&mut builder)?;

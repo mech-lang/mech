@@ -1279,6 +1279,66 @@ macro_rules! declare_native_runtime_factory {
         name: $name:expr,
         factory_type: $factory:ty,
         contract: $contract:expr,
+        semantic_contract: $semantic_contract:expr,
+
+        package: $package:literal,
+        crate_name: $crate_name:literal,
+        installer_path: $installer_path:expr,
+
+        extra_cargo_features: [$($cargo_feature:expr),* $(,)?],
+    ) => {
+        #[cfg($cfg)]
+        pub(crate) fn $registration(
+            builder: &mut $crate::FunctionCatalogBuilder,
+        ) -> $crate::MResult<()> {
+            #[cfg(feature = "native-plan")]
+            {
+                return builder.insert_runtime_factory_with_linkage_and_semantic_contract::<$factory>(
+                    $name,
+                    $contract,
+                    $crate::NativeFunctionLinkage::for_factory::<$factory>(
+                        $package,
+                        $crate_name,
+                        $installer_path,
+                        &[$($cargo_feature),*],
+                    )?,
+                    $semantic_contract,
+                );
+            }
+
+            #[cfg(not(feature = "native-plan"))]
+            {
+                builder.insert_runtime_factory_with_semantic_contract::<$factory>(
+                    $name,
+                    $contract,
+                    $semantic_contract,
+                )
+            }
+        }
+
+        #[doc(hidden)]
+        #[cfg(feature = "native-link")]
+        #[cfg($cfg)]
+        pub fn $installer(
+            builder: &mut $crate::FunctionCatalogBuilder,
+        ) -> $crate::MResult<()> {
+            builder.insert_runtime_factory_with_semantic_contract::<$factory>(
+                $name,
+                $contract,
+                $semantic_contract,
+            )
+        }
+    };
+
+    (
+        cfg: $cfg:meta,
+
+        registration: $registration:ident,
+        installer: $installer:ident,
+
+        name: $name:expr,
+        factory_type: $factory:ty,
+        contract: $contract:expr,
 
         package: $package:literal,
         crate_name: $crate_name:literal,

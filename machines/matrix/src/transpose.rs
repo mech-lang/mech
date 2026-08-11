@@ -186,7 +186,7 @@ macro_rules! impl_transpose_match_arms {
             #[cfg(all(feature = "matrixd", feature = $value_string))]
             LegacyValue::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) => {
               let (rows,cols) = {arg.borrow().shape()};
-              Ok(Box::new(TransposeMD{arg, out: Ref::new(DMatrix::from_element(rows,cols,$target_type::default()))}))
+              Ok(Box::new(TransposeMD{arg, out: Ref::new(DMatrix::from_element(cols,rows,$target_type::default()))}))
             },
           )+
         )+
@@ -225,3 +225,18 @@ fn impl_transpose_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> 
 
 #[cfg(feature = "source")]
 impl_mech_urnop_fxn!(MatrixTranspose, impl_transpose_fxn, "matrix/transpose");
+
+#[cfg(all(test, feature = "source", feature = "matrixd", feature = "f64"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deferred_dynamic_transpose_declares_transposed_shape() {
+        let input = LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::zeros(3, 2))));
+        let function = impl_transpose_fxn(input).unwrap();
+        let LegacyValue::MatrixF64(Matrix::DMatrix(output)) = function.out() else {
+            panic!("dynamic transpose must produce a dynamic matrix");
+        };
+        assert_eq!(output.borrow().shape(), (2, 3));
+    }
+}

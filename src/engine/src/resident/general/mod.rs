@@ -971,6 +971,18 @@ fn classify_nodes(artifact: &ProgramArtifact) -> Result<Box<[NodeClass]>, Reside
                         return Err(ResidentActivationError::InvalidAlias { node: node.node });
                     }
                 }
+                OutputConstruction::Build { .. } => {
+                    // The resident layout resolves and allocates every activation-stable
+                    // shape before turn execution. A pure, non-aliasing builder can
+                    // therefore reuse its scratch region on each turn; turn-lifetime
+                    // dimensions remain rejected later by `schema_layout`.
+                    if output_role != SlotRole::Derived
+                        || output.access != AccessMode::Write
+                        || output.alias != AliasPolicy::NoAlias
+                    {
+                        return Err(ResidentActivationError::InvalidAlias { node: node.node });
+                    }
+                }
                 OutputConstruction::ReadModifyWrite { base_input, .. } => {
                     if output_role != SlotRole::State
                         || output.access != AccessMode::ReadWrite
