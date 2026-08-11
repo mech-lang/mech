@@ -117,13 +117,14 @@ pub mod __resident {
         FrozenEkfStateUpdate, FrozenLiveBinding, compile_frozen_ekf_source,
     };
     pub use crate::efficacy::ekf::operation::{EkfKernel, EkfPredicate};
-    pub use crate::resident::ResidentExecutionError;
     pub use crate::resident::general::{
-        ActivatedInput, ActivatedNode, ActivatedNodeIndex, ActivatedOutput, ActivatedPlan,
-        ActivationFacts, DependencyTopology, ReactiveInstance, ResidentActivationError,
-        ResidentArenaSizes, ResidentReadLocation, ResidentRegion, ResidentStorageClass,
-        ResidentValueBorrow, ResidentWriteLocation, ResolvedSlot, StateArena, StateMigrationPolicy,
-        TurnWorkspace, TypedResidentArena, activate,
+        ActivatedConstraint, ActivatedInput, ActivatedNode, ActivatedNodeIndex, ActivatedOutput,
+        ActivatedPlan, ActivationFacts, CapturedSignalInput, DependencyTopology,
+        PreparedResidentTurn, ReactiveInstance, ResidentActivationError, ResidentArenaSizes,
+        ResidentExecutionError, ResidentReadLocation, ResidentRegion, ResidentStorageClass,
+        ResidentStructuralProbe, ResidentTurnSummary, ResidentValueBorrow, ResidentWriteLocation,
+        ResolvedSlot, StateArena, StateMigrationPolicy, TurnWorkspace, TypedResidentArena,
+        activate,
     };
 }
 #[cfg(all(feature = "source", feature = "state_machines"))]

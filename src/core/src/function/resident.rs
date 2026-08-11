@@ -115,9 +115,22 @@ impl ResidentValueMut<'_> {
     }
 }
 
+/// Allocation-free view over the prevalidated input locations of one bound
+/// resident node. Implementations may borrow disjoint regions from the same
+/// typed arena while its output region is mutably borrowed.
+pub trait ResidentKernelInputs {
+    fn len(&self) -> usize;
+
+    fn get(&self, index: usize) -> Option<ResidentValueRef<'_>>;
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
 pub type ResidentKernelExecutor = for<'a> fn(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'a>],
+    inputs: &'a dyn ResidentKernelInputs,
     output: ResidentValueMut<'a>,
 ) -> Result<bool, ResidentKernelError>;
 
@@ -151,7 +164,7 @@ impl BoundResidentKernel {
 
     pub fn execute<'a>(
         &self,
-        inputs: &[ResidentValueRef<'a>],
+        inputs: &'a dyn ResidentKernelInputs,
         output: ResidentValueMut<'a>,
     ) -> Result<bool, ResidentKernelError> {
         (self.executor)(self, inputs, output)

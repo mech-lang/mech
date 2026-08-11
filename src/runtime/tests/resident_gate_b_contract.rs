@@ -1,14 +1,17 @@
 #![cfg(feature = "runtime_bench_gate_b")]
 
-use mech_core::ReactiveInstanceId;
+use mech_core::{ReactiveInstanceId, ResidentValueRef};
 use mech_engine::__gate_b_resident::{
-    PreparedResidentTurn, ResidentEkfBatch, ResidentExecutionError, ResidentFullWrite,
-    ResidentTurnSummary,
+    PreparedResidentTurn, ResidentEkfBatch, ResidentExecutionError as GateBExecutionError,
+    ResidentFullWrite, ResidentTurnSummary,
 };
-use mech_engine::__gate_d::{
-    FrozenEkfCompilationServices, ReactiveInstance, activate, compile_frozen_ekf_source,
+use mech_engine::__resident::{
+    ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices,
+    PreparedResidentTurn as PreparedArtifactTurn, ReactiveInstance,
+    ResidentExecutionError as ArtifactExecutionError, ResidentStorageClass, ResidentValueBorrow,
+    activate, compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
-use mech_runtime::__gate_b_recording::{LedgerSequence, ResidentTurnRecorder, TurnFailurePhase};
+use mech_runtime::__resident_recording::{LedgerSequence, ResidentTurnRecorder, TurnFailurePhase};
 
 const INPUT: [f64; 4] = [1.0, 0.1, 24.0, -0.6];
 const ARTIFACT_SOURCE: &str =
@@ -17,12 +20,50 @@ const ARTIFACT_SOURCE: &str =
 fn artifact_instance() -> ReactiveInstance {
     let mut services = FrozenEkfCompilationServices::default();
     let compilation = compile_frozen_ekf_source(ARTIFACT_SOURCE, &mut services).unwrap();
+    let catalog = frozen_ekf_compiler_catalog().unwrap();
     activate(
         ReactiveInstanceId::new(0, 0),
         &compilation.source_artifact,
-        &compilation.resource_request,
+        &catalog,
+        &ActivationFacts::default(),
     )
     .unwrap()
+}
+
+fn artifact_state(instance: &ReactiveInstance) -> [u64; 12] {
+    let mut result = [0; 12];
+    for slot in instance
+        .plan
+        .slots
+        .iter()
+        .filter(|slot| slot.storage == ResidentStorageClass::State)
+    {
+        let ResidentValueBorrow::F64 { values, .. } =
+            instance.state_borrow(slot.artifact_id).unwrap()
+        else {
+            panic!("EKF resident state is f64")
+        };
+        let target = match values.len() {
+            3 => &mut result[..3],
+            9 => &mut result[3..],
+            _ => panic!("unexpected EKF resident state shape"),
+        };
+        for (target, value) in target.iter_mut().zip(values) {
+            *target = value.to_bits();
+        }
+    }
+    result
+}
+
+fn prepare_artifact<'instance>(
+    instance: &'instance mut ReactiveInstance,
+    input: &[f64; 4],
+) -> Result<PreparedArtifactTurn<'instance>, ArtifactExecutionError> {
+    let captured = CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::F64(input),
+    };
+    instance.prepare_turn(&[captured])
 }
 
 fn commit_prepared(
@@ -41,7 +82,7 @@ fn commit_prepared(
 fn finish_prepared(
     prepared: PreparedResidentTurn<'_>,
     recorder: &mut ResidentTurnRecorder,
-    permit: mech_runtime::__gate_b_recording::LedgerPermit,
+    permit: mech_runtime::__resident_recording::LedgerPermit,
 ) -> LedgerSequence {
     recorder.prepare_commit(permit, prepared).unwrap().commit()
 }
@@ -160,14 +201,14 @@ fn record_preparation_failure_automatically_aborts_before_publication() {
 fn artifact_commit_uses_the_reserved_prepare_publish_append_boundary() {
     let mut instance = artifact_instance();
     let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
-    let initial = (*instance.estimate(), *instance.covariance());
+    let initial = artifact_state(&instance);
     let permit = recorder.take_admission_permit(0).unwrap();
-    let prepared = instance.prepare_turn(INPUT).unwrap();
+    let prepared = prepare_artifact(&mut instance, &INPUT).unwrap();
     let summary = prepared.summary();
     let commit = recorder.prepare_artifact_commit(permit, prepared).unwrap();
     assert_eq!(commit.commit().get(), 1);
     assert_eq!(instance.published_epoch().get(), 1);
-    assert_ne!((*instance.estimate(), *instance.covariance()), initial);
+    assert_ne!(artifact_state(&instance), initial);
     assert_eq!(recorder.recorded_ledger_len(), 1);
     let record = recorder.inspect_last().unwrap();
     assert!(record.accepted);
@@ -180,13 +221,13 @@ fn artifact_commit_uses_the_reserved_prepare_publish_append_boundary() {
 fn artifact_record_preparation_failure_aborts_before_publication() {
     let mut instance = artifact_instance();
     let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
-    let initial = (*instance.estimate(), *instance.covariance());
+    let initial = artifact_state(&instance);
     let permit = recorder.take_admission_permit(0).unwrap();
-    let prepared = instance.prepare_turn(INPUT).unwrap();
+    let prepared = prepare_artifact(&mut instance, &INPUT).unwrap();
     recorder.fail_next_preparation_for_test();
     assert!(recorder.prepare_artifact_commit(permit, prepared).is_err());
     assert_eq!(instance.published_epoch().get(), 0);
-    assert_eq!((*instance.estimate(), *instance.covariance()), initial);
+    assert_eq!(artifact_state(&instance), initial);
     assert_eq!(recorder.recorded_ledger_len(), 0);
 }
 
@@ -203,11 +244,11 @@ fn artifact_admission_capacity_is_taken_before_candidate_execution() {
 fn rejected_artifact_execution_appends_without_publication() {
     let mut instance = artifact_instance();
     let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
-    let initial = (*instance.estimate(), *instance.covariance());
+    let initial = artifact_state(&instance);
     let permit = recorder.take_admission_permit(0).unwrap();
     let mut invalid = INPUT;
     invalid[0] = f64::NAN;
-    let failure = match instance.prepare_turn(invalid) {
+    let failure = match prepare_artifact(&mut instance, &invalid) {
         Ok(prepared) => {
             prepared.abort();
             panic!("invalid artifact candidate unexpectedly prepared")
@@ -215,11 +256,11 @@ fn rejected_artifact_execution_appends_without_publication() {
         Err(failure) => failure,
     };
     recorder
-        .prepare_rejected(permit, instance.published_epoch().get(), failure)
+        .prepare_artifact_rejected(permit, instance.published_epoch().get(), failure)
         .unwrap()
         .append();
     assert_eq!(instance.published_epoch().get(), 0);
-    assert_eq!((*instance.estimate(), *instance.covariance()), initial);
+    assert_eq!(artifact_state(&instance), initial);
     assert_eq!(recorder.recorded_ledger_len(), 1);
     let record = recorder.inspect_last().unwrap();
     assert!(!record.accepted);
@@ -279,37 +320,37 @@ fn high_epoch_executes_the_same_trajectory_and_work() {
 fn rejection_failure_kinds_and_phases_are_stable_and_bounded() {
     let failures = [
         (
-            ResidentExecutionError::EpochExhausted,
+            GateBExecutionError::EpochExhausted,
             TurnFailurePhase::Execution,
             "ResidentEpochExhausted",
         ),
         (
-            ResidentExecutionError::IncompleteCandidate,
+            GateBExecutionError::IncompleteCandidate,
             TurnFailurePhase::Integrity,
             "ResidentIncompleteCandidate",
         ),
         (
-            ResidentExecutionError::LandmarkDistance,
+            GateBExecutionError::LandmarkDistance,
             TurnFailurePhase::Integrity,
             "ResidentLandmarkDistance",
         ),
         (
-            ResidentExecutionError::InnovationDeterminant,
+            GateBExecutionError::InnovationDeterminant,
             TurnFailurePhase::Integrity,
             "ResidentInnovationDeterminant",
         ),
         (
-            ResidentExecutionError::NonFiniteState,
+            GateBExecutionError::NonFiniteState,
             TurnFailurePhase::Integrity,
             "ResidentNonFiniteState",
         ),
         (
-            ResidentExecutionError::CovarianceDiagonal,
+            GateBExecutionError::CovarianceDiagonal,
             TurnFailurePhase::Integrity,
             "ResidentCovarianceDiagonal",
         ),
         (
-            ResidentExecutionError::CovarianceSymmetry,
+            GateBExecutionError::CovarianceSymmetry,
             TurnFailurePhase::Integrity,
             "ResidentCovarianceSymmetry",
         ),
@@ -336,7 +377,7 @@ fn final_turn_identity_is_issued_once_without_wrap_or_reuse() {
 
     let permit = recorder.take_admission_permit(0).unwrap();
     recorder
-        .prepare_rejected(permit, 0, ResidentExecutionError::EpochExhausted)
+        .prepare_rejected(permit, 0, GateBExecutionError::EpochExhausted)
         .unwrap()
         .append();
     let record = recorder.inspect_last().unwrap();
@@ -347,7 +388,7 @@ fn final_turn_identity_is_issued_once_without_wrap_or_reuse() {
     let permit = recorder.take_admission_permit(1).unwrap();
     assert!(
         recorder
-            .prepare_rejected(permit, 0, ResidentExecutionError::EpochExhausted)
+            .prepare_rejected(permit, 0, GateBExecutionError::EpochExhausted)
             .is_err()
     );
     assert_eq!(recorder.recorded_ledger_len(), 1);

@@ -1,4 +1,4 @@
-#![cfg(feature = "resident-ekf-artifact")]
+#![cfg(feature = "resident-artifact")]
 
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeInstruction, ChangeDetectionPolicy,
@@ -6,7 +6,7 @@ use mech_core::{
     ObservationReplayPolicy, OutputConstruction, ParsedProgram, ResolvedOperationContract,
     ResourceDelivery, ResourceIntent, ShapeRule, ValueData, snapshot::SequenceView,
 };
-use mech_engine::__gate_d::{
+use mech_engine::__resident::{
     FrozenEkfCompilationServices, compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
 use mech_engine::{MechProgram, MechProgramConfig};

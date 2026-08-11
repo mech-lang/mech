@@ -1,5 +1,9 @@
 //! Schema-driven activation for the pre-launch dense numeric resident profile.
 
+mod execution;
+
+pub use execution::*;
+
 use core::ops::Range;
 use core::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{BTreeMap, BTreeSet};
@@ -10,9 +14,9 @@ use mech_core::{
     DeliveryMode, DimensionExpr, DimensionLifetime, ExternalInteraction, FunctionCatalog,
     InstanceEpoch, IntegrityConstraintId, LayoutGeneration, NodeId, ObservationReplayPolicy,
     OutputConstruction, PlanGeneration, ProgramRevision, ReactiveInstanceId,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentPortLayout, ResidentShape,
-    ResidentValueKind, ResidentValueMut, ResidentValueRef, SchemaBody, SchemaId, SchemaKey,
-    ShapeInstance, SlotIndex, Value, ValueData, ValueDataDraft, ValueDraft,
+    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelInputs, ResidentPortLayout,
+    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef, SchemaBody, SchemaId,
+    SchemaKey, ShapeInstance, SlotIndex, Value, ValueData, ValueDataDraft, ValueDraft,
 };
 
 use crate::{
@@ -517,25 +521,20 @@ impl ReactiveInstance {
                 ValueDataDraft::F64(F64Bits::from_f64(values[0]))
             }
             ResidentValueBorrow::Bool { values, .. } => ValueDataDraft::Matrix(
-                values
-                    .iter()
-                    .map(|value| ValueDataDraft::Bool(*value != 0))
+                canonical_matrix_indices(declaration.region.shape)
+                    .map(|index| ValueDataDraft::Bool(values[index] != 0))
                     .collect::<Vec<_>>()
                     .into_boxed_slice(),
             ),
             ResidentValueBorrow::Index { values, .. } => ValueDataDraft::Matrix(
-                values
-                    .iter()
-                    .copied()
-                    .map(ValueDataDraft::Index)
+                canonical_matrix_indices(declaration.region.shape)
+                    .map(|index| ValueDataDraft::Index(values[index]))
                     .collect::<Vec<_>>()
                     .into_boxed_slice(),
             ),
             ResidentValueBorrow::F64 { values, .. } => ValueDataDraft::Matrix(
-                values
-                    .iter()
-                    .copied()
-                    .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                canonical_matrix_indices(declaration.region.shape)
+                    .map(|index| ValueDataDraft::F64(F64Bits::from_f64(values[index])))
                     .collect::<Vec<_>>()
                     .into_boxed_slice(),
             ),
@@ -1264,12 +1263,8 @@ fn execute_activation_graph(
             .iter()
             .map(|source| owned_activation_input(plan, arena, *source))
             .collect::<Result<Vec<_>, _>>()?;
-        let refs = inputs
-            .iter()
-            .map(OwnedResidentValue::as_ref)
-            .collect::<Vec<_>>();
         step.kernel
-            .execute(&refs, arena.write(step.write))
+            .execute(&OwnedActivationInputs(&inputs), arena.write(step.write))
             .map_err(|_| ResidentActivationError::ActivationKernel {
                 node: step.artifact_node,
             })?;
@@ -1291,6 +1286,18 @@ impl OwnedResidentValue {
             Self::Index(values) => ResidentValueRef::Index(values),
             Self::F64(values) => ResidentValueRef::F64(values),
         }
+    }
+}
+
+struct OwnedActivationInputs<'a>(&'a [OwnedResidentValue]);
+
+impl ResidentKernelInputs for OwnedActivationInputs<'_> {
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+        self.0.get(index).map(OwnedResidentValue::as_ref)
     }
 }
 
@@ -1393,11 +1400,6 @@ fn build_topology(
         set_bit(&mut root_mask, root.get() as usize);
     }
     let mut mandatory = vec![0_u64; words].into_boxed_slice();
-    for (index, node) in nodes.iter().enumerate() {
-        if node.write.storage == ResidentStorageClass::State {
-            set_bit(&mut mandatory, index);
-        }
-    }
     for constraint in artifact.constraints() {
         let Some(ArtifactSource::Slot(slot)) = constraint.inputs.first().copied() else {
             continue;
@@ -1544,15 +1546,20 @@ fn write_value(
             if target.len() != source.len() {
                 return Err(ResidentActivationError::InvalidSnapshotRepresentation);
             }
-            for (target, source) in target.iter_mut().zip(source) {
-                *target = u8::from(*source);
+            for (canonical, physical) in canonical_matrix_indices(region.shape).enumerate() {
+                target[physical] = u8::from(source[canonical]);
             }
         }
         (ResidentValueMut::Index(target), ValueData::Matrix(matrix)) => {
             let SequenceView::Index(source) = matrix.elements() else {
                 return Err(ResidentActivationError::InvalidSnapshotRepresentation);
             };
-            target.copy_from_slice(source);
+            if target.len() != source.len() {
+                return Err(ResidentActivationError::InvalidSnapshotRepresentation);
+            }
+            for (canonical, physical) in canonical_matrix_indices(region.shape).enumerate() {
+                target[physical] = source[canonical];
+            }
         }
         (ResidentValueMut::F64(target), ValueData::Matrix(matrix)) => {
             let SequenceView::F64(source) = matrix.elements() else {
@@ -1561,13 +1568,23 @@ fn write_value(
             if target.len() != source.len() {
                 return Err(ResidentActivationError::InvalidSnapshotRepresentation);
             }
-            for (target, source) in target.iter_mut().zip(source) {
-                *target = source.to_f64();
+            for (canonical, physical) in canonical_matrix_indices(region.shape).enumerate() {
+                target[physical] = source[canonical].to_f64();
             }
         }
         _ => return Err(ResidentActivationError::InvalidSnapshotRepresentation),
     }
     Ok(())
+}
+
+fn canonical_matrix_indices(shape: ResidentShape) -> impl ExactSizeIterator<Item = usize> {
+    let rows = shape.rows as usize;
+    let columns = shape.columns as usize;
+    (0..rows * columns).map(move |canonical| {
+        let row = canonical / columns;
+        let column = canonical % columns;
+        column * rows + row
+    })
 }
 
 fn physical_layout_eq(left: &ActivatedPlan, right: &ActivatedPlan) -> bool {

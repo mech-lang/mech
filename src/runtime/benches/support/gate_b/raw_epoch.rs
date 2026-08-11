@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use mech_runtime::__gate_b_recording::{
+use mech_runtime::__resident_recording::{
     GateBFixedReceipt, InputSequence, InputSequenceRange, LedgerPermit, OwnedTurnRecord,
     RecordEstimate, RetainedTurnLedger, TurnId, TurnRecordHeader, TurnRecordStatus,
     prepare_retained, reserve_retained,

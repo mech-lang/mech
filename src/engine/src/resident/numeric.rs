@@ -1,7 +1,7 @@
 use mech_core::{
     BoundResidentKernel, FunctionCatalogBuilder, MResult, ResidentKernelBindError,
-    ResidentKernelBindRequest, ResidentKernelError, ResidentShape, ResidentValueMut,
-    ResidentValueRef,
+    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentShape,
+    ResidentValueMut, ResidentValueRef,
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -77,31 +77,82 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         "VerticalConcatenateVDN<f64>",
         bind_vertical,
     )?;
-    register(builder, &runtime, "Assign<f64DVector>", bind_deferred_ekf)?;
-    register(builder, &runtime, "Assign<f64DMatrix>", bind_deferred_ekf)?;
+    register(builder, &runtime, "Assign<f64DVector>", bind_assign)?;
+    register(builder, &runtime, "Assign<f64DMatrix>", bind_assign)?;
 
-    for operation in [
-        "trigonometric-state",
-        "motion-jacobian",
-        "control-jacobian",
+    register(builder, &["ekf"], "trigonometric-state", bind_ekf_trig)?;
+    register(builder, &["ekf"], "motion-jacobian", bind_ekf_motion)?;
+    register(builder, &["ekf"], "control-jacobian", bind_ekf_control)?;
+    register(
+        builder,
+        &["ekf"],
         "predicted-state",
+        bind_ekf_predicted_state,
+    )?;
+    register(
+        builder,
+        &["ekf"],
         "predicted-covariance",
+        bind_ekf_predicted_covariance,
+    )?;
+    register(
+        builder,
+        &["ekf"],
         "landmark-delta-and-range",
+        bind_ekf_landmark,
+    )?;
+    register(
+        builder,
+        &["ekf"],
         "predicted-measurement",
+        bind_ekf_measurement,
+    )?;
+    register(
+        builder,
+        &["ekf"],
         "measurement-jacobian",
+        bind_ekf_measurement_jacobian,
+    )?;
+    register(
+        builder,
+        &["ekf"],
         "innovation-covariance",
-        "solve-2x2",
-        "kalman-gain",
-        "innovation",
+        bind_ekf_innovation_covariance,
+    )?;
+    register(builder, &["ekf"], "solve-2x2", bind_ekf_solve)?;
+    register(builder, &["ekf"], "kalman-gain", bind_ekf_gain)?;
+    register(builder, &["ekf"], "innovation", bind_ekf_innovation)?;
+    register(
+        builder,
+        &["ekf"],
         "corrected-state",
+        bind_ekf_corrected_state,
+    )?;
+    register(
+        builder,
+        &["ekf"],
         "joseph-covariance-update",
+        bind_ekf_joseph,
+    )?;
+    register(
+        builder,
+        &["ekf"],
         "covariance-symmetrization",
-        "candidate-finite",
+        bind_ekf_symmetrize,
+    )?;
+    register(builder, &["ekf"], "candidate-finite", bind_ekf_finite)?;
+    register(
+        builder,
+        &["ekf"],
         "covariance-positive-diagonal",
+        bind_ekf_positive_diagonal,
+    )?;
+    register(
+        builder,
+        &["ekf"],
         "covariance-symmetric",
-    ] {
-        register(builder, &["ekf"], operation, bind_deferred_ekf)?;
-    }
+        bind_ekf_symmetric,
+    )?;
     Ok(())
 }
 
@@ -121,19 +172,45 @@ fn bound(
     Ok(BoundResidentKernel::new(executor, parameters.into()))
 }
 
-fn bind_deferred_ekf(
-    _request: &ResidentKernelBindRequest<'_>,
+fn bind_executor(
+    request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelExecutor,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bound(deferred_ekf, Vec::<u64>::new().into_boxed_slice())
+    if request.output.shape.len().is_none() {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(executor, Vec::<u64>::new().into_boxed_slice())
 }
 
-fn deferred_ekf(
-    _kernel: &BoundResidentKernel,
-    _inputs: &[ResidentValueRef<'_>],
-    _output: ResidentValueMut<'_>,
-) -> Result<bool, ResidentKernelError> {
-    Err(ResidentKernelError::InvalidInput)
+macro_rules! binder {
+    ($binder:ident, $executor:ident) => {
+        fn $binder(
+            request: &ResidentKernelBindRequest<'_>,
+        ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+            bind_executor(request, $executor)
+        }
+    };
 }
+
+binder!(bind_assign, assign);
+binder!(bind_ekf_trig, ekf_trig);
+binder!(bind_ekf_motion, ekf_motion);
+binder!(bind_ekf_control, ekf_control);
+binder!(bind_ekf_predicted_state, ekf_predicted_state);
+binder!(bind_ekf_predicted_covariance, ekf_predicted_covariance);
+binder!(bind_ekf_landmark, ekf_landmark);
+binder!(bind_ekf_measurement, ekf_measurement);
+binder!(bind_ekf_measurement_jacobian, ekf_measurement_jacobian);
+binder!(bind_ekf_innovation_covariance, ekf_innovation_covariance);
+binder!(bind_ekf_solve, ekf_solve);
+binder!(bind_ekf_gain, ekf_gain);
+binder!(bind_ekf_innovation, ekf_innovation);
+binder!(bind_ekf_corrected_state, ekf_corrected_state);
+binder!(bind_ekf_joseph, ekf_joseph);
+binder!(bind_ekf_symmetrize, ekf_symmetrize);
+binder!(bind_ekf_finite, ekf_finite);
+binder!(bind_ekf_positive_diagonal, ekf_positive_diagonal);
+binder!(bind_ekf_symmetric, ekf_symmetric);
 
 fn bind_copy_shape(
     request: &ResidentKernelBindRequest<'_>,
@@ -337,8 +414,18 @@ fn bind_indexed_rows(
     )
 }
 
-fn f64_input<'a>(input: &ResidentValueRef<'a>) -> Result<&'a [f64], ResidentKernelError> {
-    let ResidentValueRef::F64(values) = input else {
+fn input(
+    inputs: &dyn ResidentKernelInputs,
+    index: usize,
+) -> Result<ResidentValueRef<'_>, ResidentKernelError> {
+    inputs.get(index).ok_or(ResidentKernelError::InvalidInput)
+}
+
+fn f64_input(
+    inputs: &dyn ResidentKernelInputs,
+    index: usize,
+) -> Result<&[f64], ResidentKernelError> {
+    let ResidentValueRef::F64(values) = input(inputs, index)? else {
         return Err(ResidentKernelError::InvalidInput);
     };
     Ok(values)
@@ -351,8 +438,12 @@ fn f64_output(output: ResidentValueMut<'_>) -> Result<&mut [f64], ResidentKernel
     Ok(values)
 }
 
-fn index_at(input: &ResidentValueRef<'_>, ordinal: usize) -> Result<u64, ResidentKernelError> {
-    match input {
+fn index_at(
+    inputs: &dyn ResidentKernelInputs,
+    input_index: usize,
+    ordinal: usize,
+) -> Result<u64, ResidentKernelError> {
+    match input(inputs, input_index)? {
         ResidentValueRef::Index(values) => values
             .get(ordinal)
             .copied()
@@ -380,15 +471,314 @@ fn replace_f64(output: &mut [f64], mut next: impl FnMut(usize) -> f64) -> bool {
     changed
 }
 
-fn negate(
+fn f64_array<const N: usize>(
+    inputs: &dyn ResidentKernelInputs,
+    index: usize,
+) -> Result<&[f64; N], ResidentKernelError> {
+    f64_input(inputs, index)?
+        .try_into()
+        .map_err(|_| ResidentKernelError::InvalidShape)
+}
+
+fn f64_scalar(inputs: &dyn ResidentKernelInputs, index: usize) -> Result<f64, ResidentKernelError> {
+    let [value] = f64_input(inputs, index)? else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    Ok(*value)
+}
+
+fn write_f64_array<const N: usize>(
+    output: ResidentValueMut<'_>,
+    next: [f64; N],
+) -> Result<bool, ResidentKernelError> {
+    let output = f64_output(output)?;
+    if output.len() != N {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let changed = output
+        .iter()
+        .zip(next)
+        .any(|(left, right)| left.to_bits() != right.to_bits());
+    output.copy_from_slice(&next);
+    Ok(changed)
+}
+
+fn write_bool(output: ResidentValueMut<'_>, next: bool) -> Result<bool, ResidentKernelError> {
+    let ResidentValueMut::Bool(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let [output] = output else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let next = u8::from(next);
+    let changed = *output != next;
+    *output = next;
+    Ok(changed)
+}
+
+fn assign(
     _kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [input] = inputs else {
+    if inputs.len() != 1 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let input = f64_input(input)?;
+    }
+    let source = f64_input(inputs, 0)?;
+    let output = f64_output(output)?;
+    if source.len() != output.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let changed = output
+        .iter()
+        .zip(source)
+        .any(|(left, right)| left.to_bits() != right.to_bits());
+    output.copy_from_slice(source);
+    Ok(changed)
+}
+
+fn ekf_trig(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::trigonometric_state(f64_array(inputs, 0)?),
+    )
+}
+
+fn ekf_motion(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::motion_jacobian(
+            f64_array(inputs, 1)?,
+            f64_array(inputs, 2)?,
+            f64_scalar(inputs, 3)?,
+        ),
+    )
+}
+
+fn ekf_control(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::control_jacobian(f64_array(inputs, 0)?, f64_scalar(inputs, 1)?),
+    )
+}
+
+fn ekf_predicted_state(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::predicted_state(
+            f64_array(inputs, 0)?,
+            f64_array(inputs, 1)?,
+            f64_array(inputs, 2)?,
+            f64_scalar(inputs, 3)?,
+        ),
+    )
+}
+
+fn ekf_predicted_covariance(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::predicted_covariance(
+            f64_array(inputs, 0)?,
+            f64_array(inputs, 1)?,
+            f64_array(inputs, 2)?,
+            f64_array(inputs, 3)?,
+        ),
+    )
+}
+
+fn ekf_landmark(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let next = crate::efficacy::ekf::math::landmark_delta_and_range(
+        f64_array(inputs, 0)?,
+        f64_array(inputs, 1)?,
+    )
+    .map_err(|_| ResidentKernelError::Arithmetic)?;
+    write_f64_array(output, next)
+}
+
+fn ekf_measurement(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::predicted_measurement(
+            f64_array(inputs, 0)?,
+            f64_array(inputs, 1)?,
+        ),
+    )
+}
+
+fn ekf_measurement_jacobian(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::measurement_jacobian(f64_array(inputs, 0)?),
+    )
+}
+
+fn ekf_innovation_covariance(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::innovation_covariance(
+            f64_array(inputs, 0)?,
+            f64_array(inputs, 1)?,
+            f64_array(inputs, 2)?,
+        ),
+    )
+}
+
+fn ekf_solve(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let next = crate::efficacy::ekf::math::solve_2x2(f64_array(inputs, 0)?)
+        .map_err(|_| ResidentKernelError::Arithmetic)?;
+    write_f64_array(output, next)
+}
+
+fn ekf_gain(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::kalman_gain(
+            f64_array(inputs, 0)?,
+            f64_array(inputs, 1)?,
+            f64_array(inputs, 2)?,
+        ),
+    )
+}
+
+fn ekf_innovation(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::innovation(f64_array(inputs, 0)?, f64_array(inputs, 1)?),
+    )
+}
+
+fn ekf_corrected_state(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::corrected_state(
+            f64_array(inputs, 0)?,
+            f64_array(inputs, 1)?,
+            f64_array(inputs, 2)?,
+        ),
+    )
+}
+
+fn ekf_joseph(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::joseph_covariance_update(
+            f64_array(inputs, 0)?,
+            f64_array(inputs, 1)?,
+            f64_array(inputs, 2)?,
+            f64_array(inputs, 3)?,
+        ),
+    )
+}
+
+fn ekf_symmetrize(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::covariance_symmetrization(f64_array(inputs, 0)?),
+    )
+}
+
+fn ekf_finite(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_bool(
+        output,
+        crate::efficacy::ekf::math::candidate_finite(f64_array(inputs, 0)?, f64_array(inputs, 1)?),
+    )
+}
+
+fn ekf_positive_diagonal(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_bool(
+        output,
+        crate::efficacy::ekf::math::covariance_positive_diagonal(f64_array(inputs, 0)?),
+    )
+}
+
+fn ekf_symmetric(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    write_bool(
+        output,
+        crate::efficacy::ekf::math::covariance_symmetric(f64_array(inputs, 0)?),
+    )
+}
+
+fn negate(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 1 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let input = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
     if input.len() != output.len() {
         return Err(ResidentKernelError::InvalidShape);
@@ -397,15 +787,15 @@ fn negate(
 }
 
 fn binary_f64(
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
     operation: impl Fn(f64, f64) -> f64,
 ) -> Result<bool, ResidentKernelError> {
-    let [left, right] = inputs else {
+    if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let left = f64_input(left)?;
-    let right = f64_input(right)?;
+    }
+    let left = f64_input(inputs, 0)?;
+    let right = f64_input(inputs, 1)?;
     let output = f64_output(output)?;
     let output_len = output.len();
     let pick = |values: &[f64], index: usize| match values.len() {
@@ -423,7 +813,7 @@ fn binary_f64(
 
 fn subtract(
     _kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     binary_f64(inputs, output, |left, right| left - right)
@@ -431,7 +821,7 @@ fn subtract(
 
 fn multiply(
     _kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     binary_f64(inputs, output, |left, right| left * right)
@@ -439,7 +829,7 @@ fn multiply(
 
 fn power(
     _kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     binary_f64(inputs, output, f64::powf)
@@ -447,14 +837,14 @@ fn power(
 
 fn multiply_rows(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [matrix, vector] = inputs else {
+    if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let matrix = f64_input(matrix)?;
-    let vector = f64_input(vector)?;
+    }
+    let matrix = f64_input(inputs, 0)?;
+    let vector = f64_input(inputs, 1)?;
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     if matrix.len() != output.len() || vector.len() != rows {
@@ -467,13 +857,13 @@ fn multiply_rows(
 
 fn add_assign(
     _kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [source] = inputs else {
+    if inputs.len() != 1 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let source = f64_input(source)?;
+    }
+    let source = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
     if source.len() != output.len() {
         return Err(ResidentKernelError::InvalidShape);
@@ -489,13 +879,13 @@ fn add_assign(
 
 fn transpose(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [input] = inputs else {
+    if inputs.len() != 1 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let input = f64_input(input)?;
+    }
+    let input = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     let columns = kernel.parameters()[1] as usize;
@@ -511,13 +901,13 @@ fn transpose(
 
 fn sum_columns(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [input] = inputs else {
+    if inputs.len() != 1 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let input = f64_input(input)?;
+    }
+    let input = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     let columns = kernel.parameters()[1] as usize;
@@ -531,7 +921,7 @@ fn sum_columns(
 
 fn concatenate_horizontal(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let output = f64_output(output)?;
@@ -541,8 +931,8 @@ fn concatenate_horizontal(
     let rows = kernel.parameters().get(1).copied().unwrap_or(1) as usize;
     let mut cursor = 0usize;
     let mut changed = false;
-    for (ordinal, input) in inputs.iter().enumerate() {
-        let input = f64_input(input)?;
+    for ordinal in 0..inputs.len() {
+        let input = f64_input(inputs, ordinal)?;
         let input_rows = kernel.parameters()[1 + ordinal * 2] as usize;
         let input_columns = kernel.parameters()[2 + ordinal * 2] as usize;
         if input_rows != rows || input.len() != input_rows * input_columns {
@@ -564,7 +954,7 @@ fn concatenate_horizontal(
 
 fn concatenate_vertical(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let output = f64_output(output)?;
@@ -572,8 +962,8 @@ fn concatenate_vertical(
     let output_rows = output.len() / columns;
     let mut changed = false;
     let mut row_base = 0usize;
-    for (ordinal, input) in inputs.iter().enumerate() {
-        let input = f64_input(input)?;
+    for ordinal in 0..inputs.len() {
+        let input = f64_input(inputs, ordinal)?;
         let rows = kernel.parameters()[1 + ordinal * 2] as usize;
         let input_columns = kernel.parameters()[2 + ordinal * 2] as usize;
         if input_columns != columns || input.len() != rows * columns {
@@ -597,16 +987,16 @@ fn concatenate_vertical(
 
 fn range_inclusive(
     _kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [start, end] = inputs else {
+    if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let start = *f64_input(start)?
+    }
+    let start = *f64_input(inputs, 0)?
         .first()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    let end = *f64_input(end)?
+    let end = *f64_input(inputs, 1)?
         .first()
         .ok_or(ResidentKernelError::InvalidInput)?;
     let output = f64_output(output)?;
@@ -616,14 +1006,14 @@ fn range_inclusive(
 
 fn n_choose_k(
     _kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [values, k] = inputs else {
+    if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let values = f64_input(values)?;
-    let k = *f64_input(k)?
+    }
+    let values = f64_input(inputs, 0)?;
+    let k = *f64_input(inputs, 1)?
         .first()
         .ok_or(ResidentKernelError::InvalidInput)? as usize;
     let output = f64_output(output)?;
@@ -665,58 +1055,61 @@ fn n_choose_k(
 
 fn gather_1d(
     _kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [source, indices] = inputs else {
+    if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let source_values = f64_input(source)?;
+    }
+    let source_values = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
-    if output.len() != indices.len() {
+    let indices_len = input(inputs, 1)?.len();
+    if output.len() != indices_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let mut next = Vec::with_capacity(output.len());
-    for ordinal in 0..output.len() {
-        let index = checked_one_based(index_at(indices, ordinal)?, source_values.len())?;
-        next.push(source_values[index]);
+    let mut changed = false;
+    for (ordinal, target) in output.iter_mut().enumerate() {
+        let index = checked_one_based(index_at(inputs, 1, ordinal)?, source_values.len())?;
+        let next = source_values[index];
+        changed |= target.to_bits() != next.to_bits();
+        *target = next;
     }
-    let changed = output
-        .iter()
-        .zip(&next)
-        .any(|(left, right)| left.to_bits() != right.to_bits());
-    output.copy_from_slice(&next);
     Ok(changed)
 }
 
 fn all_rows_columns(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [source, columns] = inputs else {
+    if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let source = f64_input(source)?;
+    }
+    let source = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     let source_columns = kernel.parameters()[1] as usize;
-    if output.len() != rows * columns.len() {
+    let selected_columns = input(inputs, 1)?.len();
+    if output.len() != rows * selected_columns {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let mut next = Vec::with_capacity(output.len());
-    for ordinal in 0..columns.len() {
-        let column = checked_one_based(index_at(columns, ordinal)?, source_columns)?;
-        next.extend_from_slice(&source[column * rows..(column + 1) * rows]);
+    let mut changed = false;
+    for ordinal in 0..selected_columns {
+        let column = checked_one_based(index_at(inputs, 1, ordinal)?, source_columns)?;
+        let source = &source[column * rows..(column + 1) * rows];
+        let target = &mut output[ordinal * rows..(ordinal + 1) * rows];
+        changed |= target
+            .iter()
+            .zip(source)
+            .any(|(left, right)| left.to_bits() != right.to_bits());
+        target.copy_from_slice(source);
     }
-    let changed = output != next;
-    output.copy_from_slice(&next);
     Ok(changed)
 }
 
 fn all_rows_column(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     all_rows_columns(kernel, inputs, output)
@@ -724,17 +1117,17 @@ fn all_rows_column(
 
 fn row_all_columns(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [source, row] = inputs else {
+    if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let source = f64_input(source)?;
+    }
+    let source = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     let columns = kernel.parameters()[1] as usize;
-    let row = checked_one_based(index_at(row, 0)?, rows)?;
+    let row = checked_one_based(index_at(inputs, 1, 0)?, rows)?;
     if output.len() != columns {
         return Err(ResidentKernelError::InvalidShape);
     }
@@ -743,29 +1136,31 @@ fn row_all_columns(
 
 fn rows_all_columns(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [source, selected] = inputs else {
+    if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let source = f64_input(source)?;
+    }
+    let source = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
     let rows = kernel.parameters()[0] as usize;
     let columns = kernel.parameters()[1] as usize;
-    let selected_rows = selected.len();
+    let selected_rows = input(inputs, 1)?.len();
     if output.len() != selected_rows * columns {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let mut next = Vec::with_capacity(output.len());
+    let mut changed = false;
+    let mut target_index = 0;
     for column in 0..columns {
         for ordinal in 0..selected_rows {
-            let row = checked_one_based(index_at(selected, ordinal)?, rows)?;
-            next.push(source[row + column * rows]);
+            let row = checked_one_based(index_at(inputs, 1, ordinal)?, rows)?;
+            let next = source[row + column * rows];
+            changed |= output[target_index].to_bits() != next.to_bits();
+            output[target_index] = next;
+            target_index += 1;
         }
     }
-    let changed = output != next;
-    output.copy_from_slice(&next);
     Ok(changed)
 }
 
@@ -781,7 +1176,7 @@ fn checked_one_based(index: u64, upper: usize) -> Result<usize, ResidentKernelEr
 
 fn add_indexed_rows(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     indexed_rows(kernel, inputs, output, |target, source| target + source)
@@ -789,7 +1184,7 @@ fn add_indexed_rows(
 
 fn sub_indexed_rows(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     indexed_rows(kernel, inputs, output, |target, source| target - source)
@@ -797,14 +1192,14 @@ fn sub_indexed_rows(
 
 fn indexed_rows(
     kernel: &BoundResidentKernel,
-    inputs: &[ResidentValueRef<'_>],
+    inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
     operation: impl Fn(f64, f64) -> f64,
 ) -> Result<bool, ResidentKernelError> {
-    let [source, indices] = inputs else {
+    if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let source_values = f64_input(source)?;
+    }
+    let source_values = f64_input(inputs, 0)?;
     let output = f64_output(output)?;
     let target_rows = kernel.parameters()[0] as usize;
     let columns = kernel.parameters()[1] as usize;
@@ -813,8 +1208,9 @@ fn indexed_rows(
         return Err(ResidentKernelError::InvalidShape);
     }
     let mut changed = false;
-    for occurrence in 0..indices.len() {
-        let row = checked_one_based(index_at(indices, occurrence)?, target_rows)?;
+    let index_count = input(inputs, 1)?.len();
+    for occurrence in 0..index_count {
+        let row = checked_one_based(index_at(inputs, 1, occurrence)?, target_rows)?;
         for column in 0..columns {
             let target = row + column * target_rows;
             let source = occurrence + column * source_rows;
@@ -824,4 +1220,75 @@ fn indexed_rows(
         }
     }
     Ok(changed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct Inputs<'a>(&'a [ResidentValueRef<'a>]);
+
+    impl ResidentKernelInputs for Inputs<'_> {
+        fn len(&self) -> usize {
+            self.0.len()
+        }
+
+        fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+            self.0.get(index).copied()
+        }
+    }
+
+    fn indexed_kernel(
+        executor: mech_core::ResidentKernelExecutor,
+        rows: u64,
+        columns: u64,
+        source_rows: u64,
+        index_count: u64,
+    ) -> BoundResidentKernel {
+        BoundResidentKernel::new(
+            executor,
+            [rows, columns, source_rows, columns, index_count]
+                .into_iter()
+                .collect::<Box<[_]>>(),
+        )
+    }
+
+    #[test]
+    fn duplicate_indexed_rows_accumulate_once_per_source_occurrence() {
+        let kernel = indexed_kernel(add_indexed_rows, 2, 2, 3, 3);
+        let source = [0.5, 1.0, 2.0, 5.0, 10.0, 20.0];
+        let indices = [1_u64, 1, 2];
+        let inputs = [
+            ResidentValueRef::F64(&source),
+            ResidentValueRef::Index(&indices),
+        ];
+        let mut target = [1.0, 2.0, 10.0, 20.0];
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut target)),
+            Ok(true)
+        );
+        assert_eq!(target, [2.5, 4.0, 25.0, 40.0]);
+    }
+
+    #[test]
+    fn out_of_range_index_is_a_structured_kernel_rejection() {
+        let kernel = indexed_kernel(sub_indexed_rows, 2, 1, 2, 2);
+        let source = [1.0, 2.0];
+        let indices = [1_u64, 3];
+        let inputs = [
+            ResidentValueRef::F64(&source),
+            ResidentValueRef::Index(&indices),
+        ];
+        let mut candidate = [10.0, 20.0];
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut candidate)),
+            Err(ResidentKernelError::IndexOutOfRange {
+                index: 3,
+                upper_bound: 2,
+            })
+        );
+        assert_eq!(candidate, [9.0, 20.0]);
+    }
 }

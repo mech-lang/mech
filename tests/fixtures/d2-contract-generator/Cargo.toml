@@ -8,6 +8,7 @@ publish = false
 mech-core = { path = "../../../src/core", default-features = false, features = ["program", "std"] }
 mech-engine = { path = "../../../src/engine", default-features = false, features = ["resident-artifact"] }
 mech-stdlib = { path = "../../../src/stdlib", default-features = false, features = ["full_compiler"] }
+sha2 = "0.10"
 
 [patch.crates-io]
 mech-bytecode = { path = "../../../src/bytecode" }

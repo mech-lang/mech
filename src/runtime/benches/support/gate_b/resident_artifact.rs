@@ -1,9 +1,10 @@
-use mech_core::ReactiveInstanceId;
-use mech_engine::__gate_d::{
-    FrozenEkfCompilationServices, ReactiveInstance, ResidentStructuralProbe, ResidentTurnSummary,
-    activate, compile_frozen_ekf_source,
+use mech_core::{ReactiveInstanceId, ResidentValueRef};
+use mech_engine::__resident::{
+    ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices, ReactiveInstance,
+    ResidentStorageClass, ResidentStructuralProbe, ResidentTurnSummary, ResidentValueBorrow,
+    activate, compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
-use mech_runtime::__gate_b_recording::{GateBFixedReceipt, ResidentTurnRecorder};
+use mech_runtime::__resident_recording::{GateBFixedReceipt, ResidentTurnRecorder};
 
 use super::contract::{
     EPISODE_LENGTH, EkfInput, EkfState, assert_state_close, quantized_trajectory_hash,
@@ -42,13 +43,15 @@ fn activate_route(route: ArtifactRoute, next_epoch: u64) -> ReactiveInstance {
         ArtifactRoute::Source => &compilation.source_artifact,
         ArtifactRoute::Bytecode => &compilation.decoded_artifact,
     };
+    let catalog = frozen_ekf_compiler_catalog().expect("build frozen resident kernel catalog");
     let mut instance = activate(
         ReactiveInstanceId::new(0, 0),
         artifact,
-        &compilation.resource_request,
+        &catalog,
+        &ActivationFacts::default(),
     )
     .expect("activate frozen public ProgramArtifact before timing");
-    instance.set_next_epoch_for_d1_test(next_epoch);
+    instance.set_next_epoch_for_test(next_epoch);
     instance
 }
 
@@ -75,7 +78,9 @@ impl ResidentArtifactFixture {
             .take_admission_permit(self.next_turn)
             .expect("pre-reserved artifact admission");
         let before_epoch = self.instance.published_epoch().get();
-        match self.instance.prepare_turn(input_array(input)) {
+        let frame = input_array(input);
+        let captured = captured_input(&self.instance, &frame);
+        match self.instance.prepare_turn(&[captured]) {
             Ok(prepared) => {
                 let summary = prepared.summary();
                 let commit = self
@@ -87,7 +92,7 @@ impl ResidentArtifactFixture {
             }
             Err(failure) => {
                 self.recorder
-                    .prepare_rejected(permit, before_epoch, failure)
+                    .prepare_artifact_rejected(permit, before_epoch, failure.clone())
                     .expect("artifact rejection preparation")
                     .append();
                 panic!("frozen artifact resident turn failed: {failure:?}");
@@ -119,10 +124,7 @@ impl ResidentArtifactFixture {
     }
 
     pub fn state(&self) -> EkfState {
-        EkfState {
-            state: *self.instance.estimate(),
-            covariance: *self.instance.covariance(),
-        }
+        artifact_state(&self.instance)
     }
 
     pub fn validate_final(&self) {
@@ -145,8 +147,10 @@ impl ResidentArtifactFixture {
 
     pub fn abort_output_hash(&mut self) -> String {
         let before = self.state();
+        let frame = input_array(trace()[0]);
+        let captured = captured_input(&self.instance, &frame);
         self.instance
-            .execute_then_abort(input_array(trace()[0]))
+            .execute_then_abort(&[captured])
             .expect("valid candidate before forced artifact abort");
         assert_eq!(self.state(), before);
         quantized_trajectory_hash(&[before])
@@ -163,9 +167,11 @@ impl ResidentArtifactKernelFixture {
 
     #[inline]
     fn run_turn(&mut self, input: EkfInput) {
+        let frame = input_array(input);
+        let captured = captured_input(&self.instance, &frame);
         self.last_summary = Some(
             self.instance
-                .prepare_turn(input_array(input))
+                .prepare_turn(&[captured])
                 .expect("artifact kernel candidate")
                 .publish(),
         );
@@ -194,10 +200,7 @@ impl ResidentArtifactKernelFixture {
     }
 
     pub fn state(&self) -> EkfState {
-        EkfState {
-            state: *self.instance.estimate(),
-            covariance: *self.instance.covariance(),
-        }
+        artifact_state(&self.instance)
     }
 
     pub fn validate_final(&self) {
@@ -245,7 +248,7 @@ impl ResidentArtifactProbe {
     ) -> Self {
         Self {
             candidate_seed_bytes: probe.candidate_seed_bytes,
-            candidate_written_bytes: probe.candidate_written_bytes,
+            candidate_written_bytes: probe.candidate_materialized_bytes,
             published_buffer_copy_bytes: probe.published_buffer_copy_bytes,
             publication_store_count: probe.publication_store_count,
             receipt_bytes: GateBFixedReceipt::RETAINED_BYTES,
@@ -269,4 +272,34 @@ fn input_array(input: EkfInput) -> [f64; 4] {
         input.measured_range,
         input.measured_bearing,
     ]
+}
+
+fn captured_input<'a>(instance: &ReactiveInstance, input: &'a [f64; 4]) -> CapturedSignalInput<'a> {
+    CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::F64(input),
+    }
+}
+
+fn artifact_state(instance: &ReactiveInstance) -> EkfState {
+    let mut state = [0.0; 3];
+    let mut covariance = [0.0; 9];
+    for slot in instance
+        .plan
+        .slots
+        .iter()
+        .filter(|slot| slot.storage == ResidentStorageClass::State)
+    {
+        let ResidentValueBorrow::F64 { values, .. } =
+            instance.state_borrow(slot.artifact_id).expect("state slot")
+        else {
+            panic!("EKF resident state is f64")
+        };
+        match values.len() {
+            3 => state.copy_from_slice(values),
+            9 => covariance.copy_from_slice(values),
+            _ => panic!("unexpected EKF resident state shape"),
+        }
+    }
+    EkfState { state, covariance }
 }
