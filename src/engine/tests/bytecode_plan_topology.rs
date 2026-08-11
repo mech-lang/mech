@@ -691,6 +691,35 @@ fn equal_interned_constants_keep_distinct_register_roles() -> MResult<()> {
 }
 
 #[test]
+fn state_reads_precede_the_first_commit_and_multiple_commits_remain_distinct() -> MResult<()> {
+    let (artifact, decoded) = compile_artifact_fixture(
+        "~state := 1.0\nlimit := 2.0\nbefore := state < limit\nstate = limit\nstate = 3.0\nstate",
+    )?;
+    assert_eq!(artifact.revision(), decoded.revision());
+    let states = artifact
+        .slots()
+        .iter()
+        .filter(|slot| slot.role == SlotRole::State)
+        .collect::<Vec<_>>();
+    assert_eq!(states.len(), 2);
+
+    let first_state = states[0].slot;
+    let first_consumer = artifact
+        .nodes()
+        .iter()
+        .find(|node| node.operation.operation_name == TEST_LESS_RUNTIME)
+        .expect("source contains a comparison before the first commit");
+    assert!(first_consumer.input_bindings.clone().any(|index| matches!(
+        artifact.bindings().get(index as usize),
+        Some(BindingDeclaration::Input {
+            source: ArtifactSource::Slot(slot),
+            ..
+        }) if *slot == first_state
+    )));
+    Ok(())
+}
+
+#[test]
 fn composite_register_helpers_do_not_become_state_and_keep_the_initializer() -> MResult<()> {
     let tuple = LegacyValue::Tuple(Ref::new(mech_core::MechTuple::from_vec(vec![
         LegacyValue::from(1.0_f64),

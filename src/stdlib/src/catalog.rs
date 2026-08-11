@@ -100,29 +100,35 @@ pub fn build_runtime_catalog() -> MResult<FunctionCatalog> {
 /// bytecode. Those planning-only entries must not leak into
 /// [`build_runtime_catalog`].
 #[cfg(feature = "native-plan")]
-pub fn build_native_plan_catalog() -> MResult<FunctionCatalog> {
-    let mut builder = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_native_plan(&mut builder)?;
+pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    mech_engine::install_intrinsic_native_plan(builder)?;
 
     #[cfg(feature = "mech-math")]
-    mech_math::install_native_plan(&mut builder)?;
+    mech_math::install_native_plan(builder)?;
     #[cfg(feature = "mech-compare")]
-    mech_compare::install_runtime(&mut builder)?;
+    mech_compare::install_runtime(builder)?;
     #[cfg(feature = "mech-logic")]
-    mech_logic::install_runtime(&mut builder)?;
+    mech_logic::install_runtime(builder)?;
     #[cfg(feature = "mech-range")]
-    mech_range::install_runtime(&mut builder)?;
+    mech_range::install_runtime(builder)?;
     #[cfg(feature = "mech-matrix")]
-    mech_matrix::install_runtime(&mut builder)?;
+    mech_matrix::install_runtime(builder)?;
     #[cfg(feature = "mech-set")]
-    mech_set::install_runtime(&mut builder)?;
+    mech_set::install_runtime(builder)?;
     #[cfg(feature = "mech-string")]
-    mech_string::install_runtime(&mut builder)?;
+    mech_string::install_runtime(builder)?;
     #[cfg(feature = "mech-stats")]
-    mech_stats::install_runtime(&mut builder)?;
+    mech_stats::install_runtime(builder)?;
     #[cfg(feature = "mech-combinatorics")]
-    mech_combinatorics::install_runtime(&mut builder)?;
+    mech_combinatorics::install_runtime(builder)?;
 
+    Ok(())
+}
+
+#[cfg(feature = "native-plan")]
+pub fn build_native_plan_catalog() -> MResult<FunctionCatalog> {
+    let mut builder = FunctionCatalogBuilder::new();
+    install_native_plan(&mut builder)?;
     builder.build()
 }
 
@@ -130,6 +136,17 @@ pub fn build_native_plan_catalog() -> MResult<FunctionCatalog> {
 pub fn build_source_catalog() -> MResult<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
     install_runtime(&mut builder)?;
+    install_source(&mut builder)?;
+    builder.build()
+}
+
+/// Builds a source catalog that can also resolve compiler-emitted native-plan
+/// bridge operations. This is intentionally separate from the frozen source
+/// catalog used by the interpreter.
+#[cfg(all(feature = "source", feature = "native-plan"))]
+pub fn build_source_native_plan_catalog() -> MResult<FunctionCatalog> {
+    let mut builder = FunctionCatalogBuilder::new();
+    install_native_plan(&mut builder)?;
     install_source(&mut builder)?;
     builder.build()
 }
@@ -184,6 +201,23 @@ pub fn source_catalog() -> Arc<FunctionCatalog> {
     }
 }
 
+#[cfg(all(feature = "source", feature = "native-plan"))]
+pub fn source_native_plan_catalog() -> Arc<FunctionCatalog> {
+    #[cfg(not(feature = "no_std"))]
+    {
+        static CATALOG: OnceLock<Arc<FunctionCatalog>> = OnceLock::new();
+        Arc::clone(CATALOG.get_or_init(|| {
+            build_catalog_on_large_stack("source-native-plan", build_source_native_plan_catalog)
+        }))
+    }
+    #[cfg(feature = "no_std")]
+    {
+        Arc::new(
+            build_source_native_plan_catalog().expect("source native-plan catalog must be valid"),
+        )
+    }
+}
+
 #[cfg(all(test, not(feature = "no_std")))]
 mod tests {
     use super::*;
@@ -207,6 +241,14 @@ mod tests {
                     let source_again = source_catalog();
                     assert!(Arc::ptr_eq(&source, &source_again));
                     assert!(!Arc::ptr_eq(&runtime, &source));
+
+                    #[cfg(feature = "native-plan")]
+                    {
+                        let source_native_plan = source_native_plan_catalog();
+                        let source_native_plan_again = source_native_plan_catalog();
+                        assert!(Arc::ptr_eq(&source_native_plan, &source_native_plan_again));
+                        assert!(!Arc::ptr_eq(&source, &source_native_plan));
+                    }
                 }
             })
             .expect("catalog cache test thread must spawn");
