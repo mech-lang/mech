@@ -26,7 +26,7 @@ use mech_core::{
     LegacyNominalResolution, LegacyReferencePolicy, LegacyResolvedExtent, LegacySemanticContext,
     LegacySnapshotContext, LegacyValue, NamedKindPathResolver, NominalKind, OperationContractError,
     OutputConstruction, SchemaBody, SchemaHandle, SchemaTableBuilder, SemanticModelError,
-    ValueKind, schema_from_legacy_value_kind, snapshot_from_legacy, write_bytecode,
+    ValueKind, schema_from_legacy_value_kind, snapshot_from_legacy,
 };
 
 use super::{
@@ -536,9 +536,7 @@ pub fn compile_executable_program_artifact(
     )?;
     validate_compiled_instruction_roles(compiled, catalog)?;
 
-    let legacy_bytes = write_bytecode(&compiled.program)?;
-    let legacy_constants =
-        mech_core::ParsedProgram::from_bytes(&legacy_bytes)?.decode_constants()?;
+    let legacy_constants = mech_core::decode_encoded_constants(&compiled.program.constants)?;
 
     struct PendingRegisterSchema {
         handle: SchemaHandle,
@@ -1037,6 +1035,22 @@ pub fn compile_executable_program_artifact(
                         register: dst,
                     });
                 }
+                if is_variable_definition_instruction(instruction, catalog) {
+                    if prior.is_none() && !pseudo_destination {
+                        return Err(ArtifactBuildError::MissingRegisterSource {
+                            instruction: instruction_id,
+                            register: dst,
+                            role: "variable definition",
+                        });
+                    }
+                    continue;
+                }
+                if matches!(instruction, BytecodeInstruction::CompositePack { .. })
+                    && register_constant_roles.get(dst as usize).copied().flatten()
+                        == Some(CompilerConstantRole::StateInitializer)
+                {
+                    continue;
+                }
                 let declaration = compiled.instruction_contracts[instruction_index].or_else(|| {
                     instruction
                         .runtime_function()
@@ -1153,19 +1167,8 @@ pub fn compile_executable_program_artifact(
                     set_register(&mut registers, dst, None)?;
                     continue;
                 }
-                let preserves_destination =
-                    is_variable_definition_instruction(instruction, catalog);
                 let source = match state_index {
                     Some(state) => SourceValue::State(state),
-                    None if preserves_destination => {
-                        prior
-                            .ok_or(ArtifactBuildError::MissingRegisterSource {
-                                instruction: instruction_id,
-                                register: dst,
-                                role: "preserved destination",
-                            })?
-                            .source
-                    }
                     None if prior
                         .is_some_and(|value| matches!(value.source, SourceValue::State(_))) =>
                     {

@@ -19,19 +19,22 @@ With the `native` feature, `GpuProgram::run_gpu` dispatches that WGSL through
 on Linux and Windows. `run_cpu` and `run_gpu` therefore select execution hosts
 without changing the Mech source.
 
-The current native call is a correctness path: it creates and reads back a GPU
-dispatch for one turn. A resident session that retains the pipeline and device
-buffers across turns is the next executor step; see
-[`gpu-artifact-lowering-findings.md`](../../docs/design/gpu-artifact-lowering-findings.md).
+The one-shot native call is a correctness path that creates and reads back a
+GPU dispatch for one turn. `GpuProgram::prepare_resident` creates a persistent
+pipeline and ping-pong state buffers. Its feedback map connects physical result
+buffers to the next turn's input bindings, and readback is deferred until the
+host asks for outputs.
 
 Run the release benchmark with a particle count, CPU turn count, and GPU sample
 count:
 
 ```text
 cargo run -p mech-gpu --release --features native \
-  --example particle_benchmark -- 50000 20 7
+  --example particle_benchmark -- 2000000 2 2 120
 ```
 
-The benchmark checks every GPU output against the CPU executor and reports
-artifact/WGSL compilation, CPU execution, cold GPU execution, and the median
-warm one-shot GPU phase breakdown separately.
+The arguments are particle count, CPU turns, one-shot GPU samples, and resident
+GPU turns. The benchmark checks one-shot GPU output against the CPU executor,
+checks sampled resident output against the repeated recurrence, and reports
+compilation, one-shot execution, resident dispatch, and final readback
+separately.
