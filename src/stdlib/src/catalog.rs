@@ -129,7 +129,6 @@ pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> 
 pub fn build_native_plan_catalog() -> MResult<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
     install_native_plan(&mut builder)?;
-
     builder.build()
 }
 
@@ -147,6 +146,17 @@ pub fn build_source_catalog() -> MResult<FunctionCatalog> {
     }
     #[cfg(not(feature = "native-plan"))]
     install_runtime(&mut builder)?;
+    install_source(&mut builder)?;
+    builder.build()
+}
+
+/// Builds a source catalog that can also resolve compiler-emitted native-plan
+/// bridge operations. This is intentionally separate from the frozen source
+/// catalog used by the interpreter.
+#[cfg(all(feature = "source", feature = "native-plan"))]
+pub fn build_source_native_plan_catalog() -> MResult<FunctionCatalog> {
+    let mut builder = FunctionCatalogBuilder::new();
+    install_native_plan(&mut builder)?;
     install_source(&mut builder)?;
     builder.build()
 }
@@ -201,6 +211,23 @@ pub fn source_catalog() -> Arc<FunctionCatalog> {
     }
 }
 
+#[cfg(all(feature = "source", feature = "native-plan"))]
+pub fn source_native_plan_catalog() -> Arc<FunctionCatalog> {
+    #[cfg(not(feature = "no_std"))]
+    {
+        static CATALOG: OnceLock<Arc<FunctionCatalog>> = OnceLock::new();
+        Arc::clone(CATALOG.get_or_init(|| {
+            build_catalog_on_large_stack("source-native-plan", build_source_native_plan_catalog)
+        }))
+    }
+    #[cfg(feature = "no_std")]
+    {
+        Arc::new(
+            build_source_native_plan_catalog().expect("source native-plan catalog must be valid"),
+        )
+    }
+}
+
 #[cfg(all(test, not(feature = "no_std")))]
 mod tests {
     use super::*;
@@ -224,6 +251,14 @@ mod tests {
                     let source_again = source_catalog();
                     assert!(Arc::ptr_eq(&source, &source_again));
                     assert!(!Arc::ptr_eq(&runtime, &source));
+
+                    #[cfg(feature = "native-plan")]
+                    {
+                        let source_native_plan = source_native_plan_catalog();
+                        let source_native_plan_again = source_native_plan_catalog();
+                        assert!(Arc::ptr_eq(&source_native_plan, &source_native_plan_again));
+                        assert!(!Arc::ptr_eq(&source, &source_native_plan));
+                    }
                 }
             })
             .expect("catalog cache test thread must spawn");

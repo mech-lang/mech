@@ -8,7 +8,7 @@ use std::{
 
 use wgpu::util::DeviceExt;
 
-use super::{GpuBindingAccess, GpuProgram};
+use super::{GpuBindingAccess, GpuBindingKind, GpuProgram};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GpuExecutionError {
@@ -143,8 +143,8 @@ impl GpuProgram {
         let pipeline_started = Instant::now();
         let mut buffers = Vec::with_capacity(self.bindings.len());
         for binding in &self.bindings {
-            let buffer = match binding.access {
-                GpuBindingAccess::Read => {
+            let buffer = match binding.kind {
+                GpuBindingKind::Input(_) => {
                     let values = inputs
                         .get(&binding.name)
                         .ok_or_else(|| GpuExecutionError::MissingInput(binding.name.clone()))?;
@@ -161,12 +161,26 @@ impl GpuProgram {
                         usage: wgpu::BufferUsages::STORAGE,
                     })
                 }
-                GpuBindingAccess::ReadWrite => device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some(&binding.name),
-                    size: binding.elements * std::mem::size_of::<f32>() as u64,
-                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-                    mapped_at_creation: false,
-                }),
+                GpuBindingKind::StateRead(slot) => {
+                    let state = self
+                        .states
+                        .iter()
+                        .find(|state| state.slot == slot)
+                        .expect("state binding references known state");
+                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some(&binding.name),
+                        contents: bytemuck::cast_slice(&state.initializer),
+                        usage: wgpu::BufferUsages::STORAGE,
+                    })
+                }
+                GpuBindingKind::StateWrite(_) | GpuBindingKind::Output(_) => {
+                    device.create_buffer(&wgpu::BufferDescriptor {
+                        label: Some(&binding.name),
+                        size: binding.elements * std::mem::size_of::<f32>() as u64,
+                        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                        mapped_at_creation: false,
+                    })
+                }
             };
             buffers.push(buffer);
         }
@@ -237,19 +251,16 @@ impl GpuProgram {
             pass.set_bind_group(0, &bind_group, &[]);
             pass.dispatch_workgroups(self.workgroup_count(), 1, 1);
         }
-        for (index, binding) in self.bindings.iter().enumerate() {
-            if binding.access != GpuBindingAccess::ReadWrite {
-                continue;
-            }
-            let size = binding.elements * std::mem::size_of::<f32>() as u64;
+        for output in &self.outputs {
+            let size = output.elements * std::mem::size_of::<f32>() as u64;
             let readback = device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("Mech GPU readback"),
                 size,
                 usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
                 mapped_at_creation: false,
             });
-            encoder.copy_buffer_to_buffer(&buffers[index], 0, &readback, 0, size);
-            readbacks.push((binding.name.clone(), readback));
+            encoder.copy_buffer_to_buffer(&buffers[output.binding as usize], 0, &readback, 0, size);
+            readbacks.push((output.name.clone(), readback));
         }
         queue.submit(Some(encoder.finish()));
 
@@ -283,15 +294,13 @@ impl GpuProgram {
     pub fn prepare_resident(
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
-        feedback: &BTreeMap<String, String>,
     ) -> Result<ResidentGpuSession, GpuExecutionError> {
-        pollster::block_on(self.prepare_resident_async(inputs, feedback))
+        pollster::block_on(self.prepare_resident_async(inputs))
     }
 
     pub async fn prepare_resident_async(
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
-        feedback: &BTreeMap<String, String>,
     ) -> Result<ResidentGpuSession, GpuExecutionError> {
         let instance = wgpu::Instance::default();
         let adapter = instance
@@ -335,50 +344,28 @@ impl GpuProgram {
             .await
             .map_err(|error| GpuExecutionError::DeviceRequest(error.to_string()))?;
 
-        let output_bindings = self
-            .bindings
-            .iter()
-            .filter(|binding| binding.access == GpuBindingAccess::ReadWrite)
-            .map(|binding| (binding.name.as_str(), binding))
-            .collect::<BTreeMap<_, _>>();
-        let input_bindings = self
-            .bindings
-            .iter()
-            .filter(|binding| binding.access == GpuBindingAccess::Read)
-            .map(|binding| (binding.name.as_str(), binding))
-            .collect::<BTreeMap<_, _>>();
-        for (output, input) in feedback {
-            let output_binding = output_bindings.get(output.as_str()).ok_or_else(|| {
-                GpuExecutionError::InvalidFeedback(format!("unknown output {output}"))
-            })?;
-            let input_binding = input_bindings.get(input.as_str()).ok_or_else(|| {
-                GpuExecutionError::InvalidFeedback(format!("unknown input {input}"))
-            })?;
-            if output_binding.elements != input_binding.elements {
-                return Err(GpuExecutionError::InvalidFeedback(format!(
-                    "{output} has {} elements but {input} has {}",
-                    output_binding.elements, input_binding.elements
-                )));
-            }
-        }
-
-        let feedback_by_input = feedback
-            .iter()
-            .map(|(output, input)| (input.as_str(), output.as_str()))
-            .collect::<BTreeMap<_, _>>();
-        if feedback_by_input.len() != feedback.len() {
-            return Err(GpuExecutionError::InvalidFeedback(
-                "multiple outputs target the same input".to_owned(),
-            ));
-        }
-
         let mut state_buffers = BTreeMap::new();
         let mut fixed_buffers = BTreeMap::new();
-        for binding in self
-            .bindings
-            .iter()
-            .filter(|binding| binding.access == GpuBindingAccess::Read)
-        {
+        for state in &self.states {
+            let initial = Arc::new(
+                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("Mech resident initial state"),
+                    contents: bytemuck::cast_slice(&state.initializer),
+                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                }),
+            );
+            let alternate = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("Mech resident alternate state"),
+                size: state.elements * std::mem::size_of::<f32>() as u64,
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                mapped_at_creation: false,
+            }));
+            state_buffers.insert(state.slot, [initial, alternate]);
+        }
+        for binding in &self.bindings {
+            if !matches!(binding.kind, GpuBindingKind::Input(_)) {
+                continue;
+            }
             let values = inputs
                 .get(&binding.name)
                 .ok_or_else(|| GpuExecutionError::MissingInput(binding.name.clone()))?;
@@ -389,69 +376,58 @@ impl GpuProgram {
                     actual: values.len(),
                 });
             }
-            let usage = if feedback_by_input.contains_key(binding.name.as_str()) {
-                wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC
-            } else {
-                wgpu::BufferUsages::STORAGE
-            };
-            let initial = Arc::new(
-                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some(&binding.name),
-                    contents: bytemuck::cast_slice(values),
-                    usage,
-                }),
+            fixed_buffers.insert(
+                binding.binding,
+                Arc::new(
+                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some(&binding.name),
+                        contents: bytemuck::cast_slice(values),
+                        usage: wgpu::BufferUsages::STORAGE,
+                    }),
+                ),
             );
-            if feedback_by_input.contains_key(binding.name.as_str()) {
-                let alternate = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("Mech resident alternate state"),
-                    size: binding.elements * std::mem::size_of::<f32>() as u64,
-                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-                    mapped_at_creation: false,
-                }));
-                state_buffers.insert(binding.name.as_str(), [initial, alternate]);
-            } else {
-                fixed_buffers.insert(binding.name.as_str(), initial);
-            }
         }
 
         let mut group_buffers: [Vec<Arc<wgpu::Buffer>>; 2] = [Vec::new(), Vec::new()];
+        for binding in &self.bindings {
+            match binding.kind {
+                GpuBindingKind::Input(_) => {
+                    let buffer = fixed_buffers[&binding.binding].clone();
+                    group_buffers[0].push(buffer.clone());
+                    group_buffers[1].push(buffer);
+                }
+                GpuBindingKind::StateRead(slot) => {
+                    group_buffers[0].push(state_buffers[&slot][0].clone());
+                    group_buffers[1].push(state_buffers[&slot][1].clone());
+                }
+                GpuBindingKind::StateWrite(slot) => {
+                    group_buffers[0].push(state_buffers[&slot][1].clone());
+                    group_buffers[1].push(state_buffers[&slot][0].clone());
+                }
+                GpuBindingKind::Output(_) => {
+                    let buffer = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
+                        label: Some(&binding.name),
+                        size: binding.elements * std::mem::size_of::<f32>() as u64,
+                        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                        mapped_at_creation: false,
+                    }));
+                    group_buffers[0].push(buffer.clone());
+                    group_buffers[1].push(buffer.clone());
+                }
+            }
+        }
+
         let mut output_buffers: [BTreeMap<String, Arc<wgpu::Buffer>>; 2] =
             [BTreeMap::new(), BTreeMap::new()];
         let mut output_elements = BTreeMap::new();
-        for binding in &self.bindings {
-            match binding.access {
-                GpuBindingAccess::Read => {
-                    if let Some(buffers) = state_buffers.get(binding.name.as_str()) {
-                        group_buffers[0].push(buffers[0].clone());
-                        group_buffers[1].push(buffers[1].clone());
-                    } else {
-                        let buffer = fixed_buffers[&binding.name.as_str()].clone();
-                        group_buffers[0].push(buffer.clone());
-                        group_buffers[1].push(buffer);
-                    }
-                }
-                GpuBindingAccess::ReadWrite => {
-                    if let Some(input) = feedback.get(&binding.name) {
-                        let buffers = &state_buffers[input.as_str()];
-                        group_buffers[0].push(buffers[1].clone());
-                        group_buffers[1].push(buffers[0].clone());
-                        output_buffers[0].insert(binding.name.clone(), buffers[1].clone());
-                        output_buffers[1].insert(binding.name.clone(), buffers[0].clone());
-                    } else {
-                        let buffer = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
-                            label: Some(&binding.name),
-                            size: binding.elements * std::mem::size_of::<f32>() as u64,
-                            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-                            mapped_at_creation: false,
-                        }));
-                        group_buffers[0].push(buffer.clone());
-                        group_buffers[1].push(buffer.clone());
-                        output_buffers[0].insert(binding.name.clone(), buffer.clone());
-                        output_buffers[1].insert(binding.name.clone(), buffer);
-                    }
-                    output_elements.insert(binding.name.clone(), binding.elements);
-                }
+        for output in &self.outputs {
+            for group in 0..2 {
+                output_buffers[group].insert(
+                    output.name.clone(),
+                    group_buffers[group][output.binding as usize].clone(),
+                );
             }
+            output_elements.insert(output.name.clone(), output.elements);
         }
 
         let layout_entries = self
