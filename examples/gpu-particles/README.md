@@ -41,11 +41,14 @@ from dominating the frame, the generic point renderer samples at most 250,000
 particles for display. The page reports both counts and continues to calculate
 throughput from the complete simulation state.
 
-The compile readout separates source parsing from eager source initialization.
-The current compiler materializes the source-defined initial matrices on the
-CPU before it lowers the recurring graph to WebGPU. GPU-side initializer
-lowering is future executor work; changing the recurring executor alone does
-not remove that startup cost.
+The compile readout separates source parsing, eager source initialization, and
+artifact compilation. The current compiler still materializes the
+source-defined initial matrices on the CPU before it lowers the recurring graph
+to WebGPU. Successful plan registration does not render function debug output,
+so large matrices are not formatted merely to prepare diagnostics. At this
+scale, semantic artifact snapshotting and hashing are now the dominant startup
+cost. GPU-side initializer lowering remains future executor work and would
+avoid both the CPU materialization and the large initializer constants.
 
 ## Native executor
 
