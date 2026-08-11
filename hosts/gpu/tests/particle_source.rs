@@ -243,6 +243,55 @@ fn particle_example_uses_the_shared_project_and_gpu_shim() {
     assert!(!SERVED_PARTICLE_SOURCE.contains("host-"));
 }
 
+#[test]
+fn served_particle_field_stays_bounded_without_damping() {
+    let source = SERVED_PARTICLE_SOURCE.replacen("2000000f32", "512f32", 1);
+    let artifact = compile_source(&source, []);
+    let program = GpuHost
+        .compile(&artifact)
+        .unwrap_or_else(|error| panic!("served particle source must be admitted: {error}"));
+
+    assert!(!program.wgsl().contains("sin("));
+    assert!(!program.wgsl().contains("cos("));
+    assert!(!program.wgsl().contains("%"));
+
+    let inputs = BTreeMap::from([
+        ("origin".to_owned(), vec![0.0]),
+        ("attraction".to_owned(), vec![0.45]),
+        ("nonlinear-attraction".to_owned(), vec![0.65]),
+        ("dt".to_owned(), vec![0.02]),
+    ]);
+    let mut cpu = program
+        .prepare_cpu(&inputs)
+        .expect("particle field must prepare from its captured constants");
+    let initial = cpu.outputs().expect("initial particle field must read");
+    let initial_radius = root_mean_square_radius(&initial["result.0"]);
+
+    cpu.dispatch_turns(2_000)
+        .expect("conservative particle field must advance");
+    let evolved = cpu.outputs().expect("evolved particle field must read");
+    let evolved_radius = root_mean_square_radius(&evolved["result.0"]);
+
+    assert!(evolved["result.0"].iter().all(|value| value.is_finite()));
+    assert!(evolved["result.0"].iter().all(|value| value.abs() < 2.0));
+    assert!(
+        evolved_radius > initial_radius * 0.8,
+        "particle field collapsed: initial RMS radius {initial_radius}, evolved {evolved_radius}"
+    );
+}
+
+fn root_mean_square_radius(positions: &[f32]) -> f32 {
+    let particles = positions.len() / 2;
+    let squared_radius = (0..particles)
+        .map(|index| {
+            let x = positions[index];
+            let y = positions[particles + index];
+            x * x + y * y
+        })
+        .sum::<f32>();
+    (squared_radius / particles as f32).sqrt()
+}
+
 #[cfg(feature = "native")]
 #[test]
 fn native_gpu_matches_the_cpu_backend_when_an_adapter_is_available() {
