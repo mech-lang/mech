@@ -77,7 +77,7 @@ browser_project = ["source", "browser_project_runner", "resident-routing-source"
 browser_project_runner = ["resident-routing-source", "program", "pretty_print", "serde"]
 browser_gpu_compiler = [
   "compiler", "f32", "f64", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
-  "math_add", "math_sub", "math_mul", "math_div",
+  "math_add", "math_sub", "math_mul", "math_div", "math_mod", "math_sin", "math_cos",
   "variables", "variable_define", "variable_assign", "tuple",
   "mech-stdlib/native-plan", "dep:mech-gpu",
 ]
