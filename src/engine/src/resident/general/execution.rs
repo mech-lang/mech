@@ -11,8 +11,8 @@ use mech_core::{
 
 use super::{
     ActivatedNodeIndex, EAGER_F64_STATE_ARENA_BASE, EAGER_F64_STATE_SLOT_BIT, EagerF64Read,
-    ReactiveInstance, ResidentReadLocation, ResidentRegion, ResidentStorageClass, StateArena,
-    StateVersion, TypedResidentArena,
+    ReactiveInstance, ResidentIntegrityMode, ResidentReadLocation, ResidentRegion,
+    ResidentStorageClass, StateArena, StateVersion, TypedResidentArena,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -371,8 +371,8 @@ impl ReactiveInstance {
             // installed together, so this dense pure graph executes in its
             // prevalidated linear order without per-node scheduler work.
             if self.plan.eager_f64_reads.is_some() {
-                for order in 0..self.plan.topology.linear_node_order.len() {
-                    let node_index = self.plan.topology.linear_node_order[order];
+                for order in 0..self.plan.execution_node_order.len() {
+                    let node_index = self.plan.execution_node_order[order];
                     self.execute_eager_f64_node(
                         node_index,
                         before_epoch,
@@ -382,26 +382,22 @@ impl ReactiveInstance {
                     )?;
                 }
             } else {
-                for order in 0..self.plan.topology.linear_node_order.len() {
-                    let node_index = self.plan.topology.linear_node_order[order];
+                for order in 0..self.plan.execution_node_order.len() {
+                    let node_index = self.plan.execution_node_order[order];
                     self.execute_eager_node(node_index, before_epoch, working_epoch, probe)?;
                 }
             }
             if track_summary {
-                self.workspace.executed_bits.fill(u64::MAX);
-                if let Some(last) = self.workspace.executed_bits.last_mut() {
-                    let remainder = self.plan.nodes.len() % 64;
-                    if remainder != 0 {
-                        *last = (1_u64 << remainder) - 1;
-                    }
-                }
+                self.workspace
+                    .executed_bits
+                    .copy_from_slice(&self.plan.execution_node_mask);
                 self.workspace.all_outputs_initialized = true;
             }
         } else if self.plan.topology.word_len() == 1 {
             let mut dirty = self.workspace.dirty_bits[0];
             let mut executed = 0_u64;
-            for order in 0..self.plan.topology.linear_node_order.len() {
-                let node_index = self.plan.topology.linear_node_order[order];
+            for order in 0..self.plan.execution_node_order.len() {
+                let node_index = self.plan.execution_node_order[order];
                 let index = node_index.get() as usize;
                 let node_bit = 1_u64 << index;
                 if dirty & node_bit == 0 {
@@ -416,13 +412,13 @@ impl ReactiveInstance {
             self.workspace.dirty_bits[0] = dirty;
             self.workspace.executed_bits[0] = executed;
             if !self.workspace.all_outputs_initialized
-                && executed.count_ones() as usize == self.plan.nodes.len()
+                && executed.count_ones() as usize == self.plan.execution_node_order.len()
             {
                 self.workspace.all_outputs_initialized = true;
             }
         } else {
-            for order in 0..self.plan.topology.linear_node_order.len() {
-                let node_index = self.plan.topology.linear_node_order[order];
+            for order in 0..self.plan.execution_node_order.len() {
+                let node_index = self.plan.execution_node_order[order];
                 let index = node_index.get() as usize;
                 if !bit_is_set(&self.workspace.dirty_bits, index) {
                     continue;
@@ -437,23 +433,25 @@ impl ReactiveInstance {
                 }
             }
             if !self.workspace.all_outputs_initialized
-                && count_bits(&self.workspace.executed_bits) == self.plan.nodes.len()
+                && count_bits(&self.workspace.executed_bits) == self.plan.execution_node_order.len()
             {
                 self.workspace.all_outputs_initialized = true;
             }
         }
-        for constraint in &self.plan.constraints {
-            let Some(ResidentValueRef::Bool(predicate)) =
-                self.read_location(constraint.predicate, working_epoch)
-            else {
-                return Err(ResidentExecutionError::Integrity {
-                    constraint: constraint.artifact_id,
-                });
-            };
-            if predicate != [1] {
-                return Err(ResidentExecutionError::Integrity {
-                    constraint: constraint.artifact_id,
-                });
+        if self.plan.integrity_mode == ResidentIntegrityMode::Checked {
+            for constraint in &self.plan.constraints {
+                let Some(ResidentValueRef::Bool(predicate)) =
+                    self.read_location(constraint.predicate, working_epoch)
+                else {
+                    return Err(ResidentExecutionError::Integrity {
+                        constraint: constraint.artifact_id,
+                    });
+                };
+                if predicate != [1] {
+                    return Err(ResidentExecutionError::Integrity {
+                        constraint: constraint.artifact_id,
+                    });
+                }
             }
         }
         Ok(())

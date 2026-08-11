@@ -1,8 +1,9 @@
 use mech_core::{ReactiveInstanceId, ResidentValueRef};
 use mech_engine::__resident::{
     ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices, ReactiveInstance,
-    ResidentStorageClass, ResidentStructuralProbe, ResidentTurnSummary, ResidentValueBorrow,
-    activate, compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
+    ResidentActivationOptions, ResidentIntegrityMode, ResidentStorageClass,
+    ResidentStructuralProbe, ResidentTurnSummary, ResidentValueBorrow, activate_with_options,
+    compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
 use mech_runtime::__resident_recording::{GateBFixedReceipt, ResidentTurnRecorder};
 
@@ -35,7 +36,11 @@ pub struct ResidentArtifactKernelFixture {
     last_summary: Option<ResidentTurnSummary>,
 }
 
-fn activate_route(route: ArtifactRoute, next_epoch: u64) -> ReactiveInstance {
+fn activate_route(
+    route: ArtifactRoute,
+    next_epoch: u64,
+    integrity: ResidentIntegrityMode,
+) -> ReactiveInstance {
     let mut services = FrozenEkfCompilationServices::default();
     let compilation = compile_frozen_ekf_source(SOURCE, &mut services)
         .expect("compile frozen ordinary EKF source before timing");
@@ -44,11 +49,12 @@ fn activate_route(route: ArtifactRoute, next_epoch: u64) -> ReactiveInstance {
         ArtifactRoute::Bytecode => &compilation.decoded_artifact,
     };
     let catalog = frozen_ekf_compiler_catalog().expect("build frozen resident kernel catalog");
-    let mut instance = activate(
+    let mut instance = activate_with_options(
         ReactiveInstanceId::new(0, 0),
         artifact,
         &catalog,
         &ActivationFacts::default(),
+        ResidentActivationOptions { integrity },
     )
     .expect("activate frozen public ProgramArtifact before timing");
     instance.set_next_epoch_for_test(next_epoch);
@@ -62,7 +68,7 @@ impl ResidentArtifactFixture {
 
     pub fn with_controls(route: ArtifactRoute, retained_history: usize, next_epoch: u64) -> Self {
         Self {
-            instance: activate_route(route, next_epoch),
+            instance: activate_route(route, next_epoch, ResidentIntegrityMode::Checked),
             recorder: ResidentTurnRecorder::new(EPISODE_LENGTH, retained_history)
                 .expect("resident artifact recorder setup"),
             retained_history,
@@ -159,8 +165,12 @@ impl ResidentArtifactFixture {
 
 impl ResidentArtifactKernelFixture {
     pub fn new(route: ArtifactRoute) -> Self {
+        Self::with_integrity(route, ResidentIntegrityMode::Checked)
+    }
+
+    pub fn with_integrity(route: ArtifactRoute, integrity: ResidentIntegrityMode) -> Self {
         Self {
-            instance: activate_route(route, 1),
+            instance: activate_route(route, 1, integrity),
             last_summary: None,
         }
     }
@@ -212,7 +222,7 @@ impl ResidentArtifactKernelFixture {
             0,
             0,
         );
-        probe.dirty_nodes = self.instance.plan.nodes.len();
+        probe.dirty_nodes = self.instance.plan.execution_node_count();
         probe.post_publication_append_infallible = false;
         probe
     }

@@ -155,6 +155,27 @@ pub struct ActivatedConstraint {
     pub predicate: ResidentReadLocation,
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ResidentIntegrityMode {
+    /// Execute every admitted integrity predicate and reject the candidate if
+    /// any constraint fails.
+    #[default]
+    Checked,
+    /// Do not enforce integrity constraints. Activation may remove predicate
+    /// producers whose results have no non-constraint consumers. Kernel
+    /// errors, candidate isolation, rollback, and atomic publication remain.
+    Unchecked,
+}
+
+/// Semantic safety choices applied while activating a resident artifact.
+///
+/// These remain separate from optimization level because changing them can
+/// change whether an invalid candidate is published.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct ResidentActivationOptions {
+    pub integrity: ResidentIntegrityMode,
+}
+
 #[derive(Clone, Debug)]
 pub struct ActivatedPlan {
     pub program_revision: ProgramRevision,
@@ -165,6 +186,9 @@ pub struct ActivatedPlan {
     pub nodes: Box<[ActivatedNode]>,
     pub reads: Box<[ResidentReadLocation]>,
     eager_f64_reads: Option<Box<[EagerF64Read]>>,
+    execution_node_order: Box<[ActivatedNodeIndex]>,
+    execution_node_mask: Box<[u64]>,
+    pub integrity_mode: ResidentIntegrityMode,
     pub topology: DependencyTopology,
     pub inputs: Box<[ActivatedInput]>,
     pub outputs: Box<[ActivatedOutput]>,
@@ -177,6 +201,12 @@ pub struct ActivatedPlan {
     pub(crate) rmw_state_slots: Box<[CellSlotId]>,
     pub(crate) state_hash_seed: u64,
     pub(crate) activation_sizes: ResidentArenaSizes,
+}
+
+impl ActivatedPlan {
+    pub fn execution_node_count(&self) -> usize {
+        self.execution_node_order.len()
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -627,7 +657,15 @@ impl ReactiveInstance {
             .plan_generation
             .checked_next()
             .map_err(|_| ResidentActivationError::PlanGenerationExhausted)?;
-        let mut replacement = activate(self.id, artifact, catalog, facts)?;
+        let mut replacement = activate_with_options(
+            self.id,
+            artifact,
+            catalog,
+            facts,
+            ResidentActivationOptions {
+                integrity: self.plan.integrity_mode,
+            },
+        )?;
         let same_layout = physical_layout_eq(&self.plan, &replacement.plan);
         let next_layout = if same_layout {
             self.plan.layout_generation
@@ -783,12 +821,34 @@ pub fn activate(
     catalog: &FunctionCatalog,
     facts: &ActivationFacts,
 ) -> Result<ReactiveInstance, ResidentActivationError> {
+    activate_with_options(
+        id,
+        artifact,
+        catalog,
+        facts,
+        ResidentActivationOptions::default(),
+    )
+}
+
+pub fn activate_with_options(
+    id: ReactiveInstanceId,
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    facts: &ActivationFacts,
+    options: ResidentActivationOptions,
+) -> Result<ReactiveInstance, ResidentActivationError> {
     preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact)?;
     let layout = build_layout(artifact, facts, &classification)?;
     let facts_fingerprint = activation_facts_fingerprint(facts);
-    let (plan, input_sizes, state_sizes, scratch_sizes, activation_sizes) =
-        build_plan(artifact, catalog, classification, layout, facts_fingerprint)?;
+    let (plan, input_sizes, state_sizes, scratch_sizes, activation_sizes) = build_plan(
+        artifact,
+        catalog,
+        classification,
+        layout,
+        facts_fingerprint,
+        options,
+    )?;
     let mut activation = TypedResidentArena::allocate(activation_sizes);
     for raw in 0..artifact.constants().len() {
         let constant = ConstantId::new(raw as u32);
@@ -1213,6 +1273,7 @@ fn build_plan(
     classes: Box<[NodeClass]>,
     layout: LayoutBuild,
     activation_facts_fingerprint: [u8; 32],
+    options: ResidentActivationOptions,
 ) -> Result<
     (
         ActivatedPlan,
@@ -1313,6 +1374,17 @@ fn build_plan(
     }
     let activation_steps = order_activation_steps(artifact, &classes, activation_steps)?;
     let topology = build_topology(artifact, &classes, &nodes, &artifact_to_activated)?;
+    let execution_node_order = build_execution_node_order(
+        artifact,
+        &nodes,
+        &artifact_to_activated,
+        &topology,
+        options.integrity,
+    );
+    let mut execution_node_mask = vec![0_u64; topology.word_len()].into_boxed_slice();
+    for node in &execution_node_order {
+        set_bit(&mut execution_node_mask, node.get() as usize);
+    }
     let inputs = layout
         .slots
         .iter()
@@ -1411,6 +1483,9 @@ fn build_plan(
         nodes: nodes.into_boxed_slice(),
         reads: reads.into_boxed_slice(),
         eager_f64_reads,
+        execution_node_order,
+        execution_node_mask,
+        integrity_mode: options.integrity,
         topology,
         inputs,
         outputs,
@@ -1431,6 +1506,45 @@ fn build_plan(
         scratch_sizes,
         activation_sizes,
     ))
+}
+
+fn build_execution_node_order(
+    artifact: &ProgramArtifact,
+    nodes: &[ActivatedNode],
+    artifact_to_activated: &[Option<ActivatedNodeIndex>],
+    topology: &DependencyTopology,
+    integrity: ResidentIntegrityMode,
+) -> Box<[ActivatedNodeIndex]> {
+    if integrity == ResidentIntegrityMode::Checked {
+        return topology.linear_node_order.clone();
+    }
+    let mut omitted = vec![false; nodes.len()];
+    for constraint in artifact.constraints() {
+        let Some(ArtifactSource::Slot(slot)) = constraint.inputs.first().copied() else {
+            continue;
+        };
+        let ProducerReference::NodeOutput { node, .. } =
+            artifact.slots()[slot.get() as usize].producer
+        else {
+            continue;
+        };
+        let Some(activated) = artifact_to_activated[node.get() as usize] else {
+            continue;
+        };
+        let candidate = &nodes[activated.get() as usize];
+        if candidate.write.storage == ResidentStorageClass::Scratch
+            && topology.same_turn_downstream(activated).is_empty()
+        {
+            omitted[activated.get() as usize] = true;
+        }
+    }
+    topology
+        .linear_node_order
+        .iter()
+        .copied()
+        .filter(|node| !omitted[node.get() as usize])
+        .collect::<Vec<_>>()
+        .into_boxed_slice()
 }
 
 fn build_eager_f64_reads(

@@ -7,6 +7,7 @@ use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use mech_engine::__resident::ResidentIntegrityMode;
 #[cfg(feature = "runtime_bench_probes")]
 use mech_runtime::{gate_a_cost_snapshot, reset_gate_a_costs};
 
@@ -599,19 +600,33 @@ fn resident_artifact(c: &mut Criterion) {
     complete_group.finish();
 
     let mut kernel_group = c.benchmark_group("gate_b/mech-resident-artifact-kernel");
-    for (route, lane, benchmark_name) in [
+    for (route, integrity, lane, benchmark_name) in [
         (
             ArtifactRoute::Source,
+            ResidentIntegrityMode::Checked,
             "mech-resident-artifact-kernel-source",
             "source",
         ),
         (
             ArtifactRoute::Bytecode,
+            ResidentIntegrityMode::Checked,
             "mech-resident-artifact-kernel-bytecode",
             "bytecode",
         ),
+        (
+            ArtifactRoute::Source,
+            ResidentIntegrityMode::Unchecked,
+            "mech-resident-artifact-kernel-source-unchecked",
+            "source-unchecked",
+        ),
+        (
+            ArtifactRoute::Bytecode,
+            ResidentIntegrityMode::Unchecked,
+            "mech-resident-artifact-kernel-bytecode-unchecked",
+            "bytecode-unchecked",
+        ),
     ] {
-        let mut correctness = ResidentArtifactKernelFixture::new(route);
+        let mut correctness = ResidentArtifactKernelFixture::with_integrity(route, integrity);
         let trajectory_hash = correctness.run_and_validate_every_turn();
         assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
         correctness.validate_final();
@@ -619,7 +634,8 @@ fn resident_artifact(c: &mut Criterion) {
             benchmark.iter_custom(|iterations| {
                 let mut elapsed = Duration::ZERO;
                 for _ in 0..iterations {
-                    let mut fixture = ResidentArtifactKernelFixture::new(route);
+                    let mut fixture =
+                        ResidentArtifactKernelFixture::with_integrity(route, integrity);
                     reset_allocations();
                     let started = Instant::now();
                     fixture.run_episode();

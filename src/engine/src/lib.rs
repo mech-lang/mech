@@ -120,11 +120,12 @@ pub mod __resident {
     pub use crate::resident::general::{
         ActivatedConstraint, ActivatedInput, ActivatedNode, ActivatedNodeIndex, ActivatedOutput,
         ActivatedPlan, ActivationFacts, CapturedSignalInput, DependencyTopology,
-        PreparedResidentTurn, ReactiveInstance, ResidentActivationError, ResidentArenaSizes,
-        ResidentExecutionError, ResidentReadLocation, ResidentRegion, ResidentStorageClass,
-        ResidentStructuralProbe, ResidentTurnSummary, ResidentValueBorrow, ResidentWriteLocation,
-        ResolvedSlot, StateArena, StateMigrationMapping, StateMigrationPolicy, TurnWorkspace,
-        TypedResidentArena, activate,
+        PreparedResidentTurn, ReactiveInstance, ResidentActivationError, ResidentActivationOptions,
+        ResidentArenaSizes, ResidentExecutionError, ResidentIntegrityMode, ResidentReadLocation,
+        ResidentRegion, ResidentStorageClass, ResidentStructuralProbe, ResidentTurnSummary,
+        ResidentValueBorrow, ResidentWriteLocation, ResolvedSlot, StateArena,
+        StateMigrationMapping, StateMigrationPolicy, TurnWorkspace, TypedResidentArena, activate,
+        activate_with_options,
     };
 }
 #[cfg(all(feature = "source", feature = "state_machines"))]

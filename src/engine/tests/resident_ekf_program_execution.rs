@@ -7,8 +7,9 @@ use mech_core::{
 use mech_engine::__gate_b_resident::ResidentEkfBatch;
 use mech_engine::__resident::{
     ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices, ReactiveInstance,
-    ResidentExecutionError, ResidentStorageClass, ResidentTurnSummary, ResidentValueBorrow,
-    activate, compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
+    ResidentActivationOptions, ResidentExecutionError, ResidentIntegrityMode, ResidentStorageClass,
+    ResidentTurnSummary, ResidentValueBorrow, activate, activate_with_options,
+    compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
 use sha2::{Digest, Sha256};
 
@@ -73,16 +74,44 @@ fn execute_turn(
 }
 
 fn instance(id: u32) -> MResult<ReactiveInstance> {
+    instance_with_integrity(id, ResidentIntegrityMode::Checked)
+}
+
+fn instance_with_integrity(id: u32, integrity: ResidentIntegrityMode) -> MResult<ReactiveInstance> {
     let mut services = FrozenEkfCompilationServices::default();
     let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
     let catalog = frozen_ekf_compiler_catalog()?;
-    Ok(activate(
+    Ok(activate_with_options(
         ReactiveInstanceId::new(id, 0),
         &compilation.source_artifact,
         &catalog,
         &ActivationFacts::default(),
+        ResidentActivationOptions { integrity },
     )
     .unwrap())
+}
+
+#[test]
+fn unchecked_integrity_is_explicit_and_omits_constraint_only_nodes() -> MResult<()> {
+    let mut checked = instance_with_integrity(20, ResidentIntegrityMode::Checked)?;
+    let mut unchecked = instance_with_integrity(21, ResidentIntegrityMode::Unchecked)?;
+    let frame = frames().next().unwrap();
+
+    let checked_summary = execute_turn(&mut checked, &frame).unwrap();
+    let unchecked_summary = execute_turn(&mut unchecked, &frame).unwrap();
+    assert_eq!(state(&checked), state(&unchecked));
+    assert_eq!(checked_summary.dirty_nodes, 20);
+    assert_eq!(unchecked_summary.dirty_nodes, 17);
+
+    let mut invalid = frame;
+    invalid[0] = f64::NAN;
+    assert!(matches!(
+        execute_turn(&mut checked, &invalid),
+        Err(ResidentExecutionError::Integrity { .. })
+    ));
+    assert!(execute_turn(&mut unchecked, &invalid).is_ok());
+    assert!(state(&unchecked).iter().any(|value| !value.is_finite()));
+    Ok(())
 }
 
 #[test]
