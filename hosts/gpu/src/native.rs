@@ -1,4 +1,9 @@
-use std::{collections::BTreeMap, fmt, sync::mpsc};
+use std::{
+    collections::BTreeMap,
+    fmt,
+    sync::mpsc,
+    time::{Duration, Instant},
+};
 
 use wgpu::util::DeviceExt;
 
@@ -26,6 +31,16 @@ impl fmt::Display for GpuExecutionError {
 
 impl std::error::Error for GpuExecutionError {}
 
+#[derive(Clone, Debug)]
+pub struct GpuExecutionProfile {
+    pub adapter: String,
+    pub setup: Duration,
+    pub pipeline_and_upload: Duration,
+    pub dispatch_and_readback: Duration,
+    pub total: Duration,
+    pub outputs: BTreeMap<String, Vec<f32>>,
+}
+
 impl GpuProgram {
     /// Dispatches the generated kernel through wgpu. The same path works over
     /// Metal, Vulkan, Direct3D 12, and WebGPU-capable native backends.
@@ -33,13 +48,31 @@ impl GpuProgram {
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BTreeMap<String, Vec<f32>>, GpuExecutionError> {
-        pollster::block_on(self.run_gpu_async(inputs))
+        self.run_gpu_profiled(inputs).map(|profile| profile.outputs)
+    }
+
+    pub fn run_gpu_profiled(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<GpuExecutionProfile, GpuExecutionError> {
+        pollster::block_on(self.run_gpu_profiled_async(inputs))
     }
 
     pub async fn run_gpu_async(
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BTreeMap<String, Vec<f32>>, GpuExecutionError> {
+        self.run_gpu_profiled_async(inputs)
+            .await
+            .map(|profile| profile.outputs)
+    }
+
+    pub async fn run_gpu_profiled_async(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<GpuExecutionProfile, GpuExecutionError> {
+        let total_started = Instant::now();
+        let setup_started = Instant::now();
         let instance = wgpu::Instance::default();
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -49,6 +82,10 @@ impl GpuProgram {
             })
             .await
             .ok_or(GpuExecutionError::AdapterUnavailable)?;
+        let adapter_name = {
+            let info = adapter.get_info();
+            format!("{} ({:?})", info.name, info.backend)
+        };
         let required_storage_buffers = self.bindings.len() as u32;
         let adapter_limits = adapter.limits();
         if required_storage_buffers > adapter_limits.max_storage_buffers_per_shader_stage {
@@ -72,7 +109,9 @@ impl GpuProgram {
             )
             .await
             .map_err(|error| GpuExecutionError::DeviceRequest(error.to_string()))?;
+        let setup = setup_started.elapsed();
 
+        let pipeline_started = Instant::now();
         let mut buffers = Vec::with_capacity(self.bindings.len());
         for binding in &self.bindings {
             let buffer = match binding.access {
@@ -153,7 +192,9 @@ impl GpuProgram {
             entry_point: "main",
             compilation_options: wgpu::PipelineCompilationOptions::default(),
         });
+        let pipeline_and_upload = pipeline_started.elapsed();
 
+        let dispatch_started = Instant::now();
         let mut readbacks = Vec::new();
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Mech GPU command encoder"),
@@ -200,6 +241,13 @@ impl GpuProgram {
             drop(mapped);
             readback.unmap();
         }
-        Ok(outputs)
+        Ok(GpuExecutionProfile {
+            adapter: adapter_name,
+            setup,
+            pipeline_and_upload,
+            dispatch_and_readback: dispatch_started.elapsed(),
+            total: total_started.elapsed(),
+            outputs,
+        })
     }
 }

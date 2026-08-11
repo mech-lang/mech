@@ -105,6 +105,20 @@ Admission should continue to fail closed for opaque nodes. Expanding GPU
 coverage should first expand authoritative operation contracts, not add an
 unsafe fallback.
 
+### 8. Live host inputs must not be serialized as artifact values
+
+The release particle benchmark compiles at 50,000 particles but fails at
+75,000 and 100,000 with `ProgramArtifact section exceeds read limit`. The host
+matrices are currently materialized while source is evaluated and then captured
+inside the artifact. Compile time also grows with particle count: 50.5 ms at
+1,000 particles, 159.7 ms at 10,000, 321.8 ms at 25,000, and 616.6 ms at
+50,000 on the measured Apple M1.
+
+Live ingress should contribute schema, shape, and binding identity to the
+artifact, not its current payload. Runtime data belongs in activation input
+buffers. This is both a correctness ceiling and a bytecode-size/design issue,
+not a GPU-host optimization.
+
 ## Executor and physical-plan findings
 
 ### Logical composites need physical decomposition
