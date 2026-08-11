@@ -96,6 +96,20 @@ pub fn decode_constants(
     Ok(values)
 }
 
+/// Decodes compiler-owned constants before bytecode section framing.
+///
+/// This keeps semantic artifact construction independent from file-size read
+/// limits. The final bytecode writer still applies all framing and read limits.
+pub fn decode_encoded_constants(constants: &[EncodedConstant]) -> MResult<Vec<LegacyValue>> {
+    constants
+        .iter()
+        .map(|constant| {
+            let mut context = ConstantCodecContext::new();
+            decode_value_payload(&constant.runtime_type, &constant.bytes, &mut context)
+        })
+        .collect()
+}
+
 pub(crate) fn referenced_runtime_types(
     types: &[RuntimeType],
     entries: &[ConstantEntry],

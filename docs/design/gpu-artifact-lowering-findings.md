@@ -62,14 +62,14 @@ independent input solely because source syntax used `:=`.
 
 ### 4. Elide or classify variable-definition markers
 
-`VariableDefine*` instructions survive as `LegacyOpaque` artifact nodes even
-though downstream registers already reference the values being named. The GPU
-host can safely ignore these exact dead markers, but every portable executor
-should not have to rediscover that rule.
+`VariableDefine*` instructions previously survived as `LegacyOpaque` artifact
+nodes even though downstream registers already referenced the values being
+named. This branch now elides the markers during semantic artifact construction
+while retaining their executable bytecode and symbol metadata.
 
-Recommended change: either elide definition-only nodes while building the
-artifact or give them a first-class structural/identity classification. Do not
-model them as opaque computation.
+This also allows dead evaluated snapshots used only by those markers to be
+removed from the artifact constant store. Definition-only markers should remain
+absent from future artifact designs rather than modeled as opaque computation.
 
 ### 5. Typed `f32` literal conversion is outside the runtime catalog closure
 
@@ -107,17 +107,21 @@ unsafe fallback.
 
 ### 8. Live host inputs must not be serialized as artifact values
 
-The release particle benchmark compiles at 50,000 particles but fails at
-75,000 and 100,000 with `ProgramArtifact section exceeds read limit`. The host
-matrices are currently materialized while source is evaluated and then captured
-inside the artifact. Compile time also grows with particle count: 50.5 ms at
-1,000 particles, 159.7 ms at 10,000, 321.8 ms at 25,000, and 616.6 ms at
-50,000 on the measured Apple M1.
+The initial release particle benchmark compiled at 50,000 particles but failed
+at 75,000 and 100,000 with `ProgramArtifact section exceeds read limit`.
+Compiler-generated definition markers retained evaluated matrix snapshots even
+though no semantic node consumed them. Artifact construction now decodes
+compiler-owned constants without a bytecode file round trip, elides those
+markers, and compacts constants to the IDs actually referenced by the semantic
+graph. The two-million-particle artifact has no constants and compiles without
+raising bytecode read limits.
 
-Live ingress should contribute schema, shape, and binding identity to the
-artifact, not its current payload. Runtime data belongs in activation input
-buffers. This is both a correctness ceiling and a bytecode-size/design issue,
-not a GPU-host optimization.
+Large live ingress is still evaluated by the legacy interpreter before artifact
+construction. That makes artifact plus WGSL compilation take 20.47 seconds at
+two million particles on the measured Apple M1. Live ingress should contribute
+schema, shape, and binding identity directly to compilation; payload allocation
+and initialization belong in activation input buffers. This remaining issue is
+compile-time work, not resident GPU execution.
 
 ## Executor and physical-plan findings
 
@@ -139,14 +143,18 @@ parameter buffer and reuse compatible arenas. Admission must compare the
 planned binding count against adapter limits and report a capability diagnostic
 before pipeline creation.
 
-### Resident execution is the next performance boundary
+### Resident execution removes per-turn setup and observation
 
-The current native proof creates a device, pipeline, buffers, dispatch, and
-readback for one call. This proves generated-kernel correctness, not steady-state
-performance. A production GPU executor must retain the device, pipeline,
-bind group, device buffers, and staging buffers across turns. Only changed
-inputs should be uploaded, and readback should occur only for host-observed
-outputs.
+The native proof now includes a resident session that retains the device,
+pipeline, bind groups, and two particle state-buffer sets. A host-provided
+feedback map connects `result.0` to `positions` and `result.1` to `velocities`.
+Turns alternate bind groups without host copies; output staging and mapping
+occur only when the host requests readback.
+
+On the measured Apple M1, two million particles ran 120 turns at 1.703 ms per
+turn (1.174 billion particle-turns per second). One final full readback of both
+matrices took 15.852 ms. CPU/GPU one-turn output matched exactly and sampled
+120-turn recurrence error was 5.96e-8.
 
 This is executor machinery, not bytecode machinery. D1's
 `ProgramArtifact -> ActivatedPlan -> ReactiveInstance` separation is compatible
