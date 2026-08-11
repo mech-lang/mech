@@ -68,8 +68,21 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
         MechProgramConfig::default(),
         mech_stdlib::source_native_plan_catalog(),
     );
-    source_program.run_string(source.trim())?;
+    let catalog_elapsed = compile_started.elapsed();
+
+    let parse_started = Instant::now();
+    let tree = mech_syntax::parse(source.trim())?;
+    let parse_elapsed = parse_started.elapsed();
+
+    let source_started = Instant::now();
+    source_program.run_tree(&tree)?;
+    let source_elapsed = source_started.elapsed();
+
+    let artifact_started = Instant::now();
     let artifact = source_program.compile_program_artifact()?;
+    let artifact_elapsed = artifact_started.elapsed();
+
+    let lower_started = Instant::now();
     let placement = GpuHost.plan(&artifact);
     let program = GpuHost.compile(&artifact).map_err(|error| {
         executor_error(
@@ -80,6 +93,7 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
             ),
         )
     })?;
+    let lower_elapsed = lower_started.elapsed();
     let compile_elapsed = compile_started.elapsed();
 
     println!(
@@ -97,8 +111,21 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
         program.workgroup_count(),
         milliseconds(compile_elapsed),
     );
+    println!(
+        "[Mech Run] Compile phases: catalog {:.3} ms, parse {:.3} ms, source execution + initialization {:.3} ms, artifact {:.3} ms, GPU lowering {:.3} ms",
+        milliseconds(catalog_elapsed),
+        milliseconds(parse_elapsed),
+        milliseconds(source_elapsed),
+        milliseconds(artifact_elapsed),
+        milliseconds(lower_elapsed),
+    );
 
+    let inputs_started = Instant::now();
     let inputs = source_input_values(&source_program, &program)?;
+    println!(
+        "[Mech Run] Captured executor inputs in {:.3} ms",
+        milliseconds(inputs_started.elapsed())
+    );
     match executor.provider.as_str() {
         "cpu" => {
             let mut session = program

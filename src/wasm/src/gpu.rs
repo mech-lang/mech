@@ -6,6 +6,17 @@ use mech_engine::{MechProgram, MechProgramConfig};
 use mech_gpu::{GpuBindingAccess, GpuBindingRole, GpuHost, GpuProgram, WORKGROUP_SIZE};
 use mech_runtime::{ConfigProfileOptions, parse_config_document};
 use wasm_bindgen::prelude::*;
+use web_time::Instant;
+
+#[derive(Clone, Copy, Debug, Default)]
+struct CompileTimings {
+    catalog_setup: f64,
+    parsing: f64,
+    source_execution: f64,
+    artifact_compilation: f64,
+    gpu_lowering: f64,
+    input_capture: f64,
+}
 
 #[wasm_bindgen(js_name = requiredGpuPaths)]
 pub fn required_gpu_paths(config_source: &str) -> Result<Array, JsValue> {
@@ -47,7 +58,8 @@ pub fn configured_executor(config_source: &str) -> Result<JsValue, JsValue> {
 
 #[wasm_bindgen(js_name = compileGpuProgram)]
 pub fn compile_gpu_program(source: &str) -> Result<JsValue, JsValue> {
-    let (program, input_values) = compile_program(source).map_err(error)?;
+    let (program, input_values, timings) = compile_program(source).map_err(error)?;
+    let manifest_started = Instant::now();
 
     let manifest = Object::new();
     set(&manifest, "wgsl", program.wgsl())?;
@@ -134,24 +146,65 @@ pub fn compile_gpu_program(source: &str) -> Result<JsValue, JsValue> {
         outputs.push(&value);
     }
     set(&manifest, "outputs", outputs)?;
+
+    let compile_timings = Object::new();
+    set(&compile_timings, "catalogSetup", timings.catalog_setup)?;
+    set(&compile_timings, "parsing", timings.parsing)?;
+    set(
+        &compile_timings,
+        "sourceExecution",
+        timings.source_execution,
+    )?;
+    set(
+        &compile_timings,
+        "artifactCompilation",
+        timings.artifact_compilation,
+    )?;
+    set(&compile_timings, "gpuLowering", timings.gpu_lowering)?;
+    set(&compile_timings, "inputCapture", timings.input_capture)?;
+    set(
+        &compile_timings,
+        "manifestEncoding",
+        milliseconds(manifest_started),
+    )?;
+    set(&manifest, "compileTimings", compile_timings)?;
     Ok(manifest.into())
 }
 
-fn compile_program(source: &str) -> Result<(GpuProgram, BTreeMap<String, Vec<f32>>), String> {
+fn compile_program(
+    source: &str,
+) -> Result<(GpuProgram, BTreeMap<String, Vec<f32>>, CompileTimings), String> {
+    let catalog_started = Instant::now();
     let mut source_program = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
         mech_stdlib::source_native_plan_catalog(),
     );
-    source_program
-        .run_string(source.trim())
+    let catalog_setup = milliseconds(catalog_started);
+
+    let parse_started = Instant::now();
+    let tree = mech_syntax::parse(source.trim())
         .map_err(|failure| format!("Mech source rejected: {failure:?}"))?;
+    let parsing = milliseconds(parse_started);
+
+    let source_started = Instant::now();
+    source_program
+        .run_tree(&tree)
+        .map_err(|failure| format!("Mech source rejected: {failure:?}"))?;
+    let source_execution = milliseconds(source_started);
+
+    let artifact_started = Instant::now();
     let artifact = source_program
         .compile_program_artifact()
         .map_err(|failure| format!("Mech artifact compilation failed: {failure:?}"))?;
+    let artifact_compilation = milliseconds(artifact_started);
+
+    let gpu_started = Instant::now();
     let program = GpuHost
         .compile(&artifact)
         .map_err(|failure| format!("GPU host rejected the Mech program: {failure}"))?;
+    let gpu_lowering = milliseconds(gpu_started);
 
+    let input_started = Instant::now();
     let symbols = source_program.interpreter().symbols();
     let symbols = symbols.borrow();
     let mut input_values = BTreeMap::new();
@@ -176,7 +229,23 @@ fn compile_program(source: &str) -> Result<(GpuProgram, BTreeMap<String, Vec<f32
         }
         input_values.insert(binding.name.clone(), values);
     }
-    Ok((program, input_values))
+    let input_capture = milliseconds(input_started);
+    Ok((
+        program,
+        input_values,
+        CompileTimings {
+            catalog_setup,
+            parsing,
+            source_execution,
+            artifact_compilation,
+            gpu_lowering,
+            input_capture,
+        },
+    ))
+}
+
+fn milliseconds(started: Instant) -> f64 {
+    started.elapsed().as_secs_f64() * 1_000.0
 }
 
 fn set(target: &Object, name: &str, value: impl Into<JsValue>) -> Result<(), JsValue> {
@@ -204,7 +273,7 @@ positions = next-positions
 
     #[test]
     fn selected_browser_features_compile_complete_particle_source_to_gpu_program() {
-        let (program, inputs) =
+        let (program, inputs, _) =
             compile_program(PARTICLE_SOURCE).expect("browser compiler must admit the source");
         assert_eq!(program.dispatch_elements(), 4);
         assert!(
