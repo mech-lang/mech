@@ -2,12 +2,15 @@ use std::collections::BTreeMap;
 
 use mech_core::{LegacyValue, Ref, ResolvedOperationContract, hash_str, matrix::Matrix};
 use mech_engine::{MechProgram, MechProgramConfig, SlotRole};
-use mech_gpu::{ExecutionTarget, GpuDiagnosticCode, GpuHost, SlotResidence, TransferDirection};
+use mech_gpu::{
+    ExecutionTarget, GpuBindingRole, GpuDiagnosticCode, GpuHost, SlotResidence, TransferDirection,
+};
 
 const PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particle-kernel.mec");
 
 const STANDALONE_PARTICLE_SOURCE: &str =
     include_str!("../../../examples/gpu-particles/particles.mec");
+const PARTICLE_BROWSER_HOST: &str = include_str!("../../../examples/gpu-particles/particle-gpu.js");
 
 fn compile_source(
     source: &str,
@@ -108,6 +111,28 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     assert!(!program.wgsl().contains("gravity"));
     assert_eq!(program.dispatch_elements(), 8);
     assert_eq!(program.workgroup_count(), 1);
+    assert_eq!(
+        program
+            .bindings()
+            .iter()
+            .filter(|binding| binding.role() == GpuBindingRole::StateRead)
+            .count(),
+        2
+    );
+    assert_eq!(
+        program
+            .bindings()
+            .iter()
+            .filter(|binding| binding.role() == GpuBindingRole::StateWrite)
+            .count(),
+        2
+    );
+    for (_, slot, elements) in program.outputs() {
+        assert_eq!(elements, 8);
+        assert!(program.bindings().iter().any(|binding| {
+            binding.role() == GpuBindingRole::StateWrite && binding.slot() == slot
+        }));
+    }
 
     let mut inputs = BTreeMap::new();
     inputs.insert(
@@ -154,6 +179,14 @@ fn standalone_particle_program_needs_no_host_inputs() {
     let cycled = cpu.outputs().expect("cycled outputs must read");
     assert_close(&cycled["result.0"], &initial["result.0"]);
     assert_close(&cycled["result.1"], &initial["result.1"]);
+}
+
+#[test]
+fn browser_host_compiles_raw_mech_source_instead_of_embedding_compute_wgsl() {
+    assert!(PARTICLE_BROWSER_HOST.contains("compileGpuProgram(source, MAX_PARTICLES)"));
+    assert!(PARTICLE_BROWSER_HOST.contains("/source/particle-kernel.mec"));
+    assert!(!PARTICLE_BROWSER_HOST.contains("@compute"));
+    assert!(!PARTICLE_BROWSER_HOST.contains("computeShader"));
 }
 
 #[cfg(feature = "native")]

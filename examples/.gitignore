@@ -2,3 +2,4 @@
 src/.DS_Store
 machines
 *.html
+!gpu-particles/index.html

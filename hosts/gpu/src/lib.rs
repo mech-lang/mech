@@ -24,7 +24,7 @@ pub use native::*;
 mod placement;
 pub use placement::*;
 
-const WORKGROUP_SIZE: u32 = 64;
+pub const WORKGROUP_SIZE: u32 = 64;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GpuDiagnosticCode {
@@ -102,6 +102,34 @@ pub struct GpuBinding {
     pub access: GpuBindingAccess,
     pub elements: u64,
     kind: GpuBindingKind,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum GpuBindingRole {
+    Input,
+    StateRead,
+    StateWrite,
+    Output,
+}
+
+impl GpuBinding {
+    pub const fn role(&self) -> GpuBindingRole {
+        match self.kind {
+            GpuBindingKind::Input(_) => GpuBindingRole::Input,
+            GpuBindingKind::StateRead(_) => GpuBindingRole::StateRead,
+            GpuBindingKind::StateWrite(_) => GpuBindingRole::StateWrite,
+            GpuBindingKind::Output(_) => GpuBindingRole::Output,
+        }
+    }
+
+    pub const fn slot(&self) -> CellSlotId {
+        match self.kind {
+            GpuBindingKind::Input(slot)
+            | GpuBindingKind::StateRead(slot)
+            | GpuBindingKind::StateWrite(slot)
+            | GpuBindingKind::Output(slot) => slot,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -186,6 +214,12 @@ impl GpuProgram {
 
     pub fn bindings(&self) -> &[GpuBinding] {
         &self.bindings
+    }
+
+    pub fn outputs(&self) -> impl Iterator<Item = (&str, CellSlotId, u64)> {
+        self.outputs
+            .iter()
+            .map(|output| (output.name.as_str(), output.source, output.elements))
     }
 
     pub const fn dispatch_elements(&self) -> u64 {
