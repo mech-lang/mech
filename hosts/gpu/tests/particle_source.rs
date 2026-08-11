@@ -6,11 +6,39 @@ use mech_gpu::{
     ExecutionTarget, GpuBindingRole, GpuDiagnosticCode, GpuHost, SlotResidence, TransferDirection,
 };
 
-const PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particle-kernel.mec");
+const PARTICLE_SOURCE: &str = r#"
+~positions := host-positions
+~velocities := host-velocities
+origin := host-origin
+attraction := host-attraction
+drag := host-drag
+dt := host-dt
+acceleration := (origin - positions) * attraction
+next-velocities := (velocities + acceleration * dt) * drag
+next-positions := positions + next-velocities * dt
+velocities = next-velocities
+positions = next-positions
+(positions, velocities)
+"#;
 
-const STANDALONE_PARTICLE_SOURCE: &str =
-    include_str!("../../../examples/gpu-particles/particles.mec");
-const PARTICLE_BROWSER_HOST: &str = include_str!("../../../examples/gpu-particles/particle-gpu.js");
+const STANDALONE_PARTICLE_SOURCE: &str = r#"
+particle-count := 10f32
+particle-index := 1f32..=particle-count
+particle-x := (particle-index / particle-count) * 2f32 - 1f32
+particle-y := particle-x * particle-x - 0.5<f32>
+~positions := [particle-x; particle-y]
+~velocities := [(0f32 - particle-y); particle-x] * 0.18<f32>
+acceleration := (0f32 - positions) * 0.34<f32>
+next-velocities := (velocities + acceleration * 0.008333333<f32>) * 0.997<f32>
+next-positions := positions + next-velocities * 0.008333333<f32>
+velocities = next-velocities
+positions = next-positions
+(positions, velocities)
+"#;
+
+const PROJECT_BOOTSTRAP: &str = include_str!("../../../include/project.js");
+const PARTICLE_HTML: &str = include_str!("../../../examples/gpu-particles/index.html");
+const SERVED_PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particles.mec");
 
 fn compile_source(
     source: &str,
@@ -157,36 +185,50 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
 #[test]
 fn standalone_particle_program_needs_no_host_inputs() {
     let artifact = compile_source(STANDALONE_PARTICLE_SOURCE, []);
-    assert!(
-        artifact.inputs().is_empty(),
-        "unexpected inputs: {:?}",
-        artifact.inputs()
-    );
     let program = GpuHost
         .compile(&artifact)
         .unwrap_or_else(|error| panic!("standalone particle source must be admitted: {error}"));
+    assert!(
+        program
+            .bindings()
+            .iter()
+            .all(|binding| binding.role() != GpuBindingRole::Input),
+        "initialization-only source values must not become turn inputs"
+    );
+    let position_slot = program
+        .outputs()
+        .find_map(|(name, slot, _)| (name == "result.0").then_some(slot))
+        .expect("particle position output must exist");
+    assert_eq!(
+        program.output_dimensions(position_slot),
+        Some([2, 10].as_slice())
+    );
     let mut cpu = program
         .prepare_cpu(&BTreeMap::new())
         .expect("standalone CPU executor must prepare");
     let initial = cpu.outputs().expect("standalone initial outputs must read");
-    assert_eq!(initial["result.0"].len(), 18);
-    assert_eq!(initial["result.1"].len(), 18);
+    assert_eq!(initial["result.0"].len(), 20);
+    assert_eq!(initial["result.1"].len(), 20);
     assert!(initial["result.0"].iter().any(|value| *value != 0.0));
-    assert!(initial["result.1"].iter().all(|value| *value == 0.0));
+    assert!(initial["result.1"].iter().any(|value| *value != 0.0));
 
     cpu.dispatch_turns(6)
         .expect("standalone CPU executor must advance");
     let cycled = cpu.outputs().expect("cycled outputs must read");
-    assert_close(&cycled["result.0"], &initial["result.0"]);
-    assert_close(&cycled["result.1"], &initial["result.1"]);
+    assert_ne!(cycled["result.0"], initial["result.0"]);
+    assert_ne!(cycled["result.1"], initial["result.1"]);
 }
 
 #[test]
-fn browser_host_compiles_raw_mech_source_instead_of_embedding_compute_wgsl() {
-    assert!(PARTICLE_BROWSER_HOST.contains("compileGpuProgram(source, MAX_PARTICLES)"));
-    assert!(PARTICLE_BROWSER_HOST.contains("/source/particle-kernel.mec"));
-    assert!(!PARTICLE_BROWSER_HOST.contains("@compute"));
-    assert!(!PARTICLE_BROWSER_HOST.contains("computeShader"));
+fn particle_example_uses_the_shared_project_and_gpu_shim() {
+    assert!(PARTICLE_HTML.contains("src=\"/_mech/project.js\""));
+    assert!(!PARTICLE_HTML.contains("particle-gpu.js"));
+    assert!(PROJECT_BOOTSTRAP.contains("mech.compileGpuProgram(source)"));
+    assert!(PROJECT_BOOTSTRAP.contains("data-mech-gpu-renderer"));
+    assert!(!PROJECT_BOOTSTRAP.contains("seedParticles"));
+    assert!(!PROJECT_BOOTSTRAP.contains("host-positions"));
+    assert!(SERVED_PARTICLE_SOURCE.contains("particle-count := 2000000f32"));
+    assert!(!SERVED_PARTICLE_SOURCE.contains("host-"));
 }
 
 #[cfg(feature = "native")]

@@ -1,30 +1,22 @@
-// This complete program owns both its initial data and its recurrence. Change
-// run.executor.provider in mech.mcfg to run the same typed graph on CPU or GPU.
-~positions := [
-  -1<f32> -1<f32>;
-   0<f32> -1<f32>;
-   1<f32> -1<f32>;
-  -1<f32>  0<f32>;
-   0<f32>  0<f32>;
-   1<f32>  0<f32>;
-  -1<f32>  1<f32>;
-   0<f32>  1<f32>;
-   1<f32>  1<f32>
-]
-~velocities := [
-  0<f32> 0<f32>;
-  0<f32> 0<f32>;
-  0<f32> 0<f32>;
-  0<f32> 0<f32>;
-  0<f32> 0<f32>;
-  0<f32> 0<f32>;
-  0<f32> 0<f32>;
-  0<f32> 0<f32>;
-  0<f32> 0<f32>
-]
-acceleration := (0f32 - positions) * 1f32
-next-velocities := (velocities + acceleration * 1f32) * 1f32
-next-positions := positions + next-velocities * 1f32
-positions = next-positions
+// The complete particle application is Mech: size, initial state, constants,
+// and the recurring simulation step. The configured executor decides whether
+// the typed recurring graph runs on the CPU or GPU.
+particle-count := 2000000f32
+particle-index := 1f32..=particle-count
+particle-phase := (particle-index / particle-count) * 2f32 - 1f32
+particle-x2 := particle-phase * particle-phase * 2f32 - 1f32
+particle-x := (particle-x2 * particle-x2 * 2f32 - 1f32) * 0.92<f32>
+particle-y3 := particle-phase * (particle-phase * particle-phase * 4f32 - 3f32)
+particle-y := particle-y3 * (particle-y3 * particle-y3 * 4f32 - 3f32) * 0.92<f32>
+~positions := [particle-x; particle-y]
+~velocities := [(0f32 - particle-y); particle-x] * 0.18<f32>
+origin := 0f32
+attraction := 0.34<f32>
+drag := 0.997<f32>
+dt := 0.008333333<f32>
+acceleration := (origin - positions) * attraction
+next-velocities := (velocities + acceleration * dt) * drag
+next-positions := positions + next-velocities * dt
 velocities = next-velocities
+positions = next-positions
 (positions, velocities)
