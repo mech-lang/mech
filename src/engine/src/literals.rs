@@ -132,9 +132,8 @@ pub fn typed_literal(
 ) -> MResult<LegacyValue> {
     let value = literal(ltrl, p)?;
     let kind = kind_annotation(&knd_attn.kind, p)?;
-    let args = vec![value, kind.to_value(&p.state.borrow().kinds)?];
-    let plan = p.plan();
-    execute_catalog_operation(p, &plan, "convert/kind", args)
+    let target = kind.to_value(&p.state.borrow().kinds)?;
+    crate::intrinsics::convert::scalar::convert_literal_value(value, target)
 }
 
 #[cfg(feature = "atom")]

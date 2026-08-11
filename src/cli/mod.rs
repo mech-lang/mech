@@ -8,6 +8,8 @@ pub mod capabilities;
 pub mod commands;
 #[cfg(any(feature = "build", feature = "serve", feature = "run"))]
 pub mod config;
+#[cfg(feature = "gpu_executor_native")]
+pub(crate) mod executor;
 #[cfg(any(feature = "build", feature = "run"))]
 pub(crate) mod host_configuration;
 #[cfg(feature = "run")]

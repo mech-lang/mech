@@ -1,15 +1,30 @@
-// Initial values establish the inferred state types and shapes. State is part
-// of the Mech program, so an execution provider can keep it resident.
-~positions := host-positions
-~velocities := host-velocities
-origin := host-origin
-attraction := host-attraction
-drag := host-drag
-dt := host-dt
-
-acceleration := (origin - positions) * attraction
-next-velocities := (velocities + acceleration * dt) * drag
-next-positions := positions + next-velocities * dt
-velocities = next-velocities
+// This complete program owns both its initial data and its recurrence. Change
+// run.executor.provider in mech.mcfg to run the same typed graph on CPU or GPU.
+~positions := [
+  -1<f32> -1<f32>;
+   0<f32> -1<f32>;
+   1<f32> -1<f32>;
+  -1<f32>  0<f32>;
+   0<f32>  0<f32>;
+   1<f32>  0<f32>;
+  -1<f32>  1<f32>;
+   0<f32>  1<f32>;
+   1<f32>  1<f32>
+]
+~velocities := [
+  0<f32> 0<f32>;
+  0<f32> 0<f32>;
+  0<f32> 0<f32>;
+  0<f32> 0<f32>;
+  0<f32> 0<f32>;
+  0<f32> 0<f32>;
+  0<f32> 0<f32>;
+  0<f32> 0<f32>;
+  0<f32> 0<f32>
+]
+acceleration := (0f32 - positions) * 1f32
+next-velocities := (velocities + acceleration * 1f32) * 1f32
+next-positions := positions + next-velocities * 1f32
 positions = next-positions
+velocities = next-velocities
 (positions, velocities)
