@@ -115,7 +115,7 @@ full-hosts = [
 gpu_executor_native = [
       "dep:mech-gpu", "mech-gpu/native",
       "f32", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
-      "math_add", "math_sub", "math_mul", "math_div",
+      "math_add", "math_sub", "math_mul", "math_div", "math_mod", "math_sin", "math_cos",
       "mech-stdlib/native-plan",
       ]
 experimental-actors = ["mech-build?/experimental-actors"]
