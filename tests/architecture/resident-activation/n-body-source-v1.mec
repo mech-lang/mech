@@ -83,9 +83,9 @@ N-body resident activation v1
   ~v := planets[:,[4,5,6]]
   m := planets[:,7]
 
-  Δ := (x[ix1,:] - x[ix2,:]) ^ 2
-  distance := stats/sum/column(Δ)
-  mag := Δt * distance ^ -1.5
+  Δ := x[ix1,:] - x[ix2,:]
+  distance² := stats/sum/column(Δ ^ 2)
+  mag := Δt * distance² ^ -1.5
   v[ix1,:] -= Δ * m[ix2] * mag
   v[ix2,:] += Δ * m[ix1] * mag
   x += v * Δt

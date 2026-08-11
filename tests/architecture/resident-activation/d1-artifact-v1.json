@@ -12,7 +12,7 @@
   "legacy_opaque_contracts": 0,
   "observation_roots": 1,
   "outputs": 1,
-  "program_revision": "156a5ed1b0955a21270851f29b73fb6aa7d321269a84b2db8c3caf1b1b797c26",
+  "program_revision": "6d62c3261c73a73f7f7611cba480852206440a757713f1f04642fcb946574c45",
   "projection": "artifact",
   "resident_kernels": 15,
   "schema_version": 1,

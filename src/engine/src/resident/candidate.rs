@@ -106,6 +106,11 @@ impl Candidate<'_> {
 
 impl Drop for Candidate<'_> {
     fn drop(&mut self) {
-        debug_assert!(self.finished, "candidate must publish or abort explicitly");
+        if !self.finished {
+            self.instance
+                .state
+                .reject_candidate(self.candidate_buffer, self.working_epoch);
+            self.finished = true;
+        }
     }
 }

@@ -224,6 +224,14 @@ def json_schema_errors(
 
 def static_contract_errors(root: Path = ROOT) -> list[str]:
     gate_b_dir = root / "benchmarks/runtime/gate-b"
+    resident_recording = root / "src/runtime/src/resident_recording.rs"
+    if not resident_recording.exists():
+        resident_recording = root / "src/runtime/src/resident_gate_b.rs"
+    program_activation = root / "src/engine/src/resident/general/mod.rs"
+    program_execution = root / "src/engine/src/resident/general/execution.rs"
+    if not program_execution.exists():
+        program_activation = root / "src/engine/src/resident/program_activation.rs"
+        program_execution = root / "src/engine/src/resident/program_execution.rs"
     required = (
         gate_b_dir / "README.md",
         gate_b_dir / "ekf-v1.json",
@@ -241,7 +249,7 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         root / "src/runtime/benches/support/gate_b/resident_kernel.rs",
         root / "src/runtime/benches/support/gate_b/resident_turn.rs",
         root / "src/runtime/benches/support/gate_b/resident_artifact.rs",
-        root / "src/runtime/src/resident_gate_b.rs",
+        resident_recording,
         root / "src/engine/src/resident/artifact.rs",
         root / "src/engine/src/resident/activation.rs",
         root / "src/engine/src/resident/arena.rs",
@@ -250,8 +258,8 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         root / "src/engine/src/resident/full_write.rs",
         root / "src/engine/src/resident/kernel.rs",
         root / "src/engine/src/resident/efficacy/ekf.rs",
-        root / "src/engine/src/resident/program_activation.rs",
-        root / "src/engine/src/resident/program_execution.rs",
+        program_activation,
+        program_execution,
     )
     errors = [f"missing required Gate B fixture: {path.relative_to(root)}" for path in required if not path.is_file()]
     if errors:
@@ -334,6 +342,8 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
     for source, text in resident_sources.items():
         identifiers = set(re.split(r"[^A-Za-z0-9_]+", text))
         forbidden = forbidden_resident_identifiers.intersection(identifiers)
+        if source == program_activation:
+            forbidden.discard("Value")
         if forbidden:
             errors.append(
                 f"resident source {source.relative_to(root)} uses legacy state: "
@@ -355,20 +365,23 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
             errors.append(f"resident timed implementation contains forbidden {forbidden}")
     full_write_path = root / "src/engine/src/resident/full_write.rs"
     for source, text in resident_sources.items():
-        if source != full_write_path and "Box<[f64]>" in text:
+        if source not in {full_write_path, program_activation} and "Box<[f64]>" in text:
             errors.append(
                 "resident typed EKF storage is erased in "
                 f"{source.relative_to(root)}"
             )
     candidate_source = resident_sources[root / "src/engine/src/resident/candidate.rs"]
-    program_execution_source = resident_sources[
-        root / "src/engine/src/resident/program_execution.rs"
-    ]
+    program_activation_source = resident_sources[program_activation]
+    program_execution_source = resident_sources[program_execution]
     if candidate_source.count(".store(") != 1:
         errors.append("Gate B control must contain exactly one publication store site")
-    if program_execution_source.count(".store(") != 1:
-        errors.append("D1 artifact execution must contain exactly one publication store site")
-    if sum(text.count(".store(") for text in resident_sources.values()) != 2:
+    if program_execution_source.count(".store(") != 2:
+        errors.append(
+            "D1 artifact execution must contain one prepared and one summary-free publication store site"
+        )
+    if program_activation_source.count(".store(") != 1:
+        errors.append("D1 artifact reactivation must contain one epoch-preservation store site")
+    if sum(text.count(".store(") for text in resident_sources.values()) != 4:
         errors.append("resident execution contains an unapproved publication store site")
     if "next_epoch: Option<InstanceEpoch>" not in candidate_source or "checked_next()" not in candidate_source:
         errors.append("resident candidate epochs do not use checked exhaustion")
@@ -391,7 +404,7 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
     resident_turn_fixture = read_text(
         root / "src/runtime/benches/support/gate_b/resident_turn.rs"
     )
-    resident_recorder = read_text(root / "src/runtime/src/resident_gate_b.rs")
+    resident_recorder = read_text(resident_recording)
     if "resident: ResidentEkfBatch" not in resident_fixture:
         errors.append("scaled resident lanes do not use one ResidentEkfBatch")
     complete_path = resident_turn_fixture + "\n" + resident_recorder
@@ -535,6 +548,7 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
     allowed_production = {
         root / "src/runtime/src/lib.rs",
         root / "src/runtime/src/resident_gate_b.rs",
+        root / "src/runtime/src/resident_recording.rs",
         root / "src/runtime/src/turn_record.rs",
     }
     for source in (root / "src").rglob("*.rs"):

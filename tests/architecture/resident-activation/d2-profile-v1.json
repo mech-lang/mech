@@ -1,0 +1,40 @@
+{
+  "activation_construction": [
+    "FullWrite",
+    "Build"
+  ],
+  "alias_policy": [
+    "NoAlias",
+    "exact-base MayAlias"
+  ],
+  "bytecode_format": "v1",
+  "change_propagation": "dirty bits and semantic change",
+  "dimension_lifetimes": [
+    "CompileTime",
+    "Activation"
+  ],
+  "forbidden_dimension_lifetimes": [
+    "Turn"
+  ],
+  "gate": "D2",
+  "integrity_default": "Checked",
+  "integrity_modes": [
+    "Checked",
+    "Unchecked"
+  ],
+  "legacy_opaque": 0,
+  "normal_runtime_routing_changed": false,
+  "output_policy": "state-backed only",
+  "resident_computation": "Pure",
+  "schema_version": 1,
+  "turn_construction": [
+    "FullWrite",
+    "ReadModifyWrite"
+  ],
+  "unchecked_integrity": "explicit opt-in; constraint-violating candidates may publish",
+  "value_kinds": [
+    "Bool",
+    "Index",
+    "F64"
+  ]
+}

@@ -1,12 +1,14 @@
-//! Private complete-turn coordinator for the retained Gate B efficacy proof.
+//! Private complete-turn coordinator shared by resident efficacy workloads.
 
 use mech_core::{MResult, MechError, MechErrorKind};
 use mech_engine::__gate_b_resident::{
     PreparedResidentFullWrite, PreparedResidentTurn as PreparedGateBResidentTurn,
     ResidentExecutionError, ResidentTurnSummary as GateBResidentTurnSummary,
 };
-use mech_engine::__gate_d::{
-    PreparedArtifactResidentTurn, ResidentTurnSummary as ArtifactResidentTurnSummary,
+use mech_engine::__resident::{
+    PreparedResidentTurn as PreparedArtifactResidentTurn,
+    ResidentExecutionError as ArtifactResidentExecutionError,
+    ResidentTurnSummary as ArtifactResidentTurnSummary,
 };
 
 use crate::{
@@ -236,6 +238,21 @@ impl ResidentTurnRecorder {
         }))
     }
 
+    pub fn prepare_artifact_rejected(
+        &mut self,
+        permit: LedgerPermit,
+        before_epoch: u64,
+        failure: ArtifactResidentExecutionError,
+    ) -> MResult<PreparedRejectedAppend<'_>> {
+        let identity = self.take_turn_identity()?;
+        let record = rejected_artifact_record(identity, before_epoch, failure)?;
+        let prepared = TurnLedger::prepare_append(&self.ledger, permit, record)?;
+        Ok(PreparedRejectedAppend(PreparedResidentAppend {
+            ledger: &mut self.ledger,
+            prepared,
+        }))
+    }
+
     pub fn recorded_ledger_len(&self) -> usize {
         self.ledger.len()
     }
@@ -389,6 +406,61 @@ fn rejected_record(
             TurnFailurePhase::Integrity,
             "ResidentCovarianceSymmetry",
             "resident covariance is not symmetric",
+        ),
+    };
+    Ok(OwnedTurnRecord {
+        header: header(
+            identity,
+            TurnRecordStatus::Rejected,
+            Some(TurnFailureRecord {
+                phase,
+                kind: kind.to_string(),
+                message: message.to_string(),
+            }),
+        )?,
+        body: GateBFixedReceipt::rejected(before_epoch),
+    })
+}
+
+fn rejected_artifact_record(
+    identity: u64,
+    before_epoch: u64,
+    failure: ArtifactResidentExecutionError,
+) -> MResult<ResidentTurnRecord> {
+    let (phase, kind, message) = match failure {
+        ArtifactResidentExecutionError::ActiveCandidate => (
+            TurnFailurePhase::Execution,
+            "ResidentActiveCandidate",
+            "resident instance already has an active candidate",
+        ),
+        ArtifactResidentExecutionError::EpochExhausted => (
+            TurnFailurePhase::Execution,
+            "ResidentEpochExhausted",
+            "resident candidate epoch exhausted",
+        ),
+        ArtifactResidentExecutionError::InputCount { .. }
+        | ArtifactResidentExecutionError::UnknownInput { .. }
+        | ArtifactResidentExecutionError::DuplicateInput { .. }
+        | ArtifactResidentExecutionError::InputLayout { .. } => (
+            TurnFailurePhase::InputInstallation,
+            "ResidentInput",
+            "resident captured input was invalid",
+        ),
+        ArtifactResidentExecutionError::Kernel { .. }
+        | ArtifactResidentExecutionError::InvalidWrite { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentKernel",
+            "resident kernel execution failed",
+        ),
+        ArtifactResidentExecutionError::Integrity { .. } => (
+            TurnFailurePhase::Integrity,
+            "ResidentIntegrity",
+            "resident candidate integrity failed",
+        ),
+        ArtifactResidentExecutionError::CounterOverflow => (
+            TurnFailurePhase::Execution,
+            "ResidentCounterOverflow",
+            "resident turn summary overflowed",
         ),
     };
     Ok(OwnedTurnRecord {

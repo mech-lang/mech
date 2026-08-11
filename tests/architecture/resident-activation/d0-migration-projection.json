@@ -60,7 +60,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "machines/combinatorics/src/n_choose_k.rs",
-          "line": 1007,
+          "line": 1073,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -68,7 +68,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "machines/combinatorics/src/n_choose_k.rs",
-          "line": 1007,
+          "line": 1073,
           "column": 52,
           "target": "mutable-reference-runtime-storage"
         },
@@ -76,7 +76,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "machines/combinatorics/src/n_choose_k.rs",
-          "line": 1012,
+          "line": 1078,
           "column": 21,
           "target": "mutable-reference-runtime-storage"
         },
@@ -84,7 +84,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "machines/combinatorics/src/n_choose_k.rs",
-          "line": 1016,
+          "line": 1082,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -1364,7 +1364,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "machines/range/src/inclusive.rs",
-          "line": 288,
+          "line": 324,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -1372,7 +1372,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "machines/range/src/inclusive.rs",
-          "line": 288,
+          "line": 324,
           "column": 55,
           "target": "mutable-reference-runtime-storage"
         },
@@ -1380,7 +1380,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "machines/range/src/inclusive.rs",
-          "line": 291,
+          "line": 327,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -1388,7 +1388,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "machines/range/src/inclusive.rs",
-          "line": 294,
+          "line": 330,
           "column": 24,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2036,7 +2036,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/core/src/function/mod.rs",
-          "line": 711,
+          "line": 713,
           "column": 31,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2044,7 +2044,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/core/src/function/mod.rs",
-          "line": 730,
+          "line": 732,
           "column": 29,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2588,7 +2588,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/efficacy/ekf/catalog.rs",
-          "line": 589,
+          "line": 590,
           "column": 9,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2596,7 +2596,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/efficacy/ekf/catalog.rs",
-          "line": 685,
+          "line": 686,
           "column": 9,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2604,7 +2604,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/efficacy/ekf/catalog.rs",
-          "line": 734,
+          "line": 735,
           "column": 9,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2804,7 +2804,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 1541,
+          "line": 1547,
           "column": 17,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2812,7 +2812,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 1626,
+          "line": 1632,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2820,7 +2820,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 1739,
+          "line": 1745,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2828,7 +2828,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 1931,
+          "line": 1937,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2836,7 +2836,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 2217,
+          "line": 2223,
           "column": 17,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2844,7 +2844,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 2333,
+          "line": 2339,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2852,7 +2852,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 2417,
+          "line": 2423,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2860,7 +2860,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 2505,
+          "line": 2511,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2868,7 +2868,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 2665,
+          "line": 2681,
           "column": 17,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2876,7 +2876,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 2772,
+          "line": 2788,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2884,7 +2884,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 2878,
+          "line": 2894,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -2892,7 +2892,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 2985,
+          "line": 3001,
           "column": 18,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3388,7 +3388,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6002,
+          "line": 6058,
           "column": 11,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3396,7 +3396,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6010,
+          "line": 6066,
           "column": 167,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3404,7 +3404,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6015,
+          "line": 6071,
           "column": 167,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3412,7 +3412,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6020,
+          "line": 6076,
           "column": 167,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3420,7 +3420,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6025,
+          "line": 6081,
           "column": 161,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3428,7 +3428,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6030,
+          "line": 6086,
           "column": 161,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3436,79 +3436,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6035,
-          "column": 161,
-          "target": "mutable-reference-runtime-storage"
-        },
-        {
-          "enum": "LegacyValue",
-          "variant": "MutableReference",
-          "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6040,
-          "column": 161,
-          "target": "mutable-reference-runtime-storage"
-        },
-        {
-          "enum": "LegacyValue",
-          "variant": "MutableReference",
-          "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6045,
-          "column": 161,
-          "target": "mutable-reference-runtime-storage"
-        },
-        {
-          "enum": "LegacyValue",
-          "variant": "MutableReference",
-          "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6050,
-          "column": 167,
-          "target": "mutable-reference-runtime-storage"
-        },
-        {
-          "enum": "LegacyValue",
-          "variant": "MutableReference",
-          "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6055,
-          "column": 167,
-          "target": "mutable-reference-runtime-storage"
-        },
-        {
-          "enum": "LegacyValue",
-          "variant": "MutableReference",
-          "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6060,
-          "column": 167,
-          "target": "mutable-reference-runtime-storage"
-        },
-        {
-          "enum": "LegacyValue",
-          "variant": "MutableReference",
-          "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6065,
-          "column": 161,
-          "target": "mutable-reference-runtime-storage"
-        },
-        {
-          "enum": "LegacyValue",
-          "variant": "MutableReference",
-          "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6070,
-          "column": 161,
-          "target": "mutable-reference-runtime-storage"
-        },
-        {
-          "enum": "LegacyValue",
-          "variant": "MutableReference",
-          "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6075,
-          "column": 161,
-          "target": "mutable-reference-runtime-storage"
-        },
-        {
-          "enum": "LegacyValue",
-          "variant": "MutableReference",
-          "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6080,
+          "line": 6091,
           "column": 161,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3517,6 +3445,78 @@
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/horzcat.rs",
           "line": 6096,
+          "column": 161,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/intrinsics/horzcat.rs",
+          "line": 6101,
+          "column": 161,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/intrinsics/horzcat.rs",
+          "line": 6106,
+          "column": 167,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/intrinsics/horzcat.rs",
+          "line": 6111,
+          "column": 167,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/intrinsics/horzcat.rs",
+          "line": 6116,
+          "column": 167,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/intrinsics/horzcat.rs",
+          "line": 6121,
+          "column": 161,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/intrinsics/horzcat.rs",
+          "line": 6126,
+          "column": 161,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/intrinsics/horzcat.rs",
+          "line": 6131,
+          "column": 161,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/intrinsics/horzcat.rs",
+          "line": 6136,
+          "column": 161,
+          "target": "mutable-reference-runtime-storage"
+        },
+        {
+          "enum": "LegacyValue",
+          "variant": "MutableReference",
+          "path": "src/engine/src/intrinsics/horzcat.rs",
+          "line": 6152,
           "column": 11,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3524,7 +3524,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6381,
+          "line": 6437,
           "column": 17,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3540,7 +3540,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/intrinsics/vertcat.rs",
-          "line": 2245,
+          "line": 2276,
           "column": 16,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3736,7 +3736,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/core/src/function/mod.rs",
-          "line": 677,
+          "line": 679,
           "column": 27,
           "target": "uninitialized-storage"
         },
@@ -3840,7 +3840,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/intrinsics/access/matrix.rs",
-          "line": 1614,
+          "line": 1620,
           "column": 22,
           "target": "uninitialized-storage"
         },
@@ -3880,7 +3880,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6087,
+          "line": 6143,
           "column": 11,
           "target": "uninitialized-storage"
         },
@@ -3888,7 +3888,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6089,
+          "line": 6145,
           "column": 14,
           "target": "uninitialized-storage"
         },
@@ -3896,7 +3896,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6362,
+          "line": 6418,
           "column": 17,
           "target": "uninitialized-storage"
         },
@@ -3904,7 +3904,7 @@
           "enum": "LegacyValue",
           "variant": "Empty",
           "path": "src/engine/src/intrinsics/horzcat.rs",
-          "line": 6368,
+          "line": 6424,
           "column": 22,
           "target": "uninitialized-storage"
         },

@@ -13,6 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 D0_FINAL = "a9422eff9908e967e0537f7ec1fa56e7bd05eb8d"
+D1_FINAL = "7ff20887ea2d267b790917608c4bc8826b031762"
 BRANCH = "feat/resident-ekf-program-artifact-path"
 COMMIT_SUBJECTS = [
     "feat(engine): close the frozen EKF ProgramArtifact [D1A]",
@@ -24,8 +25,8 @@ EVIDENCE = "benchmarks/runtime/gate-b/b2-resident-turn.json"
 GATE_B_REGRESSION = "tests/architecture/value-system/gate-b-regression.json"
 PROJECTION_DIR = Path("tests/architecture/resident-activation")
 PROJECTION_SHA256 = {
-    "d1-artifact-v1.json": "eaa7cf8ef68e6a7f71a9030e5a48d418905da0de17e4faae33d062f22154d567",
-    "d1-activation-v1.json": "a79c6af6a70b191e43b3feb1ed8b509b04a2934641e54a7bc24812ec8f923267",
+    "d1-artifact-v1.json": "590a81d559e9b0a5155c4b15e169c6b83af53f149f9fc162c3b8e2868d682072",
+    "d1-activation-v1.json": "18f1da4865f8c7f0e874cb12c5222580a93b9d2b3f509e29478a0b2f8d02ddd6",
     "d1-execution-v1.json": "9f2dede0a0893af64b90e08432beb7bde9944f48338a51d9ecaba0f98ec13d2a",
 }
 D1_ALLOWED_CHANGES = (
@@ -247,7 +248,12 @@ def source_contract_errors(root: Path) -> list[str]:
     if declarations != [("src/engine/src/artifact/model.rs", "pub")]:
         errors.append(f"D1 must retain one public ProgramArtifact authority; found {declarations}")
 
-    execution = (resident_dir / "program_execution.rs").read_text()
+    execution_path = resident_dir / "program_execution.rs"
+    activation_path = resident_dir / "program_activation.rs"
+    if not execution_path.exists():
+        execution_path = resident_dir / "general" / "execution.rs"
+        activation_path = resident_dir / "general/mod.rs"
+    execution = execution_path.read_text()
     for token in (
         "ProgramArtifact",
         "SchemaTable",
@@ -260,7 +266,7 @@ def source_contract_errors(root: Path) -> list[str]:
         if token in execution:
             errors.append(f"D1 hot artifact execution performs forbidden {token} lookup")
     for required in ("Ordering::Release", ".store(", "Ordering::Acquire", ".load("):
-        if required not in execution and required not in (resident_dir / "program_activation.rs").read_text():
+        if required not in execution and required not in activation_path.read_text():
             errors.append(f"D1 publication boundary is missing {required}")
 
     route_markers = re.compile(r"compile_frozen_ekf_source|__gate_d|resident-ekf-artifact")
@@ -388,12 +394,22 @@ def main() -> int:
     parser.add_argument("--contract-only", action="store_true")
     parser.add_argument("--implementation-head", action="store_true")
     args = parser.parse_args()
-    errors = run(contract_only=args.contract_only, implementation_head=args.implementation_head)
+    inherited_descendant = (
+        not args.contract_only
+        and not args.implementation_head
+        and command(["git", "rev-parse", "HEAD"]).stdout.strip() != D1_FINAL
+        and command(["git", "merge-base", "--is-ancestor", D1_FINAL, "HEAD"]).returncode == 0
+    )
+    errors = run(
+        contract_only=args.contract_only or inherited_descendant,
+        implementation_head=args.implementation_head,
+    )
     if errors:
         for error in errors:
             print(f"D1 contract failure: {error}", file=sys.stderr)
         return 1
-    print("D1 public-ProgramArtifact resident EKF contract: OK")
+    mode = "inherited contract" if inherited_descendant else "contract"
+    print(f"D1 public-ProgramArtifact resident EKF {mode}: OK")
     return 0
 
 

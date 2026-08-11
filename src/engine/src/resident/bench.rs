@@ -87,10 +87,9 @@ impl PreparedResidentTurn<'_> {
 
 impl Drop for PreparedResidentTurn<'_> {
     fn drop(&mut self) {
-        debug_assert!(
-            self.candidate.is_none(),
-            "prepared resident turn must publish or abort explicitly"
-        );
+        if let Some(candidate) = self.candidate.take() {
+            candidate.abort();
+        }
     }
 }
 

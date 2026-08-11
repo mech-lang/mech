@@ -265,6 +265,7 @@
     "src/core/src/function/catalog.rs",
     "src/core/src/function/contract.rs",
     "src/core/src/function/mod.rs",
+    "src/core/src/function/resident.rs",
     "src/core/src/function/signature.rs",
     "src/core/src/kind.rs",
     "src/core/src/kind_expr.rs",
@@ -434,11 +435,13 @@
     "src/engine/src/resident/candidate.rs",
     "src/engine/src/resident/efficacy/ekf.rs",
     "src/engine/src/resident/full_write.rs",
+    "src/engine/src/resident/general/execution.rs",
+    "src/engine/src/resident/general/mod.rs",
     "src/engine/src/resident/kernel.rs",
     "src/engine/src/resident/mod.rs",
-    "src/engine/src/resident/program_activation.rs",
-    "src/engine/src/resident/program_execution.rs",
+    "src/engine/src/resident/numeric.rs",
     "src/engine/src/resident/workspace.rs",
+    "src/engine/src/resident_value_adapter.rs",
     "src/engine/src/state_machines.rs",
     "src/engine/src/statements/context.rs",
     "src/engine/src/statements/destructure.rs",
@@ -512,7 +515,7 @@
     "src/runtime/src/operation.rs",
     "src/runtime/src/outbox/mod.rs",
     "src/runtime/src/outbox/retained.rs",
-    "src/runtime/src/resident_gate_b.rs",
+    "src/runtime/src/resident_recording.rs",
     "src/runtime/src/resolver/ast.rs",
     "src/runtime/src/resolver/file.rs",
     "src/runtime/src/resolver/imports.rs",
@@ -2082,6 +2085,22 @@
       ]
     },
     {
+      "manifest": "tests/fixtures/d2-contract-generator/Cargo.toml",
+      "package": "d2-contract-generator",
+      "targets": [
+        {
+          "kinds": [
+            "bin"
+          ],
+          "name": "d2-contract-generator",
+          "reachable_rust_files": [
+            "tests/fixtures/d2-contract-generator/src/main.rs"
+          ],
+          "root": "tests/fixtures/d2-contract-generator/src/main.rs"
+        }
+      ]
+    },
+    {
       "manifest": "tests/fixtures/dynamic-status-module/Cargo.toml",
       "package": "mech-dynamic-status-test",
       "targets": [
@@ -2574,6 +2593,7 @@
     "src/core/src/function/catalog.rs",
     "src/core/src/function/contract.rs",
     "src/core/src/function/mod.rs",
+    "src/core/src/function/resident.rs",
     "src/core/src/function/signature.rs",
     "src/core/src/function/tests/checkpoint.rs",
     "src/core/src/function/tests/dependencies.rs",
@@ -2798,12 +2818,14 @@
     "src/engine/src/resident/candidate.rs",
     "src/engine/src/resident/efficacy/ekf.rs",
     "src/engine/src/resident/full_write.rs",
+    "src/engine/src/resident/general/execution.rs",
+    "src/engine/src/resident/general/mod.rs",
     "src/engine/src/resident/kernel.rs",
     "src/engine/src/resident/mod.rs",
-    "src/engine/src/resident/program_activation.rs",
-    "src/engine/src/resident/program_execution.rs",
+    "src/engine/src/resident/numeric.rs",
     "src/engine/src/resident/tests.rs",
     "src/engine/src/resident/workspace.rs",
+    "src/engine/src/resident_value_adapter.rs",
     "src/engine/src/state_machines.rs",
     "src/engine/src/statements/context.rs",
     "src/engine/src/statements/destructure.rs",
@@ -2934,7 +2956,7 @@
     "src/runtime/src/outbox/mod.rs",
     "src/runtime/src/outbox/retained.rs",
     "src/runtime/src/outbox/tests.rs",
-    "src/runtime/src/resident_gate_b.rs",
+    "src/runtime/src/resident_recording.rs",
     "src/runtime/src/resolver/ast.rs",
     "src/runtime/src/resolver/file.rs",
     "src/runtime/src/resolver/imports.rs",
@@ -3185,6 +3207,7 @@
     "tests/fixtures/bytecode-v1-generator/src/main.rs",
     "tests/fixtures/bytecode-v1-source-generator/src/main.rs",
     "tests/fixtures/d1-contract-generator/src/main.rs",
+    "tests/fixtures/d2-contract-generator/src/main.rs",
     "tests/fixtures/dynamic-status-module/src/lib.rs",
     "tests/fixtures/full-bytecode-runtime/src/main.rs",
     "tests/fixtures/full-source-runtime/src/main.rs",
@@ -4037,22 +4060,22 @@
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1007
+            "line": 1073
           },
           {
             "column": 65,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1007
+            "line": 1073
           },
           {
             "column": 34,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1012
+            "line": 1078
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1016
+            "line": 1082
           }
         ]
       },
@@ -5248,22 +5271,22 @@
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 288
+            "line": 324
           },
           {
             "column": 68,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 288
+            "line": 324
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 291
+            "line": 327
           },
           {
             "column": 37,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 294
+            "line": 330
           }
         ]
       },
@@ -5800,12 +5823,12 @@
           {
             "column": 44,
             "fingerprint": "c9cab66815146e3e6462eeeaae13d40773a9c97f9a6d272837c03cdad113296c",
-            "line": 711
+            "line": 713
           },
           {
             "column": 42,
             "fingerprint": "c9cab66815146e3e6462eeeaae13d40773a9c97f9a6d272837c03cdad113296c",
-            "line": 730
+            "line": 732
           }
         ]
       },
@@ -6243,17 +6266,17 @@
           {
             "column": 22,
             "fingerprint": "0322260a60fcf925e18cf9a9e82295e337693121dc18119a40f8858710420f35",
-            "line": 589
+            "line": 590
           },
           {
             "column": 22,
             "fingerprint": "71e243731ed76f3d7588cd9558ab72986f5926b8fa055f9139e577686fa3b246",
-            "line": 685
+            "line": 686
           },
           {
             "column": 22,
             "fingerprint": "7a41a59d707efb8b030596833a01d3176b2e00f50b24b65fcd3455e96cd0343b",
-            "line": 734
+            "line": 735
           }
         ]
       },
@@ -6493,62 +6516,62 @@
           {
             "column": 30,
             "fingerprint": "c9cab66815146e3e6462eeeaae13d40773a9c97f9a6d272837c03cdad113296c",
-            "line": 1541
+            "line": 1547
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1626
+            "line": 1632
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1739
+            "line": 1745
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1931
+            "line": 1937
           },
           {
             "column": 30,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2217
+            "line": 2223
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2333
+            "line": 2339
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2417
+            "line": 2423
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2505
+            "line": 2511
           },
           {
             "column": 30,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2665
+            "line": 2681
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2772
+            "line": 2788
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2878
+            "line": 2894
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2985
+            "line": 3001
           }
         ]
       },
@@ -6970,92 +6993,92 @@
           {
             "column": 24,
             "fingerprint": "bf4f5bfa441881555a1df8686227144761606fc6090de3b5756a431b8aaec770",
-            "line": 6002
+            "line": 6058
           },
           {
             "column": 180,
             "fingerprint": "6eb2b19d8bce40944b8413acae105ee1a4b38d518218395dc0d06f34e0e416ba",
-            "line": 6010
+            "line": 6066
           },
           {
             "column": 180,
             "fingerprint": "e74a94a16a80699058845e328ddcbf101fc39734dfb88fe9f38d73b35f2c3599",
-            "line": 6015
+            "line": 6071
           },
           {
             "column": 180,
             "fingerprint": "e26874020a63fc1c7a4570980051bd51e0430029ddf0b3eee2b4e9e0703184f4",
-            "line": 6020
+            "line": 6076
           },
           {
             "column": 174,
             "fingerprint": "c114e417bdf0b4c7c7457563efa14f48442e8fd38521f3f31a79187c5d19209f",
-            "line": 6025
+            "line": 6081
           },
           {
             "column": 174,
             "fingerprint": "62dff821b39e57b8948827e7694695fd94fc5ec1e3555a3ff8ed659fd0020327",
-            "line": 6030
+            "line": 6086
           },
           {
             "column": 174,
             "fingerprint": "f7650946214098b1c10404551bed640fecb189444f26f43d6f0b4c6f21f58fd7",
-            "line": 6035
+            "line": 6091
           },
           {
             "column": 174,
             "fingerprint": "66cd7e750988740825d84507641cebd99e68dbc8fec2519e7cfbd1db1e018d99",
-            "line": 6040
+            "line": 6096
           },
           {
             "column": 174,
             "fingerprint": "53dc25887e632925cb55bd4e403ae8615fbb46e4b044e43f520453f4d36c4072",
-            "line": 6045
+            "line": 6101
           },
           {
             "column": 180,
             "fingerprint": "e731d08479b3bc54f1d3922b41ecd874bad15cc60d43b13c9497608d4a09fe1e",
-            "line": 6050
+            "line": 6106
           },
           {
             "column": 180,
             "fingerprint": "dd684dd2dc1a69e31f6ce613b8cdcc1b0e6a1e57cff9756b4e600579e01ffec1",
-            "line": 6055
+            "line": 6111
           },
           {
             "column": 180,
             "fingerprint": "7ef3710407bf725302e589a405f4d2ac58c04b6751e7a9ce8fe4f5c417e6b8b1",
-            "line": 6060
+            "line": 6116
           },
           {
             "column": 174,
             "fingerprint": "ee289c015df6bb382b696867d59f8d3cab198f6552d79af80b2dca101931c827",
-            "line": 6065
+            "line": 6121
           },
           {
             "column": 174,
             "fingerprint": "a74755567c7fa6415a9bf5ec53f82966e8a160e3cb4aa32a726c4d72dc88d0eb",
-            "line": 6070
+            "line": 6126
           },
           {
             "column": 174,
             "fingerprint": "c19e5a0c3fd1e467ad70e98b7ed1ebebeed9a636b5b4dcbc08d4738c9fe73ca3",
-            "line": 6075
+            "line": 6131
           },
           {
             "column": 174,
             "fingerprint": "8a874a0f8a97a4df386e1cda3a7b524da6785d438ea5878e1a0379cd49504942",
-            "line": 6080
+            "line": 6136
           },
           {
             "column": 24,
             "fingerprint": "e2bd04828b81a2402778ee37396e82005c2b7e2b9b4ad568ac37d6c1a6f32200",
-            "line": 6096
+            "line": 6152
           },
           {
             "column": 30,
             "fingerprint": "e2bd04828b81a2402778ee37396e82005c2b7e2b9b4ad568ac37d6c1a6f32200",
-            "line": 6381
+            "line": 6437
           }
         ]
       },
@@ -7077,7 +7100,7 @@
           {
             "column": 29,
             "fingerprint": "9781e313737f51598aac62d1f86bb5ccd04352dd1e502c3ed865973f2658e8cb",
-            "line": 2245
+            "line": 2276
           }
         ]
       },
@@ -7309,287 +7332,287 @@
           {
             "column": 47,
             "fingerprint": "ecbd25b6ed5e7ca29a6835963b6de5b59acfb2e0766753c78830b277d524b12f",
-            "line": 424
+            "line": 426
           },
           {
             "column": 33,
             "fingerprint": "a2c47e623d0950a07ba37b298643a902d709088f4946f5608c1a32a091adb66b",
-            "line": 457
+            "line": 459
           },
           {
             "column": 23,
             "fingerprint": "6cef3b4e01e15034cd12465b6b7d223bd7b5093269f43e44f2303f4184bf05c7",
-            "line": 464
+            "line": 466
           },
           {
             "column": 57,
             "fingerprint": "6cef3b4e01e15034cd12465b6b7d223bd7b5093269f43e44f2303f4184bf05c7",
-            "line": 468
+            "line": 470
           },
           {
             "column": 33,
             "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-            "line": 480
+            "line": 482
           },
           {
             "column": 23,
             "fingerprint": "5133b1fa2b8a3d87e0a48e6e946403a46ce37756f4cfeaf0cb5b0b63d224b74d",
-            "line": 498
+            "line": 500
           },
           {
             "column": 27,
             "fingerprint": "5133b1fa2b8a3d87e0a48e6e946403a46ce37756f4cfeaf0cb5b0b63d224b74d",
-            "line": 504
+            "line": 506
           },
           {
             "column": 33,
             "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-            "line": 516
+            "line": 518
           },
           {
             "column": 23,
             "fingerprint": "fe5fd0f96597b0115276e0ea9851f9cee10e45a265fea95bec85bcd454df3c4c",
-            "line": 528
+            "line": 530
           },
           {
             "column": 34,
             "fingerprint": "fe5fd0f96597b0115276e0ea9851f9cee10e45a265fea95bec85bcd454df3c4c",
-            "line": 531
+            "line": 533
           },
           {
             "column": 33,
             "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-            "line": 537
+            "line": 539
           },
           {
             "column": 21,
             "fingerprint": "20799a9c414ec42fbd941873a396c5bfa8062297a6ec6ba6cfee4a1fd41afcbe",
-            "line": 773
+            "line": 775
           },
           {
             "column": 15,
             "fingerprint": "95ad659912976e5de46221cab9754c4b078c9bf117526ded8a04cbc033ef5cd1",
-            "line": 796
+            "line": 798
           },
           {
             "column": 26,
             "fingerprint": "819ca25b7387d6f4adb252e92cd05324962792e1e1692195eac1f5c24c4bcfba",
-            "line": 837
+            "line": 839
           },
           {
             "column": 28,
             "fingerprint": "050336a774734149052eba642b47c5c697068a5261346177e93330d3707db007",
-            "line": 859
+            "line": 861
           },
           {
             "column": 40,
             "fingerprint": "050336a774734149052eba642b47c5c697068a5261346177e93330d3707db007",
-            "line": 860
+            "line": 862
           },
           {
             "column": 15,
             "fingerprint": "2a2660ba89e59fa354b9be1aa56f77811212a6e5e2f48c27aff5870a9196a075",
-            "line": 865
+            "line": 867
           },
           {
             "column": 22,
             "fingerprint": "ade4e5ec50dc0e790c9713c74dff78ae214c84f907e811555ec4be4ae7be8364",
-            "line": 906
+            "line": 908
           },
           {
             "column": 37,
             "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-            "line": 912
+            "line": 914
           },
           {
             "column": 36,
             "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-            "line": 913
+            "line": 915
           },
           {
             "column": 39,
             "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-            "line": 915
+            "line": 917
           },
           {
             "column": 15,
             "fingerprint": "caef8a5105027e8eccc034058ec8522386aadcf9367b7d8fa59468d20645ac0c",
-            "line": 961
+            "line": 963
           },
           {
             "column": 15,
             "fingerprint": "225bd9a58d5ee8643c62637e6f173fde2ba197c2cf27a9d8c066243091521f5f",
-            "line": 1009
+            "line": 1011
           },
           {
             "column": 23,
             "fingerprint": "6c5a4b106d3bee8d29154ffd07eb43fb22bfe26855ac2d2d65904f907f575ff4",
-            "line": 1027
+            "line": 1029
           },
           {
             "column": 20,
             "fingerprint": "6c5a4b106d3bee8d29154ffd07eb43fb22bfe26855ac2d2d65904f907f575ff4",
-            "line": 1028
+            "line": 1030
           },
           {
             "column": 18,
             "fingerprint": "cb83dea1380f273071c7cb9c33aef765258ff680f7ccd0311c3a953024bf5d1f",
-            "line": 1060
+            "line": 1062
           },
           {
             "column": 39,
             "fingerprint": "4248a05882d9a3161ff4f705bf7379207cb93032069a67b01f62ae5a43cd4486",
-            "line": 1069
+            "line": 1071
           },
           {
             "column": 45,
             "fingerprint": "5b4ea13ad7bc850a8fca9c963abe490b0f3d38c7227ac94544905bfca6005c06",
-            "line": 1278
+            "line": 1280
           },
           {
             "column": 44,
             "fingerprint": "5b4ea13ad7bc850a8fca9c963abe490b0f3d38c7227ac94544905bfca6005c06",
-            "line": 1279
+            "line": 1281
           },
           {
             "column": 15,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1666
+            "line": 1668
           },
           {
             "column": 15,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1696
+            "line": 1698
           },
           {
             "column": 48,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1719
+            "line": 1721
           },
           {
             "column": 47,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1726
+            "line": 1728
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1735
+            "line": 1737
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1743
+            "line": 1745
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1753
+            "line": 1755
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1762
+            "line": 1764
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1778
+            "line": 1780
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1787
+            "line": 1789
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1802
+            "line": 1804
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1812
+            "line": 1814
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1969
+            "line": 1971
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1978
+            "line": 1980
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 2013
+            "line": 2015
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 2028
+            "line": 2030
           },
           {
             "column": 73,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2233
+            "line": 2235
           },
           {
             "column": 28,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2238
+            "line": 2240
           },
           {
             "column": 28,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2239
+            "line": 2241
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2289
+            "line": 2291
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2295
+            "line": 2297
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2305
+            "line": 2307
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2314
+            "line": 2316
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2341
+            "line": 2343
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2350
+            "line": 2352
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2360
+            "line": 2362
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2370
+            "line": 2372
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2382
+            "line": 2384
           }
         ]
       },
@@ -8059,72 +8082,72 @@
           {
             "column": 23,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1754
+            "line": 1756
           },
           {
             "column": 23,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1763
+            "line": 1765
           },
           {
             "column": 23,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1789
+            "line": 1791
           },
           {
             "column": 23,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1804
+            "line": 1806
           },
           {
             "column": 34,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1814
+            "line": 1816
           },
           {
             "column": 23,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1872
+            "line": 1874
           },
           {
             "column": 34,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1880
+            "line": 1882
           },
           {
             "column": 23,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 2014
+            "line": 2016
           },
           {
             "column": 23,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 2029
+            "line": 2031
           },
           {
             "column": 23,
             "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-            "line": 2306
+            "line": 2308
           },
           {
             "column": 23,
             "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-            "line": 2315
+            "line": 2317
           },
           {
             "column": 23,
             "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-            "line": 2332
+            "line": 2334
           },
           {
             "column": 23,
             "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-            "line": 2361
+            "line": 2363
           },
           {
             "column": 23,
             "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-            "line": 2371
+            "line": 2373
           }
         ]
       },
@@ -8302,12 +8325,12 @@
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 504
+            "line": 567
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 706
+            "line": 772
           }
         ]
       },
@@ -8498,27 +8521,27 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 250
+            "line": 316
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 424
+            "line": 493
           },
           {
             "column": 12,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 570
+            "line": 642
           },
           {
             "column": 12,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 670
+            "line": 745
           },
           {
             "column": 12,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 767
+            "line": 845
           }
         ]
       },
@@ -8540,7 +8563,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 332
+            "line": 370
           }
         ]
       },
@@ -8562,12 +8585,12 @@
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 89
+            "line": 93
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 185
+            "line": 193
           }
         ]
       },
@@ -8578,12 +8601,12 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 228
+            "line": 234
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 329
+            "line": 335
           }
         ]
       },
@@ -8638,7 +8661,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 76
+            "line": 103
           }
         ]
       },
@@ -8671,7 +8694,7 @@
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 122
+            "line": 158
           }
         ]
       },
@@ -8891,7 +8914,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 222
+            "line": 248
           }
         ]
       },
@@ -8924,37 +8947,37 @@
           {
             "column": 8,
             "fingerprint": "bef0eb388d567ebcfcd01401d9470d7ce9e6b1a653af34bf0f3f1c725aea7fe7",
-            "line": 423
+            "line": 425
           },
           {
             "column": 8,
             "fingerprint": "679ffbc4ee068e5bc0805a0c5a7c6a19ea407d8ba9207fb5bb4f9b3f7663ecb8",
-            "line": 710
+            "line": 712
           },
           {
             "column": 37,
             "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-            "line": 734
+            "line": 736
           },
           {
             "column": 12,
             "fingerprint": "474cfa7f83bfc0cf9f4aeaab1c869bea6487401834d5f542ad542464864b5c91",
-            "line": 1463
+            "line": 1465
           },
           {
             "column": 53,
             "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-            "line": 1466
+            "line": 1468
           },
           {
             "column": 12,
             "fingerprint": "d793a45b648a050b1db6882b1395596b4595e3315babc55c1acbc8b21254a64b",
-            "line": 2202
+            "line": 2204
           },
           {
             "column": 18,
             "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-            "line": 2207
+            "line": 2209
           }
         ]
       },
@@ -9183,17 +9206,17 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1040
+            "line": 1046
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1148
+            "line": 1154
           },
           {
             "column": 8,
             "fingerprint": "a7c083fc56767a81b9162ef3ac9b948b43e71d07df5214583fc9c5cf36bc95f7",
-            "line": 1540
+            "line": 1546
           }
         ]
       },
@@ -9535,267 +9558,267 @@
           {
             "column": 12,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 51
+            "line": 95
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 145
+            "line": 189
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 250
+            "line": 294
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 368
+            "line": 412
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 463
+            "line": 507
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 568
+            "line": 612
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 685
+            "line": 729
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 809
+            "line": 856
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 902
+            "line": 952
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1006
+            "line": 1059
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1363
+            "line": 1419
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1446
+            "line": 1502
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1533
+            "line": 1589
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1645
+            "line": 1701
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1746
+            "line": 1802
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1836
+            "line": 1892
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1913
+            "line": 1969
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 2028
+            "line": 2084
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 2118
+            "line": 2174
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 2206
+            "line": 2262
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 2295
+            "line": 2351
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 2400
+            "line": 2456
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 2505
+            "line": 2561
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 2610
+            "line": 2666
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 2715
+            "line": 2771
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 2807
+            "line": 2863
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 2899
+            "line": 2955
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 2993
+            "line": 3049
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 3087
+            "line": 3143
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 3181
+            "line": 3237
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 3277
+            "line": 3333
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 3373
+            "line": 3429
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 3469
+            "line": 3525
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 3563
+            "line": 3619
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 3674
+            "line": 3730
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 3768
+            "line": 3824
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 3921
+            "line": 3977
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 4017
+            "line": 4073
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 4122
+            "line": 4178
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 4218
+            "line": 4274
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 4314
+            "line": 4370
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 4410
+            "line": 4466
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 4506
+            "line": 4562
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 4611
+            "line": 4667
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 4716
+            "line": 4772
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 4821
+            "line": 4877
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 4926
+            "line": 4982
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 5031
+            "line": 5087
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 5249
+            "line": 5305
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 5354
+            "line": 5410
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 5459
+            "line": 5515
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 5563
+            "line": 5619
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 5667
+            "line": 5723
           }
         ]
       },
@@ -9811,7 +9834,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 315
+            "line": 320
           }
         ]
       },
@@ -9833,77 +9856,77 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 81
+            "line": 109
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 186
+            "line": 214
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 296
+            "line": 324
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 382
+            "line": 410
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 487
+            "line": 515
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 604
+            "line": 632
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 709
+            "line": 737
           },
           {
             "column": 12,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 840
+            "line": 868
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 926
+            "line": 954
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1029
+            "line": 1057
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1143
+            "line": 1171
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1262
+            "line": 1293
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1349
+            "line": 1380
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1489
+            "line": 1520
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1782
+            "line": 1813
           }
         ]
       }
@@ -9937,12 +9960,12 @@
           {
             "column": 43,
             "fingerprint": "ae9d410aed935f72c1ef211953646ad7ceab0b0d5f28e7e165b0d372233b2cb4",
-            "line": 683
+            "line": 685
           },
           {
             "column": 26,
             "fingerprint": "ae9d410aed935f72c1ef211953646ad7ceab0b0d5f28e7e165b0d372233b2cb4",
-            "line": 691
+            "line": 693
           }
         ]
       },
@@ -10502,22 +10525,22 @@
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1007
+            "line": 1073
           },
           {
             "column": 52,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1007
+            "line": 1073
           },
           {
             "column": 21,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1012
+            "line": 1078
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1016
+            "line": 1082
           }
         ]
       },
@@ -11713,22 +11736,22 @@
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 288
+            "line": 324
           },
           {
             "column": 55,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 288
+            "line": 324
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 291
+            "line": 327
           },
           {
             "column": 24,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 294
+            "line": 330
           }
         ]
       },
@@ -12265,12 +12288,12 @@
           {
             "column": 31,
             "fingerprint": "8b6a8606774c6ca947032a54f6a7682acf82be35f55455301c395fe5a87f5719",
-            "line": 711
+            "line": 713
           },
           {
             "column": 29,
             "fingerprint": "8b6a8606774c6ca947032a54f6a7682acf82be35f55455301c395fe5a87f5719",
-            "line": 730
+            "line": 732
           }
         ]
       },
@@ -12682,17 +12705,17 @@
           {
             "column": 9,
             "fingerprint": "fa1a1aba1b5686f49c73f87255e74b185560dc8476c003ae4cb6370b4669b8f5",
-            "line": 589
+            "line": 590
           },
           {
             "column": 9,
             "fingerprint": "4d7cc17264b536757675aeb46c4f03db249261c740393b9197b66d9a28c3b7c1",
-            "line": 685
+            "line": 686
           },
           {
             "column": 9,
             "fingerprint": "da21e6cddae92fca04b8257b4be718836493f3e4419931f8e7803206b47ca5c8",
-            "line": 734
+            "line": 735
           }
         ]
       },
@@ -12907,62 +12930,62 @@
           {
             "column": 17,
             "fingerprint": "8b6a8606774c6ca947032a54f6a7682acf82be35f55455301c395fe5a87f5719",
-            "line": 1541
+            "line": 1547
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1626
+            "line": 1632
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1739
+            "line": 1745
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1931
+            "line": 1937
           },
           {
             "column": 17,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2217
+            "line": 2223
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2333
+            "line": 2339
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2417
+            "line": 2423
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2505
+            "line": 2511
           },
           {
             "column": 17,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2665
+            "line": 2681
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2772
+            "line": 2788
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2878
+            "line": 2894
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2985
+            "line": 3001
           }
         ]
       },
@@ -13374,92 +13397,92 @@
           {
             "column": 11,
             "fingerprint": "ff0a861c129b3c91ddd4295ede6579cac14059c56d87d25d7303a81f3f2b2f6e",
-            "line": 6002
+            "line": 6058
           },
           {
             "column": 167,
             "fingerprint": "986e8eea3e6174acf59c43fdeb55c3f50631db31526869251317a26840e29835",
-            "line": 6010
+            "line": 6066
           },
           {
             "column": 167,
             "fingerprint": "e1af94924f324e81ee7ef144b94ac221c0e0cefcbb6adf76c375ab303e7c672a",
-            "line": 6015
+            "line": 6071
           },
           {
             "column": 167,
             "fingerprint": "0b58aad39b9615a240b8995a1b647da6361c2868ccd1cb3009b84ac9b1d52287",
-            "line": 6020
+            "line": 6076
           },
           {
             "column": 161,
             "fingerprint": "944a7d0db9117fa3fbca1bc9e344102800fa58d8733d24e316972fdd244edf7c",
-            "line": 6025
+            "line": 6081
           },
           {
             "column": 161,
             "fingerprint": "b1c20e52c1bf008e2a67d09c38de8bcf396fb04e543f3fbb9c290d8f9e076a09",
-            "line": 6030
+            "line": 6086
           },
           {
             "column": 161,
             "fingerprint": "0886d6de46116c275081db362155802fb3d682fee7a7a84c61458f3fd7958229",
-            "line": 6035
+            "line": 6091
           },
           {
             "column": 161,
             "fingerprint": "2ef8a92a964982a81565e0b013906f3b2fab8311f39f0ad80bfc65aecaa9744b",
-            "line": 6040
+            "line": 6096
           },
           {
             "column": 161,
             "fingerprint": "488590120d9fb54c8bdd50bbc95c87a4501b6d47304d2a963697f9b78f0daf60",
-            "line": 6045
+            "line": 6101
           },
           {
             "column": 167,
             "fingerprint": "93716e6742a43c81b5c37c19c41af5a23fa4e06cd7d9865b7dd9dd168dfee47e",
-            "line": 6050
+            "line": 6106
           },
           {
             "column": 167,
             "fingerprint": "7ac3fe44a9c2f5182e95bbeaaa437f65ae89382de8f568906c2dab372abd83b0",
-            "line": 6055
+            "line": 6111
           },
           {
             "column": 167,
             "fingerprint": "5c4332add4cab4235b8a32dd17e374707809c03f7a56bf7dc551b909adaa1206",
-            "line": 6060
+            "line": 6116
           },
           {
             "column": 161,
             "fingerprint": "21b680bfad18cd0b6a95e78676c62c8633fa1392d01fb334ec631607dd29bcb3",
-            "line": 6065
+            "line": 6121
           },
           {
             "column": 161,
             "fingerprint": "95be85f01e68eee7b933af0c1bed29174cf2007168c265d65c5bd67d4dd78897",
-            "line": 6070
+            "line": 6126
           },
           {
             "column": 161,
             "fingerprint": "45195a427fe9067461ea72668cb20ad4dac33c477e0b08656ee10222d6e67d74",
-            "line": 6075
+            "line": 6131
           },
           {
             "column": 161,
             "fingerprint": "f554ebf3381cda96b74a4c15c46f9ae31e7c780a3102dc37072c150861912420",
-            "line": 6080
+            "line": 6136
           },
           {
             "column": 11,
             "fingerprint": "96990eca19bc7cb85f5426ff8a70c1aff8749f3d25ba1c8d96a52fcfe329b155",
-            "line": 6096
+            "line": 6152
           },
           {
             "column": 17,
             "fingerprint": "96990eca19bc7cb85f5426ff8a70c1aff8749f3d25ba1c8d96a52fcfe329b155",
-            "line": 6381
+            "line": 6437
           }
         ]
       },
@@ -13481,7 +13504,7 @@
           {
             "column": 16,
             "fingerprint": "2defd88696f711ffea87ef413e74d6f91975dc75c7b9604a110192f8691ac547",
-            "line": 2245
+            "line": 2276
           }
         ]
       },
@@ -14038,17 +14061,17 @@
           {
             "column": 9,
             "fingerprint": "fa1a1aba1b5686f49c73f87255e74b185560dc8476c003ae4cb6370b4669b8f5",
-            "line": 588
+            "line": 589
           },
           {
             "column": 9,
             "fingerprint": "4d7cc17264b536757675aeb46c4f03db249261c740393b9197b66d9a28c3b7c1",
-            "line": 684
+            "line": 685
           },
           {
             "column": 9,
             "fingerprint": "da21e6cddae92fca04b8257b4be718836493f3e4419931f8e7803206b47ca5c8",
-            "line": 733
+            "line": 734
           }
         ]
       },
@@ -14102,12 +14125,12 @@
           {
             "column": 37,
             "fingerprint": "3b15ece87e7c3f00aaeec9ddaf050b03aa9363f3b5f485a6b710a9d73fc5ce30",
-            "line": 1532
+            "line": 1538
           },
           {
             "column": 21,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1612
+            "line": 1618
           }
         ]
       },
@@ -14181,12 +14204,12 @@
           {
             "column": 11,
             "fingerprint": "96990eca19bc7cb85f5426ff8a70c1aff8749f3d25ba1c8d96a52fcfe329b155",
-            "line": 6088
+            "line": 6144
           },
           {
             "column": 17,
             "fingerprint": "96990eca19bc7cb85f5426ff8a70c1aff8749f3d25ba1c8d96a52fcfe329b155",
-            "line": 6366
+            "line": 6422
           }
         ]
       },
@@ -14273,287 +14296,287 @@
             {
               "column": 47,
               "fingerprint": "ecbd25b6ed5e7ca29a6835963b6de5b59acfb2e0766753c78830b277d524b12f",
-              "line": 424
+              "line": 426
             },
             {
               "column": 33,
               "fingerprint": "a2c47e623d0950a07ba37b298643a902d709088f4946f5608c1a32a091adb66b",
-              "line": 457
+              "line": 459
             },
             {
               "column": 23,
               "fingerprint": "6cef3b4e01e15034cd12465b6b7d223bd7b5093269f43e44f2303f4184bf05c7",
-              "line": 464
+              "line": 466
             },
             {
               "column": 57,
               "fingerprint": "6cef3b4e01e15034cd12465b6b7d223bd7b5093269f43e44f2303f4184bf05c7",
-              "line": 468
+              "line": 470
             },
             {
               "column": 33,
               "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-              "line": 480
+              "line": 482
             },
             {
               "column": 23,
               "fingerprint": "5133b1fa2b8a3d87e0a48e6e946403a46ce37756f4cfeaf0cb5b0b63d224b74d",
-              "line": 498
+              "line": 500
             },
             {
               "column": 27,
               "fingerprint": "5133b1fa2b8a3d87e0a48e6e946403a46ce37756f4cfeaf0cb5b0b63d224b74d",
-              "line": 504
+              "line": 506
             },
             {
               "column": 33,
               "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-              "line": 516
+              "line": 518
             },
             {
               "column": 23,
               "fingerprint": "fe5fd0f96597b0115276e0ea9851f9cee10e45a265fea95bec85bcd454df3c4c",
-              "line": 528
+              "line": 530
             },
             {
               "column": 34,
               "fingerprint": "fe5fd0f96597b0115276e0ea9851f9cee10e45a265fea95bec85bcd454df3c4c",
-              "line": 531
+              "line": 533
             },
             {
               "column": 33,
               "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-              "line": 537
+              "line": 539
             },
             {
               "column": 21,
               "fingerprint": "20799a9c414ec42fbd941873a396c5bfa8062297a6ec6ba6cfee4a1fd41afcbe",
-              "line": 773
+              "line": 775
             },
             {
               "column": 15,
               "fingerprint": "95ad659912976e5de46221cab9754c4b078c9bf117526ded8a04cbc033ef5cd1",
-              "line": 796
+              "line": 798
             },
             {
               "column": 26,
               "fingerprint": "819ca25b7387d6f4adb252e92cd05324962792e1e1692195eac1f5c24c4bcfba",
-              "line": 837
+              "line": 839
             },
             {
               "column": 28,
               "fingerprint": "050336a774734149052eba642b47c5c697068a5261346177e93330d3707db007",
-              "line": 859
+              "line": 861
             },
             {
               "column": 40,
               "fingerprint": "050336a774734149052eba642b47c5c697068a5261346177e93330d3707db007",
-              "line": 860
+              "line": 862
             },
             {
               "column": 15,
               "fingerprint": "2a2660ba89e59fa354b9be1aa56f77811212a6e5e2f48c27aff5870a9196a075",
-              "line": 865
+              "line": 867
             },
             {
               "column": 22,
               "fingerprint": "ade4e5ec50dc0e790c9713c74dff78ae214c84f907e811555ec4be4ae7be8364",
-              "line": 906
+              "line": 908
             },
             {
               "column": 37,
               "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-              "line": 912
+              "line": 914
             },
             {
               "column": 36,
               "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-              "line": 913
+              "line": 915
             },
             {
               "column": 39,
               "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-              "line": 915
+              "line": 917
             },
             {
               "column": 15,
               "fingerprint": "caef8a5105027e8eccc034058ec8522386aadcf9367b7d8fa59468d20645ac0c",
-              "line": 961
+              "line": 963
             },
             {
               "column": 15,
               "fingerprint": "225bd9a58d5ee8643c62637e6f173fde2ba197c2cf27a9d8c066243091521f5f",
-              "line": 1009
+              "line": 1011
             },
             {
               "column": 23,
               "fingerprint": "6c5a4b106d3bee8d29154ffd07eb43fb22bfe26855ac2d2d65904f907f575ff4",
-              "line": 1027
+              "line": 1029
             },
             {
               "column": 20,
               "fingerprint": "6c5a4b106d3bee8d29154ffd07eb43fb22bfe26855ac2d2d65904f907f575ff4",
-              "line": 1028
+              "line": 1030
             },
             {
               "column": 18,
               "fingerprint": "cb83dea1380f273071c7cb9c33aef765258ff680f7ccd0311c3a953024bf5d1f",
-              "line": 1060
+              "line": 1062
             },
             {
               "column": 39,
               "fingerprint": "4248a05882d9a3161ff4f705bf7379207cb93032069a67b01f62ae5a43cd4486",
-              "line": 1069
+              "line": 1071
             },
             {
               "column": 45,
               "fingerprint": "5b4ea13ad7bc850a8fca9c963abe490b0f3d38c7227ac94544905bfca6005c06",
-              "line": 1278
+              "line": 1280
             },
             {
               "column": 44,
               "fingerprint": "5b4ea13ad7bc850a8fca9c963abe490b0f3d38c7227ac94544905bfca6005c06",
-              "line": 1279
+              "line": 1281
             },
             {
               "column": 15,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1666
+              "line": 1668
             },
             {
               "column": 15,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1696
+              "line": 1698
             },
             {
               "column": 48,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1719
+              "line": 1721
             },
             {
               "column": 47,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1726
+              "line": 1728
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1735
+              "line": 1737
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1743
+              "line": 1745
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1753
+              "line": 1755
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1762
+              "line": 1764
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1778
+              "line": 1780
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1787
+              "line": 1789
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1802
+              "line": 1804
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1812
+              "line": 1814
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1969
+              "line": 1971
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1978
+              "line": 1980
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 2013
+              "line": 2015
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 2028
+              "line": 2030
             },
             {
               "column": 73,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2233
+              "line": 2235
             },
             {
               "column": 28,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2238
+              "line": 2240
             },
             {
               "column": 28,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2239
+              "line": 2241
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2289
+              "line": 2291
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2295
+              "line": 2297
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2305
+              "line": 2307
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2314
+              "line": 2316
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2341
+              "line": 2343
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2350
+              "line": 2352
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2360
+              "line": 2362
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2370
+              "line": 2372
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2382
+              "line": 2384
             }
           ]
         },
@@ -15290,72 +15313,72 @@
             {
               "column": 23,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1754
+              "line": 1756
             },
             {
               "column": 23,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1763
+              "line": 1765
             },
             {
               "column": 23,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1789
+              "line": 1791
             },
             {
               "column": 23,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1804
+              "line": 1806
             },
             {
               "column": 34,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1814
+              "line": 1816
             },
             {
               "column": 23,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1872
+              "line": 1874
             },
             {
               "column": 34,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1880
+              "line": 1882
             },
             {
               "column": 23,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 2014
+              "line": 2016
             },
             {
               "column": 23,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 2029
+              "line": 2031
             },
             {
               "column": 23,
               "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-              "line": 2306
+              "line": 2308
             },
             {
               "column": 23,
               "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-              "line": 2315
+              "line": 2317
             },
             {
               "column": 23,
               "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-              "line": 2332
+              "line": 2334
             },
             {
               "column": 23,
               "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-              "line": 2361
+              "line": 2363
             },
             {
               "column": 23,
               "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-              "line": 2371
+              "line": 2373
             }
           ]
         },
@@ -15408,12 +15431,12 @@
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 504
+              "line": 567
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 706
+              "line": 772
             }
           ]
         },
@@ -15604,27 +15627,27 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 250
+              "line": 316
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 424
+              "line": 493
             },
             {
               "column": 12,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 570
+              "line": 642
             },
             {
               "column": 12,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 670
+              "line": 745
             },
             {
               "column": 12,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 767
+              "line": 845
             }
           ]
         },
@@ -15646,7 +15669,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 332
+              "line": 370
             }
           ]
         },
@@ -15668,12 +15691,12 @@
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 89
+              "line": 93
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 185
+              "line": 193
             }
           ]
         },
@@ -15684,12 +15707,12 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 228
+              "line": 234
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 329
+              "line": 335
             }
           ]
         },
@@ -15744,7 +15767,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 76
+              "line": 103
             }
           ]
         },
@@ -15777,7 +15800,7 @@
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 122
+              "line": 158
             }
           ]
         },
@@ -15997,7 +16020,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 222
+              "line": 248
             }
           ]
         },
@@ -16030,37 +16053,37 @@
             {
               "column": 8,
               "fingerprint": "bef0eb388d567ebcfcd01401d9470d7ce9e6b1a653af34bf0f3f1c725aea7fe7",
-              "line": 423
+              "line": 425
             },
             {
               "column": 8,
               "fingerprint": "679ffbc4ee068e5bc0805a0c5a7c6a19ea407d8ba9207fb5bb4f9b3f7663ecb8",
-              "line": 710
+              "line": 712
             },
             {
               "column": 37,
               "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-              "line": 734
+              "line": 736
             },
             {
               "column": 12,
               "fingerprint": "474cfa7f83bfc0cf9f4aeaab1c869bea6487401834d5f542ad542464864b5c91",
-              "line": 1463
+              "line": 1465
             },
             {
               "column": 53,
               "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-              "line": 1466
+              "line": 1468
             },
             {
               "column": 12,
               "fingerprint": "d793a45b648a050b1db6882b1395596b4595e3315babc55c1acbc8b21254a64b",
-              "line": 2202
+              "line": 2204
             },
             {
               "column": 18,
               "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-              "line": 2207
+              "line": 2209
             }
           ]
         },
@@ -16289,17 +16312,17 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1040
+              "line": 1046
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1148
+              "line": 1154
             },
             {
               "column": 8,
               "fingerprint": "a7c083fc56767a81b9162ef3ac9b948b43e71d07df5214583fc9c5cf36bc95f7",
-              "line": 1540
+              "line": 1546
             }
           ]
         },
@@ -16641,267 +16664,267 @@
             {
               "column": 12,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 51
+              "line": 95
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 145
+              "line": 189
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 250
+              "line": 294
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 368
+              "line": 412
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 463
+              "line": 507
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 568
+              "line": 612
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 685
+              "line": 729
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 809
+              "line": 856
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 902
+              "line": 952
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1006
+              "line": 1059
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1363
+              "line": 1419
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1446
+              "line": 1502
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1533
+              "line": 1589
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1645
+              "line": 1701
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1746
+              "line": 1802
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1836
+              "line": 1892
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1913
+              "line": 1969
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 2028
+              "line": 2084
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 2118
+              "line": 2174
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 2206
+              "line": 2262
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 2295
+              "line": 2351
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 2400
+              "line": 2456
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 2505
+              "line": 2561
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 2610
+              "line": 2666
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 2715
+              "line": 2771
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 2807
+              "line": 2863
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 2899
+              "line": 2955
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 2993
+              "line": 3049
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 3087
+              "line": 3143
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 3181
+              "line": 3237
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 3277
+              "line": 3333
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 3373
+              "line": 3429
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 3469
+              "line": 3525
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 3563
+              "line": 3619
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 3674
+              "line": 3730
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 3768
+              "line": 3824
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 3921
+              "line": 3977
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 4017
+              "line": 4073
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 4122
+              "line": 4178
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 4218
+              "line": 4274
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 4314
+              "line": 4370
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 4410
+              "line": 4466
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 4506
+              "line": 4562
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 4611
+              "line": 4667
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 4716
+              "line": 4772
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 4821
+              "line": 4877
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 4926
+              "line": 4982
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 5031
+              "line": 5087
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 5249
+              "line": 5305
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 5354
+              "line": 5410
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 5459
+              "line": 5515
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 5563
+              "line": 5619
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 5667
+              "line": 5723
             }
           ]
         },
@@ -16917,7 +16940,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 315
+              "line": 320
             }
           ]
         },
@@ -16939,77 +16962,77 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 81
+              "line": 109
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 186
+              "line": 214
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 296
+              "line": 324
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 382
+              "line": 410
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 487
+              "line": 515
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 604
+              "line": 632
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 709
+              "line": 737
             },
             {
               "column": 12,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 840
+              "line": 868
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 926
+              "line": 954
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1029
+              "line": 1057
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1143
+              "line": 1171
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1262
+              "line": 1293
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1349
+              "line": 1380
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1489
+              "line": 1520
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1782
+              "line": 1813
             }
           ]
         }
@@ -19206,21 +19229,21 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 591,
+      "line": 592,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "Bool"
     },
     {
       "column": 38,
       "enum": "LegacyValue",
-      "line": 666,
+      "line": 667,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "Bool"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 769,
+      "line": 770,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "Bool"
     },
@@ -19444,28 +19467,28 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 191,
+      "line": 251,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "C64"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 942,
+      "line": 1008,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "C64"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 942,
+      "line": 1008,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "C64"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 974,
+      "line": 1040,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "C64"
     },
@@ -19829,7 +19852,7 @@
     {
       "column": 27,
       "enum": "LegacyValue",
-      "line": 677,
+      "line": 679,
       "path": "src/core/src/function/mod.rs",
       "variant": "Empty"
     },
@@ -20207,14 +20230,14 @@
     {
       "column": 49,
       "enum": "LegacyValue",
-      "line": 1612,
+      "line": 1618,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Empty"
     },
     {
       "column": 22,
       "enum": "LegacyValue",
-      "line": 1614,
+      "line": 1620,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Empty"
     },
@@ -20326,28 +20349,28 @@
     {
       "column": 11,
       "enum": "LegacyValue",
-      "line": 6087,
+      "line": 6143,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Empty"
     },
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 6089,
+      "line": 6145,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Empty"
     },
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 6362,
+      "line": 6418,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Empty"
     },
     {
       "column": 22,
       "enum": "LegacyValue",
-      "line": 6368,
+      "line": 6424,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Empty"
     },
@@ -21103,14 +21126,14 @@
     {
       "column": 32,
       "enum": "LegacyValue",
-      "line": 6087,
+      "line": 6143,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "EmptyKind"
     },
     {
       "column": 38,
       "enum": "LegacyValue",
-      "line": 6362,
+      "line": 6418,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "EmptyKind"
     },
@@ -21516,28 +21539,28 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 168,
+      "line": 228,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F32"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 924,
+      "line": 990,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F32"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 924,
+      "line": 990,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F32"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 968,
+      "line": 1034,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F32"
     },
@@ -22146,28 +22169,28 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 177,
+      "line": 237,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F64"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 930,
+      "line": 996,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F64"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 930,
+      "line": 996,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F64"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 970,
+      "line": 1036,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F64"
     },
@@ -22804,21 +22827,21 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 590,
+      "line": 591,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "F64"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 673,
+      "line": 674,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "F64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 735,
+      "line": 736,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "F64"
     },
@@ -23028,35 +23051,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 138,
+      "line": 198,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I128"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 166,
+      "line": 226,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I128"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 918,
+      "line": 984,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I128"
     },
     {
       "column": 32,
       "enum": "LegacyValue",
-      "line": 918,
+      "line": 984,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I128"
     },
     {
       "column": 38,
       "enum": "LegacyValue",
-      "line": 966,
+      "line": 1032,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I128"
     },
@@ -23532,35 +23555,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 132,
+      "line": 192,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I16"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 160,
+      "line": 220,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I16"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 900,
+      "line": 966,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I16"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 900,
+      "line": 966,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I16"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 960,
+      "line": 1026,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I16"
     },
@@ -24029,42 +24052,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 134,
+      "line": 194,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I32"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 162,
+      "line": 222,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I32"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 906,
+      "line": 972,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I32"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 906,
+      "line": 972,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I32"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 962,
+      "line": 1028,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I32"
     },
     {
       "column": 33,
       "enum": "LegacyValue",
-      "line": 345,
+      "line": 351,
       "path": "machines/math/src/ops/pow.rs",
       "variant": "I32"
     },
@@ -24533,35 +24556,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 136,
+      "line": 196,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 164,
+      "line": 224,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I64"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 912,
+      "line": 978,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I64"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 912,
+      "line": 978,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I64"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 964,
+      "line": 1030,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I64"
     },
@@ -25100,35 +25123,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 130,
+      "line": 190,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I8"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 158,
+      "line": 218,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I8"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 894,
+      "line": 960,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I8"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 894,
+      "line": 960,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I8"
     },
     {
       "column": 36,
       "enum": "LegacyValue",
-      "line": 958,
+      "line": 1024,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I8"
     },
@@ -25863,7 +25886,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 265,
+      "line": 325,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "Index"
     },
@@ -27193,448 +27216,420 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 130,
+      "line": 136,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 229,
+      "line": 235,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 231,
+      "line": 237,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1445,
+      "line": 1451,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1449,
+      "line": 1455,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1453,
+      "line": 1459,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1457,
+      "line": 1463,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1461,
+      "line": 1467,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1465,
+      "line": 1471,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1469,
+      "line": 1475,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1473,
+      "line": 1479,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1477,
+      "line": 1483,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1481,
+      "line": 1487,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1485,
+      "line": 1491,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1489,
+      "line": 1495,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1493,
+      "line": 1499,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1497,
+      "line": 1503,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1501,
+      "line": 1507,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 52,
       "enum": "LegacyValue",
-      "line": 1603,
+      "line": 1609,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1651,
+      "line": 1657,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1651,
+      "line": 1657,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1655,
+      "line": 1661,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1655,
+      "line": 1661,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1659,
+      "line": 1665,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1659,
+      "line": 1665,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1663,
+      "line": 1669,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1663,
+      "line": 1669,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1667,
+      "line": 1673,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1667,
+      "line": 1673,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1671,
+      "line": 1677,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1671,
+      "line": 1677,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1675,
+      "line": 1681,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1675,
+      "line": 1681,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1679,
+      "line": 1685,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1679,
+      "line": 1685,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1683,
+      "line": 1689,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1683,
+      "line": 1689,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1687,
+      "line": 1693,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1687,
+      "line": 1693,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1691,
+      "line": 1697,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1691,
+      "line": 1697,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1695,
+      "line": 1701,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1695,
+      "line": 1701,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1699,
+      "line": 1705,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1699,
+      "line": 1705,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1703,
+      "line": 1709,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 93,
       "enum": "LegacyValue",
-      "line": 1703,
+      "line": 1709,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 91,
       "enum": "LegacyValue",
-      "line": 2358,
+      "line": 2364,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 91,
       "enum": "LegacyValue",
-      "line": 2362,
+      "line": 2368,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 91,
       "enum": "LegacyValue",
-      "line": 2366,
+      "line": 2372,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 91,
       "enum": "LegacyValue",
-      "line": 2370,
+      "line": 2376,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 91,
       "enum": "LegacyValue",
-      "line": 2374,
+      "line": 2380,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 91,
       "enum": "LegacyValue",
-      "line": 2378,
+      "line": 2384,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 2442,
+      "line": 2448,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 2446,
+      "line": 2452,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 2450,
+      "line": 2456,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 2454,
+      "line": 2460,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2458,
+      "line": 2464,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2462,
+      "line": 2468,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 2466,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 116,
-      "enum": "LegacyValue",
-      "line": 2798,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 116,
-      "enum": "LegacyValue",
-      "line": 2802,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 116,
-      "enum": "LegacyValue",
-      "line": 2806,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 116,
-      "enum": "LegacyValue",
-      "line": 2810,
+      "line": 2472,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -27653,30 +27648,30 @@
       "variant": "Index"
     },
     {
-      "column": 115,
+      "column": 116,
       "enum": "LegacyValue",
-      "line": 2823,
+      "line": 2822,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 115,
+      "column": 116,
       "enum": "LegacyValue",
-      "line": 2827,
+      "line": 2826,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 115,
+      "column": 116,
       "enum": "LegacyValue",
-      "line": 2831,
+      "line": 2830,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 115,
+      "column": 116,
       "enum": "LegacyValue",
-      "line": 2835,
+      "line": 2834,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -27695,30 +27690,30 @@
       "variant": "Index"
     },
     {
-      "column": 68,
+      "column": 115,
       "enum": "LegacyValue",
-      "line": 2904,
+      "line": 2847,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 68,
+      "column": 115,
       "enum": "LegacyValue",
-      "line": 2908,
+      "line": 2851,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 68,
+      "column": 115,
       "enum": "LegacyValue",
-      "line": 2912,
+      "line": 2855,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 68,
+      "column": 115,
       "enum": "LegacyValue",
-      "line": 2916,
+      "line": 2859,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -27739,28 +27734,28 @@
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2929,
+      "line": 2928,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2933,
+      "line": 2932,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2937,
+      "line": 2936,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2941,
+      "line": 2940,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -27775,6 +27770,34 @@
       "column": 68,
       "enum": "LegacyValue",
       "line": 2949,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 68,
+      "enum": "LegacyValue",
+      "line": 2953,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 68,
+      "enum": "LegacyValue",
+      "line": 2957,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 68,
+      "enum": "LegacyValue",
+      "line": 2961,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 68,
+      "enum": "LegacyValue",
+      "line": 2965,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -29202,362 +29225,334 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 140,
+      "line": 146,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2242,
+      "line": 2248,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2243,
+      "line": 2249,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2246,
+      "line": 2252,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2247,
+      "line": 2253,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2250,
+      "line": 2256,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2251,
+      "line": 2257,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2254,
+      "line": 2260,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2255,
+      "line": 2261,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2258,
+      "line": 2264,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2259,
+      "line": 2265,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2262,
+      "line": 2268,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2263,
+      "line": 2269,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2266,
+      "line": 2272,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2267,
+      "line": 2273,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2270,
+      "line": 2276,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2271,
+      "line": 2277,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2274,
+      "line": 2280,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2275,
+      "line": 2281,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2278,
+      "line": 2284,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2279,
+      "line": 2285,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2282,
+      "line": 2288,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2283,
+      "line": 2289,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2286,
+      "line": 2292,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2287,
+      "line": 2293,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2290,
+      "line": 2296,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2291,
+      "line": 2297,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2294,
+      "line": 2300,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 79,
       "enum": "LegacyValue",
-      "line": 2295,
+      "line": 2301,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2358,
+      "line": 2364,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2362,
+      "line": 2368,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2366,
+      "line": 2372,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2370,
+      "line": 2376,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2374,
+      "line": 2380,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2378,
+      "line": 2384,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 89,
       "enum": "LegacyValue",
-      "line": 2442,
+      "line": 2448,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 89,
       "enum": "LegacyValue",
-      "line": 2446,
+      "line": 2452,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 89,
       "enum": "LegacyValue",
-      "line": 2450,
+      "line": 2456,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 89,
       "enum": "LegacyValue",
-      "line": 2454,
+      "line": 2460,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 91,
       "enum": "LegacyValue",
-      "line": 2458,
+      "line": 2464,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 91,
       "enum": "LegacyValue",
-      "line": 2462,
+      "line": 2468,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 89,
       "enum": "LegacyValue",
-      "line": 2466,
+      "line": 2472,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 2560,
+      "line": 2566,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 2564,
+      "line": 2570,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 2569,
+      "line": 2575,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 2574,
+      "line": 2580,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 2578,
+      "line": 2584,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 113,
-      "enum": "LegacyValue",
-      "line": 2691,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 113,
-      "enum": "LegacyValue",
-      "line": 2695,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 113,
-      "enum": "LegacyValue",
-      "line": 2699,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 115,
-      "enum": "LegacyValue",
-      "line": 2703,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 115,
       "enum": "LegacyValue",
       "line": 2707,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -29571,35 +29566,35 @@
       "variant": "IndexAll"
     },
     {
-      "column": 112,
+      "column": 113,
       "enum": "LegacyValue",
-      "line": 2716,
+      "line": 2715,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 115,
+      "enum": "LegacyValue",
+      "line": 2719,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 115,
+      "enum": "LegacyValue",
+      "line": 2723,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 113,
+      "enum": "LegacyValue",
+      "line": 2727,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 112,
-      "enum": "LegacyValue",
-      "line": 2720,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 112,
-      "enum": "LegacyValue",
-      "line": 2724,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 114,
-      "enum": "LegacyValue",
-      "line": 2728,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 114,
       "enum": "LegacyValue",
       "line": 2732,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -29609,6 +29604,34 @@
       "column": 112,
       "enum": "LegacyValue",
       "line": 2736,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 112,
+      "enum": "LegacyValue",
+      "line": 2740,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 114,
+      "enum": "LegacyValue",
+      "line": 2744,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 114,
+      "enum": "LegacyValue",
+      "line": 2748,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 112,
+      "enum": "LegacyValue",
+      "line": 2752,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
@@ -32289,208 +32312,180 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 156,
+      "line": 162,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 236,
+      "line": 242,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 61,
       "enum": "LegacyValue",
-      "line": 366,
+      "line": 372,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1764,
+      "line": 1770,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1768,
+      "line": 1774,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1772,
+      "line": 1778,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1776,
+      "line": 1782,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1783,
+      "line": 1789,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1787,
+      "line": 1793,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1791,
+      "line": 1797,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1795,
+      "line": 1801,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1802,
+      "line": 1808,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1806,
+      "line": 1812,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1810,
+      "line": 1816,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1814,
+      "line": 1820,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 1818,
+      "line": 1824,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 1822,
+      "line": 1828,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1826,
+      "line": 1832,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 2038,
+      "line": 2044,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 2038,
+      "line": 2044,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 2061,
+      "line": 2067,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 2084,
+      "line": 2090,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 2569,
+      "line": 2575,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 2574,
+      "line": 2580,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 2578,
+      "line": 2584,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
-      "enum": "LegacyValue",
-      "line": 2716,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixBool"
-    },
-    {
-      "column": 66,
-      "enum": "LegacyValue",
-      "line": 2720,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixBool"
-    },
-    {
-      "column": 66,
-      "enum": "LegacyValue",
-      "line": 2724,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixBool"
-    },
-    {
-      "column": 68,
-      "enum": "LegacyValue",
-      "line": 2728,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixBool"
-    },
-    {
-      "column": 68,
       "enum": "LegacyValue",
       "line": 2732,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -32504,30 +32499,30 @@
       "variant": "MatrixBool"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
-      "line": 2823,
+      "line": 2740,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2827,
+      "line": 2744,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2831,
+      "line": 2748,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
-      "line": 2835,
+      "line": 2752,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
@@ -32546,30 +32541,30 @@
       "variant": "MatrixBool"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2929,
+      "line": 2847,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2933,
+      "line": 2851,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2937,
+      "line": 2855,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2941,
+      "line": 2859,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
@@ -32584,6 +32579,34 @@
       "column": 93,
       "enum": "LegacyValue",
       "line": 2949,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixBool"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2953,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixBool"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2957,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixBool"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2961,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixBool"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2965,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
@@ -32646,7 +32669,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 974,
+      "line": 1040,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixC64"
     },
@@ -32919,7 +32942,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 968,
+      "line": 1034,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixF32"
     },
@@ -34893,7 +34916,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 970,
+      "line": 1036,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixF64"
     },
@@ -36951,56 +36974,56 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 592,
+      "line": 593,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "MatrixF64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 595,
+      "line": 596,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "MatrixF64"
     },
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 668,
+      "line": 669,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "MatrixF64"
     },
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 671,
+      "line": 672,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "MatrixF64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 688,
+      "line": 689,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "MatrixF64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 701,
+      "line": 702,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "MatrixF64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 752,
+      "line": 753,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "MatrixF64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 756,
+      "line": 757,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "MatrixF64"
     },
@@ -37119,7 +37142,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 966,
+      "line": 1032,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixI128"
     },
@@ -37413,7 +37436,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 960,
+      "line": 1026,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixI16"
     },
@@ -37707,7 +37730,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 962,
+      "line": 1028,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixI32"
     },
@@ -38001,7 +38024,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 964,
+      "line": 1030,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixI64"
     },
@@ -38295,7 +38318,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 958,
+      "line": 1024,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixI8"
     },
@@ -40955,194 +40978,166 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 141,
+      "line": 147,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 12,
       "enum": "LegacyValue",
-      "line": 234,
+      "line": 240,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1833,
+      "line": 1839,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1837,
+      "line": 1843,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1841,
+      "line": 1847,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 1845,
+      "line": 1851,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1852,
+      "line": 1858,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1856,
+      "line": 1862,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1860,
+      "line": 1866,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1864,
+      "line": 1870,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1871,
+      "line": 1877,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1875,
+      "line": 1881,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1879,
+      "line": 1885,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1883,
+      "line": 1889,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 1887,
+      "line": 1893,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 1891,
+      "line": 1897,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1895,
+      "line": 1901,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 2034,
+      "line": 2040,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 2034,
+      "line": 2040,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 2061,
+      "line": 2067,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 2084,
+      "line": 2090,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 2560,
+      "line": 2566,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 2564,
+      "line": 2570,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
-      "enum": "LegacyValue",
-      "line": 2691,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 66,
-      "enum": "LegacyValue",
-      "line": 2695,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 66,
-      "enum": "LegacyValue",
-      "line": 2699,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 68,
-      "enum": "LegacyValue",
-      "line": 2703,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 68,
       "enum": "LegacyValue",
       "line": 2707,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -41156,30 +41151,30 @@
       "variant": "MatrixIndex"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
-      "line": 2798,
+      "line": 2715,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2802,
+      "line": 2719,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2806,
+      "line": 2723,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
-      "line": 2810,
+      "line": 2727,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
@@ -41198,30 +41193,30 @@
       "variant": "MatrixIndex"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2904,
+      "line": 2822,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2908,
+      "line": 2826,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2912,
+      "line": 2830,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2916,
+      "line": 2834,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
@@ -41236,6 +41231,34 @@
       "column": 93,
       "enum": "LegacyValue",
       "line": 2924,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2928,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2932,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2936,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2940,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
@@ -41333,7 +41356,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 972,
+      "line": 1038,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixR64"
     },
@@ -41893,7 +41916,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 956,
+      "line": 1022,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixU128"
     },
@@ -42187,7 +42210,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 950,
+      "line": 1016,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixU16"
     },
@@ -42481,7 +42504,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 952,
+      "line": 1018,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixU32"
     },
@@ -42775,7 +42798,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 954,
+      "line": 1020,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixU64"
     },
@@ -43076,7 +43099,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 948,
+      "line": 1014,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixU8"
     },
@@ -43685,7 +43708,7 @@
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 1603,
+      "line": 1609,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixValue"
     },
@@ -43881,28 +43904,28 @@
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1007,
+      "line": 1073,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MutableReference"
     },
     {
       "column": 52,
       "enum": "LegacyValue",
-      "line": 1007,
+      "line": 1073,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MutableReference"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 1012,
+      "line": 1078,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1016,
+      "line": 1082,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MutableReference"
     },
@@ -45022,28 +45045,28 @@
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 288,
+      "line": 324,
       "path": "machines/range/src/inclusive.rs",
       "variant": "MutableReference"
     },
     {
       "column": 55,
       "enum": "LegacyValue",
-      "line": 288,
+      "line": 324,
       "path": "machines/range/src/inclusive.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 291,
+      "line": 327,
       "path": "machines/range/src/inclusive.rs",
       "variant": "MutableReference"
     },
     {
       "column": 24,
       "enum": "LegacyValue",
-      "line": 294,
+      "line": 330,
       "path": "machines/range/src/inclusive.rs",
       "variant": "MutableReference"
     },
@@ -45610,14 +45633,14 @@
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 711,
+      "line": 713,
       "path": "src/core/src/function/mod.rs",
       "variant": "MutableReference"
     },
     {
       "column": 29,
       "enum": "LegacyValue",
-      "line": 730,
+      "line": 732,
       "path": "src/core/src/function/mod.rs",
       "variant": "MutableReference"
     },
@@ -46093,21 +46116,21 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 589,
+      "line": 590,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "MutableReference"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 685,
+      "line": 686,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "MutableReference"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 734,
+      "line": 735,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "MutableReference"
     },
@@ -46282,84 +46305,84 @@
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 1541,
+      "line": 1547,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1626,
+      "line": 1632,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1739,
+      "line": 1745,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1931,
+      "line": 1937,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 2217,
+      "line": 2223,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2333,
+      "line": 2339,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2417,
+      "line": 2423,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2505,
+      "line": 2511,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 2665,
+      "line": 2681,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2772,
+      "line": 2788,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2878,
+      "line": 2894,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2985,
+      "line": 3001,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
@@ -46793,126 +46816,126 @@
     {
       "column": 11,
       "enum": "LegacyValue",
-      "line": 6002,
+      "line": 6058,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "MutableReference"
     },
     {
       "column": 167,
       "enum": "LegacyValue",
-      "line": 6010,
+      "line": 6066,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "MutableReference"
     },
     {
       "column": 167,
       "enum": "LegacyValue",
-      "line": 6015,
+      "line": 6071,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "MutableReference"
     },
     {
       "column": 167,
       "enum": "LegacyValue",
-      "line": 6020,
+      "line": 6076,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "MutableReference"
     },
     {
       "column": 161,
       "enum": "LegacyValue",
-      "line": 6025,
+      "line": 6081,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "MutableReference"
     },
     {
       "column": 161,
       "enum": "LegacyValue",
-      "line": 6030,
+      "line": 6086,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "MutableReference"
     },
     {
       "column": 161,
       "enum": "LegacyValue",
-      "line": 6035,
+      "line": 6091,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "MutableReference"
     },
     {
       "column": 161,
-      "enum": "LegacyValue",
-      "line": 6040,
-      "path": "src/engine/src/intrinsics/horzcat.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 161,
-      "enum": "LegacyValue",
-      "line": 6045,
-      "path": "src/engine/src/intrinsics/horzcat.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 167,
-      "enum": "LegacyValue",
-      "line": 6050,
-      "path": "src/engine/src/intrinsics/horzcat.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 167,
-      "enum": "LegacyValue",
-      "line": 6055,
-      "path": "src/engine/src/intrinsics/horzcat.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 167,
-      "enum": "LegacyValue",
-      "line": 6060,
-      "path": "src/engine/src/intrinsics/horzcat.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 161,
-      "enum": "LegacyValue",
-      "line": 6065,
-      "path": "src/engine/src/intrinsics/horzcat.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 161,
-      "enum": "LegacyValue",
-      "line": 6070,
-      "path": "src/engine/src/intrinsics/horzcat.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 161,
-      "enum": "LegacyValue",
-      "line": 6075,
-      "path": "src/engine/src/intrinsics/horzcat.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 161,
-      "enum": "LegacyValue",
-      "line": 6080,
-      "path": "src/engine/src/intrinsics/horzcat.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 11,
       "enum": "LegacyValue",
       "line": 6096,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "MutableReference"
     },
     {
+      "column": 161,
+      "enum": "LegacyValue",
+      "line": 6101,
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "variant": "MutableReference"
+    },
+    {
+      "column": 167,
+      "enum": "LegacyValue",
+      "line": 6106,
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "variant": "MutableReference"
+    },
+    {
+      "column": 167,
+      "enum": "LegacyValue",
+      "line": 6111,
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "variant": "MutableReference"
+    },
+    {
+      "column": 167,
+      "enum": "LegacyValue",
+      "line": 6116,
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "variant": "MutableReference"
+    },
+    {
+      "column": 161,
+      "enum": "LegacyValue",
+      "line": 6121,
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "variant": "MutableReference"
+    },
+    {
+      "column": 161,
+      "enum": "LegacyValue",
+      "line": 6126,
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "variant": "MutableReference"
+    },
+    {
+      "column": 161,
+      "enum": "LegacyValue",
+      "line": 6131,
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "variant": "MutableReference"
+    },
+    {
+      "column": 161,
+      "enum": "LegacyValue",
+      "line": 6136,
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "variant": "MutableReference"
+    },
+    {
+      "column": 11,
+      "enum": "LegacyValue",
+      "line": 6152,
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "variant": "MutableReference"
+    },
+    {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 6381,
+      "line": 6437,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "MutableReference"
     },
@@ -46926,7 +46949,7 @@
     {
       "column": 16,
       "enum": "LegacyValue",
-      "line": 2245,
+      "line": 2276,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "MutableReference"
     },
@@ -47073,42 +47096,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 140,
+      "line": 200,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "R64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 186,
+      "line": 246,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "R64"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 936,
+      "line": 1002,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "R64"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 936,
+      "line": 1002,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "R64"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 972,
+      "line": 1038,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "R64"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 345,
+      "line": 351,
       "path": "machines/math/src/ops/pow.rs",
       "variant": "R64"
     },
@@ -50482,21 +50505,21 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 588,
+      "line": 589,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "Typed"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 684,
+      "line": 685,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "Typed"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 733,
+      "line": 734,
       "path": "src/engine/src/efficacy/ekf/catalog.rs",
       "variant": "Typed"
     },
@@ -50538,14 +50561,14 @@
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1532,
+      "line": 1538,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Typed"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 1612,
+      "line": 1618,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Typed"
     },
@@ -50615,14 +50638,14 @@
     {
       "column": 11,
       "enum": "LegacyValue",
-      "line": 6088,
+      "line": 6144,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Typed"
     },
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 6366,
+      "line": 6422,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Typed"
     },
@@ -50643,35 +50666,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 128,
+      "line": 188,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U128"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 156,
+      "line": 216,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U128"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 888,
+      "line": 954,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U128"
     },
     {
       "column": 32,
       "enum": "LegacyValue",
-      "line": 888,
+      "line": 954,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U128"
     },
     {
       "column": 38,
       "enum": "LegacyValue",
-      "line": 956,
+      "line": 1022,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U128"
     },
@@ -51126,35 +51149,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 122,
+      "line": 182,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U16"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 150,
+      "line": 210,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U16"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 870,
+      "line": 936,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U16"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 870,
+      "line": 936,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U16"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 950,
+      "line": 1016,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U16"
     },
@@ -51609,35 +51632,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 124,
+      "line": 184,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U32"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 152,
+      "line": 212,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U32"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 876,
+      "line": 942,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U32"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 876,
+      "line": 942,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U32"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 952,
+      "line": 1018,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U32"
     },
@@ -52092,35 +52115,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 126,
+      "line": 186,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 154,
+      "line": 214,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U64"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 882,
+      "line": 948,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U64"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 882,
+      "line": 948,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U64"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 954,
+      "line": 1020,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U64"
     },
@@ -52624,35 +52647,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 120,
+      "line": 180,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U8"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 148,
+      "line": 208,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U8"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 864,
+      "line": 930,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U8"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 864,
+      "line": 930,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U8"
     },
     {
       "column": 36,
       "enum": "LegacyValue",
-      "line": 948,
+      "line": 1014,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U8"
     },
@@ -53254,7 +53277,7 @@
     {
       "column": 28,
       "enum": "ValueKind",
-      "line": 1325,
+      "line": 1432,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Any"
     },
@@ -53289,7 +53312,7 @@
     {
       "column": 22,
       "enum": "ValueKind",
-      "line": 1608,
+      "line": 1614,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Any"
     },
@@ -53611,14 +53634,14 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6742,
+      "line": 6798,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Bool"
     },
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2666,
+      "line": 2697,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "Bool"
     },
@@ -53772,14 +53795,14 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6763,
+      "line": 6819,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "C64"
     },
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2687,
+      "line": 2718,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "C64"
     },
@@ -53961,7 +53984,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1325,
+      "line": 1432,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Empty"
     },
@@ -53996,7 +54019,7 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 6650,
+      "line": 6706,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Empty"
     },
@@ -54724,14 +54747,14 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6665,
+      "line": 6721,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "F32"
     },
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2624,
+      "line": 2655,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "F32"
     },
@@ -55137,14 +55160,14 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6658,
+      "line": 6714,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "F64"
     },
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2617,
+      "line": 2648,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "F64"
     },
@@ -55459,7 +55482,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6735,
+      "line": 6791,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "I128"
     },
@@ -55774,7 +55797,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6714,
+      "line": 6770,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "I16"
     },
@@ -56089,7 +56112,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6721,
+      "line": 6777,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "I32"
     },
@@ -56404,7 +56427,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6728,
+      "line": 6784,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "I64"
     },
@@ -56719,7 +56742,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6707,
+      "line": 6763,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "I8"
     },
@@ -57223,14 +57246,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1314,
+      "line": 1421,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Kind"
     },
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 1316,
+      "line": 1423,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Kind"
     },
@@ -57356,14 +57379,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1271,
+      "line": 1378,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Map"
     },
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1275,
+      "line": 1382,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Map"
     },
@@ -57741,14 +57764,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1252,
+      "line": 1359,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Matrix"
     },
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1255,
+      "line": 1362,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Matrix"
     },
@@ -57902,7 +57925,7 @@
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1607,
+      "line": 1613,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Matrix"
     },
@@ -58000,7 +58023,7 @@
     {
       "column": 11,
       "enum": "ValueKind",
-      "line": 2192,
+      "line": 2223,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "Matrix"
     },
@@ -58140,7 +58163,7 @@
     {
       "column": 45,
       "enum": "ValueKind",
-      "line": 1325,
+      "line": 1432,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "None"
     },
@@ -58343,14 +58366,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1310,
+      "line": 1417,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Option"
     },
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 1312,
+      "line": 1419,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Option"
     },
@@ -58371,14 +58394,14 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 1532,
+      "line": 1538,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Option"
     },
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1611,
+      "line": 1617,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Option"
     },
@@ -58420,21 +58443,21 @@
     {
       "column": 34,
       "enum": "ValueKind",
-      "line": 6089,
+      "line": 6145,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Option"
     },
     {
       "column": 42,
       "enum": "ValueKind",
-      "line": 6368,
+      "line": 6424,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Option"
     },
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 6651,
+      "line": 6707,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Option"
     },
@@ -58679,14 +58702,14 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6756,
+      "line": 6812,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "R64"
     },
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2680,
+      "line": 2711,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "R64"
     },
@@ -58819,14 +58842,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1259,
+      "line": 1366,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Record"
     },
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 1269,
+      "line": 1376,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Record"
     },
@@ -58903,14 +58926,14 @@
     {
       "column": 32,
       "enum": "ValueKind",
-      "line": 663,
+      "line": 674,
       "path": "src/bytecode/src/context.rs",
       "variant": "Reference"
     },
     {
       "column": 39,
       "enum": "ValueKind",
-      "line": 665,
+      "line": 676,
       "path": "src/bytecode/src/context.rs",
       "variant": "Reference"
     },
@@ -59036,28 +59059,28 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1248,
+      "line": 1355,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Reference"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1326,
+      "line": 1433,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Reference"
     },
     {
       "column": 11,
       "enum": "ValueKind",
-      "line": 6109,
+      "line": 6165,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "Reference"
     },
     {
       "column": 11,
       "enum": "ValueKind",
-      "line": 2191,
+      "line": 2222,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "Reference"
     },
@@ -59267,14 +59290,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1303,
+      "line": 1410,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Set"
     },
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1306,
+      "line": 1413,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Set"
     },
@@ -59505,14 +59528,14 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6749,
+      "line": 6805,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "String"
     },
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2673,
+      "line": 2704,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "String"
     },
@@ -59673,14 +59696,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1279,
+      "line": 1386,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Table"
     },
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 1289,
+      "line": 1396,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Table"
     },
@@ -59904,14 +59927,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1291,
+      "line": 1398,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Tuple"
     },
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 1301,
+      "line": 1408,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Tuple"
     },
@@ -60275,14 +60298,14 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6700,
+      "line": 6756,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "U128"
     },
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2659,
+      "line": 2690,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "U128"
     },
@@ -60597,14 +60620,14 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6679,
+      "line": 6735,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "U16"
     },
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2638,
+      "line": 2669,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "U16"
     },
@@ -60919,14 +60942,14 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6686,
+      "line": 6742,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "U32"
     },
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2645,
+      "line": 2676,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "U32"
     },
@@ -61241,14 +61264,14 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6693,
+      "line": 6749,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "U64"
     },
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2652,
+      "line": 2683,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "U64"
     },
@@ -61563,14 +61586,14 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 6672,
+      "line": 6728,
       "path": "src/engine/src/intrinsics/horzcat.rs",
       "variant": "U8"
     },
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2631,
+      "line": 2662,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "U8"
     },
@@ -61594,7 +61617,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 927
+      "rust_file_count": 931
     },
     {
       "directory": "hosts/browser",
@@ -61660,13 +61683,13 @@
       "directory": "src/core",
       "manifest": "src/core/Cargo.toml",
       "name": "mech-core",
-      "rust_file_count": 120
+      "rust_file_count": 121
     },
     {
       "directory": "src/engine",
       "manifest": "src/engine/Cargo.toml",
       "name": "mech-engine",
-      "rust_file_count": 156
+      "rust_file_count": 158
     },
     {
       "directory": "src/runtime",

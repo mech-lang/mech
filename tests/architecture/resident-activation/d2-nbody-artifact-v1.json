@@ -1,0 +1,21 @@
+{
+  "activation_nodes": 140,
+  "artifact_nodes": 155,
+  "bytecode_format": "v1",
+  "legacy_opaque_contracts": 0,
+  "position_writer_chain": [
+    "WholeValue ReadModifyWrite"
+  ],
+  "program_revision": "d265ade8a64a46281968a57af58c63f5c5bf9ac37cab4bc3b24d24c796e2fbcd",
+  "schema_version": 1,
+  "source_bytecode_revision_equal": true,
+  "source_sha256": "5a3a5a703d4db5a28e07acf40b9da8262b7056ffc9167cd3efd3b638b88054f7",
+  "stable_topological_execution": true,
+  "state_slots": 2,
+  "turn_nodes": 15,
+  "unclassified_nodes": 0,
+  "velocity_writer_chain": [
+    "IndexedAxis(0) ReadModifyWrite",
+    "IndexedAxis(0) ReadModifyWrite"
+  ]
+}

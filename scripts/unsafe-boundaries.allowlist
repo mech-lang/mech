@@ -124,5 +124,6 @@ src/runtime/benches/history_scaling.rs|benchmark-probe|mech-runtime|the counting
 src/runtime/benches/recording_primitives.rs|benchmark-probe|mech-runtime|the counting allocator forwards the exact pointer and layout to System and retains no allocation pointer|benchmark-only allocation accounting for Gate A evidence
 src/runtime/benches/resident_ekf.rs|benchmark-probe|mech-runtime|the counting allocator forwards the exact pointer and layout to System and retains no allocation pointer|benchmark-only allocation accounting for Gate B evidence
 src/wasm/src/websocket.rs|ffi|mech-wasm|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
+tests/fixtures/d2-contract-generator/src/main.rs|benchmark-probe|mech-engine|the counting allocator forwards the exact pointer and layout to System and retains no allocation pointer|D2 steady-state resident allocation accounting
 tests/fixtures/dynamic-status-module/src/lib.rs|ffi|repository-tests|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 tests/mech_repl_ctrlc.rs|ffi|repository-tests|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary

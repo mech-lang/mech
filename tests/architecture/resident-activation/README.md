@@ -2,8 +2,8 @@
 
 D0 froze the boundary between the final `ProgramArtifact` and resident
 activation without changing production behavior. D1 now implements the exact
-ordinary-EKF vertical slice behind the `resident-ekf-artifact` efficacy
-feature; general production routing remains unchanged.
+ordinary-EKF vertical slice. D2 replaces its pre-launch feature name with the
+general `resident-artifact` efficacy feature; production routing remains unchanged.
 
 The Gate B executor remains an explicitly named efficacy control, but no
 private resident `ProgramArtifact` authority remains. The frozen ordinary EKF

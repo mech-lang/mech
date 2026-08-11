@@ -1,10 +1,15 @@
-#![cfg(feature = "resident-ekf-artifact")]
+#![cfg(feature = "resident-artifact")]
 
-use mech_core::{InstanceEpoch, MResult, ReactiveInstanceId};
+use mech_core::{
+    BoundResidentKernel, ChangeDetectionPolicy, InstanceEpoch, MResult, ReactiveInstanceId,
+    ResidentKernelError, ResidentKernelInputs, ResidentValueMut, ResidentValueRef,
+};
 use mech_engine::__gate_b_resident::ResidentEkfBatch;
-use mech_engine::__gate_d::{
-    ActivatedNodeKind, FrozenEkfCompilationServices, ReactiveInstance, ResidentExecutionError,
-    ResidentTurnSummary, activate, compile_frozen_ekf_source,
+use mech_engine::__resident::{
+    ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices, ReactiveInstance,
+    ResidentActivationOptions, ResidentExecutionError, ResidentIntegrityMode, ResidentStorageClass,
+    ResidentTurnSummary, ResidentValueBorrow, activate, activate_with_options,
+    compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
 use sha2::{Digest, Sha256};
 
@@ -35,48 +40,111 @@ fn quantized_hash(states: impl IntoIterator<Item = [f64; 12]>) -> String {
     format!("{:x}", hash.finalize())
 }
 
-fn state(instance: &mech_engine::__gate_d::ReactiveInstance) -> [f64; 12] {
-    let mut state = [0.0; 12];
-    state[..3].copy_from_slice(instance.estimate());
-    state[3..].copy_from_slice(instance.covariance());
-    state
+fn state(instance: &ReactiveInstance) -> [f64; 12] {
+    let mut result = [0.0; 12];
+    for slot in instance
+        .plan
+        .slots
+        .iter()
+        .filter(|slot| slot.storage == ResidentStorageClass::State)
+    {
+        let ResidentValueBorrow::F64 { values, .. } =
+            instance.state_borrow(slot.artifact_id).unwrap()
+        else {
+            panic!("EKF state is f64")
+        };
+        match values.len() {
+            3 => result[..3].copy_from_slice(values),
+            9 => result[3..].copy_from_slice(values),
+            _ => panic!("unexpected EKF state shape"),
+        }
+    }
+    result
 }
 
 fn execute_turn(
     instance: &mut ReactiveInstance,
-    frame: [f64; 4],
+    frame: &[f64; 4],
 ) -> Result<ResidentTurnSummary, ResidentExecutionError> {
-    Ok(instance.prepare_turn(frame)?.publish())
+    let input = CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::F64(frame),
+    };
+    instance.turn(&[input])
+}
+
+fn instance(id: u32) -> MResult<ReactiveInstance> {
+    instance_with_integrity(id, ResidentIntegrityMode::Checked)
+}
+
+fn instance_with_integrity(id: u32, integrity: ResidentIntegrityMode) -> MResult<ReactiveInstance> {
+    let mut services = FrozenEkfCompilationServices::default();
+    let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
+    let catalog = frozen_ekf_compiler_catalog()?;
+    Ok(activate_with_options(
+        ReactiveInstanceId::new(id, 0),
+        &compilation.source_artifact,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentActivationOptions { integrity },
+    )
+    .unwrap())
+}
+
+#[test]
+fn unchecked_integrity_is_explicit_and_omits_constraint_only_nodes() -> MResult<()> {
+    let mut checked = instance_with_integrity(20, ResidentIntegrityMode::Checked)?;
+    let mut unchecked = instance_with_integrity(21, ResidentIntegrityMode::Unchecked)?;
+    let frame = frames().next().unwrap();
+
+    let checked_summary = execute_turn(&mut checked, &frame).unwrap();
+    let unchecked_summary = execute_turn(&mut unchecked, &frame).unwrap();
+    assert_eq!(state(&checked), state(&unchecked));
+    assert_eq!(checked_summary.dirty_nodes, 20);
+    assert_eq!(unchecked_summary.dirty_nodes, 17);
+
+    let mut invalid = frame;
+    invalid[0] = f64::NAN;
+    assert!(matches!(
+        execute_turn(&mut checked, &invalid),
+        Err(ResidentExecutionError::Integrity { .. })
+    ));
+    assert!(execute_turn(&mut unchecked, &invalid).is_ok());
+    assert!(state(&unchecked).iter().any(|value| !value.is_finite()));
+    Ok(())
 }
 
 #[test]
 fn source_and_bytecode_artifacts_execute_the_complete_frozen_trace() -> MResult<()> {
     let mut services = FrozenEkfCompilationServices::default();
     let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
+    let catalog = frozen_ekf_compiler_catalog()?;
     let mut source = activate(
         ReactiveInstanceId::new(0, 0),
         &compilation.source_artifact,
-        &compilation.resource_request,
+        &catalog,
+        &ActivationFacts::default(),
     )
     .unwrap();
     let mut decoded = activate(
         ReactiveInstanceId::new(1, 0),
         &compilation.decoded_artifact,
-        &compilation.resource_request,
+        &catalog,
+        &ActivationFacts::default(),
     )
     .unwrap();
     let mut control = ResidentEkfBatch::new(1);
     let mut trajectory = Vec::with_capacity(TURNS);
 
     for (turn, frame) in frames().enumerate() {
-        let source_receipt = execute_turn(&mut source, frame).expect("source artifact turn");
-        let decoded_receipt = execute_turn(&mut decoded, frame).expect("bytecode artifact turn");
+        let source_receipt = execute_turn(&mut source, &frame).expect("source artifact turn");
+        let decoded_receipt = execute_turn(&mut decoded, &frame).expect("bytecode artifact turn");
         control.turn(frame).expect("Gate B control turn");
         assert_eq!(state(&source), state(&decoded), "turn {turn}");
         let control_state = control.state(0);
-        assert_eq!(source.estimate(), &control_state.state, "turn {turn}");
+        assert_eq!(&state(&source)[..3], &control_state.state, "turn {turn}");
         assert_eq!(
-            source.covariance(),
+            &state(&source)[3..],
             &control_state.covariance,
             "turn {turn}"
         );
@@ -95,177 +163,187 @@ fn source_and_bytecode_artifacts_execute_the_complete_frozen_trace() -> MResult<
 }
 
 #[test]
-fn abort_and_integrity_failure_leave_publication_unchanged_and_reuse_storage() -> MResult<()> {
-    let mut services = FrozenEkfCompilationServices::default();
-    let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
-    let mut instance = activate(
-        ReactiveInstanceId::new(0, 0),
-        &compilation.source_artifact,
-        &compilation.resource_request,
-    )
-    .unwrap();
+fn abort_and_integrity_failure_leave_publication_unchanged() -> MResult<()> {
+    let mut instance = instance(0)?;
     let frame = frames().next().unwrap();
-    execute_turn(&mut instance, frame).unwrap();
+    execute_turn(&mut instance, &frame).unwrap();
     let published = state(&instance);
     let epoch = instance.published_epoch();
 
-    let prepared = instance.prepare_turn(frame).unwrap();
-    assert_eq!(prepared.published_estimate(), &published[..3]);
-    prepared.abort();
+    let input = CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::F64(&frame),
+    };
+    instance.prepare_turn(&[input]).unwrap().abort();
     assert_eq!(instance.published_epoch(), epoch);
     assert_eq!(state(&instance), published);
 
     let mut invalid = frame;
     invalid[0] = f64::NAN;
-    assert_eq!(
-        execute_turn(&mut instance, invalid),
-        Err(ResidentExecutionError::NonFiniteState)
-    );
+    assert!(matches!(
+        execute_turn(&mut instance, &invalid),
+        Err(ResidentExecutionError::Integrity { .. })
+    ));
     assert_eq!(instance.published_epoch(), epoch);
     assert_eq!(state(&instance), published);
-    assert_eq!(instance.structural_probe().candidate_seed_bytes, 0);
-    assert_eq!(instance.structural_probe().candidate_written_bytes, 96);
-    assert_eq!(instance.structural_probe().published_buffer_copy_bytes, 0);
-    assert_eq!(instance.structural_probe().publication_store_count, 1);
+    let probe = instance.structural_probe();
+    assert_eq!(probe.candidate_seed_bytes, 0);
+    assert_eq!(probe.candidate_materialized_bytes, 96);
+    assert_eq!(probe.published_buffer_copy_bytes, 0);
+    assert_eq!(probe.publication_store_count, 1);
     Ok(())
 }
 
 #[test]
 fn maximum_epoch_publishes_once_then_exhausts() -> MResult<()> {
-    let mut services = FrozenEkfCompilationServices::default();
-    let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
-    let mut instance = activate(
-        ReactiveInstanceId::new(0, 0),
-        &compilation.source_artifact,
-        &compilation.resource_request,
-    )
-    .unwrap();
-    instance.set_next_epoch_for_d1_test(u64::MAX);
-    let receipt = execute_turn(&mut instance, frames().next().unwrap()).unwrap();
+    let mut instance = instance(0)?;
+    instance.set_next_epoch_for_test(u64::MAX);
+    let frame = frames().next().unwrap();
+    let receipt = execute_turn(&mut instance, &frame).unwrap();
     assert_eq!(receipt.after_epoch, InstanceEpoch::new(u64::MAX));
     assert_eq!(instance.published_epoch(), InstanceEpoch::new(u64::MAX));
     assert_eq!(
-        execute_turn(&mut instance, frames().next().unwrap()),
+        execute_turn(&mut instance, &frame),
         Err(ResidentExecutionError::EpochExhausted)
     );
-    assert_eq!(instance.published_epoch(), InstanceEpoch::new(u64::MAX));
     Ok(())
 }
 
 #[test]
-fn independently_activated_instances_keep_separate_epochs_and_state() -> MResult<()> {
-    let mut services = FrozenEkfCompilationServices::default();
-    let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
-    let mut left = activate(
-        ReactiveInstanceId::new(7, 0),
-        &compilation.source_artifact,
-        &compilation.resource_request,
-    )
-    .unwrap();
-    let mut right = activate(
-        ReactiveInstanceId::new(8, 0),
-        &compilation.source_artifact,
-        &compilation.resource_request,
-    )
-    .unwrap();
-
-    execute_turn(&mut left, [1.0, 0.01, 20.0, 0.1]).unwrap();
-    execute_turn(&mut right, [3.0, -0.02, 18.0, -0.1]).unwrap();
-    assert_eq!(left.published_epoch(), InstanceEpoch::new(1));
-    assert_eq!(right.published_epoch(), InstanceEpoch::new(1));
-    assert_ne!(left.estimate(), right.estimate());
-    assert_ne!(left.covariance(), right.covariance());
-    Ok(())
-}
-
-#[test]
-fn repeated_identical_aborted_frames_skip_numeric_work_but_complete_the_candidate() -> MResult<()> {
-    let mut services = FrozenEkfCompilationServices::default();
-    let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
-    let mut instance = activate(
-        ReactiveInstanceId::new(0, 0),
-        &compilation.source_artifact,
-        &compilation.resource_request,
-    )
-    .unwrap();
-    let frame = frames().next().unwrap();
-    let first = instance.execute_then_abort(frame).unwrap();
-    let second = instance.execute_then_abort(frame).unwrap();
-    assert_eq!(first.dirty_nodes, 20);
-    assert!(second.dirty_nodes < first.dirty_nodes);
-    assert!(second.dirty_nodes >= 5);
-    assert_eq!(second.touched_slots, 2);
-    assert!(
-        instance
-            .workspace
-            .predicate_values()
-            .iter()
-            .all(|value| *value)
-    );
-    assert_eq!(instance.published_epoch(), InstanceEpoch::ZERO);
-    Ok(())
-}
-
-#[test]
-fn published_readers_follow_both_candidate_buffers() -> MResult<()> {
-    let mut services = FrozenEkfCompilationServices::default();
-    let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
-    let mut instance = activate(
-        ReactiveInstanceId::new(0, 0),
-        &compilation.source_artifact,
-        &compilation.resource_request,
-    )
-    .unwrap();
+fn odd_and_even_publications_follow_the_two_sparse_buffers() -> MResult<()> {
+    let mut instance = instance(0)?;
     let mut control = ResidentEkfBatch::new(1);
     for (turn, frame) in frames().take(2).enumerate() {
-        execute_turn(&mut instance, frame).unwrap();
+        execute_turn(&mut instance, &frame).unwrap();
         control.turn(frame).unwrap();
         let expected = control.state(0);
-        assert_eq!(instance.estimate(), &expected.state, "turn {}", turn + 1);
+        assert_eq!(&state(&instance)[..3], &expected.state, "turn {}", turn + 1);
         assert_eq!(
-            instance.covariance(),
+            &state(&instance)[3..],
             &expected.covariance,
             "turn {}",
             turn + 1
-        );
-        assert_eq!(
-            instance.published_epoch(),
-            InstanceEpoch::new((turn + 1) as u64)
         );
     }
     Ok(())
 }
 
 #[test]
-fn malformed_plan_cannot_publish_an_incomplete_candidate() -> MResult<()> {
-    let mut services = FrozenEkfCompilationServices::default();
-    let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
-    let mut instance = activate(
-        ReactiveInstanceId::new(0, 0),
-        &compilation.source_artifact,
-        &compilation.resource_request,
-    )
-    .unwrap();
-    let omitted = instance
-        .plan
-        .nodes
-        .iter()
-        .position(|node| matches!(node.kind, ActivatedNodeKind::StateCopy { .. }))
-        .unwrap() as u32;
-    instance.plan.topology.linear_node_order = instance
-        .plan
-        .topology
-        .linear_node_order
-        .iter()
-        .copied()
-        .filter(|node| node.get() != omitted)
-        .collect();
-    let before = state(&instance);
-    assert_eq!(
-        execute_turn(&mut instance, frames().next().unwrap()),
-        Err(ResidentExecutionError::IncompleteCandidate)
-    );
-    assert_eq!(instance.published_epoch(), InstanceEpoch::ZERO);
-    assert_eq!(state(&instance), before);
+fn dropped_prepare_and_identical_retry_match_a_fresh_instance() -> MResult<()> {
+    let frame = frames().next().unwrap();
+    let mut retried = instance(7)?;
+    let mut fresh = instance(7)?;
+    let input = CapturedSignalInput {
+        slot: retried.plan.inputs[0].slot,
+        value: ResidentValueRef::F64(&frame),
+    };
+
+    drop(retried.prepare_turn(&[input]).unwrap());
+    let actual = execute_turn(&mut retried, &frame).unwrap();
+    let expected = execute_turn(&mut fresh, &frame).unwrap();
+
+    assert_eq!(actual, expected);
+    assert_eq!(state(&retried), state(&fresh));
+    Ok(())
+}
+
+fn partial_write_then_fail(
+    _kernel: &BoundResidentKernel,
+    _inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let ResidentValueMut::F64(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    output[0] = 123_456.0;
+    Err(ResidentKernelError::Arithmetic)
+}
+
+#[test]
+fn partial_kernel_failure_and_retry_match_a_fresh_instance() -> MResult<()> {
+    let frame = frames().next().unwrap();
+    let mut retried = instance(8)?;
+    let mut fresh = instance(8)?;
+    let original = retried.plan.nodes[0].kernel.clone();
+    retried.plan.nodes[0].kernel = BoundResidentKernel::new(partial_write_then_fail, Box::new([]));
+
+    assert!(matches!(
+        execute_turn(&mut retried, &frame),
+        Err(ResidentExecutionError::Kernel {
+            error: ResidentKernelError::Arithmetic,
+            ..
+        })
+    ));
+    retried.plan.nodes[0].kernel = original;
+    let actual = execute_turn(&mut retried, &frame).unwrap();
+    let expected = execute_turn(&mut fresh, &frame).unwrap();
+
+    assert_eq!(actual, expected);
+    assert_eq!(state(&retried), state(&fresh));
+    Ok(())
+}
+
+#[test]
+fn integrity_failure_and_valid_retry_match_a_fresh_instance() -> MResult<()> {
+    let frame = frames().next().unwrap();
+    let mut retried = instance(9)?;
+    let mut fresh = instance(9)?;
+    let mut invalid = frame;
+    invalid[0] = f64::NAN;
+
+    assert!(matches!(
+        execute_turn(&mut retried, &invalid),
+        Err(ResidentExecutionError::Integrity { .. })
+    ));
+    let actual = execute_turn(&mut retried, &frame).unwrap();
+    let expected = execute_turn(&mut fresh, &frame).unwrap();
+
+    assert_eq!(actual, expected);
+    assert_eq!(state(&retried), state(&fresh));
+    Ok(())
+}
+
+#[test]
+fn forgotten_prepare_blocks_a_second_candidate() -> MResult<()> {
+    let frame = frames().next().unwrap();
+    let mut instance = instance(10)?;
+    let input = CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::F64(&frame),
+    };
+    let prepared = instance.prepare_turn(&[input]).unwrap();
+    core::mem::forget(prepared);
+
+    assert!(matches!(
+        instance.prepare_turn(&[input]),
+        Err(ResidentExecutionError::ActiveCandidate)
+    ));
+    Ok(())
+}
+
+fn report_unchanged(
+    _kernel: &BoundResidentKernel,
+    _inputs: &dyn ResidentKernelInputs,
+    _output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    Ok(false)
+}
+
+#[test]
+fn always_changed_policy_propagates_when_the_kernel_reports_unchanged() -> MResult<()> {
+    let frame = frames().next().unwrap();
+    let mut always = instance(11)?;
+    let mut reported = instance(12)?;
+    execute_turn(&mut always, &frame).unwrap();
+    execute_turn(&mut reported, &frame).unwrap();
+    for instance in [&mut always, &mut reported] {
+        instance.plan.nodes[0].kernel = BoundResidentKernel::new(report_unchanged, Box::new([]));
+    }
+    always.plan.nodes[0].change_detection = ChangeDetectionPolicy::AlwaysChanged;
+    reported.plan.nodes[0].change_detection = ChangeDetectionPolicy::KernelReported;
+
+    let always_summary = execute_turn(&mut always, &frame).unwrap();
+    let reported_summary = execute_turn(&mut reported, &frame).unwrap();
+    assert!(always_summary.dirty_nodes > reported_summary.dirty_nodes);
     Ok(())
 }

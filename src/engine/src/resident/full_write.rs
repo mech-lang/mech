@@ -53,10 +53,9 @@ impl PreparedResidentFullWrite<'_> {
 
 impl Drop for PreparedResidentFullWrite<'_> {
     fn drop(&mut self) {
-        debug_assert!(
-            self.candidate.is_none(),
-            "prepared resident full write must publish or abort explicitly"
-        );
+        if let Some(candidate) = self.candidate.take() {
+            candidate.abort();
+        }
     }
 }
 
@@ -107,10 +106,9 @@ impl PreparedFullWriteCandidate<'_> {
 
 impl Drop for PreparedFullWriteCandidate<'_> {
     fn drop(&mut self) {
-        debug_assert!(
-            self.resident.is_none(),
-            "resident full-write candidate must publish or abort explicitly"
-        );
+        if let Some(resident) = self.resident.take() {
+            resident.buffer_epochs[self.candidate] = None;
+        }
     }
 }
 

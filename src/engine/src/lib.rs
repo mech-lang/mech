@@ -94,6 +94,8 @@ pub mod patterns;
 pub mod program;
 #[cfg(feature = "resident-ekf")]
 mod resident;
+#[cfg(feature = "resident-artifact")]
+mod resident_value_adapter;
 #[cfg(feature = "resident-ekf")]
 #[doc(hidden)]
 pub mod __gate_b_resident {
@@ -117,13 +119,15 @@ pub mod __resident {
         FrozenEkfStateUpdate, FrozenLiveBinding, compile_frozen_ekf_source,
     };
     pub use crate::efficacy::ekf::operation::{EkfKernel, EkfPredicate};
-    pub use crate::resident::ResidentExecutionError;
     pub use crate::resident::general::{
-        ActivatedInput, ActivatedNode, ActivatedNodeIndex, ActivatedOutput, ActivatedPlan,
-        ActivationFacts, DependencyTopology, ReactiveInstance, ResidentActivationError,
-        ResidentArenaSizes, ResidentReadLocation, ResidentRegion, ResidentStorageClass,
-        ResidentValueBorrow, ResidentWriteLocation, ResolvedSlot, StateArena, StateMigrationPolicy,
-        TurnWorkspace, TypedResidentArena, activate,
+        ActivatedConstraint, ActivatedInput, ActivatedNode, ActivatedNodeIndex, ActivatedOutput,
+        ActivatedPlan, ActivationFacts, CapturedSignalInput, DependencyTopology,
+        PreparedResidentTurn, ReactiveInstance, ResidentActivationError, ResidentActivationOptions,
+        ResidentArenaSizes, ResidentExecutionError, ResidentIntegrityMode, ResidentReadLocation,
+        ResidentRegion, ResidentStorageClass, ResidentStructuralProbe, ResidentTurnSummary,
+        ResidentValueBorrow, ResidentWriteLocation, ResolvedSlot, StateArena,
+        StateMigrationMapping, StateMigrationPolicy, TurnWorkspace, TypedResidentArena, activate,
+        activate_with_options,
     };
 }
 #[cfg(all(feature = "source", feature = "state_machines"))]
