@@ -1,18 +1,18 @@
 {
   "b1_progression": {
     "limit_multiplier": 1.05,
-    "limit_ns_per_turn": 259.4620565975414,
+    "limit_ns_per_turn": 259.15305664062504,
     "passed": true,
-    "resident_kernel_ns_per_turn": 93.4269249305382,
-    "resident_kernel_ratio": 0.9125694880345157,
-    "resident_kernel_vs_raw_epoch": 0.37808330228888926,
-    "rust_epoch_ns_per_turn": 247.106720569087,
-    "rust_kernel_ns_per_turn": 102.37787495148487
+    "resident_kernel_ns_per_turn": 104.12783002853394,
+    "resident_kernel_ratio": 1.0292198852076364,
+    "resident_kernel_vs_raw_epoch": 0.4218905342937071,
+    "rust_epoch_ns_per_turn": 246.81243489583335,
+    "rust_kernel_ns_per_turn": 101.1716072776101
   },
   "b2_decision": {
     "conditional_attribution": null,
     "decision": "Pass",
-    "executor_tax_ns": 205.47899276694446,
+    "executor_tax_ns": 193.3042301727981,
     "hard_gates": {
       "constant_publication": true,
       "correctness": true,
@@ -25,16 +25,16 @@
       "tail_stability": true,
       "zero_allocation": true
     },
-    "high_epoch_over_low_epoch_median_ratio": 1.0004910589171292,
-    "history_100k_over_history_0_median_ratio": 1.0012471048428124,
-    "history_1k_over_history_0_median_ratio": 1.0012368330675352,
-    "legacy_gap_closure": 0.9937532389209734,
-    "numpy_ratio": 0.014340457337418656,
+    "high_epoch_over_low_epoch_median_ratio": 0.9988917112932312,
+    "history_100k_over_history_0_median_ratio": 1.0012370743182504,
+    "history_1k_over_history_0_median_ratio": 0.9998534438242548,
+    "legacy_gap_closure": 0.9939035225411831,
+    "numpy_ratio": 0.01404197462637916,
     "numpy_target": true,
-    "raw_epoch_ratio": 1.2096227775962631,
-    "recording_tax_ns": 178.34633534029288,
-    "scheduler_tax_ns": 27.132657426651576,
-    "tail_ratio": 1.0035421793325583
+    "raw_epoch_ratio": 1.205093496714874,
+    "recording_tax_ns": 176.55467619052715,
+    "scheduler_tax_ns": 16.749553982270953,
+    "tail_ratio": 1.0009037332142834
   },
   "benchmark_arguments": [
     "cargo",
@@ -56,22 +56,48 @@
     "--nresamples",
     "10000"
   ],
+  "d1_decision": {
+    "artifact_complete_turn_ratio": 0.5663877057119706,
+    "decision": "Pass",
+    "executor_tax_ns": -128.97019801871485,
+    "hard_gates": {
+      "candidate_contract": true,
+      "complete_turn_control_ratio": true,
+      "correctness": true,
+      "epoch_magnitude_independent": true,
+      "history_independent": true,
+      "legacy_boundaries_unused": true,
+      "legacy_gap_closure": true,
+      "raw_epoch_ratio": true,
+      "recording_contract": true,
+      "source_bytecode_equivalence": true,
+      "zero_allocation": true
+    },
+    "high_epoch_over_low_epoch_median_ratio": 1.0052566064998534,
+    "history_100k_over_history_0_median_ratio": 1.001243122562868,
+    "history_1k_over_history_0_median_ratio": 1.0040053018044792,
+    "kernel_bytecode_ns_per_turn": 112.19294976128472,
+    "kernel_source_ns_per_turn": 112.75489257812501,
+    "legacy_gap_closure": 1.0094363104734327,
+    "raw_epoch_ratio": 0.6825501407727538,
+    "source_bytecode_ratio": 1.005531687178045
+  },
   "derived": {
-    "legacy_denominator_ns_per_turn": 8292.168769238042,
-    "mech_legacy_atomic_ns_per_turn": 8539.275489807129,
+    "legacy_denominator_ns_per_turn": 8303.093982950846,
+    "mech_legacy_atomic_ns_per_turn": 8549.90641784668,
     "positive": true,
-    "rust_epoch_ns_per_turn": 247.106720569087
+    "rust_epoch_ns_per_turn": 246.81243489583335
   },
   "gate": "B",
-  "git_branch": "codex/c4-gateb-review1-b9ee",
-  "git_commit": "b9ee8d1be7633f8b434947b748a810843bbd2144",
+  "git_branch": "feat/resident-ekf-program-artifact-path",
+  "git_commit": "2e52406c28ab3a6c3e6c7c7230bdfffd7ced0f27",
   "lanes": [
     {
       "allocation": {
-        "allocated_bytes_per_turn": 23161.53125,
-        "allocations_per_turn": 211.01318359375,
-        "episode_allocated_bytes": 94869632,
-        "episode_allocation_count": 864310
+        "allocated_bytes_per_turn": 23385.53125,
+        "allocations_per_turn": 212.01318359375,
+        "episode_allocated_bytes": 95787136,
+        "episode_allocation_count": 868406
       },
       "correctness": true,
       "instances": 1,
@@ -99,17 +125,17 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 8539.275489807129,
-        "p95_ns_per_turn": 8567.320759616428
+        "median_ns_per_turn": 8549.90641784668,
+        "p95_ns_per_turn": 8602.480591692243
       },
       "turns_per_sample": 4096
     },
     {
       "allocation": {
-        "allocated_bytes_per_turn": 83361.53125,
-        "allocations_per_turn": 766.01318359375,
-        "episode_allocated_bytes": 341448832,
-        "episode_allocation_count": 3137590
+        "allocated_bytes_per_turn": 83585.53125,
+        "allocations_per_turn": 767.01318359375,
+        "episode_allocated_bytes": 342366336,
+        "episode_allocation_count": 3141686
       },
       "correctness": true,
       "instances": 8,
@@ -137,17 +163,17 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 33708.82340494792,
-        "p95_ns_per_turn": 33759.56905517578
+        "median_ns_per_turn": 33593.04130045573,
+        "p95_ns_per_turn": 33716.56036376953
       },
       "turns_per_sample": 4096
     },
     {
       "allocation": {
-        "allocated_bytes_per_turn": 568019.046875,
-        "allocations_per_turn": 5047.687744140625,
-        "episode_allocated_bytes": 2326606016,
-        "episode_allocation_count": 20675329
+        "allocated_bytes_per_turn": 568718.6875,
+        "allocations_per_turn": 5050.6650390625,
+        "episode_allocated_bytes": 2329471744,
+        "episode_allocation_count": 20687524
       },
       "correctness": true,
       "instances": 64,
@@ -175,17 +201,17 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 306867.4011230469,
-        "p95_ns_per_turn": 308289.8779174805
+        "median_ns_per_turn": 306879.72521972656,
+        "p95_ns_per_turn": 307930.40870361327
       },
       "turns_per_sample": 4096
     },
     {
       "allocation": {
-        "allocated_bytes_per_turn": 115888.349609375,
-        "allocations_per_turn": 143.013671875,
-        "episode_allocated_bytes": 474678680,
-        "episode_allocation_count": 585784
+        "allocated_bytes_per_turn": 116112.349609375,
+        "allocations_per_turn": 144.013671875,
+        "episode_allocated_bytes": 475596184,
+        "episode_allocation_count": 589880
       },
       "correctness": true,
       "instances": 1,
@@ -213,8 +239,274 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 8689.48094482422,
-        "p95_ns_per_turn": 8805.122779235839
+        "median_ns_per_turn": 8873.190280490451,
+        "p95_ns_per_turn": 8904.626986694337
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-artifact-bytecode",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": "e2e191f308cf265b6a7652d11e38ce98f2ec6eab6c74c923ce2efc04b66de59f",
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 20,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 169.39374050564237,
+        "p95_ns_per_turn": 171.74697387695312
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-artifact-kernel-bytecode",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 20,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 112.19294976128472,
+        "p95_ns_per_turn": 112.33341573079427
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-artifact-kernel-source",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": null,
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 20,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": false,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 0,
+        "record_preparation_count": 0,
+        "records_appended": 0,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 112.75489257812501,
+        "p95_ns_per_turn": 113.06640087890625
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-artifact-source",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": "e2e191f308cf265b6a7652d11e38ce98f2ec6eab6c74c923ce2efc04b66de59f",
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 20,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 168.46186218261718,
+        "p95_ns_per_turn": 168.94612097167968
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-artifact-source",
+      "next_epoch": 1000000001,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 0,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": "e2e191f308cf265b6a7652d11e38ce98f2ec6eab6c74c923ce2efc04b66de59f",
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 20,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 0
+      },
+      "timing": {
+        "median_ns_per_turn": 169.34739990234374,
+        "p95_ns_per_turn": 170.27195416259767
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-artifact-source",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 1000,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": "e2e191f308cf265b6a7652d11e38ce98f2ec6eab6c74c923ce2efc04b66de59f",
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 20,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 1000
+      },
+      "timing": {
+        "median_ns_per_turn": 169.13660278320313,
+        "p95_ns_per_turn": 169.58859545898437
+      },
+      "turns_per_sample": 4096
+    },
+    {
+      "allocation": {
+        "allocated_bytes_per_turn": 0.0,
+        "allocations_per_turn": 0.0,
+        "episode_allocated_bytes": 0,
+        "episode_allocation_count": 0
+      },
+      "correctness": true,
+      "instances": 1,
+      "lane": "mech-resident-artifact-source",
+      "next_epoch": 1,
+      "quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "reference_quantized_state_hash": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+      "retained_history": 100000,
+      "sample_count": 10,
+      "structural": {
+        "abort_output_hash": "e2e191f308cf265b6a7652d11e38ce98f2ec6eab6c74c923ce2efc04b66de59f",
+        "candidate_seed_bytes": 0,
+        "candidate_written_bytes": 96,
+        "commit_runtime_call_count": 0,
+        "dirty_node_count": 20,
+        "ledger_records_inspected": 0,
+        "legacy_journal_capture_count": 0,
+        "post_publication_append_infallible": true,
+        "publication_store_count": 1,
+        "published_buffer_copy_bytes": 0,
+        "receipt_bytes": 64,
+        "record_append_count": 1,
+        "record_preparation_count": 1,
+        "records_appended": 4096,
+        "records_retained_before_timing": 100000
+      },
+      "timing": {
+        "median_ns_per_turn": 168.67128092447916,
+        "p95_ns_per_turn": 169.31868831089565
       },
       "turns_per_sample": 4096
     },
@@ -251,8 +543,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 93.4269249305382,
-        "p95_ns_per_turn": 93.48010477559549
+        "median_ns_per_turn": 104.12783002853394,
+        "p95_ns_per_turn": 104.1534510453542
       },
       "turns_per_sample": 4096
     },
@@ -289,8 +581,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 680.9191777547201,
-        "p95_ns_per_turn": 682.4654895310175
+        "median_ns_per_turn": 674.646784532335,
+        "p95_ns_per_turn": 674.9336246490478
       },
       "turns_per_sample": 4096
     },
@@ -327,8 +619,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 5209.637715657553,
-        "p95_ns_per_turn": 5210.628520507812
+        "median_ns_per_turn": 5145.734700520833,
+        "p95_ns_per_turn": 5147.5514597574875
       },
       "turns_per_sample": 4096
     },
@@ -365,8 +657,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 3869.488320486886,
-        "p95_ns_per_turn": 3890.8597938537596
+        "median_ns_per_turn": 3855.734083387587,
+        "p95_ns_per_turn": 3879.83001033238
       },
       "turns_per_sample": 4096
     },
@@ -403,8 +695,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 120.55958235718978,
-        "p95_ns_per_turn": 120.94731405722128
+        "median_ns_per_turn": 120.87738401080489,
+        "p95_ns_per_turn": 121.01823254506522
       },
       "turns_per_sample": 4096
     },
@@ -441,8 +733,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 298.90591769748266,
-        "p95_ns_per_turn": 299.96469606153005
+        "median_ns_per_turn": 297.43206020133204,
+        "p95_ns_per_turn": 297.7008594331287
       },
       "turns_per_sample": 4096
     },
@@ -479,8 +771,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 299.0526981137507,
-        "p95_ns_per_turn": 299.4490066382998
+        "median_ns_per_turn": 297.1024196079799,
+        "p95_ns_per_turn": 297.6648504348028
       },
       "turns_per_sample": 4096
     },
@@ -517,8 +809,8 @@
         "records_retained_before_timing": 1000
       },
       "timing": {
-        "median_ns_per_turn": 299.2756144205729,
-        "p95_ns_per_turn": 300.7956539577908
+        "median_ns_per_turn": 297.3884696960449,
+        "p95_ns_per_turn": 297.7855946350098
       },
       "turns_per_sample": 4096
     },
@@ -555,8 +847,8 @@
         "records_retained_before_timing": 100000
       },
       "timing": {
-        "median_ns_per_turn": 299.27868471498846,
-        "p95_ns_per_turn": 299.439390846535
+        "median_ns_per_turn": 297.80000576443143,
+        "p95_ns_per_turn": 298.253811984592
       },
       "turns_per_sample": 4096
     },
@@ -593,8 +885,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 37018.08166503906,
-        "p95_ns_per_turn": 37189.44684448242
+        "median_ns_per_turn": 37008.32110595703,
+        "p95_ns_per_turn": 37473.16744995117
       },
       "turns_per_sample": 4096
     },
@@ -631,8 +923,8 @@
         "records_retained_before_timing": null
       },
       "timing": {
-        "median_ns_per_turn": 20843.54150390625,
-        "p95_ns_per_turn": 20957.72492675781
+        "median_ns_per_turn": 21181.640625,
+        "p95_ns_per_turn": 21253.4509765625
       },
       "turns_per_sample": 4096
     },
@@ -669,8 +961,8 @@
         "records_retained_before_timing": null
       },
       "timing": {
-        "median_ns_per_turn": 163181.47265625,
-        "p95_ns_per_turn": 163418.05047607422
+        "median_ns_per_turn": 164228.03759765625,
+        "p95_ns_per_turn": 165632.55725097656
       },
       "turns_per_sample": 4096
     },
@@ -707,8 +999,8 @@
         "records_retained_before_timing": null
       },
       "timing": {
-        "median_ns_per_turn": 1303862.3657226562,
-        "p95_ns_per_turn": 1316001.6709106446
+        "median_ns_per_turn": 1306440.958618164,
+        "p95_ns_per_turn": 1315970.198059082
       },
       "turns_per_sample": 4096
     },
@@ -745,8 +1037,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 247.106720569087,
-        "p95_ns_per_turn": 248.11927915086932
+        "median_ns_per_turn": 246.81243489583335,
+        "p95_ns_per_turn": 247.9807767681047
       },
       "turns_per_sample": 4096
     },
@@ -783,8 +1075,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 1399.1814971923827,
-        "p95_ns_per_turn": 1400.8352124023438
+        "median_ns_per_turn": 1388.7336157226564,
+        "p95_ns_per_turn": 1389.243331841363
       },
       "turns_per_sample": 4096
     },
@@ -821,8 +1113,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 10606.149037679035,
-        "p95_ns_per_turn": 10632.687222595214
+        "median_ns_per_turn": 10495.874769422742,
+        "p95_ns_per_turn": 10521.298532104493
       },
       "turns_per_sample": 4096
     },
@@ -859,8 +1151,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 34908.281046549484,
-        "p95_ns_per_turn": 35207.64934895834
+        "median_ns_per_turn": 34902.560791015625,
+        "p95_ns_per_turn": 34960.403987630205
       },
       "turns_per_sample": 4096
     },
@@ -897,8 +1189,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 102.37787495148487,
-        "p95_ns_per_turn": 103.2909005033053
+        "median_ns_per_turn": 101.1716072776101,
+        "p95_ns_per_turn": 103.50657187457725
       },
       "turns_per_sample": 4096
     },
@@ -935,8 +1227,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 775.6685904851036,
-        "p95_ns_per_turn": 776.35912238227
+        "median_ns_per_turn": 767.3066092597114,
+        "p95_ns_per_turn": 770.0308629014756
       },
       "turns_per_sample": 4096
     },
@@ -973,8 +1265,8 @@
         "records_retained_before_timing": 0
       },
       "timing": {
-        "median_ns_per_turn": 6197.337131076389,
-        "p95_ns_per_turn": 6202.741114908854
+        "median_ns_per_turn": 6146.868930069858,
+        "p95_ns_per_turn": 6151.462615559896
       },
       "turns_per_sample": 4096
     }
@@ -985,9 +1277,9 @@
     "os": "macOS-26.2-arm64-arm-64bit"
   },
   "phase": "B2-resident-turn",
-  "raw_criterion_directory": "/private/tmp/mech-c4-gateb-final/target/criterion",
-  "raw_output": "/private/tmp/mech-c4-gateb-final/target/gate-b-benchmark-runs/b9ee8d1be7633f8b434947b748a810843bbd2144/b0-controls.log",
-  "raw_structural_probe_output": "/private/tmp/mech-c4-gateb-final/target/gate-b-benchmark-runs/b9ee8d1be7633f8b434947b748a810843bbd2144/b0-structural.log",
+  "raw_criterion_directory": "/private/tmp/mech-d1a/target/criterion",
+  "raw_output": "/private/tmp/mech-d1a/target/gate-b-benchmark-runs/2e52406c28ab3a6c3e6c7c7230bdfffd7ced0f27/b0-controls.log",
+  "raw_structural_probe_output": "/private/tmp/mech-d1a/target/gate-b-benchmark-runs/2e52406c28ab3a6c3e6c7c7230bdfffd7ced0f27/b0-structural.log",
   "sample_protocol": {
     "correctness_included_in_timing": false,
     "criterion_sample_size": 10,
@@ -1031,7 +1323,7 @@
     "numpy": "2.0.2",
     "numpy_config": "{\n  \"Compilers\": {\n    \"c\": {\n      \"name\": \"clang\",\n      \"linker\": \"ld64\",\n      \"version\": \"15.0.0\",\n      \"commands\": \"cc\"\n    },\n    \"cython\": {\n      \"name\": \"cython\",\n      \"linker\": \"cython\",\n      \"version\": \"3.0.11\",\n      \"commands\": \"cython\"\n    },\n    \"c++\": {\n      \"name\": \"clang\",\n      \"linker\": \"ld64\",\n      \"version\": \"15.0.0\",\n      \"commands\": \"c++\"\n    }\n  },\n  \"Machine Information\": {\n    \"host\": {\n      \"cpu\": \"aarch64\",\n      \"family\": \"aarch64\",\n      \"endian\": \"little\",\n      \"system\": \"darwin\"\n    },\n    \"build\": {\n      \"cpu\": \"aarch64\",\n      \"family\": \"aarch64\",\n      \"endian\": \"little\",\n      \"system\": \"darwin\"\n    }\n  },\n  \"Build Dependencies\": {\n    \"blas\": {\n      \"name\": \"accelerate\",\n      \"found\": true,\n      \"version\": \"unknown\",\n      \"detection method\": \"system\",\n      \"include directory\": \"unknown\",\n      \"lib directory\": \"unknown\",\n      \"openblas configuration\": \"unknown\",\n      \"pc file directory\": \"unknown\"\n    },\n    \"lapack\": {\n      \"name\": \"accelerate\",\n      \"found\": true,\n      \"version\": \"unknown\",\n      \"detection method\": \"system\",\n      \"include directory\": \"unknown\",\n      \"lib directory\": \"unknown\",\n      \"openblas configuration\": \"unknown\",\n      \"pc file directory\": \"unknown\"\n    }\n  },\n  \"Python Information\": {\n    \"path\": \"/private/var/folders/4d/0gnh84wj53j7wyk695q0tc_80000gn/T/build-env-kq4kuj35/bin/python\",\n    \"version\": \"3.9\"\n  },\n  \"SIMD Extensions\": {\n    \"baseline\": [\n      \"NEON\",\n      \"NEON_FP16\",\n      \"NEON_VFPV4\",\n      \"ASIMD\"\n    ],\n    \"found\": [\n      \"ASIMDHP\"\n    ],\n    \"not found\": [\n      \"ASIMDFHM\"\n    ]\n  }\n}",
     "python": "3.9.6",
-    "python_executable": "/private/tmp/mech-gate-b-venv/bin/python",
+    "python_executable": "target/gate-b-venv/bin/python",
     "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0"
   },
   "trace": {
