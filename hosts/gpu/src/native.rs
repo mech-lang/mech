@@ -1,6 +1,7 @@
 use std::{
     collections::BTreeMap,
     fmt,
+    sync::Arc,
     sync::mpsc,
     time::{Duration, Instant},
 };
@@ -21,6 +22,11 @@ pub enum GpuExecutionError {
     },
     BufferMap(String),
     ChannelClosed,
+    InvalidFeedback(String),
+    WorkgroupLimit {
+        required: u32,
+        supported: u32,
+    },
 }
 
 impl fmt::Display for GpuExecutionError {
@@ -38,6 +44,29 @@ pub struct GpuExecutionProfile {
     pub pipeline_and_upload: Duration,
     pub dispatch_and_readback: Duration,
     pub total: Duration,
+    pub outputs: BTreeMap<String, Vec<f32>>,
+}
+
+#[derive(Debug)]
+pub struct ResidentGpuSession {
+    adapter: String,
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    pipeline: wgpu::ComputePipeline,
+    bind_groups: [wgpu::BindGroup; 2],
+    output_buffers: [BTreeMap<String, Arc<wgpu::Buffer>>; 2],
+    output_elements: BTreeMap<String, u64>,
+    workgroups: u32,
+    next_group: usize,
+    last_output_group: Option<usize>,
+}
+
+#[derive(Clone, Debug)]
+pub struct ResidentDispatchProfile {
+    pub adapter: String,
+    pub turns: u32,
+    pub dispatch: Duration,
+    pub readback: Duration,
     pub outputs: BTreeMap<String, Vec<f32>>,
 }
 
@@ -247,6 +276,338 @@ impl GpuProgram {
             pipeline_and_upload,
             dispatch_and_readback: dispatch_started.elapsed(),
             total: total_started.elapsed(),
+            outputs,
+        })
+    }
+
+    pub fn prepare_resident(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+        feedback: &BTreeMap<String, String>,
+    ) -> Result<ResidentGpuSession, GpuExecutionError> {
+        pollster::block_on(self.prepare_resident_async(inputs, feedback))
+    }
+
+    pub async fn prepare_resident_async(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+        feedback: &BTreeMap<String, String>,
+    ) -> Result<ResidentGpuSession, GpuExecutionError> {
+        let instance = wgpu::Instance::default();
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                compatible_surface: None,
+                force_fallback_adapter: false,
+            })
+            .await
+            .ok_or(GpuExecutionError::AdapterUnavailable)?;
+        let adapter_info = adapter.get_info();
+        let adapter_name = format!("{} ({:?})", adapter_info.name, adapter_info.backend);
+        let adapter_limits = adapter.limits();
+        let required_storage_buffers = self.bindings.len() as u32;
+        if required_storage_buffers > adapter_limits.max_storage_buffers_per_shader_stage {
+            return Err(GpuExecutionError::DeviceRequest(format!(
+                "kernel needs {required_storage_buffers} storage buffers, adapter supports {}",
+                adapter_limits.max_storage_buffers_per_shader_stage
+            )));
+        }
+        let workgroups = self.workgroup_count();
+        if workgroups > adapter_limits.max_compute_workgroups_per_dimension {
+            return Err(GpuExecutionError::WorkgroupLimit {
+                required: workgroups,
+                supported: adapter_limits.max_compute_workgroups_per_dimension,
+            });
+        }
+        let required_limits = wgpu::Limits {
+            max_storage_buffers_per_shader_stage: required_storage_buffers,
+            ..wgpu::Limits::downlevel_defaults()
+        };
+        let (device, queue) = adapter
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    label: Some("Mech resident GPU program"),
+                    required_features: wgpu::Features::empty(),
+                    required_limits,
+                },
+                None,
+            )
+            .await
+            .map_err(|error| GpuExecutionError::DeviceRequest(error.to_string()))?;
+
+        let output_bindings = self
+            .bindings
+            .iter()
+            .filter(|binding| binding.access == GpuBindingAccess::ReadWrite)
+            .map(|binding| (binding.name.as_str(), binding))
+            .collect::<BTreeMap<_, _>>();
+        let input_bindings = self
+            .bindings
+            .iter()
+            .filter(|binding| binding.access == GpuBindingAccess::Read)
+            .map(|binding| (binding.name.as_str(), binding))
+            .collect::<BTreeMap<_, _>>();
+        for (output, input) in feedback {
+            let output_binding = output_bindings.get(output.as_str()).ok_or_else(|| {
+                GpuExecutionError::InvalidFeedback(format!("unknown output {output}"))
+            })?;
+            let input_binding = input_bindings.get(input.as_str()).ok_or_else(|| {
+                GpuExecutionError::InvalidFeedback(format!("unknown input {input}"))
+            })?;
+            if output_binding.elements != input_binding.elements {
+                return Err(GpuExecutionError::InvalidFeedback(format!(
+                    "{output} has {} elements but {input} has {}",
+                    output_binding.elements, input_binding.elements
+                )));
+            }
+        }
+
+        let feedback_by_input = feedback
+            .iter()
+            .map(|(output, input)| (input.as_str(), output.as_str()))
+            .collect::<BTreeMap<_, _>>();
+        if feedback_by_input.len() != feedback.len() {
+            return Err(GpuExecutionError::InvalidFeedback(
+                "multiple outputs target the same input".to_owned(),
+            ));
+        }
+
+        let mut state_buffers = BTreeMap::new();
+        let mut fixed_buffers = BTreeMap::new();
+        for binding in self
+            .bindings
+            .iter()
+            .filter(|binding| binding.access == GpuBindingAccess::Read)
+        {
+            let values = inputs
+                .get(&binding.name)
+                .ok_or_else(|| GpuExecutionError::MissingInput(binding.name.clone()))?;
+            if values.len() != binding.elements as usize {
+                return Err(GpuExecutionError::InputLength {
+                    name: binding.name.clone(),
+                    expected: binding.elements,
+                    actual: values.len(),
+                });
+            }
+            let usage = if feedback_by_input.contains_key(binding.name.as_str()) {
+                wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC
+            } else {
+                wgpu::BufferUsages::STORAGE
+            };
+            let initial = Arc::new(
+                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some(&binding.name),
+                    contents: bytemuck::cast_slice(values),
+                    usage,
+                }),
+            );
+            if feedback_by_input.contains_key(binding.name.as_str()) {
+                let alternate = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("Mech resident alternate state"),
+                    size: binding.elements * std::mem::size_of::<f32>() as u64,
+                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                    mapped_at_creation: false,
+                }));
+                state_buffers.insert(binding.name.as_str(), [initial, alternate]);
+            } else {
+                fixed_buffers.insert(binding.name.as_str(), initial);
+            }
+        }
+
+        let mut group_buffers: [Vec<Arc<wgpu::Buffer>>; 2] = [Vec::new(), Vec::new()];
+        let mut output_buffers: [BTreeMap<String, Arc<wgpu::Buffer>>; 2] =
+            [BTreeMap::new(), BTreeMap::new()];
+        let mut output_elements = BTreeMap::new();
+        for binding in &self.bindings {
+            match binding.access {
+                GpuBindingAccess::Read => {
+                    if let Some(buffers) = state_buffers.get(binding.name.as_str()) {
+                        group_buffers[0].push(buffers[0].clone());
+                        group_buffers[1].push(buffers[1].clone());
+                    } else {
+                        let buffer = fixed_buffers[&binding.name.as_str()].clone();
+                        group_buffers[0].push(buffer.clone());
+                        group_buffers[1].push(buffer);
+                    }
+                }
+                GpuBindingAccess::ReadWrite => {
+                    if let Some(input) = feedback.get(&binding.name) {
+                        let buffers = &state_buffers[input.as_str()];
+                        group_buffers[0].push(buffers[1].clone());
+                        group_buffers[1].push(buffers[0].clone());
+                        output_buffers[0].insert(binding.name.clone(), buffers[1].clone());
+                        output_buffers[1].insert(binding.name.clone(), buffers[0].clone());
+                    } else {
+                        let buffer = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
+                            label: Some(&binding.name),
+                            size: binding.elements * std::mem::size_of::<f32>() as u64,
+                            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                            mapped_at_creation: false,
+                        }));
+                        group_buffers[0].push(buffer.clone());
+                        group_buffers[1].push(buffer.clone());
+                        output_buffers[0].insert(binding.name.clone(), buffer.clone());
+                        output_buffers[1].insert(binding.name.clone(), buffer);
+                    }
+                    output_elements.insert(binding.name.clone(), binding.elements);
+                }
+            }
+        }
+
+        let layout_entries = self
+            .bindings
+            .iter()
+            .map(|binding| wgpu::BindGroupLayoutEntry {
+                binding: binding.binding,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage {
+                        read_only: binding.access == GpuBindingAccess::Read,
+                    },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            })
+            .collect::<Vec<_>>();
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Mech resident GPU bindings"),
+            entries: &layout_entries,
+        });
+        let bind_groups = [0, 1].map(|group| {
+            let entries = self
+                .bindings
+                .iter()
+                .zip(&group_buffers[group])
+                .map(|(binding, buffer)| wgpu::BindGroupEntry {
+                    binding: binding.binding,
+                    resource: buffer.as_entire_binding(),
+                })
+                .collect::<Vec<_>>();
+            device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("Mech resident GPU bind group"),
+                layout: &bind_group_layout,
+                entries: &entries,
+            })
+        });
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Generated resident Mech WGSL"),
+            source: wgpu::ShaderSource::Wgsl(self.wgsl.clone().into()),
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Mech resident GPU pipeline layout"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
+        let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("Mech resident GPU pipeline"),
+            layout: Some(&pipeline_layout),
+            module: &shader,
+            entry_point: "main",
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        });
+
+        Ok(ResidentGpuSession {
+            adapter: adapter_name,
+            device,
+            queue,
+            pipeline,
+            bind_groups,
+            output_buffers,
+            output_elements,
+            workgroups,
+            next_group: 0,
+            last_output_group: None,
+        })
+    }
+}
+
+impl ResidentGpuSession {
+    pub fn dispatch_turns(&mut self, turns: u32) -> Result<Duration, GpuExecutionError> {
+        if turns == 0 {
+            return Err(GpuExecutionError::InvalidFeedback(
+                "resident dispatch needs at least one turn".to_owned(),
+            ));
+        }
+        let started = Instant::now();
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Mech resident GPU turns"),
+            });
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("Mech resident GPU compute pass"),
+                timestamp_writes: None,
+            });
+            pass.set_pipeline(&self.pipeline);
+            for _ in 0..turns {
+                let group = self.next_group;
+                pass.set_bind_group(0, &self.bind_groups[group], &[]);
+                pass.dispatch_workgroups(self.workgroups, 1, 1);
+                self.last_output_group = Some(group);
+                self.next_group = 1 - group;
+            }
+        }
+        self.queue.submit(Some(encoder.finish()));
+        self.device.poll(wgpu::Maintain::Wait);
+        Ok(started.elapsed())
+    }
+
+    pub fn read_outputs(
+        &self,
+    ) -> Result<(Duration, BTreeMap<String, Vec<f32>>), GpuExecutionError> {
+        let group = self.last_output_group.ok_or_else(|| {
+            GpuExecutionError::InvalidFeedback("no resident turns have run".to_owned())
+        })?;
+        let started = Instant::now();
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Mech resident GPU readback"),
+            });
+        let mut readbacks = Vec::new();
+        for (name, buffer) in &self.output_buffers[group] {
+            let size = self.output_elements[name] * std::mem::size_of::<f32>() as u64;
+            let readback = self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("Mech resident GPU readback buffer"),
+                size,
+                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                mapped_at_creation: false,
+            });
+            encoder.copy_buffer_to_buffer(buffer, 0, &readback, 0, size);
+            readbacks.push((name.clone(), readback));
+        }
+        self.queue.submit(Some(encoder.finish()));
+
+        let mut outputs = BTreeMap::new();
+        for (name, readback) in readbacks {
+            let slice = readback.slice(..);
+            let (sender, receiver) = mpsc::channel();
+            slice.map_async(wgpu::MapMode::Read, move |result| {
+                let _ = sender.send(result);
+            });
+            self.device.poll(wgpu::Maintain::Wait);
+            receiver
+                .recv()
+                .map_err(|_| GpuExecutionError::ChannelClosed)?
+                .map_err(|error| GpuExecutionError::BufferMap(error.to_string()))?;
+            let mapped = slice.get_mapped_range();
+            outputs.insert(name, bytemuck::cast_slice::<u8, f32>(&mapped).to_vec());
+            drop(mapped);
+            readback.unmap();
+        }
+        Ok((started.elapsed(), outputs))
+    }
+
+    pub fn run_turns(&mut self, turns: u32) -> Result<ResidentDispatchProfile, GpuExecutionError> {
+        let dispatch = self.dispatch_turns(turns)?;
+        let (readback, outputs) = self.read_outputs()?;
+        Ok(ResidentDispatchProfile {
+            adapter: self.adapter.clone(),
+            turns,
+            dispatch,
+            readback,
             outputs,
         })
     }

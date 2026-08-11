@@ -26,10 +26,8 @@ fn compile_source(
     }
     program.run_string(source).expect("source must run");
     program
-        .compile_program_product()
+        .compile_program_artifact()
         .expect("source must compile")
-        .into_parts()
-        .0
 }
 
 fn particle_inputs() -> Vec<(&'static str, LegacyValue)> {
@@ -46,10 +44,7 @@ fn particle_inputs() -> Vec<(&'static str, LegacyValue)> {
             "host-velocities",
             LegacyValue::MatrixF32(Matrix::from_vec(vec![0.0; 8], 4, 2)),
         ),
-        (
-            "host-origin",
-            LegacyValue::MatrixF32(Matrix::from_vec(vec![0.0; 8], 4, 2)),
-        ),
+        ("host-origin", LegacyValue::F32(Ref::new(0.0))),
         ("host-attraction", LegacyValue::F32(Ref::new(0.5))),
         ("host-drag", LegacyValue::F32(Ref::new(0.9))),
         ("host-dt", LegacyValue::F32(Ref::new(0.1))),
@@ -59,6 +54,11 @@ fn particle_inputs() -> Vec<(&'static str, LegacyValue)> {
 #[test]
 fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());
+    assert!(
+        artifact.constants().is_empty(),
+        "unexpected retained constants: {}",
+        artifact.constants().len()
+    );
     let program = GpuHost
         .compile(&artifact)
         .unwrap_or_else(|error| panic!("particle source must be admitted: {error}"));
@@ -79,7 +79,7 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
         vec![1.0, -1.0, 2.0, -2.0, 0.5, -0.5, 4.0, -4.0],
     );
     inputs.insert("velocities".to_owned(), vec![0.0; 8]);
-    inputs.insert("origin".to_owned(), vec![0.0; 8]);
+    inputs.insert("origin".to_owned(), vec![0.0]);
     inputs.insert("attraction".to_owned(), vec![0.5]);
     inputs.insert("drag".to_owned(), vec![0.9]);
     inputs.insert("dt".to_owned(), vec![0.1]);
@@ -106,7 +106,7 @@ fn native_gpu_matches_the_cpu_backend_when_an_adapter_is_available() {
             vec![1.0, -1.0, 2.0, -2.0, 0.5, -0.5, 4.0, -4.0],
         ),
         ("velocities".to_owned(), vec![0.0; 8]),
-        ("origin".to_owned(), vec![0.0; 8]),
+        ("origin".to_owned(), vec![0.0]),
         ("attraction".to_owned(), vec![0.5]),
         ("drag".to_owned(), vec![0.9]),
         ("dt".to_owned(), vec![0.1]),
@@ -124,6 +124,55 @@ fn native_gpu_matches_the_cpu_backend_when_an_adapter_is_available() {
     for (name, cpu_values) in cpu {
         assert_close(&gpu[&name], &cpu_values);
     }
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn resident_gpu_feeds_particle_outputs_into_the_next_turn() {
+    let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());
+    let program = GpuHost
+        .compile(&artifact)
+        .expect("particle source must be admitted");
+    let mut inputs = BTreeMap::from([
+        (
+            "positions".to_owned(),
+            vec![1.0, -1.0, 2.0, -2.0, 0.5, -0.5, 4.0, -4.0],
+        ),
+        ("velocities".to_owned(), vec![0.0; 8]),
+        ("origin".to_owned(), vec![0.0]),
+        ("attraction".to_owned(), vec![0.5]),
+        ("drag".to_owned(), vec![0.9]),
+        ("dt".to_owned(), vec![0.1]),
+    ]);
+    for _ in 0..3 {
+        let outputs = program.run_cpu(&inputs).expect("CPU turn must run");
+        inputs.insert("positions".to_owned(), outputs["result.0"].clone());
+        inputs.insert("velocities".to_owned(), outputs["result.1"].clone());
+    }
+
+    let initial_inputs = BTreeMap::from([
+        (
+            "positions".to_owned(),
+            vec![1.0, -1.0, 2.0, -2.0, 0.5, -0.5, 4.0, -4.0],
+        ),
+        ("velocities".to_owned(), vec![0.0; 8]),
+        ("origin".to_owned(), vec![0.0]),
+        ("attraction".to_owned(), vec![0.5]),
+        ("drag".to_owned(), vec![0.9]),
+        ("dt".to_owned(), vec![0.1]),
+    ]);
+    let feedback = BTreeMap::from([
+        ("result.0".to_owned(), "positions".to_owned()),
+        ("result.1".to_owned(), "velocities".to_owned()),
+    ]);
+    let mut resident = match program.prepare_resident(&initial_inputs, &feedback) {
+        Ok(resident) => resident,
+        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
+        Err(error) => panic!("resident GPU preparation failed: {error}"),
+    };
+    let gpu = resident.run_turns(3).expect("resident turns must run");
+    assert_close(&gpu.outputs["result.0"], &inputs["positions"]);
+    assert_close(&gpu.outputs["result.1"], &inputs["velocities"]);
 }
 
 #[test]

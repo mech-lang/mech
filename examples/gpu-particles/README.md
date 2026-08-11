@@ -34,9 +34,13 @@ Benchmark the generated CPU and GPU executors in release mode with:
 
 ```text
 cargo run -p mech-gpu --release --features native \
-  --example particle_benchmark -- 50000 20 7
+  --example particle_benchmark -- 2000000 2 2 120
 ```
 
-This is currently a one-shot GPU measurement. Each sample recreates the device,
-pipeline, buffers, and full output readback. It is deliberately not presented
-as the eventual resident-loop performance.
+On the measured Apple M1, two million particles completed 120 resident turns at
+1.703 ms per turn, or 1.174 billion particle-turns per second. The final full
+readback took 15.852 ms and sampled recurrence error was 5.96e-8.
+
+The benchmark reports the older one-shot path separately. Resident turns keep
+the pipeline and particle state on the GPU, alternate the two state-buffer
+sets, and perform one readback after the measured loop.
