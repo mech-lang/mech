@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 mech-core = { path = "../../../src/core", default-features = false, features = ["program", "std"] }
-mech-engine = { path = "../../../src/engine", default-features = false, features = ["compiler"] }
+mech-engine = { path = "../../../src/engine", default-features = false, features = ["resident-artifact"] }
 mech-stdlib = { path = "../../../src/stdlib", default-features = false, features = ["full_compiler"] }
 
 [patch.crates-io]

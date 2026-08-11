@@ -54,7 +54,7 @@ static PURE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclar
         interaction: ExternalInteraction::Pure,
     });
 
-#[cfg(feature = "resident-ekf-artifact")]
+#[cfg(feature = "resident-artifact")]
 pub(crate) fn install_frozen_ekf_state_runtime(
     builder: &mut FunctionCatalogBuilder,
 ) -> MResult<()> {

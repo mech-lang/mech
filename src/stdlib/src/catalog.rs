@@ -55,6 +55,8 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "mech-combinatorics")]
     mech_combinatorics::install_runtime(builder)?;
 
+    mech_engine::install_intrinsic_resident(builder)?;
+
     Ok(())
 }
 

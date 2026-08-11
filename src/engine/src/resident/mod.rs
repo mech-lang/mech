@@ -4,11 +4,11 @@ mod artifact;
 pub(crate) mod bench;
 mod candidate;
 mod full_write;
+#[cfg(feature = "resident-artifact")]
+pub(crate) mod general;
 mod kernel;
-#[cfg(feature = "resident-ekf-artifact")]
-pub(crate) mod program_activation;
-#[cfg(feature = "resident-ekf-artifact")]
-pub(crate) mod program_execution;
+#[cfg(feature = "resident-artifact")]
+pub(crate) mod numeric;
 mod workspace;
 mod efficacy {
     pub(crate) mod ekf;

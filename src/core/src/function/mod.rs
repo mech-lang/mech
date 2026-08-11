@@ -1,10 +1,12 @@
 pub mod argument;
 pub mod catalog;
 pub mod contract;
+pub mod resident;
 pub mod signature;
 pub use argument::*;
 pub use catalog::*;
 pub use contract::*;
+pub use resident::*;
 pub use signature::*;
 
 use crate::legacy_value::*;

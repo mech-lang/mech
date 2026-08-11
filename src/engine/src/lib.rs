@@ -106,9 +106,9 @@ pub mod __gate_b_resident {
         FULL_WRITE_ELEMENTS, PreparedResidentFullWrite, ResidentExecutionError, ResidentFullWrite,
     };
 }
-#[cfg(feature = "resident-ekf-artifact")]
+#[cfg(feature = "resident-artifact")]
 #[doc(hidden)]
-pub mod __gate_d {
+pub mod __resident {
     pub use crate::efficacy::ekf::catalog::frozen_ekf_compiler_catalog;
     pub use crate::efficacy::ekf::closure::{
         FrozenEkfArtifactClosure, FrozenEkfArtifactClosureError, FrozenEkfCompilation,
@@ -118,16 +118,12 @@ pub mod __gate_d {
     };
     pub use crate::efficacy::ekf::operation::{EkfKernel, EkfPredicate};
     pub use crate::resident::ResidentExecutionError;
-    pub use crate::resident::program_activation::{
-        ActivatedConstraint, ActivatedInput, ActivatedNode, ActivatedNodeIndex, ActivatedNodeKind,
-        ActivatedOutput, ActivatedPlan, ActivatedRead, ActivatedReadLocation, ActivatedWrite,
-        ActivationProjection, DependencyTopology, EkfPredicateSlot, EkfScratchSlot,
-        ReactiveInstance, ResidentActivationError, ResidentStorageLocation, ResolvedSlot,
-        StateArena, TurnWorkspace, activate,
-    };
-    pub use crate::resident::program_execution::{
-        PreparedResidentTurn as PreparedArtifactResidentTurn, ResidentStructuralProbe,
-        ResidentTurnSummary,
+    pub use crate::resident::general::{
+        ActivatedInput, ActivatedNode, ActivatedNodeIndex, ActivatedOutput, ActivatedPlan,
+        ActivationFacts, DependencyTopology, ReactiveInstance, ResidentActivationError,
+        ResidentArenaSizes, ResidentReadLocation, ResidentRegion, ResidentStorageClass,
+        ResidentValueBorrow, ResidentWriteLocation, ResolvedSlot, StateArena, StateMigrationPolicy,
+        TurnWorkspace, TypedResidentArena, activate,
     };
 }
 #[cfg(all(feature = "source", feature = "state_machines"))]

@@ -1,120 +1,98 @@
-#![cfg(feature = "resident-ekf-artifact")]
+#![cfg(feature = "resident-artifact")]
 
 use mech_core::{InstanceEpoch, MResult, ReactiveInstanceId};
-use mech_engine::__gate_d::{
-    ActivatedNodeKind, FrozenEkfCompilationServices, ResidentActivationError, activate,
-    compile_frozen_ekf_source,
+use mech_engine::__resident::{
+    ActivationFacts, FrozenEkfCompilationServices, ResidentStorageClass, ResidentValueBorrow,
+    activate, compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
 
 const SOURCE: &str =
     include_str!("../../../tests/architecture/resident-activation/ekf-source-v1.mec");
 
+fn f64_state(instance: &mech_engine::__resident::ReactiveInstance) -> Vec<Vec<f64>> {
+    instance
+        .plan
+        .slots
+        .iter()
+        .filter(|slot| slot.storage == ResidentStorageClass::State)
+        .map(
+            |slot| match instance.state_borrow(slot.artifact_id).unwrap() {
+                ResidentValueBorrow::F64 { values, .. } => values.to_vec(),
+                _ => panic!("frozen EKF state is f64"),
+            },
+        )
+        .collect()
+}
+
 #[test]
-fn public_artifact_activates_into_typed_resident_storage_without_a_turn() -> MResult<()> {
+fn public_ekf_artifact_activates_into_generic_storage_without_a_turn() -> MResult<()> {
     let mut services = FrozenEkfCompilationServices::default();
     let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
+    let catalog = frozen_ekf_compiler_catalog()?;
     let instance = activate(
         ReactiveInstanceId::new(7, 3),
         &compilation.source_artifact,
-        &compilation.resource_request,
+        &catalog,
+        &ActivationFacts::default(),
     )
-    .expect("closed public artifact activates");
+    .expect("closed public EKF artifact activates through the generic path");
 
     assert_eq!(instance.id, ReactiveInstanceId::new(7, 3));
     assert_eq!(
         instance.plan.program_revision,
-        compilation.source_closure.program_revision
+        compilation.source_artifact.revision()
     );
     assert_eq!(instance.plan.nodes.len(), 20);
-    assert_eq!(
-        instance
-            .plan
-            .nodes
-            .iter()
-            .filter(|node| matches!(node.kind, ActivatedNodeKind::Kernel(_)))
-            .count(),
-        15
-    );
-    assert_eq!(
-        instance
-            .plan
-            .nodes
-            .iter()
-            .filter(|node| matches!(node.kind, ActivatedNodeKind::Predicate(_)))
-            .count(),
-        3
-    );
-    assert_eq!(
-        instance
-            .plan
-            .nodes
-            .iter()
-            .filter(|node| matches!(node.kind, ActivatedNodeKind::StateCopy { .. }))
-            .count(),
-        2
-    );
-    assert_eq!(instance.plan.constraints.len(), 3);
-    assert_eq!(instance.estimate(), &[2.0, 1.0, 0.15]);
-    assert_eq!(
-        instance.covariance(),
-        &[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.05]
-    );
+    assert!(instance.plan.activation_nodes.is_empty());
+    assert_eq!(instance.plan.inputs.len(), 1);
+    assert_eq!(instance.plan.outputs.len(), 1);
     assert_eq!(instance.state.candidate_bytes(), 96);
+    assert_eq!(instance.state.dual_payload_bytes(), 192);
     assert_eq!(instance.published_epoch(), InstanceEpoch::ZERO);
     assert_eq!(instance.next_epoch(), Some(InstanceEpoch::new(1)));
-    assert_eq!(instance.workspace.input(), &[0.0; 4]);
-    assert_eq!(instance.workspace.predicate_values(), &[false; 3]);
-    assert_eq!(instance.workspace.executed_node_count(), 0);
+
+    let state = f64_state(&instance);
+    assert_eq!(state.len(), 2);
+    assert!(state.contains(&vec![2.0, 1.0, 0.15]));
+    assert!(state.contains(&vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.05]));
     Ok(())
 }
 
 #[test]
-fn repeated_source_and_bytecode_activation_have_one_logical_projection() -> MResult<()> {
+fn source_and_bytecode_ekf_activation_have_one_generic_layout() -> MResult<()> {
     let mut services = FrozenEkfCompilationServices::default();
     let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
+    let catalog = frozen_ekf_compiler_catalog()?;
     let id = ReactiveInstanceId::new(1, 0);
-    let left = activate(
+    let source = activate(
         id,
         &compilation.source_artifact,
-        &compilation.resource_request,
+        &catalog,
+        &ActivationFacts::default(),
     )
-    .expect("source artifact activates");
+    .unwrap();
     let repeated = activate(
         id,
         &compilation.source_artifact,
-        &compilation.resource_request,
+        &catalog,
+        &ActivationFacts::default(),
     )
-    .expect("source artifact activates repeatedly");
+    .unwrap();
     let decoded = activate(
         id,
         &compilation.decoded_artifact,
-        &compilation.resource_request,
+        &catalog,
+        &ActivationFacts::default(),
     )
-    .expect("decoded bytecode artifact activates");
+    .unwrap();
 
+    assert_eq!(source.plan.slots, repeated.plan.slots);
+    assert_eq!(source.plan.slots, decoded.plan.slots);
+    assert_eq!(source.plan.activation_nodes, decoded.plan.activation_nodes);
     assert_eq!(
-        left.logical_binding_projection(),
-        repeated.logical_binding_projection()
+        source.plan.topology.turn_root_mask,
+        decoded.plan.topology.turn_root_mask
     );
-    assert_eq!(
-        left.logical_binding_projection(),
-        decoded.logical_binding_projection()
-    );
-    Ok(())
-}
-
-#[test]
-fn activation_revalidates_the_observation_boundary() -> MResult<()> {
-    let mut services = FrozenEkfCompilationServices::default();
-    let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
-    let mut invalid_request = compilation.resource_request.clone();
-    invalid_request.path = "wrong".into();
-    let error = activate(
-        ReactiveInstanceId::new(0, 0),
-        &compilation.source_artifact,
-        &invalid_request,
-    )
-    .expect_err("activation must not trust an earlier closure");
-    assert!(matches!(error, ResidentActivationError::ArtifactClosure(_)));
+    assert_eq!(f64_state(&source), f64_state(&decoded));
     Ok(())
 }
