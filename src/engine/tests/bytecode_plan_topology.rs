@@ -444,7 +444,7 @@ fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> M
         assert_eq!(artifact_a.bindings(), artifact_b.bindings());
         assert_eq!(artifact_a.outputs(), artifact_b.outputs());
         assert!(!artifact_a.schemas().is_empty());
-        assert!(!artifact_a.constants().is_empty());
+        assert_eq!(artifact_a.constants().len(), artifact_b.constants().len());
     }
     Ok(())
 }

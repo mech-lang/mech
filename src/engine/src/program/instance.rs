@@ -1339,6 +1339,21 @@ impl MechProgram {
     }
 
     #[cfg(feature = "compiler")]
+    pub fn compile_program_artifact(&mut self) -> MResult<ProgramArtifact> {
+        let compiled = compile_bytecode(self)?;
+        compile_executable_program_artifact(&compiled, self.interpreter.function_catalog().as_ref())
+            .map_err(|error| {
+                MechError::new(
+                    ProgramArtifactCompilationError {
+                        reason: format!("unable to finalize source ProgramArtifact: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })
+    }
+
+    #[cfg(feature = "compiler")]
     pub fn compile_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
         let compiled = compile_bytecode(self)?;
         let artifact = compile_executable_program_artifact(

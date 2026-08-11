@@ -4,7 +4,7 @@
 //! and its decoder reconstructs and validates the same artifact; it does not
 //! feed a separate compatibility graph back into this compiler.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
     BindingId, CellSlotId, ConstantId, ConstantStore, InputId, IntegrityConstraintId, NodeId,
@@ -26,7 +26,7 @@ use mech_core::{
     LegacyNominalResolution, LegacyReferencePolicy, LegacyResolvedExtent, LegacySemanticContext,
     LegacySnapshotContext, LegacyValue, NamedKindPathResolver, NominalKind, OperationContractError,
     OutputConstruction, SchemaBody, SchemaHandle, SchemaTableBuilder, SemanticModelError,
-    ValueKind, schema_from_legacy_value_kind, snapshot_from_legacy, write_bytecode,
+    ValueKind, schema_from_legacy_value_kind, snapshot_from_legacy,
 };
 
 use super::{
@@ -439,9 +439,7 @@ pub fn compile_executable_program_artifact(
     )?;
     validate_compiled_instruction_roles(compiled, catalog)?;
 
-    let legacy_bytes = write_bytecode(&compiled.program)?;
-    let legacy_constants =
-        mech_core::ParsedProgram::from_bytes(&legacy_bytes)?.decode_constants()?;
+    let legacy_constants = mech_core::decode_encoded_constants(&compiled.program.constants)?;
 
     struct PendingRegisterSchema {
         handle: SchemaHandle,
@@ -773,6 +771,16 @@ pub fn compile_executable_program_artifact(
                         register: dst,
                     });
                 }
+                if is_variable_definition_instruction(instruction, catalog) {
+                    if prior.is_none() && !pseudo_destination {
+                        return Err(ArtifactBuildError::MissingRegisterSource {
+                            instruction: instruction_id,
+                            register: dst,
+                            role: "variable definition",
+                        });
+                    }
+                    continue;
+                }
                 if let BytecodeInstruction::CompositePack { template, .. } = instruction {
                     if register_constant_roles.get(dst as usize).copied().flatten()
                         == Some(CompilerConstantRole::StateInitializer)
@@ -863,19 +871,8 @@ pub fn compile_executable_program_artifact(
                     set_register(&mut registers, dst, None)?;
                     continue;
                 }
-                let preserves_destination =
-                    is_variable_definition_instruction(instruction, catalog);
                 let source = match state_index {
                     Some(state) => SourceValue::State(state),
-                    None if preserves_destination => {
-                        prior
-                            .ok_or(ArtifactBuildError::MissingRegisterSource {
-                                instruction: instruction_id,
-                                register: dst,
-                                role: "preserved destination",
-                            })?
-                            .source
-                    }
                     None if prior
                         .is_some_and(|value| matches!(value.source, SourceValue::State(_))) =>
                     {
@@ -995,17 +992,80 @@ pub fn compile_executable_program_artifact(
         });
     }
 
+    let mut source = SourceProgram {
+        inputs: inputs.into_boxed_slice(),
+        states: states.into_boxed_slice(),
+        nodes: nodes.into_boxed_slice(),
+        outputs: outputs.into_boxed_slice(),
+        constraints: constraints.into_boxed_slice(),
+    };
+    let constant_store = compact_source_constants(&mut source, &schemas, &constant_store)?;
     compile_source_program_with_contracts(
-        &SourceProgram {
-            inputs: inputs.into_boxed_slice(),
-            states: states.into_boxed_slice(),
-            nodes: nodes.into_boxed_slice(),
-            outputs: outputs.into_boxed_slice(),
-            constraints: constraints.into_boxed_slice(),
-        },
+        &source,
         &mut ArtifactBuildContext::new(&schemas, &constant_store),
         &node_contracts,
     )
+}
+
+#[cfg(feature = "compiler")]
+fn compact_source_constants(
+    source: &mut SourceProgram,
+    schemas: &SchemaTable,
+    constants: &ConstantStore,
+) -> Result<ConstantStore, ArtifactBuildError> {
+    let mut referenced = BTreeSet::new();
+    referenced.extend(source.states.iter().filter_map(|state| state.initializer));
+    for node in &source.nodes {
+        referenced.extend(node.inputs.iter().filter_map(|input| match input {
+            SourceValue::Constant(constant) => Some(*constant),
+            _ => None,
+        }));
+    }
+    for constraint in &source.constraints {
+        referenced.extend(constraint.inputs.iter().filter_map(|input| match input {
+            SourceValue::Constant(constant) => Some(*constant),
+            _ => None,
+        }));
+    }
+
+    let mut builder = ConstantStoreBuilder::new(schemas);
+    let mut handles = BTreeMap::new();
+    for constant in referenced {
+        let value =
+            constants
+                .get(constant)
+                .ok_or(ArtifactBuildError::SourceGraphReferenceOutOfRange {
+                    reference: "constant",
+                    index: constant.get(),
+                })?;
+        handles.insert(constant, builder.insert(value.clone())?);
+    }
+    let build = builder.finish()?;
+    let remap = handles
+        .into_iter()
+        .map(|(old, handle)| Ok((old, build.resolve(handle)?)))
+        .collect::<Result<BTreeMap<_, _>, ArtifactBuildError>>()?;
+
+    for state in &mut source.states {
+        if let Some(initializer) = &mut state.initializer {
+            *initializer = remap[initializer];
+        }
+    }
+    for node in &mut source.nodes {
+        for input in &mut node.inputs {
+            if let SourceValue::Constant(constant) = input {
+                *constant = remap[constant];
+            }
+        }
+    }
+    for constraint in &mut source.constraints {
+        for input in &mut constraint.inputs {
+            if let SourceValue::Constant(constant) = input {
+                *constant = remap[constant];
+            }
+        }
+    }
+    Ok(build.into_parts().0)
 }
 
 #[cfg(feature = "compiler")]
