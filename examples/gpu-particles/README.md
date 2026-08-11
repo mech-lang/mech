@@ -29,3 +29,14 @@ cargo test -p mech-gpu --features native --test particle_source native_gpu
 
 The native path is portable through `wgpu`, including Windows Direct3D 12 and
 Vulkan adapters.
+
+Benchmark the generated CPU and GPU executors in release mode with:
+
+```text
+cargo run -p mech-gpu --release --features native \
+  --example particle_benchmark -- 50000 20 7
+```
+
+This is currently a one-shot GPU measurement. Each sample recreates the device,
+pipeline, buffers, and full output readback. It is deliberately not presented
+as the eventual resident-loop performance.
