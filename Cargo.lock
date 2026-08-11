@@ -2356,6 +2356,7 @@ dependencies = [
  "mech-console",
  "mech-core",
  "mech-engine",
+ "mech-gpu",
  "mech-robot-arm",
  "mech-runtime",
  "mech-scene",

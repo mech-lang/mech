@@ -4,7 +4,7 @@ use mech_core::{LegacyValue, Ref, hash_str, matrix::Matrix};
 use mech_engine::{MechProgram, MechProgramConfig};
 use mech_gpu::GpuHost;
 
-const PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particles.mec");
+const PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particle-kernel.mec");
 
 fn main() {
     let particles = env::args()

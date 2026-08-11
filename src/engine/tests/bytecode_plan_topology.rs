@@ -4,6 +4,8 @@ use mech_bytecode::{
     CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
     CompiledNodeKind, CompiledSymbolDefinition,
 };
+#[cfg(feature = "native-plan")]
+use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, ChangeDetectionPolicy, DeliveryMode, DimensionExpr, EncodedConstant,
@@ -671,6 +673,45 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
         node.operation.module_path.as_ref() != ["integrity"]
             || node.operation.operation_name != "constraint"
     }));
+    Ok(())
+}
+
+#[cfg(feature = "native-plan")]
+#[test]
+fn mutable_matrix_state_retains_its_declaration_time_initializer() -> MResult<()> {
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_native_plan(&mut builder)?;
+    mech_engine::install_intrinsic_source(&mut builder)?;
+    let mut program = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        Arc::new(builder.build()?),
+    );
+    program.run_string(
+        "~state := [1.0 2.0; 3.0 4.0]\nreplacement := [0.0 0.0; 0.0 0.0]\nstate = replacement\nstate",
+    )?;
+    let artifact = program.compile_program_artifact()?;
+    let state = artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == SlotRole::State)
+        .expect("mutable matrix must produce a state slot");
+    let InitializerReference::Constant(initializer) = state
+        .initializer
+        .expect("mutable matrix state must retain an initializer");
+    let ValueData::Matrix(initializer) = artifact.constants().get(initializer).unwrap().data()
+    else {
+        panic!("matrix state initializer must remain a matrix")
+    };
+    let SequenceView::F64(values) = initializer.elements() else {
+        panic!("matrix state initializer must retain f64 elements")
+    };
+    assert_eq!(
+        values
+            .iter()
+            .map(|value| value.to_f64())
+            .collect::<Vec<_>>(),
+        vec![1.0, 2.0, 3.0, 4.0]
+    );
     Ok(())
 }
 
@@ -1614,6 +1655,21 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
     }
     assert_matrix_literal_chain(&source.interpreter().plan());
     assert_matrix_literal_chain(&decoded.interpreter().plan());
+    Ok(())
+}
+
+#[test]
+fn typed_literal_conversion_is_folded_into_the_constant() -> MResult<()> {
+    let mut source = source_program();
+    let output = source.run_string("1f32")?;
+    assert!(matches!(output, LegacyValue::F32(_)));
+
+    let artifact = source.compile_program_artifact()?;
+    assert!(artifact.nodes().iter().all(|node| {
+        node.operation.module_path.as_ref() != ["convert"]
+            && !node.operation.operation_name.contains("Convert")
+    }));
+    assert_eq!(artifact.constants().len(), 1);
     Ok(())
 }
 

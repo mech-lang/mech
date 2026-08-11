@@ -10,6 +10,8 @@ pub mod commands;
 pub mod config;
 #[cfg(feature = "cli_core")]
 pub(crate) mod diagnostics;
+#[cfg(feature = "gpu_executor_native")]
+pub(crate) mod executor;
 #[cfg(any(feature = "build", feature = "run"))]
 pub(crate) mod host_configuration;
 #[cfg(feature = "run")]

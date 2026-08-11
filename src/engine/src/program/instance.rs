@@ -1422,6 +1422,12 @@ fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
     let plan = state.plan.borrow();
     let mut context = CompileCtx::new();
 
+    // State declarations retain their declaration-time initializer even when
+    // source execution has already advanced the corresponding reactive cell.
+    for step in plan.iter() {
+        step.reserve_bytecode_registers(&mut context)?;
+    }
+
     for step in plan.iter() {
         context.begin_plan_node_with_contract(
             match step.reactive_node_kind() {

@@ -1,6 +1,10 @@
 //! Capability admission and fused WGSL lowering for typed Mech programs.
 
-use std::{collections::BTreeMap, error::Error, fmt};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    error::Error,
+    fmt,
+};
 
 use mech_core::snapshot::SequenceView;
 use mech_core::{
@@ -9,7 +13,8 @@ use mech_core::{
     SchemaBody, SchemaId, ValueData,
 };
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, OperationReference, ProgramArtifact, SlotRole,
+    ArtifactSource, BindingDeclaration, OperationReference, ProducerReference, ProgramArtifact,
+    SlotRole,
 };
 
 #[cfg(feature = "native")]
@@ -494,7 +499,11 @@ impl<'a> Compiler<'a> {
     }
 
     fn lower_nodes(&mut self) {
+        let turn_nodes = turn_required_nodes(self.artifact);
         for node in self.artifact.nodes() {
+            if !turn_nodes.contains(&node.node) {
+                continue;
+            }
             let operation_name = display_operation(&node.operation);
             // Definitions establish source-level names and input/output identity.
             // The compiler keeps them as bytecode markers, but downstream slots
@@ -1148,6 +1157,61 @@ impl<'a> Compiler<'a> {
             operation,
             detail: detail.into(),
         });
+    }
+}
+
+fn turn_required_nodes(artifact: &ProgramArtifact) -> BTreeSet<NodeId> {
+    let mut required = BTreeSet::new();
+    for node in artifact.nodes() {
+        let writes_state = node.output_bindings.clone().any(|index| {
+            matches!(
+                artifact.bindings().get(index as usize),
+                Some(BindingDeclaration::Output { target, .. })
+                    if artifact.slots()[target.get() as usize].role == SlotRole::State
+            )
+        });
+        if writes_state {
+            visit_turn_node(artifact, node.node, &mut required);
+        }
+    }
+    for output in artifact.outputs() {
+        visit_turn_source(artifact, ArtifactSource::Slot(output.source), &mut required);
+    }
+    required
+}
+
+fn visit_turn_node(artifact: &ProgramArtifact, node: NodeId, required: &mut BTreeSet<NodeId>) {
+    if !required.insert(node) {
+        return;
+    }
+    let Some(declaration) = artifact.nodes().get(node.get() as usize) else {
+        return;
+    };
+    for binding in declaration.input_bindings.clone() {
+        if let Some(BindingDeclaration::Input { source, .. }) =
+            artifact.bindings().get(binding as usize)
+        {
+            visit_turn_source(artifact, *source, required);
+        }
+    }
+}
+
+fn visit_turn_source(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    required: &mut BTreeSet<NodeId>,
+) {
+    let ArtifactSource::Slot(slot) = source else {
+        return;
+    };
+    let Some(declaration) = artifact.slots().get(slot.get() as usize) else {
+        return;
+    };
+    if declaration.role == SlotRole::State {
+        return;
+    }
+    if let ProducerReference::NodeOutput { node, .. } = declaration.producer {
+        visit_turn_node(artifact, node, required);
     }
 }
 
