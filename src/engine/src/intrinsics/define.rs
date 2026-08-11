@@ -161,6 +161,11 @@ where
     T: CompileConst + ConstElem + AsValueKind,
     MatA: CompileConst + ConstElem + AsNaKind,
 {
+    fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
+        let _ = compile_register_initial!(self.var, self.initial, ctx);
+        Ok(())
+    }
+
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let variable_register = compile_register_initial!(self.var, self.initial, ctx);
         let variable_name = self.name.borrow().clone();
@@ -230,6 +235,14 @@ macro_rules! impl_variable_define_fxn {
       }
       #[cfg(feature = "compiler")]
       impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
+      fn reserve_bytecode_registers(
+          &self,
+          ctx: &mut dyn BytecodeCompilerContext,
+      ) -> MResult<()> {
+          let _ = compile_register_initial!(self.var, self.initial, ctx);
+          Ok(())
+        }
+
       fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let variable_register = compile_register_initial!(self.var, self.initial, ctx);
           let variable_name = self.name.borrow().clone();
@@ -607,6 +620,11 @@ impl MechFunctionImpl for VariableDefineEmpty {
 }
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for VariableDefineEmpty {
+    fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
+        let _ = compile_register_initial!(self.var, self.initial, ctx);
+        Ok(())
+    }
+
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let variable_register = compile_register_initial!(self.var, self.initial, ctx);
         let variable_name = self.name.borrow().clone();

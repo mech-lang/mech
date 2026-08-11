@@ -4,7 +4,10 @@ use mech_core::{LegacyValue, Ref, ResolvedOperationContract, hash_str, matrix::M
 use mech_engine::{MechProgram, MechProgramConfig, SlotRole};
 use mech_gpu::{ExecutionTarget, GpuDiagnosticCode, GpuHost, SlotResidence, TransferDirection};
 
-const PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particles.mec");
+const PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particle-kernel.mec");
+
+const STANDALONE_PARTICLE_SOURCE: &str =
+    include_str!("../../../examples/gpu-particles/particles.mec");
 
 fn compile_source(
     source: &str,
@@ -124,6 +127,33 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     ];
     assert_close(&outputs["result.1"], &expected_velocities);
     assert_close(&outputs["result.0"], &expected_positions);
+}
+
+#[test]
+fn standalone_particle_program_needs_no_host_inputs() {
+    let artifact = compile_source(STANDALONE_PARTICLE_SOURCE, []);
+    assert!(
+        artifact.inputs().is_empty(),
+        "unexpected inputs: {:?}",
+        artifact.inputs()
+    );
+    let program = GpuHost
+        .compile(&artifact)
+        .unwrap_or_else(|error| panic!("standalone particle source must be admitted: {error}"));
+    let mut cpu = program
+        .prepare_cpu(&BTreeMap::new())
+        .expect("standalone CPU executor must prepare");
+    let initial = cpu.outputs().expect("standalone initial outputs must read");
+    assert_eq!(initial["result.0"].len(), 18);
+    assert_eq!(initial["result.1"].len(), 18);
+    assert!(initial["result.0"].iter().any(|value| *value != 0.0));
+    assert!(initial["result.1"].iter().all(|value| *value == 0.0));
+
+    cpu.dispatch_turns(6)
+        .expect("standalone CPU executor must advance");
+    let cycled = cpu.outputs().expect("cycled outputs must read");
+    assert_close(&cycled["result.0"], &initial["result.0"]);
+    assert_close(&cycled["result.1"], &initial["result.1"]);
 }
 
 #[cfg(feature = "native")]

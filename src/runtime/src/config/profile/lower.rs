@@ -79,6 +79,13 @@ pub struct RunHostConfig {
     pub paths: Vec<PathBuf>,
     pub grants: Vec<RunResourceGrantConfig>,
     pub grants_specified: bool,
+    pub executor: Option<RunExecutorConfig>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RunExecutorConfig {
+    pub provider: String,
+    pub turns: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -503,6 +510,7 @@ impl ConfigLowerer {
         for (key, value) in map {
             match key.as_str() {
                 "paths" => out.paths = expect_path_list("run.paths", value)?,
+                "executor" => out.executor = Some(self.lower_run_executor(value)?),
                 "grants" => {
                     out.grants = self.lower_run_grants(value)?;
                     out.grants_specified = true;
@@ -512,6 +520,37 @@ impl ConfigLowerer {
         }
 
         Ok(out)
+    }
+
+    fn lower_run_executor(&self, value: &ConfigValue) -> MResult<RunExecutorConfig> {
+        let map = expect_map("run.executor", value)?;
+        let mut provider = None;
+        let mut turns = None;
+        for (key, value) in map {
+            match key.as_str() {
+                "provider" => provider = Some(expect_string("run.executor.provider", value)?),
+                "turns" => {
+                    let value = expect_u64("run.executor.turns", value)?;
+                    let value = u32::try_from(value).map_err(|_| {
+                        invalid_error("run.executor.turns must fit in an unsigned 32-bit integer")
+                    })?;
+                    if value == 0 {
+                        return invalid("run.executor.turns must be positive");
+                    }
+                    turns = Some(value);
+                }
+                other => return invalid(format!("unknown run.executor field `{other}`")),
+            }
+        }
+        let provider =
+            provider.ok_or_else(|| invalid_error("run.executor.provider is required"))?;
+        if provider.trim().is_empty() {
+            return invalid("run.executor.provider must be non-empty");
+        }
+        Ok(RunExecutorConfig {
+            provider,
+            turns: turns.unwrap_or(1),
+        })
     }
 
     fn lower_run_grants(&self, value: &ConfigValue) -> MResult<Vec<RunResourceGrantConfig>> {
@@ -716,6 +755,41 @@ mod tests {
             run.paths,
             vec![PathBuf::from("foo.mec"), PathBuf::from("bar.mec")]
         );
+    }
+
+    #[test]
+    fn run_executor_parses_provider_and_turns() {
+        let doc = parse(
+            r#"config := {
+  run: {
+    paths: ["particles.mec"]
+    executor: {provider: "gpu" turns: 120}
+  }
+}
+"#,
+        )
+        .unwrap();
+
+        assert_eq!(
+            doc.run.unwrap().executor,
+            Some(RunExecutorConfig {
+                provider: "gpu".to_owned(),
+                turns: 120,
+            })
+        );
+    }
+
+    #[test]
+    fn run_executor_rejects_zero_turns() {
+        let error = parse(
+            r#"config := {
+  run: {executor: {provider: "gpu" turns: 0}}
+}
+"#,
+        )
+        .expect_err("zero executor turns must fail");
+
+        assert!(format!("{error:?}").contains("turns must be positive"));
     }
 
     #[test]

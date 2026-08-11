@@ -8,7 +8,7 @@ use mech_engine::{
     ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact, SlotRole,
 };
 
-use super::{GpuHost, binary_operation, display_operation};
+use super::{GpuHost, binary_operation, display_operation, turn_required_nodes};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ExecutionTarget {
@@ -80,12 +80,20 @@ impl GpuHost {
 }
 
 fn plan_artifact(artifact: &ProgramArtifact) -> HybridPlacementPlan {
+    let turn_nodes = turn_required_nodes(artifact);
     let mut nodes = artifact
         .nodes()
         .iter()
         .map(|node| {
             let operation = display_operation(&node.operation);
-            let (target, reason) = classify_node(artifact, node);
+            let (target, reason) = if turn_nodes.contains(&node.node) {
+                classify_node(artifact, node)
+            } else {
+                (
+                    ExecutionTarget::Structural,
+                    "initialization only; captured in the typed artifact".to_owned(),
+                )
+            };
             NodePlacement {
                 node: node.node,
                 operation,

@@ -112,6 +112,11 @@ full-hosts = [
       "dep:mech-robot-arm", "mech-robot-arm/provider",
       "mech-build?/full-hosts",
       ]
+gpu_executor_native = [
+      "dep:mech-gpu", "mech-gpu/native",
+      "f32", "matrixd", "math_add", "math_sub", "math_mul",
+      "mech-stdlib/native-plan",
+      ]
 experimental-actors = ["mech-build?/experimental-actors"]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default", "state_machines",
@@ -401,6 +406,7 @@ mech-console = { version = "0.3.5", path = "hosts/console", default-features = f
 mech-timer = { version = "0.3.5", path = "hosts/timer", default-features = false, optional = true }
 mech-scene = { version = "0.3.5", path = "hosts/scene", default-features = false, optional = true }
 mech-robot-arm = { version = "0.3.5", default-features = false, optional = true }
+mech-gpu = { version = "0.3.5", path = "hosts/gpu", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"
