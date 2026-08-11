@@ -108,7 +108,7 @@ canvas {
 
 .telemetry {
   display: grid;
-  grid-template-columns: repeat(4, minmax(105px, 1fr));
+  grid-template-columns: repeat(6, minmax(105px, 1fr));
   gap: 24px;
   margin: 0;
   padding: 18px 2px 0;
@@ -147,5 +147,11 @@ dd {
 
   .telemetry {
     grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1100px) {
+  .telemetry {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
   }
 }

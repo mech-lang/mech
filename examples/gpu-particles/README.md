@@ -36,6 +36,17 @@ cargo build --release --features gpu_executor_native
 
 Open `http://127.0.0.1:8081`.
 
+The simulation advances every configured particle. To keep canvas rendering
+from dominating the frame, the generic point renderer samples at most 250,000
+particles for display. The page reports both counts and continues to calculate
+throughput from the complete simulation state.
+
+The compile readout separates source parsing from eager source initialization.
+The current compiler materializes the source-defined initial matrices on the
+CPU before it lowers the recurring graph to WebGPU. GPU-side initializer
+lowering is future executor work; changing the recurring executor alone does
+not remove that startup cost.
+
 ## Native executor
 
 The same source can run through the native resident executor:
