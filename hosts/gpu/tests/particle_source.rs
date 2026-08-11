@@ -211,6 +211,15 @@ fn standalone_particle_program_needs_no_host_inputs() {
     assert_eq!(initial["result.1"].len(), 20);
     assert!(initial["result.0"].iter().any(|value| *value != 0.0));
     assert!(initial["result.1"].iter().any(|value| *value != 0.0));
+    let expected_x = (1..=10)
+        .map(|index| (index as f32 / 10.0) * 2.0 - 1.0)
+        .collect::<Vec<_>>();
+    let expected_positions = expected_x
+        .iter()
+        .copied()
+        .chain(expected_x.iter().map(|x| x * x - 0.5))
+        .collect::<Vec<_>>();
+    assert_close(&initial["result.0"], &expected_positions);
 
     cpu.dispatch_turns(6)
         .expect("standalone CPU executor must advance");
@@ -225,6 +234,8 @@ fn particle_example_uses_the_shared_project_and_gpu_shim() {
     assert!(!PARTICLE_HTML.contains("particle-gpu.js"));
     assert!(PROJECT_BOOTSTRAP.contains("mech.compileGpuProgram(source)"));
     assert!(PROJECT_BOOTSTRAP.contains("data-mech-gpu-renderer"));
+    assert!(PROJECT_BOOTSTRAP.contains("this.output.dimensions[1] === 2"));
+    assert!(PROJECT_BOOTSTRAP.contains("maxRenderedPoints = 250_000"));
     assert!(!PROJECT_BOOTSTRAP.contains("seedParticles"));
     assert!(!PROJECT_BOOTSTRAP.contains("host-positions"));
     assert!(SERVED_PARTICLE_SOURCE.contains("particle-count := 2000000f32"));

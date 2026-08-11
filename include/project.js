@@ -97,6 +97,10 @@ struct RenderParams {
   pixel_x: f32,
   pixel_y: f32,
   interleaved: f32,
+  sample_stride: f32,
+  _padding_0: f32,
+  _padding_1: f32,
+  _padding_2: f32,
 }
 
 struct VertexOutput {
@@ -119,12 +123,13 @@ fn vertex_main(
   @builtin(instance_index) instance_index: u32,
 ) -> VertexOutput {
   let count = arrayLength(&points) / 2u;
+  let point_index = min(instance_index * u32(params.sample_stride), count - 1u);
   var point: vec2f;
   if (params.interleaved > 0.5) {
-    let offset = instance_index * 2u;
+    let offset = point_index * 2u;
     point = vec2f(points[offset], points[offset + 1u]);
   } else {
-    point = vec2f(points[instance_index], points[count + instance_index]);
+    point = vec2f(points[point_index], points[count + point_index]);
   }
   let local = corners[vertex_index];
   let size = vec2f(params.pixel_x, params.pixel_y) * params.point_size;
@@ -192,10 +197,14 @@ class BrowserGpuProject {
     ) {
       throw new Error(`points2d requires an N x 2 or 2 x N f32 matrix, got [${this.output.dimensions.join(', ')}]`);
     }
-    this.interleavedPoints = this.output.dimensions[0] === 2;
+    // Mech matrices use logical row-major order at this host boundary.
+    this.interleavedPoints = this.output.dimensions[1] === 2;
     this.itemCount = this.interleavedPoints
-      ? this.output.dimensions[1]
-      : this.output.dimensions[0];
+      ? this.output.dimensions[0]
+      : this.output.dimensions[1];
+    const maxRenderedPoints = 250_000;
+    this.sampleStride = Math.max(1, Math.ceil(this.itemCount / maxRenderedPoints));
+    this.renderItemCount = Math.ceil(this.itemCount / this.sampleStride);
     this.setStatus('Requesting GPU', '');
 
     this.adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
@@ -235,6 +244,24 @@ class BrowserGpuProject {
     this.message.textContent = '';
     this.setStatus(`Mech compiled in ${(this.compileMilliseconds / 1000).toFixed(1)} s`, 'ready');
     this.setText('[data-mech-gpu-item-count]', this.itemCount.toLocaleString());
+    this.setText('[data-mech-gpu-render-count]', this.renderItemCount.toLocaleString());
+    const timings = this.manifest.compileTimings;
+    if (timings) {
+      this.setText(
+        '[data-mech-gpu-compile-time]',
+        `${timings.parsing.toFixed(0)} ms parse / ` +
+        `${(timings.sourceExecution / 1000).toFixed(1)} s init`,
+      );
+      console.table({
+        'catalog setup': timings.catalogSetup,
+        'source parsing': timings.parsing,
+        'source execution + initialization': timings.sourceExecution,
+        'artifact compilation': timings.artifactCompilation,
+        'GPU lowering': timings.gpuLowering,
+        'input capture': timings.inputCapture,
+        'manifest encoding': timings.manifestEncoding,
+      });
+    }
     const residentBytes = [...this.stateBuffers.values()]
       .reduce((total, buffers) => total + buffers[0].size + buffers[1].size, 0);
     this.setText('[data-mech-gpu-state-size]', `${(residentBytes / 1_048_576).toFixed(1)} MB resident`);
@@ -278,9 +305,8 @@ class BrowserGpuProject {
         size: state.elements * Float32Array.BYTES_PER_ELEMENT,
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
       }));
-      for (const buffer of buffers) {
-        this.device.queue.writeBuffer(buffer, 0, state.initialValues);
-      }
+      this.device.queue.writeBuffer(buffers[0], 0, state.initialValues);
+      state.initialValues = null;
       this.stateBuffers.set(state.slot, buffers);
     }
 
@@ -295,6 +321,7 @@ class BrowserGpuProject {
       });
       if (binding.initialValues) {
         this.device.queue.writeBuffer(buffer, 0, binding.initialValues);
+        binding.initialValues = null;
       }
       this.fixedBuffers.set(binding.binding, buffer);
     }
@@ -307,7 +334,7 @@ class BrowserGpuProject {
       })),
     }));
     this.renderUniform = this.device.createBuffer({
-      size: 16,
+      size: 32,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     this.renderBindGroups = [0, 1].map((index) => this.device.createBindGroup({
@@ -359,7 +386,16 @@ class BrowserGpuProject {
     this.device.queue.writeBuffer(
       this.renderUniform,
       0,
-      new Float32Array([pointSize, 2 / width, 2 / height, this.interleavedPoints ? 1 : 0]),
+      new Float32Array([
+        pointSize,
+        2 / width,
+        2 / height,
+        this.interleavedPoints ? 1 : 0,
+        this.sampleStride,
+        0,
+        0,
+        0,
+      ]),
     );
   }
 
@@ -387,7 +423,7 @@ class BrowserGpuProject {
     });
     render.setPipeline(this.renderPipeline);
     render.setBindGroup(0, this.renderBindGroups[renderedBuffer]);
-    render.draw(6, this.itemCount);
+    render.draw(6, this.renderItemCount);
     render.end();
     this.device.queue.submit([encoder.finish()]);
     this.activeBuffer = renderedBuffer;

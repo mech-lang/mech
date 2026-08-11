@@ -333,6 +333,7 @@ base64 = "0.22.1"
 brotli = "8.0.1"
 gloo-net = {version = "0.6.0", features = ["http"]}
 wasm-bindgen-futures = "0.4.50"
+web-time = "1.1.0"
 
 [dev-dependencies]
 serde_json = "1"
