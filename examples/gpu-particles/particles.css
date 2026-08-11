@@ -194,6 +194,27 @@ button:focus-visible {
   border-radius: 6px;
 }
 
+.benchmark-results {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid #293341;
+}
+
+.benchmark-results h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.benchmark-results pre {
+  overflow-x: auto;
+  margin: 0;
+  color: #c9d5dd;
+  font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 900px) {
   main {
     padding: 20px 18px 28px;

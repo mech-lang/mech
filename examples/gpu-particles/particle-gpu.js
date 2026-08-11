@@ -142,6 +142,8 @@ fn fragment_main(input: VertexOutput) -> @location(0) vec4f {
       this.statsFrames = 0;
       this.frameHandle = 0;
       this.generation = 0;
+      this.adapterInfo = {};
+      this.benchmarkScheduled = false;
       this.bindControls();
     }
 
@@ -178,6 +180,12 @@ fn fragment_main(input: VertexOutput) -> @location(0) vec4f {
       if (!adapter) {
         throw new Error("No compatible WebGPU adapter was found");
       }
+      this.adapterInfo = adapter.info ? {
+        vendor: adapter.info.vendor || "",
+        architecture: adapter.info.architecture || "",
+        device: adapter.info.device || "",
+        description: adapter.info.description || "",
+      } : {};
       this.device = await adapter.requestDevice();
       this.context = this.canvas.getContext("webgpu");
       if (!this.context) {
@@ -194,6 +202,28 @@ fn fragment_main(input: VertexOutput) -> @location(0) vec4f {
       this.lastFrame = performance.now();
       this.statsStart = this.lastFrame;
       this.frameHandle = requestAnimationFrame((time) => this.frame(time));
+    }
+
+    scheduleAutomaticBenchmark() {
+      const mode = new URLSearchParams(location.search).get("benchmark");
+      if (this.benchmarkScheduled || !mode) {
+        return;
+      }
+      this.benchmarkScheduled = true;
+      const output = document.querySelector("#benchmark-output");
+      const results = document.querySelector("#benchmark-results");
+      results.hidden = false;
+      this.initializing.then(async () => {
+        const benchmark = await this.benchmarkAll(mode, (message) => {
+          output.textContent = message;
+        });
+        output.textContent = this.formatBenchmark(benchmark);
+        output.dataset.json = JSON.stringify(benchmark);
+        document.title = "MECH_GPU_BENCHMARK_COMPLETE";
+      }).catch((error) => {
+        output.textContent = JSON.stringify({ error: String(error) }, null, 2);
+        document.title = "MECH_GPU_BENCHMARK_FAILED";
+      });
     }
 
     createPipelines() {
@@ -362,6 +392,174 @@ fn fragment_main(input: VertexOutput) -> @location(0) vec4f {
       this.frameHandle = requestAnimationFrame((next) => this.frame(next));
     }
 
+    stopFrameLoop() {
+      this.running = false;
+      cancelAnimationFrame(this.frameHandle);
+      this.frameHandle = 0;
+    }
+
+    async runComputeSteps(steps) {
+      this.writeUniforms(1 / 120, this.generation / 120);
+      const encoder = this.device.createCommandEncoder();
+      const compute = encoder.beginComputePass();
+      compute.setPipeline(this.computePipeline);
+      let active = this.activeBuffer;
+      for (let step = 0; step < steps; step += 1) {
+        compute.setBindGroup(0, this.computeBindGroups[active]);
+        compute.dispatchWorkgroups(Math.ceil(this.control.particleCount / 256));
+        active = 1 - active;
+      }
+      compute.end();
+      const started = performance.now();
+      this.device.queue.submit([encoder.finish()]);
+      await this.device.queue.onSubmittedWorkDone();
+      const elapsedMs = performance.now() - started;
+      this.activeBuffer = active;
+      this.generation += steps;
+      return elapsedMs;
+    }
+
+    percentile(values, fraction) {
+      const ordered = [...values].sort((left, right) => left - right);
+      const index = Math.min(ordered.length - 1, Math.floor(fraction * ordered.length));
+      return ordered[index];
+    }
+
+    async benchmarkCompute(particleCount) {
+      this.control.particleCount = particleCount;
+      this.seedParticles();
+      await this.device.queue.onSubmittedWorkDone();
+      const steps = particleCount <= 100_000 ? 256
+        : particleCount <= 500_000 ? 128
+          : particleCount <= 1_000_000 ? 64 : 32;
+      await this.runComputeSteps(Math.max(8, Math.floor(steps / 4)));
+      const samples = [];
+      for (let sample = 0; sample < 7; sample += 1) {
+        samples.push(await this.runComputeSteps(steps));
+      }
+      const totalMs = samples.reduce((sum, value) => sum + value, 0);
+      return {
+        particleCount,
+        stepsPerSample: steps,
+        samples: samples.length,
+        throughputMUpdatesPerSecond: Number(
+          ((particleCount * steps * samples.length) / totalMs / 1000).toFixed(2),
+        ),
+        sampleTimeMsP50: Number(this.percentile(samples, 0.5).toFixed(3)),
+        sampleTimeMsP95: Number(this.percentile(samples, 0.95).toFixed(3)),
+      };
+    }
+
+    async runRenderedFrame() {
+      const started = performance.now();
+      this.resize();
+      this.writeUniforms(1 / 120, this.generation / 120);
+      const destination = 1 - this.activeBuffer;
+      const encoder = this.device.createCommandEncoder();
+      const compute = encoder.beginComputePass();
+      compute.setPipeline(this.computePipeline);
+      compute.setBindGroup(0, this.computeBindGroups[this.activeBuffer]);
+      compute.dispatchWorkgroups(Math.ceil(this.control.particleCount / 256));
+      compute.end();
+      const render = encoder.beginRenderPass({
+        colorAttachments: [{
+          view: this.context.getCurrentTexture().createView(),
+          clearValue: { r: 0.018, g: 0.026, b: 0.039, a: 1 },
+          loadOp: "clear",
+          storeOp: "store",
+        }],
+      });
+      render.setPipeline(this.renderPipeline);
+      render.setBindGroup(0, this.renderBindGroups[destination]);
+      render.draw(6, this.control.particleCount);
+      render.end();
+      this.device.queue.submit([encoder.finish()]);
+      await this.device.queue.onSubmittedWorkDone();
+      this.activeBuffer = destination;
+      this.generation += 1;
+      return performance.now() - started;
+    }
+
+    async benchmarkRendered(particleCount) {
+      this.control.particleCount = particleCount;
+      this.seedParticles();
+      await this.device.queue.onSubmittedWorkDone();
+      await this.runRenderedFrame();
+      await this.runRenderedFrame();
+      const sampleCount = particleCount <= 100_000 ? 20
+        : particleCount <= 500_000 ? 12
+          : particleCount <= 1_000_000 ? 8 : 5;
+      const samples = [];
+      for (let sample = 0; sample < sampleCount; sample += 1) {
+        samples.push(await this.runRenderedFrame());
+      }
+      const totalMs = samples.reduce((sum, value) => sum + value, 0);
+      const fps = samples.length * 1000 / totalMs;
+      return {
+        particleCount,
+        frames: samples.length,
+        fps: Number(fps.toFixed(2)),
+        throughputMUpdatesPerSecond: Number((particleCount * fps / 1_000_000).toFixed(2)),
+        frameTimeMsP50: Number(this.percentile(samples, 0.5).toFixed(3)),
+        frameTimeMsP95: Number(this.percentile(samples, 0.95).toFixed(3)),
+        frameTimeMsP99: Number(this.percentile(samples, 0.99).toFixed(3)),
+      };
+    }
+
+    formatBenchmark(benchmark) {
+      const lines = [
+        benchmark.benchmark,
+        `${benchmark.adapter.description || benchmark.adapter.device || "WebGPU adapter"}`,
+        "",
+        "Compute only (queue-drained)",
+        "particles   M updates/s   p50 ms   p95 ms",
+      ];
+      for (const row of benchmark.computeOnly) {
+        lines.push(
+          `${String(row.particleCount).padStart(9)}   ${String(row.throughputMUpdatesPerSecond).padStart(11)}   ${String(row.sampleTimeMsP50).padStart(6)}   ${String(row.sampleTimeMsP95).padStart(6)}`,
+        );
+      }
+      if (benchmark.computeAndRender.length) {
+        lines.push("", "Compute + render (queue drained)", "particles      Hz   M updates/s   p50 ms   p95 ms   p99 ms");
+        for (const row of benchmark.computeAndRender) {
+          lines.push(
+            `${String(row.particleCount).padStart(9)}   ${String(row.fps).padStart(5)}   ${String(row.throughputMUpdatesPerSecond).padStart(11)}   ${String(row.frameTimeMsP50).padStart(6)}   ${String(row.frameTimeMsP95).padStart(6)}   ${String(row.frameTimeMsP99).padStart(6)}`,
+          );
+        }
+      }
+      return lines.join("\n");
+    }
+
+    async benchmarkAll(mode, progress) {
+      this.stopFrameLoop();
+      this.paused = false;
+      const counts = [100_000, 500_000, 1_000_000, 2_000_000];
+      const computeOnly = [];
+      const computeAndRender = [];
+      for (const count of counts) {
+        progress(`Compute-only benchmark: ${count.toLocaleString()} particles`);
+        computeOnly.push(await this.benchmarkCompute(count));
+      }
+      if (mode !== "compute") {
+        for (const count of counts) {
+          progress(`Compute + render benchmark: ${count.toLocaleString()} particles`);
+          computeAndRender.push(await this.benchmarkRendered(count));
+        }
+      }
+      return {
+        benchmark: "Mech resident WebGPU particle host",
+        measuredAt: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        adapter: this.adapterInfo,
+        methodology: {
+          computeOnly: "7 queue-drained samples after an untimed warm-up; command encoding excluded",
+          computeAndRender: "queue drained after every frame and 2 warm-up frames; includes JS orchestration, uniform upload, command encoding, compute, rendering, submission, and synchronization",
+        },
+        computeOnly,
+        computeAndRender,
+      };
+    }
+
     updateTelemetry(fps) {
       const count = this.control ? this.control.particleCount : 0;
       this.setText("#particle-count", count.toLocaleString());
@@ -432,6 +630,7 @@ fn fragment_main(input: VertexOutput) -> @location(0) vec4f {
         simulations.set(instance, simulation);
       }
       simulation.configure(control);
+      simulation.scheduleAutomaticBenchmark();
       return true;
     },
   });
