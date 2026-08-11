@@ -10,8 +10,9 @@ use mech_core::{
 };
 
 use super::{
-    ActivatedNodeIndex, ReactiveInstance, ResidentReadLocation, ResidentRegion,
-    ResidentStorageClass, StateArena, StateVersion, TypedResidentArena,
+    ActivatedNodeIndex, EAGER_F64_STATE_ARENA_BASE, EAGER_F64_STATE_SLOT_BIT, EagerF64Read,
+    ReactiveInstance, ResidentReadLocation, ResidentRegion, ResidentStorageClass, StateArena,
+    StateVersion, TypedResidentArena,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -128,7 +129,7 @@ impl ReactiveInstance {
             .ok_or(ResidentExecutionError::EpochExhausted)?;
         self.next_epoch = working_epoch.checked_next().ok();
         let before_epoch = self.published_epoch();
-        if let Err(error) = self.begin_workspace(inputs) {
+        if let Err(error) = self.begin_workspace(inputs, before_epoch) {
             self.next_epoch = Some(working_epoch);
             return Err(error);
         }
@@ -138,7 +139,7 @@ impl ReactiveInstance {
             record_append_count: 1,
             ..ResidentStructuralProbe::default()
         };
-        if let Err(error) = self.execute_candidate(before_epoch, working_epoch, &mut probe) {
+        if let Err(error) = self.execute_candidate(before_epoch, working_epoch, &mut probe, true) {
             self.abort_candidate(working_epoch);
             return Err(error);
         }
@@ -204,12 +205,12 @@ impl ReactiveInstance {
             .ok_or(ResidentExecutionError::EpochExhausted)?;
         self.next_epoch = working_epoch.checked_next().ok();
         let before_epoch = self.published_epoch();
-        if let Err(error) = self.begin_workspace(inputs) {
+        if let Err(error) = self.begin_workspace(inputs, before_epoch) {
             self.next_epoch = Some(working_epoch);
             return Err(error);
         }
         let mut probe = ResidentStructuralProbe::default();
-        if let Err(error) = self.execute_candidate(before_epoch, working_epoch, &mut probe) {
+        if let Err(error) = self.execute_candidate(before_epoch, working_epoch, &mut probe, false) {
             self.abort_candidate(working_epoch);
             return Err(error);
         }
@@ -289,6 +290,7 @@ impl ReactiveInstance {
     fn begin_workspace(
         &mut self,
         inputs: &[CapturedSignalInput<'_>],
+        before_epoch: InstanceEpoch,
     ) -> Result<(), ResidentExecutionError> {
         if inputs.len() != self.plan.inputs.len() {
             return Err(ResidentExecutionError::InputCount {
@@ -329,22 +331,30 @@ impl ReactiveInstance {
                     .map_err(|_| ResidentExecutionError::InputLayout { slot: input.slot })?;
             }
         }
-        self.workspace.dirty_bits.fill(0);
-        self.workspace.executed_bits.fill(0);
         self.workspace.touched_slots.clear();
         self.workspace.changed_slots.clear();
-        for (target, root) in self
-            .workspace
-            .dirty_bits
-            .iter_mut()
-            .zip(&self.plan.topology.turn_root_mask)
-        {
-            *target = *root;
+        if !self.plan.topology.eager_turn {
+            self.workspace.dirty_bits.fill(0);
+            self.workspace.executed_bits.fill(0);
+            for (target, root) in self
+                .workspace
+                .dirty_bits
+                .iter_mut()
+                .zip(&self.plan.topology.turn_root_mask)
+            {
+                *target = *root;
+            }
+            or_bits(
+                &mut self.workspace.dirty_bits,
+                &self.plan.topology.mandatory_candidate_mask,
+            );
         }
-        or_bits(
-            &mut self.workspace.dirty_bits,
-            &self.plan.topology.mandatory_candidate_mask,
-        );
+        if self.plan.eager_f64_reads.is_some() {
+            for version in &self.state.versions {
+                self.workspace.state_f64_arena_by_slot[version.slot.get() as usize] =
+                    EAGER_F64_STATE_ARENA_BASE + select_version(version, before_epoch) as u8;
+            }
+        }
         Ok(())
     }
 
@@ -353,24 +363,40 @@ impl ReactiveInstance {
         before_epoch: InstanceEpoch,
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
+        track_summary: bool,
     ) -> Result<(), ResidentExecutionError> {
         if self.plan.topology.eager_turn {
             // Activation proved that every admitted node is downstream of a
             // turn root or mandatory constraint. All declared inputs are
             // installed together, so this dense pure graph executes in its
             // prevalidated linear order without per-node scheduler work.
-            for order in 0..self.plan.topology.linear_node_order.len() {
-                let node_index = self.plan.topology.linear_node_order[order];
-                self.execute_eager_node(node_index, before_epoch, working_epoch, probe)?;
-            }
-            self.workspace.executed_bits.fill(u64::MAX);
-            if let Some(last) = self.workspace.executed_bits.last_mut() {
-                let remainder = self.plan.nodes.len() % 64;
-                if remainder != 0 {
-                    *last = (1_u64 << remainder) - 1;
+            if self.plan.eager_f64_reads.is_some() {
+                for order in 0..self.plan.topology.linear_node_order.len() {
+                    let node_index = self.plan.topology.linear_node_order[order];
+                    self.execute_eager_f64_node(
+                        node_index,
+                        before_epoch,
+                        working_epoch,
+                        probe,
+                        track_summary,
+                    )?;
+                }
+            } else {
+                for order in 0..self.plan.topology.linear_node_order.len() {
+                    let node_index = self.plan.topology.linear_node_order[order];
+                    self.execute_eager_node(node_index, before_epoch, working_epoch, probe)?;
                 }
             }
-            self.workspace.all_outputs_initialized = true;
+            if track_summary {
+                self.workspace.executed_bits.fill(u64::MAX);
+                if let Some(last) = self.workspace.executed_bits.last_mut() {
+                    let remainder = self.plan.nodes.len() % 64;
+                    if remainder != 0 {
+                        *last = (1_u64 << remainder) - 1;
+                    }
+                }
+                self.workspace.all_outputs_initialized = true;
+            }
         } else if self.plan.topology.word_len() == 1 {
             let mut dirty = self.workspace.dirty_bits[0];
             let mut executed = 0_u64;
@@ -431,6 +457,74 @@ impl ReactiveInstance {
             }
         }
         Ok(())
+    }
+
+    #[inline(always)]
+    fn execute_eager_f64_node(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        track_summary: bool,
+    ) -> Result<(), ResidentExecutionError> {
+        let index = node_index.get() as usize;
+        let node = &self.plan.nodes[index];
+        if !track_summary
+            && node.write.storage == ResidentStorageClass::State
+            && !node.reads_state
+            && matches!(node.construction, OutputConstruction::FullWrite { .. })
+        {
+            let slot = node.write.slot;
+            let candidate = self.state.candidate_buffer(slot, before_epoch);
+            let output = self.state.buffers[candidate].write(node.write.region);
+            let inputs = EagerNonStateF64NodeInputs {
+                locations: &self.plan.eager_f64_reads.as_ref().expect("checked above")
+                    [node.reads.start as usize..node.reads.end as usize],
+                arenas: [
+                    &self.activation.f64s,
+                    &self.workspace.input.f64s,
+                    &self.workspace.scratch.f64s,
+                ],
+            };
+            node.kernel.execute(&inputs, output).map_err(|error| {
+                ResidentExecutionError::Kernel {
+                    node: node.artifact_node,
+                    error,
+                }
+            })?;
+            self.state.tag(slot, candidate, working_epoch);
+            self.workspace.state_f64_arena_by_slot[slot.get() as usize] =
+                EAGER_F64_STATE_ARENA_BASE + candidate as u8;
+            return Ok(());
+        }
+        if node.write.storage != ResidentStorageClass::Scratch || !node.scratch_prefix_reads {
+            self.execute_eager_node(node_index, before_epoch, working_epoch, probe)?;
+            return Ok(());
+        }
+        let (scratch, output) = self
+            .workspace
+            .scratch
+            .split_scratch_output(node.write.region);
+        let inputs = EagerF64NodeInputs {
+            locations: &self.plan.eager_f64_reads.as_ref().expect("checked above")
+                [node.reads.start as usize..node.reads.end as usize],
+            arenas: [
+                &self.activation.f64s,
+                &self.workspace.input.f64s,
+                scratch.f64s,
+                &self.state.buffers[0].f64s,
+                &self.state.buffers[1].f64s,
+            ],
+            state_arena_by_slot: &self.workspace.state_f64_arena_by_slot,
+        };
+        node.kernel
+            .execute(&inputs, output)
+            .map(|_| ())
+            .map_err(|error| ResidentExecutionError::Kernel {
+                node: node.artifact_node,
+                error,
+            })
     }
 
     #[inline(always)]
@@ -558,6 +652,10 @@ impl ReactiveInstance {
                     OutputConstruction::ReadModifyWrite { .. } => {
                         let (candidate, seeded) =
                             self.state.begin_rmw(slot, before_epoch, working_epoch);
+                        if self.plan.eager_f64_reads.is_some() {
+                            self.workspace.state_f64_arena_by_slot[slot.get() as usize] =
+                                EAGER_F64_STATE_ARENA_BASE + candidate as u8;
+                        }
                         if seeded {
                             probe.candidate_seed_bytes += region_bytes(node.write.region);
                             probe.candidate_materialized_bytes += region_bytes(node.write.region);
@@ -615,6 +713,10 @@ impl ReactiveInstance {
                 };
                 if matches!(node.construction, OutputConstruction::FullWrite { .. }) {
                     self.state.tag(slot, candidate, working_epoch);
+                    if self.plan.eager_f64_reads.is_some() {
+                        self.workspace.state_f64_arena_by_slot[slot.get() as usize] =
+                            EAGER_F64_STATE_ARENA_BASE + candidate as u8;
+                    }
                     probe.candidate_materialized_bytes += region_bytes(node.write.region);
                     self.workspace
                         .touched_slots
@@ -1009,6 +1111,80 @@ struct ScratchNodeInputs<'a> {
     state: &'a StateArena,
     scratch: ScratchArenaReadAccess<'a>,
     epoch: InstanceEpoch,
+}
+
+struct EagerF64NodeInputs<'a> {
+    locations: &'a [EagerF64Read],
+    arenas: [&'a [f64]; 5],
+    state_arena_by_slot: &'a [u8],
+}
+
+impl EagerF64NodeInputs<'_> {
+    #[inline(always)]
+    fn f64_at(&self, index: usize) -> Option<&[f64]> {
+        let location = *self.locations.get(index)?;
+        let arena = if location.selector & EAGER_F64_STATE_SLOT_BIT == 0 {
+            location.selector as usize
+        } else {
+            let slot = (location.selector & !EAGER_F64_STATE_SLOT_BIT) as usize;
+            *self.state_arena_by_slot.get(slot)? as usize
+        };
+        self.arenas
+            .get(arena)?
+            .get(location.start as usize..location.end as usize)
+    }
+}
+
+impl ResidentKernelInputs for EagerF64NodeInputs<'_> {
+    #[inline(always)]
+    fn len(&self) -> usize {
+        self.locations.len()
+    }
+
+    #[inline(always)]
+    fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+        self.f64_at(index).map(ResidentValueRef::F64)
+    }
+
+    #[inline(always)]
+    fn f64(&self, index: usize) -> Option<&[f64]> {
+        self.f64_at(index)
+    }
+}
+
+struct EagerNonStateF64NodeInputs<'a> {
+    locations: &'a [EagerF64Read],
+    arenas: [&'a [f64]; 3],
+}
+
+impl EagerNonStateF64NodeInputs<'_> {
+    #[inline(always)]
+    fn f64_at(&self, index: usize) -> Option<&[f64]> {
+        let location = *self.locations.get(index)?;
+        if location.selector & EAGER_F64_STATE_SLOT_BIT != 0 {
+            return None;
+        }
+        self.arenas
+            .get(location.selector as usize)?
+            .get(location.start as usize..location.end as usize)
+    }
+}
+
+impl ResidentKernelInputs for EagerNonStateF64NodeInputs<'_> {
+    #[inline(always)]
+    fn len(&self) -> usize {
+        self.locations.len()
+    }
+
+    #[inline(always)]
+    fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+        self.f64_at(index).map(ResidentValueRef::F64)
+    }
+
+    #[inline(always)]
+    fn f64(&self, index: usize) -> Option<&[f64]> {
+        self.f64_at(index)
+    }
 }
 
 impl ScratchNodeInputs<'_> {

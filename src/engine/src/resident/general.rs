@@ -63,6 +63,22 @@ pub enum ResidentReadLocation {
     Scratch(ResidentRegion),
 }
 
+// Activation packs validated eager f64 reads so the hot loop can select an
+// arena and range without repeatedly decoding the general resident location.
+// Unsupported graphs retain the general executor path.
+const EAGER_F64_ACTIVATION_ARENA: u32 = 0;
+const EAGER_F64_INPUT_ARENA: u32 = 1;
+const EAGER_F64_SCRATCH_ARENA: u32 = 2;
+const EAGER_F64_STATE_ARENA_BASE: u8 = 3;
+const EAGER_F64_STATE_SLOT_BIT: u32 = 1 << 31;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct EagerF64Read {
+    selector: u32,
+    start: u32,
+    end: u32,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ResidentWriteLocation {
     pub slot: CellSlotId,
@@ -148,6 +164,7 @@ pub struct ActivatedPlan {
     pub slots: Box<[ResolvedSlot]>,
     pub nodes: Box<[ActivatedNode]>,
     pub reads: Box<[ResidentReadLocation]>,
+    eager_f64_reads: Option<Box<[EagerF64Read]>>,
     pub topology: DependencyTopology,
     pub inputs: Box<[ActivatedInput]>,
     pub outputs: Box<[ActivatedOutput]>,
@@ -385,6 +402,7 @@ pub struct TurnWorkspace {
     pub(crate) all_outputs_initialized: bool,
     pub(crate) touched_slots: Vec<SlotIndex>,
     pub(crate) changed_slots: Vec<SlotIndex>,
+    state_f64_arena_by_slot: Box<[u8]>,
 }
 
 impl TurnWorkspace {
@@ -403,6 +421,7 @@ impl TurnWorkspace {
             all_outputs_initialized: false,
             touched_slots: Vec::with_capacity(plan.state_slots.len()),
             changed_slots: Vec::with_capacity(plan.state_slots.len()),
+            state_f64_arena_by_slot: vec![0; plan.slots.len()].into_boxed_slice(),
         }
     }
 }
@@ -1382,6 +1401,7 @@ fn build_plan(
     let state_sizes = layout.sizes[2];
     let scratch_sizes = layout.sizes[3];
     let activation_sizes = layout.sizes[0];
+    let eager_f64_reads = build_eager_f64_reads(&reads, topology.eager_turn);
     let plan = ActivatedPlan {
         program_revision: artifact.revision(),
         activation_facts_fingerprint,
@@ -1390,6 +1410,7 @@ fn build_plan(
         slots: layout.slots,
         nodes: nodes.into_boxed_slice(),
         reads: reads.into_boxed_slice(),
+        eager_f64_reads,
         topology,
         inputs,
         outputs,
@@ -1410,6 +1431,40 @@ fn build_plan(
         scratch_sizes,
         activation_sizes,
     ))
+}
+
+fn build_eager_f64_reads(
+    reads: &[ResidentReadLocation],
+    eager_turn: bool,
+) -> Option<Box<[EagerF64Read]>> {
+    if !eager_turn {
+        return None;
+    }
+    reads
+        .iter()
+        .map(|read| {
+            let (selector, region) = match *read {
+                ResidentReadLocation::Constant(region) => (EAGER_F64_ACTIVATION_ARENA, region),
+                ResidentReadLocation::Input(region) => (EAGER_F64_INPUT_ARENA, region),
+                ResidentReadLocation::Scratch(region) => (EAGER_F64_SCRATCH_ARENA, region),
+                ResidentReadLocation::State { slot, region }
+                    if slot.get() < EAGER_F64_STATE_SLOT_BIT =>
+                {
+                    (EAGER_F64_STATE_SLOT_BIT | slot.get(), region)
+                }
+                ResidentReadLocation::State { .. } => return None,
+            };
+            if region.kind != ResidentValueKind::F64 {
+                return None;
+            }
+            Some(EagerF64Read {
+                selector,
+                start: u32::try_from(region.offset).ok()?,
+                end: u32::try_from(region.offset.checked_add(region.len)?).ok()?,
+            })
+        })
+        .collect::<Option<Vec<_>>>()
+        .map(Vec::into_boxed_slice)
 }
 
 fn state_hash_seed(
