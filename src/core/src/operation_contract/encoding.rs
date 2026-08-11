@@ -197,7 +197,7 @@ fn encode_construction(
         } => {
             bytes.push(1);
             bytes.extend_from_slice(&base_input.to_le_bytes());
-            bytes.push(region_tag(*regions));
+            encode_region(*regions, bytes);
         }
         OutputConstruction::Replace { shape } => {
             bytes.push(2);
@@ -224,7 +224,7 @@ fn decode_construction(
         },
         1 => OutputConstruction::ReadModifyWrite {
             base_input: reader.u16()?,
-            regions: decode_region(reader.u8()?)?,
+            regions: decode_region(reader.u8()?, reader)?,
         },
         2 => OutputConstruction::Replace {
             shape: decode_shape(reader)?,
@@ -398,6 +398,13 @@ fn decode_delivery(tag: u8) -> Result<DeliveryMode, OperationContractError> {
     })
 }
 
+fn encode_region(region: RegionPolicy, bytes: &mut Vec<u8>) {
+    bytes.push(region_tag(region));
+    if let RegionPolicy::IndexedAxis { axis } = region {
+        bytes.extend_from_slice(&axis.to_le_bytes());
+    }
+}
+
 fn region_tag(region: RegionPolicy) -> u8 {
     match region {
         RegionPolicy::SingleElement => 0,
@@ -405,16 +412,22 @@ fn region_tag(region: RegionPolicy) -> u8 {
         RegionPolicy::RectangularRegion => 2,
         RegionPolicy::CollectionEntry => 3,
         RegionPolicy::Arbitrary => 4,
+        RegionPolicy::WholeValue => 5,
+        RegionPolicy::IndexedAxis { .. } => 6,
     }
 }
 
-fn decode_region(tag: u8) -> Result<RegionPolicy, OperationContractError> {
+fn decode_region(tag: u8, reader: &mut Reader<'_>) -> Result<RegionPolicy, OperationContractError> {
     Ok(match tag {
         0 => RegionPolicy::SingleElement,
         1 => RegionPolicy::ContiguousRange,
         2 => RegionPolicy::RectangularRegion,
         3 => RegionPolicy::CollectionEntry,
         4 => RegionPolicy::Arbitrary,
+        5 => RegionPolicy::WholeValue,
+        6 => RegionPolicy::IndexedAxis {
+            axis: reader.u16()?,
+        },
         _ => return invalid("unknown region-policy tag"),
     })
 }

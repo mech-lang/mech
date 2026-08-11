@@ -67,6 +67,7 @@ where
         + PartialEq
         + 'static,
     Ref<O>: ToValue,
+    O: FunctionRuntimeType,
 {
     fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
@@ -81,6 +82,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(crate::ops::unary_full_write_contract(O::REPRESENTATION))
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
@@ -163,6 +167,7 @@ where
         + PartialEq
         + 'static,
     Ref<O>: ToValue,
+    O: FunctionRuntimeType,
 {
     fn solve_result(&self) -> MResult<()> {
         let arg_ptr = self.arg.as_ptr();
@@ -177,6 +182,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(crate::ops::unary_full_write_contract(O::REPRESENTATION))
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)

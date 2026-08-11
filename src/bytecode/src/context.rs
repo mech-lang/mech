@@ -372,6 +372,8 @@ impl CompileCtx {
         for instruction in &mut instructions {
             remap_instruction_requirement(instruction, &requirement_remap)?;
         }
+        let (constants, constant_remap) =
+            canonicalize_instruction_constants(&mut instructions, &self.pending_constants)?;
         instructions.push(BytecodeInstruction::Return {
             src: return_register,
         });
@@ -417,13 +419,22 @@ impl CompileCtx {
                     ))
                     .unwrap_err()
                 })?;
-            *target = Some(*constant);
+            *target = Some(
+                constant_remap
+                    .get(*constant as usize)
+                    .copied()
+                    .flatten()
+                    .ok_or_else(|| {
+                        invalid::<()>("state initializer constant is not referenced by bytecode")
+                            .unwrap_err()
+                    })?,
+            );
         }
 
         Ok(CompiledBytecode {
             program: BytecodeProgram {
                 register_count: self.next_register,
-                constants: self.pending_constants.clone(),
+                constants,
                 symbols: self.symbols.clone(),
                 mutable_symbols: self.mutable_symbols.clone(),
                 instructions,
@@ -944,6 +955,38 @@ fn remap_instruction_requirement(
     Ok(())
 }
 
+fn canonicalize_instruction_constants(
+    instructions: &mut [BytecodeInstruction],
+    pending: &[EncodedConstant],
+) -> MResult<(Vec<EncodedConstant>, Vec<Option<u32>>)> {
+    let mut constants = Vec::new();
+    let mut remap = vec![None; pending.len()];
+    for instruction in instructions {
+        let constant = match instruction {
+            BytecodeInstruction::ConstLoad { constant, .. } => constant,
+            BytecodeInstruction::CompositePack { template, .. } => template,
+            _ => continue,
+        };
+        let old = *constant as usize;
+        let value = pending.get(old).ok_or_else(|| {
+            invalid::<()>("instruction constant index is out of range").unwrap_err()
+        })?;
+        let canonical = match remap[old] {
+            Some(canonical) => canonical,
+            None => {
+                let canonical = u32::try_from(constants.len()).map_err(|_| {
+                    invalid::<()>("canonical constant count exceeds u32").unwrap_err()
+                })?;
+                constants.push(value.clone());
+                remap[old] = Some(canonical);
+                canonical
+            }
+        };
+        *constant = canonical;
+    }
+    Ok((constants, remap))
+}
+
 fn invalid<T>(reason: impl Into<String>) -> MResult<T> {
     Err(MechError::new(
         BytecodeValidationError {
@@ -1343,6 +1386,32 @@ mod tests {
                 BytecodeInstruction::Return { src: register },
             ],
         );
+    }
+
+    #[test]
+    fn finish_orders_constants_by_first_instruction_reference() {
+        let mut context = CompileCtx::new();
+        let registers = allocate_registers(&mut context, 2);
+        let skipped = context.intern_constant(f64_constant(1.0)).unwrap();
+        let first = context.intern_constant(f64_constant(2.0)).unwrap();
+        let second = context.intern_constant(f64_constant(3.0)).unwrap();
+        assert_eq!((skipped, first, second), (0, 1, 2));
+        context.emit_const_load(registers[0], second);
+        context.emit_const_load(registers[1], first);
+
+        let compiled = context.finish_program(registers[1]).unwrap();
+        assert_eq!(
+            compiled.program.constants,
+            vec![f64_constant(3.0), f64_constant(2.0)]
+        );
+        assert!(matches!(
+            compiled.program.instructions[0],
+            BytecodeInstruction::ConstLoad { constant: 0, .. }
+        ));
+        assert!(matches!(
+            compiled.program.instructions[1],
+            BytecodeInstruction::ConstLoad { constant: 1, .. }
+        ));
     }
 
     #[test]

@@ -557,11 +557,20 @@ pub fn compile_executable_program_artifact(
         if has_mutable && has_immutable && immutable_precedes_state {
             return Err(ArtifactBuildError::AmbiguousRegisterRole { register });
         }
+        let has_constant_seed = compiled.program.instructions.iter().any(|instruction| {
+            matches!(
+                instruction,
+                BytecodeInstruction::ConstLoad { dst, .. }
+                    | BytecodeInstruction::CompositePack { dst, .. }
+                    if *dst == register
+            )
+        });
         register_constant_roles[register_index] = Some(if has_mutable {
             CompilerConstantRole::StateInitializer
         } else if pending_schema.contains_reference
             && has_immutable
             && !computed_registers[register_index]
+            && !has_constant_seed
         {
             CompilerConstantRole::ExternalInput
         } else {
@@ -728,15 +737,40 @@ pub fn compile_executable_program_artifact(
         input_indexes[register as usize] = Some(input);
     }
 
+    let mut mutable_declaration_instructions = vec![None; compiled.program.register_count as usize];
+    for (instruction_index, (instruction, role)) in compiled
+        .program
+        .instructions
+        .iter()
+        .zip(&compiled.instruction_roles)
+        .enumerate()
+    {
+        if *role != Some(CompiledInstructionRole::DeclarationMarker) {
+            continue;
+        }
+        let Some(register) = instruction_destination(instruction) else {
+            continue;
+        };
+        if definitions_by_register[register as usize]
+            .iter()
+            .any(|definition| definition.mutable)
+        {
+            mutable_declaration_instructions[register as usize].get_or_insert(instruction_index);
+        }
+    }
     let assigned_state_registers = compiled
         .program
         .instructions
         .iter()
         .zip(&compiled.instruction_roles)
-        .filter_map(|(instruction, role)| {
-            (*role == Some(CompiledInstructionRole::Node(CompiledNodeKind::Register)))
+        .enumerate()
+        .filter_map(|(instruction_index, (instruction, role))| {
+            let register = matches!(role, Some(CompiledInstructionRole::Node(_)))
                 .then(|| instruction_destination(instruction))
-                .flatten()
+                .flatten()?;
+            mutable_declaration_instructions[register as usize]
+                .is_some_and(|declaration| instruction_index > declaration)
+                .then_some(register)
         })
         .collect::<std::collections::BTreeSet<_>>();
     let mut inferred_state_initializers = vec![None; compiled.program.register_count as usize];
@@ -946,7 +980,10 @@ pub fn compile_executable_program_artifact(
                     }
                 }
                 let node_index = checked_u32(nodes.len(), "NodeId")?;
-                let state_index = if kind == CompiledNodeKind::Register {
+                let state_index = if register_state_indexes[dst as usize].is_some()
+                    && mutable_declaration_instructions[dst as usize]
+                        .is_some_and(|marker| instruction_index > marker)
+                {
                     let _schema = schema.ok_or(ArtifactBuildError::MissingRegisterKind {
                         instruction: instruction_id,
                         register: dst,
@@ -959,9 +996,6 @@ pub fn compile_executable_program_artifact(
                         },
                     )?;
                     let declaration = &mut states[state as usize];
-                    if declaration.producer_node != u32::MAX {
-                        return Err(ArtifactBuildError::AmbiguousRegisterRole { register: dst });
-                    }
                     declaration.producer_node = node_index;
                     Some(state)
                 } else {
@@ -1147,8 +1181,15 @@ pub fn compile_executable_program_artifact(
         });
     }
 
-    let (inputs, nodes, outputs, constraints) =
+    let (inputs, mut nodes, outputs, mut constraints) =
         prune_unused_inputs(inputs, nodes, outputs, constraints)?;
+    let constant_store = prune_unused_constants(
+        &schemas,
+        &constant_store,
+        &mut states,
+        &mut nodes,
+        &mut constraints,
+    )?;
 
     compile_source_program_with_contracts(
         &SourceProgram {
@@ -1161,6 +1202,72 @@ pub fn compile_executable_program_artifact(
         &mut ArtifactBuildContext::new(&schemas, &constant_store),
         &node_contracts,
     )
+}
+
+#[cfg(feature = "compiler")]
+fn prune_unused_constants(
+    schemas: &SchemaTable,
+    constants: &ConstantStore,
+    states: &mut [SourceState],
+    nodes: &mut [SourceNode],
+    constraints: &mut [SourceIntegrityConstraint],
+) -> Result<ConstantStore, ArtifactBuildError> {
+    let mut used = std::collections::BTreeSet::<ConstantId>::new();
+    for state in states.iter() {
+        if let Some(constant) = state.initializer {
+            used.insert(constant);
+        }
+    }
+    for node in nodes.iter() {
+        for source in &node.inputs {
+            if let SourceValue::Constant(constant) = source {
+                used.insert(*constant);
+            }
+        }
+    }
+    for constraint in constraints.iter() {
+        for source in &constraint.inputs {
+            if let SourceValue::Constant(constant) = source {
+                used.insert(*constant);
+            }
+        }
+    }
+
+    let mut builder = ConstantStoreBuilder::new(schemas);
+    let mut remap = std::collections::BTreeMap::<ConstantId, ConstantHandle>::new();
+    for constant in used {
+        let value = constants
+            .get(constant)
+            .ok_or(ArtifactBuildError::UnknownConstant { constant })?;
+        remap.insert(constant, builder.insert(value.clone())?);
+    }
+    let build = builder.finish()?;
+    let remap = remap
+        .into_iter()
+        .map(|(old, handle)| Ok((old, build.resolve(handle)?)))
+        .collect::<Result<std::collections::BTreeMap<_, _>, ArtifactBuildError>>()?;
+    let (constants, _) = build.into_parts();
+    let remap_source = |source: &mut SourceValue| {
+        if let SourceValue::Constant(constant) = source {
+            *constant = remap[constant];
+        }
+    };
+    for state in states {
+        if let Some(constant) = &mut state.initializer {
+            *constant = remap[constant];
+        }
+    }
+    for node in nodes {
+        for source in &mut node.inputs {
+            remap_source(source);
+        }
+    }
+    for constraint in constraints {
+        for source in &mut constraint.inputs {
+            remap_source(source);
+        }
+    }
+    Ok(constants)
 }
 
 #[cfg(feature = "compiler")]

@@ -175,6 +175,31 @@ fn canonical_bytes_round_trip_every_contract_family() {
 }
 
 #[test]
+fn canonical_bytes_round_trip_resident_region_policies() {
+    for region in [
+        RegionPolicy::WholeValue,
+        RegionPolicy::IndexedAxis { axis: 0 },
+        RegionPolicy::IndexedAxis { axis: 7 },
+    ] {
+        let contract = one_input_one_output(
+            SchemaId::new(3),
+            SchemaId::new(3),
+            AliasPolicy::MayAlias { input: 0 },
+            OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: region,
+            },
+            ExternalInteraction::Pure,
+        );
+        let bytes = contract.canonical_bytes().unwrap();
+        assert_eq!(
+            ResolvedOperationContract::from_canonical_bytes(&bytes).unwrap(),
+            contract,
+        );
+    }
+}
+
+#[test]
 fn canonical_decoder_rejects_nested_counts_before_allocating() {
     let mut declared_bytes = declared(ChangeDetectionPolicy::ExactScalar)
         .canonical_bytes()
