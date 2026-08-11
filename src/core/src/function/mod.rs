@@ -1538,14 +1538,12 @@ impl ReactivePlan {
     ) -> MResult<ReactiveNodeId> {
         let node_id = self.nodes.len();
         let plan_index = node_id;
-        let function_description = function.to_string();
-
         let dependency_kinds = match function.reactive_dependency_kinds(arguments.len()) {
             Some(kinds) => {
                 if kinds.len() != arguments.len() {
                     return Err(MechError::new(
                         ReactiveDependencyArityMismatchError {
-                            function: function_description,
+                            function: function.to_string(),
                             expected: arguments.len(),
                             found: kinds.len(),
                         },
@@ -1562,7 +1560,7 @@ impl ReactivePlan {
                 if scopes.len() != arguments.len() {
                     return Err(MechError::new(
                         ReactiveDependencyScopeArityMismatchError {
-                            function: function_description,
+                            function: function.to_string(),
                             expected: arguments.len(),
                             found: scopes.len(),
                         },
@@ -1619,7 +1617,7 @@ impl ReactivePlan {
                     Some(_) => {
                         return Err(MechError::new(
                             ReactiveDependencyKindConflictError {
-                                function: function_description,
+                                function: function.to_string(),
                                 cell,
                             },
                             None,

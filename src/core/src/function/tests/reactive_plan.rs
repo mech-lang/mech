@@ -3,6 +3,7 @@ use super::support::TestFunction;
 #[cfg(all(feature = "set", feature = "f64"))]
 use super::support::set_output;
 use crate::{LegacyValue, ReactiveCellId, Ref};
+use std::{cell::RefCell, rc::Rc};
 
 #[test]
 fn reactive_plan_push_creates_one_node() {
@@ -36,6 +37,25 @@ fn reactive_plan_node_is_only_function_owner() {
     plan.push(Box::new(TestFunction::new("second")));
 
     assert_eq!(plan.len(), plan.nodes.len());
+}
+
+#[test]
+fn successful_registration_does_not_render_function_description() {
+    let description_calls = Rc::new(RefCell::new(0));
+    let mut plan = ReactivePlan::new();
+
+    plan.register(
+        Box::new(
+            TestFunction::new("expensive-description")
+                .with_description_counter(description_calls.clone()),
+        ),
+        &[],
+    )
+    .unwrap();
+
+    assert_eq!(*description_calls.borrow(), 0);
+    assert_eq!(plan[0].to_string(), "expensive-description");
+    assert_eq!(*description_calls.borrow(), 1);
 }
 
 #[cfg(all(feature = "set", feature = "f64"))]
