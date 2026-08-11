@@ -236,6 +236,7 @@ fn particle_example_uses_the_shared_project_and_gpu_shim() {
     assert!(PROJECT_BOOTSTRAP.contains("data-mech-gpu-renderer"));
     assert!(PROJECT_BOOTSTRAP.contains("this.output.dimensions[1] === 2"));
     assert!(PROJECT_BOOTSTRAP.contains("maxRenderedPoints = 250_000"));
+    assert!(PROJECT_BOOTSTRAP.contains("timings.artifactCompilation / 1000"));
     assert!(!PROJECT_BOOTSTRAP.contains("seedParticles"));
     assert!(!PROJECT_BOOTSTRAP.contains("host-positions"));
     assert!(SERVED_PARTICLE_SOURCE.contains("particle-count := 2000000f32"));
