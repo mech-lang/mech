@@ -1,0 +1,12 @@
+config := {
+  host: {
+    provider: "gpu-particles"
+    contexts: [
+      {
+        name: "simulation"
+        base-uri: "gpu-particles://{instance}/simulation"
+        operations: ["write"]
+      }
+    ]
+  }
+}

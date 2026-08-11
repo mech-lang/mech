@@ -69,7 +69,7 @@ host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_sign
 # Served `/code/...` documents are encoded by a native formatter with Mika
 # nodes enabled. Keep that feature-gated Program schema identical in the
 # prebuilt browser package so serialized enum indices remain compatible.
-browser_project = ["source", "browser_project_runner", "sample_hold", "state_step", "served_project_authority", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_console", "browser_host_scene", "baselib", "mika", "statements_default", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "f64", "bool", "string_default", "record", "tuple", "table", "atom", "enum", "variables"]
+browser_project = ["source", "browser_project_runner", "sample_hold", "state_step", "served_project_authority", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_console", "browser_host_scene", "browser_host_gpu_particles", "baselib", "mika", "statements_default", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "f64", "bool", "string_default", "record", "tuple", "table", "atom", "enum", "variables"]
 browser_project_runner = ["source", "program", "pretty_print", "serde"]
 served_project_authority = ["host_delegation_signing"]
 browser_host_dom = ["dep:mech-host-browser", "mech-host-browser/provider", "mech-host-browser/serde"]
@@ -77,6 +77,7 @@ browser_host_time = ["dep:mech-host-time", "mech-host-time/browser"]
 browser_host_timer = ["dep:mech-host-timer", "mech-host-timer/browser"]
 browser_host_console = ["dep:mech-host-console", "mech-host-console/browser"]
 browser_host_scene = ["dep:mech-host-scene", "mech-host-scene/browser"]
+browser_host_gpu_particles = ["dep:mech-host-gpu-particles", "mech-host-gpu-particles/browser"]
 run_program = ["program"]
 inline_output_values = []
 codeblock_output_values = []
@@ -312,6 +313,7 @@ mech-host-time = { version = "0.3.5", path = "../../hosts/time", default-feature
 mech-host-console = { version = "0.3.5", path = "../../hosts/console", default-features = false, optional = true }
 mech-host-timer = { version = "0.3.5", path = "../../hosts/timer", default-features = false, optional = true }
 mech-host-scene = { version = "0.3.5", path = "../../hosts/scene", default-features = false, optional = true }
+mech-host-gpu-particles = { version = "0.3.5", path = "../../hosts/gpu-particles", default-features = false, optional = true }
 
 wasm-bindgen = "0.2.100"
 serde-wasm-bindgen = "0.6.5"

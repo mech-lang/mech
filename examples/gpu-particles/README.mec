@@ -1,0 +1,14 @@
+GPU Particle Field
+===============================================================================
+
+This example sends one committed control record from Mech to a resident WebGPU
+particle pipeline. Particle arrays remain in persistent device buffers during
+steady-state execution.
+
+```sh
+bash scripts/build-mech-browser.sh
+./target/release/mech serve examples/gpu-particles
+```
+
+The browser must provide WebGPU. The compute and render passes share the same
+resident particle state; only control values cross the Mech host boundary.

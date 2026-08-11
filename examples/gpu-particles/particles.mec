@@ -1,0 +1,17 @@
+@particles := gpu-particles://particles/simulation{:write(control)}
+
+particle-count := 1000000.0
+gravity := 0.34
+drag := 0.997
+point-size := 1.35
+time-scale := 1.0
+
+control := {
+  particle-count: particle-count
+  gravity: gravity
+  drag: drag
+  point-size: point-size
+  time-scale: time-scale
+}
+
+@particles/control <- control

@@ -16,6 +16,8 @@ use mech_host_browser::BrowserRuntimeInjectionConfig;
 use mech_host_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation};
 #[cfg(feature = "browser_host_console")]
 use mech_host_console::BrowserConsoleHostFactory;
+#[cfg(feature = "browser_host_gpu_particles")]
+use mech_host_gpu_particles::BrowserGpuParticleHostFactory;
 #[cfg(feature = "browser_host_scene")]
 use mech_host_scene::{BrowserSceneHostFactory, BrowserSceneRegistry};
 #[cfg(feature = "browser_host_time")]
@@ -794,6 +796,14 @@ fn runtime_builder_with_factories(
             .host_factory(Box::new(scene_factory))
             .map_err(to_js_error)?;
     }
+    #[cfg(feature = "browser_host_gpu_particles")]
+    {
+        builder = builder
+            .host_factory(Box::new(
+                BrowserGpuParticleHostFactory::new().map_err(to_js_error)?,
+            ))
+            .map_err(to_js_error)?;
+    }
     Ok(builder)
 }
 
@@ -869,6 +879,8 @@ fn compiled_browser_providers() -> BTreeMap<&'static str, &'static str> {
     providers.insert("console", "browser_host_console");
     #[cfg(feature = "browser_host_scene")]
     providers.insert("scene", "browser_host_scene");
+    #[cfg(feature = "browser_host_gpu_particles")]
+    providers.insert("gpu-particles", "browser_host_gpu_particles");
     providers
 }
 
@@ -879,6 +891,7 @@ fn standard_browser_provider_feature(provider: &str) -> Option<&'static str> {
         "timer" => Some("browser_host_timer"),
         "console" => Some("browser_host_console"),
         "scene" => Some("browser_host_scene"),
+        "gpu-particles" => Some("browser_host_gpu_particles"),
         _ => None,
     }
 }

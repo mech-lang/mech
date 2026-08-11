@@ -89,7 +89,7 @@ run = ["cli_core", "standard_source", "cli_host", "time_host_native", "timer_hos
 test = ["cli_core", "standard_source", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/default"]
 project = ["standard_source", "mech-runtime", "mech-runtime/default"]
 cli_host = ["mech-runtime", "mech-runtime/default", "dep:mech-host-cli", "mech-host-cli/provider"]
-web_host = ["mech-runtime", "mech-runtime/default", "mech-host-browser", "mech-host-browser/serde", "mech-host-browser/provider", "dep:mech-host-time", "dep:mech-host-timer", "dep:mech-host-console", "dep:mech-host-scene"]
+web_host = ["mech-runtime", "mech-runtime/default", "mech-host-browser", "mech-host-browser/serde", "mech-host-browser/provider", "dep:mech-host-time", "dep:mech-host-timer", "dep:mech-host-console", "dep:mech-host-scene", "dep:mech-host-gpu-particles"]
 bundle_web_core = ["project", "web_host", "formatter_core", "serde", "mech-runtime", "mech-runtime/default"]
 bundle_web = ["cli_core", "bundle_web_core"]
 serve = ["cli_core", "project", "web_host", "formatter_core", "mech-runtime", "mech-runtime/default", "ignore"]
@@ -358,6 +358,7 @@ mech-host-time = { version = "0.3.5", path = "hosts/time", default-features = fa
 mech-host-console = { version = "0.3.5", path = "hosts/console", default-features = false, optional = true }
 mech-host-timer = { version = "0.3.5", path = "hosts/timer", default-features = false, optional = true }
 mech-host-scene = { version = "0.3.5", path = "hosts/scene", default-features = false, optional = true }
+mech-host-gpu-particles = { version = "0.3.5", path = "hosts/gpu-particles", default-features = false, optional = true }
 mech-host-robot-arm = { version = "0.3.5", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
 
@@ -404,6 +405,7 @@ members = [
   "hosts/time",
   "hosts/timer",
   "hosts/scene",
+  "hosts/gpu-particles",
   "tests/fixtures/native-live-host",
 ]
 
@@ -430,6 +432,7 @@ mech-host-time = { path = 'hosts/time'}
 mech-host-console = { path = 'hosts/console'}
 mech-host-timer = { path = 'hosts/timer'}
 mech-host-scene = { path = 'hosts/scene'}
+mech-host-gpu-particles = { path = 'hosts/gpu-particles'}
 #mech-utilities = { path = 'src/utilities' }
 mech-combinatorics = { path = 'machines/combinatorics' }
 mech-compare = { path = 'machines/compare' }

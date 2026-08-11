@@ -28,6 +28,7 @@ PACKAGES = {
     "mech-combinatorics": ROOT / "machines/combinatorics/Cargo.toml",
     "mech-host-cli": ROOT / "hosts/cli/Cargo.toml",
     "mech-host-console": ROOT / "hosts/console/Cargo.toml",
+    "mech-host-gpu-particles": ROOT / "hosts/gpu-particles/Cargo.toml",
     "mech-host-time": ROOT / "hosts/time/Cargo.toml",
     "mech-host-timer": ROOT / "hosts/timer/Cargo.toml",
     "mech-host-scene": ROOT / "hosts/scene/Cargo.toml",
@@ -36,6 +37,7 @@ PACKAGES = {
 REQUIRED_RESOURCES = {
     "mech-host-cli": ("host.mcfg",),
     "mech-host-console": ("host.mcfg",),
+    "mech-host-gpu-particles": ("host.mcfg",),
     "mech-host-time": ("host.mcfg",),
     "mech-host-timer": ("host.mcfg",),
     "mech-host-scene": ("host.mcfg",),

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mech GPU Particle Field</title>
+  <link rel="stylesheet" href="particles.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Mech resident GPU runtime</p>
+        <h1>GPU Particle Field</h1>
+      </div>
+      <p class="status" id="gpu-status"><span aria-hidden="true"></span>Waiting for Mech</p>
+    </header>
+
+    <section class="simulation" aria-label="GPU particle simulation">
+      <canvas id="particle-canvas"></canvas>
+      <p class="canvas-message" id="canvas-message" role="status">Initializing</p>
+    </section>
+
+    <section class="telemetry" aria-label="Simulation telemetry">
+      <dl>
+        <div><dt>Particles</dt><dd id="particle-count">0</dd></div>
+        <div><dt>Frame rate</dt><dd id="frame-rate">0 Hz</dd></div>
+        <div><dt>Throughput</dt><dd id="throughput">0 M updates/s</dd></div>
+        <div><dt>State</dt><dd id="resident-state">0 MB resident</dd></div>
+      </dl>
+      <div class="controls" aria-label="Particle controls">
+        <div class="segments" role="group" aria-label="Particle count">
+          <button type="button" data-particle-count="100000">100K</button>
+          <button type="button" data-particle-count="500000">500K</button>
+          <button type="button" data-particle-count="1000000" aria-pressed="true">1M</button>
+          <button type="button" data-particle-count="2000000">2M</button>
+        </div>
+        <button type="button" class="command" id="pause-button">Pause</button>
+        <button type="button" class="command" id="reset-button">Reset</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="particle-gpu.js"></script>
+  <script
+    type="module"
+    src="./_mech/project.js"
+    data-mech-project="."
+    data-mech-max-inputs="4"></script>
+</body>
+</html>

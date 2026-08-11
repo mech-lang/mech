@@ -2087,6 +2087,7 @@ dependencies = [
  "mech-host-browser",
  "mech-host-cli",
  "mech-host-console",
+ "mech-host-gpu-particles",
  "mech-host-robot-arm",
  "mech-host-scene",
  "mech-host-time",
@@ -2243,6 +2244,16 @@ dependencies = [
  "mech-runtime",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "mech-host-gpu-particles"
+version = "0.3.5"
+dependencies = [
+ "js-sys",
+ "mech-core",
+ "mech-runtime",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -2439,6 +2450,7 @@ dependencies = [
  "mech-engine",
  "mech-host-browser",
  "mech-host-console",
+ "mech-host-gpu-particles",
  "mech-host-scene",
  "mech-host-time",
  "mech-host-timer",

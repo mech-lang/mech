@@ -46,6 +46,10 @@ fn standard_browser_runtime_provider_profile() -> MResult<BrowserRuntimeProvider
     profile.register(mech_host_scene::scene_host_manifest()?, |settings| {
         mech_host_scene::scene_settings_from_config(settings).map(|_| ())
     })?;
+    profile.register(
+        mech_host_gpu_particles::gpu_particle_host_manifest()?,
+        |settings| mech_host_gpu_particles::gpu_particle_settings_from_config(settings).map(|_| ()),
+    )?;
     Ok(profile)
 }
 
