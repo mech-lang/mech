@@ -23,3 +23,15 @@ The current native call is a correctness path: it creates and reads back a GPU
 dispatch for one turn. A resident session that retains the pipeline and device
 buffers across turns is the next executor step; see
 [`gpu-artifact-lowering-findings.md`](../../docs/design/gpu-artifact-lowering-findings.md).
+
+Run the release benchmark with a particle count, CPU turn count, and GPU sample
+count:
+
+```text
+cargo run -p mech-gpu --release --features native \
+  --example particle_benchmark -- 50000 20 7
+```
+
+The benchmark checks every GPU output against the CPU executor and reports
+artifact/WGSL compilation, CPU execution, cold GPU execution, and the median
+warm one-shot GPU phase breakdown separately.
