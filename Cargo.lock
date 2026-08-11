@@ -2725,6 +2725,7 @@ dependencies = [
  "mech-console",
  "mech-core",
  "mech-engine",
+ "mech-gpu",
  "mech-runtime",
  "mech-scene",
  "mech-stdlib",
