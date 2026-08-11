@@ -1,10 +1,10 @@
 use mech_core::{InstanceEpoch, SlotIndex};
 
-use super::{ActivatedPlan, NodeIndex, slot};
+use super::{GateBPlan, NodeIndex, slot};
 use crate::efficacy::ekf::operation::EkfScratch;
 
 #[derive(Debug)]
-pub(crate) struct TurnWorkspace {
+pub(crate) struct GateBWorkspace {
     pub(crate) input: [f64; 4],
     pub(crate) scratch: Box<[EkfScratch]>,
     pub(crate) slot_epoch_marks: Box<[InstanceEpoch]>,
@@ -18,8 +18,8 @@ pub(crate) struct TurnWorkspace {
     pub(crate) linear_node_order: Box<[NodeIndex]>,
 }
 
-impl TurnWorkspace {
-    pub(crate) fn activate(plan: &ActivatedPlan) -> Self {
+impl GateBWorkspace {
+    pub(crate) fn activate(plan: &GateBPlan) -> Self {
         let persistent_capacity = plan.instances * 2;
         Self {
             input: [0.0; 4],
@@ -101,8 +101,8 @@ mod tests {
 
     #[test]
     fn dense_marks_skip_a_clean_branch_and_deduplicate_invalidations() {
-        let plan = ActivatedPlan::activate(super::super::ProgramArtifact::frozen_ekf_batch(1));
-        let mut workspace = TurnWorkspace::activate(&plan);
+        let plan = GateBPlan::from_control_fixture(super::super::GateBControlFixture::new(1));
+        let mut workspace = GateBWorkspace::activate(&plan);
         let epoch = InstanceEpoch(7);
         let order = [
             NodeIndex(0),

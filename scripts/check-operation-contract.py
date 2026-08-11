@@ -12,6 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "tests/architecture/operation-contract/c4-boundary.json"
+C4_FINAL_COMMIT = "33298522331d40960175427052ce363bb5e424df"
 CONTRACT_SOURCES = (
     "src/core/src/operation_contract/declaration.rs",
     "src/core/src/operation_contract/resolved.rs",
@@ -23,6 +24,17 @@ CONTRACT_SOURCES = (
 
 def read(root: Path, path: str) -> str:
     return (root / path).read_text()
+
+
+def read_at(root: Path, commit: str, path: str) -> str:
+    result = subprocess.run(
+        ["git", "show", f"{commit}:{path}"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    return result.stdout
 
 
 def type_is_declared(source: str, name: str) -> bool:
@@ -156,6 +168,19 @@ def validate_representatives(root: Path, representatives: list[dict[str, object]
     return errors
 
 
+def validate_representatives_at(
+    root: Path, commit: str, representatives: list[dict[str, object]]
+) -> list[str]:
+    errors: list[str] = []
+    for representative in representatives:
+        path = str(representative["path"])
+        source = read_at(root, commit, path)
+        for marker in representative["markers"]:
+            if str(marker) not in source:
+                errors.append(f"representative declaration {path} lost {marker}")
+    return errors
+
+
 def validate_opaque_policy(validation: str, fixture: str) -> list[str]:
     errors: list[str] = []
     for marker in (
@@ -176,9 +201,11 @@ def validate_opaque_policy(validation: str, fixture: str) -> list[str]:
     return errors
 
 
-def changed_protected_paths(root: Path, base: str, protected: list[str]) -> list[str]:
+def changed_protected_paths(
+    root: Path, base: str, protected: list[str], head: str = "HEAD"
+) -> list[str]:
     result = subprocess.run(
-        ["git", "diff", "--name-only", base, "--", *protected],
+        ["git", "diff", "--name-only", base, head, "--", *protected],
         cwd=root,
         text=True,
         capture_output=True,
@@ -190,6 +217,14 @@ def changed_protected_paths(root: Path, base: str, protected: list[str]) -> list
 def run(root: Path = ROOT) -> list[str]:
     manifest = json.loads((root / MANIFEST.relative_to(ROOT)).read_text())
     errors: list[str] = []
+    ancestor = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", C4_FINAL_COMMIT, "HEAD"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+    )
+    if ancestor.returncode != 0:
+        errors.append(f"C4 final commit {C4_FINAL_COMMIT} must be an ancestor of HEAD")
     contract_source = "\n".join(read(root, path) for path in CONTRACT_SOURCES)
     errors.extend(validate_contract_sources(contract_source, manifest["contract_types"]))
     errors.extend(validate_table_boundary(contract_source))
@@ -201,19 +236,35 @@ def run(root: Path = ROOT) -> list[str]:
     section = read(root, "src/core/src/program/bytecode/section.rs")
     reader = read(root, "src/core/src/program/bytecode/reader.rs")
     errors.extend(validate_bytecode(section, reader, manifest["bytecode_section"]))
-    errors.extend(validate_representatives(root, manifest["representative_declarations"]))
+    errors.extend(
+        validate_representatives_at(
+            root, C4_FINAL_COMMIT, manifest["representative_declarations"]
+        )
+    )
     errors.extend(validate_opaque_policy(
         read(root, "src/engine/src/artifact/validation.rs"),
         read(root, "src/engine/tests/program_artifact_contract.rs"),
     ))
     changed = changed_protected_paths(
-        root, manifest["base_commit"], manifest["protected_execution_paths"]
+        root,
+        manifest["base_commit"],
+        manifest["protected_execution_paths"],
+        C4_FINAL_COMMIT,
     )
     unapproved = [path for path in changed if path not in manifest["allowed_protected_changes"]]
     if unapproved:
         errors.append("C4 changes an unapproved production execution path: " + ", ".join(unapproved))
     diff = subprocess.run(
-        ["git", "diff", manifest["base_commit"], "--", "src", "machines", "hosts"],
+        [
+            "git",
+            "diff",
+            manifest["base_commit"],
+            C4_FINAL_COMMIT,
+            "--",
+            "src",
+            "machines",
+            "hosts",
+        ],
         cwd=root,
         text=True,
         capture_output=True,

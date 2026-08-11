@@ -1,9 +1,9 @@
 # Program artifact resident activation contract
 
-This document is the normative D0 contract for converting a finalized
-`ProgramArtifact` into resident execution state. D0 freezes the boundary and
-the first admitted workload; it does not implement production activation or
-route any program through the resident executor.
+This document is the normative contract, introduced by D0, for converting a
+finalized `ProgramArtifact` into resident execution state. D1 implements the
+first admitted ordinary-EKF vertical slice behind an efficacy-only feature. It
+does not route general production programs through the resident executor.
 
 The boundary is:
 
@@ -41,9 +41,9 @@ Authority is ordered and non-overlapping:
   scratch, and bounded turn-local bookkeeping.
 - The turn ledger is the retained transition-history authority.
 
-The private Gate B `resident::artifact::ProgramArtifact` is not semantic
-authority. It is an efficacy control scheduled for replacement in D1. D1 must
-adapt the finalized public artifact instead of preserving two artifact models.
+The Gate B control is not semantic authority and is now named
+`GateBControlFixture`. The finalized public artifact is the only
+`ProgramArtifact` authority used by D1 activation and execution.
 
 ## Identity map
 
@@ -157,16 +157,13 @@ No full-write output is seeded from the published version.
 
 ## Receipt boundary
 
-D1 continues to use the private Gate B fixed receipt for efficacy evidence:
+The artifact-derived engine path returns a typed `ResidentTurnSummary`
+containing the instance and program identities, before/after epochs, candidate
+hash, and bounded touched/changed/dirty counts. The private runtime Gate B
+coordinator converts that summary into the existing benchmark-only
+`GateBFixedReceipt`; D1 does not introduce a new canonical receipt format.
 
-```text
-GateBFixedReceipt
-  benchmark-only
-  not the permanent TurnReceipt
-  not exposed as runtime API
-```
-
-The sole normative D1 sequence is:
+The sole normative D1 sequence remains the D0 sequence:
 
 ```text
 1. reserve admission/ledger capacity before execution
@@ -179,13 +176,9 @@ The sole normative D1 sequence is:
 8. append the already-prepared record infallibly
 ```
 
-The D0 boundary records these eight names in the exact `ordered_steps` order;
-reordering, omitting, or inserting a step is a contract failure.
-
-Receipt contents depend on the candidate hash, touched slots, changed slots,
-and dirty-node count, so receipt preparation cannot precede candidate
-execution or summary derivation. D0 does not introduce canonical receipt
-types, event projection, effect delivery, or production ledger routing.
+Receipt preparation failure aborts the candidate before publication. After
+publication the prepared append is infallible. D1 does not introduce event
+projection, effect delivery, or production ledger routing.
 
 ## D1 admitted profile
 
@@ -199,7 +192,9 @@ input interaction:        Observation(CaptureAsInputFact)
 dimension lifetime:       CompileTime
 output construction:      FullWrite
 alias policy:             NoAlias
-change detection:         KernelReported or ExactScalar
+pure numeric kernels:     KernelReported
+pure predicates:          ExactScalar
+sole observation root:    AlwaysChanged
 observer policy:          Synchronous
 ```
 
@@ -222,7 +217,8 @@ Build
 MayAlias
 InPlaceRequired
 SemanticHash
-AlwaysChanged
+AlwaysChanged on resident compute or state update
+second observation root
 unknown kernel
 unknown operation
 unsupported schema
@@ -237,9 +233,9 @@ the legacy executor.
 
 The ordinary source fixture at
 `tests/architecture/resident-activation/ekf-source-v1.mec` is the exact D1
-vertical slice. Its `ekf/*` operations will bind to the typed kernels already
-proven by Gate B. They are not compiler-generated source construction and D0
-does not register or elaborate them.
+vertical slice. Its `ekf/*` operations bind to the typed kernels already proven
+by Gate B after compiling through the normal parser and `MechProgram`; the
+fixture is not a hand-built artifact or source plan.
 
 The semantic workload and the committed source bytes are authoritative. The
 fixture uses the current parser's hanging-call form: no whitespace immediately
@@ -289,11 +285,12 @@ reconfiguration and generalizes storage and shapes.
 
 ## Private Gate B control and migration
 
-The private Gate B executor remains an efficacy control. Its typed dual
+The Gate B executor remains an efficacy control. Its typed dual
 buffers, candidate epoch, fixed receipt, and single release-store publication
-prove that the resident target is effective. D1 replaces its private artifact
-and hard-coded activation path with activation from the finalized public
-`ProgramArtifact`; it does not duplicate those authorities.
+prove that the resident target is effective. D1 replaces its former private
+artifact and activation authority with activation from the finalized public
+`ProgramArtifact`; only the explicitly named control fixture remains for
+performance comparison.
 
 The existing resident module must not gain dependencies on legacy value
 storage, mutable-reference identity, reactive-cell identity, legacy journals,
@@ -304,7 +301,8 @@ is reproduced mechanically from the authoritative value-system inventory.
 ## Phase boundaries
 
 - D0 freezes this contract and changes no production behavior.
-- D1 implements the frozen ordinary EKF artifact-to-resident vertical slice.
+- D1 implements the frozen ordinary EKF artifact-to-resident vertical slice;
+  one artifact and two state slots are migrated within that slice only.
 - D2 generalizes storage, shapes, reconfiguration, and observer retention.
 - D3 adds observations, effects, and transactional participants.
 - D4 routes supported production programs.

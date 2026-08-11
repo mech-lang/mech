@@ -160,6 +160,13 @@ def merge_structural_probes(
                 ("mech-resident-turn", 1, 100_000, 1),
                 ("mech-resident-turn", 1, 0, 1_000_000_001),
                 ("mech-resident-turn-full-write", 1, 0, 1),
+                ("mech-resident-artifact-source", 1, 0, 1),
+                ("mech-resident-artifact-source", 1, 1_000, 1),
+                ("mech-resident-artifact-source", 1, 100_000, 1),
+                ("mech-resident-artifact-source", 1, 0, 1_000_000_001),
+                ("mech-resident-artifact-bytecode", 1, 0, 1),
+                ("mech-resident-artifact-kernel-source", 1, 0, 1),
+                ("mech-resident-artifact-kernel-bytecode", 1, 0, 1),
             }
         )
     for key in legacy | resident:
@@ -415,6 +422,69 @@ def assemble_lanes(
                 probes[key]["quantized_state_hash"],
             )
         )
+    for lane, benchmark, history, next_epoch in (
+        (
+            "mech-resident-artifact-source",
+            "gate_b/mech-resident-artifact/source-history-0-low-epoch",
+            0,
+            1,
+        ),
+        (
+            "mech-resident-artifact-source",
+            "gate_b/mech-resident-artifact/source-history-1000-low-epoch",
+            1_000,
+            1,
+        ),
+        (
+            "mech-resident-artifact-source",
+            "gate_b/mech-resident-artifact/source-history-100000-low-epoch",
+            100_000,
+            1,
+        ),
+        (
+            "mech-resident-artifact-source",
+            "gate_b/mech-resident-artifact/source-history-0-high-epoch",
+            0,
+            1_000_000_001,
+        ),
+        (
+            "mech-resident-artifact-bytecode",
+            "gate_b/mech-resident-artifact/bytecode-history-0-low-epoch",
+            0,
+            1,
+        ),
+        (
+            "mech-resident-artifact-kernel-source",
+            "gate_b/mech-resident-artifact-kernel/source",
+            0,
+            1,
+        ),
+        (
+            "mech-resident-artifact-kernel-bytecode",
+            "gate_b/mech-resident-artifact-kernel/bytecode",
+            0,
+            1,
+        ),
+    ):
+        if benchmark not in criterion:
+            raise ValueError(f"missing Criterion result {benchmark}")
+        key = (lane, 1, history, next_epoch)
+        if key not in probes:
+            raise ValueError(f"missing structural probe {lane}/1")
+        timing = criterion[benchmark]
+        lanes.append(
+            lane_record(
+                lane,
+                1,
+                int(timing["sample_count"]),
+                float(timing["median_episode_ns"]),
+                float(timing["p95_episode_ns"]),
+                probes[key],
+                reference_hash,
+            )
+        )
+        lanes[-1]["retained_history"] = history
+        lanes[-1]["next_epoch"] = next_epoch
     if ("mech-resident-turn", 1, 0, 1) in probes:
         for lane, benchmark, history, next_epoch in (
             (
@@ -687,6 +757,111 @@ def b2_decision(lanes: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def d1_decision(lanes: list[dict[str, Any]]) -> dict[str, Any]:
+    legacy = primary_median(lanes, "mech-legacy-atomic")
+    raw_epoch = primary_median(lanes, "rust-epoch")
+    gate_b_turn = selected_lane(lanes, "mech-resident-turn")
+    source = selected_lane(lanes, "mech-resident-artifact-source")
+    bytecode = selected_lane(lanes, "mech-resident-artifact-bytecode")
+    history_1k = selected_lane(lanes, "mech-resident-artifact-source", history=1_000)
+    history_100k = selected_lane(lanes, "mech-resident-artifact-source", history=100_000)
+    high_epoch = selected_lane(
+        lanes, "mech-resident-artifact-source", next_epoch=1_000_000_001
+    )
+    kernel_source = selected_lane(lanes, "mech-resident-artifact-kernel-source")
+    kernel_bytecode = selected_lane(lanes, "mech-resident-artifact-kernel-bytecode")
+    source_median = float(source["timing"]["median_ns_per_turn"])
+    bytecode_median = float(bytecode["timing"]["median_ns_per_turn"])
+    gate_b_median = float(gate_b_turn["timing"]["median_ns_per_turn"])
+    source_bytecode_ratio = max(source_median, bytecode_median) / min(
+        source_median, bytecode_median
+    )
+    complete_control_ratio = source_median / gate_b_median
+    raw_epoch_ratio = source_median / raw_epoch
+    legacy_gap_closure = (legacy - source_median) / (legacy - raw_epoch)
+    history_1k_ratio = (
+        float(history_1k["timing"]["median_ns_per_turn"]) / source_median
+    )
+    history_100k_ratio = (
+        float(history_100k["timing"]["median_ns_per_turn"]) / source_median
+    )
+    high_epoch_ratio = (
+        float(high_epoch["timing"]["median_ns_per_turn"]) / source_median
+    )
+    complete_lanes = [source, bytecode, history_1k, history_100k, high_epoch]
+    structural = source["structural"]
+    structural_equivalent = all(
+        lane["structural"][field] == structural[field]
+        for lane in complete_lanes
+        for field in (
+            "candidate_seed_bytes",
+            "candidate_written_bytes",
+            "published_buffer_copy_bytes",
+            "publication_store_count",
+            "record_preparation_count",
+            "record_append_count",
+            "records_appended",
+            "ledger_records_inspected",
+            "post_publication_append_infallible",
+            "commit_runtime_call_count",
+            "legacy_journal_capture_count",
+        )
+    )
+    hard_gates = {
+        "correctness": all(
+            lane["correctness"]
+            and lane["quantized_state_hash"] == lane["reference_quantized_state_hash"]
+            for lane in complete_lanes
+        ),
+        "source_bytecode_equivalence": source_bytecode_ratio <= 1.03,
+        "complete_turn_control_ratio": complete_control_ratio <= 1.20,
+        "raw_epoch_ratio": raw_epoch_ratio <= 1.50,
+        "legacy_gap_closure": legacy_gap_closure >= 0.75,
+        "history_independent": history_1k_ratio <= 1.05 and history_100k_ratio <= 1.05,
+        "epoch_magnitude_independent": high_epoch_ratio <= 1.05,
+        "zero_allocation": all(
+            lane["allocation"]["episode_allocation_count"] == 0
+            for lane in complete_lanes
+        ),
+        "candidate_contract": (
+            structural["candidate_seed_bytes"] == 0
+            and structural["candidate_written_bytes"] == 96
+            and structural["published_buffer_copy_bytes"] == 0
+            and structural["publication_store_count"] == 1
+        ),
+        "recording_contract": (
+            structural_equivalent
+            and structural["record_preparation_count"] == 1
+            and structural["record_append_count"] == 1
+            and structural["records_appended"] == EPISODE_LENGTH
+            and structural["ledger_records_inspected"] == 0
+            and structural["post_publication_append_infallible"] is True
+        ),
+        "legacy_boundaries_unused": (
+            structural["commit_runtime_call_count"] == 0
+            and structural["legacy_journal_capture_count"] == 0
+        ),
+    }
+    return {
+        "legacy_gap_closure": legacy_gap_closure,
+        "raw_epoch_ratio": raw_epoch_ratio,
+        "source_bytecode_ratio": source_bytecode_ratio,
+        "artifact_complete_turn_ratio": complete_control_ratio,
+        "executor_tax_ns": source_median - gate_b_median,
+        "history_1k_over_history_0_median_ratio": history_1k_ratio,
+        "history_100k_over_history_0_median_ratio": history_100k_ratio,
+        "high_epoch_over_low_epoch_median_ratio": high_epoch_ratio,
+        "kernel_source_ns_per_turn": float(
+            kernel_source["timing"]["median_ns_per_turn"]
+        ),
+        "kernel_bytecode_ns_per_turn": float(
+            kernel_bytecode["timing"]["median_ns_per_turn"]
+        ),
+        "hard_gates": hard_gates,
+        "decision": "Pass" if all(hard_gates.values()) else "Fail",
+    }
+
+
 def worktree_changes() -> str:
     return command_output(["git", "status", "--porcelain=v1", "--untracked-files=all"])
 
@@ -951,6 +1126,8 @@ def main() -> int:
     if branch == B2_BRANCH or args.phase == "B2-resident-turn":
         summary["b1_progression"] = b1_progression(lanes)
         summary["b2_decision"] = b2_decision(lanes)
+        if any(lane["lane"] == "mech-resident-artifact-source" for lane in lanes):
+            summary["d1_decision"] = d1_decision(lanes)
     rendered = json.dumps(summary, indent=2, sort_keys=True) + "\n"
     if args.output:
         output = args.output if args.output.is_absolute() else ROOT / args.output
@@ -978,6 +1155,12 @@ def main() -> int:
             file=sys.stderr,
         )
         return 5
+    if summary.get("d1_decision", {}).get("decision") == "Fail":
+        print(
+            "Gate D D1 stop: recorded artifact turn failed one or more hard gates",
+            file=sys.stderr,
+        )
+        return 6
     return 0
 
 

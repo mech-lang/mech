@@ -74,6 +74,7 @@ pub(crate) struct EkfScratch {
     pub innovation: [f64; 2],
     pub corrected_state: [f64; 3],
     pub corrected_covariance: [f64; 9],
+    pub symmetrized_covariance: [f64; 9],
 }
 
 use ChangeDetectionPolicy::{ExactScalar, KernelReported};

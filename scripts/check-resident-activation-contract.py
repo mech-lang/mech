@@ -20,6 +20,7 @@ GENERATOR_PATH = ROOT / "scripts/generate-resident-activation-contract.py"
 D0_C4_SEMANTIC_BASE = "33298522331d40960175427052ce363bb5e424df"
 D0_PR_BASE = "a9d06ee20ceb03d56c3ba465b726aa4a69427af8"
 D0_GATE_B_IMPLEMENTATION = "b9ee8d1be7633f8b434947b748a810843bbd2144"
+D0_FINAL_COMMIT = "a9422eff9908e967e0537f7ec1fa56e7bd05eb8d"
 D0_ALLOWED_CHANGES = (
     ".github/workflows/ci.yml",
     "docs/design/index.mec",
@@ -116,8 +117,8 @@ def command(args: list[str], root: Path = ROOT) -> subprocess.CompletedProcess[s
     return subprocess.run(args, cwd=root, check=False, text=True, capture_output=True)
 
 
-def changed_paths(root: Path, base: str) -> list[str]:
-    result = command(["git", "diff", "--name-only", base, "HEAD"], root)
+def changed_paths(root: Path, base: str, head: str = "HEAD") -> list[str]:
+    result = command(["git", "diff", "--name-only", base, head], root)
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or "unable to enumerate D0 changed paths")
     return [line for line in result.stdout.splitlines() if line]
@@ -136,18 +137,25 @@ def validate_changed_paths(paths: list[str], allowed: list[str]) -> list[str]:
 
 def validate_commit_topology(root: Path) -> list[str]:
     failures = []
-    count = command(["git", "rev-list", "--count", f"{D0_PR_BASE}..HEAD"], root)
-    if count.returncode != 0 or count.stdout.strip() != "5":
-        detail = count.stderr.strip() or count.stdout.strip() or "unavailable"
-        failures.append(f"HEAD must contain exactly five commits after D0_PR_BASE; found {detail}")
-    parent = command(["git", "rev-parse", "HEAD~5"], root)
-    if parent.returncode != 0 or parent.stdout.strip() != D0_PR_BASE:
-        actual = parent.stdout.strip() or parent.stderr.strip() or "unavailable"
-        failures.append(f"HEAD~5 must equal D0_PR_BASE {D0_PR_BASE}; found {actual}")
     ancestor = command(
-        ["git", "merge-base", "--is-ancestor", D0_C4_SEMANTIC_BASE, D0_PR_BASE], root
+        ["git", "merge-base", "--is-ancestor", D0_FINAL_COMMIT, "HEAD"], root
     )
     if ancestor.returncode != 0:
+        failures.append(f"D0 final commit {D0_FINAL_COMMIT} must be an ancestor of HEAD")
+    count = command(
+        ["git", "rev-list", "--count", f"{D0_PR_BASE}..{D0_FINAL_COMMIT}"], root
+    )
+    if count.returncode != 0 or count.stdout.strip() != "5":
+        detail = count.stderr.strip() or count.stdout.strip() or "unavailable"
+        failures.append(f"D0 final must contain exactly five commits after D0_PR_BASE; found {detail}")
+    parent = command(["git", "rev-parse", f"{D0_FINAL_COMMIT}~5"], root)
+    if parent.returncode != 0 or parent.stdout.strip() != D0_PR_BASE:
+        actual = parent.stdout.strip() or parent.stderr.strip() or "unavailable"
+        failures.append(f"D0_FINAL_COMMIT~5 must equal D0_PR_BASE {D0_PR_BASE}; found {actual}")
+    semantic_ancestor = command(
+        ["git", "merge-base", "--is-ancestor", D0_C4_SEMANTIC_BASE, D0_PR_BASE], root
+    )
+    if semantic_ancestor.returncode != 0:
         failures.append("D0_C4_SEMANTIC_BASE must be an ancestor of D0_PR_BASE")
     semantic_diff = command(
         ["git", "diff", "--quiet", D0_C4_SEMANTIC_BASE, D0_PR_BASE], root
@@ -210,13 +218,13 @@ def validate_inventory_documents(baseline: dict, current: dict) -> list[str]:
     ]
 
 
-def validate_inventory_delta(root: Path, base: str) -> list[str]:
+def validate_inventory_delta(root: Path, base: str, current_commit: str = "HEAD") -> list[str]:
     baseline_source = git_source(root, base, INVENTORY_PATH)
     if not baseline_source:
         return [f"unable to read {INVENTORY_PATH} at pinned D0 base {base}"]
     try:
         baseline = json.loads(baseline_source)
-        current = read_json(root / INVENTORY_PATH)
+        current = json.loads(git_source(root, current_commit, INVENTORY_PATH))
     except (json.JSONDecodeError, OSError) as error:
         return [f"unable to read D0 inventory documents: {error}"]
     return validate_inventory_documents(baseline, current)
@@ -230,8 +238,8 @@ def validate_inventory_blob_id(actual: str) -> list[str]:
     ]
 
 
-def validate_inventory_blob(root: Path) -> list[str]:
-    result = command(["git", "hash-object", INVENTORY_PATH], root)
+def validate_inventory_blob(root: Path, commit: str = "HEAD") -> list[str]:
+    result = command(["git", "rev-parse", f"{commit}:{INVENTORY_PATH}"], root)
     if result.returncode != 0:
         return [result.stderr.strip() or "unable to hash current-inventory.json"]
     return validate_inventory_blob_id(result.stdout.strip())
@@ -243,6 +251,17 @@ def production_rust_sources(root: Path) -> dict[str, str]:
         relative = path.relative_to(root).as_posix()
         sources[relative] = path.read_text(encoding="utf-8")
     return sources
+
+
+def production_rust_sources_at_commit(root: Path, commit: str) -> dict[str, str]:
+    listing = command(["git", "ls-tree", "-r", "--name-only", commit, "src"], root)
+    if listing.returncode != 0:
+        return {}
+    return {
+        path: git_source(root, commit, path)
+        for path in listing.stdout.splitlines()
+        if re.fullmatch(r"src/[^/]+/src/.+\.rs", path)
+    }
 
 
 def validate_artifact_authority(sources: dict[str, str]) -> list[str]:
@@ -332,27 +351,34 @@ def enclosing_function(source: str, offset: int) -> tuple[str, int, int, int] | 
 
 def validate_pointer_identity(sources: dict[str, str]) -> list[str]:
     failures = []
-    helper_path = "src/engine/src/resident/arena.rs"
-    helper_seen = False
+    helper_specs = {
+        ("src/engine/src/resident/arena.rs", "buffer_addresses"),
+        ("src/engine/src/resident/program_execution.rs", "version_addresses_for_d1_test"),
+    }
+    helpers_seen = set()
     for path, source in sources.items():
         for token, pattern in POINTER_PATTERNS.items():
             for match in pattern.finditer(source):
                 function = enclosing_function(source, match.start())
                 allowed = False
-                if token == "as_ptr" and path == helper_path and function is not None:
+                if token == "as_ptr" and function is not None:
                     name, start, _, end = function
                     attributes = source[max(0, start - 128) : start]
-                    if name == "buffer_addresses" and "#[cfg(test)]" in attributes:
+                    helper = (path, name)
+                    if helper in helper_specs and "#[cfg(test)]" in attributes:
                         allowed = True
-                        helper_seen = True
-                        helper = source[start:end]
-                        if len(POINTER_PATTERNS["as_ptr"].findall(helper)) != 4:
-                            failures.append("frozen test-only buffer_addresses helper must contain exactly four as_ptr calls")
+                        helpers_seen.add(helper)
+                        helper_source = source[start:end]
+                        if len(POINTER_PATTERNS["as_ptr"].findall(helper_source)) != 4:
+                            failures.append(
+                                f"test-only {name} helper must contain exactly four as_ptr calls"
+                            )
                 if not allowed:
                     location = "outside a function" if function is None else f"in {function[0]}"
                     failures.append(f"resident pointer identity token {token} appears in {path} {location}")
-    if not helper_seen:
-        failures.append("frozen #[cfg(test)] StateArena::buffer_addresses pointer helper is missing")
+    missing_helpers = helper_specs.difference(helpers_seen)
+    for path, name in sorted(missing_helpers):
+        failures.append(f"frozen #[cfg(test)] {path}::{name} pointer helper is missing")
     return sorted(set(failures))
 
 
@@ -424,24 +450,30 @@ def subprocess_failure(label: str, result: subprocess.CompletedProcess[str]) -> 
 
 def run(root: Path = ROOT) -> list[str]:
     contract_dir = root / CONTRACT_DIR.relative_to(ROOT)
-    boundary = read_json(contract_dir / "d0-boundary.json")
+    boundary = json.loads(
+        git_source(root, D0_FINAL_COMMIT, "tests/architecture/resident-activation/d0-boundary.json")
+    )
     base = D0_PR_BASE
     failures = validate_commit_topology(root)
     if failures:
         return failures
     failures.extend(validate_boundary_policy(boundary))
     try:
-        failures.extend(validate_changed_paths(changed_paths(root, base), list(D0_ALLOWED_CHANGES)))
+        failures.extend(
+            validate_changed_paths(
+                changed_paths(root, base, D0_FINAL_COMMIT), list(D0_ALLOWED_CHANGES)
+            )
+        )
     except RuntimeError as error:
         failures.append(str(error))
-    failures.extend(validate_inventory_blob(root))
-    failures.extend(validate_inventory_delta(root, base))
+    failures.extend(validate_inventory_blob(root, D0_FINAL_COMMIT))
+    failures.extend(validate_inventory_delta(root, base, D0_FINAL_COMMIT))
 
-    production = production_rust_sources(root)
+    production = production_rust_sources_at_commit(root, D0_FINAL_COMMIT)
     failures.extend(validate_artifact_authority(production))
     current_resident = resident_sources(root)
     baseline_resident = {
-        path: git_source(root, base, path) for path in current_resident
+        path: git_source(root, D0_FINAL_COMMIT, path) for path in current_resident
     }
     failures.extend(validate_new_legacy_dependencies(current_resident, baseline_resident))
     failures.extend(validate_pointer_identity(current_resident))
@@ -452,19 +484,21 @@ def run(root: Path = ROOT) -> list[str]:
     )
     failures.extend(subprocess_failure("D0 generated contract", generator))
 
-    gate_b = command(
-        [
-            sys.executable,
-            "scripts/check-gate-b-contract.py",
-            "--report",
-            "benchmarks/runtime/gate-b/b2-resident-turn.json",
-            "--expected-commit",
-            D0_GATE_B_IMPLEMENTATION,
-        ],
-        root,
+    try:
+        gate_b = json.loads(
+            git_source(root, D0_FINAL_COMMIT, "benchmarks/runtime/gate-b/b2-resident-turn.json")
+        )
+        failures.extend(validate_gate_b_expected(gate_b.get("git_commit", "")))
+    except json.JSONDecodeError as error:
+        failures.append(f"unable to read frozen D0 Gate B evidence: {error}")
+    migration = json.loads(
+        git_source(
+            root,
+            D0_FINAL_COMMIT,
+            "tests/architecture/resident-activation/d0-migration-projection.json",
+        )
     )
-    failures.extend(subprocess_failure("unchanged Gate B evidence", gate_b))
-    failures.extend(validate_migration_status(read_json(contract_dir / "d0-migration-projection.json")))
+    failures.extend(validate_migration_status(migration))
     return failures
 
 

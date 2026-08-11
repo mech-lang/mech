@@ -133,7 +133,7 @@ pub enum ActivatedReadLocation {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct ActivatedNodeIndex(u32);
+pub struct ActivatedNodeIndex(pub(crate) u32);
 
 impl ActivatedNodeIndex {
     pub const fn get(self) -> u32 {
@@ -182,6 +182,9 @@ pub struct DependencyTopology {
     pub same_turn_downstream_offsets: Box<[u32]>,
     pub same_turn_downstream_nodes: Box<[ActivatedNodeIndex]>,
     pub turn_root_nodes: Box<[ActivatedNodeIndex]>,
+    pub(crate) same_turn_downstream_masks: Box<[u32]>,
+    pub(crate) turn_root_mask: u32,
+    pub(crate) mandatory_candidate_mask: u32,
 }
 
 impl DependencyTopology {
@@ -206,6 +209,8 @@ pub struct ActivatedPlan {
     pub constraints: Box<[ActivatedConstraint]>,
     pub input: ActivatedInput,
     pub output: ActivatedOutput,
+    pub(crate) state_slot: SlotIndex,
+    pub(crate) covariance_slot: SlotIndex,
     pub(crate) constants: EkfConstants,
 }
 
@@ -221,6 +226,30 @@ impl<T: Copy> VersionedValue<T> {
             buffers: [initial, initial],
             epochs: [Some(InstanceEpoch::ZERO), None],
         }
+    }
+
+    pub(crate) fn published_index(&self, epoch: InstanceEpoch) -> usize {
+        match self.epochs {
+            [Some(left), _] if left == epoch => 0,
+            [_, Some(right)] if right == epoch => 1,
+            _ => panic!("published resident epoch has no typed artifact buffer"),
+        }
+    }
+
+    pub(crate) fn begin_candidate(
+        &mut self,
+        base: InstanceEpoch,
+        working: InstanceEpoch,
+    ) -> (usize, usize) {
+        let published = self.published_index(base);
+        let candidate = 1 - published;
+        self.epochs[candidate] = Some(working);
+        (published, candidate)
+    }
+
+    pub(crate) fn reject(&mut self, candidate: usize, working: InstanceEpoch) {
+        debug_assert_eq!(self.epochs[candidate], Some(working));
+        self.epochs[candidate] = None;
     }
 }
 
@@ -241,6 +270,22 @@ impl StateArena {
     pub fn candidate_bytes(&self) -> usize {
         core::mem::size_of::<[f64; 3]>() + core::mem::size_of::<[f64; 9]>()
     }
+
+    pub(crate) fn begin_candidate(
+        &mut self,
+        base: InstanceEpoch,
+        working: InstanceEpoch,
+    ) -> (usize, usize) {
+        let state = self.state.begin_candidate(base, working);
+        let covariance = self.covariance.begin_candidate(base, working);
+        debug_assert_eq!(state, covariance);
+        state
+    }
+
+    pub(crate) fn reject_candidate(&mut self, candidate: usize, working: InstanceEpoch) {
+        self.state.reject(candidate, working);
+        self.covariance.reject(candidate, working);
+    }
 }
 
 #[derive(Debug)]
@@ -251,10 +296,9 @@ pub struct TurnWorkspace {
     pub(crate) slot_epoch_marks: Box<[InstanceEpoch]>,
     pub(crate) touched_slots: Vec<SlotIndex>,
     pub(crate) changed_slots: Vec<SlotIndex>,
-    pub(crate) dirty_node_marks: Box<[InstanceEpoch]>,
-    pub(crate) node_execution_marks: Box<[InstanceEpoch]>,
-    pub(crate) dirty_nodes: Vec<ActivatedNodeIndex>,
-    pub(crate) executed_nodes: Vec<ActivatedNodeIndex>,
+    pub(crate) dirty_node_mask: u32,
+    pub(crate) executed_node_mask: u32,
+    pub(crate) initialized_node_mask: u32,
 }
 
 impl TurnWorkspace {
@@ -266,10 +310,9 @@ impl TurnWorkspace {
             slot_epoch_marks: vec![InstanceEpoch::ZERO; plan.slots.len()].into_boxed_slice(),
             touched_slots: Vec::with_capacity(2),
             changed_slots: Vec::with_capacity(2),
-            dirty_node_marks: vec![InstanceEpoch::ZERO; plan.nodes.len()].into_boxed_slice(),
-            node_execution_marks: vec![InstanceEpoch::ZERO; plan.nodes.len()].into_boxed_slice(),
-            dirty_nodes: Vec::with_capacity(plan.nodes.len()),
-            executed_nodes: Vec::with_capacity(plan.nodes.len()),
+            dirty_node_mask: 0,
+            executed_node_mask: 0,
+            initialized_node_mask: 0,
         }
     }
 
@@ -282,7 +325,31 @@ impl TurnWorkspace {
     }
 
     pub fn executed_node_count(&self) -> usize {
-        self.executed_nodes.len()
+        self.executed_node_mask.count_ones() as usize
+    }
+
+    pub(crate) fn begin(&mut self, frame: [f64; 4]) {
+        self.input = frame;
+        self.touched_slots.clear();
+        self.changed_slots.clear();
+        self.dirty_node_mask = 0;
+        self.executed_node_mask = 0;
+    }
+
+    pub(crate) fn record_execution(&mut self, node: ActivatedNodeIndex) {
+        self.executed_node_mask |= 1_u32 << node.0;
+    }
+
+    pub(crate) fn record_dirty(&mut self, node: ActivatedNodeIndex) {
+        self.dirty_node_mask |= 1_u32 << node.0;
+    }
+
+    pub(crate) fn output_initialized(&self, node: ActivatedNodeIndex) -> bool {
+        self.initialized_node_mask & (1_u32 << node.0) != 0
+    }
+
+    pub(crate) fn record_output_initialized(&mut self, node: ActivatedNodeIndex) {
+        self.initialized_node_mask |= 1_u32 << node.0;
     }
 }
 
@@ -548,6 +615,13 @@ fn build_plan(
         .into_boxed_slice();
     let input_slot = SlotIndex::new(closure.input.slot.get());
     let output_slot = SlotIndex::new(closure.output.source.get());
+    let covariance_slot = slots
+        .iter()
+        .find(|slot| slot.location == ResidentStorageLocation::Covariance)
+        .map(|slot| slot.physical_index)
+        .ok_or(ResidentActivationError::MissingPhysicalBinding {
+            slot: closure.output.source,
+        })?;
     Ok(ActivatedPlan {
         program_revision: closure.program_revision,
         plan_generation: PlanGeneration::ZERO,
@@ -568,6 +642,8 @@ fn build_plan(
             schema: closure.output.schema,
             location: ResidentStorageLocation::State,
         },
+        state_slot: output_slot,
+        covariance_slot,
         constants,
     })
 }
@@ -708,6 +784,28 @@ fn build_topology(
     }
     roots.sort_by_key(|node| node.0);
     roots.dedup();
+    debug_assert!(nodes.len() <= u32::BITS as usize);
+    let downstream_masks = downstream
+        .iter()
+        .map(|nodes| {
+            nodes
+                .iter()
+                .fold(0_u32, |mask, node| mask | (1_u32 << node.0))
+        })
+        .collect::<Box<[_]>>();
+    let turn_root_mask = roots
+        .iter()
+        .fold(0_u32, |mask, node| mask | (1_u32 << node.0));
+    let mandatory_candidate_mask = nodes
+        .iter()
+        .enumerate()
+        .filter(|(_, node)| {
+            matches!(
+                node.kind,
+                ActivatedNodeKind::Predicate(_) | ActivatedNodeKind::StateCopy { .. }
+            )
+        })
+        .fold(0_u32, |mask, (index, _)| mask | (1_u32 << index));
     let mut offsets = Vec::with_capacity(nodes.len() + 1);
     let mut values = Vec::new();
     offsets.push(0);
@@ -722,6 +820,9 @@ fn build_topology(
         same_turn_downstream_offsets: offsets.into_boxed_slice(),
         same_turn_downstream_nodes: values.into_boxed_slice(),
         turn_root_nodes: roots.into_boxed_slice(),
+        same_turn_downstream_masks: downstream_masks,
+        turn_root_mask,
+        mandatory_candidate_mask,
     })
 }
 

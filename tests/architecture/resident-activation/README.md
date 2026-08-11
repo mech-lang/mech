@@ -1,12 +1,15 @@
 # Resident activation architecture gate
 
-D0 changes no production behavior. It freezes the boundary between the final
-`ProgramArtifact` and future resident activation.
+D0 froze the boundary between the final `ProgramArtifact` and resident
+activation without changing production behavior. D1 now implements the exact
+ordinary-EKF vertical slice behind the `resident-ekf-artifact` efficacy
+feature; general production routing remains unchanged.
 
-The private Gate B executor remains an efficacy control. D1 must replace the
-private EKF artifact with activation from the final `ProgramArtifact`. The
-ordinary EKF source is frozen here, and D1 must produce zero `LegacyOpaque`
-contracts. D1 must not route general production execution.
+The Gate B executor remains an explicitly named efficacy control, but no
+private resident `ProgramArtifact` authority remains. The frozen ordinary EKF
+source compiles through the normal parser and `MechProgram`, produces equivalent
+source and bytecode-v1 artifacts, activates typed resident storage, and executes
+the complete 4,096-turn trace with zero steady-state allocation.
 
 The semantic workload and committed source bytes are authoritative. The
 fixture uses the current parser's hanging-call form: no whitespace immediately
@@ -22,18 +25,21 @@ There is no bytecode v2 before launch. D evolves bytecode v1 only if the
 static `ProgramArtifact` format requires additional pre-launch fields. D0
 itself changes no bytecode.
 
-The checked files in this directory are architecture and workload contracts,
-not claims that resident activation already exists. Run:
+The checked files in this directory include the frozen D0 contract and the
+mechanical D1 artifact, activation, and execution projections. Run:
 
 ```text
 python3 scripts/generate-resident-activation-contract.py --check
 python3 scripts/check-resident-activation-contract.py
+python3 scripts/generate-d1-contract.py --check
+python3 scripts/check-d1-contract.py --contract-only
 ```
 
-The generator derives source integrity and the Phase-D migration projection.
-The checker fails closed on production changes, duplicate artifact authority,
-new legacy dependencies, pointer-derived identity, per-turn semantic lookup,
-stale Gate B evidence, or premature migration claims.
+The D1 generator executes the source- and bytecode-derived artifacts in five
+fresh processes and pins deterministic projections. The phase checker fails
+closed on opaque or unclassified nodes, duplicate artifact authority, legacy
+resident dependencies, pointer-derived identity, per-turn semantic lookup,
+production routing, stale evidence, or global migration overclaims.
 
 The publication boundary freezes the complete `reserve → begin → execute →
 validate → summary → prepare → publish → append` order as one exact
@@ -45,10 +51,15 @@ separate `integrity/assert` declaration reads that Boolean and has zero outputs.
 `ekf/candidate-finite` consumes both corrected state and symmetrized covariance,
 preserving Gate B finiteness coverage without changing artifact lowering.
 
-The only C0 inventory exception is the exact `resident_activation_contract`
+The frozen D0 inventory exception is the exact `resident_activation_contract`
 compilation unit rooted at and reaching only
 `src/engine/tests/resident_activation_contract.rs`, one addition of that path
 to the Rust-file inventory, and the `mech` 912→913 plus `mech-engine` 143→144
 file-count changes. All other inventory content, including every legacy
 occurrence and count, remains byte-for-byte fixed by blob
 `5b5fd877143cba1d7945d850405a45975930e6f4`.
+
+D1 records only vertical-slice progress: one admitted artifact and two migrated
+state slots. Both global D migration targets remain incomplete, no legacy target
+is removed, and none of the 488 inventoried legacy occurrences is claimed as
+migrated.

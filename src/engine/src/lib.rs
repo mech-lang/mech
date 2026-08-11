@@ -117,12 +117,17 @@ pub mod __gate_d {
         FrozenEkfStateUpdate, FrozenLiveBinding, compile_frozen_ekf_source,
     };
     pub use crate::efficacy::ekf::operation::{EkfKernel, EkfPredicate};
+    pub use crate::resident::ResidentExecutionError;
     pub use crate::resident::program_activation::{
         ActivatedConstraint, ActivatedInput, ActivatedNode, ActivatedNodeIndex, ActivatedNodeKind,
         ActivatedOutput, ActivatedPlan, ActivatedRead, ActivatedReadLocation, ActivatedWrite,
         ActivationProjection, DependencyTopology, EkfPredicateSlot, EkfScratchSlot,
         ReactiveInstance, ResidentActivationError, ResidentStorageLocation, ResolvedSlot,
         StateArena, TurnWorkspace, activate,
+    };
+    pub use crate::resident::program_execution::{
+        PreparedResidentTurn as PreparedArtifactResidentTurn, ResidentStructuralProbe,
+        ResidentTurnSummary,
     };
 }
 #[cfg(all(feature = "source", feature = "state_machines"))]

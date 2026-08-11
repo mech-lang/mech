@@ -1,12 +1,29 @@
 #![cfg(feature = "runtime_bench_gate_b")]
 
+use mech_core::ReactiveInstanceId;
 use mech_engine::__gate_b_resident::{
     PreparedResidentTurn, ResidentEkfBatch, ResidentExecutionError, ResidentFullWrite,
     ResidentTurnSummary,
 };
+use mech_engine::__gate_d::{
+    FrozenEkfCompilationServices, ReactiveInstance, activate, compile_frozen_ekf_source,
+};
 use mech_runtime::__gate_b_recording::{LedgerSequence, ResidentTurnRecorder, TurnFailurePhase};
 
 const INPUT: [f64; 4] = [1.0, 0.1, 24.0, -0.6];
+const ARTIFACT_SOURCE: &str =
+    include_str!("../../../tests/architecture/resident-activation/ekf-source-v1.mec");
+
+fn artifact_instance() -> ReactiveInstance {
+    let mut services = FrozenEkfCompilationServices::default();
+    let compilation = compile_frozen_ekf_source(ARTIFACT_SOURCE, &mut services).unwrap();
+    activate(
+        ReactiveInstanceId::new(0, 0),
+        &compilation.source_artifact,
+        &compilation.resource_request,
+    )
+    .unwrap()
+}
 
 fn commit_prepared(
     resident: &mut ResidentEkfBatch,
@@ -140,6 +157,76 @@ fn record_preparation_failure_automatically_aborts_before_publication() {
 }
 
 #[test]
+fn artifact_commit_uses_the_reserved_prepare_publish_append_boundary() {
+    let mut instance = artifact_instance();
+    let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
+    let initial = (*instance.estimate(), *instance.covariance());
+    let permit = recorder.take_admission_permit(0).unwrap();
+    let prepared = instance.prepare_turn(INPUT).unwrap();
+    let summary = prepared.summary();
+    let commit = recorder.prepare_artifact_commit(permit, prepared).unwrap();
+    assert_eq!(commit.commit().get(), 1);
+    assert_eq!(instance.published_epoch().get(), 1);
+    assert_ne!((*instance.estimate(), *instance.covariance()), initial);
+    assert_eq!(recorder.recorded_ledger_len(), 1);
+    let record = recorder.inspect_last().unwrap();
+    assert!(record.accepted);
+    assert_eq!(record.body.after_epoch(), 1);
+    assert_eq!(record.body.state_hash(), summary.state_hash);
+    assert_eq!(record.body.touched_slots(), 2);
+}
+
+#[test]
+fn artifact_record_preparation_failure_aborts_before_publication() {
+    let mut instance = artifact_instance();
+    let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
+    let initial = (*instance.estimate(), *instance.covariance());
+    let permit = recorder.take_admission_permit(0).unwrap();
+    let prepared = instance.prepare_turn(INPUT).unwrap();
+    recorder.fail_next_preparation_for_test();
+    assert!(recorder.prepare_artifact_commit(permit, prepared).is_err());
+    assert_eq!(instance.published_epoch().get(), 0);
+    assert_eq!((*instance.estimate(), *instance.covariance()), initial);
+    assert_eq!(recorder.recorded_ledger_len(), 0);
+}
+
+#[test]
+fn artifact_admission_capacity_is_taken_before_candidate_execution() {
+    let instance = artifact_instance();
+    let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
+    drop(recorder.take_admission_permit(0).unwrap());
+    assert!(recorder.take_admission_permit(0).is_err());
+    assert_eq!(instance.published_epoch().get(), 0);
+}
+
+#[test]
+fn rejected_artifact_execution_appends_without_publication() {
+    let mut instance = artifact_instance();
+    let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
+    let initial = (*instance.estimate(), *instance.covariance());
+    let permit = recorder.take_admission_permit(0).unwrap();
+    let mut invalid = INPUT;
+    invalid[0] = f64::NAN;
+    let failure = match instance.prepare_turn(invalid) {
+        Ok(prepared) => {
+            prepared.abort();
+            panic!("invalid artifact candidate unexpectedly prepared")
+        }
+        Err(failure) => failure,
+    };
+    recorder
+        .prepare_rejected(permit, instance.published_epoch().get(), failure)
+        .unwrap()
+        .append();
+    assert_eq!(instance.published_epoch().get(), 0);
+    assert_eq!((*instance.estimate(), *instance.covariance()), initial);
+    assert_eq!(recorder.recorded_ledger_len(), 1);
+    let record = recorder.inspect_last().unwrap();
+    assert!(!record.accepted);
+    assert_eq!(record.failure_phase, Some(TurnFailurePhase::Integrity));
+}
+
+#[test]
 fn admission_exhaustion_precedes_candidate_execution() {
     let resident = ResidentEkfBatch::new(1);
     let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
@@ -197,6 +284,11 @@ fn rejection_failure_kinds_and_phases_are_stable_and_bounded() {
             "ResidentEpochExhausted",
         ),
         (
+            ResidentExecutionError::IncompleteCandidate,
+            TurnFailurePhase::Integrity,
+            "ResidentIncompleteCandidate",
+        ),
+        (
             ResidentExecutionError::LandmarkDistance,
             TurnFailurePhase::Integrity,
             "ResidentLandmarkDistance",
@@ -234,7 +326,7 @@ fn rejection_failure_kinds_and_phases_are_stable_and_bounded() {
         assert_eq!(record.failure_kind, Some(kind));
         assert!(!record.body.is_accepted());
     }
-    assert_eq!(recorder.recorded_ledger_len(), 6);
+    assert_eq!(recorder.recorded_ledger_len(), 7);
 }
 
 #[test]

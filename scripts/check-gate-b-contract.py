@@ -66,6 +66,17 @@ def import_roots(source: str) -> set[str]:
 
 
 LaneKey = tuple[str, int, int, int]
+D1_ARTIFACT_LANE_KEYS = frozenset(
+    {
+        ("mech-resident-artifact-source", 1, 0, 1),
+        ("mech-resident-artifact-source", 1, 1_000, 1),
+        ("mech-resident-artifact-source", 1, 100_000, 1),
+        ("mech-resident-artifact-source", 1, 0, 1_000_000_001),
+        ("mech-resident-artifact-bytecode", 1, 0, 1),
+        ("mech-resident-artifact-kernel-source", 1, 0, 1),
+        ("mech-resident-artifact-kernel-bytecode", 1, 0, 1),
+    }
+)
 
 
 def required_lane_keys() -> set[LaneKey]:
@@ -229,6 +240,7 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         root / "src/runtime/benches/support/gate_b/legacy_atomic.rs",
         root / "src/runtime/benches/support/gate_b/resident_kernel.rs",
         root / "src/runtime/benches/support/gate_b/resident_turn.rs",
+        root / "src/runtime/benches/support/gate_b/resident_artifact.rs",
         root / "src/runtime/src/resident_gate_b.rs",
         root / "src/engine/src/resident/artifact.rs",
         root / "src/engine/src/resident/activation.rs",
@@ -238,6 +250,8 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         root / "src/engine/src/resident/full_write.rs",
         root / "src/engine/src/resident/kernel.rs",
         root / "src/engine/src/resident/efficacy/ekf.rs",
+        root / "src/engine/src/resident/program_activation.rs",
+        root / "src/engine/src/resident/program_execution.rs",
     )
     errors = [f"missing required Gate B fixture: {path.relative_to(root)}" for path in required if not path.is_file()]
     if errors:
@@ -346,9 +360,16 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
                 "resident typed EKF storage is erased in "
                 f"{source.relative_to(root)}"
             )
-    if sum(text.count(".store(") for text in resident_sources.values()) != 1:
-        errors.append("resident execution must contain exactly one publication store site")
     candidate_source = resident_sources[root / "src/engine/src/resident/candidate.rs"]
+    program_execution_source = resident_sources[
+        root / "src/engine/src/resident/program_execution.rs"
+    ]
+    if candidate_source.count(".store(") != 1:
+        errors.append("Gate B control must contain exactly one publication store site")
+    if program_execution_source.count(".store(") != 1:
+        errors.append("D1 artifact execution must contain exactly one publication store site")
+    if sum(text.count(".store(") for text in resident_sources.values()) != 2:
+        errors.append("resident execution contains an unapproved publication store site")
     if "next_epoch: Option<InstanceEpoch>" not in candidate_source or "checked_next()" not in candidate_source:
         errors.append("resident candidate epochs do not use checked exhaustion")
     artifact_source = resident_sources[root / "src/engine/src/resident/artifact.rs"]
@@ -624,6 +645,11 @@ def report_contract_errors(
     except ValueError as error:
         errors.append(str(error))
         required_lanes = set()
+    has_d1_lanes = any(
+        key[0].startswith("mech-resident-artifact-") for key in lanes
+    )
+    if report.get("d1_decision") is not None or has_d1_lanes:
+        required_lanes.update(D1_ARTIFACT_LANE_KEYS)
     missing = required_lanes.difference(lanes)
     if missing:
         errors.append(
@@ -862,6 +888,17 @@ def report_contract_errors(
             ("mech-resident-turn", 1, 100_000, 1),
             ("mech-resident-turn", 1, 0, 1_000_000_001),
         ]
+        artifact_complete_keys = [
+            ("mech-resident-artifact-source", 1, 0, 1),
+            ("mech-resident-artifact-source", 1, 1_000, 1),
+            ("mech-resident-artifact-source", 1, 100_000, 1),
+            ("mech-resident-artifact-source", 1, 0, 1_000_000_001),
+            ("mech-resident-artifact-bytecode", 1, 0, 1),
+        ]
+        artifact_kernel_keys = [
+            ("mech-resident-artifact-kernel-source", 1, 0, 1),
+            ("mech-resident-artifact-kernel-bytecode", 1, 0, 1),
+        ]
         complete_keys = [
             ("mech-resident-scheduled", 1, 0, 1),
             *turn_keys,
@@ -884,6 +921,46 @@ def report_contract_errors(
                 errors.append(f"B2 resident lane {key} seeds candidate storage")
             if structural.get("published_buffer_copy_bytes") != 0:
                 errors.append(f"B2 resident lane {key} copies published storage")
+
+        for key in artifact_complete_keys:
+            if key not in lanes:
+                continue
+            structural = lanes[key].get("structural", {})
+            expected_structural = {
+                "candidate_written_bytes": 96,
+                "record_preparation_count": 1,
+                "record_append_count": 1,
+                "records_retained_before_timing": key[2],
+                "records_appended": EPISODE_LENGTH,
+                "ledger_records_inspected": 0,
+                "post_publication_append_infallible": True,
+                "commit_runtime_call_count": 0,
+                "legacy_journal_capture_count": 0,
+            }
+            for field, expected_value in expected_structural.items():
+                if structural.get(field) != expected_value:
+                    errors.append(f"D1 artifact lane {key} reports wrong {field}")
+            if not structural.get("abort_output_hash"):
+                errors.append(f"D1 artifact lane {key} has no forced-abort output hash")
+            dirty = structural.get("dirty_node_count")
+            if not isinstance(dirty, int) or not 5 <= dirty <= 20:
+                errors.append(f"D1 artifact lane {key} reports invalid actual dirty count")
+
+        for key in artifact_kernel_keys:
+            if key not in lanes:
+                continue
+            structural = lanes[key].get("structural", {})
+            for field, expected_value in {
+                "candidate_written_bytes": 96,
+                "record_preparation_count": 0,
+                "record_append_count": 0,
+                "records_appended": 0,
+                "post_publication_append_infallible": False,
+                "commit_runtime_call_count": 0,
+                "legacy_journal_capture_count": 0,
+            }.items():
+                if structural.get(field) != expected_value:
+                    errors.append(f"D1 artifact kernel lane {key} reports wrong {field}")
 
         for key in turn_keys:
             if key not in lanes:
@@ -976,11 +1053,7 @@ def report_contract_errors(
                 ):
                     errors.append(f"B2 decision {field} is inconsistent with lane evidence")
 
-            resident_decision_lanes = [
-                lanes[key]
-                for key in complete_keys
-                if key in lanes
-            ]
+            resident_decision_lanes = [lanes[key] for key in complete_keys]
             primary_structural = lanes[turn_key]["structural"]
             full_structural = lanes[full_turn_key]["structural"]
             hard_gates = {
@@ -1046,6 +1119,117 @@ def report_contract_errors(
                 errors.append("B2 final decision is inconsistent with recomputed gates")
             if b2.get("conditional_attribution") != expected_attribution:
                 errors.append("B2 conditional attribution is inconsistent with its decision")
+
+        d1_keys = {*artifact_complete_keys, *artifact_kernel_keys}
+        d1 = report.get("d1_decision")
+        has_d1_evidence = d1 is not None or any(key in lanes for key in d1_keys)
+        if has_d1_evidence and not isinstance(d1, dict):
+            errors.append("D1 report is missing independent d1_decision")
+        elif isinstance(d1, dict) and not d1_keys.issubset(lanes):
+            errors.append("D1 report is missing one or more required artifact lanes")
+        elif isinstance(d1, dict) and d1_keys.issubset(lanes) and decision_keys.issubset(lanes):
+            median = lambda key: float(lanes[key]["timing"]["median_ns_per_turn"])
+            source_key = ("mech-resident-artifact-source", 1, 0, 1)
+            bytecode_key = ("mech-resident-artifact-bytecode", 1, 0, 1)
+            gate_b_key = ("mech-resident-turn", 1, 0, 1)
+            source = median(source_key)
+            bytecode = median(bytecode_key)
+            gate_b = median(gate_b_key)
+            raw_epoch = median(("rust-epoch", 1, 0, 1))
+            legacy = median(("mech-legacy-atomic", 1, 0, 1))
+            history_1k_ratio = (
+                median(("mech-resident-artifact-source", 1, 1_000, 1)) / source
+            )
+            history_100k_ratio = (
+                median(("mech-resident-artifact-source", 1, 100_000, 1)) / source
+            )
+            high_epoch_ratio = (
+                median(("mech-resident-artifact-source", 1, 0, 1_000_000_001))
+                / source
+            )
+            metrics = {
+                "legacy_gap_closure": (legacy - source) / (legacy - raw_epoch),
+                "raw_epoch_ratio": source / raw_epoch,
+                "source_bytecode_ratio": max(source, bytecode) / min(source, bytecode),
+                "artifact_complete_turn_ratio": source / gate_b,
+                "executor_tax_ns": source - gate_b,
+                "history_1k_over_history_0_median_ratio": history_1k_ratio,
+                "history_100k_over_history_0_median_ratio": history_100k_ratio,
+                "high_epoch_over_low_epoch_median_ratio": high_epoch_ratio,
+                "kernel_source_ns_per_turn": median(
+                    ("mech-resident-artifact-kernel-source", 1, 0, 1)
+                ),
+                "kernel_bytecode_ns_per_turn": median(
+                    ("mech-resident-artifact-kernel-bytecode", 1, 0, 1)
+                ),
+            }
+            for field, expected_value in metrics.items():
+                reported = d1.get(field)
+                if not isinstance(reported, (int, float)) or not math.isclose(
+                    float(reported), expected_value, rel_tol=1.0e-12, abs_tol=1.0e-9
+                ):
+                    errors.append(f"D1 decision {field} is inconsistent with lane evidence")
+            complete_lanes = [lanes[key] for key in artifact_complete_keys]
+            structural = lanes[source_key]["structural"]
+            structural_fields = (
+                "candidate_seed_bytes",
+                "candidate_written_bytes",
+                "published_buffer_copy_bytes",
+                "publication_store_count",
+                "record_preparation_count",
+                "record_append_count",
+                "records_appended",
+                "ledger_records_inspected",
+                "post_publication_append_infallible",
+                "commit_runtime_call_count",
+                "legacy_journal_capture_count",
+            )
+            structural_equivalent = all(
+                lane["structural"].get(field) == structural.get(field)
+                for lane in complete_lanes
+                for field in structural_fields
+            )
+            hard_gates = {
+                "correctness": all(
+                    lane.get("correctness") is True
+                    and lane.get("quantized_state_hash")
+                    == lane.get("reference_quantized_state_hash")
+                    for lane in complete_lanes
+                ),
+                "source_bytecode_equivalence": metrics["source_bytecode_ratio"] <= 1.03,
+                "complete_turn_control_ratio": metrics["artifact_complete_turn_ratio"] <= 1.20,
+                "raw_epoch_ratio": metrics["raw_epoch_ratio"] <= 1.50,
+                "legacy_gap_closure": metrics["legacy_gap_closure"] >= 0.75,
+                "history_independent": history_1k_ratio <= 1.05 and history_100k_ratio <= 1.05,
+                "epoch_magnitude_independent": high_epoch_ratio <= 1.05,
+                "zero_allocation": all(
+                    lane.get("allocation", {}).get("episode_allocation_count") == 0
+                    for lane in complete_lanes
+                ),
+                "candidate_contract": (
+                    structural.get("candidate_seed_bytes") == 0
+                    and structural.get("candidate_written_bytes") == 96
+                    and structural.get("published_buffer_copy_bytes") == 0
+                    and structural.get("publication_store_count") == 1
+                ),
+                "recording_contract": (
+                    structural_equivalent
+                    and structural.get("record_preparation_count") == 1
+                    and structural.get("record_append_count") == 1
+                    and structural.get("records_appended") == EPISODE_LENGTH
+                    and structural.get("ledger_records_inspected") == 0
+                    and structural.get("post_publication_append_infallible") is True
+                ),
+                "legacy_boundaries_unused": (
+                    structural.get("commit_runtime_call_count") == 0
+                    and structural.get("legacy_journal_capture_count") == 0
+                ),
+            }
+            if d1.get("hard_gates") != hard_gates:
+                errors.append("D1 decision hard gates are inconsistent with lane evidence")
+            expected_decision = "Pass" if all(hard_gates.values()) else "Fail"
+            if d1.get("decision") != expected_decision:
+                errors.append("D1 final decision is inconsistent with recomputed gates")
     return errors
 
 

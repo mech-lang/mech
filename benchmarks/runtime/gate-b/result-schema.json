@@ -219,7 +219,29 @@
     },
     "resident_breakdown": { "type": "object" },
     "decision": { "type": "object" },
-    "b2_decision": { "type": "object" }
+    "b2_decision": { "type": "object" },
+    "d1_decision": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "legacy_gap_closure",
+        "raw_epoch_ratio",
+        "source_bytecode_ratio",
+        "artifact_complete_turn_ratio",
+        "executor_tax_ns",
+        "hard_gates",
+        "decision"
+      ],
+      "properties": {
+        "legacy_gap_closure": { "type": "number" },
+        "raw_epoch_ratio": { "type": "number", "exclusiveMinimum": 0 },
+        "source_bytecode_ratio": { "type": "number", "minimum": 1 },
+        "artifact_complete_turn_ratio": { "type": "number", "exclusiveMinimum": 0 },
+        "executor_tax_ns": { "type": "number" },
+        "hard_gates": { "type": "object" },
+        "decision": { "enum": ["Pass", "Fail"] }
+      }
+    }
   },
   "$defs": {
     "lane": {

@@ -326,6 +326,16 @@ class GateBContractCheckerTests(unittest.TestCase):
     def test_valid_b2_report_recomputes_complete_turn_decision(self):
         self.assertEqual(CHECKER.report_contract_errors(valid_b2_report()), [])
 
+    def test_d1_artifact_lanes_extend_the_b2_lane_set(self):
+        report = valid_b2_report()
+        report["d1_decision"] = {}
+        report["lanes"].extend(
+            lane(name, instances, retained_history, next_epoch)
+            for name, instances, retained_history, next_epoch in CHECKER.D1_ARTIFACT_LANE_KEYS
+        )
+        errors = CHECKER.report_contract_errors(report)
+        self.assertFalse(any("unexpected lanes" in error for error in errors))
+
     def test_b2_descendant_refresh_requires_and_accepts_exact_commit(self):
         report = valid_b2_report()
         report["git_branch"] = "feat/core-semantic-foundations"

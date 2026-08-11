@@ -1,5 +1,5 @@
 use super::{
-    Candidate, NODES_PER_EKF, ReactiveInstance, ResidentExecutionError, execute_ekf_candidate,
+    Candidate, GateBInstance, NODES_PER_EKF, ResidentExecutionError, execute_ekf_candidate,
     execute_scheduled_ekf_candidate,
 };
 
@@ -19,7 +19,7 @@ pub struct ResidentTurnProbe {
 }
 
 pub struct ResidentEkfBatch {
-    instance: ReactiveInstance,
+    instance: GateBInstance,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -97,7 +97,7 @@ impl Drop for PreparedResidentTurn<'_> {
 impl ResidentEkfBatch {
     pub fn new(instances: usize) -> Self {
         Self {
-            instance: ReactiveInstance::frozen_ekf_batch(instances),
+            instance: GateBInstance::new(instances),
         }
     }
 

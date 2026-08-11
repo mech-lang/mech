@@ -2,7 +2,11 @@
 
 use mech_core::{MResult, MechError, MechErrorKind};
 use mech_engine::__gate_b_resident::{
-    PreparedResidentFullWrite, PreparedResidentTurn, ResidentExecutionError, ResidentTurnSummary,
+    PreparedResidentFullWrite, PreparedResidentTurn as PreparedGateBResidentTurn,
+    ResidentExecutionError, ResidentTurnSummary as GateBResidentTurnSummary,
+};
+use mech_engine::__gate_d::{
+    PreparedArtifactResidentTurn, ResidentTurnSummary as ArtifactResidentTurnSummary,
 };
 
 use crate::{
@@ -85,7 +89,7 @@ impl ResidentTurnRecorder {
                 u64::try_from(ordinal).map_err(|_| error("history identity overflow"))?;
             let record = accepted_record(
                 identity,
-                ResidentTurnSummary {
+                GateBResidentTurnSummary {
                     before_epoch: identity.saturating_sub(1),
                     after_epoch: identity,
                     state_hash: 0,
@@ -126,7 +130,7 @@ impl ResidentTurnRecorder {
     fn prepare_accepted_append(
         &mut self,
         permit: LedgerPermit,
-        summary: ResidentTurnSummary,
+        summary: GateBResidentTurnSummary,
     ) -> MResult<PreparedResidentAppend<'_>> {
         let identity = self.take_turn_identity()?;
         if core::mem::take(&mut self.fail_next_preparation) {
@@ -144,13 +148,53 @@ impl ResidentTurnRecorder {
     pub fn prepare_commit<'instance>(
         &mut self,
         permit: LedgerPermit,
-        turn: PreparedResidentTurn<'instance>,
+        turn: PreparedGateBResidentTurn<'instance>,
     ) -> MResult<PreparedResidentCommit<'instance, '_>> {
         let summary = turn.summary();
         match self.prepare_accepted_append(permit, summary) {
             Ok(append) => Ok(PreparedResidentCommit {
                 turn: PreparedResidentPublication::Ekf(turn),
                 append,
+            }),
+            Err(error) => {
+                turn.abort();
+                Err(error)
+            }
+        }
+    }
+
+    pub fn prepare_artifact_commit<'instance>(
+        &mut self,
+        permit: LedgerPermit,
+        turn: PreparedArtifactResidentTurn<'instance>,
+    ) -> MResult<PreparedResidentCommit<'instance, '_>> {
+        let summary = turn.summary();
+        let identity = match self.take_turn_identity() {
+            Ok(identity) => identity,
+            Err(error) => {
+                turn.abort();
+                return Err(error);
+            }
+        };
+        if core::mem::take(&mut self.fail_next_preparation) {
+            drop(permit);
+            turn.abort();
+            return Err(error("forced resident ledger preparation failure"));
+        }
+        let record = match accepted_artifact_record(identity, summary) {
+            Ok(record) => record,
+            Err(error) => {
+                turn.abort();
+                return Err(error);
+            }
+        };
+        match TurnLedger::prepare_append(&self.ledger, permit, record) {
+            Ok(prepared) => Ok(PreparedResidentCommit {
+                turn: PreparedResidentPublication::Artifact(turn),
+                append: PreparedResidentAppend {
+                    ledger: &mut self.ledger,
+                    prepared,
+                },
             }),
             Err(error) => {
                 turn.abort();
@@ -271,12 +315,32 @@ fn header(
     })
 }
 
-fn accepted_record(identity: u64, summary: ResidentTurnSummary) -> MResult<ResidentTurnRecord> {
+fn accepted_record(
+    identity: u64,
+    summary: GateBResidentTurnSummary,
+) -> MResult<ResidentTurnRecord> {
     Ok(OwnedTurnRecord {
         header: header(identity, TurnRecordStatus::Accepted, None)?,
         body: GateBFixedReceipt::accepted(
             summary.before_epoch,
             summary.after_epoch,
+            summary.state_hash,
+            summary.touched_slots,
+            summary.changed_slots,
+            summary.dirty_nodes,
+        ),
+    })
+}
+
+fn accepted_artifact_record(
+    identity: u64,
+    summary: ArtifactResidentTurnSummary,
+) -> MResult<ResidentTurnRecord> {
+    Ok(OwnedTurnRecord {
+        header: header(identity, TurnRecordStatus::Accepted, None)?,
+        body: GateBFixedReceipt::accepted(
+            summary.before_epoch.get(),
+            summary.after_epoch.get(),
             summary.state_hash,
             summary.touched_slots,
             summary.changed_slots,
@@ -295,6 +359,11 @@ fn rejected_record(
             TurnFailurePhase::Execution,
             "ResidentEpochExhausted",
             "resident candidate epoch exhausted",
+        ),
+        ResidentExecutionError::IncompleteCandidate => (
+            TurnFailurePhase::Integrity,
+            "ResidentIncompleteCandidate",
+            "resident candidate did not fully materialize its state",
         ),
         ResidentExecutionError::LandmarkDistance => (
             TurnFailurePhase::Integrity,
@@ -342,7 +411,8 @@ pub struct PreparedResidentCommit<'instance, 'ledger> {
 }
 
 enum PreparedResidentPublication<'instance> {
-    Ekf(PreparedResidentTurn<'instance>),
+    Ekf(PreparedGateBResidentTurn<'instance>),
+    Artifact(PreparedArtifactResidentTurn<'instance>),
     FullWrite(PreparedResidentFullWrite<'instance>),
 }
 
@@ -351,6 +421,9 @@ impl PreparedResidentPublication<'_> {
     fn publish(self) {
         match self {
             Self::Ekf(turn) => turn.publish(),
+            Self::Artifact(turn) => {
+                turn.publish();
+            }
             Self::FullWrite(turn) => turn.publish(),
         }
     }

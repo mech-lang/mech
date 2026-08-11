@@ -2,6 +2,8 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use mech_core::structures::Matrix as MechMatrix;
+#[cfg(feature = "compiler")]
+use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{
     FunctionCatalog, FunctionCatalogBuilder, FunctionExport, FunctionExposure, FunctionSpecializer,
     GenericError, InitialSolvePolicy, LegacyValue, MResult, MechError, MechFunction,
@@ -90,6 +92,13 @@ impl MechFunctionImpl for LegacyEkfFunction {
     }
 }
 
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for LegacyEkfFunction {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
+    }
+}
+
 struct LegacyEkfSpecializer;
 
 impl FunctionSpecializer for LegacyEkfSpecializer {
@@ -146,6 +155,13 @@ impl MechFunctionImpl for LegacyFullWriteFunction {
 
     fn to_string(&self) -> String {
         "GateBFullWriteLegacyAtomic".to_string()
+    }
+}
+
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for LegacyFullWriteFunction {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        Ok(0)
     }
 }
 

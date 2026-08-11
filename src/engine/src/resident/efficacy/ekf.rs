@@ -81,7 +81,9 @@ pub(crate) fn execute(
             );
         }
         CovarianceSymmetrization => {
-            *candidate_covariance = math::covariance_symmetrization(&scratch.corrected_covariance);
+            scratch.symmetrized_covariance =
+                math::covariance_symmetrization(&scratch.corrected_covariance);
+            *candidate_covariance = scratch.symmetrized_covariance;
             *candidate_state = scratch.corrected_state;
         }
     }

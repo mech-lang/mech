@@ -39,7 +39,7 @@ pub(crate) struct NodeDecl {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct ProgramArtifact {
+pub(crate) struct GateBControlFixture {
     pub(crate) instances: usize,
     pub(crate) slots: Box<[SlotDecl]>,
     pub(crate) nodes: Box<[NodeDecl]>,
@@ -187,8 +187,8 @@ fn append_ekf_nodes(nodes: &mut Vec<NodeDecl>, instance: u32) {
     ]);
 }
 
-impl ProgramArtifact {
-    pub(crate) fn frozen_ekf_batch(instances: usize) -> Self {
+impl GateBControlFixture {
+    pub(crate) fn new(instances: usize) -> Self {
         assert!(instances > 0, "resident EKF batch must not be empty");
         let slot_capacity = instances
             .checked_mul(LOGICAL_SLOTS_PER_EKF as usize)

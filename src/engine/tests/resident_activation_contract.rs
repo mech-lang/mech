@@ -158,8 +158,9 @@ fn gate_b_resident_control_remains_private_and_unrouted() {
     assert!(!normal_program.contains("ReactiveInstance::frozen_ekf_batch"));
 
     let resident_module = read("src/engine/src/resident/mod.rs");
-    let resident_artifact = read("src/engine/src/resident/artifact.rs");
+    let resident_control = read("src/engine/src/resident/artifact.rs");
     assert!(resident_module.contains("mod artifact;"));
-    assert!(resident_artifact.contains("pub(crate) struct ProgramArtifact"));
-    assert!(resident_artifact.contains("fn frozen_ekf_batch"));
+    assert!(!resident_control.contains("struct ProgramArtifact"));
+    assert!(!resident_control.contains("fn frozen_ekf_batch"));
+    assert!(resident_control.contains("struct GateBControlFixture"));
 }

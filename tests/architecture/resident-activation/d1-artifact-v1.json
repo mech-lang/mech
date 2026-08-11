@@ -1,0 +1,24 @@
+{
+  "artifact_nodes": 21,
+  "bytecode_format": "v1",
+  "change_detection": {
+    "observation_always_changed": 1,
+    "pure_kernel_kernel_reported": 17,
+    "pure_predicate_exact_scalar": 3
+  },
+  "gate": "D1",
+  "integrity_constraints": 3,
+  "integrity_predicates": 3,
+  "legacy_opaque_contracts": 0,
+  "observation_roots": 1,
+  "outputs": 1,
+  "program_revision": "156a5ed1b0955a21270851f29b73fb6aa7d321269a84b2db8c3caf1b1b797c26",
+  "projection": "artifact",
+  "resident_kernels": 15,
+  "schema_version": 1,
+  "source_bytecode_revision_equal": true,
+  "source_sha256": "a64d72c34434fe240dfac2ce31763d4b1af24e8eb3abc0319c167db50468e1ec",
+  "state_slots": 2,
+  "state_updates": 2,
+  "unclassified_nodes": 0
+}

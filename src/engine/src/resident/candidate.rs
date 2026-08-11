@@ -2,11 +2,12 @@ use core::sync::atomic::{AtomicU64, Ordering};
 
 use mech_core::InstanceEpoch;
 
-use super::{ActivatedPlan, ProgramArtifact, StateArena, TurnWorkspace};
+use super::{GateBArena, GateBControlFixture, GateBPlan, GateBWorkspace};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ResidentExecutionError {
     EpochExhausted,
+    IncompleteCandidate,
     LandmarkDistance,
     InnovationDeterminant,
     NonFiniteState,
@@ -20,21 +21,21 @@ pub(crate) fn publish_epoch(target: &AtomicU64, epoch: InstanceEpoch) {
 }
 
 #[derive(Debug)]
-pub(crate) struct ReactiveInstance {
-    pub(crate) plan: ActivatedPlan,
-    pub(crate) state: StateArena,
-    pub(crate) workspace: TurnWorkspace,
+pub(crate) struct GateBInstance {
+    pub(crate) plan: GateBPlan,
+    pub(crate) state: GateBArena,
+    pub(crate) workspace: GateBWorkspace,
     pub(crate) published_epoch: AtomicU64,
     pub(crate) next_epoch: Option<InstanceEpoch>,
     #[cfg(feature = "runtime_bench_probes")]
     pub(crate) publication_store_count: u64,
 }
 
-impl ReactiveInstance {
-    pub(crate) fn frozen_ekf_batch(instances: usize) -> Self {
-        let plan = ActivatedPlan::activate(ProgramArtifact::frozen_ekf_batch(instances));
-        let state = StateArena::activate(instances);
-        let workspace = TurnWorkspace::activate(&plan);
+impl GateBInstance {
+    pub(crate) fn new(instances: usize) -> Self {
+        let plan = GateBPlan::from_control_fixture(GateBControlFixture::new(instances));
+        let state = GateBArena::activate(instances);
+        let workspace = GateBWorkspace::activate(&plan);
         Self {
             plan,
             state,
@@ -75,7 +76,7 @@ impl ReactiveInstance {
 }
 
 pub(crate) struct Candidate<'a> {
-    pub(crate) instance: &'a mut ReactiveInstance,
+    pub(crate) instance: &'a mut GateBInstance,
     pub(crate) base_epoch: InstanceEpoch,
     pub(crate) working_epoch: InstanceEpoch,
     pub(crate) published_buffer: usize,

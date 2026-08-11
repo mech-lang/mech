@@ -19,7 +19,7 @@ no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-syntax?/no_std"]
 
 runtime = ["mech-engine/runtime"]
 runtime_bench_probes = ["mech-engine/runtime_bench_probes"]
-runtime_bench_gate_b = ["mech-engine/resident-ekf"]
+runtime_bench_gate_b = ["compiler", "mech-engine/resident-ekf-artifact"]
 native-link = ["runtime", "string"]
 source = ["runtime", "mech-engine/source", "dep:mech-syntax"]
 compiler = ["source", "mech-engine/compiler"]

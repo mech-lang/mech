@@ -1,6 +1,8 @@
 use mech_core::{CellSlotId, SlotIndex};
 
-use super::artifact::{LOGICAL_SLOTS_PER_EKF, NODES_PER_EKF, ProgramArtifact, SlotKind, SlotRole};
+use super::artifact::{
+    GateBControlFixture, LOGICAL_SLOTS_PER_EKF, NODES_PER_EKF, SlotKind, SlotRole,
+};
 use crate::efficacy::ekf::operation::{EkfConstants, EkfKernel};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -68,7 +70,7 @@ impl DependencyTopology {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct ActivatedPlan {
+pub(crate) struct GateBPlan {
     pub(crate) instances: usize,
     pub(crate) slots: Box<[ResolvedSlot]>,
     pub(crate) nodes: Box<[ActivatedNode]>,
@@ -88,8 +90,8 @@ fn flatten<T: Copy>(lists: &[Vec<T>]) -> (Box<[u32]>, Box<[T]>) {
     (offsets.into_boxed_slice(), values.into_boxed_slice())
 }
 
-impl ActivatedPlan {
-    pub(crate) fn activate(artifact: ProgramArtifact) -> Self {
+impl GateBPlan {
+    pub(crate) fn from_control_fixture(artifact: GateBControlFixture) -> Self {
         let logical_slot_count = artifact.slots.len();
         let slots: Box<[_]> = artifact
             .slots
@@ -229,10 +231,10 @@ mod tests {
     #[test]
     fn scaled_activation_is_deterministic_and_topologically_complete() {
         for instances in [1, 8, 64] {
-            let artifact = ProgramArtifact::frozen_ekf_batch(instances);
+            let artifact = GateBControlFixture::new(instances);
             let declarations = artifact.nodes.clone();
-            let left = ActivatedPlan::activate(artifact);
-            let right = ActivatedPlan::activate(ProgramArtifact::frozen_ekf_batch(instances));
+            let left = GateBPlan::from_control_fixture(artifact);
+            let right = GateBPlan::from_control_fixture(GateBControlFixture::new(instances));
             assert_eq!(left.nodes.len(), NODES_PER_EKF * instances);
             assert_eq!(left.slots.len(), LOGICAL_SLOTS_PER_EKF as usize * instances);
             assert_eq!(left.topology.linear_node_order.len(), left.nodes.len());

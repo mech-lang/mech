@@ -93,7 +93,11 @@ class ResidentActivationCheckerTests(unittest.TestCase):
             CHECKER.git_source(ROOT, CHECKER.D0_PR_BASE, CHECKER.INVENTORY_PATH)
         )
         current = copy.deepcopy(
-            json.loads((ROOT / CHECKER.INVENTORY_PATH).read_text(encoding="utf-8"))
+            json.loads(
+                CHECKER.git_source(
+                    ROOT, CHECKER.D0_FINAL_COMMIT, CHECKER.INVENTORY_PATH
+                )
+            )
         )
         engine = next(
             fixture
@@ -111,7 +115,9 @@ class ResidentActivationCheckerTests(unittest.TestCase):
         baseline = json.loads(
             CHECKER.git_source(ROOT, CHECKER.D0_PR_BASE, CHECKER.INVENTORY_PATH)
         )
-        current = json.loads((ROOT / CHECKER.INVENTORY_PATH).read_text(encoding="utf-8"))
+        current = json.loads(
+            CHECKER.git_source(ROOT, CHECKER.D0_FINAL_COMMIT, CHECKER.INVENTORY_PATH)
+        )
         expected = CHECKER.expected_inventory_after_d0(baseline)
         self.assertEqual(current, expected)
         self.assertEqual(CHECKER.validate_inventory_documents(baseline, current), [])

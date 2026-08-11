@@ -19,6 +19,9 @@ use support::gate_b::full_write::{FullWriteEpochFixture, FullWriteProbe, buffer_
 use support::gate_b::legacy_atomic::{LegacyEkfFixture, LegacyFullWriteFixture};
 use support::gate_b::raw_epoch::{EpochFixture, EpochProbe};
 use support::gate_b::raw_kernel::KernelFixture;
+use support::gate_b::resident_artifact::{
+    ArtifactRoute, ResidentArtifactFixture, ResidentArtifactKernelFixture, ResidentArtifactProbe,
+};
 use support::gate_b::resident_kernel::{
     ResidentFullWriteFixture, ResidentKernelFixture, ResidentKernelProbe,
 };
@@ -166,6 +169,27 @@ impl From<ResidentCompleteProbe> for StructuralProbe {
             ledger_records_inspected: probe.ledger_records_inspected,
             post_publication_append_infallible: true,
             ..Self::default()
+        }
+    }
+}
+
+impl From<ResidentArtifactProbe> for StructuralProbe {
+    fn from(probe: ResidentArtifactProbe) -> Self {
+        Self {
+            candidate_seed_bytes: probe.candidate_seed_bytes,
+            candidate_written_bytes: probe.candidate_written_bytes,
+            published_buffer_copy_bytes: probe.published_buffer_copy_bytes,
+            publication_store_count: probe.publication_store_count,
+            receipt_bytes: probe.receipt_bytes,
+            commit_runtime_call_count: probe.commit_runtime_call_count as u64,
+            legacy_journal_capture_count: probe.legacy_journal_capture_count as u64,
+            dirty_node_count: probe.dirty_nodes,
+            record_preparation_count: probe.record_preparation_count,
+            record_append_count: probe.record_append_count,
+            records_retained_before_timing: probe.records_retained_before_timing,
+            records_appended: probe.records_appended,
+            ledger_records_inspected: probe.ledger_records_inspected,
+            post_publication_append_infallible: probe.post_publication_append_infallible,
         }
     }
 }
@@ -501,6 +525,124 @@ fn resident_turn(c: &mut Criterion) {
     group.finish();
 }
 
+fn resident_artifact(c: &mut Criterion) {
+    let mut complete_group = c.benchmark_group("gate_b/mech-resident-artifact");
+    for (route, lane, benchmark_name, history, next_epoch) in [
+        (
+            ArtifactRoute::Source,
+            "mech-resident-artifact-source",
+            "source-history-0-low-epoch",
+            0,
+            1,
+        ),
+        (
+            ArtifactRoute::Source,
+            "mech-resident-artifact-source",
+            "source-history-1000-low-epoch",
+            1_000,
+            1,
+        ),
+        (
+            ArtifactRoute::Source,
+            "mech-resident-artifact-source",
+            "source-history-100000-low-epoch",
+            100_000,
+            1,
+        ),
+        (
+            ArtifactRoute::Source,
+            "mech-resident-artifact-source",
+            "source-history-0-high-epoch",
+            0,
+            1_000_000_001,
+        ),
+        (
+            ArtifactRoute::Bytecode,
+            "mech-resident-artifact-bytecode",
+            "bytecode-history-0-low-epoch",
+            0,
+            1,
+        ),
+    ] {
+        let mut correctness = ResidentArtifactFixture::with_controls(route, history, next_epoch);
+        let trajectory_hash = correctness.run_and_validate_every_turn();
+        assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+        correctness.validate_final();
+        complete_group.bench_function(benchmark_name, |benchmark| {
+            benchmark.iter_custom(|iterations| {
+                let mut elapsed = Duration::ZERO;
+                for _ in 0..iterations {
+                    let mut fixture =
+                        ResidentArtifactFixture::with_controls(route, history, next_epoch);
+                    reset_allocations();
+                    let started = Instant::now();
+                    fixture.run_episode();
+                    elapsed += started.elapsed();
+                    let allocations = allocation_snapshot();
+                    fixture.validate_final();
+                    black_box(fixture.state());
+                    report_dimensions(
+                        lane,
+                        1,
+                        history,
+                        next_epoch,
+                        allocations,
+                        fixture.probe().into(),
+                        &trajectory_hash,
+                        None,
+                    );
+                }
+                elapsed
+            });
+        });
+    }
+    complete_group.finish();
+
+    let mut kernel_group = c.benchmark_group("gate_b/mech-resident-artifact-kernel");
+    for (route, lane, benchmark_name) in [
+        (
+            ArtifactRoute::Source,
+            "mech-resident-artifact-kernel-source",
+            "source",
+        ),
+        (
+            ArtifactRoute::Bytecode,
+            "mech-resident-artifact-kernel-bytecode",
+            "bytecode",
+        ),
+    ] {
+        let mut correctness = ResidentArtifactKernelFixture::new(route);
+        let trajectory_hash = correctness.run_and_validate_every_turn();
+        assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
+        correctness.validate_final();
+        kernel_group.bench_function(benchmark_name, |benchmark| {
+            benchmark.iter_custom(|iterations| {
+                let mut elapsed = Duration::ZERO;
+                for _ in 0..iterations {
+                    let mut fixture = ResidentArtifactKernelFixture::new(route);
+                    reset_allocations();
+                    let started = Instant::now();
+                    fixture.run_episode();
+                    elapsed += started.elapsed();
+                    let allocations = allocation_snapshot();
+                    fixture.validate_final();
+                    black_box(fixture.state());
+                    report(
+                        lane,
+                        1,
+                        allocations,
+                        fixture.probe().into(),
+                        &trajectory_hash,
+                        None,
+                    );
+                }
+                elapsed
+            });
+        });
+    }
+    kernel_group.finish();
+}
+
 fn legacy_atomic(c: &mut Criterion) {
     let mut group = c.benchmark_group("gate_b/mech-legacy-atomic");
     for instances in SCALED_INSTANCES {
@@ -649,6 +791,72 @@ fn full_write(c: &mut Criterion) {
 
 #[cfg(feature = "runtime_bench_probes")]
 fn resident_structural_samples() {
+    for (route, lane, history, next_epoch) in [
+        (ArtifactRoute::Source, "mech-resident-artifact-source", 0, 1),
+        (
+            ArtifactRoute::Source,
+            "mech-resident-artifact-source",
+            1_000,
+            1,
+        ),
+        (
+            ArtifactRoute::Source,
+            "mech-resident-artifact-source",
+            100_000,
+            1,
+        ),
+        (
+            ArtifactRoute::Source,
+            "mech-resident-artifact-source",
+            0,
+            1_000_000_001,
+        ),
+        (
+            ArtifactRoute::Bytecode,
+            "mech-resident-artifact-bytecode",
+            0,
+            1,
+        ),
+    ] {
+        let mut fixture = ResidentArtifactFixture::with_controls(route, history, next_epoch);
+        let trajectory_hash = fixture.run_and_validate_every_turn();
+        let probe = fixture.probe();
+        let mut rejected = ResidentArtifactFixture::new(route);
+        let abort_hash = rejected.abort_output_hash();
+        report_dimensions(
+            lane,
+            1,
+            history,
+            next_epoch,
+            AllocationSnapshot::default(),
+            probe.into(),
+            &trajectory_hash,
+            Some(&abort_hash),
+        );
+    }
+
+    for (route, lane) in [
+        (
+            ArtifactRoute::Source,
+            "mech-resident-artifact-kernel-source",
+        ),
+        (
+            ArtifactRoute::Bytecode,
+            "mech-resident-artifact-kernel-bytecode",
+        ),
+    ] {
+        let mut fixture = ResidentArtifactKernelFixture::new(route);
+        let trajectory_hash = fixture.run_and_validate_every_turn();
+        report(
+            lane,
+            1,
+            AllocationSnapshot::default(),
+            fixture.probe().into(),
+            &trajectory_hash,
+            None,
+        );
+    }
+
     for instances in SCALED_INSTANCES {
         let mut fixture = ResidentKernelFixture::new(instances);
         let trajectory_hash = fixture.run_and_validate_every_turn();
@@ -781,6 +989,7 @@ fn gate_b_controls(c: &mut Criterion) {
     resident_kernel(c);
     resident_scheduled(c);
     resident_turn(c);
+    resident_artifact(c);
     legacy_atomic(c);
     full_write(c);
 }
