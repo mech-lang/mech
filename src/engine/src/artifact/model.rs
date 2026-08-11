@@ -494,6 +494,10 @@ pub enum ArtifactBuildError {
     ProducerBindingMismatch {
         slot: CellSlotId,
     },
+    InvalidStateWriterChain {
+        slot: CellSlotId,
+        reason: &'static str,
+    },
     MissingProducerBinding {
         slot: CellSlotId,
         producer: ProducerReference,

@@ -50,6 +50,29 @@ use nalgebra::Vector4;
 use paste::paste;
 use std::fmt::Debug;
 use std::ops::*;
+use std::sync::LazyLock;
+
+static PURE_STATS_REDUCTION_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatsArithmeticOverflow {
@@ -214,6 +237,9 @@ macro_rules! impl_stats_unop {
             }
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
+            }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_STATS_REDUCTION_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)

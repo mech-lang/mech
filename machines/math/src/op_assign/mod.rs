@@ -3,6 +3,7 @@ use crate::*;
 
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::sync::LazyLock;
 
 #[cfg(feature = "matrix")]
 use nalgebra::{
@@ -88,6 +89,68 @@ checked_op_assign!(checked_add_assign, runtime_checked_add, "addition assignment
 checked_op_assign!(checked_sub_assign, runtime_checked_sub, "subtraction assignment");
 checked_op_assign!(checked_mul_assign, runtime_checked_mul, "multiplication assignment");
 checked_op_assign!(checked_div_assign, runtime_checked_div, "division assignment");
+
+static PURE_WHOLE_VALUE_RMW_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::ReadWrite,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::WholeValue,
+            },
+            alias: AliasPolicy::MayAlias { input: 0 },
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
+
+static PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::ReadWrite,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::IndexedAxis { axis: 0 },
+            },
+            alias: AliasPolicy::MayAlias { input: 0 },
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 fn checked_one_based_index(index: usize, len: usize) -> MResult<usize> {
     if index == 0 || index > len {
@@ -242,6 +305,9 @@ macro_rules! impl_op_assign_range_fxn_s {
             }
             fn out(&self) -> LegacyValue {
                 self.sink.to_value()
+            }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
@@ -417,6 +483,9 @@ macro_rules! impl_op_assign_range_fxn_v {
             fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_INDEXED_AXIS_ZERO_RMW_CONTRACT)
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -565,6 +634,9 @@ macro_rules! impl_assign_scalar_scalar {
         }
         fn out(&self) -> LegacyValue { self.sink.to_value() }
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
+        fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+          Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)
+        }
         fn to_string(&self) -> String { format!("{:#?}", self) }
 
         fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
@@ -665,6 +737,9 @@ macro_rules! impl_assign_vector_vector {
         }
         fn out(&self) -> LegacyValue {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
+        fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+          Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)
+        }
         fn to_string(&self) -> String {format!("{:#?}", self)}
 
         fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
@@ -762,6 +837,9 @@ macro_rules! impl_assign_vector_scalar {
         }
         fn out(&self) -> LegacyValue {self.sink.to_value()}
         fn reactive_node_kind(&self) -> ReactiveNodeKind { ReactiveNodeKind::Register }
+        fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+          Some(&PURE_WHOLE_VALUE_RMW_CONTRACT)
+        }
         fn to_string(&self) -> String {format!("{:#?}", self)}
 
         fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {

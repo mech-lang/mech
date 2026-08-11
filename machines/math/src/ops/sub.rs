@@ -120,7 +120,20 @@ macro_rules! sub_row_mat_op {
     };
 }
 
-impl_fxns!(Sub, T, T, impl_checked_arithmetic_binop);
+macro_rules! impl_checked_sub_binop {
+    ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
+        impl_checked_arithmetic_binop!(
+            $struct_name,
+            $arg1_type,
+            $arg2_type,
+            $out_type,
+            $op,
+            crate::ops::arithmetic_full_write_contract
+        );
+    };
+}
+
+impl_fxns!(Sub, T, T, impl_checked_sub_binop);
 
 #[cfg(all(test, feature = "u8"))]
 mod checked_arithmetic_tests {

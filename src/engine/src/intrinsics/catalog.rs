@@ -77,6 +77,8 @@ fn validate_integrity_constraint_marker(args: &FunctionArgs) -> MResult<()> {
 
 #[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "matrix_horzcat")]
+    crate::intrinsics::horzcat::install_source_runtime(builder)?;
     #[cfg(feature = "matrix_comprehensions")]
     install_named(
         builder,

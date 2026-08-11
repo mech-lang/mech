@@ -201,7 +201,7 @@ macro_rules! impl_range_range_fxn_v {
 
 #[macro_export]
 macro_rules! impl_all_fxn_v {
-    ($struct_name:ident, $op:ident, $ix:ty) => {
+    ($struct_name:ident, $op:ident, $ix:ty $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
         pub struct $struct_name<T, MatA, MatB, IxVec> {
             pub source: Ref<MatB>,
@@ -307,6 +307,11 @@ macro_rules! impl_all_fxn_v {
             }
             fn out(&self) -> LegacyValue {
                 self.sink.to_value()
+            }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                let contract: Option<&'static OperationContractDeclaration> = None;
+                $(let contract = Some(&*$semantic_contract);)?
+                contract
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)

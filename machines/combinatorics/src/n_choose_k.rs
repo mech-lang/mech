@@ -10,6 +10,66 @@ use num_traits::{One, Zero};
 use paste::paste;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
+use std::sync::LazyLock;
+
+static PURE_N_CHOOSE_K_SCALAR_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::ExactScalar,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
+
+static PURE_N_CHOOSE_K_MATRIX_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["combinatorics".to_owned()].into_boxed_slice(),
+                    contract_name: "n-choose-k-matrix-output".to_owned(),
+                },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NChooseKResultUnrepresentable {
@@ -497,6 +557,9 @@ where
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_N_CHOOSE_K_SCALAR_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -702,6 +765,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_N_CHOOSE_K_MATRIX_CONTRACT)
     }
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())

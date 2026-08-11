@@ -1,9 +1,9 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    AccessMode, BindingId, CellSlotId, ConstantId, DeliveryMode, ExternalInteraction, NodeId,
-    OperationContractError, OperationContractId, PortDirection, ResolvedOperationContract,
-    SchemaId, validate_contract_schemas, validate_signal_bindings,
+    AccessMode, AliasPolicy, BindingId, CellSlotId, ConstantId, DeliveryMode, ExternalInteraction,
+    NodeId, OperationContractError, OperationContractId, OutputConstruction, PortDirection,
+    ResolvedOperationContract, SchemaId, validate_contract_schemas, validate_signal_bindings,
 };
 
 use super::{
@@ -311,6 +311,7 @@ fn checked_range(
 fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError> {
     let mut cursor = 0usize;
     let mut bound_producers = BTreeSet::new();
+    let mut state_writers = BTreeMap::<CellSlotId, Vec<(NodeId, u16)>>::new();
     for node in &draft.nodes {
         validate_operation(&node.operation)?;
         let inputs = checked_range(&node.input_bindings, draft.bindings.len(), node.node)?;
@@ -378,16 +379,22 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                     actual: slot.schema,
                 });
             }
-            if slot.producer
-                != (ProducerReference::NodeOutput {
-                    node: node.node,
-                    output_ordinal: ordinal as u16,
-                })
-            {
-                return Err(ArtifactBuildError::ProducerBindingMismatch { slot: *target });
-            }
-            if !bound_producers.insert(producer_key(slot.producer)) {
-                return Err(ArtifactBuildError::ProducerBindingMismatch { slot: *target });
+            let writer = ProducerReference::NodeOutput {
+                node: node.node,
+                output_ordinal: ordinal as u16,
+            };
+            if slot.role == SlotRole::State {
+                state_writers
+                    .entry(*target)
+                    .or_default()
+                    .push((node.node, ordinal as u16));
+            } else {
+                if slot.producer != writer {
+                    return Err(ArtifactBuildError::ProducerBindingMismatch { slot: *target });
+                }
+                if !bound_producers.insert(producer_key(slot.producer)) {
+                    return Err(ArtifactBuildError::ProducerBindingMismatch { slot: *target });
+                }
             }
         }
     }
@@ -400,6 +407,14 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
         return Err(ArtifactBuildError::BindingRangeMismatch { node });
     }
     for slot in &draft.slots {
+        if slot.role == SlotRole::State {
+            let writers = state_writers
+                .get(&slot.slot)
+                .map(Vec::as_slice)
+                .unwrap_or(&[]);
+            validate_state_writer_chain(draft, slot.slot, writers)?;
+            bound_producers.insert(producer_key(slot.producer));
+        }
         if matches!(slot.producer, ProducerReference::NodeOutput { .. })
             && !bound_producers.contains(&producer_key(slot.producer))
         {
@@ -407,6 +422,104 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                 slot: slot.slot,
                 producer: slot.producer,
             });
+        }
+    }
+    Ok(())
+}
+
+fn validate_state_writer_chain(
+    draft: &ProgramArtifactDraft,
+    slot_id: CellSlotId,
+    writers: &[(NodeId, u16)],
+) -> Result<(), ArtifactBuildError> {
+    let slot = require_slot(draft, slot_id)?;
+    let Some(&(final_node, final_output)) = writers.last() else {
+        return Err(ArtifactBuildError::MissingProducerBinding {
+            slot: slot_id,
+            producer: slot.producer,
+        });
+    };
+    if slot.producer
+        != (ProducerReference::NodeOutput {
+            node: final_node,
+            output_ordinal: final_output,
+        })
+    {
+        return Err(ArtifactBuildError::ProducerBindingMismatch { slot: slot_id });
+    }
+
+    enum WriterForm {
+        FullWrite,
+        ReadModifyWrite,
+    }
+    let mut form = None;
+    for &(node_id, output_ordinal) in writers {
+        let node = require_node(draft, node_id)?;
+        let contract = match require_contract(draft, node.contract)? {
+            ResolvedOperationContract::Declared(contract) => contract,
+            ResolvedOperationContract::LegacyOpaque(_) if writers.len() == 1 => return Ok(()),
+            ResolvedOperationContract::LegacyOpaque(_) => {
+                return Err(ArtifactBuildError::InvalidStateWriterChain {
+                    slot: slot_id,
+                    reason: "multi-writer state chains require declared operation contracts",
+                });
+            }
+        };
+        let output = contract.outputs.get(output_ordinal as usize).ok_or(
+            ArtifactBuildError::InvalidStateWriterChain {
+                slot: slot_id,
+                reason: "state writer output is absent from its contract",
+            },
+        )?;
+        let current = match (&output.construction, output.access, output.alias) {
+            (OutputConstruction::FullWrite { .. }, AccessMode::Write, AliasPolicy::NoAlias) => {
+                WriterForm::FullWrite
+            }
+            (
+                OutputConstruction::ReadModifyWrite { base_input, .. },
+                AccessMode::ReadWrite,
+                AliasPolicy::MayAlias { input },
+            ) if *base_input == input => {
+                let inputs = checked_range(&node.input_bindings, draft.bindings.len(), node.node)?;
+                let binding = draft
+                    .bindings
+                    .get(inputs.start + *base_input as usize)
+                    .ok_or(ArtifactBuildError::InvalidStateWriterChain {
+                        slot: slot_id,
+                        reason: "state writer base input is out of range",
+                    })?;
+                if !matches!(
+                    binding,
+                    BindingDeclaration::Input {
+                        source: ArtifactSource::Slot(base),
+                        ..
+                    } if *base == slot_id
+                ) {
+                    return Err(ArtifactBuildError::InvalidStateWriterChain {
+                        slot: slot_id,
+                        reason: "read-modify-write base input must resolve to the same state slot",
+                    });
+                }
+                WriterForm::ReadModifyWrite
+            }
+            _ => {
+                return Err(ArtifactBuildError::InvalidStateWriterChain {
+                    slot: slot_id,
+                    reason: "state writer access, construction, and alias policies disagree",
+                });
+            }
+        };
+        match (&form, &current) {
+            (None, _) => form = Some(current),
+            (Some(WriterForm::FullWrite), WriterForm::FullWrite)
+            | (Some(WriterForm::FullWrite), WriterForm::ReadModifyWrite)
+            | (Some(WriterForm::ReadModifyWrite), WriterForm::FullWrite) => {
+                return Err(ArtifactBuildError::InvalidStateWriterChain {
+                    slot: slot_id,
+                    reason: "a state slot must use one full writer or an ordered RMW chain",
+                });
+            }
+            (Some(WriterForm::ReadModifyWrite), WriterForm::ReadModifyWrite) => {}
         }
     }
     Ok(())
@@ -516,6 +629,7 @@ fn validate_constants(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildE
 fn validate_combinational_graph(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError> {
     let mut incoming = vec![0usize; draft.nodes.len()];
     let mut downstream = vec![Vec::<usize>::new(); draft.nodes.len()];
+    let mut latest_state_writer = BTreeMap::<CellSlotId, usize>::new();
     for node in &draft.nodes {
         let range = node.input_bindings.start as usize..node.input_bindings.end as usize;
         for binding in &draft.bindings[range] {
@@ -527,17 +641,30 @@ fn validate_combinational_graph(draft: &ProgramArtifactDraft) -> Result<(), Arti
                 continue;
             };
             let slot = require_slot(draft, *slot)?;
-            if slot.role == SlotRole::State {
-                continue;
-            }
-            let ProducerReference::NodeOutput { node: producer, .. } = slot.producer else {
-                continue;
+            let from = if slot.role == SlotRole::State {
+                latest_state_writer.get(&slot.slot).copied()
+            } else {
+                match slot.producer {
+                    ProducerReference::NodeOutput { node: producer, .. } => {
+                        Some(producer.get() as usize)
+                    }
+                    ProducerReference::Input(_) => None,
+                }
             };
-            let from = producer.get() as usize;
+            let Some(from) = from else { continue };
             let to = node.node.get() as usize;
             if !downstream[from].contains(&to) {
                 downstream[from].push(to);
                 incoming[to] += 1;
+            }
+        }
+        let outputs = node.output_bindings.start as usize..node.output_bindings.end as usize;
+        for binding in &draft.bindings[outputs] {
+            let BindingDeclaration::Output { target, .. } = binding else {
+                continue;
+            };
+            if require_slot(draft, *target)?.role == SlotRole::State {
+                latest_state_writer.insert(*target, node.node.get() as usize);
             }
         }
     }

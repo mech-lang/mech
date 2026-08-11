@@ -488,6 +488,33 @@ fn pure_full_write_contract(
     }
 }
 
+fn pure_state_rmw_contract(base_input: u16) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                };
+                2
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::ReadWrite,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::ReadModifyWrite {
+                base_input,
+                regions: RegionPolicy::WholeValue,
+            },
+            alias: AliasPolicy::MayAlias { input: base_input },
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
 fn build_both_with_contracts(
     data: &FixtureData,
     graph: SourceProgram,
@@ -680,6 +707,49 @@ fn combinational_cycles_are_rejected_but_state_feedback_is_valid() {
         Err(ArtifactBuildError::CombinationalCycle)
     ));
     assert!(build_both(&data, stateful_register(&data)).0.nodes().len() == 1);
+}
+
+#[test]
+fn state_reads_depend_on_the_latest_preceding_writer() {
+    let data = fixture_data();
+    let graph = SourceProgram {
+        states: vec![SourceState {
+            schema: data.schema.f64_,
+            initializer: Some(data.constant.one),
+            producer_node: 0,
+            producer_output_ordinal: 0,
+        }]
+        .into_boxed_slice(),
+        nodes: vec![
+            node(
+                operation("state", "write"),
+                vec![
+                    SourceValue::NodeOutput {
+                        node: 1,
+                        output_ordinal: 0,
+                    },
+                    SourceValue::State(0),
+                ],
+                vec![SourceNodeOutput::State(0)],
+            ),
+            node(
+                operation("state", "read-after-write"),
+                vec![SourceValue::State(0)],
+                vec![SourceNodeOutput::Derived {
+                    schema: data.schema.f64_,
+                }],
+            ),
+        ]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+    let write = Box::leak(Box::new(pure_state_rmw_contract(1)));
+    let read = Box::leak(Box::new(pure_full_write_contract(1, 1)));
+    let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
+    assert!(matches!(
+        compile_source_program_with_contracts(&graph, &mut context, &[Some(write), Some(read)],),
+        Err(ArtifactBuildError::CombinationalCycle)
+    ));
 }
 
 #[test]

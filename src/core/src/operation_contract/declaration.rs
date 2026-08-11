@@ -136,6 +136,8 @@ pub struct ShapeContractReference {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum RegionPolicy {
+    WholeValue,
+    IndexedAxis { axis: u16 },
     SingleElement,
     ContiguousRange,
     RectangularRegion,

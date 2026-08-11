@@ -2,6 +2,30 @@ use crate::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 use mech_core::*;
+use std::sync::LazyLock;
+
+static PURE_TRANSPOSE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::TransposeOf { input: 0 },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+});
 
 // Transpose ------------------------------------------------------------------
 
@@ -68,6 +92,9 @@ macro_rules! impl_transpose {
             }
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
+            }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_TRANSPOSE_CONTRACT)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
