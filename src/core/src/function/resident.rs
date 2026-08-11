@@ -1,4 +1,4 @@
-use crate::{ResolvedOperationContract, SchemaKey};
+use crate::{ResolvedOperationContract, SchemaId, SchemaKey};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, string::String};
@@ -33,7 +33,8 @@ impl ResidentShape {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ResidentPortLayout {
-    pub schema: SchemaKey,
+    pub schema_id: SchemaId,
+    pub schema_key: SchemaKey,
     pub kind: ResidentValueKind,
     pub shape: ResidentShape,
 }
@@ -123,6 +124,29 @@ pub trait ResidentKernelInputs {
 
     fn get(&self, index: usize) -> Option<ResidentValueRef<'_>>;
 
+    fn f64(&self, index: usize) -> Option<&[f64]> {
+        let ResidentValueRef::F64(values) = self.get(index)? else {
+            return None;
+        };
+        Some(values)
+    }
+
+    fn f64_1(&self) -> Option<[&[f64]; 1]> {
+        Some([self.f64(0)?])
+    }
+
+    fn f64_2(&self) -> Option<[&[f64]; 2]> {
+        Some([self.f64(0)?, self.f64(1)?])
+    }
+
+    fn f64_3(&self) -> Option<[&[f64]; 3]> {
+        Some([self.f64(0)?, self.f64(1)?, self.f64(2)?])
+    }
+
+    fn f64_4(&self) -> Option<[&[f64]; 4]> {
+        Some([self.f64(0)?, self.f64(1)?, self.f64(2)?, self.f64(3)?])
+    }
+
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -134,9 +158,45 @@ pub type ResidentKernelExecutor = for<'a> fn(
     output: ResidentValueMut<'a>,
 ) -> Result<bool, ResidentKernelError>;
 
+pub type ResidentKernelF64Executor1 = for<'a> fn(
+    kernel: &BoundResidentKernel,
+    first: &'a [f64],
+    output: ResidentValueMut<'a>,
+) -> Result<bool, ResidentKernelError>;
+pub type ResidentKernelF64Executor2 = for<'a> fn(
+    kernel: &BoundResidentKernel,
+    first: &'a [f64],
+    second: &'a [f64],
+    output: ResidentValueMut<'a>,
+) -> Result<bool, ResidentKernelError>;
+pub type ResidentKernelF64Executor3 = for<'a> fn(
+    kernel: &BoundResidentKernel,
+    first: &'a [f64],
+    second: &'a [f64],
+    third: &'a [f64],
+    output: ResidentValueMut<'a>,
+) -> Result<bool, ResidentKernelError>;
+pub type ResidentKernelF64Executor4 = for<'a> fn(
+    kernel: &BoundResidentKernel,
+    first: &'a [f64],
+    second: &'a [f64],
+    third: &'a [f64],
+    fourth: &'a [f64],
+    output: ResidentValueMut<'a>,
+) -> Result<bool, ResidentKernelError>;
+
+#[derive(Clone, Copy)]
+enum ResidentKernelDispatch {
+    Dynamic(ResidentKernelExecutor),
+    F64_1(ResidentKernelF64Executor1),
+    F64_2(ResidentKernelF64Executor2),
+    F64_3(ResidentKernelF64Executor3),
+    F64_4(ResidentKernelF64Executor4),
+}
+
 #[derive(Clone)]
 pub struct BoundResidentKernel {
-    executor: ResidentKernelExecutor,
+    dispatch: ResidentKernelDispatch,
     parameters: Box<[u64]>,
 }
 
@@ -144,7 +204,7 @@ impl core::fmt::Debug for BoundResidentKernel {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         formatter
             .debug_struct("BoundResidentKernel")
-            .field("executor", &"<prebound>")
+            .field("dispatch", &"<prebound>")
             .field("parameters", &self.parameters)
             .finish()
     }
@@ -153,7 +213,35 @@ impl core::fmt::Debug for BoundResidentKernel {
 impl BoundResidentKernel {
     pub fn new(executor: ResidentKernelExecutor, parameters: Box<[u64]>) -> Self {
         Self {
-            executor,
+            dispatch: ResidentKernelDispatch::Dynamic(executor),
+            parameters,
+        }
+    }
+
+    pub fn new_f64_1(executor: ResidentKernelF64Executor1, parameters: Box<[u64]>) -> Self {
+        Self {
+            dispatch: ResidentKernelDispatch::F64_1(executor),
+            parameters,
+        }
+    }
+
+    pub fn new_f64_2(executor: ResidentKernelF64Executor2, parameters: Box<[u64]>) -> Self {
+        Self {
+            dispatch: ResidentKernelDispatch::F64_2(executor),
+            parameters,
+        }
+    }
+
+    pub fn new_f64_3(executor: ResidentKernelF64Executor3, parameters: Box<[u64]>) -> Self {
+        Self {
+            dispatch: ResidentKernelDispatch::F64_3(executor),
+            parameters,
+        }
+    }
+
+    pub fn new_f64_4(executor: ResidentKernelF64Executor4, parameters: Box<[u64]>) -> Self {
+        Self {
+            dispatch: ResidentKernelDispatch::F64_4(executor),
             parameters,
         }
     }
@@ -162,12 +250,44 @@ impl BoundResidentKernel {
         &self.parameters
     }
 
-    pub fn execute<'a>(
+    #[inline(always)]
+    pub fn execute<'a, I>(
         &self,
-        inputs: &'a dyn ResidentKernelInputs,
+        inputs: &'a I,
         output: ResidentValueMut<'a>,
-    ) -> Result<bool, ResidentKernelError> {
-        (self.executor)(self, inputs, output)
+    ) -> Result<bool, ResidentKernelError>
+    where
+        I: ResidentKernelInputs,
+    {
+        match self.dispatch {
+            ResidentKernelDispatch::Dynamic(executor) => executor(self, inputs, output),
+            ResidentKernelDispatch::F64_1(executor) => executor(
+                self,
+                inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?,
+                output,
+            ),
+            ResidentKernelDispatch::F64_2(executor) => executor(
+                self,
+                inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?,
+                inputs.f64(1).ok_or(ResidentKernelError::InvalidInput)?,
+                output,
+            ),
+            ResidentKernelDispatch::F64_3(executor) => executor(
+                self,
+                inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?,
+                inputs.f64(1).ok_or(ResidentKernelError::InvalidInput)?,
+                inputs.f64(2).ok_or(ResidentKernelError::InvalidInput)?,
+                output,
+            ),
+            ResidentKernelDispatch::F64_4(executor) => executor(
+                self,
+                inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?,
+                inputs.f64(1).ok_or(ResidentKernelError::InvalidInput)?,
+                inputs.f64(2).ok_or(ResidentKernelError::InvalidInput)?,
+                inputs.f64(3).ok_or(ResidentKernelError::InvalidInput)?,
+                output,
+            ),
+        }
     }
 }
 

@@ -1,7 +1,9 @@
 use mech_core::{
-    BoundResidentKernel, FunctionCatalogBuilder, MResult, ResidentKernelBindError,
-    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentShape,
-    ResidentValueMut, ResidentValueRef,
+    AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
+    ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction, RegionPolicy,
+    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
+    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    ResolvedOperationContract, ShapeContractReference, ShapeRule,
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -172,77 +174,464 @@ fn bound(
     Ok(BoundResidentKernel::new(executor, parameters.into()))
 }
 
-fn bind_executor(
+fn validate_contract(
     request: &ResidentKernelBindRequest<'_>,
-    executor: mech_core::ResidentKernelExecutor,
-) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    if request.output.shape.len().is_none() {
+    input_count: usize,
+    construction: OutputConstruction,
+    alias: AliasPolicy,
+    output_access: AccessMode,
+    change_detection: ChangeDetectionPolicy,
+) -> Result<(), ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    if contract.interaction != ExternalInteraction::Pure
+        || contract.inputs.len() != input_count
+        || request.inputs.len() != input_count
+        || contract.outputs.len() != 1
+        || contract
+            .inputs
+            .iter()
+            .zip(request.inputs)
+            .any(|(port, layout)| {
+                port.schema != layout.schema_id
+                    || port.access != AccessMode::Read
+                    || port.delivery != DeliveryMode::Signal
+            })
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    let output = &contract.outputs[0];
+    if output.schema != request.output.schema_id
+        || output.access != output_access
+        || output.delivery != DeliveryMode::Signal
+        || output.construction != construction
+        || output.alias != alias
+        || output.change_detection != change_detection
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    Ok(())
+}
+
+fn validate_full_write(
+    request: &ResidentKernelBindRequest<'_>,
+    input_count: usize,
+    shape: ShapeRule,
+    change_detection: ChangeDetectionPolicy,
+) -> Result<(), ResidentKernelBindError> {
+    validate_contract(
+        request,
+        input_count,
+        OutputConstruction::FullWrite { shape },
+        AliasPolicy::NoAlias,
+        AccessMode::Write,
+        change_detection,
+    )
+}
+
+fn validate_build(
+    request: &ResidentKernelBindRequest<'_>,
+    input_count: usize,
+    module_path: &[&str],
+    contract_name: &str,
+) -> Result<(), ResidentKernelBindError> {
+    validate_contract(
+        request,
+        input_count,
+        OutputConstruction::Build {
+            postcondition: ShapeContractReference {
+                module_path: module_path
+                    .iter()
+                    .map(|segment| (*segment).to_owned())
+                    .collect(),
+                contract_name: contract_name.to_owned(),
+            },
+        },
+        AliasPolicy::NoAlias,
+        AccessMode::Write,
+        ChangeDetectionPolicy::KernelReported,
+    )
+}
+
+fn validate_rmw(
+    request: &ResidentKernelBindRequest<'_>,
+    input_count: usize,
+    regions: RegionPolicy,
+) -> Result<(), ResidentKernelBindError> {
+    validate_contract(
+        request,
+        input_count,
+        OutputConstruction::ReadModifyWrite {
+            base_input: 0,
+            regions,
+        },
+        AliasPolicy::MayAlias { input: 0 },
+        AccessMode::ReadWrite,
+        ChangeDetectionPolicy::KernelReported,
+    )
+}
+
+fn require_kind(
+    request: &ResidentKernelBindRequest<'_>,
+    input_kinds: &[ResidentValueKind],
+    output_kind: ResidentValueKind,
+) -> Result<(), ResidentKernelBindError> {
+    if request.inputs.len() != input_kinds.len()
+        || request
+            .inputs
+            .iter()
+            .zip(input_kinds)
+            .any(|(layout, kind)| layout.kind != *kind)
+        || request.output.kind != output_kind
+        || request.output.shape.len().is_none()
+    {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(executor, Vec::<u64>::new().into_boxed_slice())
+    Ok(())
+}
+
+fn require_f64_lengths(
+    request: &ResidentKernelBindRequest<'_>,
+    input_lengths: &[usize],
+    output_length: usize,
+) -> Result<(), ResidentKernelBindError> {
+    require_kind(
+        request,
+        &vec![ResidentValueKind::F64; input_lengths.len()],
+        ResidentValueKind::F64,
+    )?;
+    if request
+        .inputs
+        .iter()
+        .zip(input_lengths)
+        .any(|(layout, len)| layout.shape.len() != Some(*len))
+        || request.output.shape.len() != Some(output_length)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(())
+}
+
+fn validate_f64_executor(
+    request: &ResidentKernelBindRequest<'_>,
+    input_lengths: &[usize],
+    output_kind: ResidentValueKind,
+    output_length: usize,
+    change_detection: ChangeDetectionPolicy,
+) -> Result<(), ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        input_lengths.len(),
+        ShapeRule::Declared,
+        change_detection,
+    )?;
+    require_kind(
+        request,
+        &vec![ResidentValueKind::F64; input_lengths.len()],
+        output_kind,
+    )?;
+    if request
+        .inputs
+        .iter()
+        .zip(input_lengths)
+        .any(|(layout, len)| layout.shape.len() != Some(*len))
+        || request.output.shape.len() != Some(output_length)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(())
 }
 
 macro_rules! binder {
-    ($binder:ident, $executor:ident) => {
+    ($binder:ident, $executor:ident, [$first:expr], $output_kind:expr, $output:expr, $change:expr) => {
         fn $binder(
             request: &ResidentKernelBindRequest<'_>,
         ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-            bind_executor(request, $executor)
+            validate_f64_executor(request, &[$first], $output_kind, $output, $change)?;
+            Ok(BoundResidentKernel::new_f64_1($executor, Box::new([])))
+        }
+    };
+    ($binder:ident, $executor:ident, [$first:expr, $second:expr], $output_kind:expr, $output:expr, $change:expr) => {
+        fn $binder(
+            request: &ResidentKernelBindRequest<'_>,
+        ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+            validate_f64_executor(request, &[$first, $second], $output_kind, $output, $change)?;
+            Ok(BoundResidentKernel::new_f64_2($executor, Box::new([])))
+        }
+    };
+    ($binder:ident, $executor:ident, [$first:expr, $second:expr, $third:expr], $output_kind:expr, $output:expr, $change:expr) => {
+        fn $binder(
+            request: &ResidentKernelBindRequest<'_>,
+        ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+            validate_f64_executor(
+                request,
+                &[$first, $second, $third],
+                $output_kind,
+                $output,
+                $change,
+            )?;
+            Ok(BoundResidentKernel::new_f64_3($executor, Box::new([])))
+        }
+    };
+    ($binder:ident, $executor:ident, [$first:expr, $second:expr, $third:expr, $fourth:expr], $output_kind:expr, $output:expr, $change:expr) => {
+        fn $binder(
+            request: &ResidentKernelBindRequest<'_>,
+        ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+            validate_f64_executor(
+                request,
+                &[$first, $second, $third, $fourth],
+                $output_kind,
+                $output,
+                $change,
+            )?;
+            Ok(BoundResidentKernel::new_f64_4($executor, Box::new([])))
         }
     };
 }
 
-binder!(bind_assign, assign);
-binder!(bind_ekf_trig, ekf_trig);
-binder!(bind_ekf_motion, ekf_motion);
-binder!(bind_ekf_control, ekf_control);
-binder!(bind_ekf_predicted_state, ekf_predicted_state);
-binder!(bind_ekf_predicted_covariance, ekf_predicted_covariance);
-binder!(bind_ekf_landmark, ekf_landmark);
-binder!(bind_ekf_measurement, ekf_measurement);
-binder!(bind_ekf_measurement_jacobian, ekf_measurement_jacobian);
-binder!(bind_ekf_innovation_covariance, ekf_innovation_covariance);
-binder!(bind_ekf_solve, ekf_solve);
-binder!(bind_ekf_gain, ekf_gain);
-binder!(bind_ekf_innovation, ekf_innovation);
-binder!(bind_ekf_corrected_state, ekf_corrected_state);
-binder!(bind_ekf_joseph, ekf_joseph);
-binder!(bind_ekf_symmetrize, ekf_symmetrize);
-binder!(bind_ekf_finite, ekf_finite);
-binder!(bind_ekf_positive_diagonal, ekf_positive_diagonal);
-binder!(bind_ekf_symmetric, ekf_symmetric);
+binder!(
+    bind_ekf_trig,
+    ekf_trig,
+    [3],
+    ResidentValueKind::F64,
+    2,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_motion,
+    ekf_motion,
+    [3, 4, 2, 1],
+    ResidentValueKind::F64,
+    9,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_control,
+    ekf_control,
+    [2, 1],
+    ResidentValueKind::F64,
+    6,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_predicted_state,
+    ekf_predicted_state,
+    [3, 4, 2, 1],
+    ResidentValueKind::F64,
+    3,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_predicted_covariance,
+    ekf_predicted_covariance,
+    [9, 9, 6, 4],
+    ResidentValueKind::F64,
+    9,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_landmark,
+    ekf_landmark,
+    [3, 2],
+    ResidentValueKind::F64,
+    3,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_measurement,
+    ekf_measurement,
+    [3, 3],
+    ResidentValueKind::F64,
+    2,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_measurement_jacobian,
+    ekf_measurement_jacobian,
+    [3],
+    ResidentValueKind::F64,
+    6,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_innovation_covariance,
+    ekf_innovation_covariance,
+    [9, 6, 4],
+    ResidentValueKind::F64,
+    4,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_solve,
+    ekf_solve,
+    [4],
+    ResidentValueKind::F64,
+    4,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_gain,
+    ekf_gain,
+    [9, 6, 4],
+    ResidentValueKind::F64,
+    6,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_innovation,
+    ekf_innovation,
+    [4, 2],
+    ResidentValueKind::F64,
+    2,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_corrected_state,
+    ekf_corrected_state,
+    [3, 6, 2],
+    ResidentValueKind::F64,
+    3,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_joseph,
+    ekf_joseph,
+    [9, 6, 6, 4],
+    ResidentValueKind::F64,
+    9,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_symmetrize,
+    ekf_symmetrize,
+    [9],
+    ResidentValueKind::F64,
+    9,
+    ChangeDetectionPolicy::KernelReported
+);
+binder!(
+    bind_ekf_finite,
+    ekf_finite,
+    [3, 9],
+    ResidentValueKind::Bool,
+    1,
+    ChangeDetectionPolicy::ExactScalar
+);
+binder!(
+    bind_ekf_positive_diagonal,
+    ekf_positive_diagonal,
+    [9],
+    ResidentValueKind::Bool,
+    1,
+    ChangeDetectionPolicy::ExactScalar
+);
+binder!(
+    bind_ekf_symmetric,
+    ekf_symmetric,
+    [9],
+    ResidentValueKind::Bool,
+    1,
+    ChangeDetectionPolicy::ExactScalar
+);
 
-fn bind_copy_shape(
+fn bind_assign(
     request: &ResidentKernelBindRequest<'_>,
-    executor: mech_core::ResidentKernelExecutor,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    if request.output.shape.len().is_none() {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::SameAsInput { input: 0 },
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    require_kind(request, &[ResidentValueKind::F64], ResidentValueKind::F64)?;
+    if request.inputs[0].shape != request.output.shape {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(executor, Vec::<u64>::new().into_boxed_slice())
+    bound(assign, Vec::<u64>::new().into_boxed_slice())
 }
 
 fn bind_negate(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_copy_shape(request, negate)
+    let change = if request.output.shape == ResidentShape::SCALAR {
+        ChangeDetectionPolicy::ExactScalar
+    } else {
+        ChangeDetectionPolicy::KernelReported
+    };
+    validate_full_write(request, 1, ShapeRule::SameAsInput { input: 0 }, change)?;
+    require_kind(request, &[ResidentValueKind::F64], ResidentValueKind::F64)?;
+    if request.inputs[0].shape != request.output.shape {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(negate, Vec::<u64>::new().into_boxed_slice())
 }
 
 fn bind_sub(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_copy_shape(request, subtract)
+    bind_binary(request, subtract)
 }
 
 fn bind_mul(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_copy_shape(request, multiply)
+    bind_binary(request, multiply)
+}
+
+fn bind_binary(
+    request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelExecutor,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let change = if request.output.shape == ResidentShape::SCALAR {
+        ChangeDetectionPolicy::ExactScalar
+    } else {
+        ChangeDetectionPolicy::KernelReported
+    };
+    validate_full_write(request, 2, ShapeRule::Declared, change)?;
+    require_kind(
+        request,
+        &[ResidentValueKind::F64, ResidentValueKind::F64],
+        ResidentValueKind::F64,
+    )?;
+    let output_len = request
+        .output
+        .shape
+        .len()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    if request.inputs.iter().any(|input| {
+        input
+            .shape
+            .len()
+            .is_none_or(|len| len != 1 && len != output_len)
+    }) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(executor, Vec::<u64>::new().into_boxed_slice())
 }
 
 fn bind_mul_rows(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    require_kind(
+        request,
+        &[ResidentValueKind::F64, ResidentValueKind::F64],
+        ResidentValueKind::F64,
+    )?;
+    let [matrix, vector] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if matrix.shape != request.output.shape
+        || vector.shape.len() != Some(request.output.shape.rows as usize)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     bound(
         multiply_rows,
         vec![
@@ -256,21 +645,44 @@ fn bind_mul_rows(
 fn bind_pow(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_copy_shape(request, power)
+    bind_binary(request, power)
 }
 
 fn bind_add_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_copy_shape(request, add_assign)
+    validate_rmw(request, 2, RegionPolicy::WholeValue)?;
+    require_kind(
+        request,
+        &[ResidentValueKind::F64, ResidentValueKind::F64],
+        ResidentValueKind::F64,
+    )?;
+    if request.inputs[0].shape != request.output.shape
+        || request.inputs[1].shape != request.output.shape
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(add_assign, Vec::<u64>::new().into_boxed_slice())
 }
 
 fn bind_transpose(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::TransposeOf { input: 0 },
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    require_kind(request, &[ResidentValueKind::F64], ResidentValueKind::F64)?;
     let [input] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    if request.output.shape.rows != input.shape.columns
+        || request.output.shape.columns != input.shape.rows
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     bound(
         transpose,
         vec![input.shape.rows as u64, input.shape.columns as u64].into_boxed_slice(),
@@ -280,9 +692,19 @@ fn bind_transpose(
 fn bind_sum_columns(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    require_kind(request, &[ResidentValueKind::F64], ResidentValueKind::F64)?;
     let [input] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    if request.output.shape.len() != Some(input.shape.rows as usize) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     bound(
         sum_columns,
         vec![input.shape.rows as u64, input.shape.columns as u64].into_boxed_slice(),
@@ -292,6 +714,31 @@ fn bind_sum_columns(
 fn bind_horizontal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_build(
+        request,
+        request.inputs.len(),
+        &["matrix", "concatenate"],
+        "horizontal-output",
+    )?;
+    if request.inputs.is_empty()
+        || request
+            .inputs
+            .iter()
+            .any(|input| input.kind != ResidentValueKind::F64)
+        || request.output.kind != ResidentValueKind::F64
+        || request
+            .inputs
+            .iter()
+            .any(|input| input.shape.rows != request.output.shape.rows)
+        || request
+            .inputs
+            .iter()
+            .map(|input| input.shape.columns)
+            .sum::<u32>()
+            != request.output.shape.columns
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     let mut parameters = Vec::with_capacity(1 + request.inputs.len() * 2);
     parameters.push(request.inputs.len() as u64);
     for input in request.inputs {
@@ -304,6 +751,31 @@ fn bind_horizontal(
 fn bind_vertical(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_build(
+        request,
+        request.inputs.len(),
+        &["matrix", "concatenate"],
+        "vertical-output",
+    )?;
+    if request.inputs.is_empty()
+        || request
+            .inputs
+            .iter()
+            .any(|input| input.kind != ResidentValueKind::F64)
+        || request.output.kind != ResidentValueKind::F64
+        || request
+            .inputs
+            .iter()
+            .any(|input| input.shape.columns != request.output.shape.columns)
+        || request
+            .inputs
+            .iter()
+            .map(|input| input.shape.rows)
+            .sum::<u32>()
+            != request.output.shape.rows
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     let mut parameters = Vec::with_capacity(1 + request.inputs.len() * 2);
     parameters.push(request.inputs.len() as u64);
     for input in request.inputs {
@@ -316,27 +788,74 @@ fn bind_vertical(
 fn bind_range_inclusive(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_copy_shape(request, range_inclusive)
+    validate_build(request, 2, &["range"], "inclusive-output")?;
+    require_kind(
+        request,
+        &[ResidentValueKind::F64, ResidentValueKind::F64],
+        ResidentValueKind::F64,
+    )?;
+    if request
+        .inputs
+        .iter()
+        .any(|input| input.shape != ResidentShape::SCALAR)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(range_inclusive, Vec::<u64>::new().into_boxed_slice())
 }
 
 fn bind_n_choose_k(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_copy_shape(request, n_choose_k)
+    validate_build(request, 2, &["combinatorics"], "n-choose-k-matrix-output")?;
+    require_kind(
+        request,
+        &[ResidentValueKind::F64, ResidentValueKind::F64],
+        ResidentValueKind::F64,
+    )?;
+    if request.inputs[1].shape != ResidentShape::SCALAR || request.output.shape.rows != 2 {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(n_choose_k, Vec::<u64>::new().into_boxed_slice())
 }
 
 fn bind_gather_1d(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_copy_shape(request, gather_1d)
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    if request.inputs.len() != 2
+        || request.inputs[0].kind != ResidentValueKind::F64
+        || !matches!(
+            request.inputs[1].kind,
+            ResidentValueKind::F64 | ResidentValueKind::Index
+        )
+        || request.output.kind != ResidentValueKind::F64
+        || request.output.shape.len() != request.inputs[1].shape.len()
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(gather_1d, Vec::<u64>::new().into_boxed_slice())
 }
 
 fn bind_all_rows_columns(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_selection_contract(request)?;
     let [source, _] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    let selected = request.inputs[1]
+        .shape
+        .len()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    if request.output.shape.len() != Some(source.shape.rows as usize * selected) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     bound(
         all_rows_columns,
         vec![source.shape.rows as u64, source.shape.columns as u64].into_boxed_slice(),
@@ -346,6 +865,9 @@ fn bind_all_rows_columns(
 fn bind_all_rows_column(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    if request.inputs.get(1).map(|input| input.shape) != Some(ResidentShape::SCALAR) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     bind_all_rows_columns(request).map(|_| {
         BoundResidentKernel::new(
             all_rows_column,
@@ -361,9 +883,15 @@ fn bind_all_rows_column(
 fn bind_row_all_columns(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_selection_contract(request)?;
     let [source, _] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    if request.inputs[1].shape != ResidentShape::SCALAR
+        || request.output.shape.len() != Some(source.shape.columns as usize)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     bound(
         row_all_columns,
         vec![source.shape.rows as u64, source.shape.columns as u64].into_boxed_slice(),
@@ -373,9 +901,17 @@ fn bind_row_all_columns(
 fn bind_rows_all_columns(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_selection_contract(request)?;
     let [source, _] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    let selected = request.inputs[1]
+        .shape
+        .len()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    if request.output.shape.len() != Some(selected * source.shape.columns as usize) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     bound(
         rows_all_columns,
         vec![source.shape.rows as u64, source.shape.columns as u64].into_boxed_slice(),
@@ -398,9 +934,27 @@ fn bind_indexed_rows(
     request: &ResidentKernelBindRequest<'_>,
     executor: mech_core::ResidentKernelExecutor,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_rmw(request, 3, RegionPolicy::IndexedAxis { axis: 0 })?;
     let [base, source, indices] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    if base.kind != ResidentValueKind::F64
+        || source.kind != ResidentValueKind::F64
+        || !matches!(
+            indices.kind,
+            ResidentValueKind::F64 | ResidentValueKind::Index
+        )
+        || request.output.kind != ResidentValueKind::F64
+        || base.shape != request.output.shape
+        || source.shape.rows as usize
+            != indices
+                .shape
+                .len()
+                .ok_or(ResidentKernelBindError::UnsupportedLayout)?
+        || source.shape.columns != base.shape.columns
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     bound(
         executor,
         vec![
@@ -414,6 +968,28 @@ fn bind_indexed_rows(
     )
 }
 
+fn validate_selection_contract(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<(), ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    if request.inputs.len() != 2
+        || request.inputs[0].kind != ResidentValueKind::F64
+        || !matches!(
+            request.inputs[1].kind,
+            ResidentValueKind::F64 | ResidentValueKind::Index
+        )
+        || request.output.kind != ResidentValueKind::F64
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(())
+}
+
 fn input(
     inputs: &dyn ResidentKernelInputs,
     index: usize,
@@ -425,10 +1001,7 @@ fn f64_input(
     inputs: &dyn ResidentKernelInputs,
     index: usize,
 ) -> Result<&[f64], ResidentKernelError> {
-    let ResidentValueRef::F64(values) = input(inputs, index)? else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    Ok(values)
+    inputs.f64(index).ok_or(ResidentKernelError::InvalidInput)
 }
 
 fn f64_output(output: ResidentValueMut<'_>) -> Result<&mut [f64], ResidentKernelError> {
@@ -476,6 +1049,12 @@ fn f64_array<const N: usize>(
     index: usize,
 ) -> Result<&[f64; N], ResidentKernelError> {
     f64_input(inputs, index)?
+        .try_into()
+        .map_err(|_| ResidentKernelError::InvalidShape)
+}
+
+fn as_f64_array<const N: usize>(values: &[f64]) -> Result<&[f64; N], ResidentKernelError> {
+    values
         .try_into()
         .map_err(|_| ResidentKernelError::InvalidShape)
 }
@@ -539,81 +1118,95 @@ fn assign(
 
 fn ekf_trig(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    state: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
-        crate::efficacy::ekf::math::trigonometric_state(f64_array(inputs, 0)?),
+        crate::efficacy::ekf::math::trigonometric_state(as_f64_array(state)?),
     )
 }
 
 fn ekf_motion(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    _state: &[f64],
+    frame: &[f64],
+    trig: &[f64],
+    dt: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
         crate::efficacy::ekf::math::motion_jacobian(
-            f64_array(inputs, 1)?,
-            f64_array(inputs, 2)?,
-            f64_scalar(inputs, 3)?,
+            as_f64_array(frame)?,
+            as_f64_array(trig)?,
+            *as_f64_array::<1>(dt)?.first().unwrap(),
         ),
     )
 }
 
 fn ekf_control(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    trig: &[f64],
+    dt: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
-        crate::efficacy::ekf::math::control_jacobian(f64_array(inputs, 0)?, f64_scalar(inputs, 1)?),
+        crate::efficacy::ekf::math::control_jacobian(
+            as_f64_array(trig)?,
+            as_f64_array::<1>(dt)?[0],
+        ),
     )
 }
 
 fn ekf_predicted_state(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    state: &[f64],
+    frame: &[f64],
+    trig: &[f64],
+    dt: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
         crate::efficacy::ekf::math::predicted_state(
-            f64_array(inputs, 0)?,
-            f64_array(inputs, 1)?,
-            f64_array(inputs, 2)?,
-            f64_scalar(inputs, 3)?,
+            as_f64_array(state)?,
+            as_f64_array(frame)?,
+            as_f64_array(trig)?,
+            as_f64_array::<1>(dt)?[0],
         ),
     )
 }
 
 fn ekf_predicted_covariance(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    covariance: &[f64],
+    motion: &[f64],
+    control: &[f64],
+    process: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
         crate::efficacy::ekf::math::predicted_covariance(
-            f64_array(inputs, 0)?,
-            f64_array(inputs, 1)?,
-            f64_array(inputs, 2)?,
-            f64_array(inputs, 3)?,
+            as_f64_array(covariance)?,
+            as_f64_array(motion)?,
+            as_f64_array(control)?,
+            as_f64_array(process)?,
         ),
     )
 }
 
 fn ekf_landmark(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    predicted: &[f64],
+    landmark: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     let next = crate::efficacy::ekf::math::landmark_delta_and_range(
-        f64_array(inputs, 0)?,
-        f64_array(inputs, 1)?,
+        as_f64_array(predicted)?,
+        as_f64_array(landmark)?,
     )
     .map_err(|_| ResidentKernelError::Arithmetic)?;
     write_f64_array(output, next)
@@ -621,152 +1214,167 @@ fn ekf_landmark(
 
 fn ekf_measurement(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    predicted: &[f64],
+    delta: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
         crate::efficacy::ekf::math::predicted_measurement(
-            f64_array(inputs, 0)?,
-            f64_array(inputs, 1)?,
+            as_f64_array(predicted)?,
+            as_f64_array(delta)?,
         ),
     )
 }
 
 fn ekf_measurement_jacobian(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    delta: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
-        crate::efficacy::ekf::math::measurement_jacobian(f64_array(inputs, 0)?),
+        crate::efficacy::ekf::math::measurement_jacobian(as_f64_array(delta)?),
     )
 }
 
 fn ekf_innovation_covariance(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    covariance: &[f64],
+    jacobian: &[f64],
+    noise: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
         crate::efficacy::ekf::math::innovation_covariance(
-            f64_array(inputs, 0)?,
-            f64_array(inputs, 1)?,
-            f64_array(inputs, 2)?,
+            as_f64_array(covariance)?,
+            as_f64_array(jacobian)?,
+            as_f64_array(noise)?,
         ),
     )
 }
 
 fn ekf_solve(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    covariance: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let next = crate::efficacy::ekf::math::solve_2x2(f64_array(inputs, 0)?)
+    let next = crate::efficacy::ekf::math::solve_2x2(as_f64_array(covariance)?)
         .map_err(|_| ResidentKernelError::Arithmetic)?;
     write_f64_array(output, next)
 }
 
 fn ekf_gain(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    covariance: &[f64],
+    jacobian: &[f64],
+    inverse: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
         crate::efficacy::ekf::math::kalman_gain(
-            f64_array(inputs, 0)?,
-            f64_array(inputs, 1)?,
-            f64_array(inputs, 2)?,
+            as_f64_array(covariance)?,
+            as_f64_array(jacobian)?,
+            as_f64_array(inverse)?,
         ),
     )
 }
 
 fn ekf_innovation(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    frame: &[f64],
+    predicted: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
-        crate::efficacy::ekf::math::innovation(f64_array(inputs, 0)?, f64_array(inputs, 1)?),
+        crate::efficacy::ekf::math::innovation(as_f64_array(frame)?, as_f64_array(predicted)?),
     )
 }
 
 fn ekf_corrected_state(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    predicted: &[f64],
+    gain: &[f64],
+    innovation: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
         crate::efficacy::ekf::math::corrected_state(
-            f64_array(inputs, 0)?,
-            f64_array(inputs, 1)?,
-            f64_array(inputs, 2)?,
+            as_f64_array(predicted)?,
+            as_f64_array(gain)?,
+            as_f64_array(innovation)?,
         ),
     )
 }
 
 fn ekf_joseph(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    covariance: &[f64],
+    jacobian: &[f64],
+    gain: &[f64],
+    noise: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
         crate::efficacy::ekf::math::joseph_covariance_update(
-            f64_array(inputs, 0)?,
-            f64_array(inputs, 1)?,
-            f64_array(inputs, 2)?,
-            f64_array(inputs, 3)?,
+            as_f64_array(covariance)?,
+            as_f64_array(jacobian)?,
+            as_f64_array(gain)?,
+            as_f64_array(noise)?,
         ),
     )
 }
 
 fn ekf_symmetrize(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    covariance: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_f64_array(
         output,
-        crate::efficacy::ekf::math::covariance_symmetrization(f64_array(inputs, 0)?),
+        crate::efficacy::ekf::math::covariance_symmetrization(as_f64_array(covariance)?),
     )
 }
 
 fn ekf_finite(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    state: &[f64],
+    covariance: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_bool(
         output,
-        crate::efficacy::ekf::math::candidate_finite(f64_array(inputs, 0)?, f64_array(inputs, 1)?),
+        crate::efficacy::ekf::math::candidate_finite(
+            as_f64_array(state)?,
+            as_f64_array(covariance)?,
+        ),
     )
 }
 
 fn ekf_positive_diagonal(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    covariance: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_bool(
         output,
-        crate::efficacy::ekf::math::covariance_positive_diagonal(f64_array(inputs, 0)?),
+        crate::efficacy::ekf::math::covariance_positive_diagonal(as_f64_array(covariance)?),
     )
 }
 
 fn ekf_symmetric(
     _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
+    covariance: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     write_bool(
         output,
-        crate::efficacy::ekf::math::covariance_symmetric(f64_array(inputs, 0)?),
+        crate::efficacy::ekf::math::covariance_symmetric(as_f64_array(covariance)?),
     )
 }
 

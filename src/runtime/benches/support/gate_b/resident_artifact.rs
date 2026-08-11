@@ -169,12 +169,9 @@ impl ResidentArtifactKernelFixture {
     fn run_turn(&mut self, input: EkfInput) {
         let frame = input_array(input);
         let captured = captured_input(&self.instance, &frame);
-        self.last_summary = Some(
-            self.instance
-                .prepare_turn(&[captured])
-                .expect("artifact kernel candidate")
-                .publish(),
-        );
+        self.instance
+            .turn_without_summary(&[captured])
+            .expect("artifact kernel candidate");
     }
 
     pub fn run_episode(&mut self) {
@@ -215,6 +212,7 @@ impl ResidentArtifactKernelFixture {
             0,
             0,
         );
+        probe.dirty_nodes = self.instance.plan.nodes.len();
         probe.post_publication_append_infallible = false;
         probe
     }

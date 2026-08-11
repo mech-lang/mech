@@ -123,8 +123,8 @@ pub mod __resident {
         PreparedResidentTurn, ReactiveInstance, ResidentActivationError, ResidentArenaSizes,
         ResidentExecutionError, ResidentReadLocation, ResidentRegion, ResidentStorageClass,
         ResidentStructuralProbe, ResidentTurnSummary, ResidentValueBorrow, ResidentWriteLocation,
-        ResolvedSlot, StateArena, StateMigrationPolicy, TurnWorkspace, TypedResidentArena,
-        activate,
+        ResolvedSlot, StateArena, StateMigrationMapping, StateMigrationPolicy, TurnWorkspace,
+        TypedResidentArena, activate,
     };
 }
 #[cfg(all(feature = "source", feature = "state_machines"))]

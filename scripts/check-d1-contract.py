@@ -247,7 +247,12 @@ def source_contract_errors(root: Path) -> list[str]:
     if declarations != [("src/engine/src/artifact/model.rs", "pub")]:
         errors.append(f"D1 must retain one public ProgramArtifact authority; found {declarations}")
 
-    execution = (resident_dir / "program_execution.rs").read_text()
+    execution_path = resident_dir / "program_execution.rs"
+    activation_path = resident_dir / "program_activation.rs"
+    if not execution_path.exists():
+        execution_path = resident_dir / "general" / "execution.rs"
+        activation_path = resident_dir / "general.rs"
+    execution = execution_path.read_text()
     for token in (
         "ProgramArtifact",
         "SchemaTable",
@@ -260,7 +265,7 @@ def source_contract_errors(root: Path) -> list[str]:
         if token in execution:
             errors.append(f"D1 hot artifact execution performs forbidden {token} lookup")
     for required in ("Ordering::Release", ".store(", "Ordering::Acquire", ".load("):
-        if required not in execution and required not in (resident_dir / "program_activation.rs").read_text():
+        if required not in execution and required not in activation_path.read_text():
             errors.append(f"D1 publication boundary is missing {required}")
 
     route_markers = re.compile(r"compile_frozen_ekf_source|__gate_d|resident-ekf-artifact")

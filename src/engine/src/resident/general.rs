@@ -18,6 +18,7 @@ use mech_core::{
     ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef, SchemaBody, SchemaId,
     SchemaKey, ShapeInstance, SlotIndex, Value, ValueData, ValueDataDraft, ValueDraft,
 };
+use sha2::{Digest, Sha256};
 
 use crate::{
     ArtifactSource, BindingDeclaration, InitializerReference, ProducerReference, ProgramArtifact,
@@ -76,6 +77,8 @@ pub struct ActivatedNode {
     pub write: ResidentWriteLocation,
     pub construction: OutputConstruction,
     pub change_detection: ChangeDetectionPolicy,
+    pub(crate) reads_state: bool,
+    pub(crate) scratch_prefix_reads: bool,
     pub kernel: BoundResidentKernel,
 }
 
@@ -98,6 +101,7 @@ pub struct DependencyTopology {
     pub same_turn_downstream_masks: Box<[Box<[u64]>]>,
     pub turn_root_mask: Box<[u64]>,
     pub mandatory_candidate_mask: Box<[u64]>,
+    pub eager_turn: bool,
 }
 
 impl DependencyTopology {
@@ -138,6 +142,7 @@ pub struct ActivatedConstraint {
 #[derive(Clone, Debug)]
 pub struct ActivatedPlan {
     pub program_revision: ProgramRevision,
+    pub activation_facts_fingerprint: [u8; 32],
     pub plan_generation: PlanGeneration,
     pub layout_generation: LayoutGeneration,
     pub slots: Box<[ResolvedSlot]>,
@@ -152,6 +157,8 @@ pub struct ActivatedPlan {
     pub(crate) schemas: mech_core::SchemaTable,
     pub(crate) constant_regions: Box<[ResidentRegion]>,
     pub(crate) state_slots: Box<[CellSlotId]>,
+    pub(crate) rmw_state_slots: Box<[CellSlotId]>,
+    pub(crate) state_hash_seed: u64,
     pub(crate) activation_sizes: ResidentArenaSizes,
 }
 
@@ -159,6 +166,7 @@ pub struct ActivatedPlan {
 struct ActivatedOnceNode {
     artifact_node: NodeId,
     sources: Box<[ArtifactSource]>,
+    storage: ResidentStorageClass,
     write: ResidentRegion,
     kernel: BoundResidentKernel,
 }
@@ -220,6 +228,11 @@ impl TypedResidentArena {
         }
     }
 
+    pub(crate) fn read_f64(&self, region: ResidentRegion) -> Option<&[f64]> {
+        (region.kind == ResidentValueKind::F64)
+            .then(|| self.f64s.get(region.offset..region.offset + region.len))?
+    }
+
     pub(crate) fn write(&mut self, region: ResidentRegion) -> ResidentValueMut<'_> {
         let range = region.offset..region.offset + region.len;
         match region.kind {
@@ -263,6 +276,7 @@ struct StateVersion {
 pub struct StateArena {
     buffers: [TypedResidentArena; 2],
     versions: Box<[StateVersion]>,
+    version_by_slot: Box<[Option<usize>]>,
 }
 
 impl StateArena {
@@ -277,27 +291,30 @@ impl StateArena {
             })
             .collect::<Vec<_>>()
             .into_boxed_slice();
+        let mut version_by_slot = vec![None; slots.len()];
+        for (index, version) in versions.iter().enumerate() {
+            version_by_slot[version.slot.get() as usize] = Some(index);
+        }
         Self {
             buffers: [
                 TypedResidentArena::allocate(sizes),
                 TypedResidentArena::allocate(sizes),
             ],
             versions,
+            version_by_slot: version_by_slot.into_boxed_slice(),
         }
     }
 
     fn version(&self, slot: CellSlotId) -> &StateVersion {
-        self.versions
-            .iter()
-            .find(|version| version.slot == slot)
-            .expect("activated state slot has a version record")
+        let index = self.version_by_slot[slot.get() as usize]
+            .expect("activated state slot has a version record");
+        &self.versions[index]
     }
 
     fn version_mut(&mut self, slot: CellSlotId) -> &mut StateVersion {
-        self.versions
-            .iter_mut()
-            .find(|version| version.slot == slot)
-            .expect("activated state slot has a version record")
+        let index = self.version_by_slot[slot.get() as usize]
+            .expect("activated state slot has a version record");
+        &mut self.versions[index]
     }
 
     pub fn published_buffer(&self, slot: CellSlotId, epoch: InstanceEpoch) -> usize {
@@ -365,6 +382,7 @@ pub struct TurnWorkspace {
     pub(crate) dirty_bits: Box<[u64]>,
     pub(crate) executed_bits: Box<[u64]>,
     pub(crate) initialized_output_bits: Box<[u64]>,
+    pub(crate) all_outputs_initialized: bool,
     pub(crate) touched_slots: Vec<SlotIndex>,
     pub(crate) changed_slots: Vec<SlotIndex>,
 }
@@ -382,6 +400,7 @@ impl TurnWorkspace {
             dirty_bits: vec![0; words].into_boxed_slice(),
             executed_bits: vec![0; words].into_boxed_slice(),
             initialized_output_bits: vec![0; words].into_boxed_slice(),
+            all_outputs_initialized: false,
             touched_slots: Vec::with_capacity(plan.state_slots.len()),
             changed_slots: Vec::with_capacity(plan.state_slots.len()),
         }
@@ -397,6 +416,12 @@ pub struct ActivationFacts {
 pub enum StateMigrationPolicy {
     PreserveCompatibleRejectIncompatible,
     PreserveCompatibleResetIncompatible,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct StateMigrationMapping {
+    pub source: CellSlotId,
+    pub target: CellSlotId,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -559,10 +584,23 @@ impl ReactiveInstance {
         facts: &ActivationFacts,
         migration: StateMigrationPolicy,
     ) -> Result<(), ResidentActivationError> {
+        self.reactivate_with_state_map(artifact, catalog, facts, migration, &[])
+    }
+
+    pub fn reactivate_with_state_map(
+        &mut self,
+        artifact: &ProgramArtifact,
+        catalog: &FunctionCatalog,
+        facts: &ActivationFacts,
+        migration: StateMigrationPolicy,
+        state_map: &[StateMigrationMapping],
+    ) -> Result<(), ResidentActivationError> {
         if self.candidate_active {
             return Err(ResidentActivationError::ActiveCandidate);
         }
-        if artifact.revision() == self.plan.program_revision {
+        if artifact.revision() == self.plan.program_revision
+            && activation_facts_fingerprint(facts) == self.plan.activation_facts_fingerprint
+        {
             return Ok(());
         }
         let next_plan = self
@@ -581,22 +619,52 @@ impl ReactiveInstance {
                 .map_err(|_| ResidentActivationError::LayoutGenerationExhausted)?
         };
         let epoch = self.published_epoch();
+        let mut mappings = BTreeMap::<CellSlotId, CellSlotId>::new();
+        let mut sources = BTreeSet::<CellSlotId>::new();
+        if artifact.revision() == self.plan.program_revision && state_map.is_empty() {
+            for slot in replacement
+                .plan
+                .slots
+                .iter()
+                .filter(|slot| slot.storage == ResidentStorageClass::State)
+            {
+                mappings.insert(slot.artifact_id, slot.artifact_id);
+                sources.insert(slot.artifact_id);
+            }
+        }
+        for mapping in state_map {
+            if mappings.insert(mapping.target, mapping.source).is_some()
+                || !sources.insert(mapping.source)
+            {
+                return Err(ResidentActivationError::InvalidStateMigration);
+            }
+        }
+        for target in mappings.keys() {
+            if replacement
+                .plan
+                .slots
+                .get(target.get() as usize)
+                .is_none_or(|slot| slot.storage != ResidentStorageClass::State)
+            {
+                return Err(ResidentActivationError::InvalidStateMigration);
+            }
+        }
         for target in replacement
             .plan
             .slots
             .iter()
             .filter(|slot| slot.storage == ResidentStorageClass::State)
         {
-            let compatible = self
-                .plan
-                .slots
-                .get(target.artifact_id.get() as usize)
-                .filter(|source| {
-                    source.artifact_id == target.artifact_id
-                        && source.storage == ResidentStorageClass::State
-                        && source.schema_key == target.schema_key
-                        && source.shape == target.shape
-                });
+            let compatible = mappings.get(&target.artifact_id).and_then(|source_id| {
+                self.plan
+                    .slots
+                    .get(source_id.get() as usize)
+                    .filter(|source| {
+                        source.storage == ResidentStorageClass::State
+                            && source.schema_key == target.schema_key
+                            && source.shape == target.shape
+                    })
+            });
             if let Some(source) = compatible {
                 replacement.state.install_migrated(
                     target.artifact_id,
@@ -650,6 +718,9 @@ pub enum ResidentActivationError {
     UnsupportedConstruction {
         node: NodeId,
     },
+    UnsupportedChangeDetection {
+        node: NodeId,
+    },
     InvalidAlias {
         node: NodeId,
     },
@@ -682,6 +753,7 @@ pub enum ResidentActivationError {
     IncompatibleState {
         slot: CellSlotId,
     },
+    InvalidStateMigration,
     PlanGenerationExhausted,
     LayoutGenerationExhausted,
 }
@@ -692,10 +764,12 @@ pub fn activate(
     catalog: &FunctionCatalog,
     facts: &ActivationFacts,
 ) -> Result<ReactiveInstance, ResidentActivationError> {
+    preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact)?;
     let layout = build_layout(artifact, facts, &classification)?;
+    let facts_fingerprint = activation_facts_fingerprint(facts);
     let (plan, input_sizes, state_sizes, scratch_sizes, activation_sizes) =
-        build_plan(artifact, catalog, classification, layout)?;
+        build_plan(artifact, catalog, classification, layout, facts_fingerprint)?;
     let mut activation = TypedResidentArena::allocate(activation_sizes);
     for raw in 0..artifact.constants().len() {
         let constant = ConstantId::new(raw as u32);
@@ -736,6 +810,32 @@ pub fn activate(
         next_epoch: Some(InstanceEpoch::new(1)),
         candidate_active: false,
     })
+}
+
+fn preflight_state_initializers(artifact: &ProgramArtifact) -> Result<(), ResidentActivationError> {
+    for slot in artifact
+        .slots()
+        .iter()
+        .filter(|slot| slot.role == SlotRole::State)
+    {
+        let Some(InitializerReference::Constant(constant)) = slot.initializer else {
+            return Err(ResidentActivationError::MissingStateInitializer { slot: slot.slot });
+        };
+        if artifact.constants().get(constant).is_none() {
+            return Err(ResidentActivationError::MissingStateInitializer { slot: slot.slot });
+        }
+    }
+    Ok(())
+}
+
+fn activation_facts_fingerprint(facts: &ActivationFacts) -> [u8; 32] {
+    let mut hash = Sha256::new();
+    hash.update((facts.slot_shapes.len() as u64).to_le_bytes());
+    for (slot, shape) in &facts.slot_shapes {
+        hash.update(slot.get().to_le_bytes());
+        hash.update(shape.canonical_bytes());
+    }
+    hash.finalize().into()
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -782,6 +882,10 @@ fn classify_nodes(artifact: &ProgramArtifact) -> Result<Box<[NodeClass]>, Reside
             if classes[node.node.get() as usize] == NodeClass::Observation {
                 continue;
             }
+            let output = node_output_slot(artifact, node.node)?;
+            if artifact.slots()[output.get() as usize].role != SlotRole::Derived {
+                continue;
+            }
             let inputs = node_inputs(artifact, node.node)?;
             if inputs.iter().all(|source| match source {
                 ArtifactSource::Constant(_) => true,
@@ -817,13 +921,21 @@ fn classify_nodes(artifact: &ProgramArtifact) -> Result<Box<[NodeClass]>, Reside
             return Err(ResidentActivationError::InvalidNodeOutput { node: node.node });
         }
         let output = &contract.outputs[0];
+        let output_slot = node_output_slot(artifact, node.node)?;
+        let output_role = artifact.slots()[output_slot.get() as usize].role;
         match classes[node.node.get() as usize] {
-            NodeClass::Observation => {}
+            NodeClass::Observation => {
+                if output_role != SlotRole::Derived {
+                    return Err(ResidentActivationError::InvalidNodeOutput { node: node.node });
+                }
+            }
             NodeClass::Activation => {
-                if !matches!(
-                    output.construction,
-                    OutputConstruction::FullWrite { .. } | OutputConstruction::Build { .. }
-                ) || output.alias != AliasPolicy::NoAlias
+                if output_role != SlotRole::Derived
+                    || !matches!(
+                        output.construction,
+                        OutputConstruction::FullWrite { .. } | OutputConstruction::Build { .. }
+                    )
+                    || output.alias != AliasPolicy::NoAlias
                 {
                     return Err(ResidentActivationError::UnsupportedConstruction {
                         node: node.node,
@@ -832,12 +944,16 @@ fn classify_nodes(artifact: &ProgramArtifact) -> Result<Box<[NodeClass]>, Reside
             }
             NodeClass::Turn => match output.construction {
                 OutputConstruction::FullWrite { .. } => {
-                    if output.access != AccessMode::Write || output.alias != AliasPolicy::NoAlias {
+                    if matches!(output_role, SlotRole::Input)
+                        || output.access != AccessMode::Write
+                        || output.alias != AliasPolicy::NoAlias
+                    {
                         return Err(ResidentActivationError::InvalidAlias { node: node.node });
                     }
                 }
                 OutputConstruction::ReadModifyWrite { base_input, .. } => {
-                    if output.access != AccessMode::ReadWrite
+                    if output_role != SlotRole::State
+                        || output.access != AccessMode::ReadWrite
                         || output.alias != (AliasPolicy::MayAlias { input: base_input })
                         || !matches!(
                             node_inputs(artifact, node.node)?.get(base_input as usize),
@@ -959,7 +1075,14 @@ fn slot_shape(
         return Ok(artifact.constants().get(constant).unwrap().shape().clone());
     }
     if let Some(shape) = facts.slot_shapes.get(&slot) {
-        return Ok(shape.clone());
+        let schema = artifact
+            .schemas()
+            .entry(declaration.schema)
+            .expect("validated slot schema")
+            .schema();
+        return schema
+            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+            .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
     }
     let schema = artifact
         .schemas()
@@ -1070,6 +1193,7 @@ fn build_plan(
     catalog: &FunctionCatalog,
     classes: Box<[NodeClass]>,
     layout: LayoutBuild,
+    activation_facts_fingerprint: [u8; 32],
 ) -> Result<
     (
         ActivatedPlan,
@@ -1098,6 +1222,12 @@ fn build_plan(
             unreachable!()
         };
         let output_contract = &contract.outputs[0];
+        if output_contract.change_detection == ChangeDetectionPolicy::SemanticHash
+            || (output_contract.change_detection == ChangeDetectionPolicy::ExactScalar
+                && output.region.len != 1)
+        {
+            return Err(ResidentActivationError::UnsupportedChangeDetection { node: node.node });
+        }
         let base = match output_contract.construction {
             OutputConstruction::ReadModifyWrite { base_input, .. } => Some(base_input as usize),
             _ => None,
@@ -1123,6 +1253,7 @@ fn build_plan(
             activation_steps.push(ActivatedOnceNode {
                 artifact_node: node.node,
                 sources: input_sources.into_boxed_slice(),
+                storage: output.storage,
                 write: output.region,
                 kernel,
             });
@@ -1131,11 +1262,21 @@ fn build_plan(
         let activated = ActivatedNodeIndex(nodes.len() as u32);
         artifact_to_activated[node.node.get() as usize] = Some(activated);
         let read_start = reads.len() as u32;
+        let mut reads_state = false;
         for (ordinal, source) in input_sources.iter().enumerate() {
             if Some(ordinal) != base {
-                reads.push(resolve_read(artifact, &layout, *source)?);
+                let read = resolve_read(artifact, &layout, *source)?;
+                reads_state |= matches!(read, ResidentReadLocation::State { .. });
+                reads.push(read);
             }
         }
+        let scratch_prefix_reads = output.storage == ResidentStorageClass::Scratch
+            && reads[read_start as usize..].iter().all(|read| match read {
+                ResidentReadLocation::Scratch(region) if region.kind == output.region.kind => {
+                    region.offset + region.len <= output.region.offset
+                }
+                _ => true,
+            });
         nodes.push(ActivatedNode {
             artifact_node: node.node,
             reads: read_start..reads.len() as u32,
@@ -1146,9 +1287,12 @@ fn build_plan(
             },
             construction: output_contract.construction.clone(),
             change_detection: output_contract.change_detection,
+            reads_state,
+            scratch_prefix_reads,
             kernel,
         });
     }
+    let activation_steps = order_activation_steps(artifact, &classes, activation_steps)?;
     let topology = build_topology(artifact, &classes, &nodes, &artifact_to_activated)?;
     let inputs = layout
         .slots
@@ -1214,11 +1358,24 @@ fn build_plan(
         .map(|slot| slot.artifact_id)
         .collect::<Vec<_>>()
         .into_boxed_slice();
-    let activation_nodes = artifact
-        .nodes()
+    let state_hash_seed = state_hash_seed(artifact.revision(), &layout.slots, &state_slots);
+    let rmw_state_slots = nodes
         .iter()
-        .filter(|node| classes[node.node.get() as usize] == NodeClass::Activation)
-        .map(|node| node.node)
+        .filter(|node| {
+            node.write.storage == ResidentStorageClass::State
+                && matches!(
+                    node.construction,
+                    OutputConstruction::ReadModifyWrite { .. }
+                )
+        })
+        .map(|node| node.write.slot)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let activation_nodes = activation_steps
+        .iter()
+        .map(|step| step.artifact_node)
         .collect::<Vec<_>>()
         .into_boxed_slice();
     let input_sizes = layout.sizes[1];
@@ -1227,6 +1384,7 @@ fn build_plan(
     let activation_sizes = layout.sizes[0];
     let plan = ActivatedPlan {
         program_revision: artifact.revision(),
+        activation_facts_fingerprint,
         plan_generation: PlanGeneration::ZERO,
         layout_generation: LayoutGeneration::ZERO,
         slots: layout.slots,
@@ -1237,10 +1395,12 @@ fn build_plan(
         outputs,
         constraints,
         activation_nodes,
-        activation_steps: activation_steps.into_boxed_slice(),
+        activation_steps,
         schemas: artifact.schemas().clone(),
         constant_regions: layout.constant_regions,
         state_slots,
+        rmw_state_slots,
+        state_hash_seed,
         activation_sizes,
     };
     Ok((
@@ -1252,12 +1412,47 @@ fn build_plan(
     ))
 }
 
+fn state_hash_seed(
+    revision: ProgramRevision,
+    slots: &[ResolvedSlot],
+    state_slots: &[CellSlotId],
+) -> u64 {
+    let mut hash = 0x243f_6a88_85a3_08d3_u64;
+    for chunk in revision.as_bytes().chunks_exact(8) {
+        hash = fold_hash_word(hash, u64::from_le_bytes(chunk.try_into().unwrap()));
+    }
+    for artifact_slot in state_slots {
+        let slot = &slots[artifact_slot.get() as usize];
+        hash = fold_hash_word(hash, u64::from(slot.artifact_id.get()));
+        for chunk in slot.schema_key.as_bytes().chunks_exact(8) {
+            hash = fold_hash_word(hash, u64::from_le_bytes(chunk.try_into().unwrap()));
+        }
+        hash = fold_hash_word(hash, slot.shape.parameter_values().len() as u64);
+        for value in slot.shape.parameter_values() {
+            hash = fold_hash_word(hash, *value);
+        }
+        hash = fold_hash_word(hash, u64::from(slot.region.shape.rows));
+        hash = fold_hash_word(hash, u64::from(slot.region.shape.columns));
+    }
+    hash
+}
+
+#[inline(always)]
+fn fold_hash_word(hash: u64, word: u64) -> u64 {
+    (hash.rotate_left(17) ^ word).wrapping_mul(0xd6e8_feb8_6659_fd93)
+}
+
 fn execute_activation_graph(
     _artifact: &ProgramArtifact,
     plan: &ActivatedPlan,
     arena: &mut TypedResidentArena,
 ) -> Result<(), ResidentActivationError> {
     for step in &plan.activation_steps {
+        if step.storage != ResidentStorageClass::Constant {
+            return Err(ResidentActivationError::InvalidDependency {
+                node: step.artifact_node,
+            });
+        }
         let inputs = step
             .sources
             .iter()
@@ -1270,6 +1465,88 @@ fn execute_activation_graph(
             })?;
     }
     Ok(())
+}
+
+fn order_activation_steps(
+    artifact: &ProgramArtifact,
+    classes: &[NodeClass],
+    steps: Vec<ActivatedOnceNode>,
+) -> Result<Box<[ActivatedOnceNode]>, ResidentActivationError> {
+    let by_node = steps
+        .iter()
+        .enumerate()
+        .map(|(index, step)| (step.artifact_node, index))
+        .collect::<BTreeMap<_, _>>();
+    let mut downstream = vec![Vec::<usize>::new(); steps.len()];
+    for (current, step) in steps.iter().enumerate() {
+        for source in &step.sources {
+            let ArtifactSource::Slot(slot) = source else {
+                continue;
+            };
+            let ProducerReference::NodeOutput { node, .. } =
+                artifact.slots()[slot.get() as usize].producer
+            else {
+                continue;
+            };
+            if classes[node.get() as usize] != NodeClass::Activation {
+                return Err(ResidentActivationError::InvalidDependency {
+                    node: step.artifact_node,
+                });
+            }
+            let parent = *by_node
+                .get(&node)
+                .ok_or(ResidentActivationError::InvalidDependency {
+                    node: step.artifact_node,
+                })?;
+            if !downstream[parent].contains(&current) {
+                downstream[parent].push(current);
+            }
+        }
+    }
+    let keys = steps
+        .iter()
+        .map(|step| step.artifact_node.get())
+        .collect::<Vec<_>>();
+    let order = stable_topological_order(&downstream, &keys).ok_or_else(|| {
+        ResidentActivationError::InvalidDependency {
+            node: steps
+                .first()
+                .map_or(NodeId::new(0), |step| step.artifact_node),
+        }
+    })?;
+    let mut pending = steps.into_iter().map(Some).collect::<Vec<_>>();
+    Ok(order
+        .into_iter()
+        .map(|index| pending[index].take().expect("unique activation order"))
+        .collect::<Vec<_>>()
+        .into_boxed_slice())
+}
+
+fn stable_topological_order(downstream: &[Vec<usize>], keys: &[u32]) -> Option<Vec<usize>> {
+    let mut indegree = vec![0_usize; downstream.len()];
+    for children in downstream {
+        for child in children {
+            indegree[*child] = indegree[*child].checked_add(1)?;
+        }
+    }
+    let mut ready = indegree
+        .iter()
+        .enumerate()
+        .filter(|(_, degree)| **degree == 0)
+        .map(|(index, _)| (keys[index], index))
+        .collect::<BTreeSet<_>>();
+    let mut order = Vec::with_capacity(downstream.len());
+    while let Some(entry) = ready.pop_first() {
+        let index = entry.1;
+        order.push(index);
+        for child in &downstream[index] {
+            indegree[*child] -= 1;
+            if indegree[*child] == 0 {
+                ready.insert((keys[*child], *child));
+            }
+        }
+    }
+    (order.len() == downstream.len()).then_some(order)
 }
 
 #[derive(Clone, Debug)]
@@ -1338,14 +1615,12 @@ fn build_topology(
     artifact_to_activated: &[Option<ActivatedNodeIndex>],
 ) -> Result<DependencyTopology, ResidentActivationError> {
     let mut downstream = vec![Vec::<ActivatedNodeIndex>::new(); nodes.len()];
-    let mut roots = Vec::<ActivatedNodeIndex>::new();
     let mut latest_state_writer = BTreeMap::<CellSlotId, ActivatedNodeIndex>::new();
     for node in artifact.nodes() {
         if classes[node.node.get() as usize] != NodeClass::Turn {
             continue;
         }
         let current = artifact_to_activated[node.node.get() as usize].unwrap();
-        let mut root = false;
         for source in node_inputs(artifact, node.node)? {
             let ArtifactSource::Slot(slot_id) = source else {
                 continue;
@@ -1365,27 +1640,47 @@ fn build_topology(
                 if !downstream[parent.get() as usize].contains(&current) {
                     downstream[parent.get() as usize].push(current);
                 }
-            } else if slot.role == SlotRole::State
-                || classes
-                    .get(match slot.producer {
-                        ProducerReference::NodeOutput { node, .. } => node.get() as usize,
-                        ProducerReference::Input(_) => usize::MAX,
-                    })
-                    .copied()
-                    == Some(NodeClass::Observation)
-                || slot.role == SlotRole::Input
-            {
-                root = true;
             }
-        }
-        if root {
-            roots.push(current);
         }
         let output = node_output_slot(artifact, node.node)?;
         if artifact.slots()[output.get() as usize].role == SlotRole::State {
             latest_state_writer.insert(output, current);
         }
     }
+    let mut indegree = vec![0_usize; nodes.len()];
+    for children in &downstream {
+        for child in children {
+            indegree[child.get() as usize] += 1;
+        }
+    }
+    let roots = indegree
+        .iter()
+        .enumerate()
+        .filter(|(_, degree)| **degree == 0)
+        .map(|(index, _)| ActivatedNodeIndex(index as u32))
+        .collect::<Vec<_>>();
+    let order_source = downstream
+        .iter()
+        .map(|children| {
+            children
+                .iter()
+                .map(|child| child.get() as usize)
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    let keys = nodes
+        .iter()
+        .map(|node| node.artifact_node.get())
+        .collect::<Vec<_>>();
+    let linear_node_order = stable_topological_order(&order_source, &keys)
+        .ok_or_else(|| ResidentActivationError::InvalidDependency {
+            node: nodes
+                .first()
+                .map_or(NodeId::new(0), |node| node.artifact_node),
+        })?
+        .into_iter()
+        .map(|index| ActivatedNodeIndex(index as u32))
+        .collect::<Vec<_>>();
     let words = nodes.len().div_ceil(64);
     let mut masks = Vec::with_capacity(nodes.len());
     for children in &downstream {
@@ -1413,6 +1708,20 @@ fn build_topology(
             set_bit(&mut mandatory, activated.get() as usize);
         }
     }
+    let mut eager_reachable = root_mask.clone();
+    for (target, source) in eager_reachable.iter_mut().zip(&mandatory) {
+        *target |= *source;
+    }
+    for activated in &linear_node_order {
+        let index = activated.get() as usize;
+        if eager_reachable[index / 64] & (1_u64 << (index % 64)) != 0 {
+            for (target, source) in eager_reachable.iter_mut().zip(&masks[index]) {
+                *target |= *source;
+            }
+        }
+    }
+    let eager_turn =
+        (0..nodes.len()).all(|index| eager_reachable[index / 64] & (1_u64 << (index % 64)) != 0);
     let mut offsets = Vec::with_capacity(nodes.len() + 1);
     let mut values = Vec::new();
     offsets.push(0_u32);
@@ -1421,15 +1730,14 @@ fn build_topology(
         offsets.push(values.len() as u32);
     }
     Ok(DependencyTopology {
-        linear_node_order: (0..nodes.len())
-            .map(|index| ActivatedNodeIndex(index as u32))
-            .collect(),
+        linear_node_order: linear_node_order.into_boxed_slice(),
         same_turn_downstream_offsets: offsets.into_boxed_slice(),
         same_turn_downstream_nodes: values.into_boxed_slice(),
         turn_root_nodes: roots.into_boxed_slice(),
         same_turn_downstream_masks: masks.into_boxed_slice(),
         turn_root_mask: root_mask,
         mandatory_candidate_mask: mandatory,
+        eager_turn,
     })
 }
 
@@ -1471,7 +1779,8 @@ fn source_port_layout(
             let value = artifact.constants().get(constant).unwrap();
             let region = layout.constant_regions[constant.get() as usize];
             Ok(ResidentPortLayout {
-                schema: value.schema_key(),
+                schema_id: value.schema(),
+                schema_key: value.schema_key(),
                 kind: region.kind,
                 shape: region.shape,
             })
@@ -1482,7 +1791,8 @@ fn source_port_layout(
 
 fn slot_port_layout(slot: &ResolvedSlot) -> ResidentPortLayout {
     ResidentPortLayout {
-        schema: slot.schema_key,
+        schema_id: slot.schema,
+        schema_key: slot.schema_key,
         kind: slot.region.kind,
         shape: slot.region.shape,
     }

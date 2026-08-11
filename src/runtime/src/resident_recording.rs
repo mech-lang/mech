@@ -428,6 +428,11 @@ fn rejected_artifact_record(
     failure: ArtifactResidentExecutionError,
 ) -> MResult<ResidentTurnRecord> {
     let (phase, kind, message) = match failure {
+        ArtifactResidentExecutionError::ActiveCandidate => (
+            TurnFailurePhase::Execution,
+            "ResidentActiveCandidate",
+            "resident instance already has an active candidate",
+        ),
         ArtifactResidentExecutionError::EpochExhausted => (
             TurnFailurePhase::Execution,
             "ResidentEpochExhausted",

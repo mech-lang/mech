@@ -353,8 +353,14 @@ def validate_pointer_identity(sources: dict[str, str]) -> list[str]:
     failures = []
     helper_specs = {
         ("src/engine/src/resident/arena.rs", "buffer_addresses"),
-        ("src/engine/src/resident/program_execution.rs", "version_addresses_for_d1_test"),
     }
+    if "src/engine/src/resident/program_execution.rs" in sources:
+        helper_specs.add(
+            (
+                "src/engine/src/resident/program_execution.rs",
+                "version_addresses_for_d1_test",
+            )
+        )
     helpers_seen = set()
     for path, source in sources.items():
         for token, pattern in POINTER_PATTERNS.items():

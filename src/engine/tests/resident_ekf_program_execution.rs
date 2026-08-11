@@ -1,6 +1,9 @@
 #![cfg(feature = "resident-artifact")]
 
-use mech_core::{InstanceEpoch, MResult, ReactiveInstanceId, ResidentValueRef};
+use mech_core::{
+    BoundResidentKernel, ChangeDetectionPolicy, InstanceEpoch, MResult, ReactiveInstanceId,
+    ResidentKernelError, ResidentKernelInputs, ResidentValueMut, ResidentValueRef,
+};
 use mech_engine::__gate_b_resident::ResidentEkfBatch;
 use mech_engine::__resident::{
     ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices, ReactiveInstance,
@@ -193,5 +196,126 @@ fn odd_and_even_publications_follow_the_two_sparse_buffers() -> MResult<()> {
             turn + 1
         );
     }
+    Ok(())
+}
+
+#[test]
+fn dropped_prepare_and_identical_retry_match_a_fresh_instance() -> MResult<()> {
+    let frame = frames().next().unwrap();
+    let mut retried = instance(7)?;
+    let mut fresh = instance(7)?;
+    let input = CapturedSignalInput {
+        slot: retried.plan.inputs[0].slot,
+        value: ResidentValueRef::F64(&frame),
+    };
+
+    drop(retried.prepare_turn(&[input]).unwrap());
+    let actual = execute_turn(&mut retried, &frame).unwrap();
+    let expected = execute_turn(&mut fresh, &frame).unwrap();
+
+    assert_eq!(actual, expected);
+    assert_eq!(state(&retried), state(&fresh));
+    Ok(())
+}
+
+fn partial_write_then_fail(
+    _kernel: &BoundResidentKernel,
+    _inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let ResidentValueMut::F64(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    output[0] = 123_456.0;
+    Err(ResidentKernelError::Arithmetic)
+}
+
+#[test]
+fn partial_kernel_failure_and_retry_match_a_fresh_instance() -> MResult<()> {
+    let frame = frames().next().unwrap();
+    let mut retried = instance(8)?;
+    let mut fresh = instance(8)?;
+    let original = retried.plan.nodes[0].kernel.clone();
+    retried.plan.nodes[0].kernel = BoundResidentKernel::new(partial_write_then_fail, Box::new([]));
+
+    assert!(matches!(
+        execute_turn(&mut retried, &frame),
+        Err(ResidentExecutionError::Kernel {
+            error: ResidentKernelError::Arithmetic,
+            ..
+        })
+    ));
+    retried.plan.nodes[0].kernel = original;
+    let actual = execute_turn(&mut retried, &frame).unwrap();
+    let expected = execute_turn(&mut fresh, &frame).unwrap();
+
+    assert_eq!(actual, expected);
+    assert_eq!(state(&retried), state(&fresh));
+    Ok(())
+}
+
+#[test]
+fn integrity_failure_and_valid_retry_match_a_fresh_instance() -> MResult<()> {
+    let frame = frames().next().unwrap();
+    let mut retried = instance(9)?;
+    let mut fresh = instance(9)?;
+    let mut invalid = frame;
+    invalid[0] = f64::NAN;
+
+    assert!(matches!(
+        execute_turn(&mut retried, &invalid),
+        Err(ResidentExecutionError::Integrity { .. })
+    ));
+    let actual = execute_turn(&mut retried, &frame).unwrap();
+    let expected = execute_turn(&mut fresh, &frame).unwrap();
+
+    assert_eq!(actual, expected);
+    assert_eq!(state(&retried), state(&fresh));
+    Ok(())
+}
+
+#[test]
+fn forgotten_prepare_blocks_a_second_candidate() -> MResult<()> {
+    let frame = frames().next().unwrap();
+    let mut instance = instance(10)?;
+    let input = CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::F64(&frame),
+    };
+    let prepared = instance.prepare_turn(&[input]).unwrap();
+    core::mem::forget(prepared);
+
+    assert!(matches!(
+        instance.prepare_turn(&[input]),
+        Err(ResidentExecutionError::ActiveCandidate)
+    ));
+    Ok(())
+}
+
+fn report_unchanged(
+    _kernel: &BoundResidentKernel,
+    _inputs: &dyn ResidentKernelInputs,
+    _output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    Ok(false)
+}
+
+#[test]
+fn always_changed_policy_propagates_when_the_kernel_reports_unchanged() -> MResult<()> {
+    let frame = frames().next().unwrap();
+    let mut always = instance(11)?;
+    let mut reported = instance(12)?;
+    execute_turn(&mut always, &frame).unwrap();
+    execute_turn(&mut reported, &frame).unwrap();
+    for instance in [&mut always, &mut reported] {
+        instance.plan.topology.eager_turn = false;
+        instance.plan.nodes[0].kernel = BoundResidentKernel::new(report_unchanged, Box::new([]));
+    }
+    always.plan.nodes[0].change_detection = ChangeDetectionPolicy::AlwaysChanged;
+    reported.plan.nodes[0].change_detection = ChangeDetectionPolicy::KernelReported;
+
+    let always_summary = execute_turn(&mut always, &frame).unwrap();
+    let reported_summary = execute_turn(&mut reported, &frame).unwrap();
+    assert!(always_summary.dirty_nodes > reported_summary.dirty_nodes);
     Ok(())
 }
