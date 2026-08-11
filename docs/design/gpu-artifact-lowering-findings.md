@@ -123,6 +123,14 @@ schema, shape, and binding identity directly to compilation; payload allocation
 and initialization belong in activation input buffers. This remaining issue is
 compile-time work, not resident GPU execution.
 
+The browser proof makes the same limitation visible at the API boundary. Its
+compiler export currently allocates two zero-filled `2 x 2,000,000` matrices
+solely to establish input schemas and state initializers before producing the
+GPU manifest. The generated program and resident execution are representative,
+but this compile-time payload construction is not a desirable bytecode or
+executor contract. A shape-only external initializer would remove the browser
+pause and avoid transient copies without changing Mech source semantics.
+
 ## Executor and physical-plan findings
 
 ### Logical composites need physical decomposition
@@ -131,6 +139,11 @@ The semantic result is one tuple of two matrices. WGSL exposes two storage
 buffers. That decomposition belongs in a GPU activated plan, which should
 retain the mapping from logical output path (`result.0`, `result.1`) to physical
 buffer binding.
+
+The browser host now consumes this mapping through public binding roles and
+cell-slot identities. This is enough for it to allocate ping-pong state buffers
+and bind the logical position and velocity outputs to a separate render
+pipeline; it does not inspect generated WGSL or rely on fixed binding numbers.
 
 ### Binding pressure must be planned
 

@@ -13,4 +13,11 @@ config := {
       turns: 120
     }
   }
+
+  serve: {
+    address: "127.0.0.1"
+    port: 8081
+    paths: ["particle-kernel.mec"]
+    shim: "index.html"
+  }
 }
