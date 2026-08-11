@@ -75,7 +75,8 @@ host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_sign
 browser_project = ["source", "browser_project_runner", "resident-routing-source", "sample_hold", "state_step", "served_project_authority", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_console", "browser_host_scene", "baselib", "mika", "statements_default", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "stats_default", "combinatorics_default", "f64", "bool", "string_default", "record", "tuple", "table", "atom", "enum", "variables"]
 browser_project_runner = ["source", "program", "pretty_print", "serde"]
 browser_gpu_compiler = [
-  "compiler", "f32", "f64", "matrixd", "math_add", "math_sub", "math_mul",
+  "compiler", "f32", "f64", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
+  "math_add", "math_sub", "math_mul", "math_div",
   "variables", "variable_define", "variable_assign", "tuple",
   "mech-stdlib/native-plan", "dep:mech-gpu",
 ]

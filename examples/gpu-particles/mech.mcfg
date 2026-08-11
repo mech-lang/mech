@@ -17,7 +17,7 @@ config := {
   serve: {
     address: "127.0.0.1"
     port: 8081
-    paths: ["particle-kernel.mec"]
+    paths: ["particles.mec"]
     shim: "index.html"
   }
 }
