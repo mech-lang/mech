@@ -4,6 +4,11 @@ This is a complete Mech application. [`particles.mec`](particles.mec) defines
 the two-million-particle initial state, simulation constants, and recurring
 integration equations. [`mech.mcfg`](mech.mcfg) selects the GPU executor.
 
+The initial state is a four-arm spiral field. Each turn advances a conservative
+nonlinear oscillator with symplectic Euler integration. There is no damping, so
+the field stays bounded and keeps its energy while amplitude-dependent motion
+causes the arms to precess instead of collapsing into the origin.
+
 The browser boundary matches the analog clock and n-body examples:
 
 - `particles.mec` is the application.
