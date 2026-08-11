@@ -1,0 +1,13 @@
+// The host values establish the inferred input types and shapes. These
+// declarations expose ordinary Mech input cells to either execution host.
+positions := host-positions
+velocities := host-velocities
+origin := host-origin
+attraction := host-attraction
+drag := host-drag
+dt := host-dt
+
+acceleration := (origin - positions) * attraction
+next-velocities := (velocities + acceleration * dt) * drag
+next-positions := positions + next-velocities * dt
+(next-positions, next-velocities)

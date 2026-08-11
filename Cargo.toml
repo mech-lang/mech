@@ -452,6 +452,7 @@ members = [
   "hosts/time",
   "hosts/timer",
   "hosts/scene",
+  "hosts/gpu",
   "tests/fixtures/native-live-host",
 ]
 
