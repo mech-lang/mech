@@ -215,6 +215,24 @@ fn compile_artifact_fixture(source: &str) -> MResult<(ProgramArtifact, ProgramAr
     Ok((source_artifact, bytecode_artifact))
 }
 
+#[test]
+fn composite_return_materialization_has_semantic_node_metadata() -> MResult<()> {
+    let (artifact, decoded) = compile_artifact_fixture("(1.0, 2.0)")?;
+    let composite = artifact
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.operation.module_path.as_ref() == ["core"]
+                && node.operation.operation_name == "composite-pack"
+        })
+        .expect("direct tuple return must retain its composite-pack node");
+    assert_eq!(composite.input_bindings.len(), 2);
+    assert_eq!(composite.output_bindings.len(), 1);
+    assert_eq!(artifact.outputs().len(), 1);
+    assert_eq!(artifact.outputs(), decoded.outputs());
+    Ok(())
+}
+
 fn assert_f64_schema(artifact: &ProgramArtifact, schema: mech_core::SchemaId) {
     let body = artifact.schemas().get(schema).unwrap().body();
     assert!(
