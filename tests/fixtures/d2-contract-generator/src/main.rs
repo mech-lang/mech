@@ -1,7 +1,15 @@
-use mech_core::{AliasPolicy, OutputConstruction, RegionPolicy, ResolvedOperationContract};
+use mech_core::{
+    AliasPolicy, LayoutGeneration, OutputConstruction, PlanGeneration, RegionPolicy,
+    ResolvedOperationContract, ValueData,
+};
+use mech_core::snapshot::SequenceView;
 use mech_engine::{
     ArtifactSource, BindingDeclaration, MechProgram, MechProgramConfig, ProducerReference,
     ProgramArtifact, SlotRole, decode_program_artifact_bytecode_v1,
+};
+use mech_engine::__resident::{
+    ActivationFacts, ResidentActivationError, ResidentStorageClass, ResidentValueBorrow,
+    StateMigrationPolicy, activate,
 };
 use std::collections::BTreeSet;
 
@@ -10,13 +18,7 @@ const SOURCE: &str =
 
 fn main() {
     let catalog = mech_stdlib::source_catalog();
-    let mut program =
-        MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
-    program.run_string(SOURCE).expect("n-body source must execute");
-    let (artifact, bytecode) = program
-        .compile_program_product()
-        .expect("n-body source must compile into a ProgramArtifact")
-        .into_parts();
+    let (artifact, bytecode) = compile(SOURCE, catalog.clone());
     let decoded = decode_program_artifact_bytecode_v1(&bytecode)
         .expect("n-body bytecode v1 must decode into a ProgramArtifact");
 
@@ -141,6 +143,117 @@ fn main() {
         })
         .collect::<BTreeSet<_>>();
     assert!(opaque.is_empty(), "opaque n-body operations: {opaque:#?}");
+
+    let mut source_instance = activate(
+        mech_core::ReactiveInstanceId::new(0, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .expect("source n-body artifact must activate generically");
+    let decoded_instance = activate(
+        mech_core::ReactiveInstanceId::new(1, 0),
+        &decoded,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .expect("decoded n-body artifact must activate generically");
+    assert_eq!(source_instance.plan.program_revision, decoded_instance.plan.program_revision);
+    assert_eq!(source_instance.plan.slots, decoded_instance.plan.slots);
+    assert_eq!(source_instance.plan.activation_nodes, decoded_instance.plan.activation_nodes);
+    assert_eq!(
+        source_instance.plan.topology.word_len(),
+        source_instance.plan.nodes.len().div_ceil(64),
+    );
+    assert!(source_instance.plan.activation_nodes.len() > 32);
+    assert_eq!(
+        source_instance
+            .plan
+            .slots
+            .iter()
+            .filter(|slot| slot.storage == ResidentStorageClass::State)
+            .count(),
+        2,
+    );
+    let Some(ResidentValueBorrow::F64 { values, shape }) = source_instance.output_borrow(0) else {
+        panic!("positions must be a synchronous f64 resident output")
+    };
+    assert_eq!((shape.rows, shape.columns, values.len()), (10, 3, 30));
+    let copied = source_instance.copied_output(0).expect("copied positions snapshot");
+    assert_eq!(copied.schema(), artifact.outputs()[0].schema);
+
+    source_instance
+        .reactivate(
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+            StateMigrationPolicy::PreserveCompatibleRejectIncompatible,
+        )
+        .expect("same revision reactivation is a no-op");
+    assert_eq!(source_instance.plan.plan_generation, PlanGeneration::ZERO);
+    assert_eq!(source_instance.plan.layout_generation, LayoutGeneration::ZERO);
+
+    let same_layout_source = SOURCE.replacen("Δt := 0.01", "Δt := 0.02", 1);
+    let (same_layout, _) = compile(&same_layout_source, catalog.clone());
+    assert_ne!(artifact.revision(), same_layout.revision());
+    source_instance
+        .reactivate(
+            &same_layout,
+            &catalog,
+            &ActivationFacts::default(),
+            StateMigrationPolicy::PreserveCompatibleRejectIncompatible,
+        )
+        .expect("compatible state migrates across a same-layout revision");
+    assert_eq!(source_instance.plan.plan_generation, PlanGeneration::new(1));
+    assert_eq!(source_instance.plan.layout_generation, LayoutGeneration::ZERO);
+    assert_eq!(source_instance.output_borrow(0).unwrap().len(), 30);
+
+    let changed_layout_source = SOURCE
+        .replacen("1..=10", "1..=9", 1)
+        .replacen(
+            "planets := [☉ ☿ ♀ ♁ ♂ ♃ ♄ ♅ ♆ ♇]'",
+            "planets := [☉ ☿ ♀ ♁ ♂ ♃ ♄ ♅ ♆]'",
+            1,
+        );
+    let (changed_layout, _) = compile(&changed_layout_source, catalog.clone());
+    let before_revision = source_instance.plan.program_revision;
+    assert!(matches!(
+        source_instance.reactivate(
+            &changed_layout,
+            &catalog,
+            &ActivationFacts::default(),
+            StateMigrationPolicy::PreserveCompatibleRejectIncompatible,
+        ),
+        Err(ResidentActivationError::IncompatibleState { .. })
+    ));
+    assert_eq!(source_instance.plan.program_revision, before_revision);
+    source_instance
+        .reactivate(
+            &changed_layout,
+            &catalog,
+            &ActivationFacts::default(),
+            StateMigrationPolicy::PreserveCompatibleResetIncompatible,
+        )
+        .expect("explicit reset admits an incompatible state shape");
+    assert_eq!(source_instance.plan.plan_generation, PlanGeneration::new(2));
+    assert_eq!(source_instance.plan.layout_generation, LayoutGeneration::new(1));
+    assert_eq!(source_instance.output_borrow(0).unwrap().len(), 27);
+    let ValueData::Matrix(copied_matrix) = copied.data() else {
+        panic!("copied output remains an owned matrix after reactivation")
+    };
+    let SequenceView::F64(copied_values) = copied_matrix.elements() else {
+        panic!("copied output remains an owned f64 matrix after reactivation")
+    };
+    assert_eq!(copied_values.len(), 30);
+}
+
+fn compile(source: &str, catalog: std::sync::Arc<mech_core::FunctionCatalog>) -> (ProgramArtifact, Vec<u8>) {
+    let mut program = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
+    program.run_string(source).expect("source must execute");
+    program
+        .compile_program_product()
+        .expect("source must compile into a ProgramArtifact")
+        .into_parts()
 }
 
 fn node_inputs<'a>(

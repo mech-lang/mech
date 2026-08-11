@@ -580,6 +580,7 @@ pub fn frozen_ekf_compiler_catalog() -> MResult<Arc<FunctionCatalog>> {
     crate::intrinsics::catalog::install_source(&mut builder)?;
     install_runtime(&mut builder)?;
     install_source(&mut builder)?;
+    crate::function::install_intrinsic_resident(&mut builder)?;
     Ok(Arc::new(builder.build()?))
 }
 

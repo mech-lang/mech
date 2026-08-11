@@ -6,7 +6,8 @@ use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec
 use crate::{
     FunctionArgs, FunctionValueRepresentation, GuardFunctionSafety, LegacyValue, MResult,
     MechError, MechErrorKind, MechFunction, MechFunctionFactory, NativeValueFeature,
-    OperationContractDeclaration, RuntimeFunctionContract, RuntimeFunctionSignature,
+    OperationContractDeclaration, ResidentKernelFactory, ResidentKernelFactoryEntry,
+    ResidentOperationKey, RuntimeFunctionContract, RuntimeFunctionSignature,
     RuntimeOutputAliasPolicy, hash_str,
 };
 
@@ -213,6 +214,7 @@ pub struct FunctionCatalog {
     runtime_factories: BTreeMap<RuntimeFunctionId, RuntimeFunctionEntry>,
     specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
     intrinsic_specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
+    resident_factories: BTreeMap<ResidentOperationKey, ResidentKernelFactoryEntry>,
     exports_by_module_item: BTreeMap<(String, String), FunctionExport>,
     exports_by_module: BTreeMap<String, Vec<FunctionExport>>,
     exports_by_operation: BTreeMap<OperationId, Vec<FunctionExport>>,
@@ -226,6 +228,7 @@ impl FunctionCatalog {
             runtime_factories: BTreeMap::new(),
             specializers: BTreeMap::new(),
             intrinsic_specializers: BTreeMap::new(),
+            resident_factories: BTreeMap::new(),
             exports_by_module_item: BTreeMap::new(),
             exports_by_module: BTreeMap::new(),
             exports_by_operation: BTreeMap::new(),
@@ -332,6 +335,21 @@ impl FunctionCatalog {
 
     pub fn intrinsic_specializer_count(&self) -> usize {
         self.intrinsic_specializers.len()
+    }
+
+    pub fn resident_factory(
+        &self,
+        module_path: &[String],
+        operation_name: &str,
+    ) -> Option<&ResidentKernelFactoryEntry> {
+        self.resident_factories.iter().find_map(|(key, entry)| {
+            (key.module_path.as_ref() == module_path && key.operation_name == operation_name)
+                .then_some(entry)
+        })
+    }
+
+    pub fn resident_factory_count(&self) -> usize {
+        self.resident_factories.len()
     }
 }
 
@@ -590,6 +608,7 @@ pub struct FunctionCatalogBuilder {
     runtime_factories: BTreeMap<RuntimeFunctionId, RuntimeFunctionEntry>,
     specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
     intrinsic_specializers: BTreeMap<OperationId, FunctionSpecializerEntry>,
+    resident_factories: BTreeMap<ResidentOperationKey, ResidentKernelFactoryEntry>,
     exports_by_module_item: BTreeMap<(String, String), FunctionExport>,
     exports_by_operation: BTreeMap<OperationId, Vec<FunctionExport>>,
 }
@@ -606,6 +625,7 @@ impl FunctionCatalogBuilder {
             runtime_factories: BTreeMap::new(),
             specializers: BTreeMap::new(),
             intrinsic_specializers: BTreeMap::new(),
+            resident_factories: BTreeMap::new(),
             exports_by_module_item: BTreeMap::new(),
             exports_by_operation: BTreeMap::new(),
         }
@@ -631,6 +651,45 @@ impl FunctionCatalogBuilder {
             #[cfg(feature = "native-plan")]
             native_linkage: None,
         })
+    }
+
+    pub fn insert_resident_factory(
+        &mut self,
+        module_path: impl IntoIterator<Item = impl Into<String>>,
+        operation_name: impl Into<String>,
+        factory: ResidentKernelFactory,
+    ) -> MResult<()> {
+        let module_path = module_path
+            .into_iter()
+            .map(Into::into)
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        let operation_name = operation_name.into();
+        let Some(key) = ResidentOperationKey::new(module_path, operation_name) else {
+            return Err(MechError::new(
+                FunctionCatalogInvalidName {
+                    category: "resident function",
+                    name: String::new(),
+                    id: 0,
+                },
+                None,
+            )
+            .with_compiler_loc());
+        };
+        if self.resident_factories.contains_key(&key) {
+            return Err(MechError::new(
+                FunctionCatalogInvalidName {
+                    category: "duplicate resident function",
+                    name: key.operation_name.clone(),
+                    id: hash_str(&key.operation_name),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        self.resident_factories
+            .insert(key.clone(), ResidentKernelFactoryEntry { key, factory });
+        Ok(())
     }
 
     pub fn insert_runtime_factory_with_semantic_contract<F>(
@@ -848,6 +907,7 @@ impl FunctionCatalogBuilder {
             runtime_factories: self.runtime_factories,
             specializers: self.specializers,
             intrinsic_specializers: self.intrinsic_specializers,
+            resident_factories: self.resident_factories,
             exports_by_module_item: self.exports_by_module_item,
             exports_by_module,
             exports_by_operation: self.exports_by_operation,
@@ -1425,8 +1485,38 @@ mod tests {
             assert_eq!(catalog.runtime_factory_count(), 0);
             assert_eq!(catalog.specializer_count(), 0);
             assert_eq!(catalog.intrinsic_specializer_count(), 0);
+            assert_eq!(catalog.resident_factory_count(), 0);
             assert_eq!(catalog.all_exports().len(), 0);
         }
+    }
+
+    #[test]
+    fn resident_factories_are_separate_and_resolve_by_semantic_operation_path() {
+        fn binder(
+            _request: &crate::ResidentKernelBindRequest<'_>,
+        ) -> Result<crate::BoundResidentKernel, crate::ResidentKernelBindError> {
+            Err(crate::ResidentKernelBindError::UnsupportedLayout)
+        }
+
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_resident_factory(["numeric", "matrix"], "add", binder)
+            .unwrap();
+        let catalog = builder.build().unwrap();
+
+        assert_eq!(catalog.runtime_factory_count(), 0);
+        assert_eq!(catalog.specializer_count(), 0);
+        assert_eq!(catalog.resident_factory_count(), 1);
+        let module = [String::from("numeric"), String::from("matrix")];
+        assert_eq!(
+            catalog
+                .resident_factory(&module, "add")
+                .expect("resident operation is independently addressable")
+                .key
+                .operation_name,
+            "add"
+        );
+        assert!(catalog.resident_factory(&module, "subtract").is_none());
     }
 
     #[test]
