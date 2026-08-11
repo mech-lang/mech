@@ -560,6 +560,12 @@ impl ReactiveRegisterCommit for ReactiveRegisterNoopCommit {
 
 #[cfg(feature = "semantic-compiler")]
 pub trait MechFunctionCompiler {
+    /// Reserves registers whose initializer must come from declaration-time
+    /// state before other plan nodes observe their live reactive values.
+    fn reserve_bytecode_registers(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
+        Ok(())
+    }
+
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register>;
 }
 

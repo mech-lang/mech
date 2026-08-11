@@ -10,6 +10,8 @@ use crate::{
     CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
     CompiledNodeKind, CompiledSymbolDefinition,
 };
+#[cfg(feature = "native-plan")]
+use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, ChangeDetectionPolicy, DeliveryMode, DimensionExpr, EncodedConstant,
@@ -432,6 +434,40 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
         node.operation.module_path.as_ref() != ["integrity"]
             || node.operation.operation_name != "constraint"
     }));
+    Ok(())
+}
+
+#[cfg(feature = "native-plan")]
+#[test]
+fn mutable_matrix_state_retains_its_declaration_time_initializer() -> MResult<()> {
+    let mut program = source_program();
+    program.plan_source_for_test(
+        "~state := [1.0 2.0; 3.0 4.0]\nreplacement := [0.0 0.0; 0.0 0.0]\nstate = replacement\nstate",
+    )?;
+    let product = program.compile_program_product()?;
+    let artifact = product.artifact();
+    let state = artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == SlotRole::State)
+        .expect("mutable matrix must produce a state slot");
+    let InitializerReference::Constant(initializer) = state
+        .initializer
+        .expect("mutable matrix state must retain an initializer");
+    let ValueData::Matrix(initializer) = artifact.constants().get(initializer).unwrap().data()
+    else {
+        panic!("matrix state initializer must remain a matrix")
+    };
+    let SequenceView::F64(values) = initializer.elements() else {
+        panic!("matrix state initializer must retain f64 elements")
+    };
+    assert_eq!(
+        values
+            .iter()
+            .map(|value| value.to_f64())
+            .collect::<Vec<_>>(),
+        vec![1.0, 2.0, 3.0, 4.0]
+    );
     Ok(())
 }
 
