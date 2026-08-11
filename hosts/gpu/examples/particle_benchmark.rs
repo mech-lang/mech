@@ -48,6 +48,9 @@ fn main() {
     let positions = (0..elements)
         .map(|index| (index as f32 % 1024.0) / 1024.0 - 0.5)
         .collect::<Vec<_>>();
+    let canonical_positions = (0..particles)
+        .flat_map(|row| [positions[row], positions[particles + row]])
+        .collect::<Vec<_>>();
     let zeros = vec![0.0; elements];
 
     let compile_started = Instant::now();
@@ -66,10 +69,14 @@ fn main() {
     ]);
 
     let reference = program.run_cpu(&inputs).expect("CPU warmup must run");
+    let mut resident_cpu = program
+        .prepare_cpu(&inputs)
+        .expect("resident CPU session must prepare");
     let cpu_started = Instant::now();
-    for _ in 0..cpu_turns {
-        std::hint::black_box(program.run_cpu(&inputs).expect("CPU turn must run"));
-    }
+    resident_cpu
+        .dispatch_turns(cpu_turns as u32)
+        .expect("resident CPU turns must run");
+    std::hint::black_box(resident_cpu.outputs().expect("CPU outputs must read"));
     let cpu_elapsed = cpu_started.elapsed();
     let cpu_per_turn = cpu_elapsed / cpu_turns as u32;
 
@@ -100,20 +107,16 @@ fn main() {
     warm_samples.sort_by_key(|profile| profile.0);
     let gpu = &warm_samples[warm_samples.len() / 2];
 
-    let feedback = BTreeMap::from([
-        ("result.0".to_owned(), "positions".to_owned()),
-        ("result.1".to_owned(), "velocities".to_owned()),
-    ]);
     let resident_prepare_started = Instant::now();
     let mut resident = program
-        .prepare_resident(&inputs, &feedback)
+        .prepare_resident(&inputs)
         .expect("resident GPU session must prepare");
     let resident_prepare = resident_prepare_started.elapsed();
     let resident = resident
         .run_turns(resident_turns)
         .expect("resident GPU turns must run");
     let resident_error =
-        resident_sample_error(&inputs["positions"], &resident.outputs, resident_turns);
+        resident_sample_error(&canonical_positions, &resident.outputs, resident_turns);
     assert!(
         resident_error <= 1.0e-4,
         "resident GPU result differs from sampled recurrence by {resident_error}"
@@ -162,7 +165,7 @@ fn compile_particle_artifact(
 ) -> mech_engine::ProgramArtifact {
     let mut program = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
-        mech_stdlib::source_catalog(),
+        mech_stdlib::source_native_plan_catalog(),
     );
     let values = [
         (

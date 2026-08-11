@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use mech_core::{LegacyValue, Ref, ResolvedOperationContract, hash_str, matrix::Matrix};
-use mech_engine::{MechProgram, MechProgramConfig};
-use mech_gpu::{GpuDiagnosticCode, GpuHost};
+use mech_engine::{MechProgram, MechProgramConfig, SlotRole};
+use mech_gpu::{ExecutionTarget, GpuDiagnosticCode, GpuHost, SlotResidence, TransferDirection};
 
 const PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particles.mec");
 
@@ -12,7 +12,7 @@ fn compile_source(
 ) -> mech_engine::ProgramArtifact {
     let mut program = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
-        mech_stdlib::source_catalog(),
+        mech_stdlib::source_native_plan_catalog(),
     );
     let symbols = program.interpreter().symbols();
     for (name, value) in inputs {
@@ -54,10 +54,43 @@ fn particle_inputs() -> Vec<(&'static str, LegacyValue)> {
 #[test]
 fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());
+    assert_eq!(
+        artifact
+            .slots()
+            .iter()
+            .filter(|slot| slot.role == SlotRole::State)
+            .count(),
+        2
+    );
+    assert_eq!(
+        artifact.constants().len(),
+        2,
+        "state initializers are retained"
+    );
+    let placement = GpuHost.plan(&artifact);
+    assert!(placement.fully_accelerated);
+    assert_eq!(placement.gpu_regions.len(), 1);
+    assert_eq!(
+        placement
+            .slots
+            .iter()
+            .filter(|slot| slot.residence == SlotResidence::DeviceState)
+            .count(),
+        2
+    );
     assert!(
-        artifact.constants().is_empty(),
-        "unexpected retained constants: {}",
-        artifact.constants().len()
+        placement
+            .transfers
+            .iter()
+            .any(|transfer| transfer.direction == TransferDirection::Upload)
+    );
+    assert_eq!(
+        placement
+            .transfers
+            .iter()
+            .filter(|transfer| transfer.direction == TransferDirection::Readback)
+            .count(),
+        2
     );
     let program = GpuHost
         .compile(&artifact)
@@ -85,9 +118,9 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     inputs.insert("dt".to_owned(), vec![0.1]);
     let outputs = program.run_cpu(&inputs).expect("CPU backend must run");
 
-    let expected_velocities = [-0.045, 0.045, -0.09, 0.09, -0.0225, 0.0225, -0.18, 0.18];
+    let expected_velocities = [-0.045, -0.0225, 0.045, 0.0225, -0.09, -0.18, 0.09, 0.18];
     let expected_positions = [
-        0.9955, -0.9955, 1.991, -1.991, 0.49775, -0.49775, 3.982, -3.982,
+        0.9955, 0.49775, -0.9955, -0.49775, 1.991, 3.982, -1.991, -3.982,
     ];
     assert_close(&outputs["result.1"], &expected_velocities);
     assert_close(&outputs["result.0"], &expected_positions);
@@ -133,7 +166,7 @@ fn resident_gpu_feeds_particle_outputs_into_the_next_turn() {
     let program = GpuHost
         .compile(&artifact)
         .expect("particle source must be admitted");
-    let mut inputs = BTreeMap::from([
+    let inputs = BTreeMap::from([
         (
             "positions".to_owned(),
             vec![1.0, -1.0, 2.0, -2.0, 0.5, -0.5, 4.0, -4.0],
@@ -144,11 +177,9 @@ fn resident_gpu_feeds_particle_outputs_into_the_next_turn() {
         ("drag".to_owned(), vec![0.9]),
         ("dt".to_owned(), vec![0.1]),
     ]);
-    for _ in 0..3 {
-        let outputs = program.run_cpu(&inputs).expect("CPU turn must run");
-        inputs.insert("positions".to_owned(), outputs["result.0"].clone());
-        inputs.insert("velocities".to_owned(), outputs["result.1"].clone());
-    }
+    let mut cpu = program.prepare_cpu(&inputs).expect("CPU must prepare");
+    cpu.dispatch_turns(3).expect("CPU turns must run");
+    let expected = cpu.outputs().expect("CPU outputs must read");
 
     let initial_inputs = BTreeMap::from([
         (
@@ -161,18 +192,40 @@ fn resident_gpu_feeds_particle_outputs_into_the_next_turn() {
         ("drag".to_owned(), vec![0.9]),
         ("dt".to_owned(), vec![0.1]),
     ]);
-    let feedback = BTreeMap::from([
-        ("result.0".to_owned(), "positions".to_owned()),
-        ("result.1".to_owned(), "velocities".to_owned()),
-    ]);
-    let mut resident = match program.prepare_resident(&initial_inputs, &feedback) {
+    let mut resident = match program.prepare_resident(&initial_inputs) {
         Ok(resident) => resident,
         Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
         Err(error) => panic!("resident GPU preparation failed: {error}"),
     };
     let gpu = resident.run_turns(3).expect("resident turns must run");
-    assert_close(&gpu.outputs["result.0"], &inputs["positions"]);
-    assert_close(&gpu.outputs["result.1"], &inputs["velocities"]);
+    assert_close(&gpu.outputs["result.0"], &expected["result.0"]);
+    assert_close(&gpu.outputs["result.1"], &expected["result.1"]);
+}
+
+#[test]
+fn resident_cpu_advances_artifact_state_without_host_feedback() {
+    let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());
+    let program = GpuHost
+        .compile(&artifact)
+        .expect("particle source must be admitted");
+    let inputs = BTreeMap::from([
+        ("origin".to_owned(), vec![0.0]),
+        ("attraction".to_owned(), vec![0.5]),
+        ("drag".to_owned(), vec![0.9]),
+        ("dt".to_owned(), vec![0.1]),
+    ]);
+    let mut cpu = program.prepare_cpu(&inputs).expect("CPU must prepare");
+    cpu.dispatch_turns(3).expect("CPU turns must run");
+    let outputs = cpu.outputs().expect("CPU outputs must read");
+
+    let mut position = 1.0_f32;
+    let mut velocity = 0.0_f32;
+    for _ in 0..3 {
+        velocity = (velocity + (0.0 - position) * 0.5 * 0.1) * 0.9;
+        position += velocity * 0.1;
+    }
+    assert!((outputs["result.0"][0] - position).abs() < 1.0e-6);
+    assert!((outputs["result.1"][0] - velocity).abs() < 1.0e-6);
 }
 
 #[test]
@@ -194,6 +247,42 @@ fn unsupported_program_reports_why_instead_of_falling_back() {
             GpuDiagnosticCode::OpaqueOperationContract | GpuDiagnosticCode::OperationUnsupported
         ) && diagnostic.node.is_some()
             && diagnostic.operation.is_some()
+    }));
+    let placement = GpuHost.plan(&artifact);
+    assert!(!placement.fully_accelerated);
+    assert!(placement.nodes.iter().any(|node| {
+        node.target == ExecutionTarget::Cpu && node.reason.contains("no GPU lowering")
+    }));
+}
+
+#[test]
+fn mixed_graph_reports_gpu_regions_and_cpu_transfer_boundaries() {
+    let artifact = compile_source(
+        "sum := left + right\nquotient := sum / divisor\nresult := quotient * scale\nresult",
+        [
+            ("left", LegacyValue::F32(Ref::new(1.0))),
+            ("right", LegacyValue::F32(Ref::new(2.0))),
+            ("divisor", LegacyValue::F32(Ref::new(3.0))),
+            ("scale", LegacyValue::F32(Ref::new(4.0))),
+        ],
+    );
+    let placement = GpuHost.plan(&artifact);
+
+    assert!(!placement.fully_accelerated);
+    assert_eq!(placement.gpu_regions.len(), 2);
+    assert_eq!(
+        placement
+            .nodes
+            .iter()
+            .filter(|node| node.target == ExecutionTarget::Cpu)
+            .count(),
+        1
+    );
+    assert!(placement.transfers.iter().any(|transfer| {
+        transfer.direction == TransferDirection::Readback && transfer.consumer.is_some()
+    }));
+    assert!(placement.transfers.iter().any(|transfer| {
+        transfer.direction == TransferDirection::Upload && transfer.consumer.is_some()
     }));
 }
 

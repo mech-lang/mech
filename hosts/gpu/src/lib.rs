@@ -16,6 +16,8 @@ use mech_engine::{
 mod native;
 #[cfg(feature = "native")]
 pub use native::*;
+mod placement;
+pub use placement::*;
 
 const WORKGROUP_SIZE: u32 = 64;
 
@@ -94,6 +96,15 @@ pub struct GpuBinding {
     pub name: String,
     pub access: GpuBindingAccess,
     pub elements: u64,
+    kind: GpuBindingKind,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum GpuBindingKind {
+    Input(CellSlotId),
+    StateRead(CellSlotId),
+    StateWrite(CellSlotId),
+    Output(CellSlotId),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -134,7 +145,16 @@ struct KernelOutput {
     name: String,
     source: CellSlotId,
     elements: u64,
+    #[cfg_attr(not(feature = "native"), allow(dead_code))]
     binding: u32,
+}
+
+#[derive(Clone, Debug)]
+struct KernelState {
+    slot: CellSlotId,
+    source: ArtifactSource,
+    elements: u64,
+    initializer: Vec<f32>,
 }
 
 #[derive(Clone, Debug)]
@@ -143,9 +163,15 @@ pub struct GpuProgram {
     bindings: Vec<GpuBinding>,
     operations: Vec<KernelOperation>,
     outputs: Vec<KernelOutput>,
+    states: Vec<KernelState>,
     input_slots: BTreeMap<CellSlotId, (String, u64, u32)>,
     constants: BTreeMap<mech_core::ConstantId, f32>,
     dispatch_elements: u64,
+}
+
+pub struct ResidentCpuSession<'a> {
+    program: &'a GpuProgram,
+    slots: BTreeMap<CellSlotId, Vec<f32>>,
 }
 
 impl GpuProgram {
@@ -171,6 +197,15 @@ impl GpuProgram {
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BTreeMap<String, Vec<f32>>, CpuExecutionError> {
+        let mut session = self.prepare_cpu(inputs)?;
+        session.dispatch_turns(1)?;
+        session.outputs()
+    }
+
+    pub fn prepare_cpu(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<ResidentCpuSession<'_>, CpuExecutionError> {
         let mut slots = BTreeMap::<CellSlotId, Vec<f32>>::new();
         for (slot, (name, elements, _)) in &self.input_slots {
             let values = inputs
@@ -185,17 +220,48 @@ impl GpuProgram {
             }
             slots.insert(*slot, values.clone());
         }
+        for state in &self.states {
+            slots.insert(state.slot, state.initializer.clone());
+        }
+        Ok(ResidentCpuSession {
+            program: self,
+            slots,
+        })
+    }
 
+    fn execute_cpu_turn(
+        &self,
+        slots: &mut BTreeMap<CellSlotId, Vec<f32>>,
+    ) -> Result<(), CpuExecutionError> {
         for operation in &self.operations {
             let mut output = Vec::with_capacity(operation.elements as usize);
             for index in 0..operation.elements as usize {
-                let left = cpu_source_value(operation.inputs[0], index, &slots, &self.constants)?;
-                let right = cpu_source_value(operation.inputs[1], index, &slots, &self.constants)?;
+                let left = cpu_source_value(operation.inputs[0], index, slots, &self.constants)?;
+                let right = cpu_source_value(operation.inputs[1], index, slots, &self.constants)?;
                 output.push(operation.operation.apply(left, right));
             }
             slots.insert(operation.output, output);
         }
+        let next_states = self
+            .states
+            .iter()
+            .map(|state| {
+                let values = (0..state.elements as usize)
+                    .map(|index| cpu_source_value(state.source, index, slots, &self.constants))
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok((state.slot, values))
+            })
+            .collect::<Result<Vec<_>, CpuExecutionError>>()?;
+        for (slot, values) in next_states {
+            slots.insert(slot, values);
+        }
+        Ok(())
+    }
 
+    fn cpu_outputs(
+        &self,
+        slots: &BTreeMap<CellSlotId, Vec<f32>>,
+    ) -> Result<BTreeMap<String, Vec<f32>>, CpuExecutionError> {
         self.outputs
             .iter()
             .map(|output| {
@@ -211,8 +277,25 @@ impl GpuProgram {
     }
 }
 
+impl ResidentCpuSession<'_> {
+    pub fn dispatch_turns(&mut self, turns: u32) -> Result<(), CpuExecutionError> {
+        if turns == 0 {
+            return Err(CpuExecutionError::ZeroTurns);
+        }
+        for _ in 0..turns {
+            self.program.execute_cpu_turn(&mut self.slots)?;
+        }
+        Ok(())
+    }
+
+    pub fn outputs(&self) -> Result<BTreeMap<String, Vec<f32>>, CpuExecutionError> {
+        self.program.cpu_outputs(&self.slots)
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CpuExecutionError {
+    ZeroTurns,
     MissingInput {
         name: String,
     },
@@ -258,8 +341,18 @@ struct Compiler<'a> {
     constants: BTreeMap<mech_core::ConstantId, f32>,
     operations: Vec<KernelOperation>,
     outputs: Vec<KernelOutput>,
+    state_slots: BTreeMap<CellSlotId, PendingState>,
     composite_packs: BTreeMap<CellSlotId, Vec<ArtifactSource>>,
     bindings: Vec<GpuBinding>,
+}
+
+#[derive(Clone, Debug)]
+struct PendingState {
+    source: Option<ArtifactSource>,
+    elements: u64,
+    initializer: Vec<f32>,
+    read_binding: Option<u32>,
+    write_binding: Option<u32>,
 }
 
 impl<'a> Compiler<'a> {
@@ -272,6 +365,7 @@ impl<'a> Compiler<'a> {
             constants: BTreeMap::new(),
             operations: Vec::new(),
             outputs: Vec::new(),
+            state_slots: BTreeMap::new(),
             composite_packs: BTreeMap::new(),
             bindings: Vec::new(),
         }
@@ -281,6 +375,7 @@ impl<'a> Compiler<'a> {
         self.validate_program_surface();
         self.lower_inputs();
         self.lower_nodes();
+        self.lower_state_writes();
         self.lower_outputs();
         if !self.diagnostics.is_empty() {
             return Err(GpuAdmissionError {
@@ -292,14 +387,26 @@ impl<'a> Compiler<'a> {
             .outputs
             .iter()
             .map(|output| output.elements)
+            .chain(self.state_slots.values().map(|state| state.elements))
             .max()
             .unwrap_or(1);
         let wgsl = self.generate_wgsl(dispatch_elements);
+        let states = self
+            .state_slots
+            .into_iter()
+            .map(|(slot, state)| KernelState {
+                slot,
+                source: state.source.expect("validated state has a producer source"),
+                elements: state.elements,
+                initializer: state.initializer,
+            })
+            .collect();
         Ok(GpuProgram {
             wgsl,
             bindings: self.bindings,
             operations: self.operations,
             outputs: self.outputs,
+            states,
             input_slots: self.input_slots,
             constants: self.constants,
             dispatch_elements,
@@ -316,23 +423,34 @@ impl<'a> Compiler<'a> {
             );
         }
         for slot in self.artifact.slots() {
-            if slot.role == SlotRole::State {
-                self.reject(
-                    GpuDiagnosticCode::StateUnsupported,
-                    producer_node(slot.producer),
-                    None,
-                    format!(
-                        "state slot {} requires resident state semantics not present in this GPU slice",
-                        slot.slot.get()
-                    ),
-                );
-            }
             if self.is_composite_pack_slot(slot.slot) {
                 continue;
             }
             match self.schema_elements(slot.schema) {
                 Ok(elements) => {
                     self.slot_elements.insert(slot.slot, elements);
+                    if slot.role == SlotRole::State {
+                        match self.state_initializer(slot) {
+                            Ok(initializer) => {
+                                self.state_slots.insert(
+                                    slot.slot,
+                                    PendingState {
+                                        source: None,
+                                        elements,
+                                        initializer,
+                                        read_binding: None,
+                                        write_binding: None,
+                                    },
+                                );
+                            }
+                            Err((code, detail)) => self.reject(
+                                code,
+                                producer_node(slot.producer),
+                                None,
+                                format!("state slot {}: {detail}", slot.slot.get()),
+                            ),
+                        }
+                    }
                 }
                 Err((code, detail)) => self.reject(
                     code,
@@ -355,9 +473,23 @@ impl<'a> Compiler<'a> {
                 name: input.name.clone(),
                 access: GpuBindingAccess::Read,
                 elements,
+                kind: GpuBindingKind::Input(input.slot),
             });
             self.input_slots
                 .insert(input.slot, (input.name.clone(), elements, binding));
+        }
+        let state_slots = self.state_slots.keys().copied().collect::<Vec<_>>();
+        for slot in state_slots {
+            let elements = self.state_slots[&slot].elements;
+            let binding = self.bindings.len() as u32;
+            self.bindings.push(GpuBinding {
+                binding,
+                name: format!("state.{}.read", slot.get()),
+                access: GpuBindingAccess::Read,
+                elements,
+                kind: GpuBindingKind::StateRead(slot),
+            });
+            self.state_slots.get_mut(&slot).unwrap().read_binding = Some(binding);
         }
     }
 
@@ -389,16 +521,32 @@ impl<'a> Compiler<'a> {
                         Some(_) | None => None,
                     }
                 });
-                if inputs.is_empty() || output.is_none() {
+                if let Some(output) = output.filter(|_| !inputs.is_empty()) {
+                    self.composite_packs.insert(output, inputs);
+                } else {
                     self.reject(
                         GpuDiagnosticCode::ArtifactMalformed,
                         Some(node.node),
                         Some(operation_name),
                         "composite pack must have inputs and one output",
                     );
-                } else {
-                    self.composite_packs.insert(output.unwrap(), inputs);
                 }
+                continue;
+            }
+            let state_targets = node
+                .output_bindings
+                .clone()
+                .filter_map(|index| match self.artifact.bindings().get(index as usize) {
+                    Some(BindingDeclaration::Output { target, .. })
+                        if self.state_slots.contains_key(target) =>
+                    {
+                        Some(*target)
+                    }
+                    Some(_) | None => None,
+                })
+                .collect::<Vec<_>>();
+            if !state_targets.is_empty() {
+                self.lower_state_commit(node, &operation_name, &state_targets);
                 continue;
             }
             if !self.admit_contract(node.node, &operation_name, node.contract) {
@@ -479,6 +627,89 @@ impl<'a> Compiler<'a> {
         }
     }
 
+    fn lower_state_commit(
+        &mut self,
+        node: &mech_engine::NodeDeclaration,
+        operation_name: &str,
+        state_targets: &[CellSlotId],
+    ) {
+        if state_targets.len() != 1
+            || node.operation.module_path.as_ref() != ["runtime"]
+            || !node.operation.operation_name.starts_with("Assign")
+        {
+            self.reject(
+                GpuDiagnosticCode::StateUnsupported,
+                Some(node.node),
+                Some(operation_name.to_owned()),
+                "GPU state currently requires one whole-value Assign register",
+            );
+            return;
+        }
+        if !self.admit_state_contract(node.node, operation_name, node.contract) {
+            return;
+        }
+        let inputs = node
+            .input_bindings
+            .clone()
+            .filter_map(|index| match self.artifact.bindings().get(index as usize) {
+                Some(BindingDeclaration::Input { source, .. }) => Some(*source),
+                Some(_) | None => None,
+            })
+            .collect::<Vec<_>>();
+        if inputs.len() != 1 {
+            self.reject(
+                GpuDiagnosticCode::ArityUnsupported,
+                Some(node.node),
+                Some(operation_name.to_owned()),
+                format!("state Assign expected one input, found {}", inputs.len()),
+            );
+            return;
+        }
+        let target = state_targets[0];
+        let Some(source_elements) = self.source_elements(inputs[0], node.node, operation_name)
+        else {
+            return;
+        };
+        if source_elements != self.state_slots[&target].elements {
+            self.reject(
+                GpuDiagnosticCode::ShapeMismatch,
+                Some(node.node),
+                Some(operation_name.to_owned()),
+                format!(
+                    "state source has {source_elements} elements but target has {}",
+                    self.state_slots[&target].elements
+                ),
+            );
+            return;
+        }
+        self.state_slots.get_mut(&target).unwrap().source = Some(inputs[0]);
+    }
+
+    fn lower_state_writes(&mut self) {
+        let slots = self.state_slots.keys().copied().collect::<Vec<_>>();
+        for slot in slots {
+            if self.state_slots[&slot].source.is_none() {
+                self.reject(
+                    GpuDiagnosticCode::ArtifactMalformed,
+                    producer_node(self.artifact.slots()[slot.get() as usize].producer),
+                    None,
+                    format!("state slot {} has no admitted producer", slot.get()),
+                );
+                continue;
+            }
+            let elements = self.state_slots[&slot].elements;
+            let binding = self.bindings.len() as u32;
+            self.bindings.push(GpuBinding {
+                binding,
+                name: format!("state.{}.write", slot.get()),
+                access: GpuBindingAccess::ReadWrite,
+                elements,
+                kind: GpuBindingKind::StateWrite(slot),
+            });
+            self.state_slots.get_mut(&slot).unwrap().write_binding = Some(binding);
+        }
+    }
+
     fn lower_outputs(&mut self) {
         let outputs = self.artifact.outputs().to_vec();
         for output in outputs {
@@ -508,12 +739,25 @@ impl<'a> Compiler<'a> {
                 let Some(elements) = self.slot_elements.get(&source).copied() else {
                     continue;
                 };
+                if let Some(state) = self.state_slots.get(&source) {
+                    let Some(binding) = state.write_binding else {
+                        continue;
+                    };
+                    self.outputs.push(KernelOutput {
+                        name,
+                        source,
+                        elements,
+                        binding,
+                    });
+                    continue;
+                }
                 let binding = self.bindings.len() as u32;
                 self.bindings.push(GpuBinding {
                     binding,
                     name: name.clone(),
                     access: GpuBindingAccess::ReadWrite,
                     elements,
+                    kind: GpuBindingKind::Output(source),
                 });
                 self.outputs.push(KernelOutput {
                     name,
@@ -600,6 +844,100 @@ impl<'a> Compiler<'a> {
             return false;
         }
         true
+    }
+
+    fn admit_state_contract(
+        &mut self,
+        node: NodeId,
+        operation: &str,
+        contract_id: mech_core::OperationContractId,
+    ) -> bool {
+        let Some(contract) = self.artifact.contracts().get(contract_id) else {
+            self.reject(
+                GpuDiagnosticCode::ArtifactMalformed,
+                Some(node),
+                Some(operation.to_owned()),
+                format!("operation contract {} does not exist", contract_id.get()),
+            );
+            return false;
+        };
+        let ResolvedOperationContract::Declared(contract) = contract else {
+            self.reject(
+                GpuDiagnosticCode::OpaqueOperationContract,
+                Some(node),
+                Some(operation.to_owned()),
+                "state operation has a LegacyOpaque contract",
+            );
+            return false;
+        };
+        let admitted = contract.interaction == ExternalInteraction::Pure
+            && contract.inputs.len() == 1
+            && contract.inputs[0].access == AccessMode::Read
+            && contract.inputs[0].delivery == DeliveryMode::Signal
+            && contract.outputs.len() == 1
+            && contract.outputs[0].access == AccessMode::Write
+            && contract.outputs[0].delivery == DeliveryMode::Signal
+            && matches!(
+                contract.outputs[0].construction,
+                OutputConstruction::Replace { .. }
+            )
+            && contract.outputs[0].alias == AliasPolicy::NoAlias;
+        if !admitted {
+            self.reject(
+                GpuDiagnosticCode::PortContractUnsupported,
+                Some(node),
+                Some(operation.to_owned()),
+                "state Assign must be pure whole-value replacement with no aliases",
+            );
+        }
+        admitted
+    }
+
+    fn state_initializer(
+        &self,
+        slot: &mech_engine::SlotDeclaration,
+    ) -> Result<Vec<f32>, (GpuDiagnosticCode, String)> {
+        let Some(mech_engine::InitializerReference::Constant(constant)) = slot.initializer else {
+            return Err((
+                GpuDiagnosticCode::StateUnsupported,
+                "state has no constant initializer".to_owned(),
+            ));
+        };
+        let value = self.artifact.constants().get(constant).ok_or_else(|| {
+            (
+                GpuDiagnosticCode::ArtifactMalformed,
+                format!("initializer constant {} does not exist", constant.get()),
+            )
+        })?;
+        let values = match value.data() {
+            ValueData::F32(value) => vec![value.to_f32()],
+            ValueData::Matrix(matrix) => match matrix.elements() {
+                SequenceView::F32(values) => values.iter().map(|value| value.to_f32()).collect(),
+                _ => {
+                    return Err((
+                        GpuDiagnosticCode::ConstantUnsupported,
+                        "initializer is not an f32 matrix".to_owned(),
+                    ));
+                }
+            },
+            _ => {
+                return Err((
+                    GpuDiagnosticCode::ConstantUnsupported,
+                    "initializer is not scalar f32 or an f32 matrix".to_owned(),
+                ));
+            }
+        };
+        if values.len() != self.slot_elements[&slot.slot] as usize {
+            return Err((
+                GpuDiagnosticCode::ShapeMismatch,
+                format!(
+                    "initializer has {} elements but the state schema has {}",
+                    values.len(),
+                    self.slot_elements[&slot.slot]
+                ),
+            ));
+        }
+        Ok(values)
     }
 
     fn schema_elements(&self, schema: SchemaId) -> Result<u64, (GpuDiagnosticCode, String)> {
@@ -706,17 +1044,18 @@ impl<'a> Compiler<'a> {
 
     fn generate_wgsl(&self, dispatch_elements: u64) -> String {
         let mut shader = String::from("// Generated from a typed Mech ProgramArtifact.\n");
-        for (slot, (_, _, binding)) in &self.input_slots {
+        for binding in &self.bindings {
+            let (name, access) = match binding.kind {
+                GpuBindingKind::Input(slot) => (format!("input_{}", slot.get()), "read"),
+                GpuBindingKind::StateRead(slot) => (format!("state_read_{}", slot.get()), "read"),
+                GpuBindingKind::StateWrite(slot) => {
+                    (format!("state_write_{}", slot.get()), "read_write")
+                }
+                GpuBindingKind::Output(slot) => (format!("output_{}", slot.get()), "read_write"),
+            };
             shader.push_str(&format!(
-                "@group(0) @binding({binding}) var<storage, read> input_{}: array<f32>;\n",
-                slot.get()
-            ));
-        }
-        for output in &self.outputs {
-            shader.push_str(&format!(
-                "@group(0) @binding({}) var<storage, read_write> output_{}: array<f32>;\n",
-                output.binding,
-                output.source.get()
+                "@group(0) @binding({}) var<storage, {access}> {name}: array<f32>;\n",
+                binding.binding
             ));
         }
         shader.push_str(&format!(
@@ -731,7 +1070,21 @@ impl<'a> Compiler<'a> {
                 operation.operation.wgsl()
             ));
         }
+        for state in &self.state_slots {
+            let source = self.wgsl_source(
+                state.1.source.expect("validated state source"),
+                state.1.elements,
+            );
+            shader.push_str(&format!(
+                "  if (index < {}u) {{ state_write_{}[index] = {source}; }}\n",
+                state.1.elements,
+                state.0.get()
+            ));
+        }
         for output in &self.outputs {
+            if self.state_slots.contains_key(&output.source) {
+                continue;
+            }
             let source = if self.input_slots.contains_key(&output.source) {
                 self.wgsl_slot(output.source, output.elements)
             } else {
@@ -770,6 +1123,13 @@ impl<'a> Compiler<'a> {
                 "index"
             };
             format!("input_{}[{index}]", slot.get())
+        } else if self.state_slots.contains_key(&slot) {
+            let index = if elements == 1 && consumer_elements != 1 {
+                "0u"
+            } else {
+                "index"
+            };
+            format!("state_read_{}[{index}]", slot.get())
         } else {
             format!("slot_{}", slot.get())
         }
