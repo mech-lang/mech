@@ -178,6 +178,7 @@ struct KernelOutput {
     name: String,
     source: CellSlotId,
     elements: u64,
+    dimensions: Vec<u64>,
     #[cfg_attr(not(feature = "native"), allow(dead_code))]
     binding: u32,
 }
@@ -220,6 +221,19 @@ impl GpuProgram {
         self.outputs
             .iter()
             .map(|output| (output.name.as_str(), output.source, output.elements))
+    }
+
+    pub fn output_dimensions(&self, slot: CellSlotId) -> Option<&[u64]> {
+        self.outputs
+            .iter()
+            .find(|output| output.source == slot)
+            .map(|output| output.dimensions.as_slice())
+    }
+
+    pub fn state_initializers(&self) -> impl Iterator<Item = (CellSlotId, u64, &[f32])> {
+        self.states
+            .iter()
+            .map(|state| (state.slot, state.elements, state.initializer.as_slice()))
     }
 
     pub const fn dispatch_elements(&self) -> u64 {
@@ -502,7 +516,29 @@ impl<'a> Compiler<'a> {
     }
 
     fn lower_inputs(&mut self) {
+        let turn_nodes = turn_required_nodes(self.artifact);
+        let mut required_slots = BTreeSet::new();
+        for node in self
+            .artifact
+            .nodes()
+            .iter()
+            .filter(|node| turn_nodes.contains(&node.node))
+        {
+            for binding in node.input_bindings.clone() {
+                if let Some(BindingDeclaration::Input {
+                    source: ArtifactSource::Slot(slot),
+                    ..
+                }) = self.artifact.bindings().get(binding as usize)
+                {
+                    required_slots.insert(*slot);
+                }
+            }
+        }
+        required_slots.extend(self.artifact.outputs().iter().map(|output| output.source));
         for input in self.artifact.inputs() {
+            if !required_slots.contains(&input.slot) {
+                continue;
+            }
             let Some(elements) = self.slot_elements.get(&input.slot).copied() else {
                 continue;
             };
@@ -782,6 +818,7 @@ impl<'a> Compiler<'a> {
                 let Some(elements) = self.slot_elements.get(&source).copied() else {
                     continue;
                 };
+                let dimensions = self.slot_dimensions(source);
                 if let Some(state) = self.state_slots.get(&source) {
                     let Some(binding) = state.write_binding else {
                         continue;
@@ -790,6 +827,7 @@ impl<'a> Compiler<'a> {
                         name,
                         source,
                         elements,
+                        dimensions,
                         binding,
                     });
                     continue;
@@ -806,6 +844,7 @@ impl<'a> Compiler<'a> {
                     name,
                     source,
                     elements,
+                    dimensions,
                     binding,
                 });
             }
@@ -1017,6 +1056,25 @@ impl<'a> Compiler<'a> {
                 GpuDiagnosticCode::SchemaUnsupported,
                 format!("schema {body:?} is not scalar f32 or a fixed-size f32 matrix"),
             )),
+        }
+    }
+
+    fn slot_dimensions(&self, slot: CellSlotId) -> Vec<u64> {
+        let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
+            return Vec::new();
+        };
+        let Some(schema) = self.artifact.schemas().get(declaration.schema) else {
+            return Vec::new();
+        };
+        match schema.body() {
+            SchemaBody::Matrix { dimensions, .. } => dimensions
+                .iter()
+                .filter_map(|dimension| match dimension {
+                    DimensionExpr::Constant(extent) => Some(*extent),
+                    _ => None,
+                })
+                .collect(),
+            _ => Vec::new(),
         }
     }
 

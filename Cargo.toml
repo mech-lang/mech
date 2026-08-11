@@ -119,7 +119,8 @@ full-hosts = [
       ]
 gpu_executor_native = [
       "dep:mech-gpu", "mech-gpu/native",
-      "f32", "matrixd", "math_add", "math_sub", "math_mul",
+      "f32", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
+      "math_add", "math_sub", "math_mul", "math_div",
       "mech-stdlib/native-plan",
       ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",

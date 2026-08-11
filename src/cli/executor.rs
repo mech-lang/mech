@@ -2,9 +2,9 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
+use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode, hash_str};
 use mech_engine::{MechProgram, MechProgramConfig};
-use mech_gpu::GpuHost;
+use mech_gpu::{GpuBindingRole, GpuHost, GpuProgram};
 use mech_runtime::{FS_READ, MECH_TOOL_SUBJECT, RunExecutorConfig, check_fs_capability};
 
 use crate::cli::outcome::CliOutcome;
@@ -98,7 +98,7 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
         milliseconds(compile_elapsed),
     );
 
-    let inputs = BTreeMap::new();
+    let inputs = source_input_values(&source_program, &program)?;
     match executor.provider.as_str() {
         "cpu" => {
             let mut session = program
@@ -136,6 +136,46 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
     }
 
     Ok(CliOutcome::exit(0))
+}
+
+fn source_input_values(
+    source_program: &MechProgram,
+    program: &GpuProgram,
+) -> MResult<BTreeMap<String, Vec<f32>>> {
+    let symbols = source_program.interpreter().symbols();
+    let symbols = symbols.borrow();
+    let mut inputs = BTreeMap::new();
+    for binding in program
+        .bindings()
+        .iter()
+        .filter(|binding| binding.role() == GpuBindingRole::Input)
+    {
+        let cell = symbols.get(hash_str(&binding.name)).ok_or_else(|| {
+            executor_error(
+                "prepare_executor_inputs",
+                format!("GPU input `{}` has no source value", binding.name),
+            )
+        })?;
+        let values = cell.borrow().as_vecf32().map_err(|failure| {
+            executor_error(
+                "prepare_executor_inputs",
+                format!("GPU input `{}` is not f32 data: {failure:?}", binding.name),
+            )
+        })?;
+        if values.len() != binding.elements as usize {
+            return Err(executor_error(
+                "prepare_executor_inputs",
+                format!(
+                    "GPU input `{}` has {} source value(s), expected {}",
+                    binding.name,
+                    values.len(),
+                    binding.elements,
+                ),
+            ));
+        }
+        inputs.insert(binding.name.clone(), values);
+    }
+    Ok(inputs)
 }
 
 fn one_mech_source(plan: &RunExecutionPlan) -> MResult<PathBuf> {
