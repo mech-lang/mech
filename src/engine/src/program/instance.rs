@@ -779,7 +779,13 @@ fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
         }
     }
 
-    let return_register = context.resolve_value_register(&program.interpreter.out)?;
+    // Materializing a composite return can emit CompositePack. Give any such
+    // instruction normal source-node metadata instead of leaving it outside
+    // the compiler's semantic plan boundary.
+    context.begin_plan_node(CompiledNodeKind::Combinational)?;
+    let return_result = context.resolve_value_register(&program.interpreter.out);
+    context.end_plan_node();
+    let return_register = return_result?;
     let compiled = context.finish_program(return_register)?;
 
     #[cfg(feature = "invariant_define")]
