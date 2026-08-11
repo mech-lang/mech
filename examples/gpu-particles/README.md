@@ -44,3 +44,41 @@ cargo run -p mech-gpu --release --features native \
 ```
 
 Both native GPU paths use `wgpu`, including Direct3D 12 and Vulkan on Windows.
+
+## Browser particle field
+
+The served example compiles [`particle-kernel.mec`](particle-kernel.mec) in the
+browser, passes its typed artifact to the GPU host, and uses the generated WGSL
+and binding manifest as the WebGPU compute pipeline. JavaScript owns browser
+device setup, buffers, dispatch, rendering, and timing; it does not contain a
+handwritten compute shader.
+
+Build the browser compiler package and server, then serve the directory:
+
+```text
+./scripts/build-mech-gpu-browser.sh
+cargo build --release --features gpu_executor_native
+./target/release/mech serve examples/gpu-particles
+```
+
+On Windows PowerShell, use the equivalent commands:
+
+```text
+.\scripts\build-mech-gpu-browser.ps1
+cargo build --release --features gpu_executor_native
+.\target\release\mech.exe serve examples\gpu-particles
+```
+
+Open `http://127.0.0.1:8081`. The initial compile establishes capacity for two
+million particles. The 100K, 500K, 1M, and 2M controls change the active GPU
+dispatch without rebuilding the program. Use the Benchmark button for the full
+matrix, or open these URLs to start it automatically:
+
+```text
+http://127.0.0.1:8081/?benchmark=compute
+http://127.0.0.1:8081/?benchmark=all
+```
+
+The benchmark reports resident compute separately from compute plus rendering.
+Shader compilation, state allocation, initial upload, and readback are outside
+the resident per-turn measurement.
