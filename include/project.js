@@ -250,7 +250,8 @@ class BrowserGpuProject {
       this.setText(
         '[data-mech-gpu-compile-time]',
         `${timings.parsing.toFixed(0)} ms parse / ` +
-        `${(timings.sourceExecution / 1000).toFixed(1)} s init`,
+        `${timings.sourceExecution.toFixed(0)} ms init / ` +
+        `${(timings.artifactCompilation / 1000).toFixed(1)} s artifact`,
       );
       console.table({
         'catalog setup': timings.catalogSetup,
