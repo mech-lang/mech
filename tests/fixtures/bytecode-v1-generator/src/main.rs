@@ -1091,6 +1091,7 @@ fn native_plan(fixture: &Fixture) -> AppResult<mech_build::NativeBuildPlan> {
         .replace('-', "_");
     let request = NativeBuildRequest {
         bytecode: fixture.bytes.clone(),
+        aot: false,
         runtime_config: fixture.runtime_config.clone(),
         target: None,
         profile: NativeBuildProfile::Release,

@@ -120,6 +120,9 @@ pub fn validate_generation_identity(
     if request.profile != plan.profile {
         return project_invalid("request profile does not match the native build plan");
     }
+    if request.aot != plan.aot {
+        return project_invalid("request AOT mode does not match the native build plan");
+    }
     if compute_plan_sha256(plan)? != plan.plan_sha256 {
         return project_invalid("native build plan digest does not match its contents");
     }
@@ -423,6 +426,134 @@ fn main() {
     }
 }
 "#,
+    )
+}
+
+/// Render a benchmarkable executable around one compiled numeric turn.
+pub fn render_aot_main_source() -> String {
+    String::from(
+        r##"mod native_numeric;
+
+use std::{hint::black_box, time::Instant};
+
+#[derive(Clone, Copy)]
+enum Guarantees { Fast, Atomic, Checked, Transactional }
+
+impl Guarantees {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Fast => "fast",
+            Self::Atomic => "atomic",
+            Self::Checked => "checked",
+            Self::Transactional => "transactional",
+        }
+    }
+
+    fn description(self) -> &'static str {
+        match self {
+            Self::Fast => "single buffer; no rollback or validation",
+            Self::Atomic => "candidate buffer and atomic publication",
+            Self::Checked => "atomic publication and finite-value validation",
+            Self::Transactional => "checked publication and receipt hashing",
+        }
+    }
+}
+
+fn modes(value: &str) -> Result<Vec<Guarantees>, String> {
+    Ok(match value {
+        "fast" => vec![Guarantees::Fast],
+        "atomic" => vec![Guarantees::Atomic],
+        "checked" => vec![Guarantees::Checked],
+        "transactional" => vec![Guarantees::Transactional],
+        "all" => vec![Guarantees::Fast, Guarantees::Atomic, Guarantees::Checked, Guarantees::Transactional],
+        _ => return Err(format!("unknown guarantee mode `{value}`")),
+    })
+}
+
+fn options() -> Result<(u64, Vec<Guarantees>), String> {
+    let mut turns = 1_000_000_u64;
+    let mut selected = modes("all")?;
+    let mut args = std::env::args().skip(1);
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--turns" => {
+                let value = args.next().ok_or("--turns requires a value")?;
+                turns = value.parse().map_err(|_| format!("invalid turn count `{value}`"))?;
+                if turns == 0 { return Err("turn count must be positive".into()); }
+            }
+            "--guarantees" => selected = modes(&args.next().ok_or("--guarantees requires a value")?)?,
+            _ => return Err(format!("unknown argument `{arg}`")),
+        }
+    }
+    Ok((turns, selected))
+}
+
+fn hash(values: &[f64]) -> u64 {
+    values.iter().fold(0xcbf29ce484222325, |hash, value| {
+        (hash ^ value.to_bits()).wrapping_mul(0x100000001b3)
+    })
+}
+
+fn validate(values: &[f64]) -> Result<(), String> {
+    match values.iter().position(|value| !value.is_finite()) {
+        Some(index) => Err(format!("candidate state[{index}] is not finite")),
+        None => Ok(()),
+    }
+}
+
+fn run(mode: Guarantees, turns: u64) -> Result<(), String> {
+    let inputs = vec![0.0; native_numeric::INPUT_LEN];
+    let mut initial = vec![0.0; native_numeric::STATE_LEN];
+    native_numeric::initialize(&mut initial);
+    let mut buffers = [initial.clone(), initial];
+    let mut published = 0_usize;
+    let mut receipt = 0_u64;
+    let started = Instant::now();
+    match mode {
+        Guarantees::Fast => for _ in 0..turns {
+            native_numeric::turn_in_place(&inputs, &mut buffers[0]);
+        },
+        _ => for sequence in 1..=turns {
+            let candidate = 1 - published;
+            let (before, after) = if published == 0 {
+                let (left, right) = buffers.split_at_mut(1);
+                (&left[0][..], &mut right[0][..])
+            } else {
+                let (left, right) = buffers.split_at_mut(1);
+                (&right[0][..], &mut left[0][..])
+            };
+            let before_hash = if matches!(mode, Guarantees::Transactional) { hash(before) } else { 0 };
+            native_numeric::turn(&inputs, before, after);
+            if matches!(mode, Guarantees::Checked | Guarantees::Transactional) { validate(after)?; }
+            if matches!(mode, Guarantees::Transactional) {
+                receipt = sequence ^ before_hash.rotate_left(17) ^ hash(after);
+            }
+            published = candidate;
+        },
+    }
+    let elapsed = started.elapsed().as_secs_f64();
+    let state = if matches!(mode, Guarantees::Fast) { &buffers[0] } else { &buffers[published] };
+    let checksum = black_box(hash(state) ^ receipt);
+    println!("{},{},{},{:.9},{:.3},{:.3},{}", mode.name(), mode.description(), turns,
+        elapsed, elapsed * 1e9 / turns as f64, turns as f64 / elapsed, checksum);
+    Ok(())
+}
+
+fn main() {
+    let (turns, selected) = options().unwrap_or_else(|error| {
+        eprintln!("{error}");
+        eprintln!("usage: generated-app [--turns N] [--guarantees fast|atomic|checked|transactional|all]");
+        std::process::exit(2)
+    });
+    println!("mode,guarantees,turns,seconds,ns_per_turn,turns_per_second,checksum");
+    for mode in selected {
+        run(mode, turns).unwrap_or_else(|error| {
+            eprintln!("{} turn failed: {error}", mode.name());
+            std::process::exit(1)
+        });
+    }
+}
+"##,
     )
 }
 
@@ -900,19 +1031,36 @@ pub fn render_runtime_source(
 pub fn render_project_sources(
     plan: &NativeBuildPlan,
     runtime_config: Option<&NativeRuntimeConfig>,
+    aot: Option<&crate::aot::NativeAotProgram>,
 ) -> MResult<GeneratedSourceSet> {
     let mut sources = GeneratedSourceSet::new();
     sources.insert("src/catalog.rs", render_catalog_source(plan)?)?;
     sources.insert(
         "src/main.rs",
-        match plan.application_kind {
-            NativeApplicationKind::Engine => render_engine_main_source(),
-            NativeApplicationKind::Hosted => render_hosted_main_source_for_plan(plan),
+        match (plan.aot, aot) {
+            (true, Some(_)) => render_aot_main_source(),
+            (true, None) => {
+                return project_invalid("AOT build plan is missing its lowered numeric program");
+            }
+            (false, Some(_)) => {
+                return project_invalid("non-AOT build plan unexpectedly contains numeric source");
+            }
+            (false, None) => match plan.application_kind {
+                NativeApplicationKind::Engine => render_engine_main_source(),
+                NativeApplicationKind::Hosted => render_hosted_main_source_for_plan(plan),
+            },
         },
     )?;
     sources.insert(
         "src/runtime.rs",
         render_runtime_source(plan, runtime_config)?,
+    )?;
+    sources.insert(
+        "src/native_numeric.rs",
+        aot.map_or_else(
+            || "// This build uses the ordinary Mech executor.\n".to_owned(),
+            |program| program.source.clone(),
+        ),
     )?;
     Ok(sources)
 }
@@ -925,6 +1073,16 @@ pub fn render_generated_native_project(
     plan: &NativeBuildPlan,
     workspace_root: Option<&Path>,
 ) -> MResult<GeneratedNativeProject> {
+    render_generated_native_project_with_aot(root, request, plan, workspace_root, None)
+}
+
+pub fn render_generated_native_project_with_aot(
+    root: impl Into<PathBuf>,
+    request: &NativeBuildRequest,
+    plan: &NativeBuildPlan,
+    workspace_root: Option<&Path>,
+    aot: Option<&crate::aot::NativeAotProgram>,
+) -> MResult<GeneratedNativeProject> {
     validate_generation_identity(request, plan)?;
     let root = root.into();
     let dependencies = generated_dependencies_from_plan(plan)?;
@@ -934,7 +1092,7 @@ pub fn render_generated_native_project(
         dependencies,
     )?;
     let cargo_manifest = render_native_project_manifest(&manifest, &root, workspace_root)?;
-    let sources = render_project_sources(plan, request.runtime_config.as_ref())?;
+    let sources = render_project_sources(plan, request.runtime_config.as_ref(), aot)?;
     let mut build_plan_json = serde_json::to_string_pretty(plan).map_err(|error| {
         project_error(format!("failed to serialize native build plan: {error}"))
     })?;
@@ -1095,6 +1253,7 @@ mod tests {
             bytecode_version: 1,
             mech_version: "0.3.5".into(),
             application_kind: kind,
+            aot: false,
             runtime_config: RuntimeConfig::default(),
             actor_bootstrap: None,
             bytecode_sha256: sha256_hex(b"bytecode"),
@@ -1127,6 +1286,7 @@ mod tests {
     fn request() -> NativeBuildRequest {
         NativeBuildRequest {
             bytecode: b"bytecode".to_vec(),
+            aot: false,
             runtime_config: None,
             target: None,
             profile: NativeBuildProfile::Debug,
@@ -1339,6 +1499,18 @@ mod tests {
     }
 
     #[test]
+    fn aot_main_names_every_guarantee_and_uses_both_kernel_entry_points() {
+        let source = render_aot_main_source();
+        for mode in ["fast", "atomic", "checked", "transactional"] {
+            assert!(source.contains(mode));
+        }
+        assert!(source.contains("native_numeric::turn_in_place"));
+        assert!(source.contains("native_numeric::turn("));
+        assert!(source.contains("validate(after)?"));
+        assert!(source.contains("before_hash.rotate_left(17)"));
+    }
+
+    #[test]
     fn every_generated_main_accepts_only_the_once_switch() {
         for source in [
             render_engine_main_source(),
@@ -1502,7 +1674,12 @@ mod tests {
                 .keys()
                 .map(String::as_str)
                 .collect::<Vec<_>>(),
-            ["src/catalog.rs", "src/main.rs", "src/runtime.rs"]
+            [
+                "src/catalog.rs",
+                "src/main.rs",
+                "src/native_numeric.rs",
+                "src/runtime.rs"
+            ]
         );
         assert_eq!(project.bytecode, request.bytecode);
         assert!(project.build_plan_json.ends_with('\n'));

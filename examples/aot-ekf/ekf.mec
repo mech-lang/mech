@@ -1,0 +1,53 @@
+-- A complete high-level extended Kalman filter turn.
+-- `mech build --aot` converts this fixed-shape graph into one Rust function;
+-- the generated executable supplies the repeated turn loop.
+
++> math
+
+linear-velocity := 2.0
+angular-velocity := 0.05
+bearing := 0.35
+dt := 0.1
+landmark := [140.0; 12.0]
+process-noise := [0.01, 0.0; 0.0, 0.0025]
+measurement-noise := 0.25
+identity := [1.0, 0.0, 0.0; 0.0, 1.0, 0.0; 0.0, 0.0, 1.0]
+position-selector := [1.0, 0.0, 0.0; 0.0, 1.0, 0.0]
+basis-x := [1.0; 0.0]
+basis-y := [0.0; 1.0]
+basis-theta := [0.0; 0.0; 1.0]
+
+~state := [55.0; 25.0; 0.4]
+~covariance := [100.0, 0.0, 0.0; 0.0, 100.0, 0.0; 0.0, 0.0, 0.15]
+
+theta := state · basis-theta
+sin-theta := math/sin(theta)
+cos-theta := math/cos(theta)
+distance := linear-velocity * dt
+
+predicted-step := [distance * cos-theta; distance * sin-theta; angular-velocity * dt]
+predicted-state := state + predicted-step
+motion-jacobian := [1.0, 0.0, -distance * sin-theta; 0.0, 1.0, distance * cos-theta; 0.0, 0.0, 1.0]
+control-jacobian := [cos-theta * dt, 0.0; sin-theta * dt, 0.0; 0.0, dt]
+predicted-covariance := motion-jacobian ** covariance ** motion-jacobian' + control-jacobian ** process-noise ** control-jacobian'
+
+predicted-position := position-selector ** predicted-state
+delta := landmark - predicted-position
+delta-x := delta · basis-x
+delta-y := delta · basis-y
+squared-range := delta · delta
+predicted-bearing := math/atan2(delta-y, delta-x) - (predicted-state · basis-theta)
+raw-innovation := bearing - predicted-bearing
+innovation := math/atan2(math/sin(raw-innovation), math/cos(raw-innovation))
+observation-jacobian := [delta-y / squared-range, -delta-x / squared-range, -1.0]
+innovation-variance := observation-jacobian ** predicted-covariance · observation-jacobian + measurement-noise
+gain := predicted-covariance ** observation-jacobian' / innovation-variance
+
+corrected-state := predicted-state + gain * innovation
+correction := identity - gain ** observation-jacobian
+corrected-covariance := correction ** predicted-covariance ** correction' + (gain ** gain') * measurement-noise
+
+state = corrected-state
+covariance = corrected-covariance
+
+state

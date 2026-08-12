@@ -112,11 +112,11 @@ rejected because this one-turn entrypoint has no live actor scheduling model.
 
 Analysis normalizes an optional `NativeRuntimeConfig`, validates requirements
 against the trusted catalogs and target, and emits schema
-`mech.native-build-plan.v1`. Grant paths use the runtime capability
+`mech.native-build-plan.v2`. Grant paths use the runtime capability
 normalizer before matching or hashing, and host settings reject non-finite
 floats recursively so JSON plan identity remains lossless. A plan freezes:
 
-- bytecode and bytecode version, application kind, target, profile, binary
+- bytecode and bytecode version, application kind, AOT mode, target, profile, binary
   name, component version, normalized runtime configuration, and optional
   normalized actor bootstrap;
 - exact runtime types and functions, application requirements, host
@@ -240,6 +240,7 @@ mech build <INPUTS...>
   --out <PATH>
   --target <TARGET>
   --profile debug|release
+  --aot
   --config <MCFG>
   --no-config
   --workspace-root <PATH>
@@ -252,6 +253,12 @@ registry dependencies. `--out` is always the exact output path. Bytecode emit
 does not perform native analysis or invoke Cargo; plan emit does not generate
 a project; Cargo-project emit generates and locks a project without building
 an executable.
+
+`--aot` is an experimental, all-or-nothing numeric backend. It lowers a
+supported fixed-shape resident turn into Rust inside the generated project.
+An unsupported operation fails the AOT build with a diagnostic; omitting
+`--aot` keeps the ordinary bytecode/runtime path and its existing fallback
+behavior.
 
 ## Security boundary
 

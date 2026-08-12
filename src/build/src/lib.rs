@@ -1,6 +1,7 @@
 //! Deterministic native application planning and generation for Mech.
 
 mod analysis;
+pub mod aot;
 pub mod cargo;
 pub mod dependency;
 pub mod error;
@@ -66,6 +67,18 @@ impl NativeApplicationBuilder {
         }
 
         let program = ParsedProgram::from_bytes(&request.bytecode)?;
+        if request.aot {
+            aot::lower_bytecode(&request.bytecode, &self.environment.function_catalog).map_err(
+                |reason| {
+                    error::native_build_error(
+                        error::NativeBuildErrorKind::NativeProjectInvalid {
+                            reason: format!("AOT numeric lowering rejected the program: {reason}"),
+                        },
+                        None,
+                    )
+                },
+            )?;
+        }
         plan::validate_target_index_constants(&program, request.target.as_deref())?;
         let mut native_resolver = analysis::NativeBytecodeContractResolver::new(
             &program.requirements,
@@ -216,6 +229,7 @@ impl NativeApplicationBuilder {
             bytecode_version: program.header.version,
             mech_version,
             application_kind,
+            aot: request.aot,
             runtime_config: requirements.runtime_config,
             actor_bootstrap: requirements.actor_bootstrap,
             bytecode_sha256: plan::sha256_hex(&request.bytecode),
@@ -293,8 +307,30 @@ impl NativeApplicationBuilder {
             ));
         }
 
-        let project =
-            project::render_generated_native_project(root, request, plan, workspace_root)?;
+        let aot = if request.aot {
+            Some(
+                aot::lower_bytecode(&request.bytecode, &self.environment.function_catalog)
+                    .map_err(|reason| {
+                        error::native_build_error(
+                            error::NativeBuildErrorKind::NativeProjectInvalid {
+                                reason: format!(
+                                    "AOT numeric lowering rejected the program: {reason}"
+                                ),
+                            },
+                            None,
+                        )
+                    })?,
+            )
+        } else {
+            None
+        };
+        let project = project::render_generated_native_project_with_aot(
+            root,
+            request,
+            plan,
+            workspace_root,
+            aot.as_ref(),
+        )?;
         project.materialize()?;
         let dependency_lock_seed = self.dependency_lock_seed()?;
         if plan::sha256_hex(&dependency_lock_seed) != plan.dependency_resolution_seed_sha256 {

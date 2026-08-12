@@ -112,7 +112,12 @@ impl GeneratedNativeProject {
     /// components at the generated-project boundary are rejected rather than
     /// followed.
     pub fn materialize(&self) -> MResult<()> {
-        const REQUIRED_SOURCES: [&str; 3] = ["src/catalog.rs", "src/main.rs", "src/runtime.rs"];
+        const REQUIRED_SOURCES: [&str; 4] = [
+            "src/catalog.rs",
+            "src/main.rs",
+            "src/native_numeric.rs",
+            "src/runtime.rs",
+        ];
         let actual_sources = self.sources.keys().map(String::as_str).collect::<Vec<_>>();
         if actual_sources != REQUIRED_SOURCES {
             return project_invalid(format!(
@@ -140,7 +145,7 @@ impl GeneratedNativeProject {
         require_exact_existing_entries(
             &source_root,
             "generated source directory",
-            &["catalog.rs", "main.rs", "runtime.rs"],
+            &["catalog.rs", "main.rs", "native_numeric.rs", "runtime.rs"],
         )?;
         require_regular_file_if_present(&self.lockfile_path(), "generated Cargo lockfile")?;
 
@@ -518,11 +523,14 @@ mod tests {
         let mut sources = GeneratedSourceSet::new();
         sources.insert("src/main.rs", "fn main() {}\n").unwrap();
         sources.insert("src/catalog.rs", "// catalog\n").unwrap();
+        sources
+            .insert("src/native_numeric.rs", "// numeric\n")
+            .unwrap();
         sources.insert("src/runtime.rs", "// runtime\n").unwrap();
         GeneratedNativeProject::new(
             root,
             "[package]\nname = \"generated\"\nversion = \"0.0.0\"\nedition = \"2024\"\n\n[workspace]\n",
-            "{\"schema\":\"mech.native-build-plan.v1\"}",
+            "{\"schema\":\"mech.native-build-plan.v2\"}",
             b"MECH bytecode".to_vec(),
             sources,
         )
@@ -533,10 +541,16 @@ mod tests {
         let mut sources = GeneratedSourceSet::new();
         sources.insert("src/runtime.rs", "runtime").unwrap();
         sources.insert("src/catalog.rs", "catalog").unwrap();
+        sources.insert("src/native_numeric.rs", "numeric").unwrap();
         sources.insert("src/main.rs", "main").unwrap();
         assert_eq!(
             sources.iter().map(|(path, _)| path).collect::<Vec<_>>(),
-            ["src/catalog.rs", "src/main.rs", "src/runtime.rs"]
+            [
+                "src/catalog.rs",
+                "src/main.rs",
+                "src/native_numeric.rs",
+                "src/runtime.rs"
+            ]
         );
         assert!(sources.insert("src/main.rs", "duplicate").is_err());
         assert!(sources.insert("../main.rs", "escape").is_err());

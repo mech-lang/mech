@@ -26,6 +26,7 @@ fn compile(source: &str) -> (NativeApplicationBuilder, NativeBuildRequest) {
     });
     let request = NativeBuildRequest {
         bytecode,
+        aot: false,
         runtime_config: None,
         target: None,
         profile: NativeBuildProfile::Release,
@@ -144,6 +145,28 @@ state"#,
 }
 
 #[test]
+fn aot_is_all_or_nothing_while_the_ordinary_build_keeps_its_fallback() {
+    let (builder, request) = compile(
+        r#"~state := [2.0 3.0; 4.0 5.0]
+state = state[:,[1,2]]
+state"#,
+    );
+
+    let plan = builder.plan(&request).unwrap();
+    assert!(!plan.aot);
+
+    let mut aot_request = request;
+    aot_request.aot = true;
+    let error = builder.plan(&aot_request).unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("AOT numeric lowering rejected the program"),
+        "{error:?}",
+    );
+}
+
+#[test]
 fn build_analysis_lowers_the_canonical_n_body_turn_as_one_region() {
     let source =
         include_str!("../../../tests/architecture/resident-activation/n-body-source-v1.mec");
@@ -176,4 +199,23 @@ fn build_analysis_lowers_the_canonical_n_body_turn_as_one_region() {
     assert!(opcodes.contains(&NativeNumericOpcode::SubtractIndexedRows));
     assert!(opcodes.contains(&NativeNumericOpcode::AddIndexedRows));
     assert!(opcodes.contains(&NativeNumericOpcode::AddAssign));
+}
+
+#[test]
+fn canonical_n_body_lowers_to_standalone_rust_source() {
+    let source =
+        include_str!("../../../tests/architecture/resident-activation/n-body-source-v1.mec");
+    let catalog = mech_stdlib::source_catalog();
+    let mut program = mech_engine::MechProgram::with_function_catalog(
+        mech_engine::MechProgramConfig::default(),
+        catalog.clone(),
+    );
+    program.run_string(source).unwrap();
+    let (_, bytecode) = program.compile_program_product().unwrap().into_parts();
+    let aot = mech_build::aot::lower_bytecode(&bytecode, &catalog).unwrap();
+    assert_eq!(aot.input_len, 0);
+    assert!(aot.state_len > 0);
+    assert!(aot.instruction_count > 0);
+    assert!(aot.source.contains("pub fn turn_in_place"));
+    assert!(aot.source.contains(".powf("));
 }

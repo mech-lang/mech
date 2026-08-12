@@ -4,7 +4,7 @@ use mech_core::{ResourceDelivery, ResourceIntent, RuntimeType};
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 use serde::{Deserialize, Serialize};
 
-pub const NATIVE_BUILD_PLAN_SCHEMA: &str = "mech.native-build-plan.v1";
+pub const NATIVE_BUILD_PLAN_SCHEMA: &str = "mech.native-build-plan.v2";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -25,6 +25,7 @@ pub enum NativeEmit {
 #[derive(Clone, Debug, PartialEq)]
 pub struct NativeBuildRequest {
     pub bytecode: Vec<u8>,
+    pub aot: bool,
     pub runtime_config: Option<NativeRuntimeConfig>,
     pub target: Option<String>,
     pub profile: NativeBuildProfile,
@@ -150,6 +151,7 @@ pub struct NativeBuildPlan {
     pub bytecode_version: u16,
     pub mech_version: String,
     pub application_kind: NativeApplicationKind,
+    pub aot: bool,
     pub runtime_config: RuntimeConfig,
     pub actor_bootstrap: Option<NativeActorBootstrap>,
     pub bytecode_sha256: String,

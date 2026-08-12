@@ -582,6 +582,9 @@ checksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
             )
             .unwrap();
         sources.insert("src/catalog.rs", "// catalog\n").unwrap();
+        sources
+            .insert("src/native_numeric.rs", "// numeric\n")
+            .unwrap();
         sources.insert("src/runtime.rs", "// runtime\n").unwrap();
         GeneratedNativeProject::new(
             root,

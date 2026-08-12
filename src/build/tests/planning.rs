@@ -194,6 +194,7 @@ fn empty_catalog() -> Arc<FunctionCatalog> {
 fn request(bytecode: &[u8]) -> NativeBuildRequest {
     NativeBuildRequest {
         bytecode: bytecode.to_vec(),
+        aot: false,
         runtime_config: None,
         target: None,
         profile: NativeBuildProfile::Debug,

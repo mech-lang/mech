@@ -136,6 +136,7 @@ fn request(
 ) -> NativeBuildRequest {
     NativeBuildRequest {
         bytecode,
+        aot: false,
         runtime_config: runtime_config(case),
         target: None,
         profile: NativeBuildProfile::Debug,

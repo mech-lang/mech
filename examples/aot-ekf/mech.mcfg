@@ -1,0 +1,5 @@
+config := {
+  run: {
+    paths: ["ekf.mec"]
+  }
+}

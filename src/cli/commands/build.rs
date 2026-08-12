@@ -96,6 +96,12 @@ pub(crate) fn command() -> Command {
                 .help("Native Cargo profile: debug or release."),
         )
         .arg(
+            Arg::new("build_aot")
+                .long("aot")
+                .action(ArgAction::SetTrue)
+                .help("Compile a fully supported numeric turn into the generated executable."),
+        )
+        .arg(
             Arg::new("workspace_root")
                 .long("workspace-root")
                 .value_name("PATH")
@@ -152,6 +158,7 @@ pub(crate) struct BuildOptions {
     pub output_path: Option<PathBuf>,
     pub target: Option<String>,
     pub profile: BuildProfile,
+    pub aot: bool,
     pub config_path: Option<String>,
     pub no_config: bool,
     pub workspace_root: Option<PathBuf>,
@@ -188,6 +195,7 @@ impl BuildOptions {
             output_path: matches.get_one::<String>("output_path").map(PathBuf::from),
             target: matches.get_one::<String>("build_target").cloned(),
             profile,
+            aot: matches.get_flag("build_aot"),
             config_path: root_matches.get_one::<String>("config").cloned(),
             no_config: root_matches.get_flag("no_config"),
             workspace_root: matches
@@ -302,12 +310,21 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         },
     };
     let environment = NativeBuildEnvironment {
-        function_catalog: mech_stdlib::native_plan_catalog(),
+        // AOT lowering reactivates the semantic artifact to recover typed
+        // resident layouts and initial state. The restricted native planning
+        // catalog contains contract metadata but intentionally omits some
+        // executable factories needed for that activation.
+        function_catalog: if options.aot {
+            mech_stdlib::source_catalog()
+        } else {
+            mech_stdlib::native_plan_catalog()
+        },
         host_catalog: mech_build::selected_native_host_catalog()?,
         dependency_source,
     };
     let request = NativeBuildRequest {
         bytecode,
+        aot: options.aot,
         runtime_config,
         target: options.target.clone(),
         profile: options.profile.into(),
@@ -650,5 +667,17 @@ mod tests {
     fn inferred_names_are_deterministic() {
         assert_eq!(inferred_binary_name("src/demo.mec"), "demo");
         assert_eq!(inferred_binary_name("artifacts/demo.mecb"), "demo");
+    }
+
+    #[test]
+    fn aot_is_an_explicit_opt_in() {
+        let default = command()
+            .try_get_matches_from(["build", "demo.mec"])
+            .unwrap();
+        assert!(!default.get_flag("build_aot"));
+        let enabled = command()
+            .try_get_matches_from(["build", "--aot", "demo.mec"])
+            .unwrap();
+        assert!(enabled.get_flag("build_aot"));
     }
 }

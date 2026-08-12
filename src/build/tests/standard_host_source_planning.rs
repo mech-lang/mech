@@ -201,6 +201,7 @@ fn integrity_constraints_are_explicit_native_linkage_requirements() {
 
     let request = NativeBuildRequest {
         bytecode,
+        aot: false,
         runtime_config: Some(NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
             hosts: Vec::new(),
@@ -294,6 +295,7 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
     planning_runtime.run_string(case.source).unwrap();
     let request = NativeBuildRequest {
         bytecode: planning_runtime.compile_program_bytecode().unwrap(),
+        aot: false,
         runtime_config: Some(NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
             actor_bootstrap: None,

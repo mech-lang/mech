@@ -241,6 +241,7 @@ mod build_input_tests {
             output_path: Some(output_path.join("output.mecb")),
             target: None,
             profile: BuildProfile::Release,
+            aot: false,
             config_path: None,
             no_config: true,
             workspace_root: None,

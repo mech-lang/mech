@@ -115,6 +115,7 @@ mod tests {
             bytecode_version: BYTECODE_VERSION,
             mech_version: "0.3.5".to_owned(),
             application_kind: NativeApplicationKind::Engine,
+            aot: false,
             runtime_config: RuntimeConfig::default(),
             actor_bootstrap: None,
             bytecode_sha256: sha256_hex(b"bytecode"),
