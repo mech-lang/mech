@@ -135,10 +135,12 @@ fn impl_access_column_table_fxn(
 ) -> MResult<Box<dyn MechFunction>> {
     if let (LegacyValue::Table(tbl), LegacyValue::Id(k)) = (&source, &key) {
         let tbl_brrw = tbl.borrow();
-        if let Some((ValueKind::Option(_), value)) = tbl_brrw.get(k) {
-            return Ok(Box::new(TableAccessSwizzle {
-                out: LegacyValue::MatrixValue(value.clone()),
-            }));
+        if let Some((kind, value)) = tbl_brrw.get(k) {
+            if matches!(kind, ValueKind::Any | ValueKind::Option(_)) {
+                return Ok(Box::new(TableAccessSwizzle {
+                    out: LegacyValue::MatrixValue(value.clone()),
+                }));
+            }
         }
     }
     impl_access_column_table_match_arms!(

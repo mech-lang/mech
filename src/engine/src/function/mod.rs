@@ -340,68 +340,171 @@ mod source_only {
         TailCall(Vec<LegacyValue>),
     }
 
-    // If the function is single-input / single-output with matching scalar kinds,
-    // and the actual argument is a matrix, run the function on each element and
-    // reassemble the result into a matrix of the same shape.
-    // Returns None if any condition for broadcasting isn't met, so the caller can
-    // fall through to normal execution.
+    // Lift a function over one or more matrix-backed outer collections. An
+    // argument that already conforms to its declared kind is shared by every
+    // lane; otherwise, a matrix whose elements conform supplies one value per
+    // lane. Every lifted argument must use the same outer shape.
     #[cfg(feature = "matrix")]
     fn try_broadcast_user_function(
         fxn_def: &FunctionDefinition,
         input_arg_values: &Vec<LegacyValue>,
         p: &InterpreterExecution<'_>,
     ) -> MResult<Option<LegacyValue>> {
-        if input_arg_values.len() != 1
-            || fxn_def.code.output.len() != 1
-            || fxn_def.code.input.len() != 1
-        {
-            return Ok(None);
-        }
-
-        let source = detach_value(&input_arg_values[0]);
-        if !source.is_matrix() {
-            return Ok(None);
-        }
-
         // Resolve the declared input and output kinds from their annotations.
         // Without kind_annotation feature we can't know the element type, so bail.
         #[cfg(feature = "kind_annotation")]
-        let (input_kind, output_kind) = {
-            let input_kind = kind_annotation(&fxn_def.code.input[0].kind.kind, p)?
-                .to_value_kind(&p.state.borrow().kinds)?;
-            let output_kind = kind_annotation(&fxn_def.code.output[0].kind.kind, p)?
-                .to_value_kind(&p.state.borrow().kinds)?;
-            (input_kind, output_kind)
+        let (input_kinds, output_kinds) = {
+            let kinds = &p.state.borrow().kinds;
+            let input_kinds = fxn_def
+                .code
+                .input
+                .iter()
+                .map(|input| kind_annotation(&input.kind.kind, p)?.to_value_kind(kinds))
+                .collect::<MResult<Vec<_>>>()?;
+            let output_kinds = fxn_def
+                .code
+                .output
+                .iter()
+                .map(|output| kind_annotation(&output.kind.kind, p)?.to_value_kind(kinds))
+                .collect::<MResult<Vec<_>>>()?;
+            (input_kinds, output_kinds)
         };
 
         #[cfg(not(feature = "kind_annotation"))]
-        let (input_kind, output_kind) = {
+        let (input_kinds, output_kinds) = {
             return Ok(None);
         };
 
-        // Only broadcast when input and output kinds are the same scalar kind.
-        // If the input is already a matrix kind, don't recurse.
-        if input_kind != output_kind || matches!(input_kind, ValueKind::Matrix(_, _)) {
+        if input_kinds.len() != input_arg_values.len() || output_kinds.is_empty() {
             return Ok(None);
         }
 
-        let Some(elements) = crate::patterns::matrix_like_values(&source) else {
+        enum LiftedArgument {
+            Shared(LegacyValue),
+            PerLane(Vec<LegacyValue>),
+        }
+
+        let mut outer_shape: Option<(usize, usize)> = None;
+        let mut arguments = Vec::with_capacity(input_arg_values.len());
+        for (argument, declared_kind) in input_arg_values.iter().zip(&input_kinds) {
+            let argument = detach_value(argument);
+            if value_conforms_to_kind(&argument, declared_kind) {
+                arguments.push(LiftedArgument::Shared(argument));
+                continue;
+            }
+            let Some(elements) = crate::patterns::matrix_like_values(&argument) else {
+                return Ok(None);
+            };
+            if !elements
+                .iter()
+                .all(|element| value_conforms_to_kind(element, declared_kind))
+            {
+                return Ok(None);
+            }
+            let shape = argument.shape();
+            let shape = (shape[0], shape[1]);
+            match outer_shape {
+                Some(expected) if expected != shape => {
+                    return Err(MechError::new(
+                        GenericError {
+                            msg: format!(
+                                "function `{}` cannot lift arguments with outer shapes {}x{} and {}x{}",
+                                fxn_def.name, expected.0, expected.1, shape.0, shape.1,
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                    .with_tokens(fxn_def.code.name.tokens()));
+                }
+                None => outer_shape = Some(shape),
+                _ => {}
+            }
+            arguments.push(LiftedArgument::PerLane(elements));
+        }
+
+        let Some((rows, columns)) = outer_shape else {
             return Ok(None);
         };
+        let lane_count = rows.checked_mul(columns).ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: format!("function `{}` outer shape overflowed", fxn_def.name),
+                },
+                None,
+            )
+            .with_compiler_loc()
+            .with_tokens(fxn_def.code.name.tokens())
+        })?;
+        let mut outputs = (0..output_kinds.len())
+            .map(|_| Vec::with_capacity(lane_count))
+            .collect::<Vec<_>>();
 
-        // Apply the function element-wise, then reassemble into the original shape.
-        let mut outputs = Vec::with_capacity(elements.len());
-        for element in elements {
-            outputs.push(execute_user_function(fxn_def, &vec![element], p)?);
+        for lane in 0..lane_count {
+            let lane_arguments = arguments
+                .iter()
+                .map(|argument| match argument {
+                    LiftedArgument::Shared(value) => value.clone(),
+                    LiftedArgument::PerLane(values) => values[lane].clone(),
+                })
+                .collect::<Vec<_>>();
+            let lane_output = execute_user_function(fxn_def, &lane_arguments, p)?;
+            if outputs.len() == 1 {
+                outputs[0].push(lane_output);
+                continue;
+            }
+            let LegacyValue::Tuple(tuple) = lane_output else {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: format!(
+                            "function `{}` returned a non-tuple while lifting {} outputs",
+                            fxn_def.name,
+                            outputs.len(),
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+                .with_tokens(fxn_def.code.name.tokens()));
+            };
+            let tuple = tuple.borrow();
+            if tuple.elements.len() != outputs.len() {
+                return Err(MechError::new(
+                    GenericError {
+                        msg: format!(
+                            "function `{}` returned {} values while lifting {} outputs",
+                            fxn_def.name,
+                            tuple.elements.len(),
+                            outputs.len(),
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+                .with_tokens(fxn_def.code.name.tokens()));
+            }
+            for (output, value) in outputs.iter_mut().zip(&tuple.elements) {
+                output.push(value.as_ref().clone());
+            }
         }
 
-        let shape = source.shape();
-        Ok(Some(build_typed_matrix_from_values(
-            &output_kind,
-            outputs,
-            shape[0],
-            shape[1],
-        )))
+        let mut lifted_outputs = outputs
+            .into_iter()
+            .zip(output_kinds)
+            .map(|(values, kind)| build_typed_matrix_from_values(&kind, values, rows, columns))
+            .collect::<Vec<_>>();
+        Ok(Some(if lifted_outputs.len() == 1 {
+            lifted_outputs.remove(0)
+        } else {
+            LegacyValue::Tuple(Ref::new(MechTuple::from_vec(lifted_outputs)))
+        }))
+    }
+
+    #[cfg(feature = "matrix")]
+    fn value_conforms_to_kind(value: &LegacyValue, kind: &ValueKind) -> bool {
+        matches!(kind, ValueKind::Any)
+            || value.kind() == *kind
+            || value.clone().convert_to(kind).is_some()
     }
 
     // Assembles a list of scalar Values into a typed matrix.
@@ -1438,6 +1541,75 @@ mod source_only {
             assert_eq!(solve_result_calls.load(Ordering::SeqCst), 0);
             assert_eq!(preserved_initialization_calls.load(Ordering::SeqCst), 1);
             assert_eq!(plan.len(), plan_len + 1);
+        }
+    }
+
+    #[cfg(all(
+        test,
+        feature = "source",
+        feature = "functions",
+        feature = "kind_annotation",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple",
+        feature = "f64"
+    ))]
+    mod outer_lift_tests {
+        use super::*;
+
+        fn interpret(source: &str) -> LegacyValue {
+            let tree = mech_syntax::parser::parse(source).unwrap();
+            let mut interpreter = Interpreter::with_function_catalog(
+                0,
+                10_000,
+                crate::test_support::catalog::function_catalog(),
+            );
+            interpreter.interpret(&tree).unwrap()
+        }
+
+        #[test]
+        fn user_function_lifts_multiple_arguments_and_outputs() {
+            let result = interpret(
+                r#"sum-product(left<f64>, right<f64>) = (sum<f64>, product<f64>) :=
+  sum := left + right
+  product := left * right.
+
+sum-product([1.0, 2.0, 3.0], [4.0, 5.0, 6.0])"#,
+            );
+
+            assert_eq!(
+                result,
+                LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![
+                    LegacyValue::MatrixF64(Matrix::from_vec(vec![5.0, 7.0, 9.0], 1, 3)),
+                    LegacyValue::MatrixF64(Matrix::from_vec(vec![4.0, 10.0, 18.0], 1, 3)),
+                ])))
+            );
+        }
+
+        #[test]
+        fn user_function_lift_distinguishes_inner_fixed_matrices() {
+            let result = interpret(
+                r#"copy-state(state<[f64]:2,1>) = next-state<[f64]:2,1> :=
+  next-state := state.
+
+batch := |state<*> scale<f64>|
+  | [1.0; 2.0] 2.0 |
+  | [3.0; 4.0] 3.0 |
+
+copy-state(batch.state)"#,
+            );
+
+            assert_eq!(
+                result,
+                LegacyValue::MatrixValue(Matrix::from_vec(
+                    vec![
+                        LegacyValue::MatrixF64(Matrix::from_vec(vec![1.0, 2.0], 2, 1)),
+                        LegacyValue::MatrixF64(Matrix::from_vec(vec![3.0, 4.0], 2, 1)),
+                    ],
+                    2,
+                    1,
+                ))
+            );
         }
     }
 } // mod source_only
