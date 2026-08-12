@@ -85,15 +85,14 @@ state"#,
 #[test]
 fn build_analysis_keeps_an_unsupported_operation_as_a_fallback_boundary() {
     let (builder, request) = compile(
-        r#"~state := 2.0
-next := state ^ 2.0
-state = next
+        r#"~state := [2.0 3.0; 4.0 5.0]
+state = state[:,[1,2]]
 state"#,
     );
 
     let analysis = builder.analyze_numeric_regions(&request).unwrap();
     assert_eq!(analysis.rejections.len(), 1);
-    assert!(analysis.rejections[0].operation.contains("Pow"));
+    assert!(analysis.rejections[0].operation.contains("Access2D"));
     assert!(
         analysis.rejections[0]
             .reason
@@ -106,9 +105,9 @@ state"#,
 #[test]
 fn build_analysis_never_fuses_across_a_fallback_dependency() {
     let (builder, request) = compile(
-        r#"~state := 2.0
-before := state + 1.0
-fallback := before ^ 2.0
+        r#"~state := [2.0 3.0; 4.0 5.0]
+before := state + [1.0 1.0; 1.0 1.0]
+fallback := before[:,[1,2]]
 after := before + fallback
 state = after
 state"#,
@@ -116,7 +115,7 @@ state"#,
 
     let analysis = builder.analyze_numeric_regions(&request).unwrap();
     assert_eq!(analysis.rejections.len(), 1);
-    assert!(analysis.rejections[0].operation.contains("Pow"));
+    assert!(analysis.rejections[0].operation.contains("Access2D"));
     assert_eq!(analysis.regions.len(), 2, "{analysis:#?}");
     assert_eq!(analysis.regions[0].instructions.len(), 1);
     assert_eq!(
@@ -142,4 +141,39 @@ state"#,
         })
         .unwrap();
     assert!(analysis.regions[1].live_inputs.contains(&fallback_output));
+}
+
+#[test]
+fn build_analysis_lowers_the_canonical_n_body_turn_as_one_region() {
+    let source =
+        include_str!("../../../tests/architecture/resident-activation/n-body-source-v1.mec");
+    let catalog = mech_stdlib::source_catalog();
+    let mut program = mech_engine::MechProgram::with_function_catalog(
+        mech_engine::MechProgramConfig::default(),
+        catalog.clone(),
+    );
+    program.run_string(source).unwrap();
+    let (artifact, _) = program.compile_program_product().unwrap().into_parts();
+    let instance = mech_engine::__resident::activate(
+        mech_core::ReactiveInstanceId::new(0, 0),
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+    )
+    .unwrap();
+    let analysis = mech_build::analyze_activated_artifact(&artifact, &instance.plan);
+    assert!(analysis.rejections.is_empty(), "{:#?}", analysis.rejections);
+    assert_eq!(analysis.regions.len(), 1, "{analysis:#?}");
+    let opcodes = analysis.regions[0]
+        .instructions
+        .iter()
+        .map(|instruction| instruction.opcode)
+        .collect::<Vec<_>>();
+    assert!(opcodes.contains(&NativeNumericOpcode::RowsAllColumns));
+    assert!(opcodes.contains(&NativeNumericOpcode::SumColumns));
+    assert!(opcodes.contains(&NativeNumericOpcode::Power));
+    assert!(opcodes.contains(&NativeNumericOpcode::MultiplyRows));
+    assert!(opcodes.contains(&NativeNumericOpcode::SubtractIndexedRows));
+    assert!(opcodes.contains(&NativeNumericOpcode::AddIndexedRows));
+    assert!(opcodes.contains(&NativeNumericOpcode::AddAssign));
 }

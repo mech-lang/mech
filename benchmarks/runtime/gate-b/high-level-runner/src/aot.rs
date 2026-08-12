@@ -1,11 +1,12 @@
 use crate::kernel_ir::{
-    BatchLayoutKind, BinaryOperation, KernelIr, Operation, Shape, Source, UnaryOperation,
-    ValueStorage,
+    BatchLayoutKind, BinaryOperation, ElementType, KernelIr, Operation, Shape, Source,
+    UnaryOperation, ValueStorage,
 };
 use libloading::Library;
 use mech_core::CellSlotId;
-use mech_engine::__resident::ActivatedPlan;
+use mech_engine::__resident::ReactiveInstance;
 use mech_engine::artifact::ProgramArtifact;
+use std::collections::BTreeSet;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -53,23 +54,23 @@ impl AotState {
 impl AotProgram {
     pub fn build(
         artifact: &ProgramArtifact,
-        plan: &ActivatedPlan,
+        instance: &ReactiveInstance,
         input_slots: &[CellSlotId],
     ) -> Result<Self, String> {
         let kernel =
-            KernelIr::lower(artifact, plan, input_slots).map_err(|error| error.to_string())?;
+            KernelIr::lower(artifact, instance, input_slots).map_err(|error| error.to_string())?;
         Self::build_kernel(&kernel)
     }
 
     pub fn build_outer_lifted(
         artifact: &ProgramArtifact,
-        plan: &ActivatedPlan,
+        instance: &ReactiveInstance,
         input_slots: &[CellSlotId],
         batch_len: usize,
         per_lane_inputs: &[usize],
     ) -> Result<Self, String> {
         let mut kernel =
-            KernelIr::lower(artifact, plan, input_slots).map_err(|error| error.to_string())?;
+            KernelIr::lower(artifact, instance, input_slots).map_err(|error| error.to_string())?;
         kernel
             .lift_outer_batch(batch_len, per_lane_inputs)
             .map_err(|error| error.to_string())?;
@@ -177,6 +178,7 @@ impl AotProgram {
 struct Operand {
     expression: String,
     shape: Shape,
+    element: ElementType,
 }
 
 fn output_directory() -> PathBuf {
@@ -204,6 +206,24 @@ fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     .unwrap();
     writeln!(rust, "const INPUT_LEN: usize = {};", kernel.input_len).unwrap();
     writeln!(rust, "const STATE_LEN: usize = {};\n", kernel.state_len).unwrap();
+    for activation in &kernel.activations {
+        let ty = kernel.value(activation.value).ty;
+        let elements = activation
+            .elements
+            .iter()
+            .map(|value| literal(ty.element, *value))
+            .collect::<Vec<_>>();
+        writeln!(
+            rust,
+            "const A_{}: [{}; {}] = {};",
+            activation.value.get(),
+            rust_type(ty.element),
+            ty.shape.len(),
+            array(&elements),
+        )
+        .unwrap();
+    }
+    writeln!(rust).unwrap();
 
     writeln!(rust, "#[no_mangle]").unwrap();
     writeln!(
@@ -307,6 +327,7 @@ fn emit_scalarized_turn(rust: &mut String, kernel: &KernelIr) -> Result<(), Stri
         .unwrap();
     }
 
+    let mut written_states = BTreeSet::new();
     for instruction in &kernel.instructions {
         let output = kernel.value(instruction.output);
         let expression = match instruction.operation {
@@ -321,7 +342,7 @@ fn emit_scalarized_turn(rust: &mut String, kernel: &KernelIr) -> Result<(), Stri
                 let operands = instruction
                     .inputs
                     .iter()
-                    .map(|source| operand(kernel, source))
+                    .map(|source| operand(kernel, source, &written_states))
                     .collect::<Vec<_>>();
                 emit_operation(operation, &operands, output.ty.shape)?
             }
@@ -339,10 +360,14 @@ fn emit_scalarized_turn(rust: &mut String, kernel: &KernelIr) -> Result<(), Stri
         .unwrap();
         writeln!(
             rust,
-            "    let {variable}: [f64; {}] = {expression};",
+            "    let {variable}: [{}; {}] = {expression};",
+            rust_type(output.ty.element),
             output.ty.shape.len(),
         )
         .unwrap();
+        if output.storage == ValueStorage::State {
+            written_states.insert(instruction.output);
+        }
     }
 
     for state in &kernel.states {
@@ -379,6 +404,7 @@ fn emit_materialized_batched_turn(
         )
         .unwrap();
     }
+    let mut written_states = BTreeSet::new();
     for instruction in &kernel.instructions {
         let output = kernel.value(instruction.output);
         let expression = match instruction.operation {
@@ -397,7 +423,7 @@ fn emit_materialized_batched_turn(
                         instruction.node,
                     ));
                 };
-                lane_operand(kernel, input)?
+                lane_operand(kernel, input, &written_states, batch_len)?
             }
             Operation::Unary(operation) => {
                 let [input] = instruction.inputs.as_slice() else {
@@ -406,7 +432,7 @@ fn emit_materialized_batched_turn(
                         instruction.node,
                     ));
                 };
-                let value = lane_operand(kernel, input)?;
+                let value = lane_operand(kernel, input, &written_states, batch_len)?;
                 match operation {
                     UnaryOperation::Sin => format!("({value}).sin()"),
                     UnaryOperation::Cos => format!("({value}).cos()"),
@@ -422,8 +448,8 @@ fn emit_materialized_batched_turn(
                 };
                 format!(
                     "({}).atan2({})",
-                    lane_operand(kernel, left)?,
-                    lane_operand(kernel, right)?,
+                    lane_operand(kernel, left, &written_states, batch_len)?,
+                    lane_operand(kernel, right, &written_states, batch_len)?,
                 )
             }
             Operation::Binary(operation) => {
@@ -433,17 +459,15 @@ fn emit_materialized_batched_turn(
                         instruction.node,
                     ));
                 };
-                let operator = match operation {
-                    BinaryOperation::Add => "+",
-                    BinaryOperation::Subtract => "-",
-                    BinaryOperation::Multiply => "*",
-                    BinaryOperation::Divide => "/",
-                };
-                format!(
-                    "{} {operator} {}",
-                    lane_operand(kernel, left)?,
-                    lane_operand(kernel, right)?,
-                )
+                let left = lane_operand(kernel, left, &written_states, batch_len)?;
+                let right = lane_operand(kernel, right, &written_states, batch_len)?;
+                match operation {
+                    BinaryOperation::Add => format!("{left} + {right}"),
+                    BinaryOperation::Subtract => format!("{left} - {right}"),
+                    BinaryOperation::Multiply => format!("{left} * {right}"),
+                    BinaryOperation::Divide => format!("{left} / {right}"),
+                    BinaryOperation::Power => format!("({left}).powf({right})"),
+                }
             }
             operation => {
                 return Err(format!(
@@ -464,6 +488,9 @@ fn emit_materialized_batched_turn(
         )
         .unwrap();
         writeln!(rust, "        let {variable}: f64 = {expression};").unwrap();
+        if output.storage == ValueStorage::State {
+            written_states.insert(instruction.output);
+        }
     }
     for state in &kernel.states {
         let variable = if kernel.state_is_written(state.value) {
@@ -508,6 +535,7 @@ fn emit_outer_lifted_turn(
         .unwrap();
     }
 
+    let mut written_states = BTreeSet::new();
     for instruction in &kernel.instructions {
         let output = kernel.value(instruction.output);
         let expression = match instruction.operation {
@@ -528,7 +556,7 @@ fn emit_outer_lifted_turn(
                 let operands = instruction
                     .inputs
                     .iter()
-                    .map(|source| operand(kernel, source))
+                    .map(|source| operand(kernel, source, &written_states))
                     .collect::<Vec<_>>();
                 emit_operation(operation, &operands, output.ty.shape)?
             }
@@ -546,10 +574,14 @@ fn emit_outer_lifted_turn(
         .unwrap();
         writeln!(
             rust,
-            "        let {variable}: [f64; {}] = {expression};",
+            "        let {variable}: [{}; {}] = {expression};",
+            rust_type(output.ty.element),
             output.ty.shape.len(),
         )
         .unwrap();
+        if output.storage == ValueStorage::State {
+            written_states.insert(instruction.output);
+        }
     }
 
     for state in &kernel.states {
@@ -571,44 +603,72 @@ fn emit_outer_lifted_turn(
     Ok(())
 }
 
-fn lane_operand(kernel: &KernelIr, source: &Source) -> Result<String, String> {
+fn lane_operand(
+    kernel: &KernelIr,
+    source: &Source,
+    written_states: &BTreeSet<crate::kernel_ir::ValueId>,
+    batch_len: usize,
+) -> Result<String, String> {
     match source {
         Source::Constant(constant) => {
-            let Some(bits) = constant.elements.first().copied() else {
+            let Some(value) = constant.elements.first().copied() else {
                 return Err("lane constant is empty".to_string());
             };
-            if constant.elements.iter().any(|element| *element != bits) {
+            if constant.elements.iter().any(|element| *element != value) {
                 return Err("lane constant is not uniform".to_string());
             }
-            Ok(float_literal(bits))
+            Ok(literal(constant.ty.element, value))
         }
         Source::Value(id) => Ok(match kernel.value(*id).storage {
+            ValueStorage::Activation => {
+                if kernel.value(*id).ty.shape.len() == 1 {
+                    format!("A_{}[0]", id.get())
+                } else if kernel.value(*id).ty.shape.len() == batch_len {
+                    format!("A_{}[lane]", id.get())
+                } else {
+                    return Err(format!(
+                        "activation slot {} cannot be lane-lifted",
+                        id.get()
+                    ));
+                }
+            }
+            ValueStorage::State if written_states.contains(id) => format!("next_{}", id.get()),
             ValueStorage::State => format!("s_{}", id.get()),
             ValueStorage::Temporary => format!("v_{}", id.get()),
         }),
     }
 }
 
-fn operand(kernel: &KernelIr, source: &Source) -> Operand {
+fn operand(
+    kernel: &KernelIr,
+    source: &Source,
+    written_states: &BTreeSet<crate::kernel_ir::ValueId>,
+) -> Operand {
     match source {
         Source::Constant(constant) => Operand {
             expression: array(
                 &constant
                     .elements
                     .iter()
-                    .map(|bits| float_literal(*bits))
+                    .map(|value| literal(constant.ty.element, *value))
                     .collect::<Vec<_>>(),
             ),
             shape: constant.ty.shape,
+            element: constant.ty.element,
         },
         Source::Value(id) => {
             let value = kernel.value(*id);
             Operand {
                 expression: match value.storage {
+                    ValueStorage::Activation => format!("A_{}", id.get()),
+                    ValueStorage::State if written_states.contains(id) => {
+                        format!("next_{}", id.get())
+                    }
                     ValueStorage::State => format!("s_{}", id.get()),
                     ValueStorage::Temporary => format!("v_{}", id.get()),
                 },
                 shape: value.ty.shape,
+                element: value.ty.element,
             }
         }
     }
@@ -739,30 +799,117 @@ fn emit_operation(
             let [left, right] = inputs else {
                 unreachable!("kernel IR validated binary arity")
             };
-            let operator = match operation {
-                BinaryOperation::Add => "+",
-                BinaryOperation::Subtract => "-",
-                BinaryOperation::Multiply => "*",
-                BinaryOperation::Divide => "/",
-            };
             let elements = (0..output.len())
                 .map(|index| {
                     let left_index = if left.shape.len() == 1 { 0 } else { index };
                     let right_index = if right.shape.len() == 1 { 0 } else { index };
+                    let left = at(left, left_index);
+                    let right = at(right, right_index);
+                    match operation {
+                        BinaryOperation::Add => format!("{left} + {right}"),
+                        BinaryOperation::Subtract => format!("{left} - {right}"),
+                        BinaryOperation::Multiply => format!("{left} * {right}"),
+                        BinaryOperation::Divide => format!("{left} / {right}"),
+                        BinaryOperation::Power => format!("({left}).powf({right})"),
+                    }
+                })
+                .collect::<Vec<_>>();
+            Ok(array(&elements))
+        }
+        Operation::MultiplyRows => {
+            let [matrix, vector] = inputs else {
+                unreachable!("kernel IR validated row multiplication arity")
+            };
+            let elements = (0..output.len())
+                .map(|index| {
                     format!(
-                        "{} {operator} {}",
-                        at(left, left_index),
-                        at(right, right_index),
+                        "{} * {}",
+                        at(matrix, index),
+                        at(vector, index % output.rows),
                     )
                 })
                 .collect::<Vec<_>>();
             Ok(array(&elements))
+        }
+        Operation::SumColumns => {
+            let [input] = inputs else {
+                unreachable!("kernel IR validated column reduction arity")
+            };
+            let elements = (0..input.shape.rows)
+                .map(|row| {
+                    (0..input.shape.columns)
+                        .map(|column| at(input, row + column * input.shape.rows))
+                        .collect::<Vec<_>>()
+                        .join(" + ")
+                })
+                .collect::<Vec<_>>();
+            checked_array(elements, output.len())
+        }
+        Operation::Gather1D => {
+            let [source, indices] = inputs else {
+                unreachable!("kernel IR validated gather arity")
+            };
+            let elements = (0..output.len())
+                .map(|ordinal| dynamic_at(source, &zero_based(indices, ordinal)))
+                .collect::<Vec<_>>();
+            Ok(array(&elements))
+        }
+        Operation::RowsAllColumns => {
+            let [source, indices] = inputs else {
+                unreachable!("kernel IR validated row selection arity")
+            };
+            let mut elements = Vec::with_capacity(output.len());
+            for column in 0..source.shape.columns {
+                for ordinal in 0..indices.shape.len() {
+                    let row = zero_based(indices, ordinal);
+                    elements.push(dynamic_at(
+                        source,
+                        &format!("({row}) + {}", column * source.shape.rows),
+                    ));
+                }
+            }
+            Ok(array(&elements))
+        }
+        Operation::AddIndexedRows | Operation::SubtractIndexedRows => {
+            let [base, source, indices] = inputs else {
+                unreachable!("kernel IR validated indexed row update arity")
+            };
+            let operator = if operation == Operation::AddIndexedRows {
+                "+="
+            } else {
+                "-="
+            };
+            let mut block = format!("{{ let mut result = {};", base.expression);
+            for occurrence in 0..indices.shape.len() {
+                let row = zero_based(indices, occurrence);
+                for column in 0..output.columns {
+                    let target = format!("({row}) + {}", column * output.rows);
+                    let source_index = occurrence + column * source.shape.rows;
+                    write!(
+                        block,
+                        " result[{target}] {operator} {};",
+                        at(source, source_index),
+                    )
+                    .unwrap();
+                }
+            }
+            block.push_str(" result }");
+            Ok(block)
         }
     }
 }
 
 fn at(operand: &Operand, index: usize) -> String {
     format!("({})[{index}]", operand.expression)
+}
+
+fn dynamic_at(operand: &Operand, index: &str) -> String {
+    format!("({})[{index}]", operand.expression)
+}
+
+fn zero_based(indices: &Operand, ordinal: usize) -> String {
+    debug_assert_eq!(indices.element, ElementType::Index);
+    format!("(({})[{ordinal}] as usize - 1)", indices.expression)
 }
 
 fn checked_array(elements: Vec<String>, expected: usize) -> Result<String, String> {
@@ -779,6 +926,20 @@ fn float_literal(bits: u64) -> String {
     format!("f64::from_bits({bits}u64)")
 }
 
+fn literal(element: ElementType, value: u64) -> String {
+    match element {
+        ElementType::F64 => float_literal(value),
+        ElementType::Index => format!("{value}u64"),
+    }
+}
+
+fn rust_type(element: ElementType) -> &'static str {
+    match element {
+        ElementType::F64 => "f64",
+        ElementType::Index => "u64",
+    }
+}
+
 fn array(elements: &[String]) -> String {
     format!("[{}]", elements.join(", "))
 }
@@ -791,6 +952,7 @@ mod tests {
     fn matrix_multiply_codegen_uses_column_major_shapes() {
         let left = Operand {
             expression: "left".to_string(),
+            element: ElementType::F64,
             shape: Shape {
                 rows: 2,
                 columns: 3,
@@ -798,6 +960,7 @@ mod tests {
         };
         let right = Operand {
             expression: "right".to_string(),
+            element: ElementType::F64,
             shape: Shape {
                 rows: 3,
                 columns: 1,

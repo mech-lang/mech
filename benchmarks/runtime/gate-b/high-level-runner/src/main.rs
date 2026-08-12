@@ -25,6 +25,8 @@ use aot::{AotProgram, AotState};
 const SOURCE: &str = include_str!("../../ekf-function-high-level.mec");
 const NUMERIC_PROOF_SOURCE: &str = include_str!("../../numeric-kernel-proof.mec");
 const NUMERIC_BATCH_PROOF_SOURCE: &str = include_str!("../../numeric-batch-proof.mec");
+const N_BODY_SOURCE: &str =
+    include_str!("../../../../../tests/architecture/resident-activation/n-body-source-v1.mec");
 const NUMERIC_BATCH_LEN: usize = 64;
 const BATCH_EKF_LEN: usize = 1_024;
 const BATCH_VALIDATION_TURNS: usize = 256;
@@ -506,7 +508,7 @@ fn prove_general_numeric_kernel(
         .iter()
         .map(|input| mech_core::CellSlotId::new(input.slot.get()))
         .collect::<Vec<_>>();
-    let aot = AotProgram::build(&artifact, &instance.plan, &input_slots)
+    let aot = AotProgram::build(&artifact, &instance, &input_slots)
         .map_err(|message| error(format!("numeric proof AOT build failed: {message}")))?;
 
     let input_paths = services
@@ -605,7 +607,7 @@ fn prove_batched_numeric_kernel(
         .iter()
         .map(|input| mech_core::CellSlotId::new(input.slot.get()))
         .collect::<Vec<_>>();
-    let aot = AotProgram::build(&artifact, &instance.plan, &input_slots)
+    let aot = AotProgram::build(&artifact, &instance, &input_slots)
         .map_err(|message| error(format!("batched numeric AOT build failed: {message}")))?;
     assert_eq!(aot.batch_len(), Some(NUMERIC_BATCH_LEN));
 
@@ -835,7 +837,7 @@ fn prove_batched_ekf_kernel(
         .collect::<Vec<_>>();
     let aot = AotProgram::build_outer_lifted(
         &artifact,
-        &instance.plan,
+        &instance,
         &input_slots,
         BATCH_EKF_LEN,
         &per_lane_inputs,
@@ -862,9 +864,219 @@ fn prove_batched_ekf_kernel(
     Ok(aot)
 }
 
-fn main() -> MResult<()> {
+#[derive(Clone)]
+struct ReferenceNbody {
+    positions: [f64; 30],
+    velocities: [f64; 30],
+    masses: [f64; 10],
+}
+
+impl ReferenceNbody {
+    fn turn(&mut self) {
+        let mut pairs = [(0usize, 0usize, [0.0; 3], 0.0); 45];
+        let mut ordinal = 0;
+        for left in 0..10 {
+            for right in left + 1..10 {
+                let delta = core::array::from_fn(|axis| {
+                    self.positions[left + axis * 10] - self.positions[right + axis * 10]
+                });
+                let distance_squared = delta.iter().map(|value| value.powf(2.0)).sum::<f64>();
+                pairs[ordinal] = (left, right, delta, 0.01 * distance_squared.powf(-1.5));
+                ordinal += 1;
+            }
+        }
+        for (left, right, delta, magnitude) in pairs {
+            for axis in 0..3 {
+                self.velocities[left + axis * 10] -= delta[axis] * self.masses[right] * magnitude;
+            }
+        }
+        for (left, right, delta, magnitude) in pairs {
+            for axis in 0..3 {
+                self.velocities[right + axis * 10] += delta[axis] * self.masses[left] * magnitude;
+            }
+        }
+        for index in 0..30 {
+            self.positions[index] += self.velocities[index] * 0.01;
+        }
+    }
+
+    fn check(&self) -> f64 {
+        self.positions.iter().chain(&self.velocities).sum()
+    }
+}
+
+fn nbody_state(instance: &ReactiveInstance, slot: mech_core::CellSlotId) -> [f64; 30] {
+    let ResidentValueBorrow::F64 { values, .. } = instance.state_borrow(slot).unwrap() else {
+        panic!("n-body state slot must contain f64 values")
+    };
+    values.try_into().unwrap()
+}
+
+fn nbody_masses(instance: &ReactiveInstance) -> [f64; 10] {
+    for slot in instance.plan.slots.iter().filter(|slot| {
+        slot.storage == ResidentStorageClass::Constant
+            && slot.region.kind == mech_core::ResidentValueKind::F64
+            && slot.region.shape.rows == 10
+            && slot.region.shape.columns == 1
+    }) {
+        let values = &instance.activation.f64_storage()
+            [slot.region.offset..slot.region.offset + slot.region.len];
+        if values.first().is_some_and(|value| *value > 30.0)
+            && values.iter().all(|value| value.is_finite() && *value > 0.0)
+        {
+            return values.try_into().unwrap();
+        }
+    }
+    panic!("compiled n-body activation must contain the mass vector")
+}
+
+fn nbody_state_offset(instance: &ReactiveInstance, slot: mech_core::CellSlotId) -> usize {
+    instance.plan.slots[slot.get() as usize].region.offset
+}
+
+fn maximum_nbody_error(
+    actual: &[f64],
+    expected: &ReferenceNbody,
+    x_offset: usize,
+    v_offset: usize,
+) -> f64 {
+    actual[x_offset..x_offset + 30]
+        .iter()
+        .zip(expected.positions)
+        .chain(
+            actual[v_offset..v_offset + 30]
+                .iter()
+                .zip(expected.velocities),
+        )
+        .map(|(actual, expected)| (actual - expected).abs())
+        .fold(0.0, f64::max)
+}
+
+fn prove_nbody_kernel(catalog: &std::sync::Arc<mech_core::FunctionCatalog>) -> MResult<()> {
     let frontend_started = Instant::now();
+    let mut program =
+        MechProgram::with_function_catalog(MechProgramConfig::default(), catalog.clone());
+    program.run_string(N_BODY_SOURCE)?;
+    let (artifact, _bytecode) = program.compile_program_product()?.into_parts();
+    let frontend_time = frontend_started.elapsed();
+    let mut resident = activate(
+        ReactiveInstanceId::new(6, 0),
+        &artifact,
+        catalog,
+        &ActivationFacts::default(),
+    )
+    .map_err(|failure| error(format!("n-body resident activation failed: {failure:?}")))?;
+    let analysis = mech_build::analyze_activated_artifact(&artifact, &resident.plan);
+    assert!(analysis.rejections.is_empty(), "{:#?}", analysis.rejections);
+    assert_eq!(analysis.regions.len(), 1, "{analysis:#?}");
+
+    let position_slot = artifact.outputs()[0].source;
+    let velocity_slot = artifact
+        .slots()
+        .iter()
+        .find(|slot| {
+            slot.role == mech_engine::artifact::SlotRole::State && slot.slot != position_slot
+        })
+        .unwrap()
+        .slot;
+    let x_offset = nbody_state_offset(&resident, position_slot);
+    let v_offset = nbody_state_offset(&resident, velocity_slot);
+    let initial = ReferenceNbody {
+        positions: nbody_state(&resident, position_slot),
+        velocities: nbody_state(&resident, velocity_slot),
+        masses: nbody_masses(&resident),
+    };
+
+    let aot = AotProgram::build(&artifact, &resident, &[])
+        .map_err(|message| error(format!("n-body AOT build failed: {message}")))?;
+    let mut aot_state = AotState::new(&aot);
+    let mut reference = initial.clone();
+    let initial_aot_error = maximum_nbody_error(aot_state.values(), &reference, x_offset, v_offset);
+    assert!(
+        initial_aot_error == 0.0,
+        "AOT n-body initial state mismatch: {initial_aot_error:e}; generated={}",
+        aot.source_path().display(),
+    );
+    let mut maximum_aot_error = 0.0_f64;
+    let mut maximum_resident_error = 0.0_f64;
+    for turn in 0..4_096 {
+        reference.turn();
+        aot.turn(&mut aot_state, &[]);
+        resident.turn_without_summary(&[]).unwrap();
+        let aot_error = maximum_nbody_error(aot_state.values(), &reference, x_offset, v_offset);
+        let resident_positions = nbody_state(&resident, position_slot);
+        let resident_velocities = nbody_state(&resident, velocity_slot);
+        let resident_error = resident_positions
+            .iter()
+            .zip(reference.positions)
+            .chain(resident_velocities.iter().zip(reference.velocities))
+            .map(|(actual, expected)| (actual - expected).abs())
+            .fold(0.0, f64::max);
+        maximum_aot_error = maximum_aot_error.max(aot_error);
+        maximum_resident_error = maximum_resident_error.max(resident_error);
+        assert!(
+            aot_error < 1.0e-9,
+            "AOT n-body mismatch at turn {turn}: {aot_error:e}"
+        );
+        assert!(
+            resident_error < 1.0e-9,
+            "resident n-body mismatch at turn {turn}: {resident_error:e}"
+        );
+    }
+
+    println!(
+        "compiled canonical n-body: {} Mech nodes -> {} typed turn instructions in one native region ({:.1} ms frontend, {:.1} ms rustc -O)",
+        artifact.nodes().len(),
+        aot.instruction_count(),
+        frontend_time.as_secs_f64() * 1.0e3,
+        aot.compile_time().as_secs_f64() * 1.0e3,
+    );
+    println!("  source: tests/architecture/resident-activation/n-body-source-v1.mec");
+    println!("  generated kernel: {}", aot.source_path().display());
+    println!(
+        "  validated 4096 turns: AOT max error {:.3e}, resident max error {:.3e}",
+        maximum_aot_error, maximum_resident_error,
+    );
+
+    let mut raw = initial.clone();
+    let raw_measurement = measure(|| raw.turn());
+    print_measurement("n-body raw Rust", &raw_measurement, black_box(raw.check()));
+
+    let mut benchmark_aot_state = AotState::new(&aot);
+    let aot_measurement = measure(|| aot.turn(&mut benchmark_aot_state, &[]));
+    print_measurement(
+        "n-body Mech AOT",
+        &aot_measurement,
+        black_box(benchmark_aot_state.values().iter().sum()),
+    );
+
+    let mut benchmark_resident = activate(
+        ReactiveInstanceId::new(7, 0),
+        &artifact,
+        catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let resident_measurement = measure(|| {
+        benchmark_resident.turn_without_summary(&[]).unwrap();
+    });
+    let final_positions = nbody_state(&benchmark_resident, position_slot);
+    let final_velocities = nbody_state(&benchmark_resident, velocity_slot);
+    let check = final_positions.iter().chain(final_velocities.iter()).sum();
+    print_measurement(
+        "n-body Mech resident",
+        &resident_measurement,
+        black_box(check),
+    );
+    Ok(())
+}
+
+fn main() -> MResult<()> {
     let catalog = mech_stdlib::source_catalog();
+    if std::env::var_os("MECH_PROOF_NBODY_ONLY").is_some() {
+        return prove_nbody_kernel(&catalog);
+    }
+    let frontend_started = Instant::now();
     let mut services = CompilationServices::new([
         ("pulse", 0.0),
         ("linear-velocity", 1.0),
@@ -946,8 +1158,7 @@ fn main() -> MResult<()> {
         validation.plan.nodes.len(),
         validation.plan.execution_node_count(),
     );
-    let numeric_regions =
-        mech_build::analyze_activated_artifact(&artifact, &validation.plan);
+    let numeric_regions = mech_build::analyze_activated_artifact(&artifact, &validation.plan);
     assert_eq!(
         numeric_regions.regions.len(),
         1,
@@ -1007,7 +1218,7 @@ fn main() -> MResult<()> {
         .iter()
         .map(|input| mech_core::CellSlotId::new(input.slot.get()))
         .collect::<Vec<_>>();
-    let aot = AotProgram::build(&artifact, &validation.plan, &input_slots)
+    let aot = AotProgram::build(&artifact, &validation, &input_slots)
         .map_err(|message| error(format!("AOT build failed: {message}")))?;
     println!(
         "generated AOT Rust from {} kernel instructions: {} (rustc -O: {:.1} ms)",
@@ -1019,6 +1230,7 @@ fn main() -> MResult<()> {
     let _numeric_proof = prove_general_numeric_kernel(&catalog)?;
     let _batch_proof = prove_batched_numeric_kernel(&catalog)?;
     let _batch_ekf = prove_batched_ekf_kernel(&catalog, &samples)?;
+    prove_nbody_kernel(&catalog)?;
 
     let mut full = activate(
         ReactiveInstanceId::new(1, 0),

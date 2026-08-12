@@ -1,15 +1,16 @@
 use mech_core::snapshot::SequenceView;
 use mech_core::{CellSlotId, DimensionExpr, Value, ValueData};
-use mech_engine::__resident::{ActivatedPlan, ResidentStorageClass};
-use mech_engine::artifact::{
-    ArtifactSource, BindingDeclaration, InitializerReference, ProgramArtifact,
+use mech_engine::__resident::{
+    ActivatedPlan, ReactiveInstance, ResidentStorageClass, ResidentValueBorrow,
 };
+use mech_engine::artifact::{ArtifactSource, BindingDeclaration, ProgramArtifact};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ElementType {
     F64,
+    Index,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -53,6 +54,7 @@ impl From<CellSlotId> for ValueId {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ValueStorage {
     Temporary,
+    Activation,
     State,
 }
 
@@ -87,6 +89,7 @@ pub(crate) enum BinaryOperation {
     Subtract,
     Multiply,
     Divide,
+    Power,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -102,6 +105,12 @@ pub(crate) enum Operation {
     Unary(UnaryOperation),
     Atan2,
     Binary(BinaryOperation),
+    MultiplyRows,
+    SumColumns,
+    Gather1D,
+    RowsAllColumns,
+    AddIndexedRows,
+    SubtractIndexedRows,
 }
 
 #[derive(Clone, Debug)]
@@ -118,6 +127,12 @@ pub(crate) struct StateBinding {
     pub(crate) value: ValueId,
     pub(crate) offset: usize,
     pub(crate) initial_elements: Vec<u64>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct ActivationBinding {
+    pub(crate) value: ValueId,
+    pub(crate) elements: Vec<u64>,
 }
 
 #[derive(Clone, Debug)]
@@ -148,6 +163,7 @@ pub(crate) struct KernelIr {
     pub(crate) batch: Option<BatchLayout>,
     pub(crate) values: BTreeMap<ValueId, ValueDeclaration>,
     pub(crate) inputs: Vec<InputBinding>,
+    pub(crate) activations: Vec<ActivationBinding>,
     pub(crate) states: Vec<StateBinding>,
     pub(crate) instructions: Vec<Instruction>,
 }
@@ -155,9 +171,11 @@ pub(crate) struct KernelIr {
 impl KernelIr {
     pub(crate) fn lower(
         artifact: &ProgramArtifact,
-        plan: &ActivatedPlan,
+        instance: &ReactiveInstance,
         input_slots: &[CellSlotId],
     ) -> Result<Self, KernelIrError> {
+        let plan = &instance.plan;
+        let activation = &instance.activation;
         let numeric = mech_build::analyze_activated_artifact(artifact, plan);
         let numeric_operations = numeric
             .regions
@@ -180,27 +198,32 @@ impl KernelIr {
             .slots
             .iter()
             .map(|slot| {
-                if slot.region.kind != mech_core::ResidentValueKind::F64 {
-                    return Err(KernelIrError::global(format!(
-                        "slot {} has unsupported resident kind {:?}",
-                        slot.artifact_id.get(),
-                        slot.region.kind,
-                    )));
-                }
+                let element = match slot.region.kind {
+                    mech_core::ResidentValueKind::F64 => ElementType::F64,
+                    mech_core::ResidentValueKind::Index => ElementType::Index,
+                    mech_core::ResidentValueKind::Bool => {
+                        return Err(KernelIrError::global(format!(
+                            "slot {} has unsupported resident kind Bool",
+                            slot.artifact_id.get(),
+                        )));
+                    }
+                };
                 Ok((
                     ValueId::from(slot.artifact_id),
                     ValueDeclaration {
                         ty: ValueType {
-                            element: ElementType::F64,
+                            element,
                             shape: Shape {
                                 rows: slot.region.shape.rows as usize,
                                 columns: slot.region.shape.columns as usize,
                             },
                         },
-                        storage: if slot.storage == ResidentStorageClass::State {
-                            ValueStorage::State
-                        } else {
-                            ValueStorage::Temporary
+                        storage: match slot.storage {
+                            ResidentStorageClass::State => ValueStorage::State,
+                            ResidentStorageClass::Constant => ValueStorage::Activation,
+                            ResidentStorageClass::Input | ResidentStorageClass::Scratch => {
+                                ValueStorage::Temporary
+                            }
                         },
                     },
                 ))
@@ -243,47 +266,82 @@ impl KernelIr {
             .map(|input| (CellSlotId::new(input.value.get()), input.ordinal))
             .collect::<BTreeMap<_, _>>();
 
+        let activations = plan
+            .slots
+            .iter()
+            .filter(|slot| slot.storage == ResidentStorageClass::Constant)
+            .map(|slot| {
+                let range = slot.region.offset..slot.region.offset + slot.region.len;
+                let elements = match slot.region.kind {
+                    mech_core::ResidentValueKind::F64 => activation.f64_storage()[range]
+                        .iter()
+                        .map(|value| value.to_bits())
+                        .collect(),
+                    mech_core::ResidentValueKind::Index => {
+                        activation.index_storage()[range].to_vec()
+                    }
+                    mech_core::ResidentValueKind::Bool => {
+                        return Err(KernelIrError::global(format!(
+                            "activation slot {} has unsupported bool values",
+                            slot.artifact_id.get(),
+                        )));
+                    }
+                };
+                Ok(ActivationBinding {
+                    value: ValueId::from(slot.artifact_id),
+                    elements,
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
         let states = plan
             .slots
             .iter()
             .filter(|slot| slot.storage == ResidentStorageClass::State)
             .map(|slot| {
-                let declaration = artifact
-                    .slots()
-                    .get(slot.artifact_id.get() as usize)
-                    .ok_or_else(|| {
-                        KernelIrError::global(format!(
-                            "missing declaration for state slot {}",
+                let initial_elements = match instance.state_borrow(slot.artifact_id) {
+                    Some(ResidentValueBorrow::F64 { values, .. }) => {
+                        values.iter().map(|value| value.to_bits()).collect()
+                    }
+                    Some(ResidentValueBorrow::Index { values, .. }) => values.to_vec(),
+                    Some(ResidentValueBorrow::Bool { .. }) => {
+                        return Err(KernelIrError::global(format!(
+                            "state slot {} has unsupported bool values",
                             slot.artifact_id.get(),
-                        ))
-                    })?;
-                let Some(InitializerReference::Constant(constant_id)) = declaration.initializer
-                else {
-                    return Err(KernelIrError::global(format!(
-                        "state slot {} has no constant initializer",
-                        slot.artifact_id.get(),
-                    )));
+                        )));
+                    }
+                    None => {
+                        return Err(KernelIrError::global(format!(
+                            "state slot {} is not readable from the activated instance",
+                            slot.artifact_id.get(),
+                        )));
+                    }
                 };
-                let constant = constant(artifact, constant_id).map_err(KernelIrError::global)?;
-                if constant.elements.len() != slot.region.len {
+                if initial_elements.len() != slot.region.len {
                     return Err(KernelIrError::global(format!(
                         "state slot {} initializer contains {} elements, expected {}",
                         slot.artifact_id.get(),
-                        constant.elements.len(),
+                        initial_elements.len(),
                         slot.region.len,
                     )));
                 }
                 Ok(StateBinding {
                     value: ValueId::from(slot.artifact_id),
                     offset: slot.region.offset,
-                    initial_elements: constant.elements,
+                    initial_elements,
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
 
+        let activation_nodes = plan
+            .activation_nodes
+            .iter()
+            .copied()
+            .collect::<BTreeSet<_>>();
         let instructions = artifact
             .nodes()
             .iter()
+            .filter(|node| !activation_nodes.contains(&node.node))
             .map(|node| {
                 let operation_name = qualified_operation_name(node);
                 let output = node_output(artifact, node).map_err(|reason| {
@@ -367,6 +425,7 @@ impl KernelIr {
             batch,
             values,
             inputs,
+            activations,
             states,
             instructions,
         };
@@ -577,7 +636,15 @@ fn operation_from_numeric(opcode: mech_build::NativeNumericOpcode) -> Operation 
         NativeNumericOpcode::Add => Operation::Binary(BinaryOperation::Add),
         NativeNumericOpcode::Subtract => Operation::Binary(BinaryOperation::Subtract),
         NativeNumericOpcode::Multiply => Operation::Binary(BinaryOperation::Multiply),
+        NativeNumericOpcode::MultiplyRows => Operation::MultiplyRows,
         NativeNumericOpcode::Divide => Operation::Binary(BinaryOperation::Divide),
+        NativeNumericOpcode::Power => Operation::Binary(BinaryOperation::Power),
+        NativeNumericOpcode::SumColumns => Operation::SumColumns,
+        NativeNumericOpcode::Gather1D => Operation::Gather1D,
+        NativeNumericOpcode::RowsAllColumns => Operation::RowsAllColumns,
+        NativeNumericOpcode::AddAssign => Operation::Binary(BinaryOperation::Add),
+        NativeNumericOpcode::AddIndexedRows => Operation::AddIndexedRows,
+        NativeNumericOpcode::SubtractIndexedRows => Operation::SubtractIndexedRows,
     }
 }
 
@@ -648,11 +715,26 @@ fn constant(artifact: &ProgramArtifact, id: mech_core::ConstantId) -> Result<Con
         .ok_or_else(|| format!("missing constant {}", id.get()))?;
     Ok(Constant {
         ty: ValueType {
-            element: ElementType::F64,
+            element: value_element(value)?,
             shape: value_shape(artifact, value)?,
         },
         elements: value_elements(value)?,
     })
+}
+
+fn value_element(value: &Value) -> Result<ElementType, String> {
+    match value.data() {
+        ValueData::F64(_) => Ok(ElementType::F64),
+        ValueData::Index(_) => Ok(ElementType::Index),
+        ValueData::Matrix(matrix) => match matrix.elements() {
+            SequenceView::F64(_) => Ok(ElementType::F64),
+            SequenceView::Index(_) => Ok(ElementType::Index),
+            other => Err(format!(
+                "matrix constant elements {other:?} are not numeric"
+            )),
+        },
+        other => Err(format!("constant {other:?} is not numeric")),
+    }
 }
 
 fn value_shape(artifact: &ProgramArtifact, value: &Value) -> Result<Shape, String> {
@@ -662,7 +744,8 @@ fn value_shape(artifact: &ProgramArtifact, value: &Value) -> Result<Shape, Strin
         .ok_or_else(|| "constant schema is missing".to_string())?
         .schema();
     match schema.body() {
-        mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => Ok(Shape::SCALAR),
+        mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+        | mech_core::SchemaBody::Index => Ok(Shape::SCALAR),
         mech_core::SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2 => Ok(Shape {
             rows: evaluate_dimension(&dimensions[0], value.shape().parameter_values())? as usize,
             columns: evaluate_dimension(&dimensions[1], value.shape().parameter_values())? as usize,
@@ -708,11 +791,15 @@ fn evaluate_dimension(expression: &DimensionExpr, values: &[u64]) -> Result<u64,
 fn value_elements(value: &Value) -> Result<Vec<u64>, String> {
     match value.data() {
         ValueData::F64(value) => Ok(vec![value.bits()]),
+        ValueData::Index(value) => Ok(vec![*value]),
         ValueData::Matrix(matrix) => match matrix.elements() {
             SequenceView::F64(values) => Ok(values.iter().map(|value| value.bits()).collect()),
-            other => Err(format!("matrix constant elements {other:?} are not f64")),
+            SequenceView::Index(values) => Ok(values.to_vec()),
+            other => Err(format!(
+                "matrix constant elements {other:?} are not numeric"
+            )),
         },
-        other => Err(format!("constant {other:?} is not f64")),
+        other => Err(format!("constant {other:?} is not numeric")),
     }
 }
 
@@ -742,9 +829,6 @@ fn validate_instruction(
         .iter()
         .map(|source| source_type(source, values))
         .collect::<Result<Vec<_>, _>>()?;
-    if inputs.iter().any(|input| input.element != ElementType::F64) {
-        return Err("one or more input element types are not f64".to_string());
-    }
     let shape = output.shape;
     match instruction.operation {
         Operation::Input { .. } => {
@@ -813,6 +897,7 @@ fn validate_instruction(
         }
         Operation::Atan2 => {
             require_arity(&inputs, 2)?;
+            require_f64(&inputs)?;
             for input in inputs {
                 if input.shape != Shape::SCALAR && input.shape != shape {
                     return Err("atan2 operands must match the output or be scalar".to_string());
@@ -821,12 +906,73 @@ fn validate_instruction(
         }
         Operation::Binary(_) => {
             require_arity(&inputs, 2)?;
+            require_f64(&inputs)?;
             for input in inputs {
                 if input.shape != Shape::SCALAR && input.shape != shape {
                     return Err("binary operands must match the output or be scalar".to_string());
                 }
             }
         }
+        Operation::MultiplyRows => {
+            require_arity(&inputs, 2)?;
+            require_f64(&inputs)?;
+            if inputs[0].shape != shape
+                || inputs[1].shape.len() != shape.rows
+                || inputs[1].shape.columns != 1
+            {
+                return Err("row-wise multiplication shape mismatch".to_string());
+            }
+        }
+        Operation::SumColumns => {
+            require_arity(&inputs, 1)?;
+            require_f64(&inputs)?;
+            if shape.len() != inputs[0].shape.rows {
+                return Err("column reduction shape mismatch".to_string());
+            }
+        }
+        Operation::Gather1D => {
+            require_arity(&inputs, 2)?;
+            require_selection_types(output, &inputs)?;
+            if shape.len() != inputs[1].shape.len() {
+                return Err("one-dimensional gather shape mismatch".to_string());
+            }
+        }
+        Operation::RowsAllColumns => {
+            require_arity(&inputs, 2)?;
+            require_selection_types(output, &inputs)?;
+            if shape.rows != inputs[1].shape.len() || shape.columns != inputs[0].shape.columns {
+                return Err("row selection shape mismatch".to_string());
+            }
+        }
+        Operation::AddIndexedRows | Operation::SubtractIndexedRows => {
+            require_arity(&inputs, 3)?;
+            if inputs[0].element != ElementType::F64
+                || inputs[1].element != ElementType::F64
+                || inputs[2].element != ElementType::Index
+                || inputs[0].shape != shape
+                || inputs[1].shape.rows != inputs[2].shape.len()
+                || inputs[1].shape.columns != shape.columns
+            {
+                return Err("indexed row update type or shape mismatch".to_string());
+            }
+        }
+    }
+    Ok(())
+}
+
+fn require_f64(inputs: &[ValueType]) -> Result<(), String> {
+    if inputs.iter().any(|input| input.element != ElementType::F64) {
+        return Err("one or more inputs are not f64".to_string());
+    }
+    Ok(())
+}
+
+fn require_selection_types(output: ValueType, inputs: &[ValueType]) -> Result<(), String> {
+    if output.element != ElementType::F64
+        || inputs[0].element != ElementType::F64
+        || inputs[1].element != ElementType::Index
+    {
+        return Err("selection requires f64 data and Index selectors".to_string());
     }
     Ok(())
 }

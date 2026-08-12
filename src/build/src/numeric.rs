@@ -44,7 +44,15 @@ pub enum NativeNumericOpcode {
     Add,
     Subtract,
     Multiply,
+    MultiplyRows,
     Divide,
+    Power,
+    SumColumns,
+    Gather1D,
+    RowsAllColumns,
+    AddAssign,
+    AddIndexedRows,
+    SubtractIndexedRows,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -60,6 +68,12 @@ pub struct NativeNumericInstruction {
 pub struct NativeNumericShape {
     pub rows: u32,
     pub columns: u32,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NativeNumericElementType {
+    F64,
+    Index,
 }
 
 impl NativeNumericShape {
@@ -83,12 +97,14 @@ pub struct NativeNumericSlotLayout {
     pub slot: u32,
     pub storage: NativeNumericSlotStorage,
     pub offset: usize,
+    pub element: NativeNumericElementType,
     pub shape: NativeNumericShape,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeNumericConstant {
     pub constant: u32,
+    pub element: NativeNumericElementType,
     pub shape: NativeNumericShape,
     pub elements: Vec<u64>,
 }
@@ -320,11 +336,15 @@ fn node_eligibility(
             node.write.region.kind
         ));
     }
-    if plan.reads[node.reads.start as usize..node.reads.end as usize]
-        .iter()
-        .any(|read| read_region(*read).kind != ResidentValueKind::F64)
-    {
-        return Err("one or more inputs are not f64 resident values".to_owned());
+    for read in &plan.reads[node.reads.start as usize..node.reads.end as usize] {
+        let kind = read_region(*read).kind;
+        if kind != ResidentValueKind::F64
+            && !(kind == ResidentValueKind::Index && opcode_accepts_index(opcode))
+        {
+            return Err(format!(
+                "input kind {kind:?} is not accepted by native opcode {opcode:?}"
+            ));
+        }
     }
     let outputs = node_output_slots(artifact, declaration);
     if outputs.as_slice() != [node.write.slot] {
@@ -435,6 +455,13 @@ fn build_region(
                 slot,
                 storage: native_slot_storage(resolved.storage),
                 offset: resolved.region.offset,
+                element: match resolved.region.kind {
+                    ResidentValueKind::F64 => NativeNumericElementType::F64,
+                    ResidentValueKind::Index => NativeNumericElementType::Index,
+                    ResidentValueKind::Bool => {
+                        unreachable!("eligible numeric slot cannot contain bool values")
+                    }
+                },
                 shape: NativeNumericShape {
                     rows: resolved.region.shape.rows,
                     columns: resolved.region.shape.columns,
@@ -556,9 +583,25 @@ fn native_constant(
         .ok_or_else(|| format!("constant {} is missing", id.get()))?;
     Ok(NativeNumericConstant {
         constant: id.get(),
+        element: constant_element(value)?,
         shape: constant_shape(artifact, value)?,
         elements: constant_elements(value)?,
     })
+}
+
+fn constant_element(value: &Value) -> Result<NativeNumericElementType, String> {
+    match value.data() {
+        ValueData::F64(_) => Ok(NativeNumericElementType::F64),
+        ValueData::Index(_) => Ok(NativeNumericElementType::Index),
+        ValueData::Matrix(matrix) => match matrix.elements() {
+            SequenceView::F64(_) => Ok(NativeNumericElementType::F64),
+            SequenceView::Index(_) => Ok(NativeNumericElementType::Index),
+            other => Err(format!(
+                "matrix constant elements {other:?} are not numeric"
+            )),
+        },
+        other => Err(format!("constant {other:?} is not numeric")),
+    }
 }
 
 fn constant_shape(artifact: &ProgramArtifact, value: &Value) -> Result<NativeNumericShape, String> {
@@ -569,6 +612,10 @@ fn constant_shape(artifact: &ProgramArtifact, value: &Value) -> Result<NativeNum
         .schema();
     match schema.body() {
         SchemaBody::FloatingPoint(FloatWidth::W64) => Ok(NativeNumericShape {
+            rows: 1,
+            columns: 1,
+        }),
+        SchemaBody::Index => Ok(NativeNumericShape {
             rows: 1,
             columns: 1,
         }),
@@ -623,11 +670,15 @@ fn evaluate_dimension(expression: &DimensionExpr, values: &[u64]) -> Result<u64,
 fn constant_elements(value: &Value) -> Result<Vec<u64>, String> {
     match value.data() {
         ValueData::F64(value) => Ok(vec![value.bits()]),
+        ValueData::Index(value) => Ok(vec![*value]),
         ValueData::Matrix(matrix) => match matrix.elements() {
             SequenceView::F64(values) => Ok(values.iter().map(|value| value.bits()).collect()),
-            other => Err(format!("matrix constant elements {other:?} are not f64")),
+            SequenceView::Index(values) => Ok(values.to_vec()),
+            other => Err(format!(
+                "matrix constant elements {other:?} are not numeric"
+            )),
         },
-        other => Err(format!("constant {other:?} is not f64")),
+        other => Err(format!("constant {other:?} is not numeric")),
     }
 }
 
@@ -678,6 +729,22 @@ fn lower_operation(module: &[String], name: &str) -> Option<NativeNumericOpcode>
         Some(NativeNumericOpcode::Negate)
     } else if name.starts_with("Atan2") {
         Some(NativeNumericOpcode::Atan2)
+    } else if name == "Access1DVDVD<f64>" {
+        Some(NativeNumericOpcode::Gather1D)
+    } else if name == "Access2DVDAMD<f64>" {
+        Some(NativeNumericOpcode::RowsAllColumns)
+    } else if name == "StatsSumColumnMD<f64>" {
+        Some(NativeNumericOpcode::SumColumns)
+    } else if name == "MulMDVD<f64>" {
+        Some(NativeNumericOpcode::MultiplyRows)
+    } else if name.starts_with("Pow") {
+        Some(NativeNumericOpcode::Power)
+    } else if name == "AddAssignVV<[f64]:0,0>" {
+        Some(NativeNumericOpcode::AddAssign)
+    } else if name == "AddAssign2DRAV<f64DMatrixDMatrixDVector>" {
+        Some(NativeNumericOpcode::AddIndexedRows)
+    } else if name == "SubAssign2DRAV<f64DMatrixDMatrixDVector>" {
+        Some(NativeNumericOpcode::SubtractIndexedRows)
     } else if binary_operation_is_lowerable(name, "Add") {
         Some(NativeNumericOpcode::Add)
     } else if binary_operation_is_lowerable(name, "Sub") {
@@ -693,6 +760,16 @@ fn lower_operation(module: &[String], name: &str) -> Option<NativeNumericOpcode>
 
 fn binary_operation_is_lowerable(name: &str, prefix: &str) -> bool {
     name.starts_with(prefix) && !name.starts_with(&format!("{prefix}Assign"))
+}
+
+fn opcode_accepts_index(opcode: NativeNumericOpcode) -> bool {
+    matches!(
+        opcode,
+        NativeNumericOpcode::Gather1D
+            | NativeNumericOpcode::RowsAllColumns
+            | NativeNumericOpcode::AddIndexedRows
+            | NativeNumericOpcode::SubtractIndexedRows
+    )
 }
 
 struct DisjointSet {
@@ -750,7 +827,7 @@ mod tests {
                 &["runtime".to_owned()],
                 "AddAssign2DRAV<f64DMatrixDMatrixDVector>",
             ),
-            None
+            Some(NativeNumericOpcode::AddIndexedRows)
         );
         assert_eq!(
             lower_operation(&["runtime".to_owned()], "NChooseKMatrix<f64>"),
