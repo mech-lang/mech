@@ -7,6 +7,7 @@ publish = false
 [dependencies]
 mech-core = { path = "../../../src/core", default-features = false, features = ["program", "std"] }
 mech-engine = { path = "../../../src/engine", default-features = false, features = ["resident-artifact"] }
+mech-runtime = { path = "../../../src/runtime", default-features = false, features = ["source_default", "runtime_bench_gate_b"] }
 mech-stdlib = { path = "../../../src/stdlib", default-features = false, features = ["full_compiler"] }
 sha2 = "0.10"
 

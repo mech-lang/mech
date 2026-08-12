@@ -2094,6 +2094,7 @@
           ],
           "name": "d2-contract-generator",
           "reachable_rust_files": [
+            "tests/fixtures/d2-contract-generator/src/gate_d.rs",
             "tests/fixtures/d2-contract-generator/src/main.rs"
           ],
           "root": "tests/fixtures/d2-contract-generator/src/main.rs"
@@ -3207,6 +3208,7 @@
     "tests/fixtures/bytecode-v1-generator/src/main.rs",
     "tests/fixtures/bytecode-v1-source-generator/src/main.rs",
     "tests/fixtures/d1-contract-generator/src/main.rs",
+    "tests/fixtures/d2-contract-generator/src/gate_d.rs",
     "tests/fixtures/d2-contract-generator/src/main.rs",
     "tests/fixtures/dynamic-status-module/src/lib.rs",
     "tests/fixtures/full-bytecode-runtime/src/main.rs",
@@ -61617,7 +61619,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 931
+      "rust_file_count": 932
     },
     {
       "directory": "hosts/browser",

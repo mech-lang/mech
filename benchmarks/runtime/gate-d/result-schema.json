@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Mech D2 Gate D resident n-body evidence",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "gate",
+    "phase",
+    "semantic_commit",
+    "thresholds",
+    "nbody",
+    "ekf",
+    "cold_path",
+    "decision"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "gate": { "const": "D" },
+    "phase": { "const": "D2-resident-nbody" },
+    "semantic_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "thresholds": { "type": "object" },
+    "nbody": { "$ref": "#/$defs/workload" },
+    "ekf": { "$ref": "#/$defs/workload" },
+    "cold_path": { "type": "object" },
+    "decision": { "enum": ["Pass", "Fail"] }
+  },
+  "$defs": {
+    "workload": {
+      "type": "object",
+      "required": ["hard_gates", "decision"],
+      "properties": {
+        "hard_gates": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        },
+        "decision": { "enum": ["Pass", "Fail"] }
+      }
+    }
+  }
+}
