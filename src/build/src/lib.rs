@@ -5,6 +5,7 @@ pub mod cargo;
 pub mod dependency;
 pub mod error;
 pub mod host;
+pub mod numeric;
 pub mod plan;
 pub mod project;
 
@@ -19,6 +20,7 @@ pub use analysis::requirements::normalize_native_runtime_config;
 pub use cargo::*;
 pub use dependency::*;
 pub use host::*;
+pub use numeric::*;
 pub use plan::*;
 pub use project::*;
 
@@ -43,6 +45,18 @@ pub struct NativeApplicationBuilder {
 impl NativeApplicationBuilder {
     pub fn new(environment: NativeBuildEnvironment) -> Self {
         Self { environment }
+    }
+
+    /// Analyze the bytecode's resolved turn graph for native numeric regions.
+    ///
+    /// This is intentionally separate from [`Self::plan`]: native region
+    /// compilation remains optional and does not change build-plan identity or
+    /// the bytecode contract while the generated executor integration evolves.
+    pub fn analyze_numeric_regions(
+        &self,
+        request: &NativeBuildRequest,
+    ) -> Result<numeric::NativeNumericAnalysis, numeric::NativeNumericAnalysisError> {
+        numeric::analyze_bytecode(&request.bytecode, &self.environment.function_catalog)
     }
 
     pub fn plan(&self, request: &NativeBuildRequest) -> MResult<NativeBuildPlan> {

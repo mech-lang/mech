@@ -946,6 +946,24 @@ fn main() -> MResult<()> {
         validation.plan.nodes.len(),
         validation.plan.execution_node_count(),
     );
+    let numeric_regions =
+        mech_build::analyze_activated_artifact(&artifact, &validation.plan);
+    assert_eq!(
+        numeric_regions.regions.len(),
+        1,
+        "natural EKF should form one native numeric region: {numeric_regions:?}"
+    );
+    assert!(
+        numeric_regions.rejections.is_empty(),
+        "natural EKF turn graph should be fully lowerable: {:?}",
+        numeric_regions.rejections,
+    );
+    println!(
+        "native partition: {} turn nodes -> one region, {} live inputs, {} live outputs",
+        numeric_regions.regions[0].nodes.len(),
+        numeric_regions.regions[0].live_inputs.len(),
+        numeric_regions.regions[0].live_outputs.len(),
+    );
     for (ordinal, ((request, _), input)) in services
         .bindings
         .iter()
