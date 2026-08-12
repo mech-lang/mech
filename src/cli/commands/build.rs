@@ -87,7 +87,7 @@ pub(crate) fn command() -> Command {
             Arg::new("build_target")
                 .long("target")
                 .value_name("TARGET")
-                .help("Cargo target triple, or an MLIR accelerator target such as nvidia:sm_86."),
+                .help("Cargo target triple, or an MLIR accelerator target such as nvidia:sm_86 or apple:metal-f32."),
         )
         .arg(
             Arg::new("build_profile")
@@ -304,10 +304,15 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
 
     if options.emit == BuildEmit::Mlir {
         let catalog = mech_stdlib::source_catalog();
-        let program = if options.target.as_deref().is_some_and(is_nvidia_mlir_target) {
-            mech_build::aot::lower_bytecode_mlir_gpu(&bytecode, &catalog)
-        } else {
-            mech_build::aot::lower_bytecode_mlir(&bytecode, &catalog)
+        let program = match options.target.as_deref() {
+            Some(target) if is_nvidia_mlir_target(target) => {
+                mech_build::aot::lower_bytecode_mlir_gpu(&bytecode, &catalog)
+            }
+            Some("apple:metal-f32") => {
+                mech_build::aot::lower_bytecode_mlir_spirv_f32(&bytecode, &catalog)
+            }
+            Some(target) => unreachable!("validated MLIR target `{target}`"),
+            None => mech_build::aot::lower_bytecode_mlir(&bytecode, &catalog),
         }
         .map_err(|reason| {
             MechError::new(
@@ -472,11 +477,11 @@ fn is_nvidia_mlir_target(target: &str) -> bool {
 }
 
 fn validate_mlir_target(target: &str) -> MResult<()> {
-    if is_nvidia_mlir_target(target) {
+    if is_nvidia_mlir_target(target) || target == "apple:metal-f32" {
         Ok(())
     } else {
         build_error(format!(
-            "unsupported MLIR target `{target}`; omit `--target` for CPU MLIR or use `nvidia:sm_<compute-capability>`"
+            "unsupported MLIR target `{target}`; omit `--target` for CPU MLIR, use `nvidia:sm_<compute-capability>`, or use `apple:metal-f32`"
         ))
     }
 }
@@ -762,6 +767,7 @@ mod tests {
         assert!(!is_nvidia_mlir_target("nvidia:compute_86"));
         assert!(!is_nvidia_mlir_target("nvidia:sm_"));
         assert!(validate_mlir_target("nvidia:sm_86").is_ok());
+        assert!(validate_mlir_target("apple:metal-f32").is_ok());
         assert!(validate_mlir_target("x86_64-unknown-linux-gnu").is_err());
     }
 }

@@ -307,6 +307,60 @@ position"#;
 }
 
 #[test]
+fn materialized_particle_lanes_lower_to_relaxed_f32_gpu_mlir() {
+    let source = r#"~position := [1.0 1.0 1.0 1.0]
+~velocity := [0.5 0.5 0.5 0.5]
+next-velocity := velocity + position * -0.03125
+velocity = next-velocity
+position = position + next-velocity * 0.25
+position"#;
+    let catalog = mech_stdlib::source_catalog();
+    let mut program = mech_engine::MechProgram::with_function_catalog(
+        mech_engine::MechProgramConfig::default(),
+        catalog.clone(),
+    );
+    program.run_string(source).unwrap();
+    let (_, bytecode) = program.compile_program_product().unwrap().into_parts();
+
+    let mlir = mech_build::aot::lower_bytecode_mlir_gpu_f32(&bytecode, &catalog).unwrap();
+
+    assert_eq!(mlir.state_len, 8);
+    assert!(mlir.source.contains("memref<8xf32>"));
+    assert!(mlir.source.contains("0x3F000000 : f32"));
+    assert!(mlir.source.contains("spirv.entry_point_abi"));
+    assert!(!mlir.source.contains("memref<8xf64>"));
+}
+
+#[test]
+fn materialized_particle_lanes_lower_to_f32_spirv_mlir() {
+    let source = r#"~position := [1.0 1.0 1.0 1.0]
+~velocity := [0.5 0.5 0.5 0.5]
+next-velocity := velocity + position * -0.03125
+velocity = next-velocity
+position = position + next-velocity * 0.25
+position"#;
+    let catalog = mech_stdlib::source_catalog();
+    let mut program = mech_engine::MechProgram::with_function_catalog(
+        mech_engine::MechProgramConfig::default(),
+        catalog.clone(),
+    );
+    program.run_string(source).unwrap();
+    let (_, bytecode) = program.compile_program_product().unwrap().into_parts();
+
+    let mlir = mech_build::aot::lower_bytecode_mlir_spirv_f32(&bytecode, &catalog).unwrap();
+
+    assert_eq!(mlir.state_len, 8);
+    assert!(mlir.source.contains("spirv.module @mech_kernels"));
+    assert!(mlir.source.contains("@mech_state bind(0, 0)"));
+    assert!(mlir.source.contains("spirv.func @mech_initialize"));
+    assert!(mlir.source.contains("spirv.func @mech_turn"));
+    assert!(mlir.source.contains("spirv.FMul"));
+    assert!(mlir.source.contains("!spirv.array<8 x f32"));
+    assert!(!mlir.source.contains(": f64"));
+    assert!(!mlir.source.contains("x f64"));
+}
+
+#[test]
 fn standalone_n_body_example_plans_as_aot_from_bytecode() {
     let source = include_str!("../../../examples/aot-n-body/n-body.mec");
     let (builder, mut request) = compile(source);

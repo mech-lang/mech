@@ -10,6 +10,7 @@ mod codegen;
 mod kernel_ir;
 mod mlir_codegen;
 mod mlir_gpu_codegen;
+mod mlir_spirv_codegen;
 
 use mech_core::{CellSlotId, FunctionCatalog, ParsedProgram, ReactiveInstanceId};
 use mech_engine::__resident::{ActivationFacts, ResidentActivationError, activate};
@@ -74,6 +75,39 @@ pub fn lower_bytecode_mlir_gpu(
 ) -> Result<NativeMlirProgram, String> {
     let kernel = lower_kernel(bytecode, catalog)?;
     let source = mlir_gpu_codegen::emit_mlir(&kernel)?;
+    Ok(NativeMlirProgram {
+        source,
+        input_len: kernel.input_len,
+        state_len: kernel.state_len,
+        instruction_count: kernel.instructions.len(),
+    })
+}
+
+/// Lower a lane-wise numeric kernel for accelerators without native f64.
+/// This is an explicit relaxed-precision profile: Mech f64 values and
+/// constants become f32 in the emitted GPU module.
+pub fn lower_bytecode_mlir_gpu_f32(
+    bytecode: &[u8],
+    catalog: &FunctionCatalog,
+) -> Result<NativeMlirProgram, String> {
+    let kernel = lower_kernel(bytecode, catalog)?;
+    let source = mlir_gpu_codegen::emit_mlir_f32(&kernel)?;
+    Ok(NativeMlirProgram {
+        source,
+        input_len: kernel.input_len,
+        state_len: kernel.state_len,
+        instruction_count: kernel.instructions.len(),
+    })
+}
+
+/// Lower a lane-wise numeric kernel directly into f32 SPIR-V dialect MLIR.
+/// This is the portable GPU interchange used by the Apple Metal prototype.
+pub fn lower_bytecode_mlir_spirv_f32(
+    bytecode: &[u8],
+    catalog: &FunctionCatalog,
+) -> Result<NativeMlirProgram, String> {
+    let kernel = lower_kernel(bytecode, catalog)?;
+    let source = mlir_spirv_codegen::emit_spirv_mlir_f32(&kernel)?;
     Ok(NativeMlirProgram {
         source,
         input_len: kernel.input_len,

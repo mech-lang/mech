@@ -1,4 +1,4 @@
-# Mech to MLIR to CUDA: step 1
+# Mech to MLIR to GPU: step 1
 
 This example proves that the particle equations can be authored in Mech and
 compiled into a real NVIDIA GPU kernel. There is no handwritten particle
@@ -79,3 +79,29 @@ mech build --aot --emit mlir --target nvidia:sm_86 \
 That avoids inventing a global `particles` host or hiding placement in a C or
 Rust program. A later managed implementation should express accelerator policy
 in project configuration while preserving the same backend-neutral numeric IR.
+
+## Execute on Apple Metal
+
+The same `particles.mec` can be lowered through f32 SPIR-V-dialect MLIR and
+executed on Apple Metal. Install LLVM 22 and SPIRV-Cross, then run:
+
+```bash
+brew install llvm spirv-cross
+MECH_OFFLINE=1 TURNS=10000 ./examples/mlir-cuda-particles/build-metal.sh
+```
+
+The Apple path is:
+
+```text
+particles.mec -> Mech bytecode -> typed KernelIR -> SPIR-V MLIR
+              -> SPIR-V binary -> generated MSL -> Metal
+```
+
+Apple GPUs do not expose f64 compute, so `apple:metal-f32` is an explicit
+relaxed-precision target. The generated module contains both `mech_initialize`
+and `mech_turn`; `metal_runner.m` owns the device, resident buffer, dispatch
+loop, and post-timing correctness oracle, but it does not supply the executable
+GPU equations or initial state. The small duplicated CPU recurrence is used only
+to check the result after measurement.
+Metal source is compiled through the runtime, so Xcode's optional offline Metal
+Toolchain component is not required.

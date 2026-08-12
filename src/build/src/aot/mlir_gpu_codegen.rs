@@ -7,22 +7,49 @@ use std::fmt::Write as _;
 
 const THREADS_PER_BLOCK: usize = 256;
 
+#[derive(Clone, Copy)]
+enum ScalarType {
+    F32,
+    F64,
+}
+
+impl ScalarType {
+    fn mlir(self) -> &'static str {
+        match self {
+            Self::F32 => "f32",
+            Self::F64 => "f64",
+        }
+    }
+
+    fn constant(self, f64_bits: u64) -> (u64, String) {
+        match self {
+            Self::F32 => {
+                let bits = (f64::from_bits(f64_bits) as f32).to_bits();
+                (bits as u64, format!("arith.constant 0x{bits:08X} : f32"))
+            }
+            Self::F64 => (f64_bits, format!("arith.constant 0x{f64_bits:016X} : f64")),
+        }
+    }
+}
+
 struct Emitter {
     body: String,
     next_value: usize,
     constants: BTreeMap<(u8, u64), String>,
     indent: &'static str,
     state_type: String,
+    scalar: ScalarType,
 }
 
 impl Emitter {
-    fn new(indent: &'static str, state_len: usize) -> Self {
+    fn new(indent: &'static str, state_len: usize, scalar: ScalarType) -> Self {
         Self {
             body: String::new(),
             next_value: 0,
             constants: BTreeMap::new(),
             indent,
-            state_type: format!("memref<{state_len}xf64>"),
+            state_type: format!("memref<{state_len}x{}>", scalar.mlir()),
+            scalar,
         }
     }
 
@@ -39,19 +66,22 @@ impl Emitter {
     }
 
     fn constant(&mut self, element: ElementType, bits: u64) -> String {
-        let kind = match element {
-            ElementType::F64 => 0,
-            ElementType::Index => 1,
+        let (kind, cache_bits, operation) = match element {
+            ElementType::F64 => {
+                let (cache_bits, operation) = self.scalar.constant(bits);
+                let kind = match self.scalar {
+                    ScalarType::F32 => 0,
+                    ScalarType::F64 => 1,
+                };
+                (kind, cache_bits, operation)
+            }
+            ElementType::Index => (2, bits, format!("arith.constant {bits} : index")),
         };
-        if let Some(value) = self.constants.get(&(kind, bits)) {
+        if let Some(value) = self.constants.get(&(kind, cache_bits)) {
             return value.clone();
         }
-        let operation = match element {
-            ElementType::F64 => format!("arith.constant 0x{bits:016X} : f64"),
-            ElementType::Index => format!("arith.constant {bits} : index"),
-        };
         let value = self.operation(operation);
-        self.constants.insert((kind, bits), value.clone());
+        self.constants.insert((kind, cache_bits), value.clone());
         value
     }
 
@@ -82,15 +112,45 @@ impl Emitter {
     }
 
     fn unary(&mut self, operation: &str, value: &str) -> String {
-        self.operation(format!("{operation} {value} : f64"))
+        self.operation(format!("{operation} {value} : {}", self.scalar.mlir()))
     }
 
     fn binary(&mut self, operation: &str, left: &str, right: &str) -> String {
-        self.operation(format!("{operation} {left}, {right} : f64"))
+        self.operation(format!(
+            "{operation} {left}, {right} : {}",
+            self.scalar.mlir()
+        ))
     }
 }
 
 pub(super) fn emit_mlir(kernel: &KernelIr) -> Result<String, String> {
+    emit_mlir_with_scalar(kernel, ScalarType::F64)
+}
+
+pub(super) fn emit_mlir_f32(kernel: &KernelIr) -> Result<String, String> {
+    emit_mlir_with_scalar(kernel, ScalarType::F32)
+}
+
+fn emit_mlir_with_scalar(kernel: &KernelIr, scalar: ScalarType) -> Result<String, String> {
+    let batch_len = validate_kernel(kernel)?;
+
+    let mut mlir = String::new();
+    writeln!(
+        mlir,
+        "// Generated from backend-neutral Mech numeric kernel IR. Do not edit."
+    )
+    .unwrap();
+    writeln!(mlir, "module attributes {{gpu.container_module}} {{").unwrap();
+    emit_length_function(&mut mlir, "mech_state_len", kernel.state_len);
+    emit_length_function(&mut mlir, "mech_batch_len", batch_len);
+    emit_initialize(&mut mlir, kernel, scalar)?;
+    emit_gpu_kernel(&mut mlir, kernel, batch_len, scalar)?;
+    emit_launch(&mut mlir, kernel.state_len, batch_len, scalar);
+    writeln!(mlir, "}}").unwrap();
+    Ok(mlir)
+}
+
+pub(super) fn validate_kernel(kernel: &KernelIr) -> Result<usize, String> {
     if kernel.input_len != 0 || !kernel.inputs.is_empty() {
         return Err(
             "GPU MLIR step 1 accepts resident state only; host inputs are not implemented yet"
@@ -161,21 +221,7 @@ pub(super) fn emit_mlir(kernel: &KernelIr) -> Result<String, String> {
             &format!("activation {}", activation.value.get()),
         )?;
     }
-
-    let mut mlir = String::new();
-    writeln!(
-        mlir,
-        "// Generated from backend-neutral Mech numeric kernel IR. Do not edit."
-    )
-    .unwrap();
-    writeln!(mlir, "module attributes {{gpu.container_module}} {{").unwrap();
-    emit_length_function(&mut mlir, "mech_state_len", kernel.state_len);
-    emit_length_function(&mut mlir, "mech_batch_len", batch.len);
-    emit_initialize(&mut mlir, kernel)?;
-    emit_gpu_kernel(&mut mlir, kernel, batch.len)?;
-    emit_launch(&mut mlir, kernel.state_len, batch.len);
-    writeln!(mlir, "}}").unwrap();
-    Ok(mlir)
+    Ok(batch.len)
 }
 
 fn emit_length_function(mlir: &mut String, name: &str, len: usize) {
@@ -185,14 +231,14 @@ fn emit_length_function(mlir: &mut String, name: &str, len: usize) {
     writeln!(mlir, "  }}\n").unwrap();
 }
 
-fn emit_initialize(mlir: &mut String, kernel: &KernelIr) -> Result<(), String> {
-    let state_type = format!("memref<{}xf64>", kernel.state_len);
+fn emit_initialize(mlir: &mut String, kernel: &KernelIr, scalar: ScalarType) -> Result<(), String> {
+    let state_type = format!("memref<{}x{}>", kernel.state_len, scalar.mlir());
     writeln!(
         mlir,
         "  func.func @mech_initialize(%state: {state_type}) attributes {{llvm.emit_c_interface}} {{"
     )
     .unwrap();
-    let mut emitter = Emitter::new("    ", kernel.state_len);
+    let mut emitter = Emitter::new("    ", kernel.state_len, scalar);
     for state in &kernel.states {
         let uniform = state
             .initial_elements
@@ -229,12 +275,17 @@ fn emit_initialize(mlir: &mut String, kernel: &KernelIr) -> Result<(), String> {
     Ok(())
 }
 
-fn emit_gpu_kernel(mlir: &mut String, kernel: &KernelIr, batch_len: usize) -> Result<(), String> {
-    let state_type = format!("memref<{}xf64>", kernel.state_len);
+fn emit_gpu_kernel(
+    mlir: &mut String,
+    kernel: &KernelIr,
+    batch_len: usize,
+    scalar: ScalarType,
+) -> Result<(), String> {
+    let state_type = format!("memref<{}x{}>", kernel.state_len, scalar.mlir());
     writeln!(mlir, "  gpu.module @mech_kernels {{").unwrap();
     writeln!(
         mlir,
-        "    gpu.func @mech_turn(%state: {state_type}) kernel {{"
+        "    gpu.func @mech_turn(%state: {state_type}) kernel attributes {{spirv.entry_point_abi = #spirv.entry_point_abi<>}} {{"
     )
     .unwrap();
     mlir.push_str(
@@ -253,7 +304,7 @@ fn emit_gpu_kernel(mlir: &mut String, kernel: &KernelIr, batch_len: usize) -> Re
     .unwrap();
     writeln!(mlir, "      scf.if %active {{").unwrap();
 
-    let mut emitter = Emitter::new("        ", kernel.state_len);
+    let mut emitter = Emitter::new("        ", kernel.state_len, scalar);
     let mut values = BTreeMap::<ValueId, String>::new();
     for activation in &kernel.activations {
         let bits = require_uniform(
@@ -356,14 +407,14 @@ fn source_value(
     }
 }
 
-fn only_operand(operands: &[String], node: u32) -> Result<String, String> {
+pub(super) fn only_operand(operands: &[String], node: u32) -> Result<String, String> {
     let [value] = operands else {
         return Err(format!("GPU MLIR node {node} has invalid unary arity"));
     };
     Ok(value.clone())
 }
 
-fn require_uniform(elements: &[u64], label: &str) -> Result<u64, String> {
+pub(super) fn require_uniform(elements: &[u64], label: &str) -> Result<u64, String> {
     let Some(first) = elements.first().copied() else {
         return Err(format!("GPU MLIR {label} is empty"));
     };
@@ -373,9 +424,9 @@ fn require_uniform(elements: &[u64], label: &str) -> Result<u64, String> {
     Ok(first)
 }
 
-fn emit_launch(mlir: &mut String, state_len: usize, batch_len: usize) {
+fn emit_launch(mlir: &mut String, state_len: usize, batch_len: usize, scalar: ScalarType) {
     let blocks = batch_len.div_ceil(THREADS_PER_BLOCK);
-    let state_type = format!("memref<{state_len}xf64>");
+    let state_type = format!("memref<{state_len}x{}>", scalar.mlir());
     writeln!(
         mlir,
         "  func.func @mech_launch(%state: {state_type}) attributes {{llvm.emit_c_interface}} {{"
