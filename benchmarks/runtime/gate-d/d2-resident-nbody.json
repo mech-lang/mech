@@ -1,31 +1,31 @@
 {
   "cold_path": {
     "artifact-admission-and-activation": {
-      "max_ns": 93333,
-      "median_ns": 88854.5,
-      "min_ns": 87500,
-      "p95_ns": 93333,
+      "max_ns": 102333,
+      "median_ns": 99666.5,
+      "min_ns": 97834,
+      "p95_ns": 102333,
       "samples": 10
     },
     "bytecode-decoding": {
-      "max_ns": 550542,
-      "median_ns": 514708.5,
-      "min_ns": 511625,
-      "p95_ns": 550542,
+      "max_ns": 542833,
+      "median_ns": 503854.0,
+      "min_ns": 500291,
+      "p95_ns": 542833,
       "samples": 10
     },
     "bytecode-encoding": {
-      "max_ns": 137333,
-      "median_ns": 131104.5,
-      "min_ns": 130000,
-      "p95_ns": 137333,
+      "max_ns": 146042,
+      "median_ns": 140916.5,
+      "min_ns": 139667,
+      "p95_ns": 146042,
       "samples": 10
     },
     "source-compilation-and-initial-encoding": {
-      "max_ns": 24181709,
-      "median_ns": 23810312.5,
-      "min_ns": 23757208,
-      "p95_ns": 24181709,
+      "max_ns": 24092375,
+      "median_ns": 23725291.5,
+      "min_ns": 23678375,
+      "p95_ns": 24092375,
       "samples": 10
     }
   },
@@ -35,7 +35,7 @@
     "evidence": {
       "d1_head": "7ff20887ea2d267b790917608c4bc8826b031762",
       "d1_report_commit": "2e52406c28ab3a6c3e6c7c7230bdfffd7ced0f27",
-      "d2_report_commit": "234ea24bddd578174112a58391206cf4071af3a3"
+      "d2_report_commit": "cf61038766c3ec6c83fe6aeac5d0c41d579036f1"
     },
     "hard_gates": {
       "candidate_bytes": true,
@@ -50,20 +50,20 @@
     "lanes": {
       "d1_complete": 168.46186218261718,
       "d1_kernel": 112.75489257812501,
-      "d2_bytecode": 321.10841796875,
-      "d2_kernel_bytecode": 218.90575009300596,
-      "d2_kernel_source": 218.13869900173611,
-      "d2_source": 317.74862196180555,
-      "gate_b_control": 297.32263930963006
+      "d2_bytecode": 322.11383463541665,
+      "d2_kernel_bytecode": 228.9082824707031,
+      "d2_kernel_source": 229.8020039876302,
+      "d2_source": 323.5393347167969,
+      "gate_b_control": 299.1208560440891
     },
     "ratios": {
-      "complete_d1": 1.8861754099414947,
-      "kernel_d1": 1.9346273497674908,
-      "source_bytecode": 1.0105737547694174
+      "complete_d1": 1.920549437866664,
+      "kernel_d1": 2.0380668078629602,
+      "source_bytecode": 1.004425454383211
     }
   },
   "gate": "D",
-  "generated_at_utc": "2026-08-12T03:19:38.199513+00:00",
+  "generated_at_utc": "2026-08-12T22:03:23.366119+00:00",
   "machine": {
     "architecture": "arm64",
     "platform": "macOS-26.2-arm64-arm-64bit",
@@ -116,10 +116,10 @@
         "allocation_counts": [
           102400
         ],
-        "max_ns": 3603.64794921875,
-        "median_ns": 3561.986328125,
-        "min_ns": 3530.09033203125,
-        "p95_ns": 3603.64794921875,
+        "max_ns": 3571.329833984375,
+        "median_ns": 3553.9703369140625,
+        "min_ns": 3549.713134765625,
+        "p95_ns": 3571.329833984375,
         "samples": 10,
         "turns_per_sample": 4096
       },
@@ -127,10 +127,10 @@
         "allocation_counts": [
           0
         ],
-        "max_ns": 756.82568359375,
-        "median_ns": 650.93994140625,
-        "min_ns": 649.69873046875,
-        "p95_ns": 756.82568359375,
+        "max_ns": 779.7646484375,
+        "median_ns": 655.7210693359375,
+        "min_ns": 653.401611328125,
+        "p95_ns": 779.7646484375,
         "samples": 10,
         "turns_per_sample": 4096
       },
@@ -138,10 +138,10 @@
         "allocation_counts": [
           0
         ],
-        "max_ns": 3068.10498046875,
-        "median_ns": 3020.6553955078125,
-        "min_ns": 3015.909912109375,
-        "p95_ns": 3068.10498046875,
+        "max_ns": 3036.94677734375,
+        "median_ns": 3027.313232421875,
+        "min_ns": 3021.1181640625,
+        "p95_ns": 3036.94677734375,
         "samples": 10,
         "turns_per_sample": 4096
       },
@@ -149,10 +149,10 @@
         "allocation_counts": [
           0
         ],
-        "max_ns": 3007.944580078125,
-        "median_ns": 2853.91748046875,
-        "min_ns": 2846.74072265625,
-        "p95_ns": 3007.944580078125,
+        "max_ns": 2881.63232421875,
+        "median_ns": 2869.939208984375,
+        "min_ns": 2861.724853515625,
+        "p95_ns": 2881.63232421875,
         "samples": 10,
         "turns_per_sample": 4096
       },
@@ -160,10 +160,10 @@
         "allocation_counts": [
           0
         ],
-        "max_ns": 3002.644775390625,
-        "median_ns": 2849.38037109375,
-        "min_ns": 2844.83837890625,
-        "p95_ns": 3002.644775390625,
+        "max_ns": 2881.26611328125,
+        "median_ns": 2863.5660400390625,
+        "min_ns": 2860.0361328125,
+        "p95_ns": 2881.26611328125,
         "samples": 10,
         "turns_per_sample": 4096
       },
@@ -171,10 +171,10 @@
         "allocation_counts": [
           0
         ],
-        "max_ns": 3120.12744140625,
-        "median_ns": 3013.397216796875,
-        "min_ns": 3009.002685546875,
-        "p95_ns": 3120.12744140625,
+        "max_ns": 3038.77783203125,
+        "median_ns": 3019.7447509765625,
+        "min_ns": 3015.07568359375,
+        "p95_ns": 3038.77783203125,
         "samples": 10,
         "turns_per_sample": 4096
       },
@@ -182,10 +182,10 @@
         "allocation_counts": [
           0
         ],
-        "max_ns": 3017.446044921875,
-        "median_ns": 3009.4503173828125,
-        "min_ns": 3003.89599609375,
-        "p95_ns": 3017.446044921875,
+        "max_ns": 3018.412109375,
+        "median_ns": 3014.31787109375,
+        "min_ns": 3007.731201171875,
+        "p95_ns": 3018.412109375,
         "samples": 10,
         "turns_per_sample": 4096
       },
@@ -193,10 +193,10 @@
         "allocation_counts": [
           0
         ],
-        "max_ns": 3025.482177734375,
-        "median_ns": 3009.0179443359375,
-        "min_ns": 3006.58154296875,
-        "p95_ns": 3025.482177734375,
+        "max_ns": 3031.870361328125,
+        "median_ns": 3015.7928466796875,
+        "min_ns": 3009.745361328125,
+        "p95_ns": 3031.870361328125,
         "samples": 10,
         "turns_per_sample": 4096
       },
@@ -204,23 +204,23 @@
         "allocation_counts": [
           0
         ],
-        "max_ns": 3011.95263671875,
-        "median_ns": 3009.1552734375,
-        "min_ns": 3005.99169921875,
-        "p95_ns": 3011.95263671875,
+        "max_ns": 3018.513916015625,
+        "median_ns": 3015.579345703125,
+        "min_ns": 3012.105224609375,
+        "p95_ns": 3018.513916015625,
         "samples": 10,
         "turns_per_sample": 4096
       }
     },
     "ratios": {
-      "complete_turn_tax_ns": 164.016845703125,
-      "high_epoch": 0.9986902160153125,
-      "history_100k": 0.9985467324266024,
-      "history_1k": 0.9985923052773361,
-      "kernel_raw": 4.377332208157525,
-      "legacy_gap_closure": 0.18845083123064874,
-      "resident_raw": 4.629301453352086,
-      "source_bytecode": 1.002408636561579
+      "complete_turn_tax_ns": 156.1787109375,
+      "high_epoch": 0.9982028680135772,
+      "history_100k": 0.9986913118085239,
+      "history_1k": 0.998620610145248,
+      "kernel_raw": 4.367048999872852,
+      "legacy_gap_closure": 0.18432699765121202,
+      "resident_raw": 4.605227576467417,
+      "source_bytecode": 1.0025063315178757
     },
     "structural": {
       "candidate_bytes": 480,
