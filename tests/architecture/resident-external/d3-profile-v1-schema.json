@@ -1,0 +1,30 @@
+{
+  "$id": "https://mech-lang.org/contracts/d3-profile-v1-schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "const": {
+    "bytecode_format": "v1",
+    "d2_semantic_head": "96fd051608f9d9df9eb4e9b345af7c23279c6c67",
+    "durability": [
+      "Volatile",
+      "Retained"
+    ],
+    "feature": "resident-external",
+    "forbidden_delivery": [
+      "ProviderDefined",
+      "Stream",
+      "Future"
+    ],
+    "gate": "D3",
+    "host_function_requirements": "rejected",
+    "normal_product_routing_changed": false,
+    "resident_candidate_provider_calls": 0,
+    "schema_version": 1,
+    "supported_values": [
+      "Bool",
+      "Index",
+      "F64",
+      "dense matrix"
+    ]
+  },
+  "title": "Mech D3 profile contract v1"
+}

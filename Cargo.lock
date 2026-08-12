@@ -2280,6 +2280,7 @@ dependencies = [
  "mech-core",
  "mech-engine",
  "mech-native-live-host-fixture",
+ "mech-stdlib",
  "mech-syntax",
  "mech-terminal",
  "notify",

@@ -79,6 +79,11 @@ jobs:
           python3 scripts/check-d1-contract.py
           python3 scripts/generate-d2-contract.py --check
           python3 scripts/check-d2-contract.py
+          python3 scripts/generate-d3-contract.py --check
+          python3 scripts/check-d3-contract.py
+          python3 scripts/check-gate-d-contract.py \
+            --report benchmarks/runtime/gate-d/d3-resident-external.json \
+            --expected-phase D3-resident-external
           python3 -B -m unittest \
             scripts/tests/test_generate_value_system_inventory.py \
             scripts/tests/test_check_value_system_contract.py \
@@ -90,6 +95,8 @@ jobs:
             scripts/tests/test_check_d1_contract.py \
             scripts/tests/test_generate_d2_contract.py \
             scripts/tests/test_check_d2_contract.py \
+            scripts/tests/test_generate_d3_contract.py \
+            scripts/tests/test_check_d3_contract.py \
             scripts/tests/test_run_gate_b_benchmarks.py
           python3 -B -m unittest scripts/tests/test_run_gate_a_benchmarks.py
           python3 scripts/check-bytecode-v1-format.py

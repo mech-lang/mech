@@ -458,6 +458,11 @@ fn rejected_artifact_record(
             "ResidentExternalSummaryRequired",
             "resident external turns require prepared-turn coordination",
         ),
+        ArtifactResidentExecutionError::ExternalPublicationUnauthorized => (
+            TurnFailurePhase::Publication,
+            "ResidentExternalPublicationUnauthorized",
+            "resident external publication requires the bound coordinator authority",
+        ),
         ArtifactResidentExecutionError::Integrity { .. } => (
             TurnFailurePhase::Integrity,
             "ResidentIntegrity",

@@ -32,8 +32,8 @@
         { "path": "src/runtime/src/runtime/execution_session.rs", "scope_contains": "fn stage_resource_effect", "max_occurrences": 1 },
         { "path": "src/runtime/src/runtime/transaction/capabilities.rs", "scope_contains": "fn grant_capability_with_context", "max_occurrences": 1 },
         { "path": "src/runtime/src/runtime/transaction/capabilities.rs", "scope_contains": "fn revoke_capability_with_context", "max_occurrences": 1 },
-        { "path": "src/runtime/src/runtime/transaction/effects.rs", "scope_contains": "fn stage_runtime_effect_with_context", "max_occurrences": 1 },
-        { "path": "src/runtime/src/runtime/transaction/effects.rs", "scope_contains": "fn stage_runtime_resource_effect_with_context", "max_occurrences": 1 }
+        { "path": "src/runtime/src/effect_journal.rs", "scope_contains": "fn stage_runtime_effect_with_context", "max_occurrences": 1 },
+        { "path": "src/runtime/src/effect_journal.rs", "scope_contains": "fn stage_runtime_resource_effect_with_context", "max_occurrences": 1 }
       ]
     },
     {

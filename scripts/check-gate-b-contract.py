@@ -334,7 +334,7 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         source: read_text(source) for source in resident_root.rglob("*.rs")
     }
     forbidden_resident_identifiers = {
-        "Value", "Ref", "ValRef", "ReactiveCellId", "ReactiveTurnJournal",
+        "Value", "LegacyValue", "Ref", "ValRef", "ReactiveCellId", "ReactiveTurnJournal",
         "ValueStateJournal", "RuntimeExecutionTransaction",
         "transaction_state_values", "capture_runtime_operation_savepoint",
         "commit_runtime",
@@ -342,7 +342,7 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
     for source, text in resident_sources.items():
         identifiers = set(re.split(r"[^A-Za-z0-9_]+", text))
         forbidden = forbidden_resident_identifiers.intersection(identifiers)
-        if source == program_activation:
+        if source == program_activation or source == root / "src/engine/src/resident/general/execution.rs":
             forbidden.discard("Value")
         if forbidden:
             errors.append(

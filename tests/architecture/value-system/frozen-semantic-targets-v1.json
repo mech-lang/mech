@@ -2494,7 +2494,7 @@
       "sites": [
         {
           "column": 59,
-          "line": 1473
+          "line": 1491
         }
       ],
       "target": "bool-snapshot",
@@ -2615,6 +2615,18 @@
         {
           "column": 54,
           "line": 34
+        }
+      ],
+      "target": "bool-snapshot",
+      "variant": "Bool"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/runtime/src/resident_external/value_adapter.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 157
         }
       ],
       "target": "bool-snapshot",
@@ -3750,15 +3762,15 @@
       "sites": [
         {
           "column": 25,
-          "line": 1445
+          "line": 1463
         },
         {
           "column": 28,
-          "line": 1451
+          "line": 1469
         },
         {
           "column": 28,
-          "line": 1456
+          "line": 1474
         }
       ],
       "target": "option-absence",
@@ -6011,6 +6023,34 @@
         {
           "column": 53,
           "line": 125
+        }
+      ],
+      "target": "floating-point-snapshot",
+      "variant": "F64"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/runtime/src/resident_external/test_provider.rs",
+      "sites": [
+        {
+          "column": 12,
+          "line": 123
+        },
+        {
+          "column": 12,
+          "line": 133
+        }
+      ],
+      "target": "floating-point-snapshot",
+      "variant": "F64"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/runtime/src/resident_external/value_adapter.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 182
         }
       ],
       "target": "floating-point-snapshot",
@@ -9839,6 +9879,18 @@
         {
           "column": 55,
           "line": 131
+        }
+      ],
+      "target": "index-snapshot",
+      "variant": "Index"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/runtime/src/resident_external/value_adapter.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 194
         }
       ],
       "target": "index-snapshot",
@@ -24770,19 +24822,19 @@
         },
         {
           "column": 26,
-          "line": 1409
+          "line": 1427
         },
         {
           "column": 30,
-          "line": 1450
+          "line": 1468
         },
         {
           "column": 30,
-          "line": 1455
+          "line": 1473
         },
         {
           "column": 9,
-          "line": 1654
+          "line": 1672
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -26722,35 +26774,35 @@
       "sites": [
         {
           "column": 24,
-          "line": 1412
+          "line": 1430
         },
         {
           "column": 30,
-          "line": 1413
-        },
-        {
-          "column": 21,
-          "line": 1416
-        },
-        {
-          "column": 21,
-          "line": 1419
-        },
-        {
-          "column": 21,
-          "line": 1422
-        },
-        {
-          "column": 21,
-          "line": 1425
-        },
-        {
-          "column": 21,
-          "line": 1428
-        },
-        {
-          "column": 21,
           "line": 1431
+        },
+        {
+          "column": 21,
+          "line": 1434
+        },
+        {
+          "column": 21,
+          "line": 1437
+        },
+        {
+          "column": 21,
+          "line": 1440
+        },
+        {
+          "column": 21,
+          "line": 1443
+        },
+        {
+          "column": 21,
+          "line": 1446
+        },
+        {
+          "column": 21,
+          "line": 1449
         }
       ],
       "target": "string-snapshot",
@@ -30526,7 +30578,7 @@
       "sites": [
         {
           "column": 28,
-          "line": 1432
+          "line": 1535
         }
       ],
       "target": "kind-wildcard",
@@ -30962,7 +31014,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 247
+          "line": 250
         }
       ],
       "target": "bool-schema",
@@ -31158,7 +31210,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 241
+          "line": 244
         }
       ],
       "target": "complex-schema",
@@ -31378,7 +31430,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 1432
+          "line": 1535
         }
       ],
       "target": "value-kind-hole",
@@ -32086,7 +32138,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 237
+          "line": 240
         }
       ],
       "target": "floating-point-schema",
@@ -32442,7 +32494,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 239
+          "line": 242
         }
       ],
       "target": "floating-point-schema",
@@ -32718,7 +32770,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 235
+          "line": 238
         }
       ],
       "target": "signed-integer-schema",
@@ -32994,7 +33046,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 229
+          "line": 232
         }
       ],
       "target": "signed-integer-schema",
@@ -33270,7 +33322,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 231
+          "line": 234
         }
       ],
       "target": "signed-integer-schema",
@@ -33546,7 +33598,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 233
+          "line": 236
         }
       ],
       "target": "signed-integer-schema",
@@ -33822,7 +33874,7 @@
       "sites": [
         {
           "column": 34,
-          "line": 227
+          "line": 230
         }
       ],
       "target": "signed-integer-schema",
@@ -34314,11 +34366,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1421
+          "line": 1524
         },
         {
           "column": 14,
-          "line": 1423
+          "line": 1526
         }
       ],
       "target": "reified-type-schema",
@@ -34466,15 +34518,15 @@
       "sites": [
         {
           "column": 36,
-          "line": 354
+          "line": 410
         },
         {
           "column": 9,
-          "line": 1378
+          "line": 1481
         },
         {
           "column": 17,
-          "line": 1382
+          "line": 1485
         }
       ],
       "target": "map-schema",
@@ -34798,15 +34850,15 @@
       "sites": [
         {
           "column": 13,
-          "line": 352
+          "line": 408
         },
         {
           "column": 9,
-          "line": 1359
+          "line": 1462
         },
         {
           "column": 17,
-          "line": 1362
+          "line": 1465
         }
       ],
       "target": "matrix-schema",
@@ -35206,7 +35258,7 @@
       "sites": [
         {
           "column": 45,
-          "line": 1432
+          "line": 1535
         }
       ],
       "target": "kind-never",
@@ -35394,11 +35446,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1417
+          "line": 1520
         },
         {
           "column": 14,
-          "line": 1419
+          "line": 1522
         }
       ],
       "target": "option-schema",
@@ -35754,7 +35806,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 243
+          "line": 246
         }
       ],
       "target": "rational-schema",
@@ -35914,11 +35966,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1366
+          "line": 1469
         },
         {
           "column": 14,
-          "line": 1376
+          "line": 1479
         }
       ],
       "target": "record-schema",
@@ -36166,11 +36218,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1355
+          "line": 1458
         },
         {
           "column": 9,
-          "line": 1433
+          "line": 1536
         }
       ],
       "target": "reference-binding-contract",
@@ -36422,15 +36474,15 @@
       "sites": [
         {
           "column": 13,
-          "line": 354
+          "line": 410
         },
         {
           "column": 9,
-          "line": 1410
+          "line": 1513
         },
         {
           "column": 17,
-          "line": 1413
+          "line": 1516
         }
       ],
       "target": "set-schema",
@@ -36730,7 +36782,7 @@
       "sites": [
         {
           "column": 38,
-          "line": 245
+          "line": 248
         }
       ],
       "target": "string-schema",
@@ -36902,15 +36954,15 @@
       "sites": [
         {
           "column": 13,
-          "line": 353
+          "line": 409
         },
         {
           "column": 9,
-          "line": 1386
+          "line": 1489
         },
         {
           "column": 14,
-          "line": 1396
+          "line": 1499
         }
       ],
       "target": "table-schema",
@@ -37166,11 +37218,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1398
+          "line": 1501
         },
         {
           "column": 14,
-          "line": 1408
+          "line": 1511
         }
       ],
       "target": "tuple-schema",
@@ -37530,7 +37582,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 225
+          "line": 228
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37818,7 +37870,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 219
+          "line": 222
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38106,7 +38158,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 221
+          "line": 224
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38394,7 +38446,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 223
+          "line": 226
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38682,7 +38734,7 @@
       "sites": [
         {
           "column": 34,
-          "line": 217
+          "line": 220
         }
       ],
       "target": "unsigned-integer-schema",

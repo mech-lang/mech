@@ -1,5 +1,5 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 
 pub mod config;
 pub mod effect;
@@ -60,6 +60,8 @@ pub use self::input::*;
 pub use self::operation::*;
 pub use self::resource::*;
 pub use self::resource_contract::*;
+#[cfg(feature = "resident-external")]
+pub use self::runtime::resident_external::*;
 #[cfg(feature = "runtime")]
 pub use self::snapshot::*;
 

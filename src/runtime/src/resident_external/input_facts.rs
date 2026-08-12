@@ -5,7 +5,7 @@ use mech_core::{
     SchemaTable, ShapeInstance, Value, ValueHash,
 };
 
-use crate::{InputSequence, InputSequenceRange};
+use crate::turn_record::{AccountedRecord, InputSequence, InputSequenceRange, sealed::Sealed};
 
 #[derive(Clone, Debug)]
 pub struct CapturedInputFact {
@@ -31,21 +31,23 @@ impl CapturedInputFact {
         value: Value,
         schemas: &SchemaTable,
     ) -> MResult<Self> {
-        let schema = schemas.entry(value.schema()).ok_or_else(|| invalid("value schema"))?;
+        let schema = schemas
+            .entry(value.schema())
+            .ok_or_else(|| invalid_error("value schema"))?;
         if schema.key() != schema_key || value.schema_key() != schema_key || value.shape() != &shape
         {
-            return Err(invalid("schema key or shape").unwrap_err());
+            return Err(invalid_error("schema key or shape"));
         }
         let payload_hash = value
             .value_hash(schemas)
-            .map_err(|_| invalid::<()>("payload hash").unwrap_err())?;
+            .map_err(|_| invalid_error("payload hash"))?;
         let retained_bytes = value
             .canonical_payload_bytes(schemas)
-            .map_err(|_| invalid::<()>("canonical payload").unwrap_err())?
+            .map_err(|_| invalid_error("canonical payload"))?
             .len()
             .checked_add(shape.parameter_values().len() * size_of::<u64>())
             .and_then(|bytes| bytes.checked_add(size_of::<Self>()))
-            .ok_or_else(|| invalid::<()>("retained byte accounting").unwrap_err())?;
+            .ok_or_else(|| invalid_error("retained byte accounting"))?;
         Ok(Self {
             sequence,
             requirement,
@@ -74,26 +76,22 @@ pub struct CapturedInputBatch {
 
 impl CapturedInputBatch {
     pub fn new(facts: Vec<CapturedInputFact>) -> MResult<Self> {
-        let first = facts.first().ok_or_else(|| invalid::<()>("empty batch").unwrap_err())?;
-        let mut requirements = BTreeSet::new();
-        let mut slots = BTreeSet::new();
+        let first = facts.first().ok_or_else(|| invalid_error("empty batch"))?;
+        let mut identities = BTreeSet::new();
         let mut expected = first.sequence.get();
         let mut retained_bytes = size_of::<Self>();
         let mut hash = blake3::Hasher::new();
         hash.update(b"mech-resident-input-batch-v1");
         for fact in &facts {
-            if fact.sequence.get() != expected
-                || !requirements.insert(fact.requirement)
-                || !slots.insert(fact.slot)
-            {
-                return Err(invalid("sequence or duplicate identity").unwrap_err());
+            if fact.sequence.get() != expected || !identities.insert((fact.node, fact.slot)) {
+                return Err(invalid_error("sequence or duplicate identity"));
             }
             expected = expected
                 .checked_add(1)
-                .ok_or_else(|| invalid::<()>("sequence overflow").unwrap_err())?;
+                .ok_or_else(|| invalid_error("sequence overflow"))?;
             retained_bytes = retained_bytes
                 .checked_add(fact.retained_bytes())
-                .ok_or_else(|| invalid::<()>("retained byte accounting").unwrap_err())?;
+                .ok_or_else(|| invalid_error("retained byte accounting"))?;
             hash.update(&fact.sequence.get().to_le_bytes());
             hash.update(&fact.requirement.get().to_le_bytes());
             hash.update(&fact.node.get().to_le_bytes());
@@ -115,6 +113,21 @@ impl CapturedInputBatch {
     }
 }
 
+impl Sealed for CapturedInputBatch {}
+
+impl AccountedRecord for CapturedInputBatch {
+    fn validate_for_recording(&self) -> MResult<()> {
+        if self.facts.is_empty() {
+            return Err(invalid_error("empty batch"));
+        }
+        Ok(())
+    }
+
+    fn retained_bytes(&self) -> usize {
+        self.retained_bytes
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InvalidCapturedInputFact {
     pub reason: &'static str,
@@ -130,6 +143,6 @@ impl MechErrorKind for InvalidCapturedInputFact {
     }
 }
 
-fn invalid<T>(reason: &'static str) -> MResult<T> {
-    Err(MechError::new(InvalidCapturedInputFact { reason }, None))
+fn invalid_error(reason: &'static str) -> MechError {
+    MechError::new(InvalidCapturedInputFact { reason }, None)
 }

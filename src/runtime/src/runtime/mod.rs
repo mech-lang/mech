@@ -19,6 +19,8 @@
 mod actor;
 mod builder;
 mod components;
+#[path = "../effect_journal.rs"]
+pub(crate) mod effect_journal;
 mod errors;
 mod events;
 mod execution;
@@ -36,6 +38,9 @@ mod live_state;
 mod module;
 mod object;
 mod operation_context;
+#[cfg(feature = "resident-external")]
+#[path = "../resident_external/mod.rs"]
+pub mod resident_external;
 mod resources;
 mod schedule;
 mod state;

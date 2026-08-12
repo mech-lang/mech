@@ -106,6 +106,14 @@ impl<P> RetainedEffectOutbox<P> {
         self.effects.iter()
     }
 
+    pub fn front(&self) -> Option<&OwnedEffectIntent<P>> {
+        self.effects.front()
+    }
+
+    pub fn front_mut(&mut self) -> Option<&mut OwnedEffectIntent<P>> {
+        self.effects.front_mut()
+    }
+
     pub(crate) fn reserve(&self, estimate: RecordEstimate) -> MResult<OutboxPermit> {
         Ok(OutboxPermit {
             inner: Some(reserve(&self.controller, estimate)?),
@@ -204,6 +212,10 @@ impl<P> RetainedEffectOutbox<P> {
             .expect("retained outbox byte accounting entry");
         self.controller.release_retained(1, bytes);
         Some(effect)
+    }
+
+    pub fn acknowledge_front(&mut self) -> Option<OwnedEffectIntent<P>> {
+        self.pop_front()
     }
 
     pub fn drain(&mut self) -> impl Iterator<Item = OwnedEffectIntent<P>> + '_ {

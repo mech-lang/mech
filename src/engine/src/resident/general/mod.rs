@@ -5,7 +5,6 @@ mod execution;
 pub use execution::*;
 
 use core::ops::Range;
-use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -595,54 +594,21 @@ pub struct ReactiveInstance {
     next_epoch: Option<InstanceEpoch>,
     candidate_active: bool,
     candidate_epoch: Option<InstanceEpoch>,
-    external_publication_authority: Option<u64>,
 }
 
-/// Opaque authority issued only with the coordinator-specific activation path.
+/// Trusted cross-crate authority for publishing an externally coordinated
+/// resident candidate.
 ///
-/// The private token binds publication to one exact activated instance. A
-/// consumer that merely obtains a prepared external turn cannot manufacture
-/// this capability or publish it through the ordinary API.
-#[derive(Debug)]
-pub struct ResidentExternalPublicationAuthority {
-    instance: ReactiveInstanceId,
-    program_revision: ProgramRevision,
-    token: u64,
-}
-
-/// Coordinator-only activation bundle. Holding a `ReactiveInstance` alone is
-/// insufficient to publish an external turn; the opaque publication authority
-/// remains sealed inside this bundle until a coordinator consumes it.
-#[derive(Debug)]
-pub struct ResidentExternalActivation {
-    instance: ReactiveInstance,
-    authority: ResidentExternalPublicationAuthority,
-}
-
-impl ResidentExternalActivation {
-    #[doc(hidden)]
-    pub fn into_coordinator_parts(
-        self,
-    ) -> (ReactiveInstance, ResidentExternalPublicationAuthority) {
-        (self.instance, self.authority)
-    }
-}
-
-impl Deref for ResidentExternalActivation {
-    type Target = ReactiveInstance;
-
-    fn deref(&self) -> &Self::Target {
-        &self.instance
-    }
-}
-
-impl DerefMut for ResidentExternalActivation {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.instance
-    }
-}
-
-static NEXT_EXTERNAL_PUBLICATION_AUTHORITY: AtomicU64 = AtomicU64::new(1);
+/// # Safety
+///
+/// This unsafe trait is a deliberately narrow cross-crate trust boundary. It
+/// exists because Rust cannot express "implementable only by mech-runtime".
+/// Implementors must remain inaccessible outside a coordinator that completes
+/// every authorization, provider, receipt, outbox, and cleanup obligation
+/// before invoking external publication. It must not become a general runtime
+/// privilege or capability mechanism.
+#[doc(hidden)]
+pub unsafe trait ResidentExternalPublicationAuthority {}
 
 impl ReactiveInstance {
     pub fn published_epoch(&self) -> InstanceEpoch {
@@ -888,7 +854,6 @@ pub enum ResidentActivationError {
     InvalidStateMigration,
     PlanGenerationExhausted,
     LayoutGenerationExhausted,
-    PublicationAuthorityExhausted,
 }
 
 pub fn activate(
@@ -913,19 +878,20 @@ pub fn activate_with_options(
     facts: &ActivationFacts,
     options: ResidentActivationOptions,
 ) -> Result<ReactiveInstance, ResidentActivationError> {
-    activate_internal(id, artifact, catalog, facts, options, false).map(|(instance, _)| instance)
+    activate_internal(id, artifact, catalog, facts, options)
 }
 
-/// Activates an external resident instance and returns the unforgeable
-/// publication capability that must remain owned by its runtime coordinator.
-pub fn activate_external_with_authority(
+/// Activates an external resident instance structurally. Safe engine consumers
+/// can prepare and abort its candidates, but only the runtime coordinator owns
+/// the audited authority required to publish them.
+pub fn activate_external(
     id: ReactiveInstanceId,
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
     facts: &ActivationFacts,
     integrity: ResidentIntegrityMode,
-) -> Result<ResidentExternalActivation, ResidentActivationError> {
-    let (instance, authority) = activate_internal(
+) -> Result<ReactiveInstance, ResidentActivationError> {
+    activate_internal(
         id,
         artifact,
         catalog,
@@ -934,12 +900,7 @@ pub fn activate_external_with_authority(
             integrity,
             external: ResidentExternalAdmission::StructuralOnly,
         },
-        true,
-    )?;
-    Ok(ResidentExternalActivation {
-        instance,
-        authority: authority.expect("coordinator activation issues publication authority"),
-    })
+    )
 }
 
 fn activate_internal(
@@ -948,14 +909,7 @@ fn activate_internal(
     catalog: &FunctionCatalog,
     facts: &ActivationFacts,
     options: ResidentActivationOptions,
-    issue_external_publication_authority: bool,
-) -> Result<
-    (
-        ReactiveInstance,
-        Option<ResidentExternalPublicationAuthority>,
-    ),
-    ResidentActivationError,
-> {
+) -> Result<ReactiveInstance, ResidentActivationError> {
     preflight_state_initializers(artifact)?;
     let classification = classify_nodes(artifact, options.external)?;
     let layout = build_layout(artifact, facts, &classification)?;
@@ -1002,37 +956,17 @@ fn activate_internal(
         state.initialize(slot.artifact_id, value)?;
     }
     let workspace = TurnWorkspace::new(input_sizes, scratch_sizes, &plan);
-    let external_publication_authority = if issue_external_publication_authority {
-        let token = NEXT_EXTERNAL_PUBLICATION_AUTHORITY
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |next| {
-                next.checked_add(1)
-            })
-            .map_err(|_| ResidentActivationError::PublicationAuthorityExhausted)?;
-        Some(ResidentExternalPublicationAuthority {
-            instance: id,
-            program_revision: plan.program_revision,
-            token,
-        })
-    } else {
-        None
-    };
-    Ok((
-        ReactiveInstance {
-            id,
-            plan,
-            activation,
-            state,
-            workspace,
-            published_epoch: AtomicU64::new(InstanceEpoch::ZERO.get()),
-            next_epoch: Some(InstanceEpoch::new(1)),
-            candidate_active: false,
-            candidate_epoch: None,
-            external_publication_authority: external_publication_authority
-                .as_ref()
-                .map(|authority| authority.token),
-        },
-        external_publication_authority,
-    ))
+    Ok(ReactiveInstance {
+        id,
+        plan,
+        activation,
+        state,
+        workspace,
+        published_epoch: AtomicU64::new(InstanceEpoch::ZERO.get()),
+        next_epoch: Some(InstanceEpoch::new(1)),
+        candidate_active: false,
+        candidate_epoch: None,
+    })
 }
 
 fn preflight_state_initializers(artifact: &ProgramArtifact) -> Result<(), ResidentActivationError> {

@@ -125,12 +125,12 @@ pub mod __resident {
         ActivationFacts, CapturedSignalInput, CapturedValueInput, DependencyTopology,
         PreparedResidentTurn, ReactiveInstance, ResidentActivationError, ResidentActivationOptions,
         ResidentArenaSizes, ResidentEffectIntent, ResidentEffectIntentIter,
-        ResidentEffectIntentView, ResidentExecutionError, ResidentExternalActivation,
-        ResidentExternalAdmission, ResidentExternalPublicationAuthority, ResidentIntegrityMode,
-        ResidentReadLocation, ResidentRegion, ResidentStorageClass, ResidentStructuralProbe,
-        ResidentTurnSummary, ResidentValueBorrow, ResidentWriteLocation, ResolvedSlot, StateArena,
+        ResidentEffectIntentView, ResidentExecutionError, ResidentExternalAdmission,
+        ResidentExternalPublicationAuthority, ResidentIntegrityMode, ResidentReadLocation,
+        ResidentRegion, ResidentStorageClass, ResidentStructuralProbe, ResidentTurnSummary,
+        ResidentValueBorrow, ResidentWriteLocation, ResolvedSlot, StateArena,
         StateMigrationMapping, StateMigrationPolicy, TurnWorkspace, TypedResidentArena, activate,
-        activate_external_with_authority, activate_with_options,
+        activate_external, activate_with_options,
     };
 }
 #[cfg(all(feature = "source", feature = "state_machines"))]

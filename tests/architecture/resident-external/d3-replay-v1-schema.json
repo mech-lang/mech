@@ -1,0 +1,15 @@
+{
+  "$id": "https://mech-lang.org/contracts/d3-replay-v1-schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "const": {
+    "effect_batch_hash_exact": true,
+    "effect_ids_exact": true,
+    "idempotency_keys_exact": true,
+    "provider_prepare_calls": 0,
+    "provider_reads": 0,
+    "schema_version": 1,
+    "state_hash_exact": true,
+    "uses_canonical_captured_values": true
+  },
+  "title": "Mech D3 replay contract v1"
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run and summarize the controlled D2 Gate D evidence lanes."""
+"""Run and summarize the controlled Gate D evidence lanes."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 D1_HEAD = "7ff20887ea2d267b790917608c4bc8826b031762"
+D2_HEAD = "96fd051608f9d9df9eb4e9b345af7c23279c6c67"
 TURNS = 4_096
 THRESHOLDS = {
     "nbody_source_bytecode_ratio_max": 1.03,
@@ -72,6 +73,241 @@ def load_raw(path: Path | None) -> str:
     return process.stdout
 
 
+def load_d3_raw(path: Path | None) -> str:
+    if path is not None:
+        return path.read_text(encoding="utf-8")
+    process = subprocess.run(
+        [
+            "cargo",
+            "+nightly-2026-03-03",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "mech-runtime",
+            "--no-default-features",
+            "--features",
+            "source_default,resident-external,runtime_bench_gate_d3",
+            "--test",
+            "resident_external_gate_d3",
+            "--",
+            "--nocapture",
+        ],
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        check=True,
+    )
+    return process.stdout
+
+
+def parse_json_lines(raw: str, prefix: str) -> list[dict]:
+    return [
+        json.loads(line.removeprefix(prefix))
+        for line in raw.splitlines()
+        if line.startswith(prefix)
+    ]
+
+
+def exact_field(rows: list[dict], field: str):
+    values = {json.dumps(row[field], sort_keys=True) for row in rows}
+    if len(values) != 1:
+        raise ValueError(f"D3 {field} is not exact across samples: {sorted(values)}")
+    return rows[0][field]
+
+
+def d3_report(raw: str, semantic_commit: str) -> dict:
+    samples = parse_json_lines(raw, "GATE_D3_SAMPLE ")
+    replays = parse_json_lines(raw, "GATE_D3_REPLAY ")
+    controls = parse_json_lines(raw, "GATE_D3_CONTROL ")
+    structural_rows = parse_json_lines(raw, "GATE_D3_STRUCTURAL ")
+    if len(samples) != 40 or len(replays) != 2 or len(controls) != 12:
+        raise ValueError(
+            "incomplete D3 output: "
+            f"samples={len(samples)} replays={len(replays)} controls={len(controls)}"
+        )
+    if len(structural_rows) != 1:
+        raise ValueError(f"expected one D3 structural record, found {len(structural_rows)}")
+    structural = structural_rows[0]
+
+    fixtures: dict[str, dict] = {}
+    source_bytecode_ratios = []
+    all_exact = True
+    all_reads_exact = True
+    all_receipts_exact = True
+    all_publications_exact = True
+    all_outbox_exact = True
+    for fixture in ("effect", "transactional"):
+        artifact_rows = {
+            artifact: [
+                row
+                for row in samples
+                if row["fixture"] == fixture and row["artifact"] == artifact
+            ]
+            for artifact in ("source", "bytecode")
+        }
+        if any(len(rows) != 10 for rows in artifact_rows.values()):
+            raise ValueError(f"D3 {fixture} does not have ten source/bytecode samples")
+        lanes = {}
+        for artifact, rows in artifact_rows.items():
+            lanes[artifact] = {
+                "timing": summarize([row["elapsed_ns"] / row["turns"] for row in rows]),
+                "state_hash": exact_field(rows, "state_hash"),
+                "receipt_hash": exact_field(rows, "receipt_hash"),
+                "effect_batch_hash": exact_field(rows, "effect_batch_hash"),
+                "effect_id_hash": exact_field(rows, "effect_id_hash"),
+                "idempotency_key_hash": exact_field(rows, "idempotency_key_hash"),
+                "provider_reads_per_turn": exact_field(rows, "provider_reads") / TURNS,
+                "receipt_appends_per_turn": exact_field(rows, "receipt_appends") / TURNS,
+                "ordinary_outbox_appends_per_turn": exact_field(
+                    rows, "ordinary_outbox_appends"
+                )
+                / TURNS,
+                "publication_stores_per_turn": exact_field(rows, "publication_stores")
+                / TURNS,
+                "candidate_allocations": exact_field(rows, "candidate_allocations"),
+            }
+        source = lanes["source"]
+        bytecode = lanes["bytecode"]
+        ratio = max(source["timing"]["median_ns"], bytecode["timing"]["median_ns"]) / min(
+            source["timing"]["median_ns"], bytecode["timing"]["median_ns"]
+        )
+        source_bytecode_ratios.append(ratio)
+        exact = all(
+            source[field] == bytecode[field]
+            for field in (
+                "state_hash",
+                "receipt_hash",
+                "effect_batch_hash",
+                "effect_id_hash",
+                "idempotency_key_hash",
+            )
+        )
+        all_exact &= exact
+        all_reads_exact &= source["provider_reads_per_turn"] == 1
+        all_receipts_exact &= source["receipt_appends_per_turn"] == 1
+        all_publications_exact &= source["publication_stores_per_turn"] == 1
+        all_outbox_exact &= source["ordinary_outbox_appends_per_turn"] == (
+            1 if fixture == "effect" else 0
+        )
+        replay = next(row for row in replays if row["fixture"] == fixture)
+        fixtures[fixture] = {
+            "lanes": lanes,
+            "source_bytecode_ratio": ratio,
+            "source_bytecode_exact": exact,
+            "replay": {
+                **replay,
+                "state_hash_exact": replay["state_hash"] == source["state_hash"],
+                "receipt_hash_exact": replay["receipt_hash"] == source["receipt_hash"],
+                "effect_batch_hash_exact": replay["effect_batch_hash"]
+                == source["effect_batch_hash"],
+                "effect_id_hash_exact": replay["effect_id_hash"] == source["effect_id_hash"],
+                "idempotency_key_hash_exact": replay["idempotency_key_hash"]
+                == source["idempotency_key_hash"],
+            },
+        }
+
+    control_timings = {
+        lane: summarize(
+            [row["elapsed_ns"] / row["turns"] for row in controls if row["lane"] == lane]
+        )
+        for lane in ("history-0", "history-1k", "history-100k", "high-epoch")
+    }
+    control_base = control_timings["history-0"]["median_ns"]
+    control_ratios = {
+        "history_1k": control_timings["history-1k"]["median_ns"] / control_base,
+        "history_100k": control_timings["history-100k"]["median_ns"] / control_base,
+        "high_epoch": control_timings["high-epoch"]["median_ns"] / control_base,
+    }
+
+    d2_frozen = json.loads(
+        command("git", "show", f"{D2_HEAD}:benchmarks/runtime/gate-b/b2-resident-turn.json")
+    )
+    d2_current = json.loads(
+        (ROOT / "benchmarks/runtime/gate-b/b2-resident-turn.json").read_text(encoding="utf-8")
+    )
+    d2_frozen_source = select_lane(d2_frozen, "mech-resident-artifact-source")
+    d2_current_source = select_lane(d2_current, "mech-resident-artifact-source")
+    d2_regression = (
+        d2_current_source["timing"]["median_ns_per_turn"]
+        / d2_frozen_source["timing"]["median_ns_per_turn"]
+    )
+    thresholds = {
+        "d2_pure_complete_turn_regression_max": 1.05,
+        "d3_source_bytecode_ratio_max": 1.03,
+        "history_ratio_max": 1.05,
+        "high_epoch_ratio_max": 1.05,
+    }
+    replay_exact = all(
+        fixture["replay"][field]
+        for fixture in fixtures.values()
+        for field in (
+            "state_hash_exact",
+            "receipt_hash_exact",
+            "effect_batch_hash_exact",
+            "effect_id_hash_exact",
+            "idempotency_key_hash_exact",
+        )
+    )
+    gates = {
+        "d2_pure_regression": d2_regression <= thresholds["d2_pure_complete_turn_regression_max"],
+        "source_bytecode_ratio": max(source_bytecode_ratios)
+        <= thresholds["d3_source_bytecode_ratio_max"],
+        "source_bytecode_exact": all_exact,
+        "candidate_allocations": structural["candidate_allocations"] == 0,
+        "accepted_publication_store": structural["publication_stores_per_accepted_turn"] == 1
+        and all_publications_exact,
+        "rejected_publication_store": structural["publication_stores_per_rejected_turn"] == 0
+        and structural["post_candidate_rejections"] == 1
+        and structural["rejected_receipt_appends"] == 1
+        and structural["rejected_outbox_batch_appends"] == 0
+        and structural["rejected_provider_preparation_attempts"] == 1,
+        "accepted_receipt_append": all_receipts_exact,
+        "ordinary_outbox_append": all_outbox_exact,
+        "no_premature_delivery": structural["effects_delivered_before_publication"] == 0,
+        "no_rejected_delivery": structural["effects_delivered_for_rejected_turns"] == 0
+        and structural["rejected_delivery_count"] == 0,
+        "live_reads_exact": all_reads_exact,
+        "replay_reads_zero": all(fixture["replay"]["provider_reads"] == 0 for fixture in fixtures.values()),
+        "replay_exact": replay_exact,
+        "history_independent": control_ratios["history_1k"] <= thresholds["history_ratio_max"]
+        and control_ratios["history_100k"] <= thresholds["history_ratio_max"],
+        "epoch_independent": control_ratios["high_epoch"] <= thresholds["high_epoch_ratio_max"],
+        "no_commit_runtime": structural["commit_runtime_calls"] == 0,
+        "no_legacy_journal": structural["legacy_journal_captures"] == 0,
+        "no_runtime_execution_transaction": structural[
+            "runtime_execution_transaction_constructions"
+        ]
+        == 0,
+    }
+    return {
+        "schema_version": 1,
+        "gate": "D",
+        "phase": "D3-resident-external",
+        "semantic_commit": semantic_commit,
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "machine": {
+            "platform": platform.platform(),
+            "architecture": platform.machine(),
+            "processor": platform.processor(),
+        },
+        "sample_protocol": {"samples": 10, "turns_per_sample": TURNS, "profile": "release"},
+        "thresholds": thresholds,
+        "d2_pure": {
+            "frozen_semantic_head": D2_HEAD,
+            "frozen_ns_per_turn": d2_frozen_source["timing"]["median_ns_per_turn"],
+            "current_ns_per_turn": d2_current_source["timing"]["median_ns_per_turn"],
+            "regression_ratio": d2_regression,
+            "nbody_report": "benchmarks/runtime/gate-d/d2-resident-nbody.json",
+        },
+        "fixtures": fixtures,
+        "controls": {"timings": control_timings, "ratios": control_ratios},
+        "structural": structural,
+        "hard_gates": gates,
+        "decision": "Pass" if all(gates.values()) else "Fail",
+    }
+
+
 def select_lane(report: dict, name: str) -> dict:
     matches = [
         lane
@@ -88,12 +324,26 @@ def select_lane(report: dict, name: str) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--phase",
+        choices=("D2-resident-nbody", "D3-resident-external", "D3-external-turn"),
+        default="D2-resident-nbody",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--raw-input", type=Path)
     parser.add_argument("--semantic-commit")
     args = parser.parse_args()
 
     semantic_commit = args.semantic_commit or command("git", "rev-parse", "HEAD")
+    if args.phase in {"D3-resident-external", "D3-external-turn"}:
+        report = d3_report(load_d3_raw(args.raw_input), semantic_commit)
+        rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+        output = args.output if args.output.is_absolute() else ROOT / args.output
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(rendered, encoding="utf-8")
+        display = output.relative_to(ROOT) if output.is_relative_to(ROOT) else output
+        print(f"wrote {display}: {report['decision']}")
+        return 0 if report["decision"] == "Pass" else 3
     raw = load_raw(args.raw_input)
     lane_samples: dict[str, list[float]] = {}
     lane_allocations: dict[str, set[int]] = {}

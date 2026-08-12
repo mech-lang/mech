@@ -2,10 +2,53 @@ use std::sync::{Arc, Mutex};
 
 use crate::{
     ActiveRuntimeEffectPhase, InMemorySourceResolver, MechRuntime, PreparedRuntimeEffect,
-    RuntimeEventKind, SourceRequest, TransactionId,
+    RuntimeEffectId, RuntimeEventKind, SourceRequest, TransactionId,
+    runtime::effect_journal::RuntimeEffectJournal,
 };
 
-use super::{SensitiveAfterCommit, after_commit};
+use super::{SensitiveAfterCommit, after_commit, transactional};
+
+#[test]
+fn exact_resident_effect_staging_accepts_sparse_ordinals_and_cleans_rejections() {
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let transaction = TransactionId(77);
+    let mut journal = RuntimeEffectJournal::new();
+    journal
+        .stage_exact(
+            RuntimeEffectId {
+                transaction,
+                sequence: 4,
+            },
+            PreparedRuntimeEffect::Transactional(Box::new(transactional("four", log.clone()))),
+        )
+        .expect("first materialized effect may have a sparse plan ordinal");
+    journal
+        .stage_exact(
+            RuntimeEffectId {
+                transaction,
+                sequence: 9,
+            },
+            PreparedRuntimeEffect::Transactional(Box::new(transactional("nine", log.clone()))),
+        )
+        .expect("later materialized effects need only be strictly ordered");
+    assert_eq!(journal.next_sequence(), 10);
+
+    let rejected = journal.stage_exact(
+        RuntimeEffectId {
+            transaction,
+            sequence: 8,
+        },
+        PreparedRuntimeEffect::Transactional(Box::new(transactional("rejected", log.clone()))),
+    );
+    assert!(rejected.is_err());
+    assert_eq!(log.lock().unwrap().as_slice(), ["rejected:abort"]);
+
+    assert!(journal.abort_all().is_empty());
+    assert_eq!(
+        log.lock().unwrap().as_slice(),
+        ["rejected:abort", "nine:abort", "four:abort"]
+    );
+}
 
 #[test]
 fn transaction_history_persists_effect_metadata_without_payload() {

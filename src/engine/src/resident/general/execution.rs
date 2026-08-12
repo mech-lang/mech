@@ -98,6 +98,7 @@ pub struct ResidentStructuralProbe {
     pub record_append_count: usize,
     pub commit_runtime_call_count: usize,
     pub legacy_journal_capture_count: usize,
+    pub runtime_execution_transaction_construction_count: usize,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -205,23 +206,23 @@ impl PreparedResidentTurn<'_> {
     }
 
     /// Publishes an externally coordinated resident turn after all
-    /// prepublication obligations have succeeded. The opaque authority is
-    /// issued only by coordinator-specific activation and is bound to this
-    /// exact activated instance.
+    /// prepublication obligations have succeeded. Safe code cannot implement
+    /// the authority trait; the only in-repository implementation is private
+    /// to the runtime coordinator.
     #[inline]
-    pub fn publish_external(
+    #[doc(hidden)]
+    pub fn publish_external<A>(
         mut self,
-        authority: &ResidentExternalPublicationAuthority,
-    ) -> Result<ResidentTurnSummary, ResidentExecutionError> {
+        _authority: &A,
+    ) -> Result<ResidentTurnSummary, ResidentExecutionError>
+    where
+        A: ResidentExternalPublicationAuthority,
+    {
         let instance = self
             .instance
             .as_deref()
             .expect("live prepared resident turn");
-        if !instance.plan.has_external_steps()
-            || instance.id != authority.instance
-            || instance.plan.program_revision != authority.program_revision
-            || instance.external_publication_authority != Some(authority.token)
-        {
+        if !instance.plan.has_external_steps() {
             return Err(ResidentExecutionError::ExternalPublicationUnauthorized);
         }
         Ok(self.publish_inner())
@@ -481,6 +482,7 @@ impl ReactiveInstance {
             record_append_count: 1,
             commit_runtime_call_count: 0,
             legacy_journal_capture_count: 0,
+            runtime_execution_transaction_construction_count: 0,
         }
     }
 
