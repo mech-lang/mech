@@ -1,4 +1,4 @@
-use mech_core::{ConstantId, ProgramRevision, SchemaId};
+use mech_core::{ConstantId, ProgramRevision, SchemaId, canonical_application_requirement_bytes};
 use sha2::{Digest, Sha256};
 
 use super::{
@@ -91,6 +91,11 @@ pub(super) fn program_revision(
 
     writer.bytes(&draft.contracts.canonical_bytes()?);
 
+    writer.u32(draft.requirements.len() as u32);
+    for (_, requirement) in draft.requirements.iter() {
+        writer.bytes(&canonical_application_requirement_bytes(requirement)?);
+    }
+
     writer.u32(draft.inputs.len() as u32);
     for input in &draft.inputs {
         writer.u32(input.input.get());
@@ -136,6 +141,13 @@ pub(super) fn program_revision(
         writer.u32(node.node.get());
         writer.operation(&node.operation);
         writer.u32(node.contract.get());
+        match node.requirement {
+            None => writer.u8(0),
+            Some(requirement) => {
+                writer.u8(1);
+                writer.u32(requirement.get());
+            }
+        }
         writer.u32(node.input_bindings.start);
         writer.u32(node.input_bindings.end);
         writer.u32(node.output_bindings.start);

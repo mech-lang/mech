@@ -1,9 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    AccessMode, AliasPolicy, BindingId, CellSlotId, ConstantId, DeliveryMode, ExternalInteraction,
-    NodeId, OperationContractError, OperationContractId, OutputConstruction, PortDirection,
-    ResolvedOperationContract, SchemaId, validate_contract_schemas, validate_signal_bindings,
+    AccessMode, AliasPolicy, ApplicationRequirement, BindingId, CellSlotId, ConstantId,
+    DeliveryMode, ExternalInteraction, NodeId, OperationContractError, OperationContractId,
+    OutputConstruction, PortDirection, ResolvedOperationContract, ResourceDelivery, ResourceIntent,
+    SchemaId, validate_contract_schemas, validate_signal_bindings,
 };
 
 use super::{
@@ -322,6 +323,7 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
         cursor = outputs.end;
 
         let contract = require_contract(draft, node.contract)?;
+        validate_node_requirement(draft, node, contract)?;
         validate_signal_bindings(contract)?;
         let (expected_inputs, expected_outputs) = contract_port_counts(contract);
         if inputs.len() != expected_inputs {
@@ -425,6 +427,62 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
         }
     }
     Ok(())
+}
+
+fn validate_node_requirement(
+    draft: &ProgramArtifactDraft,
+    node: &super::NodeDeclaration,
+    contract: &ResolvedOperationContract,
+) -> Result<(), ArtifactBuildError> {
+    let requirement = match node.requirement {
+        Some(id) => Some(draft.requirements.get(id).ok_or(
+            ArtifactBuildError::UnknownApplicationRequirement {
+                requirement: id.get(),
+            },
+        )?),
+        None => None,
+    };
+    let ResolvedOperationContract::Declared(contract) = contract else {
+        // Host calls remain valid generic artifact data until their explicit
+        // resident contract is declared. D3 resident admission rejects them.
+        return Ok(());
+    };
+    match (&contract.interaction, requirement) {
+        (ExternalInteraction::Pure, None) => Ok(()),
+        (ExternalInteraction::Pure, Some(_)) => {
+            Err(ArtifactBuildError::UnexpectedApplicationRequirement { node: node.node })
+        }
+        (ExternalInteraction::Observation(_), Some(ApplicationRequirement::Resource(request)))
+            if request.intent == ResourceIntent::Read
+                && request.delivery == ResourceDelivery::Live =>
+        {
+            Ok(())
+        }
+        (ExternalInteraction::Effect(_), Some(ApplicationRequirement::Resource(request)))
+            if request.intent == ResourceIntent::Send
+                && request.delivery == ResourceDelivery::Snapshot
+                && contract.outputs.is_empty() =>
+        {
+            Ok(())
+        }
+        (
+            ExternalInteraction::TransactionalExternal(_),
+            Some(ApplicationRequirement::Resource(request)),
+        ) if matches!(
+            request.intent,
+            ResourceIntent::Assign | ResourceIntent::Send
+        ) && request.delivery == ResourceDelivery::Snapshot =>
+        {
+            Ok(())
+        }
+        (
+            ExternalInteraction::Observation(_)
+            | ExternalInteraction::Effect(_)
+            | ExternalInteraction::TransactionalExternal(_),
+            None,
+        ) => Err(ArtifactBuildError::MissingApplicationRequirement { node: node.node }),
+        _ => Err(ArtifactBuildError::ApplicationRequirementInteractionMismatch { node: node.node }),
+    }
 }
 
 fn validate_state_writer_chain(

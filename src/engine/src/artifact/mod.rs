@@ -4,6 +4,7 @@ mod compiler;
 mod encoding;
 mod ir;
 mod model;
+mod requirements;
 mod snapshot;
 mod validation;
 
@@ -13,6 +14,7 @@ mod bytecode;
 pub use self::compiler::*;
 pub use self::ir::*;
 pub use self::model::*;
+pub use self::requirements::*;
 
 #[cfg(feature = "compiler")]
 pub use self::bytecode::*;

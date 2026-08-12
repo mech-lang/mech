@@ -39,7 +39,7 @@
   "physical_slot_count": 21,
   "plan_generation": 0,
   "predicate_kernel_count": 3,
-  "program_revision": "6d62c3261c73a73f7f7611cba480852206440a757713f1f04642fcb946574c45",
+  "program_revision": "affa67678a3991807c39daee9d99cf8f71e51f54c168b719528eea6314d25cea",
   "projection": "activation",
   "published_epoch": 0,
   "resident_kernel_count": 15,

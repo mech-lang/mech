@@ -19,8 +19,8 @@ OUTPUTS = {
     "execution": ROOT / "tests/architecture/resident-activation/d1-execution-v1.json",
 }
 EXPECTED_SHA256 = {
-    "artifact": "590a81d559e9b0a5155c4b15e169c6b83af53f149f9fc162c3b8e2868d682072",
-    "activation": "18f1da4865f8c7f0e874cb12c5222580a93b9d2b3f509e29478a0b2f8d02ddd6",
+    "artifact": "55381f9b834738818eb512c955aac7f240e6fa3a649ced0b8bafcedb1593421c",
+    "activation": "be4d35393b6dbebf3bccc79aa32db31b903c958ab8be71f8796308f0fd9321e2",
     "execution": "9f2dede0a0893af64b90e08432beb7bde9944f48338a51d9ecaba0f98ec13d2a",
 }
 

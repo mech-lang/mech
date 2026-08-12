@@ -7,9 +7,9 @@
 use std::collections::BTreeMap;
 
 use mech_core::{
-    BindingId, CellSlotId, ConstantId, ConstantStore, InputId, IntegrityConstraintId, NodeId,
-    OperationContractDeclaration, OperationContractId, OperationContractTable, OutputId, SchemaId,
-    SchemaTable,
+    ApplicationRequirementId, BindingId, CellSlotId, ConstantId, ConstantStore, InputId,
+    IntegrityConstraintId, MResult, NodeId, OperationContractDeclaration, OperationContractId,
+    OperationContractTable, OutputId, SchemaId, SchemaTable,
 };
 
 #[cfg(feature = "compiler")]
@@ -30,9 +30,10 @@ use mech_core::{
 };
 
 use super::{
-    ArtifactBuildError, ArtifactSource, BindingDeclaration, InitializerReference, InputDeclaration,
-    IntegrityConstraintDeclaration, NodeDeclaration, OperationReference, OutputDeclaration,
-    ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
+    ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
+    InitializerReference, InputDeclaration, IntegrityConstraintDeclaration, NodeDeclaration,
+    OperationReference, OutputDeclaration, ProducerReference, ProgramArtifact,
+    ProgramArtifactDraft, SlotDeclaration, SlotRole,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -73,6 +74,7 @@ pub enum SourceNodeOutput {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceNode {
     pub operation: OperationReference,
+    pub requirement: Option<ApplicationRequirementId>,
     pub inputs: Box<[SourceValue]>,
     pub outputs: Box<[SourceNodeOutput]>,
 }
@@ -92,6 +94,7 @@ pub struct SourceIntegrityConstraint {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct SourceProgram {
+    pub requirements: ApplicationRequirementTable,
     pub inputs: Box<[SourceInput]>,
     pub states: Box<[SourceState]>,
     pub nodes: Box<[SourceNode]>,
@@ -102,6 +105,57 @@ pub struct SourceProgram {
 pub struct ArtifactBuildContext<'a> {
     schemas: &'a SchemaTable,
     constants: &'a ConstantStore,
+}
+
+/// Resolves the exact provider-independent semantic contract that an external
+/// requirement contributes to an immutable compiler artifact.
+///
+/// The source interpreter can discover resource requests without knowing a
+/// host provider. D3 supplies this resolver only at the explicit resident
+/// compilation boundary; ordinary compilation retains its existing behavior.
+#[cfg(feature = "compiler")]
+pub trait ExternalRequirementContractResolver {
+    fn resolve_external_contract(
+        &self,
+        requirement: &ApplicationRequirement,
+    ) -> MResult<Option<&'static OperationContractDeclaration>>;
+}
+
+#[cfg(feature = "compiler")]
+pub fn resolve_compiled_external_contracts(
+    compiled: &mut CompiledBytecode,
+    resolver: &dyn ExternalRequirementContractResolver,
+) -> MResult<()> {
+    for (instruction, contract) in compiled
+        .program
+        .instructions
+        .iter()
+        .zip(&mut compiled.instruction_contracts)
+    {
+        let requirement = match instruction {
+            BytecodeInstruction::HostCall { requirement, .. }
+            | BytecodeInstruction::ResourceRead { requirement, .. }
+            | BytecodeInstruction::ResourceWrite { requirement, .. }
+            | BytecodeInstruction::ResourceSend { requirement, .. } => *requirement,
+            _ => continue,
+        };
+        let requirement = compiled
+            .program
+            .requirements
+            .get(requirement as usize)
+            .ok_or_else(|| {
+                mech_core::MechError::new(
+                    mech_core::GenericError {
+                        msg: "compiled external requirement is out of range".to_owned(),
+                    },
+                    None,
+                )
+            })?;
+        if let Some(resolved) = resolver.resolve_external_contract(requirement)? {
+            *contract = Some(resolved);
+        }
+    }
+    Ok(())
 }
 
 impl<'a> ArtifactBuildContext<'a> {
@@ -265,6 +319,7 @@ pub fn compile_source_program_with_contracts(
             node,
             operation: declaration.operation.clone(),
             contract: OperationContractId::new(0),
+            requirement: declaration.requirement,
             input_bindings: input_start..input_end,
             output_bindings: output_start..output_end,
         });
@@ -314,6 +369,7 @@ pub fn compile_source_program_with_contracts(
         schemas: context.schemas.clone(),
         constants: context.constants.clone(),
         contracts: OperationContractTable::empty(),
+        requirements: graph.requirements.clone(),
         inputs: inputs.into_boxed_slice(),
         slots: slots.into_boxed_slice(),
         nodes: nodes.into_boxed_slice(),
@@ -951,6 +1007,17 @@ pub fn compile_executable_program_artifact(
                         .and_then(|function| catalog.runtime_entry_by_raw(function))
                         .and_then(|entry| entry.semantic_contract())
                 });
+                let declaration = declaration.filter(|declaration| {
+                    semantics.requirement.is_none_or(|requirement| {
+                        compiled
+                            .program
+                            .requirements
+                            .get(requirement.get() as usize)
+                            .is_some_and(|requirement| {
+                                external_declaration_matches_requirement(declaration, requirement)
+                            })
+                    })
+                });
                 if kind == CompiledNodeKind::Combinational
                     && is_literal_constructor_operation(&semantics.operation)
                     && (register_state_indexes[dst as usize].is_some()
@@ -1036,6 +1103,7 @@ pub fn compile_executable_program_artifact(
                 }
                 nodes.push(SourceNode {
                     operation: semantics.operation,
+                    requirement: semantics.requirement,
                     inputs: semantic_inputs,
                     outputs: match (state_index, schema) {
                         (Some(state), _) => vec![SourceNodeOutput::State(state)],
@@ -1101,6 +1169,7 @@ pub fn compile_executable_program_artifact(
                             module_path: vec!["core".to_owned()].into_boxed_slice(),
                             operation_name: "literal".to_owned(),
                         },
+                        requirement: None,
                         inputs: vec![SourceValue::Constant(constant)].into_boxed_slice(),
                         outputs: vec![SourceNodeOutput::Derived {
                             schema: returned.schema,
@@ -1193,6 +1262,9 @@ pub fn compile_executable_program_artifact(
 
     compile_source_program_with_contracts(
         &SourceProgram {
+            requirements: ApplicationRequirementTable::from_canonical_entries(
+                compiled.program.requirements.clone(),
+            )?,
             inputs: inputs.into_boxed_slice(),
             states: states.into_boxed_slice(),
             nodes: nodes.into_boxed_slice(),
@@ -1202,6 +1274,37 @@ pub fn compile_executable_program_artifact(
         &mut ArtifactBuildContext::new(&schemas, &constant_store),
         &node_contracts,
     )
+}
+
+#[cfg(feature = "compiler")]
+fn external_declaration_matches_requirement(
+    declaration: &OperationContractDeclaration,
+    requirement: &ApplicationRequirement,
+) -> bool {
+    match (requirement, &declaration.interaction) {
+        (ApplicationRequirement::HostFunction(_), _) => true,
+        (
+            ApplicationRequirement::Resource(request),
+            mech_core::ExternalInteraction::Observation(_),
+        ) => {
+            request.intent == mech_core::ResourceIntent::Read
+                && request.delivery == mech_core::ResourceDelivery::Live
+        }
+        (ApplicationRequirement::Resource(request), mech_core::ExternalInteraction::Effect(_)) => {
+            request.intent == mech_core::ResourceIntent::Send
+                && request.delivery == mech_core::ResourceDelivery::Snapshot
+        }
+        (
+            ApplicationRequirement::Resource(request),
+            mech_core::ExternalInteraction::TransactionalExternal(_),
+        ) => {
+            matches!(
+                request.intent,
+                mech_core::ResourceIntent::Assign | mech_core::ResourceIntent::Send
+            ) && request.delivery == mech_core::ResourceDelivery::Snapshot
+        }
+        _ => false,
+    }
 }
 
 #[cfg(feature = "compiler")]
@@ -1610,6 +1713,7 @@ struct CompiledInstructionSemantics {
     destination: u32,
     inputs: Vec<u32>,
     operation: OperationReference,
+    requirement: Option<ApplicationRequirementId>,
 }
 
 /// Some executable instructions use their destination as the logical base of
@@ -1770,16 +1874,19 @@ fn instruction_semantics(
                 module_path: vec!["core".to_owned()].into_boxed_slice(),
                 operation_name: "composite-pack".to_owned(),
             },
+            requirement: None,
         },
         BytecodeInstruction::RuntimeNullary { function, dst } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: Vec::new(),
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::RuntimeUnary { function, dst, src } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*src],
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::RuntimeBinary {
             function,
@@ -1790,6 +1897,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: vec![*lhs, *rhs],
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::RuntimeTernary {
             function,
@@ -1801,6 +1909,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: vec![*a, *b, *c],
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::RuntimeQuaternary {
             function,
@@ -1813,6 +1922,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: vec![*a, *b, *c, *d],
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::RuntimeVariadic {
             function,
@@ -1822,6 +1932,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: arguments.clone(),
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::HostCall {
             requirement,
@@ -1843,12 +1954,14 @@ fn instruction_semantics(
                 destination: *dst,
                 inputs: arguments.clone(),
                 operation: operation_reference_from_name("host", &request.name)?,
+                requirement: Some(ApplicationRequirementId::new(*requirement)),
             }
         }
         BytecodeInstruction::ResourceRead { requirement, dst } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: Vec::new(),
             operation: resource_operation_reference(*requirement, requirements, "read")?,
+            requirement: Some(ApplicationRequirementId::new(*requirement)),
         },
         BytecodeInstruction::ResourceWrite {
             requirement,
@@ -1858,6 +1971,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: vec![*src],
             operation: resource_operation_reference(*requirement, requirements, "write")?,
+            requirement: Some(ApplicationRequirementId::new(*requirement)),
         },
         BytecodeInstruction::ResourceSend {
             requirement,
@@ -1867,6 +1981,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: vec![*src],
             operation: resource_operation_reference(*requirement, requirements, "send")?,
+            requirement: Some(ApplicationRequirementId::new(*requirement)),
         },
     };
     Ok(Some(semantics))

@@ -1,0 +1,10 @@
+@input := gate-d3://input/value{:read(sample)}
+sample := @input/sample
+
+~state := 0.0
+state += sample
+
+@transactional := gate-d3://transactional/state
+@transactional/value <- state
+
+output := state

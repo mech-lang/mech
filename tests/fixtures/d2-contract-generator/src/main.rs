@@ -1,23 +1,26 @@
 use mech_core::snapshot::SequenceView;
 use mech_core::{
-    AccessMode, AliasPolicy, BindingId, ChangeDetectionPolicy, ConstantStoreBuilder,
-    BoundResidentKernel, DeclaredOperationContract, DeliveryMode, DimensionExpr, DimensionLifetime,
-    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin,
-    ExternalInteraction, FloatWidth, InputId, LayoutGeneration, NodeId,
+    AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BindingId,
+    BoundResidentKernel, ChangeDetectionPolicy, ConstantStoreBuilder, DeclaredOperationContract,
+    DeliveryMode, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
+    DimensionParameterId, DimensionParameterOrigin, ExecutionResourceRequest, ExternalInteraction,
+    FloatWidth, InputId, LayoutGeneration, NodeId,
     ObservationContract, ObservationReplayPolicy, OperationContractTableBuilder,
     OutputConstruction, OutputId, PlanGeneration, RegionPolicy, ResidentKernelBindError,
     ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentValueKind,
     ResidentValueMut, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaBody,
-    SchemaDraft, SchemaTableBuilder, ShapeRule, ValueData, ValueDataDraft, ValueDraft,
+    ResourceDelivery, ResourceIntent, SchemaDraft, SchemaTableBuilder, ShapeRule, ValueData,
+    ValueDataDraft, ValueDraft,
 };
 use mech_engine::__resident::{
     ActivationFacts, ResidentActivationError, ResidentStorageClass, ResidentValueBorrow,
     StateMigrationMapping, StateMigrationPolicy, activate,
 };
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, InitializerReference, InputDeclaration, MechProgram,
-    MechProgramConfig, NodeDeclaration, OperationReference, OutputDeclaration, ProducerReference,
-    ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
+    ApplicationRequirementTable, ArtifactSource, BindingDeclaration, InitializerReference,
+    InputDeclaration, MechProgram, MechProgramConfig, NodeDeclaration, OperationReference,
+    OutputDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration,
+    SlotRole,
     decode_program_artifact_bytecode_v1, encode_program_artifact_bytecode_v1,
 };
 use sha2::{Digest, Sha256};
@@ -703,6 +706,7 @@ fn wrong_rmw_base_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
         schemas: artifact.schemas().clone(),
         constants: artifact.constants().clone(),
         contracts,
+        requirements: artifact.requirements().clone(),
         inputs: artifact.inputs().to_vec().into_boxed_slice(),
         slots: artifact.slots().to_vec().into_boxed_slice(),
         nodes: nodes.into_boxed_slice(),
@@ -820,6 +824,7 @@ fn assert_activation_fact_reconfiguration(
         schemas,
         constants,
         contracts,
+        requirements: ApplicationRequirementTable::empty(),
         inputs: vec![InputDeclaration {
             input: InputId::new(0),
             name: "deployment-vector".to_owned(),
@@ -854,6 +859,7 @@ fn assert_activation_fact_reconfiguration(
                 operation_name: "Assign<f64DMatrix>".to_owned(),
             },
             contract,
+            requirement: None,
             input_bindings: 0..1,
             output_bindings: 1..2,
         }]
@@ -1059,6 +1065,7 @@ fn assert_activation_fact_reconfiguration(
         schemas: zero_input.schemas().clone(),
         constants: zero_input.constants().clone(),
         contracts: zero_input.contracts().clone(),
+        requirements: zero_input.requirements().clone(),
         inputs: Box::new([]),
         slots: zero_input.slots().to_vec().into_boxed_slice(),
         nodes: vec![wrong_arity_node].into_boxed_slice(),
@@ -1109,6 +1116,15 @@ fn replace_single_contract(
     artifact: &ProgramArtifact,
     contract: ResolvedOperationContract,
 ) -> ProgramArtifact {
+    let external = matches!(
+        contract,
+        ResolvedOperationContract::Declared(DeclaredOperationContract {
+            interaction: ExternalInteraction::Observation(_)
+                | ExternalInteraction::Effect(_)
+                | ExternalInteraction::TransactionalExternal(_),
+            ..
+        })
+    );
     let mut builder = OperationContractTableBuilder::new();
     let handle = builder.insert(contract).unwrap();
     let build = builder.finish().unwrap();
@@ -1117,10 +1133,27 @@ fn replace_single_contract(
     let mut nodes = artifact.nodes().to_vec();
     assert_eq!(nodes.len(), 1);
     nodes[0].contract = contract;
+    let requirements = if external {
+        nodes[0].requirement = Some(ApplicationRequirementId::new(0));
+        ApplicationRequirementTable::from_canonical_entries(vec![ApplicationRequirement::Resource(
+            ExecutionResourceRequest {
+                base_uri: "gate-d2://contract/probe".to_owned(),
+                path: "value".to_owned(),
+                context_name: "probe".to_owned(),
+                operation: "read".to_owned(),
+                intent: ResourceIntent::Read,
+                delivery: ResourceDelivery::Live,
+            },
+        )])
+        .unwrap()
+    } else {
+        artifact.requirements().clone()
+    };
     ProgramArtifactDraft {
         schemas: artifact.schemas().clone(),
         constants: artifact.constants().clone(),
         contracts,
+        requirements,
         inputs: artifact.inputs().to_vec().into_boxed_slice(),
         slots: artifact.slots().to_vec().into_boxed_slice(),
         nodes: nodes.into_boxed_slice(),
@@ -1216,6 +1249,7 @@ fn wrong_dimension_artifact(
         schemas: template.schemas().clone(),
         constants,
         contracts,
+        requirements: template.requirements().clone(),
         inputs: vec![InputDeclaration {
             input: InputId::new(0),
             name: "dynamic".to_owned(),
@@ -1250,6 +1284,7 @@ fn wrong_dimension_artifact(
                 operation_name: "SubMDMD<f64>".to_owned(),
             },
             contract,
+            requirement: None,
             input_bindings: 0..2,
             output_bindings: 2..3,
         }]
@@ -1335,6 +1370,7 @@ fn wrong_kind_artifact(
         schemas: template.schemas().clone(),
         constants,
         contracts,
+        requirements: template.requirements().clone(),
         inputs: Box::new([]),
         slots: vec![SlotDeclaration {
             slot: state,
@@ -1354,6 +1390,7 @@ fn wrong_kind_artifact(
                 operation_name: "Assign<f64DMatrix>".to_owned(),
             },
             contract,
+            requirement: None,
             input_bindings: 0..1,
             output_bindings: 1..2,
         }]
@@ -1422,6 +1459,7 @@ fn zero_input_state_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
         schemas: artifact.schemas().clone(),
         constants: artifact.constants().clone(),
         contracts,
+        requirements: artifact.requirements().clone(),
         inputs: Box::new([]),
         slots: vec![state].into_boxed_slice(),
         nodes: vec![NodeDeclaration {
@@ -1431,6 +1469,7 @@ fn zero_input_state_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
                 operation_name: "zero-input-state".to_owned(),
             },
             contract,
+            requirement: None,
             input_bindings: 0..0,
             output_bindings: 0..1,
         }]
@@ -1560,6 +1599,7 @@ fn dirty_propagation_artifact(
         schemas: template.schemas().clone(),
         constants: template.constants().clone(),
         contracts,
+        requirements: template.requirements().clone(),
         inputs: Box::new([]),
         slots: vec![
             SlotDeclaration {
@@ -1583,6 +1623,7 @@ fn dirty_propagation_artifact(
                     operation_name: root_operation.to_owned(),
                 },
                 contract: root_contract,
+                requirement: None,
                 input_bindings: 0..1,
                 output_bindings: 1..2,
             },
@@ -1593,6 +1634,7 @@ fn dirty_propagation_artifact(
                     operation_name: "state-copy".to_owned(),
                 },
                 contract: state_contract,
+                requirement: None,
                 input_bindings: 2..3,
                 output_bindings: 3..4,
             },
@@ -1795,6 +1837,7 @@ fn reorder_artifact(artifact: &ProgramArtifact, order: &[usize]) -> ProgramArtif
             node,
             operation: original.operation.clone(),
             contract: original.contract,
+            requirement: original.requirement,
             input_bindings: input_start..input_end,
             output_bindings: output_start..bindings.len() as u32,
         });
@@ -1821,6 +1864,7 @@ fn reorder_artifact(artifact: &ProgramArtifact, order: &[usize]) -> ProgramArtif
         schemas: artifact.schemas().clone(),
         constants: artifact.constants().clone(),
         contracts: artifact.contracts().clone(),
+        requirements: artifact.requirements().clone(),
         inputs: artifact.inputs().to_vec().into_boxed_slice(),
         slots: slots.into_boxed_slice(),
         nodes: nodes.into_boxed_slice(),

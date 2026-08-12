@@ -1343,6 +1343,24 @@ impl MechProgram {
     #[cfg(feature = "compiler")]
     pub fn compile_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
         let compiled = compile_bytecode(self)?;
+        self.finalize_program_product(compiled)
+    }
+
+    #[cfg(feature = "compiler")]
+    pub fn compile_program_product_with_external_contracts(
+        &mut self,
+        resolver: &dyn ExternalRequirementContractResolver,
+    ) -> MResult<ProgramCompilationProduct> {
+        let mut compiled = compile_bytecode(self)?;
+        resolve_compiled_external_contracts(&mut compiled, resolver)?;
+        self.finalize_program_product(compiled)
+    }
+
+    #[cfg(feature = "compiler")]
+    fn finalize_program_product(
+        &self,
+        compiled: CompiledBytecode,
+    ) -> MResult<ProgramCompilationProduct> {
         let artifact = compile_executable_program_artifact(
             &compiled,
             self.interpreter.function_catalog().as_ref(),

@@ -3,9 +3,9 @@
 use crate::{LegacyValue, MResult, MechError, MechErrorKind, ValRef};
 
 #[cfg(feature = "no_std")]
-use alloc::{format, string::String};
+use alloc::{format, string::String, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::string::String;
+use std::{string::String, vec::Vec};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -260,6 +260,63 @@ impl MechErrorKind for LiveResourceBindingUnsupported {
     }
 }
 
+/// Encodes the stable identity-bearing fields of an application requirement.
+///
+/// This representation is shared by artifact revisions, hidden executable
+/// operation identities, and resident effect idempotency keys. Provider state
+/// and observed values are deliberately outside this encoding.
+pub fn canonical_application_requirement_bytes(
+    requirement: &ApplicationRequirement,
+) -> MResult<Vec<u8>> {
+    fn string(bytes: &mut Vec<u8>, value: &str) -> MResult<()> {
+        let length = u32::try_from(value.len()).map_err(|_| {
+            MechError::new(
+                ApplicationRequirementEncodingError {
+                    reason: "application requirement string exceeds u32".to_owned(),
+                },
+                None,
+            )
+        })?;
+        bytes.extend_from_slice(&length.to_le_bytes());
+        bytes.extend_from_slice(value.as_bytes());
+        Ok(())
+    }
+
+    let mut bytes = Vec::new();
+    bytes.push(1);
+    match requirement {
+        ApplicationRequirement::HostFunction(request) => {
+            bytes.push(1);
+            string(&mut bytes, &request.name)?;
+        }
+        ApplicationRequirement::Resource(request) => {
+            bytes.push(2);
+            bytes.push(request.intent as u8);
+            bytes.push(request.delivery as u8);
+            string(&mut bytes, &request.operation)?;
+            string(&mut bytes, &request.context_name)?;
+            string(&mut bytes, &request.base_uri)?;
+            string(&mut bytes, &request.path)?;
+        }
+    }
+    Ok(bytes)
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ApplicationRequirementEncodingError {
+    pub reason: String,
+}
+
+impl MechErrorKind for ApplicationRequirementEncodingError {
+    fn name(&self) -> &str {
+        "ApplicationRequirementEncoding"
+    }
+
+    fn message(&self) -> String {
+        self.reason.clone()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -342,5 +399,41 @@ mod tests {
             .unwrap();
         assert_eq!(binding.interpreter_id, 17);
         assert_eq!(binding.request, resource_request);
+    }
+
+    #[test]
+    fn canonical_application_requirement_bytes_are_versioned_and_field_ordered() {
+        let host = canonical_application_requirement_bytes(&ApplicationRequirement::HostFunction(
+            ExecutionHostFunctionRequest {
+                name: "host/fn".to_owned(),
+            },
+        ))
+        .unwrap();
+        assert_eq!(&host[..2], &[1, 1]);
+        assert_eq!(u32::from_le_bytes(host[2..6].try_into().unwrap()), 7);
+        assert_eq!(&host[6..], b"host/fn");
+
+        let resource = canonical_application_requirement_bytes(&ApplicationRequirement::Resource(
+            resource_request(),
+        ))
+        .unwrap();
+        assert_eq!(
+            &resource[..4],
+            &[
+                1,
+                2,
+                ResourceIntent::Read as u8,
+                ResourceDelivery::Live as u8
+            ]
+        );
+        let mut cursor = 4;
+        for expected in ["read", "input", "test://resource", "items/0"] {
+            let length =
+                u32::from_le_bytes(resource[cursor..cursor + 4].try_into().unwrap()) as usize;
+            cursor += 4;
+            assert_eq!(&resource[cursor..cursor + length], expected.as_bytes());
+            cursor += length;
+        }
+        assert_eq!(cursor, resource.len());
     }
 }

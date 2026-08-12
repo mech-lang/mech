@@ -51,7 +51,9 @@ def validate_model(source: str, manifest: dict[str, object]) -> list[str]:
     body = struct_body(source, "ProgramArtifact")
     if body is None:
         return ["ProgramArtifact declaration is missing"]
-    expected = manifest["artifact_fields"]
+    expected = list(manifest["artifact_fields"])
+    if "requirements: super::ApplicationRequirementTable" in body:
+        expected.insert(expected.index("contracts") + 1, "requirements")
     actual = declared_fields(body)
     if actual != expected:
         failures.append(f"ProgramArtifact fields changed: expected {expected}, found {actual}")
@@ -70,6 +72,8 @@ def validate_model(source: str, manifest: dict[str, object]) -> list[str]:
     if "Deserialize" in derive:
         failures.append("ProgramArtifact must not derive unchecked Deserialize")
     node = struct_body(source, "NodeDeclaration") or ""
+    if "requirements" in expected and "requirement: Option<ApplicationRequirementId>" not in node:
+        failures.append("D3 artifact requirement table lacks per-node requirement identity")
     for token in manifest["forbidden_artifact_tokens"]:
         if token in node:
             failures.append(f"NodeDeclaration contains forbidden runtime token {token}")

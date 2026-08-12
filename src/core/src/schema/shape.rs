@@ -63,6 +63,11 @@ impl ShapeInstance {
         }
         bytes.into_boxed_slice()
     }
+
+    /// Resolves a schema dimension against this validated shape instance.
+    pub fn resolve_dimension(&self, expression: &DimensionExpr) -> Result<u64, SemanticModelError> {
+        evaluate_dimension(expression, &self.parameter_values)
+    }
 }
 
 pub(crate) fn evaluate_dimension(

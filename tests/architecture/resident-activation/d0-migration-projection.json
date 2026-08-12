@@ -3580,7 +3580,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/program/instance.rs",
-          "line": 1409,
+          "line": 1427,
           "column": 26,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3588,7 +3588,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/program/instance.rs",
-          "line": 1450,
+          "line": 1468,
           "column": 30,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3596,7 +3596,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/program/instance.rs",
-          "line": 1455,
+          "line": 1473,
           "column": 30,
           "target": "mutable-reference-runtime-storage"
         },
@@ -3604,7 +3604,7 @@
           "enum": "LegacyValue",
           "variant": "MutableReference",
           "path": "src/engine/src/program/instance.rs",
-          "line": 1654,
+          "line": 1672,
           "column": 9,
           "target": "mutable-reference-runtime-storage"
         },

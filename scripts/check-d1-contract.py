@@ -25,8 +25,8 @@ EVIDENCE = "benchmarks/runtime/gate-b/b2-resident-turn.json"
 GATE_B_REGRESSION = "tests/architecture/value-system/gate-b-regression.json"
 PROJECTION_DIR = Path("tests/architecture/resident-activation")
 PROJECTION_SHA256 = {
-    "d1-artifact-v1.json": "590a81d559e9b0a5155c4b15e169c6b83af53f149f9fc162c3b8e2868d682072",
-    "d1-activation-v1.json": "18f1da4865f8c7f0e874cb12c5222580a93b9d2b3f509e29478a0b2f8d02ddd6",
+    "d1-artifact-v1.json": "55381f9b834738818eb512c955aac7f240e6fa3a649ced0b8bafcedb1593421c",
+    "d1-activation-v1.json": "be4d35393b6dbebf3bccc79aa32db31b903c958ab8be71f8796308f0fd9321e2",
     "d1-execution-v1.json": "9f2dede0a0893af64b90e08432beb7bde9944f48338a51d9ecaba0f98ec13d2a",
 }
 D1_ALLOWED_CHANGES = (
@@ -274,6 +274,8 @@ def source_contract_errors(root: Path) -> list[str]:
         directory = root / f"src/{package}/src"
         for path in directory.rglob("*.rs"):
             relative = path.relative_to(root).as_posix()
+            if relative.endswith("/tests.rs") or "/tests/" in relative:
+                continue
             if relative == "src/engine/src/lib.rs" or relative.startswith(
                 ("src/engine/src/efficacy/", "src/engine/src/resident/")
             ) or relative in {

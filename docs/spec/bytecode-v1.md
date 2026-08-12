@@ -375,7 +375,14 @@ Kind 2 is a resource. Intent is 1 `Read`, 2 `Assign`, or 3 `Send`; delivery is
 nonempty; secondary is the path. URI, operation, context, delivery, and path
 must form a canonical valid execution request. Requirement flags are zero.
 Every application-requirement row must be referenced by at least one host or
-resource instruction; unreferenced requirement rows are noncanonical.
+resource instruction, or by an artifact node when semantic artifact sections
+are present. Unreferenced requirement rows are noncanonical.
+
+The same canonical table is authoritative for the semantic program artifact.
+Artifact nodes refer to its dense rows directly; neither the operation path
+nor a provider-specific payload is used to reconstruct an external request.
+The table and each node's optional requirement ID contribute to
+`ProgramRevision`.
 
 ## Semantic program artifact
 
@@ -400,7 +407,7 @@ only then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{node,operation,contract,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{node,operation,contract,requirement,input_start,input_end,output_start,output_end}`; `requirement` is a dense application-requirement ID or `null` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |

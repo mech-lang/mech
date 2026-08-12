@@ -244,6 +244,7 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         &instructions,
         constants.len(),
         requirements.len(),
+        !artifact.is_empty(),
     )?;
     for register in symbols.values().copied() {
         if !initialized[register as usize] {
@@ -660,6 +661,7 @@ fn validate_constant_and_requirement_reachability(
     instructions: &[BytecodeInstruction],
     constant_count: usize,
     requirement_count: usize,
+    artifact_present: bool,
 ) -> MResult<()> {
     let mut constants = vec![false; constant_count];
     let mut requirements = vec![false; requirement_count];
@@ -699,7 +701,9 @@ fn validate_constant_and_requirement_reachability(
         )
         .with_compiler_loc());
     }
-    if let Some(requirement) = requirements.iter().position(|referenced| !referenced) {
+    if !artifact_present
+        && let Some(requirement) = requirements.iter().position(|referenced| !referenced)
+    {
         return Err(MechError::new(
             BytecodeUnreferencedRequirement {
                 requirement: u32::try_from(requirement).unwrap_or(u32::MAX),
