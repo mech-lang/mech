@@ -79,6 +79,11 @@ pub(super) fn elaborate_patterned_arm_body(
         pulse.reactive_root_cell_ids(),
         activation_scope_entry_cells(interpreter),
     );
+    // Calls in a reactive body are elaborated into this static activation
+    // region. Keeping their numeric nodes on the caller plan makes the body
+    // reactive and gives artifact compilation the complete operation graph.
+    let _persistent_user_function_plan =
+        crate::function::PersistentUserFunctionPlanScope::enter(interpreter);
     let body_result = (|| -> MResult<()> {
         match &arm.body {
             ActivationArmBody::Block(body) => {
@@ -93,6 +98,7 @@ pub(super) fn elaborate_patterned_arm_body(
             }
         }
     })();
+    drop(_persistent_user_function_plan);
     while plan.activation_registration_depth() > original_scope_depth {
         plan.pop_activation_registration_scope();
     }

@@ -171,3 +171,57 @@ event := 2.0
         assert_eq!(plan_snapshot(&interpreter), topology);
     }
 }
+
+#[test]
+fn activation_statement_function_body_is_elaborated_into_the_static_arm_plan() {
+    let mut interpreter = interpret(
+        r#"
+step(value<f64>) = out<f64> :=
+  doubled := value * 2.0
+  out := doubled + 1.0.
+
+event := 2.0
+~state := 0.0
+
+~> event
+  | value => {
+      updated := step(value)
+      state = updated
+    }
+  | * => {
+      state = -1.0
+    }
+"#,
+    );
+    let trigger = root_cell(&interpreter, "event");
+    let activation = registration(&interpreter);
+    let first_arm = &activation.arms[0];
+    let topology = plan_snapshot(&interpreter);
+    let body_operations = {
+        let plan = interpreter.plan();
+        let plan = plan.borrow();
+        plan.nodes[first_arm.body_node_start..first_arm.body_node_end]
+            .iter()
+            .map(|node| node.function.to_string())
+            .collect::<Vec<_>>()
+    };
+    assert!(
+        body_operations
+            .iter()
+            .any(|operation| operation.contains("Mul")),
+        "function multiplication was not elaborated into the arm: {body_operations:?}",
+    );
+    assert!(
+        body_operations
+            .iter()
+            .any(|operation| operation.contains("Add")),
+        "function addition was not elaborated into the arm: {body_operations:?}",
+    );
+
+    for (event, expected) in [(3.0, 7.0), (5.0, 11.0)] {
+        set_f64_symbol(&interpreter, "event", event);
+        interpreter.advance_reactive_turn(&[trigger]).unwrap();
+        assert_eq!(f64_symbol(&interpreter, "state"), expected);
+        assert_eq!(plan_snapshot(&interpreter), topology);
+    }
+}

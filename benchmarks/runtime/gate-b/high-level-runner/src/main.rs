@@ -22,7 +22,7 @@ use std::time::{Duration, Instant};
 
 use aot::{AotProgram, AotState};
 
-const SOURCE: &str = include_str!("../../ekf-high-level.mec");
+const SOURCE: &str = include_str!("../../ekf-function-high-level.mec");
 const BATCH_EKF_SOURCE: &str = include_str!("../../ekf-batch-high-level.mec");
 const NUMERIC_PROOF_SOURCE: &str = include_str!("../../numeric-kernel-proof.mec");
 const NUMERIC_BATCH_PROOF_SOURCE: &str = include_str!("../../numeric-batch-proof.mec");

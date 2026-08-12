@@ -628,12 +628,18 @@ fn elaborate_activation_scope(
                 trigger_cells,
                 crate::activation::activation_scope_entry_cells(p),
             );
+            // Function calls in a static activation body are part of that body.
+            // Keep their nodes in the enclosing plan instead of evaluating them
+            // in a temporary function-local plan that is discarded after load.
+            let _persistent_user_function_plan =
+                crate::function::PersistentUserFunctionPlanScope::enter(p);
             let result = (|| -> MResult<LegacyValue> {
                 for (code, _) in body {
                     mech_code(code, p)?;
                 }
                 Ok(LegacyValue::Empty)
             })();
+            drop(_persistent_user_function_plan);
             plan.pop_activation_registration_scope();
             match result {
                 Ok(value) => Ok(value),

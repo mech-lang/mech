@@ -37,6 +37,16 @@ fn value(i: &Interpreter, n: &str) -> f64 {
         .unwrap()
         .borrow()
 }
+fn set_value(i: &Interpreter, n: &str, value: f64) {
+    let symbol = i
+        .symbols()
+        .borrow()
+        .get(hash_str(n))
+        .unwrap()
+        .borrow()
+        .clone();
+    *symbol.as_f64().unwrap().borrow_mut() = value;
+}
 fn nodes_for_output(i: &Interpreter, name: &str, kind: ReactiveNodeKind) -> Vec<ReactiveNodeId> {
     let output = cell(i, name);
     let p = i.plan();
@@ -238,6 +248,49 @@ fn activation_scope_local_outputs_are_reactive() {
             .iter()
             .any(|d| d.cell == cell(&i, "left") && d.kind == ReactiveDependencyKind::Reactive)
     );
+}
+#[test]
+fn activation_scope_statement_function_body_is_elaborated_into_the_static_plan() {
+    let mut i = interpret(
+        r#"
+step(value<f64>) = out<f64> :=
+  doubled := value * 2.0
+  out := doubled + 1.0.
+
+tick := 0.0
+~state := 0.0
+
+~> tick {
+  updated := step(tick)
+  state = updated
+}
+"#,
+    );
+    let topology = snapshot(&i);
+    let operations = {
+        let plan = i.plan();
+        let plan = plan.borrow();
+        activation_nodes(&i, "tick", ReactiveNodeKind::Combinational)
+            .iter()
+            .map(|node| plan.node(*node).unwrap().function.to_string())
+            .collect::<Vec<_>>()
+    };
+    assert!(
+        operations.iter().any(|operation| operation.contains("Mul")),
+        "function multiplication was not elaborated into the activation: {operations:?}",
+    );
+    assert!(
+        operations.iter().any(|operation| operation.contains("Add")),
+        "function addition was not elaborated into the activation: {operations:?}",
+    );
+
+    let trigger = cell(&i, "tick");
+    for (tick, expected) in [(3.0, 7.0), (5.0, 11.0)] {
+        set_value(&i, "tick", tick);
+        i.advance_reactive_turn(&[trigger]).unwrap();
+        assert_eq!(value(&i, "state"), expected);
+        assert_eq!(snapshot(&i), topology);
+    }
 }
 #[test]
 fn activation_scope_runs_once_on_trigger() {
