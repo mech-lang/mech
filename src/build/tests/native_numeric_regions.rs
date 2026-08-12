@@ -217,7 +217,10 @@ fn canonical_n_body_lowers_to_standalone_rust_source() {
     assert!(aot.state_len > 0);
     assert!(aot.instruction_count > 0);
     assert!(aot.source.contains("pub fn turn_in_place"));
-    assert!(aot.source.contains(".powf("));
+    let (strict, fast) = aot.source.split_once("pub fn turn_in_place").unwrap();
+    assert!(strict.contains(".powf("));
+    assert!(!fast.contains(".powf("));
+    assert!(fast.contains(".sqrt()"));
 }
 
 #[test]

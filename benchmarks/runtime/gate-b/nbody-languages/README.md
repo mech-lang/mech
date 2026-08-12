@@ -32,8 +32,8 @@ tolerance `1e-8`.
 - NumPy/OpenBLAS is restricted to one thread
 - Python cyclic GC remains enabled and reports collection count
 - Lua reports heap growth; Julia reports GC time and allocated bytes
-- Mech uses the `fast` AOT envelope: one resident state buffer, no rollback or
-  finite-value validation
+- Mech uses the `fast` AOT envelope: one resident state buffer, relaxed
+  fixed-shape math, no rollback, and no finite-value validation
 
 Run with:
 
@@ -55,24 +55,29 @@ artifact on the same machine.
 
 | Implementation | Median ns/turn | Turns/s | Time vs Rust |
 |---|---:|---:|---:|
-| Rust Game #3 | 26.261 | 38.08 M | 1.00x |
-| Julia Game #5 | 38.703 | 25.84 M | 1.47x |
-| LuaJIT running Lua Game #2 | 106.604 | 9.38 M | 4.06x |
-| Mech AOT atomic | 138.896 | 7.20 M | 5.29x |
-| Mech AOT fast | 139.236 | 7.18 M | 5.30x |
-| Mech AOT checked | 148.369 | 6.74 M | 5.65x |
-| Mech AOT receipt | 176.623 | 5.66 M | 6.73x |
-| Lua Game #2 | 1,943.605 | 0.515 M | 74.01x |
-| Python Game | 5,356.442 | 0.187 M | 203.97x |
-| NumPy matrix | 10,699.477 | 0.093 M | 407.43x |
+| Rust Game #3 | 26.242 | 38.11 M | 1.00x |
+| Mech AOT fast | 32.300 | 30.96 M | 1.23x |
+| Julia Game #5 | 38.132 | 26.22 M | 1.45x |
+| LuaJIT running Lua Game #2 | 105.358 | 9.49 M | 4.02x |
+| Mech AOT atomic | 138.847 | 7.20 M | 5.29x |
+| Mech AOT checked | 148.017 | 6.76 M | 5.64x |
+| Mech AOT receipt | 171.157 | 5.84 M | 6.52x |
+| Lua Game #2 | 1,918.660 | 0.521 M | 73.12x |
+| Python Game | 5,346.931 | 0.187 M | 203.76x |
+| NumPy matrix | 10,676.946 | 0.094 M | 406.86x |
 
-The apparent 0.24% advantage for Mech atomic over fast is below run-to-run
-variation; it is not evidence that copying is free or beneficial. Checked adds
-finite-value validation and receipt also hashes and chains every state. The
-reference-language runs reported no timed cyclic-GC collections; Julia reported
-zero timed allocations, while LuaJIT retained 8,324 bytes after warmup. NumPy's
-zero Python-GC count does not account for native ndarray temporary allocation
-and reference-counted reclamation.
+The generated fast Mech path is 4.31x faster than its previous 139.236 ns
+result. It is 23% slower than the portable Rust Game source and 15% faster than
+Julia Game #5 in elapsed time. This is not a strict-guarantee result: fast uses
+constant-power specialization and sparse constant-matrix simplification. The
+atomic, checked, and receipt paths retain the explicit graph operations.
+
+Fast and strict Mech energy agree to 12 decimal places after one million turns;
+their state checksums differ because their floating-point operation order
+differs. The reference-language runs reported no timed cyclic-GC collections;
+Julia reported zero timed allocations, while LuaJIT retained 8,324 bytes after
+warmup. NumPy's zero Python-GC count does not account for native ndarray
+temporary allocation and reference-counted reclamation.
 
 Raw samples are in `results/apple-m1-2026-08-12.csv`; exact tool versions and
 hardware are in `ENVIRONMENT.md`.

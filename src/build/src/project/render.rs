@@ -451,7 +451,7 @@ impl Guarantees {
 
     fn description(self) -> &'static str {
         match self {
-            Self::Fast => "single buffer; no rollback or validation",
+            Self::Fast => "single buffer; relaxed fixed-shape math; no rollback or validation",
             Self::Atomic => "candidate buffer and atomic publication",
             Self::Checked => "atomic publication and finite-value validation",
             Self::Receipt => "checked publication and chained receipt hashing",

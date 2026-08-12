@@ -10,6 +10,15 @@ struct Operand {
     expression: String,
     shape: Shape,
     element: ElementType,
+    known_elements: Option<Vec<u64>>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum OptimizationMode {
+    // Preserve the explicit graph's IEEE operations for publishable candidates.
+    Strict,
+    // The single-buffer tier may reassociate fixed-shape finite numeric work.
+    Fast,
 }
 
 pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
@@ -85,6 +94,7 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     }
     writeln!(rust, "}}\n").unwrap();
 
+    writeln!(rust, "// Strict candidate-producing entry point.").unwrap();
     writeln!(rust, "#[inline(never)]").unwrap();
     writeln!(
         rust,
@@ -97,16 +107,39 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
 
     match kernel.batch {
         Some(batch) if batch.kind == BatchLayoutKind::MaterializedLaneVectors => {
-            emit_materialized_batched_turn(&mut rust, kernel, batch.len, "published", "candidate")?;
+            emit_materialized_batched_turn(
+                &mut rust,
+                kernel,
+                batch.len,
+                "published",
+                "candidate",
+                OptimizationMode::Strict,
+            )?;
         }
-        Some(batch) => {
-            emit_outer_lifted_turn(&mut rust, kernel, batch.len, "published", "candidate")?
-        }
-        None => emit_scalarized_turn(&mut rust, kernel, "published", "candidate")?,
+        Some(batch) => emit_outer_lifted_turn(
+            &mut rust,
+            kernel,
+            batch.len,
+            "published",
+            "candidate",
+            OptimizationMode::Strict,
+        )?,
+        None => emit_scalarized_turn(
+            &mut rust,
+            kernel,
+            "published",
+            "candidate",
+            OptimizationMode::Strict,
+        )?,
     }
     writeln!(rust, "}}").unwrap();
 
-    writeln!(rust, "#[inline(never)]").unwrap();
+    writeln!(
+        rust,
+        "// Relaxed in-place entry point for the explicitly selected fast tier."
+    )
+    .unwrap();
+    writeln!(rust, "#[inline(always)]").unwrap();
     writeln!(
         rust,
         "\npub fn turn_in_place(inputs: &[f64], state: &mut [f64]) {{"
@@ -116,10 +149,24 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     writeln!(rust, "    assert_eq!(state.len(), STATE_LEN);").unwrap();
     match kernel.batch {
         Some(batch) if batch.kind == BatchLayoutKind::MaterializedLaneVectors => {
-            emit_materialized_batched_turn(&mut rust, kernel, batch.len, "state", "state")?;
+            emit_materialized_batched_turn(
+                &mut rust,
+                kernel,
+                batch.len,
+                "state",
+                "state",
+                OptimizationMode::Fast,
+            )?;
         }
-        Some(batch) => emit_outer_lifted_turn(&mut rust, kernel, batch.len, "state", "state")?,
-        None => emit_scalarized_turn(&mut rust, kernel, "state", "state")?,
+        Some(batch) => emit_outer_lifted_turn(
+            &mut rust,
+            kernel,
+            batch.len,
+            "state",
+            "state",
+            OptimizationMode::Fast,
+        )?,
+        None => emit_scalarized_turn(&mut rust, kernel, "state", "state", OptimizationMode::Fast)?,
     }
     writeln!(rust, "}}").unwrap();
     Ok(rust)
@@ -130,6 +177,7 @@ fn emit_scalarized_turn(
     kernel: &KernelIr,
     published: &str,
     candidate: &str,
+    mode: OptimizationMode,
 ) -> Result<(), String> {
     for state in &kernel.states {
         let elements = (0..state.initial_elements.len())
@@ -162,7 +210,7 @@ fn emit_scalarized_turn(
                     .iter()
                     .map(|source| operand(kernel, source, &written_states))
                     .collect::<Vec<_>>();
-                emit_operation(operation, &operands, output.ty.shape)?
+                emit_operation(operation, &operands, output.ty.shape, mode)?
             }
         };
         let variable = if output.storage == ValueStorage::State {
@@ -212,6 +260,7 @@ fn emit_materialized_batched_turn(
     batch_len: usize,
     published: &str,
     candidate: &str,
+    mode: OptimizationMode,
 ) -> Result<(), String> {
     writeln!(rust, "    const BATCH_LEN: usize = {batch_len};").unwrap();
     writeln!(rust, "    for lane in 0..BATCH_LEN {{").unwrap();
@@ -286,7 +335,12 @@ fn emit_materialized_batched_turn(
                     BinaryOperation::Subtract => format!("{left} - {right}"),
                     BinaryOperation::Multiply => format!("{left} * {right}"),
                     BinaryOperation::Divide => format!("{left} / {right}"),
-                    BinaryOperation::Power => format!("({left}).powf({right})"),
+                    BinaryOperation::Power => emit_power(
+                        &left,
+                        &right,
+                        known_scalar_f64(kernel, right_source(instruction)?),
+                        mode,
+                    ),
                 }
             }
             operation => {
@@ -335,6 +389,7 @@ fn emit_outer_lifted_turn(
     batch_len: usize,
     published: &str,
     candidate: &str,
+    mode: OptimizationMode,
 ) -> Result<(), String> {
     writeln!(rust, "    const BATCH_LEN: usize = {batch_len};").unwrap();
     writeln!(rust, "    for lane in 0..BATCH_LEN {{").unwrap();
@@ -380,7 +435,7 @@ fn emit_outer_lifted_turn(
                     .iter()
                     .map(|source| operand(kernel, source, &written_states))
                     .collect::<Vec<_>>();
-                emit_operation(operation, &operands, output.ty.shape)?
+                emit_operation(operation, &operands, output.ty.shape, mode)?
             }
         };
         let variable = if output.storage == ValueStorage::State {
@@ -477,6 +532,7 @@ fn operand(
             ),
             shape: constant.ty.shape,
             element: constant.ty.element,
+            known_elements: Some(constant.elements.clone()),
         },
         Source::Value(id) => {
             let value = kernel.value(*id);
@@ -491,6 +547,15 @@ fn operand(
                 },
                 shape: value.ty.shape,
                 element: value.ty.element,
+                known_elements: if value.storage == ValueStorage::Activation {
+                    kernel
+                        .activations
+                        .iter()
+                        .find(|activation| activation.value == *id)
+                        .map(|activation| activation.elements.clone())
+                } else {
+                    None
+                },
             }
         }
     }
@@ -500,6 +565,7 @@ fn emit_operation(
     operation: Operation,
     inputs: &[Operand],
     output: Shape,
+    mode: OptimizationMode,
 ) -> Result<String, String> {
     match operation {
         Operation::Input { .. } => {
@@ -537,15 +603,21 @@ fn emit_operation(
             for column in 0..output.columns {
                 for row in 0..output.rows {
                     let terms = (0..left.shape.columns)
-                        .map(|inner| {
-                            format!(
-                                "{} * {}",
-                                at(left, row + inner * left.shape.rows),
-                                at(right, inner + column * right.shape.rows),
+                        .filter_map(|inner| {
+                            multiply_term(
+                                left,
+                                row + inner * left.shape.rows,
+                                right,
+                                inner + column * right.shape.rows,
+                                mode,
                             )
                         })
                         .collect::<Vec<_>>();
-                    elements.push(terms.join(" + "));
+                    elements.push(if terms.is_empty() {
+                        "0.0".to_string()
+                    } else {
+                        terms.join(" + ")
+                    });
                 }
             }
             Ok(array(&elements))
@@ -625,6 +697,7 @@ fn emit_operation(
                 .map(|index| {
                     let left_index = if left.shape.len() == 1 { 0 } else { index };
                     let right_index = if right.shape.len() == 1 { 0 } else { index };
+                    let known_exponent = known_f64(right, right_index);
                     let left = at(left, left_index);
                     let right = at(right, right_index);
                     match operation {
@@ -632,7 +705,7 @@ fn emit_operation(
                         BinaryOperation::Subtract => format!("{left} - {right}"),
                         BinaryOperation::Multiply => format!("{left} * {right}"),
                         BinaryOperation::Divide => format!("{left} / {right}"),
-                        BinaryOperation::Power => format!("({left}).powf({right})"),
+                        BinaryOperation::Power => emit_power(&left, &right, known_exponent, mode),
                     }
                 })
                 .collect::<Vec<_>>();
@@ -721,6 +794,113 @@ fn emit_operation(
     }
 }
 
+fn right_source(instruction: &super::kernel_ir::Instruction) -> Result<&Source, String> {
+    instruction
+        .inputs
+        .get(1)
+        .ok_or_else(|| format!("node {} has no right operand", instruction.node))
+}
+
+fn known_scalar_f64(kernel: &KernelIr, source: &Source) -> Option<f64> {
+    let (element, elements) = match source {
+        Source::Constant(constant) => (constant.ty.element, constant.elements.as_slice()),
+        Source::Value(id) => {
+            let value = kernel.value(*id);
+            let activation = kernel
+                .activations
+                .iter()
+                .find(|activation| activation.value == *id)?;
+            (value.ty.element, activation.elements.as_slice())
+        }
+    };
+    if element != ElementType::F64 {
+        return None;
+    }
+    let bits = *elements.first()?;
+    elements
+        .iter()
+        .all(|element| *element == bits)
+        .then(|| f64::from_bits(bits))
+}
+
+fn known_f64(operand: &Operand, index: usize) -> Option<f64> {
+    if operand.element != ElementType::F64 {
+        return None;
+    }
+    operand
+        .known_elements
+        .as_ref()?
+        .get(index)
+        .copied()
+        .map(f64::from_bits)
+}
+
+fn emit_power(
+    base: &str,
+    exponent: &str,
+    known_exponent: Option<f64>,
+    mode: OptimizationMode,
+) -> String {
+    if mode == OptimizationMode::Fast {
+        match known_exponent {
+            Some(value) if value == 2.0 => {
+                return format!("{{ let x = {base}; x * x }}");
+            }
+            Some(value) if value == 3.0 => {
+                return format!("{{ let x = {base}; x * x * x }}");
+            }
+            Some(value) if value == 0.5 => {
+                return format!("({base}).sqrt()");
+            }
+            Some(value) if value == -0.5 => {
+                return format!("1.0 / ({base}).sqrt()");
+            }
+            Some(value) if value == -1.0 => {
+                return format!("1.0 / ({base})");
+            }
+            Some(value) if value == -1.5 => {
+                return format!("{{ let x = {base}; 1.0 / (x * x.sqrt()) }}");
+            }
+            Some(value) if value == -2.0 => {
+                return format!("{{ let x = {base}; 1.0 / (x * x) }}");
+            }
+            _ => {}
+        }
+    }
+    format!("({base}).powf({exponent})")
+}
+
+fn multiply_term(
+    left: &Operand,
+    left_index: usize,
+    right: &Operand,
+    right_index: usize,
+    mode: OptimizationMode,
+) -> Option<String> {
+    let left_expression = at(left, left_index);
+    let right_expression = at(right, right_index);
+    if mode == OptimizationMode::Fast {
+        if known_f64(left, left_index).is_some_and(|value| value == 0.0)
+            || known_f64(right, right_index).is_some_and(|value| value == 0.0)
+        {
+            return None;
+        }
+        if known_f64(left, left_index) == Some(1.0) {
+            return Some(right_expression);
+        }
+        if known_f64(right, right_index) == Some(1.0) {
+            return Some(left_expression);
+        }
+        if known_f64(left, left_index) == Some(-1.0) {
+            return Some(format!("-({right_expression})"));
+        }
+        if known_f64(right, right_index) == Some(-1.0) {
+            return Some(format!("-({left_expression})"));
+        }
+    }
+    Some(format!("{left_expression} * {right_expression}"))
+}
+
 fn at(operand: &Operand, index: usize) -> String {
     format!("({})[{index}]", operand.expression)
 }
@@ -779,6 +959,7 @@ mod tests {
                 rows: 2,
                 columns: 3,
             },
+            known_elements: None,
         };
         let right = Operand {
             expression: "right".to_string(),
@@ -787,6 +968,7 @@ mod tests {
                 rows: 3,
                 columns: 1,
             },
+            known_elements: None,
         };
         let expression = emit_operation(
             Operation::MatrixMultiply,
@@ -795,11 +977,62 @@ mod tests {
                 rows: 2,
                 columns: 1,
             },
+            OptimizationMode::Strict,
         )
         .unwrap();
         assert_eq!(
             expression,
             "[(left)[0] * (right)[0] + (left)[2] * (right)[1] + (left)[4] * (right)[2], (left)[1] * (right)[0] + (left)[3] * (right)[1] + (left)[5] * (right)[2]]",
         );
+    }
+
+    #[test]
+    fn fast_power_codegen_specializes_negative_three_halves() {
+        assert_eq!(
+            emit_power("x", "exponent", Some(-1.5), OptimizationMode::Fast),
+            "{ let x = x; 1.0 / (x * x.sqrt()) }",
+        );
+        assert_eq!(
+            emit_power("x", "exponent", Some(-1.5), OptimizationMode::Strict),
+            "(x).powf(exponent)",
+        );
+    }
+
+    #[test]
+    fn fast_matrix_multiply_elides_constant_zero_and_one_terms() {
+        let left = Operand {
+            expression: "left".to_string(),
+            element: ElementType::F64,
+            shape: Shape {
+                rows: 2,
+                columns: 2,
+            },
+            known_elements: Some(vec![
+                1.0_f64.to_bits(),
+                0.0_f64.to_bits(),
+                0.0_f64.to_bits(),
+                1.0_f64.to_bits(),
+            ]),
+        };
+        let right = Operand {
+            expression: "right".to_string(),
+            element: ElementType::F64,
+            shape: Shape {
+                rows: 2,
+                columns: 1,
+            },
+            known_elements: None,
+        };
+        let expression = emit_operation(
+            Operation::MatrixMultiply,
+            &[left, right],
+            Shape {
+                rows: 2,
+                columns: 1,
+            },
+            OptimizationMode::Fast,
+        )
+        .unwrap();
+        assert_eq!(expression, "[(right)[0], (right)[1]]");
     }
 }
