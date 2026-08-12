@@ -17,7 +17,10 @@ use mech_engine::{MechProgram, MechProgramConfig};
 use nalgebra::{Matrix2, Matrix3, Matrix3x2, Vector3};
 use std::collections::BTreeMap;
 use std::f64::consts::TAU;
+use std::fs::File;
 use std::hint::black_box;
+use std::io::Write;
+use std::path::Path;
 use std::time::{Duration, Instant};
 
 use aot::{AotProgram, AotState};
@@ -385,6 +388,71 @@ fn print_measurement(name: &str, measurement: &Measurement, check: f64) {
         measurement.batch_iterations,
         check,
     );
+}
+
+struct TraceSample {
+    lane: &'static str,
+    elapsed_seconds: f64,
+    interval_seconds: f64,
+    turns: usize,
+}
+
+fn trace_fixed_duration(
+    lane: &'static str,
+    duration: Duration,
+    interval: Duration,
+    mut operation: impl FnMut(),
+) -> Vec<TraceSample> {
+    let warmup_started = Instant::now();
+    while warmup_started.elapsed() < WARMUP_MIN {
+        operation();
+    }
+
+    const CHECK_BATCH: usize = 256;
+    let started = Instant::now();
+    let mut interval_started = started;
+    let mut interval_turns = 0usize;
+    let mut samples = Vec::new();
+    loop {
+        for _ in 0..CHECK_BATCH {
+            operation();
+        }
+        interval_turns += CHECK_BATCH;
+        let now = Instant::now();
+        if now.duration_since(interval_started) >= interval
+            || now.duration_since(started) >= duration
+        {
+            samples.push(TraceSample {
+                lane,
+                elapsed_seconds: now.duration_since(started).as_secs_f64(),
+                interval_seconds: now.duration_since(interval_started).as_secs_f64(),
+                turns: interval_turns,
+            });
+            interval_started = now;
+            interval_turns = 0;
+        }
+        if now.duration_since(started) >= duration {
+            break;
+        }
+    }
+    samples
+}
+
+fn write_trace(path: &Path, samples: &[TraceSample]) -> std::io::Result<()> {
+    let mut file = File::create(path)?;
+    writeln!(file, "lane,elapsed_seconds,interval_seconds,turns,hz")?;
+    for sample in samples {
+        writeln!(
+            file,
+            "{},{:.9},{:.9},{},{:.3}",
+            sample.lane,
+            sample.elapsed_seconds,
+            sample.interval_seconds,
+            sample.turns,
+            sample.turns as f64 / sample.interval_seconds,
+        )?;
+    }
+    Ok(())
 }
 
 fn benchmark_raw(samples: &[InputSample]) {
@@ -1068,6 +1136,56 @@ fn prove_nbody_kernel(catalog: &std::sync::Arc<mech_core::FunctionCatalog>) -> M
         &resident_measurement,
         black_box(check),
     );
+
+    if let Some(path) = std::env::var_os("MECH_NBODY_TRACE_CSV") {
+        let seconds = std::env::var("MECH_NBODY_TRACE_SECONDS")
+            .ok()
+            .and_then(|value| value.parse::<f64>().ok())
+            .unwrap_or(10.0);
+        let interval_milliseconds = std::env::var("MECH_NBODY_TRACE_INTERVAL_MS")
+            .ok()
+            .and_then(|value| value.parse::<f64>().ok())
+            .unwrap_or(20.0);
+        let duration = Duration::from_secs_f64(seconds);
+        let interval = Duration::from_secs_f64(interval_milliseconds / 1_000.0);
+        let mut samples = Vec::new();
+
+        let mut raw = initial.clone();
+        samples.extend(trace_fixed_duration("Rust", duration, interval, || {
+            raw.turn()
+        }));
+        black_box(raw.check());
+
+        let mut state = AotState::new(&aot);
+        samples.extend(trace_fixed_duration("Mech AOT", duration, interval, || {
+            aot.turn(&mut state, &[]);
+        }));
+        black_box(state.values().iter().sum::<f64>());
+
+        let mut resident = activate(
+            ReactiveInstanceId::new(8, 0),
+            &artifact,
+            catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        samples.extend(trace_fixed_duration(
+            "Mech resident",
+            duration,
+            interval,
+            || resident.turn_without_summary(&[]).unwrap(),
+        ));
+        black_box(nbody_state(&resident, position_slot));
+
+        let path = std::path::PathBuf::from(path);
+        write_trace(&path, &samples)
+            .map_err(|failure| error(format!("could not write {}: {failure}", path.display())))?;
+        println!(
+            "wrote {} fixed-duration samples to {}",
+            samples.len(),
+            path.display(),
+        );
+    }
     Ok(())
 }
 
