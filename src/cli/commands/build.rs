@@ -23,6 +23,7 @@ pub(crate) enum BuildEmit {
     Bytecode,
     CargoProject,
     Plan,
+    Mlir,
 }
 
 impl From<BuildEmit> for NativeEmit {
@@ -32,6 +33,7 @@ impl From<BuildEmit> for NativeEmit {
             BuildEmit::Bytecode => NativeEmit::Bytecode,
             BuildEmit::CargoProject => NativeEmit::CargoProject,
             BuildEmit::Plan => NativeEmit::Plan,
+            BuildEmit::Mlir => unreachable!("MLIR source returns before native planning"),
         }
     }
 }
@@ -53,7 +55,7 @@ impl From<BuildProfile> for NativeBuildProfile {
 
 pub(crate) fn command() -> Command {
     Command::new("build")
-        .about("Build a Mech program as a native application, bytecode, plan, or Cargo project.")
+        .about("Build a Mech program as a native application, bytecode, plan, Cargo project, or MLIR module.")
         .arg(
             Arg::new("mech_build_file_paths")
                 .help("One or more source roots, or exactly one .mecb bytecode file")
@@ -64,9 +66,9 @@ pub(crate) fn command() -> Command {
             Arg::new("build_emit")
                 .long("emit")
                 .value_name("EMIT")
-                .value_parser(["native", "bytecode", "cargo-project", "plan"])
+                .value_parser(["native", "bytecode", "cargo-project", "plan", "mlir"])
                 .default_value("native")
-                .help("Artifact to emit: native, bytecode, cargo-project, or plan."),
+                .help("Artifact to emit: native, bytecode, cargo-project, plan, or MLIR source."),
         )
         .arg(
             Arg::new("build_name")
@@ -85,7 +87,7 @@ pub(crate) fn command() -> Command {
             Arg::new("build_target")
                 .long("target")
                 .value_name("TARGET")
-                .help("Cargo target triple for native application generation."),
+                .help("Cargo target triple, or an MLIR accelerator target such as nvidia:sm_86."),
         )
         .arg(
             Arg::new("build_profile")
@@ -211,11 +213,24 @@ impl BuildOptions {
         if options.emit == BuildEmit::CargoProject && options.keep_project {
             return build_error("`--emit cargo-project` cannot be combined with `--keep-project`");
         }
+        if options.emit == BuildEmit::Mlir {
+            if !options.aot {
+                return build_error("`--emit mlir` requires `--aot`");
+            }
+            if options.keep_project {
+                return build_error("`--emit mlir` cannot be combined with `--keep-project`");
+            }
+            if let Some(target) = options.target.as_deref() {
+                validate_mlir_target(target)?;
+            }
+        }
         if options.emit != BuildEmit::Bytecode || options.keep_project {
             if let Some(name) = options.name.as_deref() {
                 mech_build::validate_project_binary_name(name)?;
             }
-            if let Some(target) = options.target.as_deref() {
+            if options.emit != BuildEmit::Mlir
+                && let Some(target) = options.target.as_deref()
+            {
                 mech_build::validate_project_target_triple(target)?;
             }
         }
@@ -285,6 +300,30 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         if !options.keep_project {
             return Ok(CliOutcome::success());
         }
+    }
+
+    if options.emit == BuildEmit::Mlir {
+        let catalog = mech_stdlib::source_catalog();
+        let program = if options.target.as_deref().is_some_and(is_nvidia_mlir_target) {
+            mech_build::aot::lower_bytecode_mlir_gpu(&bytecode, &catalog)
+        } else {
+            mech_build::aot::lower_bytecode_mlir(&bytecode, &catalog)
+        }
+        .map_err(|reason| {
+            MechError::new(
+                GenericError {
+                    msg: format!("MLIR numeric lowering rejected the program: {reason}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        copy_exact_file_bytes(program.source.as_bytes(), &requested_output)?;
+        println!(
+            "[Output] Mech MLIR written to: {}",
+            requested_output.display()
+        );
+        return Ok(CliOutcome::success());
     }
 
     let parsed = ParsedProgram::from_bytes(&bytecode)?;
@@ -392,6 +431,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
                 .expect("bytecode keep-project output was preflighted before artifact writes");
             builder.generate_at(&request, &plan, project_output)?;
         }
+        BuildEmit::Mlir => unreachable!("MLIR source returns before native planning"),
     }
     Ok(CliOutcome::success())
 }
@@ -412,6 +452,7 @@ fn parse_emit(value: &str) -> MResult<BuildEmit> {
         "bytecode" => Ok(BuildEmit::Bytecode),
         "cargo-project" => Ok(BuildEmit::CargoProject),
         "plan" => Ok(BuildEmit::Plan),
+        "mlir" => Ok(BuildEmit::Mlir),
         _ => build_error(format!("unsupported build emit `{value}`")),
     }
 }
@@ -421,6 +462,22 @@ fn parse_profile(value: &str) -> MResult<BuildProfile> {
         "debug" => Ok(BuildProfile::Debug),
         "release" => Ok(BuildProfile::Release),
         _ => build_error(format!("unsupported build profile `{value}`")),
+    }
+}
+
+fn is_nvidia_mlir_target(target: &str) -> bool {
+    target
+        .strip_prefix("nvidia:sm_")
+        .is_some_and(|arch| !arch.is_empty() && arch.bytes().all(|byte| byte.is_ascii_digit()))
+}
+
+fn validate_mlir_target(target: &str) -> MResult<()> {
+    if is_nvidia_mlir_target(target) {
+        Ok(())
+    } else {
+        build_error(format!(
+            "unsupported MLIR target `{target}`; omit `--target` for CPU MLIR or use `nvidia:sm_<compute-capability>`"
+        ))
     }
 }
 
@@ -439,6 +496,7 @@ fn default_output_path(emit: BuildEmit, binary_name: &str) -> PathBuf {
         BuildEmit::Bytecode => base.with_extension("mecb"),
         BuildEmit::CargoProject => PathBuf::from(format!("{}.cargo", base.display())),
         BuildEmit::Plan => base.with_extension("build-plan.json"),
+        BuildEmit::Mlir => base.with_extension("mlir"),
     }
 }
 
@@ -638,6 +696,10 @@ mod tests {
             PathBuf::from("target/mech/demo.build-plan.json")
         );
         assert_eq!(
+            default_output_path(BuildEmit::Mlir, "demo"),
+            PathBuf::from("target/mech/demo.mlir")
+        );
+        assert_eq!(
             default_output_path(BuildEmit::CargoProject, "demo"),
             PathBuf::from("target/mech/demo.cargo")
         );
@@ -679,5 +741,27 @@ mod tests {
             .try_get_matches_from(["build", "--aot", "demo.mec"])
             .unwrap();
         assert!(enabled.get_flag("build_aot"));
+    }
+
+    #[test]
+    fn mlir_is_an_explicit_emit_kind() {
+        let matches = command()
+            .try_get_matches_from(["build", "--emit", "mlir", "demo.mec"])
+            .unwrap();
+        assert_eq!(
+            parse_emit(matches.get_one::<String>("build_emit").unwrap()).unwrap(),
+            BuildEmit::Mlir
+        );
+        assert!(!matches.get_flag("build_aot"));
+    }
+
+    #[test]
+    fn nvidia_mlir_targets_are_explicit_and_strict() {
+        assert!(is_nvidia_mlir_target("nvidia:sm_86"));
+        assert!(is_nvidia_mlir_target("nvidia:sm_120"));
+        assert!(!is_nvidia_mlir_target("nvidia:compute_86"));
+        assert!(!is_nvidia_mlir_target("nvidia:sm_"));
+        assert!(validate_mlir_target("nvidia:sm_86").is_ok());
+        assert!(validate_mlir_target("x86_64-unknown-linux-gnu").is_err());
     }
 }

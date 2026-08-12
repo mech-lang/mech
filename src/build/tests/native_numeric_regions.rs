@@ -224,6 +224,89 @@ fn canonical_n_body_lowers_to_standalone_rust_source() {
 }
 
 #[test]
+fn standalone_n_body_lowers_to_c_callable_mlir() {
+    let source = include_str!("../../../examples/aot-n-body/n-body.mec");
+    let catalog = mech_stdlib::source_catalog();
+    let mut program = mech_engine::MechProgram::with_function_catalog(
+        mech_engine::MechProgramConfig::default(),
+        catalog.clone(),
+    );
+    program.run_string(source).unwrap();
+    let (_, bytecode) = program.compile_program_product().unwrap().into_parts();
+
+    let mlir = mech_build::aot::lower_bytecode_mlir(&bytecode, &catalog).unwrap();
+
+    assert_eq!(mlir.input_len, 0);
+    assert_eq!(mlir.state_len, 30);
+    assert!(mlir.instruction_count > 0);
+    assert!(mlir.source.contains("func.func @mech_initialize"));
+    assert!(mlir.source.contains("func.func @mech_run_fast"));
+    assert!(mlir.source.contains("llvm.emit_c_interface"));
+    assert!(mlir.source.contains("math.sqrt"));
+    assert!(!mlir.source.contains("math.powf"));
+}
+
+#[test]
+fn materialized_particle_lanes_lower_to_gpu_mlir() {
+    let source = r#"~position := [1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0]
+~velocity := [0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+dt := 0.25
+acceleration := position * -0.125
+next-velocity := velocity + acceleration * dt
+velocity = next-velocity
+position = position + next-velocity * dt
+position"#;
+    let catalog = mech_stdlib::source_catalog();
+    let mut program = mech_engine::MechProgram::with_function_catalog(
+        mech_engine::MechProgramConfig::default(),
+        catalog.clone(),
+    );
+    program.run_string(source).unwrap();
+    let (_, bytecode) = program.compile_program_product().unwrap().into_parts();
+
+    let mlir = mech_build::aot::lower_bytecode_mlir_gpu(&bytecode, &catalog).unwrap();
+
+    assert_eq!(mlir.input_len, 0);
+    assert_eq!(mlir.state_len, 16);
+    assert!(mlir.instruction_count > 0);
+    assert!(
+        mlir.source
+            .contains("module attributes {gpu.container_module}")
+    );
+    assert!(mlir.source.contains("gpu.func @mech_turn"));
+    assert!(mlir.source.contains("gpu.thread_id x"));
+    assert!(
+        mlir.source
+            .contains("gpu.launch_func @mech_kernels::@mech_turn")
+    );
+    assert!(mlir.source.contains("memref<16xf64>"));
+    assert!(mlir.source.contains("arith.mulf"));
+}
+
+#[test]
+fn gpu_mlir_rejection_identifies_an_unsupported_operation() {
+    let source = r#"+> math/*
+
+~position := [1.0 1.0 1.0 1.0]
+next := sin(position)
+position = next
+position"#;
+    let catalog = mech_stdlib::source_catalog();
+    let mut program = mech_engine::MechProgram::with_function_catalog(
+        mech_engine::MechProgramConfig::default(),
+        catalog.clone(),
+    );
+    program.run_string(source).unwrap();
+    let (_, bytecode) = program.compile_program_product().unwrap().into_parts();
+
+    let error = mech_build::aot::lower_bytecode_mlir_gpu(&bytecode, &catalog).unwrap_err();
+
+    assert!(error.contains("unsupported operation"), "{error}");
+    assert!(error.contains("Sin"), "{error}");
+    assert!(error.contains("node"), "{error}");
+}
+
+#[test]
 fn standalone_n_body_example_plans_as_aot_from_bytecode() {
     let source = include_str!("../../../examples/aot-n-body/n-body.mec");
     let (builder, mut request) = compile(source);

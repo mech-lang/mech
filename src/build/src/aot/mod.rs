@@ -8,6 +8,8 @@
 
 mod codegen;
 mod kernel_ir;
+mod mlir_codegen;
+mod mlir_gpu_codegen;
 
 use mech_core::{CellSlotId, FunctionCatalog, ParsedProgram, ReactiveInstanceId};
 use mech_engine::__resident::{ActivationFacts, ResidentActivationError, activate};
@@ -22,12 +24,65 @@ pub struct NativeAotProgram {
     pub instruction_count: usize,
 }
 
+/// A complete numeric turn expressed as standalone textual MLIR.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeMlirProgram {
+    pub source: String,
+    pub input_len: usize,
+    pub state_len: usize,
+    pub instruction_count: usize,
+}
+
 /// Try to lower the entire bytecode turn. Rejection is data, not a build
 /// failure: callers retain the normal interpreter/runtime as the fallback.
 pub fn lower_bytecode(
     bytecode: &[u8],
     catalog: &FunctionCatalog,
 ) -> Result<NativeAotProgram, String> {
+    let kernel = lower_kernel(bytecode, catalog)?;
+    let source = codegen::emit_rust(&kernel)?;
+    Ok(NativeAotProgram {
+        source,
+        input_len: kernel.input_len,
+        state_len: kernel.state_len,
+        instruction_count: kernel.instructions.len(),
+    })
+}
+
+/// Lower the same activated numeric kernel used by the Rust AOT backend into
+/// an MLIR module with C-callable initialize, one-turn, and resident-loop APIs.
+pub fn lower_bytecode_mlir(
+    bytecode: &[u8],
+    catalog: &FunctionCatalog,
+) -> Result<NativeMlirProgram, String> {
+    let kernel = lower_kernel(bytecode, catalog)?;
+    let source = mlir_codegen::emit_mlir(&kernel)?;
+    Ok(NativeMlirProgram {
+        source,
+        input_len: kernel.input_len,
+        state_len: kernel.state_len,
+        instruction_count: kernel.instructions.len(),
+    })
+}
+
+/// Lower a materialized lane-wise numeric kernel into MLIR's GPU dialect.
+/// The emitted host wrapper launches one GPU thread per lane; target-specific
+/// NVVM/PTX lowering remains an explicit subsequent MLIR toolchain step.
+pub fn lower_bytecode_mlir_gpu(
+    bytecode: &[u8],
+    catalog: &FunctionCatalog,
+) -> Result<NativeMlirProgram, String> {
+    let kernel = lower_kernel(bytecode, catalog)?;
+    let source = mlir_gpu_codegen::emit_mlir(&kernel)?;
+    Ok(NativeMlirProgram {
+        source,
+        input_len: kernel.input_len,
+        state_len: kernel.state_len,
+        instruction_count: kernel.instructions.len(),
+    })
+}
+
+fn lower_kernel(bytecode: &[u8], catalog: &FunctionCatalog) -> Result<kernel_ir::KernelIr, String> {
     let parsed = ParsedProgram::from_bytes(bytecode)
         .map_err(|error| format!("bytecode decode failed: {}", error.display_message()))?;
     let artifact = decode_program_artifact_sections(&parsed.artifact)
@@ -50,13 +105,7 @@ pub fn lower_bytecode(
     if kernel.instructions.is_empty() {
         return Err("program has no numeric turn instructions".to_owned());
     }
-    let source = codegen::emit_rust(&kernel)?;
-    Ok(NativeAotProgram {
-        source,
-        input_len: kernel.input_len,
-        state_len: kernel.state_len,
-        instruction_count: kernel.instructions.len(),
-    })
+    Ok(kernel)
 }
 
 fn activation_error(
