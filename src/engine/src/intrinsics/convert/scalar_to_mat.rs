@@ -3,10 +3,65 @@ use crate::intrinsics::*;
 use nalgebra::Scalar;
 use std::marker::PhantomData;
 
+static PURE_SCALAR_BROADCAST_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
+
 #[derive(Debug)]
 pub struct ConvertScalarToMat2<F, T> {
     pub arg: Ref<F>,
     pub out: Ref<T>,
+}
+
+impl<F, T> MechFunctionFactory for ConvertScalarToMat2<F, T>
+where
+    F: Debug + Scalar + Clone + Sync + Send + 'static + FunctionRuntimeType,
+    T: Debug + Sync + Send + 'static + FunctionRuntimeType,
+    #[cfg(feature = "compiler")]
+    F: CompileConst + ConstElem + AsValueKind,
+    #[cfg(feature = "compiler")]
+    T: CompileConst + ConstElem + AsValueKind,
+    Ref<T>: ToValue,
+    for<'a> &'a mut T: IntoIterator<Item = &'a mut F>,
+{
+    const SIGNATURE: RuntimeFunctionSignature =
+        RuntimeFunctionSignature::unary(T::REPRESENTATION, F::REPRESENTATION);
+
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+            FunctionArgs::Unary(out, arg) => {
+                let arg: Ref<F> = arg.try_function_ref(FunctionArgumentRole::Input(0))?;
+                let out: Ref<T> = out.try_function_ref(FunctionArgumentRole::Output)?;
+                Ok(Box::new(Self { arg, out }))
+            }
+            _ => Err(MechError::new(
+                IncorrectNumberOfArguments {
+                    expected: 1,
+                    found: args.len(),
+                },
+                None,
+            )
+            .with_compiler_loc()),
+        }
+    }
 }
 
 impl<F, T> MechFunctionImpl for ConvertScalarToMat2<F, T>
@@ -35,6 +90,10 @@ where
         format!("{:#?}", self)
     }
 
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SCALAR_BROADCAST_CONTRACT)
+    }
+
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
@@ -53,6 +112,64 @@ where
         );
         compile_unop!(name, self.out, self.arg, ctx);
     }
+}
+
+fn validate_scalar_to_matrix(args: &FunctionArgs) -> MResult<()> {
+    let contract = "scalar_to_matrix";
+    if args.input_count() != 1 {
+        return Err(function_shape_contract_violation(
+            contract,
+            format!("expected one input, found {}", args.input_count()),
+        ));
+    }
+    args.output_value()
+        .function_matrix_descriptor(FunctionArgumentRole::Output)?
+        .ok_or_else(|| {
+            function_shape_contract_violation(contract, "output must be matrix-backed")
+        })?;
+    if args
+        .input_value(0)
+        .expect("input count was validated")
+        .function_matrix_descriptor(FunctionArgumentRole::Input(0))?
+        .is_some()
+    {
+        return Err(function_shape_contract_violation(
+            contract,
+            "input must be scalar",
+        ));
+    }
+    Ok(())
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(
+        feature = "native-kernel-prototype",
+        feature = "convert",
+        feature = "f64",
+        feature = "row_vectord",
+    ),
+    registration: register_convert_scalar_f64_to_row_vectord,
+    installer: install_convert_scalar_f64_to_row_vectord,
+    name: "ConvertScalarToMat2<f64,[f64]:1,0>",
+    factory_type: ConvertScalarToMat2<f64, RowDVector<f64>>,
+    contract: RuntimeFunctionContract::custom(
+        "scalar_to_matrix",
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_scalar_to_matrix,
+    ),
+    package: "mech-engine", crate_name: "mech_engine",
+    installer_path: "mech_engine::__mech_native::install_convert_scalar_f64_to_row_vectord",
+    extra_cargo_features: ["native-kernel-prototype", "convert"],
+}
+
+pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(all(
+        feature = "native-kernel-prototype",
+        feature = "f64",
+        feature = "row_vectord"
+    ))]
+    register_convert_scalar_f64_to_row_vectord(builder)?;
+    Ok(())
 }
 
 macro_rules! impl_conversion_scalar_to_mat_match_arms {

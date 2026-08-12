@@ -92,6 +92,7 @@ pub(crate) enum BinaryOperation {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum Operation {
     Input { ordinal: usize },
+    Broadcast,
     HorizontalConcatenate,
     VerticalConcatenate,
     MatrixMultiply,
@@ -120,10 +121,25 @@ pub(crate) struct StateBinding {
 }
 
 #[derive(Clone, Debug)]
+pub(crate) struct InputBinding {
+    pub(crate) value: ValueId,
+    pub(crate) ordinal: usize,
+    pub(crate) offset: usize,
+    pub(crate) len: usize,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct BatchLayout {
+    pub(crate) len: usize,
+}
+
+#[derive(Clone, Debug)]
 pub(crate) struct KernelIr {
-    pub(crate) input_count: usize,
+    pub(crate) input_len: usize,
     pub(crate) state_len: usize,
+    pub(crate) batch: Option<BatchLayout>,
     pub(crate) values: BTreeMap<ValueId, ValueDeclaration>,
+    pub(crate) inputs: Vec<InputBinding>,
     pub(crate) states: Vec<StateBinding>,
     pub(crate) instructions: Vec<Instruction>,
 }
@@ -135,12 +151,6 @@ impl KernelIr {
         input_slots: &[CellSlotId],
     ) -> Result<Self, KernelIrError> {
         let state_len = state_len(plan)?;
-        let input_by_slot = input_slots
-            .iter()
-            .copied()
-            .enumerate()
-            .map(|(ordinal, slot)| (slot, ordinal))
-            .collect::<BTreeMap<_, _>>();
         let values = plan
             .slots
             .iter()
@@ -171,6 +181,41 @@ impl KernelIr {
                 ))
             })
             .collect::<Result<BTreeMap<_, _>, _>>()?;
+
+        let mut input_len = 0usize;
+        let inputs = input_slots
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(ordinal, slot)| {
+                let value = ValueId::from(slot);
+                let len = values
+                    .get(&value)
+                    .ok_or_else(|| {
+                        KernelIrError::global(format!(
+                            "input slot {} has no resolved resident type",
+                            slot.get(),
+                        ))
+                    })?
+                    .ty
+                    .shape
+                    .len();
+                let offset = input_len;
+                input_len = input_len
+                    .checked_add(len)
+                    .ok_or_else(|| KernelIrError::global("kernel input length overflow"))?;
+                Ok(InputBinding {
+                    value,
+                    ordinal,
+                    offset,
+                    len,
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let input_by_slot = inputs
+            .iter()
+            .map(|input| (CellSlotId::new(input.value.get()), input.ordinal))
+            .collect::<BTreeMap<_, _>>();
 
         let states = plan
             .slots
@@ -278,10 +323,13 @@ impl KernelIr {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
+        let batch = infer_batch_layout(&values, &states, &instructions);
         let ir = Self {
-            input_count: input_slots.len(),
+            input_len,
             state_len,
+            batch,
             values,
+            inputs,
             states,
             instructions,
         };
@@ -299,6 +347,10 @@ impl KernelIr {
         })
     }
 
+    pub(crate) fn input(&self, ordinal: usize) -> &InputBinding {
+        &self.inputs[ordinal]
+    }
+
     fn validate_input_ordinals(&self) -> Result<(), KernelIrError> {
         let ordinals = self
             .instructions
@@ -308,7 +360,7 @@ impl KernelIr {
                 _ => None,
             })
             .collect::<BTreeSet<_>>();
-        let expected = (0..self.input_count).collect::<BTreeSet<_>>();
+        let expected = (0..self.inputs.len()).collect::<BTreeSet<_>>();
         if ordinals != expected {
             return Err(KernelIrError::global(format!(
                 "kernel input ordinals are {ordinals:?}, expected {expected:?}",
@@ -385,6 +437,8 @@ fn lower_operation(name: &str) -> Option<Operation> {
         Some(Operation::Dot)
     } else if name.starts_with("Assign") {
         Some(Operation::Assign)
+    } else if name.starts_with("ConvertScalarToMat2") {
+        Some(Operation::Broadcast)
     } else if name.starts_with("MathSin") {
         Some(Operation::Unary(UnaryOperation::Sin))
     } else if name.starts_with("MathCos") {
@@ -574,8 +628,11 @@ fn validate_instruction(
     match instruction.operation {
         Operation::Input { .. } => {
             require_arity(&inputs, 0)?;
-            if shape != Shape::SCALAR {
-                return Err("resource inputs currently require a scalar output".to_string());
+        }
+        Operation::Broadcast => {
+            require_arity(&inputs, 1)?;
+            if inputs[0].shape != Shape::SCALAR {
+                return Err("broadcast currently requires a scalar input".to_string());
             }
         }
         Operation::HorizontalConcatenate => {
@@ -635,8 +692,10 @@ fn validate_instruction(
         }
         Operation::Atan2 => {
             require_arity(&inputs, 2)?;
-            if inputs.iter().any(|input| input.shape != Shape::SCALAR) || shape != Shape::SCALAR {
-                return Err("atan2 currently requires scalar inputs and output".to_string());
+            for input in inputs {
+                if input.shape != Shape::SCALAR && input.shape != shape {
+                    return Err("atan2 operands must match the output or be scalar".to_string());
+                }
             }
         }
         Operation::Binary(_) => {
@@ -649,6 +708,52 @@ fn validate_instruction(
         }
     }
     Ok(())
+}
+
+fn infer_batch_layout(
+    values: &BTreeMap<ValueId, ValueDeclaration>,
+    states: &[StateBinding],
+    instructions: &[Instruction],
+) -> Option<BatchLayout> {
+    let first_state = states.first()?;
+    let state_shape = values.get(&first_state.value)?.ty.shape;
+    if state_shape.rows != 1 || state_shape.columns <= 1 {
+        return None;
+    }
+    let len = state_shape.columns;
+    let shape_is_lane = |shape: Shape| shape == Shape::SCALAR || shape == state_shape;
+    if !values.values().all(|value| shape_is_lane(value.ty.shape))
+        || !states
+            .iter()
+            .all(|state| values[&state.value].ty.shape == state_shape)
+        || !instructions.iter().all(|instruction| {
+            matches!(
+                instruction.operation,
+                Operation::Input { .. }
+                    | Operation::Broadcast
+                    | Operation::Assign
+                    | Operation::Unary(_)
+                    | Operation::Atan2
+                    | Operation::Binary(_)
+            )
+        })
+    {
+        return None;
+    }
+    for instruction in instructions {
+        for source in &instruction.inputs {
+            let Source::Constant(constant) = source else {
+                continue;
+            };
+            if constant.ty.shape != Shape::SCALAR
+                && (constant.ty.shape != state_shape
+                    || constant.elements.windows(2).any(|pair| pair[0] != pair[1]))
+            {
+                return None;
+            }
+        }
+    }
+    Some(BatchLayout { len })
 }
 
 fn require_arity(inputs: &[ValueType], expected: usize) -> Result<(), String> {

@@ -164,6 +164,13 @@ pub mod __mech_native {
     pub use crate::intrinsics::catalog::install_set_define;
     #[cfg(feature = "convert")]
     pub use crate::intrinsics::convert::scalar::__mech_native::*;
+    #[cfg(all(
+        feature = "native-kernel-prototype",
+        feature = "convert",
+        feature = "f64",
+        feature = "row_vectord"
+    ))]
+    pub use crate::intrinsics::convert::scalar_to_mat::install_convert_scalar_f64_to_row_vectord;
     #[cfg(feature = "variable_define")]
     pub use crate::intrinsics::define::__mech_native::*;
     #[cfg(all(feature = "variable_define", feature = "matrix"))]

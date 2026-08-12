@@ -1,0 +1,13 @@
+@input := bench://numeric-batch{:read(pulse), :read(drive)}
+
+pulse := @input/pulse
+drive := @input/drive
+
+~signal<[f64]:1,64> := 1.0
+
+~> pulse {
+  decayed := signal * 0.999
+  signal = decayed + drive
+}
+
+signal

@@ -31,6 +31,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     )?;
     register(builder, &runtime, "AddAssignVV<[f64]:0,0>", bind_add_assign)?;
     register(builder, &runtime, "AddMDMD<f64>", bind_add)?;
+    register(builder, &runtime, "AddRDRD<f64>", bind_add)?;
+    register(builder, &runtime, "AddRDS<f64>", bind_add)?;
+    register(builder, &runtime, "AddSRD<f64>", bind_add)?;
     register(builder, &runtime, "AddSS<f64>", bind_add)?;
     register(builder, &runtime, "AddVDVD<f64>", bind_add)?;
     register(
@@ -53,11 +56,24 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     )?;
     register(builder, &runtime, "MulMDS<f64>", bind_mul)?;
     register(builder, &runtime, "MulMDVD<f64>", bind_mul_rows)?;
+    register(builder, &runtime, "MulRDRD<f64>", bind_mul)?;
+    register(builder, &runtime, "MulRDS<f64>", bind_mul)?;
+    register(builder, &runtime, "MulSRD<f64>", bind_mul)?;
     register(builder, &runtime, "MulSS<f64>", bind_mul)?;
     register(builder, &runtime, "MulSVD<f64>", bind_mul)?;
     register(builder, &runtime, "MulVDS<f64>", bind_mul)?;
     register(builder, &runtime, "Atan2F64", bind_atan2)?;
+    register(builder, &runtime, "Atan2RDF64", bind_atan2)?;
+    register(
+        builder,
+        &runtime,
+        "ConvertScalarToMat2<f64,[f64]:1,0>",
+        bind_broadcast,
+    )?;
     register(builder, &runtime, "DivSS<f64>", bind_div)?;
+    register(builder, &runtime, "DivRDRD<f64>", bind_div)?;
+    register(builder, &runtime, "DivRDS<f64>", bind_div)?;
+    register(builder, &runtime, "DivSRD<f64>", bind_div)?;
     register(builder, &runtime, "DivVDS<f64>", bind_div)?;
     register(builder, &runtime, "DotRDRD<f64>", bind_dot)?;
     register(builder, &runtime, "DotVDVD<f64>", bind_dot)?;
@@ -66,7 +82,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "MatMulRDMD<f64>", bind_matmul)?;
     register(builder, &runtime, "MatMulVDRD<f64>", bind_matmul)?;
     register(builder, &runtime, "MathCosF64S", bind_cos)?;
+    register(builder, &runtime, "MathCosF64RD", bind_cos)?;
     register(builder, &runtime, "MathSinF64S", bind_sin)?;
+    register(builder, &runtime, "MathSinF64RD", bind_sin)?;
     register(builder, &runtime, "NChooseKMatrix<f64>", bind_n_choose_k)?;
     register(builder, &runtime, "NegateS<f64>", bind_negate)?;
     register(builder, &runtime, "PowMDS<f64>", bind_pow)?;
@@ -86,6 +104,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         bind_sub_indexed_rows,
     )?;
     register(builder, &runtime, "SubMDMD<f64>", bind_sub)?;
+    register(builder, &runtime, "SubRDRD<f64>", bind_sub)?;
+    register(builder, &runtime, "SubRDS<f64>", bind_sub)?;
+    register(builder, &runtime, "SubSRD<f64>", bind_sub)?;
     register(builder, &runtime, "SubSS<f64>", bind_sub)?;
     register(builder, &runtime, "SubVDVD<f64>", bind_sub)?;
     register(builder, &runtime, "TransposeMD<f64>", bind_transpose)?;
@@ -124,6 +145,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "Assign<f64>", bind_assign)?;
     register(builder, &runtime, "Assign<f64DVector>", bind_assign)?;
     register(builder, &runtime, "Assign<f64DMatrix>", bind_assign)?;
+    register(builder, &runtime, "Assign<f64RowDVector>", bind_assign)?;
 
     register(builder, &["ekf"], "trigonometric-state", bind_ekf_trig)?;
     register(builder, &["ekf"], "motion-jacobian", bind_ekf_motion)?;
@@ -644,30 +666,49 @@ fn bind_assign(
     Ok(BoundResidentKernel::new_f64_1(assign_f64, Box::new([])))
 }
 
-fn bind_scalar_unary(
+fn bind_broadcast(
     request: &ResidentKernelBindRequest<'_>,
-    executor: mech_core::ResidentKernelF64Executor1,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_full_write(
         request,
         1,
-        ShapeRule::SameAsInput { input: 0 },
-        ChangeDetectionPolicy::ExactScalar,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
     )?;
-    require_f64_lengths(request, &[1], 1)?;
+    require_kind(request, &[ResidentValueKind::F64], ResidentValueKind::F64)?;
+    if request.inputs[0].shape != ResidentShape::SCALAR {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(BoundResidentKernel::new_f64_1(broadcast_f64, Box::new([])))
+}
+
+fn bind_unary(
+    request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelF64Executor1,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let change = if request.output.shape == ResidentShape::SCALAR {
+        ChangeDetectionPolicy::ExactScalar
+    } else {
+        ChangeDetectionPolicy::KernelReported
+    };
+    validate_full_write(request, 1, ShapeRule::SameAsInput { input: 0 }, change)?;
+    require_kind(request, &[ResidentValueKind::F64], ResidentValueKind::F64)?;
+    if request.inputs[0].shape != request.output.shape {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     Ok(BoundResidentKernel::new_f64_1(executor, Box::new([])))
 }
 
 fn bind_sin(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_scalar_unary(request, sin_f64)
+    bind_unary(request, sin_f64)
 }
 
 fn bind_cos(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_scalar_unary(request, cos_f64)
+    bind_unary(request, cos_f64)
 }
 
 fn bind_negate(
@@ -1304,22 +1345,28 @@ fn assign_f64(
     Ok(changed)
 }
 
-fn unary_scalar_f64(
-    input: &[f64],
+fn broadcast_f64(
+    _kernel: &BoundResidentKernel,
+    source: &[f64],
     output: ResidentValueMut<'_>,
-    operation: impl FnOnce(f64) -> f64,
 ) -> Result<bool, ResidentKernelError> {
-    let [input] = input else {
+    let [source] = source else {
         return Err(ResidentKernelError::InvalidShape);
     };
     let output = f64_output(output)?;
-    let [output] = output else {
+    Ok(replace_f64(output, |_| *source))
+}
+
+fn unary_f64(
+    input: &[f64],
+    output: ResidentValueMut<'_>,
+    operation: impl Fn(f64) -> f64,
+) -> Result<bool, ResidentKernelError> {
+    let output = f64_output(output)?;
+    if input.len() != output.len() {
         return Err(ResidentKernelError::InvalidShape);
-    };
-    let next = operation(*input);
-    let changed = output.to_bits() != next.to_bits();
-    *output = next;
-    Ok(changed)
+    }
+    Ok(replace_f64(output, |index| operation(input[index])))
 }
 
 fn sin_f64(
@@ -1327,7 +1374,7 @@ fn sin_f64(
     input: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    unary_scalar_f64(input, output, f64::sin)
+    unary_f64(input, output, f64::sin)
 }
 
 fn cos_f64(
@@ -1335,7 +1382,7 @@ fn cos_f64(
     input: &[f64],
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    unary_scalar_f64(input, output, f64::cos)
+    unary_f64(input, output, f64::cos)
 }
 
 fn binary_f64_slices(
@@ -2190,5 +2237,40 @@ mod tests {
             })
         );
         assert_eq!(candidate, [9.0, 20.0]);
+    }
+
+    #[test]
+    fn row_vector_numeric_kernels_broadcast_and_apply_elementwise() {
+        let broadcast = BoundResidentKernel::new_f64_1(broadcast_f64, Box::new([]));
+        let source = [0.5];
+        let inputs = [ResidentValueRef::F64(&source)];
+        let mut values = [0.0; 4];
+        assert_eq!(
+            broadcast.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut values)),
+            Ok(true),
+        );
+        assert_eq!(values, [0.5; 4]);
+
+        let sin = BoundResidentKernel::new_f64_1(sin_f64, Box::new([]));
+        let inputs = [ResidentValueRef::F64(&values)];
+        let mut transformed = [0.0; 4];
+        assert_eq!(
+            sin.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut transformed),),
+            Ok(true),
+        );
+        assert_eq!(transformed, [0.5_f64.sin(); 4]);
+
+        let add = BoundResidentKernel::new_f64_2(add_f64, Box::new([]));
+        let scalar = [0.25];
+        let inputs = [
+            ResidentValueRef::F64(&transformed),
+            ResidentValueRef::F64(&scalar),
+        ];
+        let mut result = [0.0; 4];
+        assert_eq!(
+            add.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut result)),
+            Ok(true),
+        );
+        assert_eq!(result, [0.5_f64.sin() + 0.25; 4]);
     }
 }

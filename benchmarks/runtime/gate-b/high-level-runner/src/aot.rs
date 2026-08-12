@@ -23,6 +23,7 @@ pub struct AotProgram {
     turn: TurnFunction,
     input_len: usize,
     state_len: usize,
+    batch_len: Option<usize>,
     instruction_count: usize,
     source_path: PathBuf,
     compile_time: Duration,
@@ -109,8 +110,9 @@ impl AotProgram {
             _library: library,
             initialize,
             turn,
-            input_len: kernel.input_count,
+            input_len: kernel.input_len,
             state_len: kernel.state_len,
+            batch_len: kernel.batch.map(|batch| batch.len),
             instruction_count: kernel.instructions.len(),
             source_path,
             compile_time,
@@ -149,6 +151,10 @@ impl AotProgram {
     pub fn instruction_count(&self) -> usize {
         self.instruction_count
     }
+
+    pub fn batch_len(&self) -> Option<usize> {
+        self.batch_len
+    }
 }
 
 #[derive(Clone)]
@@ -180,7 +186,7 @@ fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
         "// Generated from backend-neutral Mech numeric kernel IR. Do not edit."
     )
     .unwrap();
-    writeln!(rust, "const INPUT_LEN: usize = {};", kernel.input_count).unwrap();
+    writeln!(rust, "const INPUT_LEN: usize = {};", kernel.input_len).unwrap();
     writeln!(rust, "const STATE_LEN: usize = {};\n", kernel.state_len).unwrap();
 
     writeln!(rust, "#[no_mangle]").unwrap();
@@ -195,14 +201,29 @@ fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     )
     .unwrap();
     for state in &kernel.states {
-        for (ordinal, bits) in state.initial_elements.iter().enumerate() {
+        if state
+            .initial_elements
+            .windows(2)
+            .all(|pair| pair[0] == pair[1])
+        {
             writeln!(
                 rust,
-                "    state[{}] = {};",
-                state.offset + ordinal,
-                float_literal(*bits),
+                "    state[{}..{}].fill({});",
+                state.offset,
+                state.offset + state.initial_elements.len(),
+                float_literal(state.initial_elements[0]),
             )
             .unwrap();
+        } else {
+            for (ordinal, bits) in state.initial_elements.iter().enumerate() {
+                writeln!(
+                    rust,
+                    "    state[{}] = {};",
+                    state.offset + ordinal,
+                    float_literal(*bits),
+                )
+                .unwrap();
+            }
         }
     }
     writeln!(rust, "}}\n").unwrap();
@@ -229,6 +250,16 @@ fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     )
     .unwrap();
 
+    if let Some(batch) = kernel.batch {
+        emit_batched_turn(&mut rust, kernel, batch.len)?;
+    } else {
+        emit_scalarized_turn(&mut rust, kernel)?;
+    }
+    writeln!(rust, "}}").unwrap();
+    Ok(rust)
+}
+
+fn emit_scalarized_turn(rust: &mut String, kernel: &KernelIr) -> Result<(), String> {
     for state in &kernel.states {
         let elements = (0..state.initial_elements.len())
             .map(|ordinal| format!("published[{}]", state.offset + ordinal))
@@ -246,7 +277,13 @@ fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     for instruction in &kernel.instructions {
         let output = kernel.value(instruction.output);
         let expression = match instruction.operation {
-            Operation::Input { ordinal } => format!("[inputs[{ordinal}]]"),
+            Operation::Input { ordinal } => {
+                let input = kernel.input(ordinal);
+                let elements = (0..input.len)
+                    .map(|element| format!("inputs[{}]", input.offset + element))
+                    .collect::<Vec<_>>();
+                array(&elements)
+            }
             operation => {
                 let operands = instruction
                     .inputs
@@ -290,8 +327,140 @@ fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
             .unwrap();
         }
     }
-    writeln!(rust, "}}").unwrap();
-    Ok(rust)
+    Ok(())
+}
+
+fn emit_batched_turn(rust: &mut String, kernel: &KernelIr, batch_len: usize) -> Result<(), String> {
+    writeln!(rust, "    const BATCH_LEN: usize = {batch_len};").unwrap();
+    writeln!(rust, "    for lane in 0..BATCH_LEN {{").unwrap();
+    for state in &kernel.states {
+        writeln!(
+            rust,
+            "        let s_{} = published[{} + lane];",
+            state.value.get(),
+            state.offset,
+        )
+        .unwrap();
+    }
+    for instruction in &kernel.instructions {
+        let output = kernel.value(instruction.output);
+        let expression = match instruction.operation {
+            Operation::Input { ordinal } => {
+                let input = kernel.input(ordinal);
+                if input.len == 1 {
+                    format!("inputs[{}]", input.offset)
+                } else {
+                    format!("inputs[{} + lane]", input.offset)
+                }
+            }
+            Operation::Broadcast | Operation::Assign => {
+                let [input] = instruction.inputs.as_slice() else {
+                    return Err(format!(
+                        "node {} has invalid lane unary arity",
+                        instruction.node,
+                    ));
+                };
+                lane_operand(kernel, input)?
+            }
+            Operation::Unary(operation) => {
+                let [input] = instruction.inputs.as_slice() else {
+                    return Err(format!(
+                        "node {} has invalid lane unary arity",
+                        instruction.node,
+                    ));
+                };
+                let value = lane_operand(kernel, input)?;
+                match operation {
+                    UnaryOperation::Sin => format!("({value}).sin()"),
+                    UnaryOperation::Cos => format!("({value}).cos()"),
+                    UnaryOperation::Negate => format!("-({value})"),
+                }
+            }
+            Operation::Atan2 => {
+                let [left, right] = instruction.inputs.as_slice() else {
+                    return Err(format!(
+                        "node {} has invalid lane atan2 arity",
+                        instruction.node,
+                    ));
+                };
+                format!(
+                    "({}).atan2({})",
+                    lane_operand(kernel, left)?,
+                    lane_operand(kernel, right)?,
+                )
+            }
+            Operation::Binary(operation) => {
+                let [left, right] = instruction.inputs.as_slice() else {
+                    return Err(format!(
+                        "node {} has invalid lane binary arity",
+                        instruction.node,
+                    ));
+                };
+                let operator = match operation {
+                    BinaryOperation::Add => "+",
+                    BinaryOperation::Subtract => "-",
+                    BinaryOperation::Multiply => "*",
+                    BinaryOperation::Divide => "/",
+                };
+                format!(
+                    "{} {operator} {}",
+                    lane_operand(kernel, left)?,
+                    lane_operand(kernel, right)?,
+                )
+            }
+            operation => {
+                return Err(format!(
+                    "node {} operation {operation:?} is not lane-wise",
+                    instruction.node,
+                ));
+            }
+        };
+        let variable = if output.storage == ValueStorage::State {
+            format!("next_{}", instruction.output.get())
+        } else {
+            format!("v_{}", instruction.output.get())
+        };
+        writeln!(
+            rust,
+            "        // node {} {}",
+            instruction.node, instruction.operation_name,
+        )
+        .unwrap();
+        writeln!(rust, "        let {variable}: f64 = {expression};").unwrap();
+    }
+    for state in &kernel.states {
+        let variable = if kernel.state_is_written(state.value) {
+            format!("next_{}", state.value.get())
+        } else {
+            format!("s_{}", state.value.get())
+        };
+        writeln!(
+            rust,
+            "        candidate[{} + lane] = {variable};",
+            state.offset,
+        )
+        .unwrap();
+    }
+    writeln!(rust, "    }}").unwrap();
+    Ok(())
+}
+
+fn lane_operand(kernel: &KernelIr, source: &Source) -> Result<String, String> {
+    match source {
+        Source::Constant(constant) => {
+            let Some(bits) = constant.elements.first().copied() else {
+                return Err("lane constant is empty".to_string());
+            };
+            if constant.elements.iter().any(|element| *element != bits) {
+                return Err("lane constant is not uniform".to_string());
+            }
+            Ok(float_literal(bits))
+        }
+        Source::Value(id) => Ok(match kernel.value(*id).storage {
+            ValueStorage::State => format!("s_{}", id.get()),
+            ValueStorage::Temporary => format!("v_{}", id.get()),
+        }),
+    }
 }
 
 fn operand(kernel: &KernelIr, source: &Source) -> Operand {
@@ -327,6 +496,12 @@ fn emit_operation(
     match operation {
         Operation::Input { .. } => {
             Err("input operation reached numeric code generation".to_string())
+        }
+        Operation::Broadcast => {
+            let [input] = inputs else {
+                unreachable!("kernel IR validated broadcast arity")
+            };
+            Ok(array(&vec![at(input, 0); output.len()]))
         }
         Operation::HorizontalConcatenate => {
             let elements = inputs
@@ -421,7 +596,18 @@ fn emit_operation(
             let [left, right] = inputs else {
                 unreachable!("kernel IR validated atan2 arity")
             };
-            Ok(format!("[({}).atan2({})]", at(left, 0), at(right, 0)))
+            let elements = (0..output.len())
+                .map(|index| {
+                    let left_index = if left.shape.len() == 1 { 0 } else { index };
+                    let right_index = if right.shape.len() == 1 { 0 } else { index };
+                    format!(
+                        "({}).atan2({})",
+                        at(left, left_index),
+                        at(right, right_index),
+                    )
+                })
+                .collect::<Vec<_>>();
+            Ok(array(&elements))
         }
         Operation::Binary(operation) => {
             let [left, right] = inputs else {

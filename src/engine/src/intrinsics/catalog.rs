@@ -237,6 +237,8 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     super::assign::install_runtime(builder)?;
     #[cfg(feature = "convert")]
     super::convert::scalar::install_runtime(builder)?;
+    #[cfg(all(feature = "convert", feature = "matrix"))]
+    super::convert::scalar_to_mat::install_runtime(builder)?;
     #[cfg(feature = "variable_define")]
     super::define::install_runtime(builder)?;
 

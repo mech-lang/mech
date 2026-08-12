@@ -1,0 +1,130 @@
++> math
+
+@input := bench://ekf-batch-runtime{:read(pulse), :read(linear-velocity), :read(angular-velocity), :read(bearing)}
+
+pulse := @input/pulse
+linear-velocity := @input/linear-velocity
+angular-velocity := @input/angular-velocity
+bearing := @input/bearing
+
+dt := 0.1
+landmark-x := 140.0
+landmark-y := 12.0
+process-noise-v := 0.01
+process-noise-w := 0.0025
+measurement-noise := 0.25
+
+~x0<[f64]:1,1024> := 55.0
+~x1<[f64]:1,1024> := 25.0
+~x2<[f64]:1,1024> := 0.4
+
+~p00<[f64]:1,1024> := 100.0
+~p10<[f64]:1,1024> := 0.0
+~p20<[f64]:1,1024> := 0.0
+~p01<[f64]:1,1024> := 0.0
+~p11<[f64]:1,1024> := 100.0
+~p21<[f64]:1,1024> := 0.0
+~p02<[f64]:1,1024> := 0.0
+~p12<[f64]:1,1024> := 0.0
+~p22<[f64]:1,1024> := 0.15
+
+~> pulse {
+  sin-theta := math/sin(x2)
+  cos-theta := math/cos(x2)
+  distance := linear-velocity * dt
+
+  predicted-x0 := x0 + distance * cos-theta
+  predicted-x1 := x1 + distance * sin-theta
+  predicted-x2 := x2 + angular-velocity * dt
+
+  jacobian-a := 0.0 - distance * sin-theta
+  jacobian-b := distance * cos-theta
+
+  fp00 := p00 + jacobian-a * p20
+  fp01 := p01 + jacobian-a * p21
+  fp02 := p02 + jacobian-a * p22
+  fp10 := p10 + jacobian-b * p20
+  fp11 := p11 + jacobian-b * p21
+  fp12 := p12 + jacobian-b * p22
+
+  control-x := cos-theta * dt
+  control-y := sin-theta * dt
+  predicted-p00 := fp00 + fp02 * jacobian-a + control-x * control-x * process-noise-v
+  predicted-p01 := fp01 + fp02 * jacobian-b + control-x * control-y * process-noise-v
+  predicted-p02 := fp02
+  predicted-p10 := fp10 + fp12 * jacobian-a + control-y * control-x * process-noise-v
+  predicted-p11 := fp11 + fp12 * jacobian-b + control-y * control-y * process-noise-v
+  predicted-p12 := fp12
+  predicted-p20 := p20 + p22 * jacobian-a
+  predicted-p21 := p21 + p22 * jacobian-b
+  predicted-p22 := p22 + dt * dt * process-noise-w
+
+  delta-x := landmark-x - predicted-x0
+  delta-y := landmark-y - predicted-x1
+  squared-range := delta-x * delta-x + delta-y * delta-y
+  predicted-bearing := math/atan2(delta-y, delta-x) - predicted-x2
+  raw-innovation := bearing - predicted-bearing
+  innovation := math/atan2(math/sin(raw-innovation), math/cos(raw-innovation))
+
+  h0 := delta-y / squared-range
+  h1 := (0.0 - delta-x) / squared-range
+  h2 := -1.0
+
+  projected-p0 := h0 * predicted-p00 + h1 * predicted-p10 + h2 * predicted-p20
+  projected-p1 := h0 * predicted-p01 + h1 * predicted-p11 + h2 * predicted-p21
+  projected-p2 := h0 * predicted-p02 + h1 * predicted-p12 + h2 * predicted-p22
+  innovation-variance := projected-p0 * h0 + projected-p1 * h1 + projected-p2 * h2 + measurement-noise
+
+  gain0 := (predicted-p00 * h0 + predicted-p01 * h1 + predicted-p02 * h2) / innovation-variance
+  gain1 := (predicted-p10 * h0 + predicted-p11 * h1 + predicted-p12 * h2) / innovation-variance
+  gain2 := (predicted-p20 * h0 + predicted-p21 * h1 + predicted-p22 * h2) / innovation-variance
+
+  corrected-x0 := predicted-x0 + gain0 * innovation
+  corrected-x1 := predicted-x1 + gain1 * innovation
+  corrected-x2 := predicted-x2 + gain2 * innovation
+
+  a00 := 1.0 - gain0 * h0
+  a01 := 0.0 - gain0 * h1
+  a02 := 0.0 - gain0 * h2
+  a10 := 0.0 - gain1 * h0
+  a11 := 1.0 - gain1 * h1
+  a12 := 0.0 - gain1 * h2
+  a20 := 0.0 - gain2 * h0
+  a21 := 0.0 - gain2 * h1
+  a22 := 1.0 - gain2 * h2
+
+  ap00 := a00 * predicted-p00 + a01 * predicted-p10 + a02 * predicted-p20
+  ap01 := a00 * predicted-p01 + a01 * predicted-p11 + a02 * predicted-p21
+  ap02 := a00 * predicted-p02 + a01 * predicted-p12 + a02 * predicted-p22
+  ap10 := a10 * predicted-p00 + a11 * predicted-p10 + a12 * predicted-p20
+  ap11 := a10 * predicted-p01 + a11 * predicted-p11 + a12 * predicted-p21
+  ap12 := a10 * predicted-p02 + a11 * predicted-p12 + a12 * predicted-p22
+  ap20 := a20 * predicted-p00 + a21 * predicted-p10 + a22 * predicted-p20
+  ap21 := a20 * predicted-p01 + a21 * predicted-p11 + a22 * predicted-p21
+  ap22 := a20 * predicted-p02 + a21 * predicted-p12 + a22 * predicted-p22
+
+  corrected-p00 := ap00 * a00 + ap01 * a01 + ap02 * a02 + gain0 * gain0 * measurement-noise
+  corrected-p01 := ap00 * a10 + ap01 * a11 + ap02 * a12 + gain0 * gain1 * measurement-noise
+  corrected-p02 := ap00 * a20 + ap01 * a21 + ap02 * a22 + gain0 * gain2 * measurement-noise
+  corrected-p10 := ap10 * a00 + ap11 * a01 + ap12 * a02 + gain1 * gain0 * measurement-noise
+  corrected-p11 := ap10 * a10 + ap11 * a11 + ap12 * a12 + gain1 * gain1 * measurement-noise
+  corrected-p12 := ap10 * a20 + ap11 * a21 + ap12 * a22 + gain1 * gain2 * measurement-noise
+  corrected-p20 := ap20 * a00 + ap21 * a01 + ap22 * a02 + gain2 * gain0 * measurement-noise
+  corrected-p21 := ap20 * a10 + ap21 * a11 + ap22 * a12 + gain2 * gain1 * measurement-noise
+  corrected-p22 := ap20 * a20 + ap21 * a21 + ap22 * a22 + gain2 * gain2 * measurement-noise
+
+  x0 = corrected-x0
+  x1 = corrected-x1
+  x2 = corrected-x2
+  p00 = corrected-p00
+  p10 = corrected-p10
+  p20 = corrected-p20
+  p01 = corrected-p01
+  p11 = corrected-p11
+  p21 = corrected-p21
+  p02 = corrected-p02
+  p12 = corrected-p12
+  p22 = corrected-p22
+}
+
+x0

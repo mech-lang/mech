@@ -1,3 +1,4 @@
+benchmarks/runtime/gate-b/high-level-runner/src/aot.rs|ffi|mech-native-kernel-prototype|loaded library outlives copied symbols and raw pointers name length-checked aligned f64 buffers for the generated ABI|benchmark-only native numeric kernel prototype
 machines/combinatorics/src/dynamic_module.rs|ffi|mech-combinatorics|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
 machines/compare/src/eq.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/compare/src/gt.rs|typed-machine-kernel|mech-compare|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
