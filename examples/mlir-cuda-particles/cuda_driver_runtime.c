@@ -14,7 +14,8 @@ static void cuda_check(CUresult result, const char *operation) {
   const char *message = "unknown CUDA driver error";
   cuGetErrorName(result, &name);
   cuGetErrorString(result, &message);
-  fprintf(stderr, "%s failed: %s (%s)\n", operation, name, message);
+  fprintf(stderr, "%s failed: %s (%s), CUDA error %d\n", operation, name,
+          message, (int)result);
   abort();
 }
 
@@ -24,13 +25,24 @@ void *mgpuModuleLoadJIT(void *data, int32_t opt_level) {
   CUmodule module;
   cuda_check(cuInit(0), "cuInit");
   cuda_check(cuDeviceGet(&device, 0), "cuDeviceGet");
+#if CUDA_VERSION >= 13000
+  CUctxCreateParams context_params = {0};
+  cuda_check(cuCtxCreate(&mech_cuda_context, &context_params, 0, device),
+             "cuCtxCreate");
+#else
   cuda_check(cuCtxCreate(&mech_cuda_context, 0, device), "cuCtxCreate");
+#endif
   cuda_check(cuModuleLoadData(&module, data), "cuModuleLoadData");
   return module;
 }
 
 void mgpuModuleUnload(void *module) {
-  cuda_check(cuModuleUnload((CUmodule)module), "cuModuleUnload");
+  CUresult unload_result = cuModuleUnload((CUmodule)module);
+  if (unload_result == CUDA_ERROR_DEINITIALIZED) {
+    mech_cuda_context = NULL;
+    return;
+  }
+  cuda_check(unload_result, "cuModuleUnload");
   cuda_check(cuCtxDestroy(mech_cuda_context), "cuCtxDestroy");
   mech_cuda_context = NULL;
 }
