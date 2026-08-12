@@ -165,7 +165,7 @@ pub mod __mech_native {
     #[cfg(feature = "convert")]
     pub use crate::intrinsics::convert::scalar::__mech_native::*;
     #[cfg(all(
-        feature = "native-kernel-prototype",
+        feature = "native-scalar-broadcast",
         feature = "convert",
         feature = "f64",
         feature = "row_vectord"

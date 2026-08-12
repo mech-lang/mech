@@ -15,9 +15,10 @@ particles.mec
   -> CUDA Driver API launch
 ```
 
-`particles.mec` owns the initial state and every arithmetic operation. The C
-files only implement the small MLIR CUDA runtime ABI, allocate/copy device
-memory, invoke the generated entry point, and check the returned state.
+`particles.mec` owns six resident state vectors and all 31 arithmetic
+operations in each particle turn. The support files only implement the GPU
+runtime ABI, allocate resident memory, invoke the generated entry point, and
+check the returned state.
 
 ## Generate PTX on macOS or Linux
 
@@ -54,8 +55,8 @@ GPU_CHIP=sm_86 \
 ```
 
 `sm_86` is the appropriate target for an RTX 3050 Ti. A successful run prints
-the adapter, 1,024 particle lanes, 2,048 resident `f64` values, and a maximum
-absolute error no greater than `1e-12`.
+the adapter, 65,536 particle lanes, 393,216 resident `f64` values, and a
+maximum absolute error no greater than `1e-12`.
 
 Set `MECH_OFFLINE=1` when all Cargo dependencies are already cached and the
 build must not access the network.
@@ -80,6 +81,14 @@ That avoids inventing a global `particles` host or hiding placement in a C or
 Rust program. A later managed implementation should express accelerator policy
 in project configuration while preserving the same backend-neutral numeric IR.
 
+For inspection or a CPU comparison, the same KernelIR can also emit a fused
+Rust `f32` loop:
+
+```bash
+mech build --aot --emit rust --target cpu:f32 \
+  --out /tmp/particles-f32.rs examples/mlir-cuda-particles
+```
+
 ## Execute on Apple Metal
 
 The same `particles.mec` can be lowered through f32 SPIR-V-dialect MLIR and
@@ -102,6 +111,33 @@ relaxed-precision target. The generated module contains both `mech_initialize`
 and `mech_turn`; `metal_runner.m` owns the device, resident buffer, dispatch
 loop, and post-timing correctness oracle, but it does not supply the executable
 GPU equations or initial state. The small duplicated CPU recurrence is used only
-to check the result after measurement.
-Metal source is compiled through the runtime, so Xcode's optional offline Metal
-Toolchain component is not required.
+to check the result after measurement. Metal source is compiled through the
+runtime, so Xcode's optional offline Metal Toolchain component is not required.
+
+## Representative resident benchmark
+
+The benchmark compares the generated Metal `f32` kernel with generated Rust
+`f32` and normal native Mech `f64` kernels. All three execute the same six-state
+particle recurrence. Initialization, compilation, command encoding, and final
+readback are outside the timed region.
+
+```bash
+MECH_OFFLINE=1 TURNS=10000 SAMPLES=5 \
+  ./examples/mlir-cuda-particles/benchmark-metal.sh
+```
+
+On an Apple M1, the medians for 65,536 particles over 10,000 turns were:
+
+| Backend | Precision | Time | Throughput | GPU speedup |
+| --- | --- | ---: | ---: | ---: |
+| Apple Metal | `f32` | 299.396 ms | 2,188.940 M particle-turns/s | 1.00x |
+| Generated Rust | `f32` | 567.372 ms | 1,155.080 M particle-turns/s | 1.90x |
+| Native Mech | `f64` | 1,286.048 ms | 509.6 M particle-turns/s | 4.30x |
+
+The precision-matched GPU advantage is 1.90x. The larger 4.30x figure includes
+both GPU execution and the explicitly relaxed `f32` precision. After 10,000
+turns, the maximum sampled CPU `f32` versus GPU difference was about `5.2e-8`.
+
+The current example uses 65,536 lanes because shaped scalar splats are still
+serialized as dense constants in the program artifact. Larger resident arrays
+need a compact splat representation rather than higher artifact size limits.

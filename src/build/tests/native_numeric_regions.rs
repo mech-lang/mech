@@ -361,6 +361,37 @@ position"#;
 }
 
 #[test]
+fn shaped_particle_state_finalizes_for_aot_lowering() {
+    let source = r#"~position<[f64]:1,1024> := 0.25
+~velocity<[f64]:1,1024> := 0.5
+next-velocity := velocity + position * -0.03125
+velocity = next-velocity
+position = position + next-velocity * 0.25
+position"#;
+    let catalog = mech_stdlib::source_catalog();
+    let mut program = mech_engine::MechProgram::with_function_catalog(
+        mech_engine::MechProgramConfig::default(),
+        catalog.clone(),
+    );
+    program.run_string(source).unwrap();
+    let (_, bytecode) = program.compile_program_product().unwrap().into_parts();
+
+    let mlir = mech_build::aot::lower_bytecode_mlir_spirv_f32(&bytecode, &catalog).unwrap();
+    let rust = mech_build::aot::lower_bytecode(&bytecode, &catalog).unwrap();
+    let rust_f32 = mech_build::aot::lower_bytecode_rust_f32(&bytecode, &catalog).unwrap();
+
+    assert_eq!(mlir.state_len, 2048);
+    assert!(mlir.source.contains("// mech.batch_len = 1024"));
+    assert!(mlir.source.contains("!spirv.array<2048 x f32"));
+    assert!(rust.source.contains("state[0..1024].fill("));
+    assert!(!rust.source.contains("[f64; 1024]"));
+    assert!(rust.source.len() < 100_000, "{}", rust.source.len());
+    assert!(rust_f32.source.contains("state: &mut [f32]"));
+    assert!(rust_f32.source.contains("f32::from_bits("));
+    assert!(!rust_f32.source.contains("state: &mut [f64]"));
+}
+
+#[test]
 fn standalone_n_body_example_plans_as_aot_from_bytecode() {
     let source = include_str!("../../../examples/aot-n-body/n-body.mec");
     let (builder, mut request) = compile(source);

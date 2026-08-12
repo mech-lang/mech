@@ -33,6 +33,10 @@ static void cuda_check(CUresult result, const char *operation) {
 int main(void) {
   const int64_t state_len = mech_state_len();
   const int64_t lanes = mech_batch_len();
+  if (state_len != lanes * 6) {
+    fprintf(stderr, "representative particle state must have six components\n");
+    return 1;
+  }
   const size_t state_bytes = (size_t)state_len * sizeof(double);
   double *host_state = calloc((size_t)state_len, sizeof(double));
   double *initial_state = calloc((size_t)state_len, sizeof(double));
@@ -61,12 +65,37 @@ int main(void) {
   cuda_check(cuMemFree(device_state), "cuMemFree");
 
   double maximum_error = 0.0;
-  for (int64_t i = 0; i < state_len; ++i) {
-    const double expected =
-        initial_state[i] == 1.0 ? 1.1171875 : 0.46875;
-    const double error = fabs(host_state[i] - expected);
-    if (error > maximum_error) {
-      maximum_error = error;
+  for (int64_t lane = 0; lane < lanes; ++lane) {
+    const double x = initial_state[lane];
+    const double y = initial_state[lanes + lane];
+    const double z = initial_state[2 * lanes + lane];
+    const double vx = initial_state[3 * lanes + lane];
+    const double vy = initial_state[4 * lanes + lane];
+    const double vz = initial_state[5 * lanes + lane];
+    const double r2 = x * x + y * y + z * z + 0.75;
+    const double inverse = 1.0 / r2;
+    const double inverse2 = inverse * inverse;
+    const double radial = -0.2 * inverse2;
+    const double ax = x * radial + y * 0.03;
+    const double ay = y * radial - x * 0.03;
+    const double az = z * radial;
+    const double next_vx = (vx + ax * 0.004) * 0.9995;
+    const double next_vy = (vy + ay * 0.004) * 0.9995;
+    const double next_vz = (vz + az * 0.004) * 0.9995;
+    const double expected[6] = {
+        x + next_vx * 0.004,
+        y + next_vy * 0.004,
+        z + next_vz * 0.004,
+        next_vx,
+        next_vy,
+        next_vz,
+    };
+    for (int64_t component = 0; component < 6; ++component) {
+      const double error =
+          fabs(host_state[component * lanes + lane] - expected[component]);
+      if (error > maximum_error) {
+        maximum_error = error;
+      }
     }
   }
 

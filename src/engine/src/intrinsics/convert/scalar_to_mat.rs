@@ -143,7 +143,7 @@ fn validate_scalar_to_matrix(args: &FunctionArgs) -> MResult<()> {
 
 mech_core::declare_native_runtime_factory! {
     cfg: all(
-        feature = "native-kernel-prototype",
+        feature = "native-scalar-broadcast",
         feature = "convert",
         feature = "f64",
         feature = "row_vectord",
@@ -159,12 +159,12 @@ mech_core::declare_native_runtime_factory! {
     ),
     package: "mech-engine", crate_name: "mech_engine",
     installer_path: "mech_engine::__mech_native::install_convert_scalar_f64_to_row_vectord",
-    extra_cargo_features: ["native-kernel-prototype", "convert"],
+    extra_cargo_features: ["native-scalar-broadcast", "convert"],
 }
 
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(all(
-        feature = "native-kernel-prototype",
+        feature = "native-scalar-broadcast",
         feature = "f64",
         feature = "row_vectord"
     ))]

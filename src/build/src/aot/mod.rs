@@ -50,6 +50,22 @@ pub fn lower_bytecode(
     })
 }
 
+/// Lower a numeric turn into standalone Rust using the same relaxed f32
+/// precision profile as f32 accelerator targets.
+pub fn lower_bytecode_rust_f32(
+    bytecode: &[u8],
+    catalog: &FunctionCatalog,
+) -> Result<NativeAotProgram, String> {
+    let kernel = lower_kernel(bytecode, catalog)?;
+    let source = codegen::emit_rust_f32(&kernel)?;
+    Ok(NativeAotProgram {
+        source,
+        input_len: kernel.input_len,
+        state_len: kernel.state_len,
+        instruction_count: kernel.instructions.len(),
+    })
+}
+
 /// Lower the same activated numeric kernel used by the Rust AOT backend into
 /// an MLIR module with C-callable initialize, one-turn, and resident-loop APIs.
 pub fn lower_bytecode_mlir(

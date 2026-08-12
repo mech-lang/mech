@@ -82,6 +82,10 @@ int main(int argc, const char *argv[]) {
       fprintf(stderr, "lanes, state-elements, and turns must be positive\n");
       return 2;
     }
+    if (state_elements != lanes * 6) {
+      fprintf(stderr, "representative particle state must have six components\n");
+      return 2;
+    }
 
     id<MTLDevice> device = MTLCreateSystemDefaultDevice();
     if (device == nil) {
@@ -102,6 +106,11 @@ int main(int argc, const char *argv[]) {
     }
 
     dispatch(queue, initialize, state, lanes);
+    float *values = state.contents;
+    float expected[6];
+    for (NSUInteger component = 0; component < 6; ++component) {
+      expected[component] = values[component * lanes];
+    }
 
     id<MTLCommandBuffer> command_buffer = [queue commandBuffer];
     id<MTLComputeCommandEncoder> encoder = [command_buffer computeCommandEncoder];
@@ -124,15 +133,38 @@ int main(int argc, const char *argv[]) {
     require_completed(command_buffer, "resident turn dispatches");
     NSTimeInterval elapsed = [NSDate timeIntervalSinceReferenceDate] - started;
 
-    float expected_position = 1.0f;
-    float expected_velocity = 0.5f;
     for (NSUInteger ordinal = 0; ordinal < turns; ++ordinal) {
-      expected_velocity += expected_position * -0.125f * 0.25f;
-      expected_position += expected_velocity * 0.25f;
+      float x = expected[0];
+      float y = expected[1];
+      float z = expected[2];
+      float vx = expected[3];
+      float vy = expected[4];
+      float vz = expected[5];
+      float r2 = x * x + y * y + z * z + 0.75f;
+      float inverse = 1.0f / r2;
+      float inverse2 = inverse * inverse;
+      float radial = -0.2f * inverse2;
+      float ax = x * radial + y * 0.03f;
+      float ay = y * radial - x * 0.03f;
+      float az = z * radial;
+      float next_vx = (vx + ax * 0.004f) * 0.9995f;
+      float next_vy = (vy + ay * 0.004f) * 0.9995f;
+      float next_vz = (vz + az * 0.004f) * 0.9995f;
+      expected[0] = x + next_vx * 0.004f;
+      expected[1] = y + next_vy * 0.004f;
+      expected[2] = z + next_vz * 0.004f;
+      expected[3] = next_vx;
+      expected[4] = next_vy;
+      expected[5] = next_vz;
     }
-    float *values = state.contents;
-    float position_error = fabsf(values[0] - expected_position);
-    float velocity_error = fabsf(values[lanes] - expected_velocity);
+    float maximum_error = 0.0f;
+    for (NSUInteger component = 0; component < 6; ++component) {
+      for (NSUInteger lane = 0; lane < lanes; ++lane) {
+        maximum_error = fmaxf(
+            maximum_error,
+            fabsf(values[component * lanes + lane] - expected[component]));
+      }
+    }
     double particle_turns = (double)lanes * (double)turns;
 
     printf("device: %s\n", device.name.UTF8String);
@@ -141,10 +173,11 @@ int main(int argc, const char *argv[]) {
     printf("resident dispatch: %.3f ms\n", elapsed * 1000.0);
     printf("resident throughput: %.3f million particle-turns/s\n",
            particle_turns / elapsed / 1.0e6);
-    printf("position[0]: %.9g (error %.3e)\n", values[0], position_error);
-    printf("velocity[0]: %.9g (error %.3e)\n", values[lanes],
-           velocity_error);
-    if (position_error > 1.0e-5f || velocity_error > 1.0e-5f) {
+    printf("maximum f32 absolute error: %.3e\n", maximum_error);
+    printf("benchmark_csv,gpu,f32,%lu,%.9f,%.3f\n",
+           (unsigned long)turns, elapsed,
+           particle_turns / elapsed / 1.0e6);
+    if (maximum_error > 1.0e-5f) {
       fprintf(stderr, "GPU result did not match the f32 reference\n");
       return 1;
     }

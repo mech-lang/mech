@@ -21,7 +21,7 @@ experimental-actors = []
 
 [dependencies]
 mech-core = { version = "0.3.5", default-features = false, features = ["native-plan", "program", "serde"] }
-mech-engine = { version = "0.3.5", default-features = false, features = ["resident-artifact"] }
+mech-engine = { version = "0.3.5", default-features = false, features = ["resident-artifact", "native-scalar-broadcast"] }
 mech-runtime = { version = "0.3.5", default-features = false, features = ["runtime", "serde", "string"] }
 mech-terminal = { version = "0.3.5", default-features = false, features = ["provider"], optional = true }
 mech-console = { version = "0.3.5", default-features = false, features = ["native"], optional = true }

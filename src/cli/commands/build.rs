@@ -24,6 +24,7 @@ pub(crate) enum BuildEmit {
     CargoProject,
     Plan,
     Mlir,
+    Rust,
 }
 
 impl From<BuildEmit> for NativeEmit {
@@ -33,7 +34,9 @@ impl From<BuildEmit> for NativeEmit {
             BuildEmit::Bytecode => NativeEmit::Bytecode,
             BuildEmit::CargoProject => NativeEmit::CargoProject,
             BuildEmit::Plan => NativeEmit::Plan,
-            BuildEmit::Mlir => unreachable!("MLIR source returns before native planning"),
+            BuildEmit::Mlir | BuildEmit::Rust => {
+                unreachable!("source emit returns before native planning")
+            }
         }
     }
 }
@@ -55,7 +58,7 @@ impl From<BuildProfile> for NativeBuildProfile {
 
 pub(crate) fn command() -> Command {
     Command::new("build")
-        .about("Build a Mech program as a native application, bytecode, plan, Cargo project, or MLIR module.")
+        .about("Build a Mech program as a native application, bytecode, plan, Cargo project, Rust kernel, or MLIR module.")
         .arg(
             Arg::new("mech_build_file_paths")
                 .help("One or more source roots, or exactly one .mecb bytecode file")
@@ -66,9 +69,9 @@ pub(crate) fn command() -> Command {
             Arg::new("build_emit")
                 .long("emit")
                 .value_name("EMIT")
-                .value_parser(["native", "bytecode", "cargo-project", "plan", "mlir"])
+                .value_parser(["native", "bytecode", "cargo-project", "plan", "mlir", "rust"])
                 .default_value("native")
-                .help("Artifact to emit: native, bytecode, cargo-project, plan, or MLIR source."),
+                .help("Artifact to emit: native, bytecode, cargo-project, plan, Rust kernel, or MLIR source."),
         )
         .arg(
             Arg::new("build_name")
@@ -87,7 +90,7 @@ pub(crate) fn command() -> Command {
             Arg::new("build_target")
                 .long("target")
                 .value_name("TARGET")
-                .help("Cargo target triple, or an MLIR accelerator target such as nvidia:sm_86 or apple:metal-f32."),
+                .help("Cargo target triple, an MLIR accelerator target, or cpu:f32 for a relaxed Rust kernel."),
         )
         .arg(
             Arg::new("build_profile")
@@ -213,22 +216,30 @@ impl BuildOptions {
         if options.emit == BuildEmit::CargoProject && options.keep_project {
             return build_error("`--emit cargo-project` cannot be combined with `--keep-project`");
         }
-        if options.emit == BuildEmit::Mlir {
+        if matches!(options.emit, BuildEmit::Mlir | BuildEmit::Rust) {
             if !options.aot {
-                return build_error("`--emit mlir` requires `--aot`");
+                return build_error("numeric source emission requires `--aot`");
             }
             if options.keep_project {
-                return build_error("`--emit mlir` cannot be combined with `--keep-project`");
+                return build_error(
+                    "numeric source emission cannot be combined with `--keep-project`",
+                );
             }
-            if let Some(target) = options.target.as_deref() {
-                validate_mlir_target(target)?;
+            match options.emit {
+                BuildEmit::Mlir => {
+                    if let Some(target) = options.target.as_deref() {
+                        validate_mlir_target(target)?;
+                    }
+                }
+                BuildEmit::Rust => validate_rust_target(options.target.as_deref())?,
+                _ => unreachable!(),
             }
         }
         if options.emit != BuildEmit::Bytecode || options.keep_project {
             if let Some(name) = options.name.as_deref() {
                 mech_build::validate_project_binary_name(name)?;
             }
-            if options.emit != BuildEmit::Mlir
+            if !matches!(options.emit, BuildEmit::Mlir | BuildEmit::Rust)
                 && let Some(target) = options.target.as_deref()
             {
                 mech_build::validate_project_target_triple(target)?;
@@ -326,6 +337,30 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         copy_exact_file_bytes(program.source.as_bytes(), &requested_output)?;
         println!(
             "[Output] Mech MLIR written to: {}",
+            requested_output.display()
+        );
+        return Ok(CliOutcome::success());
+    }
+
+    if options.emit == BuildEmit::Rust {
+        let catalog = mech_stdlib::source_catalog();
+        let program = match options.target.as_deref() {
+            Some("cpu:f32") => mech_build::aot::lower_bytecode_rust_f32(&bytecode, &catalog),
+            None => mech_build::aot::lower_bytecode(&bytecode, &catalog),
+            Some(target) => unreachable!("validated Rust target `{target}`"),
+        }
+        .map_err(|reason| {
+            MechError::new(
+                GenericError {
+                    msg: format!("Rust numeric lowering rejected the program: {reason}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        copy_exact_file_bytes(program.source.as_bytes(), &requested_output)?;
+        println!(
+            "[Output] Mech Rust kernel written to: {}",
             requested_output.display()
         );
         return Ok(CliOutcome::success());
@@ -436,7 +471,9 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
                 .expect("bytecode keep-project output was preflighted before artifact writes");
             builder.generate_at(&request, &plan, project_output)?;
         }
-        BuildEmit::Mlir => unreachable!("MLIR source returns before native planning"),
+        BuildEmit::Mlir | BuildEmit::Rust => {
+            unreachable!("numeric source returns before native planning")
+        }
     }
     Ok(CliOutcome::success())
 }
@@ -458,6 +495,7 @@ fn parse_emit(value: &str) -> MResult<BuildEmit> {
         "cargo-project" => Ok(BuildEmit::CargoProject),
         "plan" => Ok(BuildEmit::Plan),
         "mlir" => Ok(BuildEmit::Mlir),
+        "rust" => Ok(BuildEmit::Rust),
         _ => build_error(format!("unsupported build emit `{value}`")),
     }
 }
@@ -486,6 +524,15 @@ fn validate_mlir_target(target: &str) -> MResult<()> {
     }
 }
 
+fn validate_rust_target(target: Option<&str>) -> MResult<()> {
+    match target {
+        None | Some("cpu:f32") => Ok(()),
+        Some(target) => build_error(format!(
+            "unsupported Rust kernel target `{target}`; omit `--target` for f64 or use `cpu:f32`"
+        )),
+    }
+}
+
 fn inferred_binary_name(input: &str) -> String {
     Path::new(input)
         .file_stem()
@@ -502,6 +549,7 @@ fn default_output_path(emit: BuildEmit, binary_name: &str) -> PathBuf {
         BuildEmit::CargoProject => PathBuf::from(format!("{}.cargo", base.display())),
         BuildEmit::Plan => base.with_extension("build-plan.json"),
         BuildEmit::Mlir => base.with_extension("mlir"),
+        BuildEmit::Rust => base.with_extension("rs"),
     }
 }
 
@@ -705,6 +753,10 @@ mod tests {
             PathBuf::from("target/mech/demo.mlir")
         );
         assert_eq!(
+            default_output_path(BuildEmit::Rust, "demo"),
+            PathBuf::from("target/mech/demo.rs")
+        );
+        assert_eq!(
             default_output_path(BuildEmit::CargoProject, "demo"),
             PathBuf::from("target/mech/demo.cargo")
         );
@@ -758,6 +810,22 @@ mod tests {
             BuildEmit::Mlir
         );
         assert!(!matches.get_flag("build_aot"));
+    }
+
+    #[test]
+    fn rust_is_an_explicit_emit_kind_with_an_optional_f32_target() {
+        let matches = command()
+            .try_get_matches_from([
+                "build", "--aot", "--emit", "rust", "--target", "cpu:f32", "demo.mec",
+            ])
+            .unwrap();
+        assert_eq!(
+            parse_emit(matches.get_one::<String>("build_emit").unwrap()).unwrap(),
+            BuildEmit::Rust
+        );
+        assert!(validate_rust_target(Some("cpu:f32")).is_ok());
+        assert!(validate_rust_target(None).is_ok());
+        assert!(validate_rust_target(Some("apple:metal-f32")).is_err());
     }
 
     #[test]

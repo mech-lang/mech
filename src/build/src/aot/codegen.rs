@@ -22,6 +22,23 @@ enum OptimizationMode {
 }
 
 pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
+    emit_rust_with_precision(kernel, FloatPrecision::F64)
+}
+
+pub(super) fn emit_rust_f32(kernel: &KernelIr) -> Result<String, String> {
+    emit_rust_with_precision(kernel, FloatPrecision::F32)
+}
+
+#[derive(Clone, Copy)]
+enum FloatPrecision {
+    F32,
+    F64,
+}
+
+fn emit_rust_with_precision(
+    kernel: &KernelIr,
+    precision: FloatPrecision,
+) -> Result<String, String> {
     let mut rust = String::new();
     writeln!(
         rust,
@@ -30,18 +47,31 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     .unwrap();
     writeln!(rust, "pub const INPUT_LEN: usize = {};", kernel.input_len).unwrap();
     writeln!(rust, "pub const STATE_LEN: usize = {};\n", kernel.state_len).unwrap();
-    for activation in &kernel.activations {
+    let referenced_values = kernel
+        .instructions
+        .iter()
+        .flat_map(|instruction| instruction.inputs.iter())
+        .filter_map(|source| match source {
+            Source::Value(value) => Some(*value),
+            Source::Constant(_) => None,
+        })
+        .collect::<BTreeSet<_>>();
+    for activation in kernel
+        .activations
+        .iter()
+        .filter(|activation| referenced_values.contains(&activation.value))
+    {
         let ty = kernel.value(activation.value).ty;
         let elements = activation
             .elements
             .iter()
-            .map(|value| literal(ty.element, *value))
+            .map(|value| literal(ty.element, *value, precision))
             .collect::<Vec<_>>();
         writeln!(
             rust,
             "const A_{}: [{}; {}] = {};",
             activation.value.get(),
-            rust_type(ty.element),
+            rust_type(ty.element, precision),
             ty.shape.len(),
             array(&elements),
         )
@@ -49,7 +79,12 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     }
     writeln!(rust).unwrap();
 
-    writeln!(rust, "pub fn initialize(state: &mut [f64]) {{").unwrap();
+    writeln!(
+        rust,
+        "pub fn initialize(state: &mut [{}]) {{",
+        float_type(precision),
+    )
+    .unwrap();
     writeln!(rust, "    assert_eq!(state.len(), STATE_LEN);").unwrap();
     for state in &kernel.states {
         if matches!(
@@ -63,7 +98,7 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
                     rust,
                     "    state[{start}..{}].fill({});",
                     start + batch_len,
-                    float_literal(*bits),
+                    float_literal(*bits, precision),
                 )
                 .unwrap();
             }
@@ -77,7 +112,7 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
                 "    state[{}..{}].fill({});",
                 state.offset,
                 state.offset + state.initial_elements.len(),
-                float_literal(state.initial_elements[0]),
+                float_literal(state.initial_elements[0], precision),
             )
             .unwrap();
         } else {
@@ -86,7 +121,7 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
                     rust,
                     "    state[{}] = {};",
                     state.offset + ordinal,
-                    float_literal(*bits),
+                    float_literal(*bits, precision),
                 )
                 .unwrap();
             }
@@ -98,7 +133,8 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     writeln!(rust, "#[inline(never)]").unwrap();
     writeln!(
         rust,
-        "pub fn turn(inputs: &[f64], published: &[f64], candidate: &mut [f64]) {{"
+        "pub fn turn(inputs: &[{0}], published: &[{0}], candidate: &mut [{0}]) {{",
+        float_type(precision),
     )
     .unwrap();
     writeln!(rust, "    assert_eq!(inputs.len(), INPUT_LEN);").unwrap();
@@ -114,6 +150,7 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
                 "published",
                 "candidate",
                 OptimizationMode::Strict,
+                precision,
             )?;
         }
         Some(batch) => emit_outer_lifted_turn(
@@ -123,6 +160,7 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
             "published",
             "candidate",
             OptimizationMode::Strict,
+            precision,
         )?,
         None => emit_scalarized_turn(
             &mut rust,
@@ -130,6 +168,7 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
             "published",
             "candidate",
             OptimizationMode::Strict,
+            precision,
         )?,
     }
     writeln!(rust, "}}").unwrap();
@@ -142,7 +181,8 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     writeln!(rust, "#[inline(always)]").unwrap();
     writeln!(
         rust,
-        "\npub fn turn_in_place(inputs: &[f64], state: &mut [f64]) {{"
+        "\npub fn turn_in_place(inputs: &[{0}], state: &mut [{0}]) {{",
+        float_type(precision),
     )
     .unwrap();
     writeln!(rust, "    assert_eq!(inputs.len(), INPUT_LEN);").unwrap();
@@ -156,6 +196,7 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
                 "state",
                 "state",
                 OptimizationMode::Fast,
+                precision,
             )?;
         }
         Some(batch) => emit_outer_lifted_turn(
@@ -165,8 +206,16 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
             "state",
             "state",
             OptimizationMode::Fast,
+            precision,
         )?,
-        None => emit_scalarized_turn(&mut rust, kernel, "state", "state", OptimizationMode::Fast)?,
+        None => emit_scalarized_turn(
+            &mut rust,
+            kernel,
+            "state",
+            "state",
+            OptimizationMode::Fast,
+            precision,
+        )?,
     }
     writeln!(rust, "}}").unwrap();
     Ok(rust)
@@ -178,6 +227,7 @@ fn emit_scalarized_turn(
     published: &str,
     candidate: &str,
     mode: OptimizationMode,
+    precision: FloatPrecision,
 ) -> Result<(), String> {
     for state in &kernel.states {
         let elements = (0..state.initial_elements.len())
@@ -185,8 +235,9 @@ fn emit_scalarized_turn(
             .collect::<Vec<_>>();
         writeln!(
             rust,
-            "    let s_{}: [f64; {}] = {};",
+            "    let s_{}: [{}; {}] = {};",
             state.value.get(),
+            float_type(precision),
             state.initial_elements.len(),
             array(&elements),
         )
@@ -208,7 +259,7 @@ fn emit_scalarized_turn(
                 let operands = instruction
                     .inputs
                     .iter()
-                    .map(|source| operand(kernel, source, &written_states))
+                    .map(|source| operand(kernel, source, &written_states, precision))
                     .collect::<Vec<_>>();
                 emit_operation(operation, &operands, output.ty.shape, mode)?
             }
@@ -227,7 +278,7 @@ fn emit_scalarized_turn(
         writeln!(
             rust,
             "    let {variable}: [{}; {}] = {expression};",
-            rust_type(output.ty.element),
+            rust_type(output.ty.element, precision),
             output.ty.shape.len(),
         )
         .unwrap();
@@ -261,6 +312,7 @@ fn emit_materialized_batched_turn(
     published: &str,
     candidate: &str,
     mode: OptimizationMode,
+    precision: FloatPrecision,
 ) -> Result<(), String> {
     writeln!(rust, "    const BATCH_LEN: usize = {batch_len};").unwrap();
     writeln!(rust, "    for lane in 0..BATCH_LEN {{").unwrap();
@@ -292,7 +344,7 @@ fn emit_materialized_batched_turn(
                         instruction.node,
                     ));
                 };
-                lane_operand(kernel, input, &written_states, batch_len)?
+                lane_operand(kernel, input, &written_states, batch_len, precision)?
             }
             Operation::Unary(operation) => {
                 let [input] = instruction.inputs.as_slice() else {
@@ -301,7 +353,7 @@ fn emit_materialized_batched_turn(
                         instruction.node,
                     ));
                 };
-                let value = lane_operand(kernel, input, &written_states, batch_len)?;
+                let value = lane_operand(kernel, input, &written_states, batch_len, precision)?;
                 match operation {
                     UnaryOperation::Sin => format!("({value}).sin()"),
                     UnaryOperation::Cos => format!("({value}).cos()"),
@@ -317,8 +369,8 @@ fn emit_materialized_batched_turn(
                 };
                 format!(
                     "({}).atan2({})",
-                    lane_operand(kernel, left, &written_states, batch_len)?,
-                    lane_operand(kernel, right, &written_states, batch_len)?,
+                    lane_operand(kernel, left, &written_states, batch_len, precision)?,
+                    lane_operand(kernel, right, &written_states, batch_len, precision)?,
                 )
             }
             Operation::Binary(operation) => {
@@ -328,8 +380,8 @@ fn emit_materialized_batched_turn(
                         instruction.node,
                     ));
                 };
-                let left = lane_operand(kernel, left, &written_states, batch_len)?;
-                let right = lane_operand(kernel, right, &written_states, batch_len)?;
+                let left = lane_operand(kernel, left, &written_states, batch_len, precision)?;
+                let right = lane_operand(kernel, right, &written_states, batch_len, precision)?;
                 match operation {
                     BinaryOperation::Add => format!("{left} + {right}"),
                     BinaryOperation::Subtract => format!("{left} - {right}"),
@@ -361,7 +413,12 @@ fn emit_materialized_batched_turn(
             instruction.node, instruction.operation_name,
         )
         .unwrap();
-        writeln!(rust, "        let {variable}: f64 = {expression};").unwrap();
+        writeln!(
+            rust,
+            "        let {variable}: {} = {expression};",
+            float_type(precision),
+        )
+        .unwrap();
         if output.storage == ValueStorage::State {
             written_states.insert(instruction.output);
         }
@@ -390,6 +447,7 @@ fn emit_outer_lifted_turn(
     published: &str,
     candidate: &str,
     mode: OptimizationMode,
+    precision: FloatPrecision,
 ) -> Result<(), String> {
     writeln!(rust, "    const BATCH_LEN: usize = {batch_len};").unwrap();
     writeln!(rust, "    for lane in 0..BATCH_LEN {{").unwrap();
@@ -404,8 +462,9 @@ fn emit_outer_lifted_turn(
             .collect::<Vec<_>>();
         writeln!(
             rust,
-            "        let s_{}: [f64; {}] = {};",
+            "        let s_{}: [{}; {}] = {};",
             state.value.get(),
+            float_type(precision),
             state.initial_elements.len(),
             array(&elements),
         )
@@ -433,7 +492,7 @@ fn emit_outer_lifted_turn(
                 let operands = instruction
                     .inputs
                     .iter()
-                    .map(|source| operand(kernel, source, &written_states))
+                    .map(|source| operand(kernel, source, &written_states, precision))
                     .collect::<Vec<_>>();
                 emit_operation(operation, &operands, output.ty.shape, mode)?
             }
@@ -452,7 +511,7 @@ fn emit_outer_lifted_turn(
         writeln!(
             rust,
             "        let {variable}: [{}; {}] = {expression};",
-            rust_type(output.ty.element),
+            rust_type(output.ty.element, precision),
             output.ty.shape.len(),
         )
         .unwrap();
@@ -485,6 +544,7 @@ fn lane_operand(
     source: &Source,
     written_states: &BTreeSet<super::kernel_ir::ValueId>,
     batch_len: usize,
+    precision: FloatPrecision,
 ) -> Result<String, String> {
     match source {
         Source::Constant(constant) => {
@@ -494,7 +554,7 @@ fn lane_operand(
             if constant.elements.iter().any(|element| *element != value) {
                 return Err("lane constant is not uniform".to_string());
             }
-            Ok(literal(constant.ty.element, value))
+            Ok(literal(constant.ty.element, value, precision))
         }
         Source::Value(id) => Ok(match kernel.value(*id).storage {
             ValueStorage::Activation => {
@@ -520,6 +580,7 @@ fn operand(
     kernel: &KernelIr,
     source: &Source,
     written_states: &BTreeSet<super::kernel_ir::ValueId>,
+    precision: FloatPrecision,
 ) -> Operand {
     match source {
         Source::Constant(constant) => Operand {
@@ -527,7 +588,7 @@ fn operand(
                 &constant
                     .elements
                     .iter()
-                    .map(|value| literal(constant.ty.element, *value))
+                    .map(|value| literal(constant.ty.element, *value, precision))
                     .collect::<Vec<_>>(),
             ),
             shape: constant.ty.shape,
@@ -924,21 +985,34 @@ fn checked_array(elements: Vec<String>, expected: usize) -> Result<String, Strin
     Ok(array(&elements))
 }
 
-fn float_literal(bits: u64) -> String {
-    format!("f64::from_bits({bits}u64)")
+fn float_literal(bits: u64, precision: FloatPrecision) -> String {
+    match precision {
+        FloatPrecision::F32 => {
+            let bits = (f64::from_bits(bits) as f32).to_bits();
+            format!("f32::from_bits({bits}u32)")
+        }
+        FloatPrecision::F64 => format!("f64::from_bits({bits}u64)"),
+    }
 }
 
-fn literal(element: ElementType, value: u64) -> String {
+fn literal(element: ElementType, value: u64, precision: FloatPrecision) -> String {
     match element {
-        ElementType::F64 => float_literal(value),
+        ElementType::F64 => float_literal(value, precision),
         ElementType::Index => format!("{value}u64"),
     }
 }
 
-fn rust_type(element: ElementType) -> &'static str {
+fn rust_type(element: ElementType, precision: FloatPrecision) -> &'static str {
     match element {
-        ElementType::F64 => "f64",
+        ElementType::F64 => float_type(precision),
         ElementType::Index => "u64",
+    }
+}
+
+fn float_type(precision: FloatPrecision) -> &'static str {
+    match precision {
+        FloatPrecision::F32 => "f32",
+        FloatPrecision::F64 => "f64",
     }
 }
 
