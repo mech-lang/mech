@@ -1,11 +1,18 @@
 use super::kernel_ir::{
-    BinaryOperation, ElementType, Instruction, KernelIr, Operation, Source, UnaryOperation, ValueId,
+    BinaryOperation, ElementType, Instruction, KernelIr, Operation, Shape, Source, UnaryOperation,
+    ValueId,
 };
-use super::mlir_gpu_codegen::{only_operand, require_uniform, validate_kernel};
+use super::mlir_gpu_codegen::{only_operand, referenced_values, require_uniform, validate_kernel};
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 const THREADS_PER_WORKGROUP: usize = 256;
+
+#[derive(Clone, Copy)]
+enum InitializationMode {
+    Device,
+    Host,
+}
 
 struct SpirvEmitter {
     body: String,
@@ -94,11 +101,36 @@ impl SpirvEmitter {
 }
 
 pub(super) fn emit_spirv_mlir_f32(kernel: &KernelIr) -> Result<String, String> {
+    emit_spirv_mlir_f32_with_initialization(kernel, InitializationMode::Device)
+}
+
+pub(super) fn emit_spirv_mlir_f32_host_initialized(kernel: &KernelIr) -> Result<String, String> {
+    emit_spirv_mlir_f32_with_initialization(kernel, InitializationMode::Host)
+}
+
+fn emit_spirv_mlir_f32_with_initialization(
+    kernel: &KernelIr,
+    initialization: InitializationMode,
+) -> Result<String, String> {
     let batch_len = validate_kernel(kernel)?;
     i32::try_from(kernel.state_len)
         .map_err(|_| "SPIR-V GPU state exceeds the i32 address range".to_owned())?;
     i32::try_from(batch_len)
         .map_err(|_| "SPIR-V GPU batch exceeds the i32 invocation range".to_owned())?;
+    if matches!(initialization, InitializationMode::Device)
+        && kernel.states.iter().any(|state| {
+            kernel.value(state.value).ty.shape == Shape::SCALAR
+                || !state
+                    .initial_elements
+                    .windows(2)
+                    .all(|pair| pair[0] == pair[1])
+        })
+    {
+        return Err(
+            "SPIR-V device initialization requires lane-uniform vector state and no scalar control state; use the host-initialized Metal target"
+                .to_owned(),
+        );
+    }
 
     let state_pointer = state_pointer_type(kernel.state_len);
     let mut mlir = String::new();
@@ -114,6 +146,16 @@ pub(super) fn emit_spirv_mlir_f32(kernel: &KernelIr) -> Result<String, String> {
     .unwrap();
     writeln!(mlir, "// mech.state_len = {}", kernel.state_len).unwrap();
     writeln!(mlir, "// mech.batch_len = {batch_len}").unwrap();
+    emit_state_layout_metadata(&mut mlir, kernel);
+    writeln!(
+        mlir,
+        "// mech.initialization = {}",
+        match initialization {
+            InitializationMode::Device => "device",
+            InitializationMode::Host => "host",
+        }
+    )
+    .unwrap();
     writeln!(
         mlir,
         "spirv.module @mech_kernels Logical GLSL450 attributes {{spirv.target_env = #spirv.target_env<#spirv.vce<v1.3, [Shader], []>, api=Vulkan, #spirv.resource_limits<>>}} {{"
@@ -130,10 +172,16 @@ pub(super) fn emit_spirv_mlir_f32(kernel: &KernelIr) -> Result<String, String> {
     )
     .unwrap();
 
-    emit_initialize(&mut mlir, kernel)?;
+    if matches!(initialization, InitializationMode::Device) {
+        emit_initialize(&mut mlir, kernel)?;
+    }
     emit_turn(&mut mlir, kernel)?;
 
-    for entry in ["mech_initialize", "mech_turn"] {
+    let entries: &[&str] = match initialization {
+        InitializationMode::Device => &["mech_initialize", "mech_turn"],
+        InitializationMode::Host => &["mech_turn"],
+    };
+    for entry in entries {
         writeln!(
             mlir,
             "  spirv.EntryPoint \"GLCompute\" @{entry}, @global_invocation_id"
@@ -149,10 +197,35 @@ pub(super) fn emit_spirv_mlir_f32(kernel: &KernelIr) -> Result<String, String> {
     Ok(mlir)
 }
 
+fn emit_state_layout_metadata(mlir: &mut String, kernel: &KernelIr) {
+    let lane_offsets = kernel
+        .states
+        .iter()
+        .filter(|state| kernel.value(state.value).ty.shape != Shape::SCALAR)
+        .map(|state| state.offset.to_string())
+        .collect::<Vec<_>>()
+        .join(",");
+    let scalar_offsets = kernel
+        .states
+        .iter()
+        .filter(|state| kernel.value(state.value).ty.shape == Shape::SCALAR)
+        .map(|state| state.offset.to_string())
+        .collect::<Vec<_>>()
+        .join(",");
+    writeln!(mlir, "// mech.lane_state_offsets = {lane_offsets}").unwrap();
+    writeln!(mlir, "// mech.scalar_state_offsets = {scalar_offsets}").unwrap();
+}
+
 fn emit_initialize(mlir: &mut String, kernel: &KernelIr) -> Result<(), String> {
     emit_function_header(mlir, "mech_initialize", kernel.state_len);
     let mut emitter = SpirvEmitter::new(kernel.state_len);
     for state in &kernel.states {
+        if kernel.value(state.value).ty.shape == Shape::SCALAR {
+            return Err(format!(
+                "SPIR-V device initialization cannot safely initialize scalar control state {}; use the host-initialized Metal target",
+                state.value.get(),
+            ));
+        }
         let bits = require_uniform(
             &state.initial_elements,
             &format!("state {} initializer", state.value.get()),
@@ -171,7 +244,12 @@ fn emit_turn(mlir: &mut String, kernel: &KernelIr) -> Result<(), String> {
     emit_function_header(mlir, "mech_turn", kernel.state_len);
     let mut emitter = SpirvEmitter::new(kernel.state_len);
     let mut values = BTreeMap::<ValueId, String>::new();
-    for activation in &kernel.activations {
+    let referenced_values = referenced_values(kernel);
+    for activation in kernel
+        .activations
+        .iter()
+        .filter(|activation| referenced_values.contains(&activation.value))
+    {
         let bits = require_uniform(
             &activation.elements,
             &format!("activation {}", activation.value.get()),
@@ -179,7 +257,11 @@ fn emit_turn(mlir: &mut String, kernel: &KernelIr) -> Result<(), String> {
         values.insert(activation.value, emitter.f32_constant(bits));
     }
     for state in &kernel.states {
-        let index = emitter.offset_index("%lane", state.offset)?;
+        let index = if kernel.value(state.value).ty.shape == Shape::SCALAR {
+            emitter.i32_constant(state.offset)?
+        } else {
+            emitter.offset_index("%lane", state.offset)?
+        };
         let value = emitter.load_at(&index)?;
         values.insert(state.value, value);
     }
@@ -193,7 +275,9 @@ fn emit_turn(mlir: &mut String, kernel: &KernelIr) -> Result<(), String> {
         let value = emit_instruction(&mut emitter, &values, instruction)?;
         values.insert(instruction.output, value);
     }
-    for state in &kernel.states {
+    for state in kernel.states.iter().filter(|state| {
+        kernel.state_is_written(state.value) && kernel.value(state.value).ty.shape != Shape::SCALAR
+    }) {
         let value = values.get(&state.value).ok_or_else(|| {
             format!(
                 "state {} has no value after SPIR-V lowering",

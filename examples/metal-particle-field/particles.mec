@@ -1,0 +1,45 @@
+-- Mech owns both the initial particle field and its per-frame dynamics.
+-- The four scalar states use identity assignments so the host can retain and
+-- update them without making them part of the lane-wise particle output.
+
++> math/*
+
+lane := 0..=65535
+phase := lane * 2.399963
+radius := 0.08 + lane / 65535 * 0.82
+
+~x := cos(phase) * radius
+~y := sin(phase) * radius
+~vx := (0.0 - y) * 0.16
+~vy := x * 0.16
+
+~pointer-x := 0.0
+~pointer-y := 0.0
+~pointer-down := 0.0
+~dt := 0.016
+
+pointer-x = pointer-x
+pointer-y = pointer-y
+pointer-down = pointer-down
+dt = dt
+
+dx := pointer-x - x
+dy := pointer-y - y
+pointer-distance2 := dx * dx + dy * dy + 0.015
+pointer-force := pointer-down * 0.18 / pointer-distance2
+
+center-distance2 := x * x + y * y + 0.08
+center-force := (0.0 - 0.035) / center-distance2
+
+ax := x * center-force + dx * pointer-force - y * 0.012
+ay := y * center-force + dy * pointer-force + x * 0.012
+
+next-vx := (vx + ax * dt) * 0.9995
+next-vy := (vy + ay * dt) * 0.9995
+
+vx = next-vx
+vy = next-vy
+x = x + next-vx * dt
+y = y + next-vy * dt
+
+x

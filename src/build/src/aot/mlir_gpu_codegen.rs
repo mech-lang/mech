@@ -3,6 +3,7 @@ use super::kernel_ir::{
     ValueId,
 };
 use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::fmt::Write as _;
 
 const THREADS_PER_BLOCK: usize = 256;
@@ -199,17 +200,36 @@ pub(super) fn validate_kernel(kernel: &KernelIr) -> Result<usize, String> {
     if kernel.states.is_empty() {
         return Err("GPU MLIR lowering requires at least one resident state vector".to_owned());
     }
+    let mut lane_states = 0usize;
     for state in &kernel.states {
         let ty = kernel.value(state.value).ty;
-        if ty.element != ElementType::F64 || ty.shape.len() != batch.len {
+        if ty.element != ElementType::F64 || (ty.shape.len() != batch.len && ty.shape.len() != 1) {
             return Err(format!(
-                "GPU MLIR state {} must be an f64 lane vector of length {}",
+                "GPU MLIR state {} must be an f64 scalar or lane vector of length {}",
                 state.value.get(),
                 batch.len
             ));
         }
+        if ty.shape.len() == batch.len {
+            lane_states += 1;
+        } else if kernel.state_is_written(state.value)
+            && !kernel.state_is_identity_preserved(state.value)
+        {
+            return Err(format!(
+                "GPU MLIR scalar state {} is modified by the particle kernel; scalar control state may only use an identity assignment to declare host-owned retention",
+                state.value.get(),
+            ));
+        }
     }
-    for activation in &kernel.activations {
+    if lane_states == 0 {
+        return Err("GPU MLIR lowering requires at least one resident lane vector".to_owned());
+    }
+    let referenced_values = referenced_values(kernel);
+    for activation in kernel
+        .activations
+        .iter()
+        .filter(|activation| referenced_values.contains(&activation.value))
+    {
         if kernel.value(activation.value).ty.element != ElementType::F64 {
             return Err(format!(
                 "GPU MLIR activation {} is not f64",
@@ -222,6 +242,18 @@ pub(super) fn validate_kernel(kernel: &KernelIr) -> Result<usize, String> {
         )?;
     }
     Ok(batch.len)
+}
+
+pub(super) fn referenced_values(kernel: &KernelIr) -> BTreeSet<ValueId> {
+    kernel
+        .instructions
+        .iter()
+        .flat_map(|instruction| instruction.inputs.iter())
+        .filter_map(|source| match source {
+            Source::Value(value) => Some(*value),
+            Source::Constant(_) => None,
+        })
+        .collect()
 }
 
 fn emit_length_function(mlir: &mut String, name: &str, len: usize) {
@@ -306,7 +338,12 @@ fn emit_gpu_kernel(
 
     let mut emitter = Emitter::new("        ", kernel.state_len, scalar);
     let mut values = BTreeMap::<ValueId, String>::new();
-    for activation in &kernel.activations {
+    let referenced_values = referenced_values(kernel);
+    for activation in kernel
+        .activations
+        .iter()
+        .filter(|activation| referenced_values.contains(&activation.value))
+    {
         let bits = require_uniform(
             &activation.elements,
             &format!("activation {}", activation.value.get()),
@@ -314,7 +351,11 @@ fn emit_gpu_kernel(
         values.insert(activation.value, emitter.constant(ElementType::F64, bits));
     }
     for state in &kernel.states {
-        let index = emitter.offset_index("%lane", state.offset);
+        let index = if kernel.value(state.value).ty.shape == super::kernel_ir::Shape::SCALAR {
+            emitter.index(state.offset)
+        } else {
+            emitter.offset_index("%lane", state.offset)
+        };
         let value = emitter.load_at(&index);
         values.insert(state.value, value);
     }
@@ -328,7 +369,10 @@ fn emit_gpu_kernel(
         let value = emit_instruction(&mut emitter, &values, instruction)?;
         values.insert(instruction.output, value);
     }
-    for state in &kernel.states {
+    for state in kernel.states.iter().filter(|state| {
+        kernel.state_is_written(state.value)
+            && kernel.value(state.value).ty.shape != super::kernel_ir::Shape::SCALAR
+    }) {
         let value = values.get(&state.value).ok_or_else(|| {
             format!(
                 "state {} has no value after GPU lowering",

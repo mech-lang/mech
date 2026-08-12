@@ -25,6 +25,7 @@ pub(crate) enum BuildEmit {
     Plan,
     Mlir,
     Rust,
+    InitialState,
 }
 
 impl From<BuildEmit> for NativeEmit {
@@ -34,7 +35,7 @@ impl From<BuildEmit> for NativeEmit {
             BuildEmit::Bytecode => NativeEmit::Bytecode,
             BuildEmit::CargoProject => NativeEmit::CargoProject,
             BuildEmit::Plan => NativeEmit::Plan,
-            BuildEmit::Mlir | BuildEmit::Rust => {
+            BuildEmit::Mlir | BuildEmit::Rust | BuildEmit::InitialState => {
                 unreachable!("source emit returns before native planning")
             }
         }
@@ -58,7 +59,7 @@ impl From<BuildProfile> for NativeBuildProfile {
 
 pub(crate) fn command() -> Command {
     Command::new("build")
-        .about("Build a Mech program as a native application, bytecode, plan, Cargo project, Rust kernel, or MLIR module.")
+        .about("Build a Mech program as a native application, bytecode, plan, Cargo project, numeric state image, Rust kernel, or MLIR module.")
         .arg(
             Arg::new("mech_build_file_paths")
                 .help("One or more source roots, or exactly one .mecb bytecode file")
@@ -69,9 +70,9 @@ pub(crate) fn command() -> Command {
             Arg::new("build_emit")
                 .long("emit")
                 .value_name("EMIT")
-                .value_parser(["native", "bytecode", "cargo-project", "plan", "mlir", "rust"])
+                .value_parser(["native", "bytecode", "cargo-project", "plan", "mlir", "rust", "initial-state"])
                 .default_value("native")
-                .help("Artifact to emit: native, bytecode, cargo-project, plan, Rust kernel, or MLIR source."),
+                .help("Artifact to emit: native, bytecode, cargo-project, plan, initial-state, Rust kernel, or MLIR source."),
         )
         .arg(
             Arg::new("build_name")
@@ -216,13 +217,16 @@ impl BuildOptions {
         if options.emit == BuildEmit::CargoProject && options.keep_project {
             return build_error("`--emit cargo-project` cannot be combined with `--keep-project`");
         }
-        if matches!(options.emit, BuildEmit::Mlir | BuildEmit::Rust) {
+        if matches!(
+            options.emit,
+            BuildEmit::Mlir | BuildEmit::Rust | BuildEmit::InitialState
+        ) {
             if !options.aot {
-                return build_error("numeric source emission requires `--aot`");
+                return build_error("numeric artifact emission requires `--aot`");
             }
             if options.keep_project {
                 return build_error(
-                    "numeric source emission cannot be combined with `--keep-project`",
+                    "numeric artifact emission cannot be combined with `--keep-project`",
                 );
             }
             match options.emit {
@@ -232,6 +236,9 @@ impl BuildOptions {
                     }
                 }
                 BuildEmit::Rust => validate_rust_target(options.target.as_deref())?,
+                BuildEmit::InitialState => {
+                    validate_initial_state_target(options.target.as_deref())?
+                }
                 _ => unreachable!(),
             }
         }
@@ -239,8 +246,10 @@ impl BuildOptions {
             if let Some(name) = options.name.as_deref() {
                 mech_build::validate_project_binary_name(name)?;
             }
-            if !matches!(options.emit, BuildEmit::Mlir | BuildEmit::Rust)
-                && let Some(target) = options.target.as_deref()
+            if !matches!(
+                options.emit,
+                BuildEmit::Mlir | BuildEmit::Rust | BuildEmit::InitialState
+            ) && let Some(target) = options.target.as_deref()
             {
                 mech_build::validate_project_target_triple(target)?;
             }
@@ -322,6 +331,9 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             Some("apple:metal-f32") => {
                 mech_build::aot::lower_bytecode_mlir_spirv_f32(&bytecode, &catalog)
             }
+            Some("apple:metal-f32-host-init") => {
+                mech_build::aot::lower_bytecode_mlir_spirv_f32_host_initialized(&bytecode, &catalog)
+            }
             Some(target) => unreachable!("validated MLIR target `{target}`"),
             None => mech_build::aot::lower_bytecode_mlir(&bytecode, &catalog),
         }
@@ -361,6 +373,28 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         copy_exact_file_bytes(program.source.as_bytes(), &requested_output)?;
         println!(
             "[Output] Mech Rust kernel written to: {}",
+            requested_output.display()
+        );
+        return Ok(CliOutcome::success());
+    }
+
+    if options.emit == BuildEmit::InitialState {
+        let catalog = mech_stdlib::source_catalog();
+        let state = mech_build::aot::lower_bytecode_initial_state_f32(&bytecode, &catalog)
+            .map_err(|reason| {
+                MechError::new(
+                    GenericError {
+                        msg: format!(
+                            "initial numeric state lowering rejected the program: {reason}"
+                        ),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        copy_exact_file_bytes(&state, &requested_output)?;
+        println!(
+            "[Output] Mech f32 initial state written to: {}",
             requested_output.display()
         );
         return Ok(CliOutcome::success());
@@ -471,7 +505,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
                 .expect("bytecode keep-project output was preflighted before artifact writes");
             builder.generate_at(&request, &plan, project_output)?;
         }
-        BuildEmit::Mlir | BuildEmit::Rust => {
+        BuildEmit::Mlir | BuildEmit::Rust | BuildEmit::InitialState => {
             unreachable!("numeric source returns before native planning")
         }
     }
@@ -496,6 +530,7 @@ fn parse_emit(value: &str) -> MResult<BuildEmit> {
         "plan" => Ok(BuildEmit::Plan),
         "mlir" => Ok(BuildEmit::Mlir),
         "rust" => Ok(BuildEmit::Rust),
+        "initial-state" => Ok(BuildEmit::InitialState),
         _ => build_error(format!("unsupported build emit `{value}`")),
     }
 }
@@ -515,11 +550,13 @@ fn is_nvidia_mlir_target(target: &str) -> bool {
 }
 
 fn validate_mlir_target(target: &str) -> MResult<()> {
-    if is_nvidia_mlir_target(target) || target == "apple:metal-f32" {
+    if is_nvidia_mlir_target(target)
+        || matches!(target, "apple:metal-f32" | "apple:metal-f32-host-init")
+    {
         Ok(())
     } else {
         build_error(format!(
-            "unsupported MLIR target `{target}`; omit `--target` for CPU MLIR, use `nvidia:sm_<compute-capability>`, or use `apple:metal-f32`"
+            "unsupported MLIR target `{target}`; omit `--target` for CPU MLIR, use `nvidia:sm_<compute-capability>`, `apple:metal-f32`, or `apple:metal-f32-host-init`"
         ))
     }
 }
@@ -529,6 +566,15 @@ fn validate_rust_target(target: Option<&str>) -> MResult<()> {
         None | Some("cpu:f32") => Ok(()),
         Some(target) => build_error(format!(
             "unsupported Rust kernel target `{target}`; omit `--target` for f64 or use `cpu:f32`"
+        )),
+    }
+}
+
+fn validate_initial_state_target(target: Option<&str>) -> MResult<()> {
+    match target {
+        None | Some("cpu:f32") => Ok(()),
+        Some(target) => build_error(format!(
+            "unsupported initial state target `{target}`; omit `--target` or use `cpu:f32`"
         )),
     }
 }
@@ -550,6 +596,7 @@ fn default_output_path(emit: BuildEmit, binary_name: &str) -> PathBuf {
         BuildEmit::Plan => base.with_extension("build-plan.json"),
         BuildEmit::Mlir => base.with_extension("mlir"),
         BuildEmit::Rust => base.with_extension("rs"),
+        BuildEmit::InitialState => base.with_extension("initial.f32"),
     }
 }
 
@@ -757,6 +804,10 @@ mod tests {
             PathBuf::from("target/mech/demo.rs")
         );
         assert_eq!(
+            default_output_path(BuildEmit::InitialState, "demo"),
+            PathBuf::from("target/mech/demo.initial.f32")
+        );
+        assert_eq!(
             default_output_path(BuildEmit::CargoProject, "demo"),
             PathBuf::from("target/mech/demo.cargo")
         );
@@ -829,6 +880,28 @@ mod tests {
     }
 
     #[test]
+    fn initial_state_is_an_explicit_f32_emit_kind() {
+        let matches = command()
+            .try_get_matches_from([
+                "build",
+                "--aot",
+                "--emit",
+                "initial-state",
+                "--target",
+                "cpu:f32",
+                "demo.mec",
+            ])
+            .unwrap();
+        assert_eq!(
+            parse_emit(matches.get_one::<String>("build_emit").unwrap()).unwrap(),
+            BuildEmit::InitialState
+        );
+        assert!(validate_initial_state_target(Some("cpu:f32")).is_ok());
+        assert!(validate_initial_state_target(None).is_ok());
+        assert!(validate_initial_state_target(Some("apple:metal-f32")).is_err());
+    }
+
+    #[test]
     fn nvidia_mlir_targets_are_explicit_and_strict() {
         assert!(is_nvidia_mlir_target("nvidia:sm_86"));
         assert!(is_nvidia_mlir_target("nvidia:sm_120"));
@@ -836,6 +909,7 @@ mod tests {
         assert!(!is_nvidia_mlir_target("nvidia:sm_"));
         assert!(validate_mlir_target("nvidia:sm_86").is_ok());
         assert!(validate_mlir_target("apple:metal-f32").is_ok());
+        assert!(validate_mlir_target("apple:metal-f32-host-init").is_ok());
         assert!(validate_mlir_target("x86_64-unknown-linux-gnu").is_err());
     }
 }

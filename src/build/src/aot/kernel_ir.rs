@@ -443,6 +443,20 @@ impl KernelIr {
         })
     }
 
+    pub(super) fn state_is_identity_preserved(&self, id: ValueId) -> bool {
+        let mut writes = self
+            .instructions
+            .iter()
+            .filter(|instruction| instruction.output == id);
+        let Some(first) = writes.next() else {
+            return false;
+        };
+        std::iter::once(first).chain(writes).all(|instruction| {
+            matches!(instruction.operation, Operation::Assign)
+                && matches!(instruction.inputs.as_slice(), [Source::Value(source)] if *source == id)
+        })
+    }
+
     pub(super) fn input(&self, ordinal: usize) -> &InputBinding {
         &self.inputs[ordinal]
     }
@@ -982,17 +996,16 @@ fn infer_batch_layout(
     states: &[StateBinding],
     instructions: &[Instruction],
 ) -> Option<BatchLayout> {
-    let first_state = states.first()?;
-    let state_shape = values.get(&first_state.value)?.ty.shape;
-    if state_shape.rows != 1 || state_shape.columns <= 1 {
-        return None;
-    }
+    let state_shape = states
+        .iter()
+        .filter_map(|state| values.get(&state.value).map(|value| value.ty.shape))
+        .find(|shape| shape.rows == 1 && shape.columns > 1)?;
     let len = state_shape.columns;
     let shape_is_lane = |shape: Shape| shape == Shape::SCALAR || shape == state_shape;
     if !values.values().all(|value| shape_is_lane(value.ty.shape))
         || !states
             .iter()
-            .all(|state| values[&state.value].ty.shape == state_shape)
+            .all(|state| shape_is_lane(values[&state.value].ty.shape))
         || !instructions.iter().all(|instruction| {
             matches!(
                 instruction.operation,

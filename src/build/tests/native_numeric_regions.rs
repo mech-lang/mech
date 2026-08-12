@@ -392,6 +392,78 @@ position"#;
 }
 
 #[test]
+fn host_initialized_metal_accepts_nonuniform_particles_and_scalar_controls() {
+    let source = r#"+> math/*
+lane := 0..=63
+angle := lane * 0.17
+radius := 0.1 + lane / 63 * 0.8
+~x := cos(angle) * radius
+~y := sin(angle) * radius
+~vx<[f64]:1,64> := 0.0
+~vy<[f64]:1,64> := 0.0
+~pointer-x := 0.0
+~pointer-y := 0.0
+~pointer-down := 0.0
+~dt := 0.008
+pointer-x = pointer-x
+pointer-y = pointer-y
+pointer-down = pointer-down
+dt = dt
+dx := pointer-x - x
+dy := pointer-y - y
+distance2 := dx * dx + dy * dy + 0.02
+force := pointer-down * 0.0005 / distance2
+next-vx := (vx + dx * force * dt) * 0.999
+next-vy := (vy + dy * force * dt) * 0.999
+vx = next-vx
+vy = next-vy
+x = x + next-vx * dt
+y = y + next-vy * dt
+x"#;
+    let catalog = mech_stdlib::source_catalog();
+    let mut program = mech_engine::MechProgram::with_function_catalog(
+        mech_engine::MechProgramConfig::default(),
+        catalog.clone(),
+    );
+    program.run_string(source).unwrap();
+    let (_, bytecode) = program.compile_program_product().unwrap().into_parts();
+
+    let device_error =
+        mech_build::aot::lower_bytecode_mlir_spirv_f32(&bytecode, &catalog).unwrap_err();
+    assert!(
+        device_error.contains("host-initialized Metal target"),
+        "{device_error}"
+    );
+
+    let mlir = mech_build::aot::lower_bytecode_mlir_spirv_f32_host_initialized(&bytecode, &catalog)
+        .unwrap();
+    assert_eq!(mlir.state_len, 260);
+    assert!(mlir.source.contains("// mech.batch_len = 64"));
+    assert!(mlir.source.contains("// mech.initialization = host"));
+    assert!(mlir.source.contains("// mech.lane_state_offsets = "));
+    assert!(mlir.source.contains("// mech.scalar_state_offsets = "));
+    assert!(!mlir.source.contains("spirv.func @mech_initialize"));
+    assert!(mlir.source.contains("spirv.func @mech_turn"));
+
+    let rust = mech_build::aot::lower_bytecode_rust_f32(&bytecode, &catalog).unwrap();
+    assert!(rust.source.contains("pub fn initialize(state: &mut [f32])"));
+
+    let initial = mech_build::aot::lower_bytecode_initial_state_f32(&bytecode, &catalog).unwrap();
+    assert_eq!(initial.len(), 260 * std::mem::size_of::<f32>());
+    let value = |offset: usize| {
+        f32::from_le_bytes(
+            initial[offset * std::mem::size_of::<f32>()..(offset + 1) * std::mem::size_of::<f32>()]
+                .try_into()
+                .unwrap(),
+        )
+    };
+    assert_eq!(value(256), 0.0);
+    assert_eq!(value(257), 0.0);
+    assert_eq!(value(258), 0.0);
+    assert_eq!(value(259), 0.008_f32);
+}
+
+#[test]
 fn standalone_n_body_example_plans_as_aot_from_bytecode() {
     let source = include_str!("../../../examples/aot-n-body/n-body.mec");
     let (builder, mut request) = compile(source);

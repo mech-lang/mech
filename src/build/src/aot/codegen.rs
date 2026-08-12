@@ -315,8 +315,32 @@ fn emit_materialized_batched_turn(
     precision: FloatPrecision,
 ) -> Result<(), String> {
     writeln!(rust, "    const BATCH_LEN: usize = {batch_len};").unwrap();
+    for state in kernel
+        .states
+        .iter()
+        .filter(|state| kernel.value(state.value).ty.shape == Shape::SCALAR)
+    {
+        if kernel.state_is_written(state.value) && !kernel.state_is_identity_preserved(state.value)
+        {
+            return Err(format!(
+                "materialized batch scalar state {} is modified inside the lane loop",
+                state.value.get(),
+            ));
+        }
+        writeln!(
+            rust,
+            "    let s_{} = {published}[{}];",
+            state.value.get(),
+            state.offset,
+        )
+        .unwrap();
+    }
     writeln!(rust, "    for lane in 0..BATCH_LEN {{").unwrap();
-    for state in &kernel.states {
+    for state in kernel
+        .states
+        .iter()
+        .filter(|state| kernel.value(state.value).ty.shape != Shape::SCALAR)
+    {
         writeln!(
             rust,
             "        let s_{} = {published}[{} + lane];",
@@ -423,7 +447,11 @@ fn emit_materialized_batched_turn(
             written_states.insert(instruction.output);
         }
     }
-    for state in &kernel.states {
+    for state in kernel
+        .states
+        .iter()
+        .filter(|state| kernel.value(state.value).ty.shape != Shape::SCALAR)
+    {
         let variable = if kernel.state_is_written(state.value) {
             format!("next_{}", state.value.get())
         } else {
@@ -437,6 +465,19 @@ fn emit_materialized_batched_turn(
         .unwrap();
     }
     writeln!(rust, "    }}").unwrap();
+    for state in kernel
+        .states
+        .iter()
+        .filter(|state| kernel.value(state.value).ty.shape == Shape::SCALAR)
+    {
+        writeln!(
+            rust,
+            "    {candidate}[{}] = s_{};",
+            state.offset,
+            state.value.get(),
+        )
+        .unwrap();
+    }
     Ok(())
 }
 

@@ -66,6 +66,37 @@ pub fn lower_bytecode_rust_f32(
     })
 }
 
+/// Materialize the activated numeric state directly as little-endian f32.
+/// Accelerator hosts can upload this image without compiling a generated
+/// source file or executing a separate initialization kernel.
+pub fn lower_bytecode_initial_state_f32(
+    bytecode: &[u8],
+    catalog: &FunctionCatalog,
+) -> Result<Vec<u8>, String> {
+    let kernel = lower_kernel(bytecode, catalog)?;
+    let mut state = vec![0.0_f32; kernel.state_len];
+    for binding in &kernel.states {
+        for (ordinal, bits) in binding.initial_elements.iter().enumerate() {
+            let destination = binding
+                .offset
+                .checked_add(ordinal)
+                .ok_or_else(|| "initial state offset overflow".to_owned())?;
+            let element = state.get_mut(destination).ok_or_else(|| {
+                format!(
+                    "initial state binding {} exceeds the {}-element state image",
+                    binding.value.get(),
+                    kernel.state_len,
+                )
+            })?;
+            *element = f64::from_bits(*bits) as f32;
+        }
+    }
+    Ok(state
+        .into_iter()
+        .flat_map(|value| value.to_le_bytes())
+        .collect())
+}
+
 /// Lower the same activated numeric kernel used by the Rust AOT backend into
 /// an MLIR module with C-callable initialize, one-turn, and resident-loop APIs.
 pub fn lower_bytecode_mlir(
@@ -124,6 +155,23 @@ pub fn lower_bytecode_mlir_spirv_f32(
 ) -> Result<NativeMlirProgram, String> {
     let kernel = lower_kernel(bytecode, catalog)?;
     let source = mlir_spirv_codegen::emit_spirv_mlir_f32(&kernel)?;
+    Ok(NativeMlirProgram {
+        source,
+        input_len: kernel.input_len,
+        state_len: kernel.state_len,
+        instruction_count: kernel.instructions.len(),
+    })
+}
+
+/// Lower a lane-wise numeric kernel to f32 SPIR-V while leaving state
+/// initialization to a host-generated initializer. This permits nonuniform
+/// initial particle fields without embedding a second copy in the GPU module.
+pub fn lower_bytecode_mlir_spirv_f32_host_initialized(
+    bytecode: &[u8],
+    catalog: &FunctionCatalog,
+) -> Result<NativeMlirProgram, String> {
+    let kernel = lower_kernel(bytecode, catalog)?;
+    let source = mlir_spirv_codegen::emit_spirv_mlir_f32_host_initialized(&kernel)?;
     Ok(NativeMlirProgram {
         source,
         input_len: kernel.input_len,
