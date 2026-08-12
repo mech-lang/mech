@@ -9,5 +9,5 @@ target/mech/aot-ekf --turns 1000000 --guarantees all
 ```
 
 The executable reports CSV for four envelopes around exactly the same compiled
-turn. `transactional` is the current prototype envelope (validation and
-receipt hashing), not yet the complete `MechRuntime` transaction stack.
+turn. `receipt` adds validation and chained receipt hashing. It is not the
+complete `MechRuntime` transaction stack.

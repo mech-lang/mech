@@ -85,6 +85,7 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     }
     writeln!(rust, "}}\n").unwrap();
 
+    writeln!(rust, "#[inline(never)]").unwrap();
     writeln!(
         rust,
         "pub fn turn(inputs: &[f64], published: &[f64], candidate: &mut [f64]) {{"
@@ -105,6 +106,7 @@ pub(super) fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     }
     writeln!(rust, "}}").unwrap();
 
+    writeln!(rust, "#[inline(never)]").unwrap();
     writeln!(
         rust,
         "\npub fn turn_in_place(inputs: &[f64], state: &mut [f64]) {{"

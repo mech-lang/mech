@@ -115,6 +115,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(
         builder,
         &runtime,
+        "VerticalConcatenateNArgs<f64>",
+        bind_vertical,
+    )?;
+    register(
+        builder,
+        &runtime,
         "VerticalConcatenateVDN<f64>",
         bind_vertical,
     )?;

@@ -219,3 +219,14 @@ fn canonical_n_body_lowers_to_standalone_rust_source() {
     assert!(aot.source.contains("pub fn turn_in_place"));
     assert!(aot.source.contains(".powf("));
 }
+
+#[test]
+fn standalone_n_body_example_plans_as_aot_from_bytecode() {
+    let source = include_str!("../../../examples/aot-n-body/n-body.mec");
+    let (builder, mut request) = compile(source);
+    request.aot = true;
+
+    let plan = builder.plan(&request).unwrap();
+
+    assert!(plan.aot);
+}

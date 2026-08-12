@@ -9,20 +9,24 @@ processes per mode (2026-08-12):
 
 | Mode | Median ns/turn | Median turns/s | Delta from fast |
 |---|---:|---:|---:|
-| fast | 108.838 | 9,187,950 | baseline |
-| atomic | 109.108 | 9,165,273 | +0.25% |
-| checked | 109.061 | 9,169,177 | +0.20% |
-| transactional prototype | 109.686 | 9,116,878 | +0.78% |
+| fast | 109.047 | 9,170,351 | baseline |
+| atomic | 109.374 | 9,142,976 | +0.30% |
+| checked | 109.785 | 9,108,730 | +0.68% |
+| receipt | 111.829 | 8,942,198 | +2.55% |
 
-The atomic and checked differences are within run-to-run noise on this machine.
-Receipt hashing is measurable but remains below one percent for this fused EKF.
+The corrected harness marks both kernel entry points `#[inline(never)]`, passes
+validation and hashing inputs through `black_box`, and chains each receipt into
+the next turn. Disassembly confirms distinct kernel calls, a 12-value finite
+scan, and two 12-value hash loops inside the timed turn loop.
+The output reports the state and receipt checksums separately. Every mode reaches
+the same final state; only `receipt` produces a non-zero receipt chain.
 
-`transactional prototype` is deliberately narrow: candidate-state isolation,
-finite-value validation, and before/after receipt hashing. It does not claim the
-full `MechRuntime` transaction, capability, dirty-graph, effect-outbox, or
-retained-ledger guarantees. Benchmarking that outer managed envelope around the
-same generated function requires the mixed runtime/AOT executor boundary that
-this prototype identifies but does not yet implement.
+`receipt` is deliberately narrow: candidate-state isolation, finite-value
+validation, and before/after receipt hashing. It does not claim the full
+`MechRuntime` transaction, capability, dirty-graph, effect-outbox, or retained
+ledger guarantees. Benchmarking that outer managed envelope around the same
+generated function requires the mixed runtime/AOT executor boundary that this
+prototype identifies but does not yet implement.
 
 Run with:
 

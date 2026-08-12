@@ -4,10 +4,10 @@ set -euo pipefail
 turns="${1:-1000000}"
 samples="${2:-5}"
 root="$(cd "$(dirname "$0")/../../../.." && pwd)"
-binary="$root/target/mech/aot-ekf"
+binary="$root/target/mech/aot-n-body"
 
 cargo run --release --manifest-path "$root/Cargo.toml" -- build \
-  --aot "$root/examples/aot-ekf" \
+  --aot "$root/examples/aot-n-body" \
   --workspace-root "$root" \
   --offline \
   --out "$binary"

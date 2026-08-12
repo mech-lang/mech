@@ -437,7 +437,7 @@ pub fn render_aot_main_source() -> String {
 use std::{hint::black_box, time::Instant};
 
 #[derive(Clone, Copy)]
-enum Guarantees { Fast, Atomic, Checked, Transactional }
+enum Guarantees { Fast, Atomic, Checked, Receipt }
 
 impl Guarantees {
     fn name(self) -> &'static str {
@@ -445,7 +445,7 @@ impl Guarantees {
             Self::Fast => "fast",
             Self::Atomic => "atomic",
             Self::Checked => "checked",
-            Self::Transactional => "transactional",
+            Self::Receipt => "receipt",
         }
     }
 
@@ -454,7 +454,7 @@ impl Guarantees {
             Self::Fast => "single buffer; no rollback or validation",
             Self::Atomic => "candidate buffer and atomic publication",
             Self::Checked => "atomic publication and finite-value validation",
-            Self::Transactional => "checked publication and receipt hashing",
+            Self::Receipt => "checked publication and chained receipt hashing",
         }
     }
 }
@@ -464,8 +464,8 @@ fn modes(value: &str) -> Result<Vec<Guarantees>, String> {
         "fast" => vec![Guarantees::Fast],
         "atomic" => vec![Guarantees::Atomic],
         "checked" => vec![Guarantees::Checked],
-        "transactional" => vec![Guarantees::Transactional],
-        "all" => vec![Guarantees::Fast, Guarantees::Atomic, Guarantees::Checked, Guarantees::Transactional],
+        "receipt" => vec![Guarantees::Receipt],
+        "all" => vec![Guarantees::Fast, Guarantees::Atomic, Guarantees::Checked, Guarantees::Receipt],
         _ => return Err(format!("unknown guarantee mode `{value}`")),
     })
 }
@@ -522,30 +522,41 @@ fn run(mode: Guarantees, turns: u64) -> Result<(), String> {
                 let (left, right) = buffers.split_at_mut(1);
                 (&right[0][..], &mut left[0][..])
             };
-            let before_hash = if matches!(mode, Guarantees::Transactional) { hash(before) } else { 0 };
+            let before_hash = if matches!(mode, Guarantees::Receipt) {
+                hash(black_box(before))
+            } else {
+                0
+            };
             native_numeric::turn(&inputs, before, after);
-            if matches!(mode, Guarantees::Checked | Guarantees::Transactional) { validate(after)?; }
-            if matches!(mode, Guarantees::Transactional) {
-                receipt = sequence ^ before_hash.rotate_left(17) ^ hash(after);
+            if matches!(mode, Guarantees::Checked | Guarantees::Receipt) {
+                validate(black_box(after))?;
+            }
+            if matches!(mode, Guarantees::Receipt) {
+                receipt = receipt.rotate_left(11)
+                    ^ sequence
+                    ^ before_hash.rotate_left(17)
+                    ^ hash(black_box(after));
             }
             published = candidate;
         },
     }
     let elapsed = started.elapsed().as_secs_f64();
     let state = if matches!(mode, Guarantees::Fast) { &buffers[0] } else { &buffers[published] };
-    let checksum = black_box(hash(state) ^ receipt);
-    println!("{},{},{},{:.9},{:.3},{:.3},{}", mode.name(), mode.description(), turns,
-        elapsed, elapsed * 1e9 / turns as f64, turns as f64 / elapsed, checksum);
+    let state_checksum = black_box(hash(state));
+    let receipt_checksum = black_box(receipt);
+    println!("{},{},{},{:.9},{:.3},{:.3},{},{}", mode.name(), mode.description(), turns,
+        elapsed, elapsed * 1e9 / turns as f64, turns as f64 / elapsed,
+        state_checksum, receipt_checksum);
     Ok(())
 }
 
 fn main() {
     let (turns, selected) = options().unwrap_or_else(|error| {
         eprintln!("{error}");
-        eprintln!("usage: generated-app [--turns N] [--guarantees fast|atomic|checked|transactional|all]");
+        eprintln!("usage: generated-app [--turns N] [--guarantees fast|atomic|checked|receipt|all]");
         std::process::exit(2)
     });
-    println!("mode,guarantees,turns,seconds,ns_per_turn,turns_per_second,checksum");
+    println!("mode,guarantees,turns,seconds,ns_per_turn,turns_per_second,state_checksum,receipt_checksum");
     for mode in selected {
         run(mode, turns).unwrap_or_else(|error| {
             eprintln!("{} turn failed: {error}", mode.name());
@@ -1501,13 +1512,14 @@ mod tests {
     #[test]
     fn aot_main_names_every_guarantee_and_uses_both_kernel_entry_points() {
         let source = render_aot_main_source();
-        for mode in ["fast", "atomic", "checked", "transactional"] {
+        for mode in ["fast", "atomic", "checked", "receipt"] {
             assert!(source.contains(mode));
         }
         assert!(source.contains("native_numeric::turn_in_place"));
         assert!(source.contains("native_numeric::turn("));
-        assert!(source.contains("validate(after)?"));
-        assert!(source.contains("before_hash.rotate_left(17)"));
+        assert!(source.contains("validate(black_box(after))?"));
+        assert!(source.contains("receipt.rotate_left(11)"));
+        assert!(source.contains("state_checksum,receipt_checksum"));
     }
 
     #[test]

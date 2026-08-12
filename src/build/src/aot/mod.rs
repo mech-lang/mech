@@ -10,7 +10,7 @@ mod codegen;
 mod kernel_ir;
 
 use mech_core::{CellSlotId, FunctionCatalog, ParsedProgram, ReactiveInstanceId};
-use mech_engine::__resident::{ActivationFacts, activate};
+use mech_engine::__resident::{ActivationFacts, ResidentActivationError, activate};
 use mech_engine::artifact::decode_program_artifact_sections;
 
 /// A complete numeric turn that can be emitted into a generated native app.
@@ -38,7 +38,7 @@ pub fn lower_bytecode(
         catalog,
         &ActivationFacts::default(),
     )
-    .map_err(|error| format!("resident activation failed: {error:?}"))?;
+    .map_err(|error| activation_error(&artifact, error))?;
     let input_slots = instance
         .plan
         .inputs
@@ -57,4 +57,40 @@ pub fn lower_bytecode(
         state_len: kernel.state_len,
         instruction_count: kernel.instructions.len(),
     })
+}
+
+fn activation_error(
+    artifact: &mech_engine::artifact::ProgramArtifact,
+    error: ResidentActivationError,
+) -> String {
+    let node = match &error {
+        ResidentActivationError::MissingResidentFactory { node }
+        | ResidentActivationError::KernelBind { node, .. }
+        | ResidentActivationError::ActivationKernel { node }
+        | ResidentActivationError::UnsupportedConstruction { node }
+        | ResidentActivationError::UnsupportedChangeDetection { node }
+        | ResidentActivationError::InvalidAlias { node }
+        | ResidentActivationError::InvalidNodeOutput { node }
+        | ResidentActivationError::InvalidDependency { node } => Some(*node),
+        _ => None,
+    };
+    let operation = node.and_then(|node| {
+        artifact
+            .nodes()
+            .iter()
+            .find(|declaration| declaration.node == node)
+            .map(|declaration| {
+                format!(
+                    "{}::{}",
+                    declaration.operation.module_path.join("/"),
+                    declaration.operation.operation_name,
+                )
+            })
+    });
+    match operation {
+        Some(operation) => {
+            format!("resident activation failed for `{operation}`: {error:?}")
+        }
+        None => format!("resident activation failed: {error:?}"),
+    }
 }

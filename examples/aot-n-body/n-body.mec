@@ -1,0 +1,41 @@
+-- The five-body solar-system workload used by the Computer Language
+-- Benchmarks Game, expressed as one fixed-shape Mech numeric turn.
+
++> stats
+
+dt := 0.01
+
+bodies := [0.0 0.0 0.0 -0.00038766340719874267 -0.0032753590371765707 0.000023935734080003 39.47841760435743;
+           4.8414314424647209 -1.1603200440274284 -0.10362204447112311 0.606326392995832 2.81198684491626 -0.02521836165988763 0.03769367487038949;
+           8.3433667182445799 4.1247985641243048 -0.40352341711432138 -1.0107743461787924 1.8256623712304119 0.008415761376584154 0.011286326131968767;
+           12.894369562139131 -15.111151401698631 -0.22330757889265573 1.0827910064415354 0.8687130181696082 -0.010832637401363636 0.0017237240570597112;
+           15.379697114850917 -25.919314609987964 0.17925877295037118 0.979090732243898 0.5946989986476762 -0.034755955504078104 0.0020336868699246304]
+pair-left := [1 1 1 1 2 2 2 3 3 4]
+pair-right := [2 3 4 5 3 4 5 4 5 5]
+
+-- These incidence matrices sum the ten unordered pair contributions back
+-- into the five body rows without order-dependent indexed mutation.
+left-incidence := [1.0 1.0 1.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0;
+                   0.0 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0;
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 1.0 0.0;
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0]
+right-incidence := [0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0;
+                    1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0;
+                    0.0 1.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0;
+                    0.0 0.0 1.0 0.0 0.0 1.0 0.0 1.0 0.0 0.0;
+                    0.0 0.0 0.0 1.0 0.0 0.0 1.0 0.0 1.0 1.0]
+
+~position := bodies[:,[1,2,3]]
+~velocity := bodies[:,[4,5,6]]
+mass := bodies[:,7]
+
+delta := position[pair-left,:] - position[pair-right,:]
+distance-squared := stats/sum/column(delta ^ 2.0)
+magnitude := dt * distance-squared ^ -1.5
+left-change := delta * mass[pair-right] * magnitude
+right-change := delta * mass[pair-left] * magnitude
+velocity = velocity + right-incidence ** right-change - left-incidence ** left-change
+position = position + velocity * dt
+
+position
