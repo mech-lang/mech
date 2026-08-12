@@ -158,6 +158,23 @@ impl KernelIr {
         plan: &ActivatedPlan,
         input_slots: &[CellSlotId],
     ) -> Result<Self, KernelIrError> {
+        let numeric = mech_build::analyze_activated_artifact(artifact, plan);
+        let numeric_operations = numeric
+            .regions
+            .iter()
+            .flat_map(|region| region.instructions.iter())
+            .map(|instruction| (instruction.node, instruction.opcode))
+            .collect::<BTreeMap<_, _>>();
+        let turn_nodes = plan
+            .nodes
+            .iter()
+            .map(|node| node.artifact_node.get())
+            .collect::<BTreeSet<_>>();
+        let rejection_by_node = numeric
+            .rejections
+            .iter()
+            .map(|rejection| (rejection.node, rejection.reason.as_str()))
+            .collect::<BTreeMap<_, _>>();
         let state_len = state_len(plan)?;
         let values = plan
             .slots
@@ -298,6 +315,17 @@ impl KernelIr {
                             )
                         })?,
                     }
+                } else if let Some(opcode) = numeric_operations.get(&node.node.get()) {
+                    operation_from_numeric(*opcode)
+                } else if turn_nodes.contains(&node.node.get()) {
+                    return Err(KernelIrError::node(
+                        node.node.get(),
+                        operation_name.clone(),
+                        rejection_by_node
+                            .get(&node.node.get())
+                            .copied()
+                            .unwrap_or("turn node was not assigned to a native numeric region"),
+                    ));
                 } else {
                     lower_operation(&node.operation.operation_name).ok_or_else(|| {
                         KernelIrError::node(
@@ -528,6 +556,28 @@ fn lower_operation(name: &str) -> Option<Operation> {
         Some(Operation::Binary(BinaryOperation::Divide))
     } else {
         None
+    }
+}
+
+fn operation_from_numeric(opcode: mech_build::NativeNumericOpcode) -> Operation {
+    use mech_build::NativeNumericOpcode;
+
+    match opcode {
+        NativeNumericOpcode::Broadcast => Operation::Broadcast,
+        NativeNumericOpcode::HorizontalConcatenate => Operation::HorizontalConcatenate,
+        NativeNumericOpcode::VerticalConcatenate => Operation::VerticalConcatenate,
+        NativeNumericOpcode::MatrixMultiply => Operation::MatrixMultiply,
+        NativeNumericOpcode::Transpose => Operation::Transpose,
+        NativeNumericOpcode::Dot => Operation::Dot,
+        NativeNumericOpcode::Assign => Operation::Assign,
+        NativeNumericOpcode::Sin => Operation::Unary(UnaryOperation::Sin),
+        NativeNumericOpcode::Cos => Operation::Unary(UnaryOperation::Cos),
+        NativeNumericOpcode::Negate => Operation::Unary(UnaryOperation::Negate),
+        NativeNumericOpcode::Atan2 => Operation::Atan2,
+        NativeNumericOpcode::Add => Operation::Binary(BinaryOperation::Add),
+        NativeNumericOpcode::Subtract => Operation::Binary(BinaryOperation::Subtract),
+        NativeNumericOpcode::Multiply => Operation::Binary(BinaryOperation::Multiply),
+        NativeNumericOpcode::Divide => Operation::Binary(BinaryOperation::Divide),
     }
 }
 

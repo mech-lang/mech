@@ -56,30 +56,34 @@ Apple M1 Mac mini, 8 GB, arm64, Rust 1.96.0-nightly:
 
 | Lane | Median | Throughput |
 | --- | ---: | ---: |
-| Handwritten fixed nalgebra | 103.9 ns/turn | 9.627 MHz |
-| Mech AOT generated Rust | 107.8 ns/turn | 9.273 MHz |
-| Handwritten fixed nalgebra, 1,024 filters | 75.261 ns/filter | 13.287 M filter-turns/s |
-| Mech AOT generated Rust, 1,024 filters | 72.456 ns/filter | 13.801 M filter-turns/s |
-| Mech resident, full summary | 1,221.2 ns/turn | 0.819 MHz |
-| Mech resident, no summary | 1,134.6 ns/turn | 0.881 MHz |
+| Handwritten fixed nalgebra | 102.6 ns/turn | 9.750 MHz |
+| Mech AOT generated Rust | 107.8 ns/turn | 9.277 MHz |
+| Handwritten fixed nalgebra, 1,024 filters | 74.891 ns/filter | 13.353 M filter-turns/s |
+| Mech AOT generated Rust, 1,024 filters | 81.888 ns/filter | 12.212 M filter-turns/s |
+| Mech resident, full summary | 1,189.3 ns/turn | 0.841 MHz |
+| Mech resident, no summary | 1,133.2 ns/turn | 0.882 MHz |
 
-The scalar generated EKF again matched the fixed-size nalgebra reference with zero absolute error over the deterministic 4,096-turn stream. The 1,024-filter program compiled from 276 ordinary Mech nodes to 276 typed kernel instructions. All 1,024 lanes matched independent nalgebra filters for 256 turns with zero absolute error in the recorded release run. Frontend and artifact construction took 169.6 ms, while native compilation took 133.2 ms.
+The scalar generated EKF again matched the fixed-size nalgebra reference with zero absolute error over the deterministic 4,096-turn stream. The outer-lifted program compiles the same natural 101-node matrix graph once rather than compiling a manually expanded component graph. All 1,024 lanes matched independent nalgebra filters for 256 turns with zero absolute error in the recorded release run. Scalar frontend and artifact construction took 59.6 ms, while scalar native compilation took 175.7 ms. The outer-lift frontend took 36.0 ms and its native compilation took 160.2 ms.
 
-The batch result is 1.49x the scalar Mech throughput per filter and 3.7% faster than looping over 1,024 fixed-nalgebra Rust filters in the same harness. This is not a SIMD result: arm64 assembly still uses scalar floating-point operations around the transcendental library calls, although LLVM combines adjacent sine and cosine operations into `sincos`. The measured gain comes from a single native batch boundary, structure-of-arrays state, and direct scalarized equations.
+The batch result is 1.32x the scalar Mech throughput per filter and 9.3% slower than looping over 1,024 fixed-nalgebra Rust filters in the same harness. This is not a SIMD result: arm64 assembly still uses scalar floating-point operations around the transcendental library calls, although LLVM combines adjacent sine and cosine operations into `sincos`. The per-filter gain over scalar Mech comes from a single native batch boundary, structure-of-arrays state, and direct scalarized equations.
 
-The resident lanes use the current `feat/general-pure-resident-execution` executor at commit `c539987c3`.
+The branch is rebased on the current `feat/general-pure-resident-execution`
+executor at commit `0f6c89e9a`.
 
 These are prototype results, not a stable cross-machine score. The useful conclusion is architectural: build-time scalarization of the ordinary typed artifact removes almost all of the gap without adding an EKF-specific engine operation.
 
 ## Current boundary
 
-This proves that scalar and lane-wise dense, pure, fixed-shape programs can share one typed lowering and native backend. It still compiles the complete eligible program rather than extracting supported regions from a mixed program. The batch detector currently admits only uniform `1 x N` state plus scalar or `1 x N` temporaries and lane-wise operations. A production `mech build` backend still needs:
+This proves that scalar and lane-wise dense, pure, fixed-shape programs can share one typed lowering and native backend. `mech-build` now also activates the semantic artifact and partitions the turn graph into maximal connected numeric regions. Each region contains ordered typed instructions, embedded constants, resolved slot shapes and arena offsets, and explicit runtime live-ins/live-outs. An integration test proves that an unsupported `pow` node becomes a diagnosed fallback boundary while its downstream assignment remains compilable.
 
-- a stable native artifact and host ABI;
-- phase-aware pure-region extraction with resident fallback at unsupported boundaries;
+The batch detector currently admits only uniform `1 x N` state plus scalar or `1 x N` temporaries and lane-wise operations. A production `mech build` backend still needs:
+
+- a compiled-region executor hook that can stage multiple slot writes before publication;
+- a runtime installation adapter that connects host observations to a resident instance;
+- a stable numeric-op identity in the catalog or artifact (the prototype currently maps concrete operation names once during build analysis);
 - guarantee profiles for checked, transactional, and unchecked execution;
 - cache keys and invalidation based on program revision, shapes, catalog versions, and target features;
 - source spans and precise diagnostics for unsupported operations;
 - tests for dynamic shapes, fallible operations, constraints, and mixed native/resident execution.
 
-The next implementation step is to partition the artifact into maximal eligible numeric regions and describe their live-in/live-out values. The current `KernelIr` can then represent each region, allowing the resident executor to call compiled kernels without requiring the entire turn to be native-compatible.
+PR-D does not need to wait for this work. Its artifact, activation, typed arenas, and published/candidate state model are the correct substrate and the region analyzer passes unchanged on its current head. The compiled-region and runtime-install hooks can remain additive follow-up APIs. The important constraint is not to treat the current one-output `BoundResidentKernel` as the only permanent extension point: the natural EKF region has two live state outputs, and committing both must remain atomic.

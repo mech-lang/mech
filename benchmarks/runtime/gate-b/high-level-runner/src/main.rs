@@ -958,9 +958,16 @@ fn main() -> MResult<()> {
         "natural EKF turn graph should be fully lowerable: {:?}",
         numeric_regions.rejections,
     );
-    println!(
-        "native partition: {} turn nodes -> one region, {} live inputs, {} live outputs",
+    assert_eq!(
+        numeric_regions.regions[0].instructions.len(),
         numeric_regions.regions[0].nodes.len(),
+        "every native-region node must have one typed instruction",
+    );
+    println!(
+        "native partition: {} typed turn instructions -> one region, {} constants, {} typed slots, {} live inputs, {} live outputs",
+        numeric_regions.regions[0].nodes.len(),
+        numeric_regions.regions[0].constants.len(),
+        numeric_regions.regions[0].slots.len(),
         numeric_regions.regions[0].live_inputs.len(),
         numeric_regions.regions[0].live_outputs.len(),
     );

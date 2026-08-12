@@ -7,12 +7,15 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
+use mech_core::snapshot::SequenceView;
 use mech_core::{
-    CellSlotId, ExternalInteraction, FunctionCatalog, NodeId, ParsedProgram, ReactiveInstanceId,
-    ResidentValueKind, ResolvedOperationContract,
+    CellSlotId, ConstantId, DimensionExpr, ExternalInteraction, FloatWidth, FunctionCatalog,
+    NodeId, ParsedProgram, ReactiveInstanceId, ResidentValueKind, ResolvedOperationContract,
+    SchemaBody, Value, ValueData,
 };
 use mech_engine::__resident::{
-    ActivatedNode, ActivatedPlan, ActivationFacts, ResidentReadLocation, activate,
+    ActivatedNode, ActivatedPlan, ActivationFacts, ResidentReadLocation, ResidentStorageClass,
+    activate,
 };
 use mech_engine::artifact::{
     ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact, SlotRole,
@@ -25,10 +28,78 @@ pub enum NativeNumericSource {
     Slot(u32),
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NativeNumericOpcode {
+    Broadcast,
+    HorizontalConcatenate,
+    VerticalConcatenate,
+    MatrixMultiply,
+    Transpose,
+    Dot,
+    Assign,
+    Sin,
+    Cos,
+    Negate,
+    Atan2,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeNumericInstruction {
+    pub node: u32,
+    pub operation: String,
+    pub opcode: NativeNumericOpcode,
+    pub inputs: Vec<NativeNumericSource>,
+    pub output: u32,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct NativeNumericShape {
+    pub rows: u32,
+    pub columns: u32,
+}
+
+impl NativeNumericShape {
+    pub fn len(self) -> Option<usize> {
+        usize::try_from(self.rows)
+            .ok()?
+            .checked_mul(usize::try_from(self.columns).ok()?)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NativeNumericSlotStorage {
+    Activation,
+    Input,
+    State,
+    Scratch,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeNumericSlotLayout {
+    pub slot: u32,
+    pub storage: NativeNumericSlotStorage,
+    pub offset: usize,
+    pub shape: NativeNumericShape,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeNumericConstant {
+    pub constant: u32,
+    pub shape: NativeNumericShape,
+    pub elements: Vec<u64>,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeNumericRegion {
     pub nodes: Vec<u32>,
-    pub live_inputs: Vec<NativeNumericSource>,
+    pub instructions: Vec<NativeNumericInstruction>,
+    pub constants: Vec<NativeNumericConstant>,
+    pub slots: Vec<NativeNumericSlotLayout>,
+    pub live_inputs: Vec<u32>,
     pub live_outputs: Vec<u32>,
 }
 
@@ -92,11 +163,11 @@ pub fn analyze_activated_artifact(
     artifact: &ProgramArtifact,
     plan: &ActivatedPlan,
 ) -> NativeNumericAnalysis {
-    let mut eligible = vec![false; plan.nodes.len()];
+    let mut opcodes = vec![None; plan.nodes.len()];
     let mut rejections = Vec::new();
     for (index, node) in plan.nodes.iter().enumerate() {
         match node_eligibility(artifact, plan, node) {
-            Ok(()) => eligible[index] = true,
+            Ok(opcode) => opcodes[index] = Some(opcode),
             Err(reason) => {
                 let declaration = artifact_node(artifact, node.artifact_node);
                 rejections.push(NativeNumericNodeRejection {
@@ -116,9 +187,36 @@ pub fn analyze_activated_artifact(
         .enumerate()
         .map(|(index, node)| (node.artifact_node, index))
         .collect::<BTreeMap<_, _>>();
+    let mut stages = vec![0_u32; plan.nodes.len()];
+    for activated in &plan.topology.linear_node_order {
+        let index = activated.get() as usize;
+        let node = &plan.nodes[index];
+        let Some(declaration) = artifact_node(artifact, node.artifact_node) else {
+            continue;
+        };
+        let input_stage = node_input_sources(artifact, declaration)
+            .into_iter()
+            .filter_map(|source| match source {
+                ArtifactSource::Slot(slot)
+                    if slot_role(artifact, slot) != Some(SlotRole::State) =>
+                {
+                    slot_producer(artifact, slot)
+                        .and_then(|producer| activated_by_artifact.get(&producer).copied())
+                        .map(|producer| stages[producer])
+                }
+                ArtifactSource::Constant(_) | ArtifactSource::Slot(_) => None,
+            })
+            .max()
+            .unwrap_or(0);
+        stages[index] = if opcodes[index].is_some() {
+            input_stage
+        } else {
+            input_stage.saturating_add(1)
+        };
+    }
     let mut disjoint = DisjointSet::new(plan.nodes.len());
     for (index, node) in plan.nodes.iter().enumerate() {
-        if !eligible[index] {
+        if opcodes[index].is_none() {
             continue;
         }
         let Some(declaration) = artifact_node(artifact, node.artifact_node) else {
@@ -134,17 +232,20 @@ pub fn analyze_activated_artifact(
             let Some(&producer_index) = activated_by_artifact.get(&producer) else {
                 continue;
             };
-            if eligible[producer_index] {
+            if opcodes[producer_index].is_some() && stages[producer_index] == stages[index] {
                 disjoint.union(index, producer_index);
             }
         }
     }
 
-    let mut grouped = BTreeMap::<usize, Vec<usize>>::new();
+    let mut grouped = BTreeMap::<(u32, usize), Vec<usize>>::new();
     for node in &plan.topology.linear_node_order {
         let index = node.get() as usize;
-        if eligible[index] {
-            grouped.entry(disjoint.find(index)).or_default().push(index);
+        if opcodes[index].is_some() {
+            grouped
+                .entry((stages[index], disjoint.find(index)))
+                .or_default()
+                .push(index);
         }
     }
 
@@ -170,6 +271,7 @@ pub fn analyze_activated_artifact(
             build_region(
                 artifact,
                 plan,
+                &opcodes,
                 &indices,
                 &consumers,
                 &artifact_outputs,
@@ -191,7 +293,7 @@ fn node_eligibility(
     artifact: &ProgramArtifact,
     plan: &ActivatedPlan,
     node: &ActivatedNode,
-) -> Result<(), String> {
+) -> Result<NativeNumericOpcode, String> {
     let declaration = artifact_node(artifact, node.artifact_node)
         .ok_or_else(|| "artifact node declaration is missing".to_owned())?;
     let contract = artifact
@@ -207,9 +309,11 @@ fn node_eligibility(
             contract.interaction
         ));
     }
-    if !operation_is_lowerable(&declaration.operation.operation_name) {
-        return Err("operation has no native numeric opcode lowering".to_owned());
-    }
+    let opcode = lower_operation(
+        &declaration.operation.module_path,
+        &declaration.operation.operation_name,
+    )
+    .ok_or_else(|| "operation has no native numeric opcode lowering".to_owned())?;
     if node.write.region.kind != ResidentValueKind::F64 {
         return Err(format!(
             "output kind {:?} is not supported by the f64 numeric backend",
@@ -222,12 +326,17 @@ fn node_eligibility(
     {
         return Err("one or more inputs are not f64 resident values".to_owned());
     }
-    Ok(())
+    let outputs = node_output_slots(artifact, declaration);
+    if outputs.as_slice() != [node.write.slot] {
+        return Err("numeric regions require exactly one resident output".to_owned());
+    }
+    Ok(opcode)
 }
 
 fn build_region(
     artifact: &ProgramArtifact,
     plan: &ActivatedPlan,
+    opcodes: &[Option<NativeNumericOpcode>],
     indices: &[usize],
     consumers: &BTreeMap<CellSlotId, BTreeSet<NodeId>>,
     artifact_outputs: &BTreeSet<CellSlotId>,
@@ -238,6 +347,7 @@ fn build_region(
         .map(|index| plan.nodes[*index].artifact_node)
         .collect::<BTreeSet<_>>();
     let mut live_inputs = BTreeSet::new();
+    let mut constants = BTreeSet::new();
     let mut live_outputs = BTreeSet::new();
 
     for index in indices {
@@ -246,16 +356,18 @@ fn build_region(
             continue;
         };
         for source in node_input_sources(artifact, declaration) {
-            let external = match source {
-                ArtifactSource::Constant(_) => true,
-                ArtifactSource::Slot(slot) => {
-                    slot_role(artifact, slot) == Some(SlotRole::State)
-                        || slot_producer(artifact, slot)
-                            .is_none_or(|producer| !members.contains(&producer))
+            match source {
+                ArtifactSource::Constant(constant) => {
+                    constants.insert(constant.get());
                 }
-            };
-            if external {
-                live_inputs.insert(native_source(source));
+                ArtifactSource::Slot(slot) => {
+                    let external = slot_role(artifact, slot) == Some(SlotRole::State)
+                        || slot_producer(artifact, slot)
+                            .is_none_or(|producer| !members.contains(&producer));
+                    if external {
+                        live_inputs.insert(slot.get());
+                    }
+                }
             }
         }
         for target in node_output_slots(artifact, declaration) {
@@ -272,11 +384,77 @@ fn build_region(
         }
     }
 
+    let nodes = indices
+        .iter()
+        .map(|index| plan.nodes[*index].artifact_node.get())
+        .collect::<Vec<_>>();
+    let instructions = indices
+        .iter()
+        .map(|index| {
+            let activated = &plan.nodes[*index];
+            let declaration = artifact_node(artifact, activated.artifact_node)
+                .expect("eligible node has an artifact declaration");
+            let outputs = node_output_slots(artifact, declaration);
+            let [output] = outputs.as_slice() else {
+                unreachable!("eligible node has exactly one output");
+            };
+            NativeNumericInstruction {
+                node: activated.artifact_node.get(),
+                operation: qualified_operation_name(declaration),
+                opcode: opcodes[*index].expect("region contains only eligible nodes"),
+                inputs: node_input_sources(artifact, declaration)
+                    .into_iter()
+                    .map(native_source)
+                    .collect(),
+                output: output.get(),
+            }
+        })
+        .collect::<Vec<_>>();
+    let referenced_slots = instructions
+        .iter()
+        .flat_map(|instruction| {
+            instruction
+                .inputs
+                .iter()
+                .filter_map(|source| match source {
+                    NativeNumericSource::Constant(_) => None,
+                    NativeNumericSource::Slot(slot) => Some(*slot),
+                })
+                .chain(std::iter::once(instruction.output))
+        })
+        .collect::<BTreeSet<_>>();
+    let slots = referenced_slots
+        .into_iter()
+        .map(|slot| {
+            let resolved = plan
+                .slots
+                .get(slot as usize)
+                .filter(|resolved| resolved.artifact_id.get() == slot)
+                .expect("eligible instruction slot has a resolved layout");
+            NativeNumericSlotLayout {
+                slot,
+                storage: native_slot_storage(resolved.storage),
+                offset: resolved.region.offset,
+                shape: NativeNumericShape {
+                    rows: resolved.region.shape.rows,
+                    columns: resolved.region.shape.columns,
+                },
+            }
+        })
+        .collect();
+    let constants = constants
+        .into_iter()
+        .map(|constant| {
+            native_constant(artifact, ConstantId::new(constant))
+                .expect("eligible instruction constant has a resolved f64 value")
+        })
+        .collect();
+
     NativeNumericRegion {
-        nodes: indices
-            .iter()
-            .map(|index| plan.nodes[*index].artifact_node.get())
-            .collect(),
+        nodes,
+        instructions,
+        constants,
+        slots,
         live_inputs: live_inputs.into_iter().collect(),
         live_outputs: live_outputs.into_iter().collect(),
     }
@@ -296,13 +474,20 @@ fn node_input_sources(
     artifact: &ProgramArtifact,
     node: &mech_engine::artifact::NodeDeclaration,
 ) -> Vec<ArtifactSource> {
-    artifact.bindings()[node.input_bindings.start as usize..node.input_bindings.end as usize]
+    let mut sources = artifact.bindings()
+        [node.input_bindings.start as usize..node.input_bindings.end as usize]
         .iter()
         .filter_map(|binding| match binding {
-            BindingDeclaration::Input { source, .. } => Some(*source),
+            BindingDeclaration::Input {
+                port_ordinal,
+                source,
+                ..
+            } => Some((*port_ordinal, *source)),
             BindingDeclaration::Output { .. } => None,
         })
-        .collect()
+        .collect::<Vec<_>>();
+    sources.sort_by_key(|(ordinal, _)| *ordinal);
+    sources.into_iter().map(|(_, source)| source).collect()
 }
 
 fn node_output_slots(
@@ -352,6 +537,100 @@ fn native_source(source: ArtifactSource) -> NativeNumericSource {
     }
 }
 
+fn native_slot_storage(storage: ResidentStorageClass) -> NativeNumericSlotStorage {
+    match storage {
+        ResidentStorageClass::Constant => NativeNumericSlotStorage::Activation,
+        ResidentStorageClass::Input => NativeNumericSlotStorage::Input,
+        ResidentStorageClass::State => NativeNumericSlotStorage::State,
+        ResidentStorageClass::Scratch => NativeNumericSlotStorage::Scratch,
+    }
+}
+
+fn native_constant(
+    artifact: &ProgramArtifact,
+    id: ConstantId,
+) -> Result<NativeNumericConstant, String> {
+    let value = artifact
+        .constants()
+        .get(id)
+        .ok_or_else(|| format!("constant {} is missing", id.get()))?;
+    Ok(NativeNumericConstant {
+        constant: id.get(),
+        shape: constant_shape(artifact, value)?,
+        elements: constant_elements(value)?,
+    })
+}
+
+fn constant_shape(artifact: &ProgramArtifact, value: &Value) -> Result<NativeNumericShape, String> {
+    let schema = artifact
+        .schemas()
+        .entry(value.schema())
+        .ok_or_else(|| "constant schema is missing".to_owned())?
+        .schema();
+    match schema.body() {
+        SchemaBody::FloatingPoint(FloatWidth::W64) => Ok(NativeNumericShape {
+            rows: 1,
+            columns: 1,
+        }),
+        SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2 => {
+            let rows = evaluate_dimension(&dimensions[0], value.shape().parameter_values())?;
+            let columns = evaluate_dimension(&dimensions[1], value.shape().parameter_values())?;
+            Ok(NativeNumericShape {
+                rows: u32::try_from(rows)
+                    .map_err(|_| "constant row count exceeds u32".to_owned())?,
+                columns: u32::try_from(columns)
+                    .map_err(|_| "constant column count exceeds u32".to_owned())?,
+            })
+        }
+        body => Err(format!("constant schema {body:?} is not fixed-shape f64")),
+    }
+}
+
+fn evaluate_dimension(expression: &DimensionExpr, values: &[u64]) -> Result<u64, String> {
+    match expression {
+        DimensionExpr::Hole => Err("constant contains an unresolved dimension".to_owned()),
+        DimensionExpr::Constant(value) => Ok(*value),
+        DimensionExpr::Parameter(id) => values
+            .get(id.get() as usize)
+            .copied()
+            .ok_or_else(|| "constant dimension parameter is missing".to_owned()),
+        DimensionExpr::Add(terms) => terms.iter().try_fold(0_u64, |sum, term| {
+            sum.checked_add(evaluate_dimension(term, values)?)
+                .ok_or_else(|| "constant dimension overflow".to_owned())
+        }),
+        DimensionExpr::Multiply(terms) => terms.iter().try_fold(1_u64, |product, term| {
+            product
+                .checked_mul(evaluate_dimension(term, values)?)
+                .ok_or_else(|| "constant dimension overflow".to_owned())
+        }),
+        DimensionExpr::Min(terms) => terms
+            .iter()
+            .map(|term| evaluate_dimension(term, values))
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .min()
+            .ok_or_else(|| "constant has an empty minimum dimension".to_owned()),
+        DimensionExpr::Max(terms) => terms
+            .iter()
+            .map(|term| evaluate_dimension(term, values))
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .max()
+            .ok_or_else(|| "constant has an empty maximum dimension".to_owned()),
+    }
+}
+
+fn constant_elements(value: &Value) -> Result<Vec<u64>, String> {
+    match value.data() {
+        ValueData::F64(value) => Ok(vec![value.bits()]),
+        ValueData::Matrix(matrix) => match matrix.elements() {
+            SequenceView::F64(values) => Ok(values.iter().map(|value| value.bits()).collect()),
+            other => Err(format!("matrix constant elements {other:?} are not f64")),
+        },
+        other => Err(format!("constant {other:?} is not f64")),
+    }
+}
+
 fn read_region(read: ResidentReadLocation) -> mech_engine::__resident::ResidentRegion {
     match read {
         ResidentReadLocation::Constant(region)
@@ -373,22 +652,43 @@ fn qualified_operation_name(node: &mech_engine::artifact::NodeDeclaration) -> St
     }
 }
 
-fn operation_is_lowerable(name: &str) -> bool {
-    name.starts_with("HorizontalConcatenate")
-        || name.starts_with("VerticalConcatenate")
-        || name.starts_with("MatMul")
-        || name.starts_with("Transpose")
-        || name.starts_with("Dot")
-        || name.starts_with("Assign<")
-        || name.starts_with("ConvertScalarToMat2")
-        || name.starts_with("MathSin")
-        || name.starts_with("MathCos")
-        || name.starts_with("Negate")
-        || name.starts_with("Atan2")
-        || binary_operation_is_lowerable(name, "Add")
-        || binary_operation_is_lowerable(name, "Sub")
-        || binary_operation_is_lowerable(name, "Mul")
-        || binary_operation_is_lowerable(name, "Div")
+fn lower_operation(module: &[String], name: &str) -> Option<NativeNumericOpcode> {
+    if module != ["runtime"] {
+        return None;
+    }
+    if name.starts_with("HorizontalConcatenate") {
+        Some(NativeNumericOpcode::HorizontalConcatenate)
+    } else if name.starts_with("VerticalConcatenate") {
+        Some(NativeNumericOpcode::VerticalConcatenate)
+    } else if name.starts_with("MatMul") {
+        Some(NativeNumericOpcode::MatrixMultiply)
+    } else if name.starts_with("Transpose") {
+        Some(NativeNumericOpcode::Transpose)
+    } else if name.starts_with("Dot") {
+        Some(NativeNumericOpcode::Dot)
+    } else if name.starts_with("Assign<") {
+        Some(NativeNumericOpcode::Assign)
+    } else if name.starts_with("ConvertScalarToMat2") {
+        Some(NativeNumericOpcode::Broadcast)
+    } else if name.starts_with("MathSin") {
+        Some(NativeNumericOpcode::Sin)
+    } else if name.starts_with("MathCos") {
+        Some(NativeNumericOpcode::Cos)
+    } else if name.starts_with("Negate") {
+        Some(NativeNumericOpcode::Negate)
+    } else if name.starts_with("Atan2") {
+        Some(NativeNumericOpcode::Atan2)
+    } else if binary_operation_is_lowerable(name, "Add") {
+        Some(NativeNumericOpcode::Add)
+    } else if binary_operation_is_lowerable(name, "Sub") {
+        Some(NativeNumericOpcode::Subtract)
+    } else if binary_operation_is_lowerable(name, "Mul") {
+        Some(NativeNumericOpcode::Multiply)
+    } else if binary_operation_is_lowerable(name, "Div") {
+        Some(NativeNumericOpcode::Divide)
+    } else {
+        None
+    }
 }
 
 fn binary_operation_is_lowerable(name: &str, prefix: &str) -> bool {
@@ -437,12 +737,30 @@ mod tests {
 
     #[test]
     fn lowerable_binary_families_exclude_read_modify_write_variants() {
-        assert!(operation_is_lowerable("AddMDMD<f64>"));
-        assert!(operation_is_lowerable("MulSS<f64>"));
-        assert!(!operation_is_lowerable(
-            "AddAssign2DRAV<f64DMatrixDMatrixDVector>"
-        ));
-        assert!(!operation_is_lowerable("NChooseKMatrix<f64>"));
+        assert_eq!(
+            lower_operation(&["runtime".to_owned()], "AddMDMD<f64>"),
+            Some(NativeNumericOpcode::Add)
+        );
+        assert_eq!(
+            lower_operation(&["runtime".to_owned()], "MulSS<f64>"),
+            Some(NativeNumericOpcode::Multiply)
+        );
+        assert_eq!(
+            lower_operation(
+                &["runtime".to_owned()],
+                "AddAssign2DRAV<f64DMatrixDMatrixDVector>",
+            ),
+            None
+        );
+        assert_eq!(
+            lower_operation(&["runtime".to_owned()], "NChooseKMatrix<f64>"),
+            None
+        );
+        assert_eq!(
+            lower_operation(&["custom".to_owned()], "AddSS<f64>"),
+            None,
+            "concrete names are meaningful only in the trusted runtime module",
+        );
     }
 
     #[test]

@@ -3,7 +3,8 @@ use std::sync::Arc;
 
 use mech_build::{
     NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest,
-    NativeDependencySource, NativeEmit, NativeHostCatalog, NativeNumericSource,
+    NativeDependencySource, NativeEmit, NativeHostCatalog, NativeNumericOpcode,
+    NativeNumericSlotStorage,
 };
 use mech_runtime::RuntimeBuilder;
 
@@ -51,12 +52,33 @@ state"#,
     assert_eq!(analysis.regions.len(), 1);
     let region = &analysis.regions[0];
     assert!(region.nodes.len() >= 3);
+    assert_eq!(region.instructions.len(), region.nodes.len());
+    assert_eq!(
+        region
+            .instructions
+            .iter()
+            .map(|instruction| instruction.opcode)
+            .collect::<Vec<_>>(),
+        [
+            NativeNumericOpcode::Multiply,
+            NativeNumericOpcode::Add,
+            NativeNumericOpcode::Assign,
+        ],
+    );
+    assert!(
+        !region.live_inputs.is_empty(),
+        "state must be an explicit region live-in"
+    );
+    assert_eq!(region.constants.len(), 2);
     assert!(
         region
-            .live_inputs
+            .constants
             .iter()
-            .any(|source| matches!(source, NativeNumericSource::Slot(_)))
+            .all(|constant| constant.shape.len() == Some(constant.elements.len()))
     );
+    assert!(region.slots.iter().any(|slot| {
+        region.live_inputs.contains(&slot.slot) && slot.storage == NativeNumericSlotStorage::State
+    }));
     assert_eq!(region.live_outputs.len(), 1);
 }
 
@@ -79,4 +101,45 @@ state"#,
     );
     assert_eq!(analysis.regions.len(), 1);
     assert_eq!(analysis.regions[0].nodes.len(), 1);
+}
+
+#[test]
+fn build_analysis_never_fuses_across_a_fallback_dependency() {
+    let (builder, request) = compile(
+        r#"~state := 2.0
+before := state + 1.0
+fallback := before ^ 2.0
+after := before + fallback
+state = after
+state"#,
+    );
+
+    let analysis = builder.analyze_numeric_regions(&request).unwrap();
+    assert_eq!(analysis.rejections.len(), 1);
+    assert!(analysis.rejections[0].operation.contains("Pow"));
+    assert_eq!(analysis.regions.len(), 2, "{analysis:#?}");
+    assert_eq!(analysis.regions[0].instructions.len(), 1);
+    assert_eq!(
+        analysis.regions[0].instructions[0].opcode,
+        NativeNumericOpcode::Add,
+    );
+    assert_eq!(analysis.regions[1].instructions.len(), 2);
+    assert_eq!(
+        analysis.regions[1]
+            .instructions
+            .iter()
+            .map(|instruction| instruction.opcode)
+            .collect::<Vec<_>>(),
+        [NativeNumericOpcode::Add, NativeNumericOpcode::Assign],
+    );
+    let fallback_output = analysis.regions[1]
+        .instructions
+        .first()
+        .and_then(|instruction| instruction.inputs.get(1))
+        .and_then(|source| match source {
+            mech_build::NativeNumericSource::Slot(slot) => Some(*slot),
+            mech_build::NativeNumericSource::Constant(_) => None,
+        })
+        .unwrap();
+    assert!(analysis.regions[1].live_inputs.contains(&fallback_output));
 }
