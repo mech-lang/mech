@@ -23,7 +23,6 @@ use std::time::{Duration, Instant};
 use aot::{AotProgram, AotState};
 
 const SOURCE: &str = include_str!("../../ekf-function-high-level.mec");
-const BATCH_EKF_SOURCE: &str = include_str!("../../ekf-batch-high-level.mec");
 const NUMERIC_PROOF_SOURCE: &str = include_str!("../../numeric-kernel-proof.mec");
 const NUMERIC_BATCH_PROOF_SOURCE: &str = include_str!("../../numeric-batch-proof.mec");
 const NUMERIC_BATCH_LEN: usize = 64;
@@ -655,10 +654,6 @@ fn prove_batched_numeric_kernel(
     Ok(aot)
 }
 
-fn row_value(len: usize, value: f64) -> LegacyValue {
-    LegacyValue::MatrixF64(MechMatrix::from_vec(vec![value; len], 1, len))
-}
-
 fn batch_sample(sample: InputSample, lane: usize) -> InputSample {
     let centered_lane = lane as f64 - (BATCH_EKF_LEN as f64 - 1.0) * 0.5;
     let phase = centered_lane * (TAU / BATCH_EKF_LEN as f64);
@@ -792,16 +787,16 @@ fn prove_batched_ekf_kernel(
     catalog: &std::sync::Arc<mech_core::FunctionCatalog>,
     samples: &[InputSample],
 ) -> MResult<AotProgram> {
-    let mut services = CompilationServices::with_values([
-        ("pulse", LegacyValue::F64(Ref::new(0.0))),
-        ("linear-velocity", row_value(BATCH_EKF_LEN, 1.0)),
-        ("angular-velocity", row_value(BATCH_EKF_LEN, 0.01)),
-        ("bearing", row_value(BATCH_EKF_LEN, -0.25)),
+    let mut services = CompilationServices::new([
+        ("pulse", 0.0),
+        ("linear-velocity", 1.0),
+        ("angular-velocity", 0.01),
+        ("bearing", -0.25),
     ]);
     let frontend_started = Instant::now();
     let mut program =
         MechProgram::with_function_catalog(MechProgramConfig::default(), catalog.clone());
-    program.run_string_with_services(BATCH_EKF_SOURCE, &mut services)?;
+    program.run_string_with_services(SOURCE, &mut services)?;
     let (artifact, _bytecode) = program.compile_program_product()?.into_parts();
     let frontend_time = frontend_started.elapsed();
     let instance = activate(
@@ -832,8 +827,20 @@ fn prove_batched_ekf_kernel(
         .iter()
         .map(|input| mech_core::CellSlotId::new(input.slot.get()))
         .collect::<Vec<_>>();
-    let aot = AotProgram::build(&artifact, &instance.plan, &input_slots)
-        .map_err(|message| error(format!("batched EKF AOT build failed: {message}")))?;
+    let per_lane_inputs = services
+        .bindings
+        .iter()
+        .enumerate()
+        .filter_map(|(ordinal, (request, _))| (request.path != "pulse").then_some(ordinal))
+        .collect::<Vec<_>>();
+    let aot = AotProgram::build_outer_lifted(
+        &artifact,
+        &instance.plan,
+        &input_slots,
+        BATCH_EKF_LEN,
+        &per_lane_inputs,
+    )
+    .map_err(|message| error(format!("batched EKF AOT build failed: {message}")))?;
     assert_eq!(aot.batch_len(), Some(BATCH_EKF_LEN));
     let input_paths = services
         .bindings
@@ -841,7 +848,7 @@ fn prove_batched_ekf_kernel(
         .map(|(request, _)| request.path.as_str())
         .collect::<Vec<_>>();
     println!(
-        "compiled high-level batch EKF: {} Mech nodes -> {} kernel instructions, {} lanes ({:.1} ms frontend, {:.1} ms rustc -O)",
+        "compiled one natural matrix EKF graph and outer-lifted it: {} Mech nodes -> {} kernel instructions, {} lanes ({:.1} ms frontend, {:.1} ms rustc -O)",
         artifact.nodes().len(),
         aot.instruction_count(),
         BATCH_EKF_LEN,

@@ -126,11 +126,19 @@ pub(crate) struct InputBinding {
     pub(crate) ordinal: usize,
     pub(crate) offset: usize,
     pub(crate) len: usize,
+    pub(crate) per_lane: bool,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum BatchLayoutKind {
+    MaterializedLaneVectors,
+    OuterLift,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct BatchLayout {
     pub(crate) len: usize,
+    pub(crate) kind: BatchLayoutKind,
 }
 
 #[derive(Clone, Debug)]
@@ -209,6 +217,7 @@ impl KernelIr {
                     ordinal,
                     offset,
                     len,
+                    per_lane: false,
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -349,6 +358,68 @@ impl KernelIr {
 
     pub(crate) fn input(&self, ordinal: usize) -> &InputBinding {
         &self.inputs[ordinal]
+    }
+
+    pub(crate) fn lift_outer_batch(
+        &mut self,
+        len: usize,
+        per_lane_inputs: &[usize],
+    ) -> Result<(), KernelIrError> {
+        if len == 0 {
+            return Err(KernelIrError::global(
+                "outer batch length must be greater than zero",
+            ));
+        }
+        if self.batch.is_some() {
+            return Err(KernelIrError::global(
+                "cannot outer-lift a kernel that already has a batch layout",
+            ));
+        }
+        let per_lane_inputs = per_lane_inputs.iter().copied().collect::<BTreeSet<_>>();
+        if per_lane_inputs
+            .iter()
+            .any(|ordinal| *ordinal >= self.inputs.len())
+        {
+            return Err(KernelIrError::global(
+                "outer batch references an unknown input ordinal",
+            ));
+        }
+
+        let mut input_len = 0usize;
+        for input in &mut self.inputs {
+            input.offset = input_len;
+            input.per_lane = per_lane_inputs.contains(&input.ordinal);
+            let physical_len = if input.per_lane {
+                input
+                    .len
+                    .checked_mul(len)
+                    .ok_or_else(|| KernelIrError::global("outer batch input length overflow"))?
+            } else {
+                input.len
+            };
+            input_len = input_len
+                .checked_add(physical_len)
+                .ok_or_else(|| KernelIrError::global("outer batch input length overflow"))?;
+        }
+
+        let mut state_len = 0usize;
+        for state in &mut self.states {
+            state.offset = state_len;
+            state_len =
+                state_len
+                    .checked_add(state.initial_elements.len().checked_mul(len).ok_or_else(
+                        || KernelIrError::global("outer batch state length overflow"),
+                    )?)
+                    .ok_or_else(|| KernelIrError::global("outer batch state length overflow"))?;
+        }
+
+        self.input_len = input_len;
+        self.state_len = state_len;
+        self.batch = Some(BatchLayout {
+            len,
+            kind: BatchLayoutKind::OuterLift,
+        });
+        Ok(())
     }
 
     fn validate_input_ordinals(&self) -> Result<(), KernelIrError> {
@@ -753,7 +824,10 @@ fn infer_batch_layout(
             }
         }
     }
-    Some(BatchLayout { len })
+    Some(BatchLayout {
+        len,
+        kind: BatchLayoutKind::MaterializedLaneVectors,
+    })
 }
 
 fn require_arity(inputs: &[ValueType], expected: usize) -> Result<(), String> {

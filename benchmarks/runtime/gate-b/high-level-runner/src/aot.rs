@@ -1,5 +1,6 @@
 use crate::kernel_ir::{
-    BinaryOperation, KernelIr, Operation, Shape, Source, UnaryOperation, ValueStorage,
+    BatchLayoutKind, BinaryOperation, KernelIr, Operation, Shape, Source, UnaryOperation,
+    ValueStorage,
 };
 use libloading::Library;
 use mech_core::CellSlotId;
@@ -57,6 +58,21 @@ impl AotProgram {
     ) -> Result<Self, String> {
         let kernel =
             KernelIr::lower(artifact, plan, input_slots).map_err(|error| error.to_string())?;
+        Self::build_kernel(&kernel)
+    }
+
+    pub fn build_outer_lifted(
+        artifact: &ProgramArtifact,
+        plan: &ActivatedPlan,
+        input_slots: &[CellSlotId],
+        batch_len: usize,
+        per_lane_inputs: &[usize],
+    ) -> Result<Self, String> {
+        let mut kernel =
+            KernelIr::lower(artifact, plan, input_slots).map_err(|error| error.to_string())?;
+        kernel
+            .lift_outer_batch(batch_len, per_lane_inputs)
+            .map_err(|error| error.to_string())?;
         Self::build_kernel(&kernel)
     }
 
@@ -201,7 +217,22 @@ fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     )
     .unwrap();
     for state in &kernel.states {
-        if state
+        if matches!(
+            kernel.batch,
+            Some(batch) if batch.kind == BatchLayoutKind::OuterLift
+        ) {
+            let batch_len = kernel.batch.unwrap().len;
+            for (component, bits) in state.initial_elements.iter().enumerate() {
+                let start = state.offset + component * batch_len;
+                writeln!(
+                    rust,
+                    "    state[{start}..{}].fill({});",
+                    start + batch_len,
+                    float_literal(*bits),
+                )
+                .unwrap();
+            }
+        } else if state
             .initial_elements
             .windows(2)
             .all(|pair| pair[0] == pair[1])
@@ -250,10 +281,12 @@ fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     )
     .unwrap();
 
-    if let Some(batch) = kernel.batch {
-        emit_batched_turn(&mut rust, kernel, batch.len)?;
-    } else {
-        emit_scalarized_turn(&mut rust, kernel)?;
+    match kernel.batch {
+        Some(batch) if batch.kind == BatchLayoutKind::MaterializedLaneVectors => {
+            emit_materialized_batched_turn(&mut rust, kernel, batch.len)?;
+        }
+        Some(batch) => emit_outer_lifted_turn(&mut rust, kernel, batch.len)?,
+        None => emit_scalarized_turn(&mut rust, kernel)?,
     }
     writeln!(rust, "}}").unwrap();
     Ok(rust)
@@ -330,7 +363,11 @@ fn emit_scalarized_turn(rust: &mut String, kernel: &KernelIr) -> Result<(), Stri
     Ok(())
 }
 
-fn emit_batched_turn(rust: &mut String, kernel: &KernelIr, batch_len: usize) -> Result<(), String> {
+fn emit_materialized_batched_turn(
+    rust: &mut String,
+    kernel: &KernelIr,
+    batch_len: usize,
+) -> Result<(), String> {
     writeln!(rust, "    const BATCH_LEN: usize = {batch_len};").unwrap();
     writeln!(rust, "    for lane in 0..BATCH_LEN {{").unwrap();
     for state in &kernel.states {
@@ -440,6 +477,95 @@ fn emit_batched_turn(rust: &mut String, kernel: &KernelIr, batch_len: usize) -> 
             state.offset,
         )
         .unwrap();
+    }
+    writeln!(rust, "    }}").unwrap();
+    Ok(())
+}
+
+fn emit_outer_lifted_turn(
+    rust: &mut String,
+    kernel: &KernelIr,
+    batch_len: usize,
+) -> Result<(), String> {
+    writeln!(rust, "    const BATCH_LEN: usize = {batch_len};").unwrap();
+    writeln!(rust, "    for lane in 0..BATCH_LEN {{").unwrap();
+    for state in &kernel.states {
+        let elements = (0..state.initial_elements.len())
+            .map(|component| {
+                format!(
+                    "published[{} + {component} * BATCH_LEN + lane]",
+                    state.offset,
+                )
+            })
+            .collect::<Vec<_>>();
+        writeln!(
+            rust,
+            "        let s_{}: [f64; {}] = {};",
+            state.value.get(),
+            state.initial_elements.len(),
+            array(&elements),
+        )
+        .unwrap();
+    }
+
+    for instruction in &kernel.instructions {
+        let output = kernel.value(instruction.output);
+        let expression = match instruction.operation {
+            Operation::Input { ordinal } => {
+                let input = kernel.input(ordinal);
+                let elements = (0..input.len)
+                    .map(|component| {
+                        if input.per_lane {
+                            format!("inputs[{} + {component} * BATCH_LEN + lane]", input.offset,)
+                        } else {
+                            format!("inputs[{}]", input.offset + component)
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                array(&elements)
+            }
+            operation => {
+                let operands = instruction
+                    .inputs
+                    .iter()
+                    .map(|source| operand(kernel, source))
+                    .collect::<Vec<_>>();
+                emit_operation(operation, &operands, output.ty.shape)?
+            }
+        };
+        let variable = if output.storage == ValueStorage::State {
+            format!("next_{}", instruction.output.get())
+        } else {
+            format!("v_{}", instruction.output.get())
+        };
+        writeln!(
+            rust,
+            "        // node {} {}",
+            instruction.node, instruction.operation_name,
+        )
+        .unwrap();
+        writeln!(
+            rust,
+            "        let {variable}: [f64; {}] = {expression};",
+            output.ty.shape.len(),
+        )
+        .unwrap();
+    }
+
+    for state in &kernel.states {
+        let variable = if kernel.state_is_written(state.value) {
+            format!("next_{}", state.value.get())
+        } else {
+            format!("s_{}", state.value.get())
+        };
+        for component in 0..state.initial_elements.len() {
+            writeln!(
+                rust,
+                "        candidate[{} + {component} * BATCH_LEN + lane] = {variable}[{component}];",
+                state.offset,
+            )
+            .unwrap();
+        }
     }
     writeln!(rust, "    }}").unwrap();
     Ok(())
