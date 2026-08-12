@@ -25,6 +25,8 @@ use std::alloc::{GlobalAlloc, Layout, System};
 use std::collections::BTreeSet;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+mod gate_d;
+
 struct CountingAllocator;
 
 static ALLOCATIONS: AtomicUsize = AtomicUsize::new(0);
@@ -47,6 +49,10 @@ const SOURCE: &str =
     include_str!("../../../../tests/architecture/resident-activation/n-body-source-v1.mec");
 
 fn main() {
+    if std::env::args().any(|argument| argument == "--gate-d-benchmark") {
+        gate_d::run();
+        return;
+    }
     let catalog = mech_stdlib::source_catalog();
     let (artifact, bytecode) = compile(SOURCE, catalog.clone());
     let decoded = decode_program_artifact_bytecode_v1(&bytecode)
