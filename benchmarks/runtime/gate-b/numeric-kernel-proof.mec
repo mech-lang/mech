@@ -1,0 +1,17 @@
+@input := bench://numeric-kernel{:read(pulse), :read(drive)}
+
+pulse := @input/pulse
+drive := @input/drive
+
+transition := [0.999, 0.01; -0.02, 0.998]
+drive-axis := [0.005; -0.003]
+
+~signal := [1.0; -2.0]
+
+~> pulse {
+  propagated := transition ** signal
+  driven := drive-axis * drive
+  signal = propagated + driven
+}
+
+signal

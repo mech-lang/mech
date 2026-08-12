@@ -1,5 +1,5 @@
 [package]
-name = "mech-high-level-ekf-resident"
+name = "mech-native-kernel-prototype"
 version = "0.1.0"
 edition = "2024"
 publish = false

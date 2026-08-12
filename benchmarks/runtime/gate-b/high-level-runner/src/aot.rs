@@ -1,25 +1,29 @@
-use libloading::Library;
-use mech_core::snapshot::SequenceView;
-use mech_core::{CellSlotId, DimensionExpr, ResidentShape, Value, ValueData};
-use mech_engine::__resident::{ActivatedPlan, ResidentStorageClass};
-use mech_engine::artifact::{
-    ArtifactSource, BindingDeclaration, InitializerReference, ProgramArtifact, SlotRole,
+use crate::kernel_ir::{
+    BinaryOperation, KernelIr, Operation, Shape, Source, UnaryOperation, ValueStorage,
 };
-use std::collections::BTreeMap;
+use libloading::Library;
+use mech_core::CellSlotId;
+use mech_engine::__resident::ActivatedPlan;
+use mech_engine::artifact::ProgramArtifact;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 type InitFunction = unsafe extern "C" fn(*mut f64);
 type TurnFunction = unsafe extern "C" fn(*const f64, *const f64, *mut f64);
 
+static OUTPUT_SERIAL: AtomicU64 = AtomicU64::new(0);
+
 pub struct AotProgram {
     _library: Library,
     initialize: InitFunction,
     turn: TurnFunction,
+    input_len: usize,
     state_len: usize,
+    instruction_count: usize,
     source_path: PathBuf,
     compile_time: Duration,
 }
@@ -50,10 +54,17 @@ impl AotProgram {
         plan: &ActivatedPlan,
         input_slots: &[CellSlotId],
     ) -> Result<Self, String> {
-        let generated = emit_rust(artifact, plan, input_slots)?;
+        let kernel =
+            KernelIr::lower(artifact, plan, input_slots).map_err(|error| error.to_string())?;
+        Self::build_kernel(&kernel)
+    }
+
+    fn build_kernel(kernel: &KernelIr) -> Result<Self, String> {
+        let generated = emit_rust(kernel)?;
         let directory = output_directory();
         fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
-        let stem = format!("mech_ekf_aot_{}", std::process::id());
+        let serial = OUTPUT_SERIAL.fetch_add(1, Ordering::Relaxed);
+        let stem = format!("mech_program_aot_{}_{}", std::process::id(), serial);
         let source_path = directory.join(format!("{stem}.rs"));
         let library_path = directory.join(dynamic_library_name(&stem));
         fs::write(&source_path, generated).map_err(|error| error.to_string())?;
@@ -98,13 +109,16 @@ impl AotProgram {
             _library: library,
             initialize,
             turn,
-            state_len: state_len(plan)?,
+            input_len: kernel.input_count,
+            state_len: kernel.state_len,
+            instruction_count: kernel.instructions.len(),
             source_path,
             compile_time,
         })
     }
 
-    pub fn turn(&self, state: &mut AotState, inputs: [f64; 4]) {
+    pub fn turn(&self, state: &mut AotState, inputs: &[f64]) {
+        assert_eq!(inputs.len(), self.input_len);
         assert_eq!(state.buffers[0].len(), self.state_len);
         let published = state.published;
         let candidate = 1 - published;
@@ -131,17 +145,9 @@ impl AotProgram {
     pub fn compile_time(&self) -> Duration {
         self.compile_time
     }
-}
 
-#[derive(Clone, Copy, Debug)]
-struct Shape {
-    rows: usize,
-    columns: usize,
-}
-
-impl Shape {
-    fn len(self) -> usize {
-        self.rows * self.columns
+    pub fn instruction_count(&self) -> usize {
+        self.instruction_count
     }
 }
 
@@ -167,38 +173,15 @@ fn dynamic_library_name(stem: &str) -> String {
     }
 }
 
-fn state_len(plan: &ActivatedPlan) -> Result<usize, String> {
-    plan.slots
-        .iter()
-        .filter(|slot| slot.storage == ResidentStorageClass::State)
-        .try_fold(0usize, |len, slot| {
-            if slot.region.kind != mech_core::ResidentValueKind::F64 {
-                return Err("prototype only supports f64 state".to_string());
-            }
-            Ok(len.max(slot.region.offset + slot.region.len))
-        })
-}
-
-fn emit_rust(
-    artifact: &ProgramArtifact,
-    plan: &ActivatedPlan,
-    input_slots: &[CellSlotId],
-) -> Result<String, String> {
-    let state_len = state_len(plan)?;
-    let input_by_slot = input_slots
-        .iter()
-        .copied()
-        .enumerate()
-        .map(|(ordinal, slot)| (slot, ordinal))
-        .collect::<BTreeMap<_, _>>();
+fn emit_rust(kernel: &KernelIr) -> Result<String, String> {
     let mut rust = String::new();
     writeln!(
         rust,
-        "// Generated from the normal Mech ProgramArtifact. Do not edit."
+        "// Generated from backend-neutral Mech numeric kernel IR. Do not edit."
     )
     .unwrap();
-    writeln!(rust, "const INPUT_LEN: usize = {};", input_slots.len()).unwrap();
-    writeln!(rust, "const STATE_LEN: usize = {state_len};\n").unwrap();
+    writeln!(rust, "const INPUT_LEN: usize = {};", kernel.input_count).unwrap();
+    writeln!(rust, "const STATE_LEN: usize = {};\n", kernel.state_len).unwrap();
 
     writeln!(rust, "#[no_mangle]").unwrap();
     writeln!(
@@ -211,35 +194,13 @@ fn emit_rust(
         "    let state = core::slice::from_raw_parts_mut(state, STATE_LEN);"
     )
     .unwrap();
-    for slot in plan
-        .slots
-        .iter()
-        .filter(|slot| slot.storage == ResidentStorageClass::State)
-    {
-        let declaration = &artifact.slots()[slot.artifact_id.get() as usize];
-        let Some(InitializerReference::Constant(constant)) = declaration.initializer else {
-            return Err(format!(
-                "state slot {} has no constant initializer",
-                slot.artifact_id.get()
-            ));
-        };
-        let values = value_elements(
-            artifact
-                .constants()
-                .get(constant)
-                .ok_or_else(|| format!("missing constant {}", constant.get()))?,
-        )?;
-        if values.len() != slot.region.len {
-            return Err(format!(
-                "initializer length mismatch for slot {}",
-                slot.artifact_id.get()
-            ));
-        }
-        for (ordinal, value) in values.iter().enumerate() {
+    for state in &kernel.states {
+        for (ordinal, bits) in state.initial_elements.iter().enumerate() {
             writeln!(
                 rust,
-                "    state[{}] = {value};",
-                slot.region.offset + ordinal
+                "    state[{}] = {};",
+                state.offset + ordinal,
+                float_literal(*bits),
             )
             .unwrap();
         }
@@ -268,75 +229,63 @@ fn emit_rust(
     )
     .unwrap();
 
-    for slot in plan
-        .slots
-        .iter()
-        .filter(|slot| slot.storage == ResidentStorageClass::State)
-    {
-        let elements = (0..slot.region.len)
-            .map(|ordinal| format!("published[{}]", slot.region.offset + ordinal))
+    for state in &kernel.states {
+        let elements = (0..state.initial_elements.len())
+            .map(|ordinal| format!("published[{}]", state.offset + ordinal))
             .collect::<Vec<_>>();
         writeln!(
             rust,
             "    let s_{}: [f64; {}] = {};",
-            slot.artifact_id.get(),
-            slot.region.len,
+            state.value.get(),
+            state.initial_elements.len(),
             array(&elements),
         )
         .unwrap();
     }
 
-    for node in artifact.nodes() {
-        let output = node_output(artifact, node)?;
-        let output_slot = &artifact.slots()[output.get() as usize];
-        let output_shape = slot_shape(plan, output)?;
-        if node.operation.module_path.as_ref() == ["resource", "read"] {
-            let ordinal = input_by_slot
-                .get(&output)
-                .ok_or_else(|| format!("resource node {} is not a bound input", node.node.get()))?;
-            writeln!(rust, "    // node {} resource/read", node.node.get()).unwrap();
-            writeln!(
-                rust,
-                "    let v_{}: [f64; 1] = [inputs[{ordinal}]];",
-                output.get()
-            )
-            .unwrap();
-            continue;
-        }
-        let operands = node_inputs(artifact, plan, node)?;
-        let expression = emit_operation(&node.operation.operation_name, &operands, output_shape)?;
-        let variable = if output_slot.role == SlotRole::State {
-            format!("next_{}", output.get())
+    for instruction in &kernel.instructions {
+        let output = kernel.value(instruction.output);
+        let expression = match instruction.operation {
+            Operation::Input { ordinal } => format!("[inputs[{ordinal}]]"),
+            operation => {
+                let operands = instruction
+                    .inputs
+                    .iter()
+                    .map(|source| operand(kernel, source))
+                    .collect::<Vec<_>>();
+                emit_operation(operation, &operands, output.ty.shape)?
+            }
+        };
+        let variable = if output.storage == ValueStorage::State {
+            format!("next_{}", instruction.output.get())
         } else {
-            format!("v_{}", output.get())
+            format!("v_{}", instruction.output.get())
         };
         writeln!(
             rust,
-            "    // node {} {}/{}",
-            node.node.get(),
-            node.operation.module_path.join("/"),
-            node.operation.operation_name,
+            "    // node {} {}",
+            instruction.node, instruction.operation_name,
         )
         .unwrap();
         writeln!(
             rust,
             "    let {variable}: [f64; {}] = {expression};",
-            output_shape.len(),
+            output.ty.shape.len(),
         )
         .unwrap();
     }
 
-    for slot in plan
-        .slots
-        .iter()
-        .filter(|slot| slot.storage == ResidentStorageClass::State)
-    {
-        for ordinal in 0..slot.region.len {
+    for state in &kernel.states {
+        let variable = if kernel.state_is_written(state.value) {
+            format!("next_{}", state.value.get())
+        } else {
+            format!("s_{}", state.value.get())
+        };
+        for ordinal in 0..state.initial_elements.len() {
             writeln!(
                 rust,
-                "    candidate[{}] = next_{}[{ordinal}];",
-                slot.region.offset + ordinal,
-                slot.artifact_id.get(),
+                "    candidate[{}] = {variable}[{ordinal}];",
+                state.offset + ordinal,
             )
             .unwrap();
         }
@@ -345,266 +294,144 @@ fn emit_rust(
     Ok(rust)
 }
 
-fn node_output(
-    artifact: &ProgramArtifact,
-    node: &mech_engine::artifact::NodeDeclaration,
-) -> Result<CellSlotId, String> {
-    let outputs = &artifact.bindings()
-        [node.output_bindings.start as usize..node.output_bindings.end as usize];
-    let [BindingDeclaration::Output { target, .. }] = outputs else {
-        return Err(format!("node {} must have one output", node.node.get()));
-    };
-    Ok(*target)
-}
-
-fn node_inputs(
-    artifact: &ProgramArtifact,
-    plan: &ActivatedPlan,
-    node: &mech_engine::artifact::NodeDeclaration,
-) -> Result<Vec<Operand>, String> {
-    let mut inputs = artifact.bindings()
-        [node.input_bindings.start as usize..node.input_bindings.end as usize]
-        .iter()
-        .map(|binding| match binding {
-            BindingDeclaration::Input {
-                port_ordinal,
-                source,
-                ..
-            } => Ok((*port_ordinal, operand(artifact, plan, *source)?)),
-            BindingDeclaration::Output { .. } => Err("output in input binding range".to_string()),
-        })
-        .collect::<Result<Vec<_>, String>>()?;
-    inputs.sort_by_key(|(ordinal, _)| *ordinal);
-    Ok(inputs.into_iter().map(|(_, operand)| operand).collect())
-}
-
-fn operand(
-    artifact: &ProgramArtifact,
-    plan: &ActivatedPlan,
-    source: ArtifactSource,
-) -> Result<Operand, String> {
+fn operand(kernel: &KernelIr, source: &Source) -> Operand {
     match source {
-        ArtifactSource::Constant(constant) => {
-            let value = artifact
-                .constants()
-                .get(constant)
-                .ok_or_else(|| format!("missing constant {}", constant.get()))?;
-            Ok(Operand {
-                expression: array(&value_elements(value)?),
-                shape: value_shape(artifact, value)?,
-            })
-        }
-        ArtifactSource::Slot(slot) => {
-            let declaration = &artifact.slots()[slot.get() as usize];
-            Ok(Operand {
-                expression: if declaration.role == SlotRole::State {
-                    format!("s_{}", slot.get())
-                } else {
-                    format!("v_{}", slot.get())
-                },
-                shape: slot_shape(plan, slot)?,
-            })
-        }
-    }
-}
-
-fn slot_shape(plan: &ActivatedPlan, slot: CellSlotId) -> Result<Shape, String> {
-    let region: ResidentShape = plan
-        .slots
-        .get(slot.get() as usize)
-        .ok_or_else(|| format!("missing resident slot {}", slot.get()))?
-        .region
-        .shape;
-    Ok(Shape {
-        rows: region.rows as usize,
-        columns: region.columns as usize,
-    })
-}
-
-fn value_shape(artifact: &ProgramArtifact, value: &Value) -> Result<Shape, String> {
-    let schema = artifact
-        .schemas()
-        .entry(value.schema())
-        .ok_or_else(|| "constant schema is missing".to_string())?
-        .schema();
-    match schema.body() {
-        mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => Ok(Shape {
-            rows: 1,
-            columns: 1,
-        }),
-        mech_core::SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2 => Ok(Shape {
-            rows: evaluate_dimension(&dimensions[0], value.shape().parameter_values())? as usize,
-            columns: evaluate_dimension(&dimensions[1], value.shape().parameter_values())? as usize,
-        }),
-        body => Err(format!("unsupported constant schema {body:?}")),
-    }
-}
-
-fn evaluate_dimension(expression: &DimensionExpr, values: &[u64]) -> Result<u64, String> {
-    match expression {
-        DimensionExpr::Hole => Err("unresolved dimension".to_string()),
-        DimensionExpr::Constant(value) => Ok(*value),
-        DimensionExpr::Parameter(id) => values
-            .get(id.get() as usize)
-            .copied()
-            .ok_or_else(|| "dimension parameter is missing".to_string()),
-        DimensionExpr::Add(terms) => terms.iter().try_fold(0_u64, |sum, term| {
-            sum.checked_add(evaluate_dimension(term, values)?)
-                .ok_or_else(|| "dimension overflow".to_string())
-        }),
-        DimensionExpr::Multiply(terms) => terms.iter().try_fold(1_u64, |product, term| {
-            product
-                .checked_mul(evaluate_dimension(term, values)?)
-                .ok_or_else(|| "dimension overflow".to_string())
-        }),
-        DimensionExpr::Min(terms) => terms
-            .iter()
-            .map(|term| evaluate_dimension(term, values))
-            .collect::<Result<Vec<_>, _>>()?
-            .into_iter()
-            .min()
-            .ok_or_else(|| "empty minimum".to_string()),
-        DimensionExpr::Max(terms) => terms
-            .iter()
-            .map(|term| evaluate_dimension(term, values))
-            .collect::<Result<Vec<_>, _>>()?
-            .into_iter()
-            .max()
-            .ok_or_else(|| "empty maximum".to_string()),
-    }
-}
-
-fn value_elements(value: &Value) -> Result<Vec<String>, String> {
-    let bits = match value.data() {
-        ValueData::F64(value) => vec![*value],
-        ValueData::Matrix(matrix) => match matrix.elements() {
-            SequenceView::F64(values) => values.to_vec(),
-            other => return Err(format!("unsupported matrix constant {other:?}")),
+        Source::Constant(constant) => Operand {
+            expression: array(
+                &constant
+                    .elements
+                    .iter()
+                    .map(|bits| float_literal(*bits))
+                    .collect::<Vec<_>>(),
+            ),
+            shape: constant.ty.shape,
         },
-        other => return Err(format!("unsupported constant {other:?}")),
-    };
-    Ok(bits
-        .into_iter()
-        .map(|value| format!("f64::from_bits({}u64)", value.bits()))
-        .collect())
+        Source::Value(id) => {
+            let value = kernel.value(*id);
+            Operand {
+                expression: match value.storage {
+                    ValueStorage::State => format!("s_{}", id.get()),
+                    ValueStorage::Temporary => format!("v_{}", id.get()),
+                },
+                shape: value.ty.shape,
+            }
+        }
+    }
 }
 
-fn emit_operation(name: &str, inputs: &[Operand], output: Shape) -> Result<String, String> {
-    if name.starts_with("HorizontalConcatenate") {
-        let mut elements = Vec::new();
-        for input in inputs {
-            if input.shape.rows != output.rows {
-                return Err(format!("{name}: horizontal row mismatch"));
-            }
-            elements.extend((0..input.shape.len()).map(|index| at(input, index)));
+fn emit_operation(
+    operation: Operation,
+    inputs: &[Operand],
+    output: Shape,
+) -> Result<String, String> {
+    match operation {
+        Operation::Input { .. } => {
+            Err("input operation reached numeric code generation".to_string())
         }
-        return checked_array(name, elements, output.len());
-    }
-    if name.starts_with("VerticalConcatenate") {
-        let mut elements = Vec::new();
-        for column in 0..output.columns {
-            for input in inputs {
-                if input.shape.columns != output.columns {
-                    return Err(format!("{name}: vertical column mismatch"));
+        Operation::HorizontalConcatenate => {
+            let elements = inputs
+                .iter()
+                .flat_map(|input| (0..input.shape.len()).map(|index| at(input, index)))
+                .collect::<Vec<_>>();
+            checked_array(elements, output.len())
+        }
+        Operation::VerticalConcatenate => {
+            let mut elements = Vec::new();
+            for column in 0..output.columns {
+                for input in inputs {
+                    for row in 0..input.shape.rows {
+                        elements.push(at(input, row + column * input.shape.rows));
+                    }
                 }
-                for row in 0..input.shape.rows {
-                    elements.push(at(input, row + column * input.shape.rows));
-                }
             }
+            checked_array(elements, output.len())
         }
-        return checked_array(name, elements, output.len());
-    }
-    if name.starts_with("MatMul") {
-        let [left, right] = inputs else {
-            return Err(format!("{name}: expected two inputs"));
-        };
-        if left.shape.columns != right.shape.rows
-            || output.rows != left.shape.rows
-            || output.columns != right.shape.columns
-        {
-            return Err(format!("{name}: matrix product shape mismatch"));
-        }
-        let mut elements = Vec::with_capacity(output.len());
-        for column in 0..output.columns {
-            for row in 0..output.rows {
-                let terms = (0..left.shape.columns)
-                    .map(|inner| {
-                        format!(
-                            "{} * {}",
-                            at(left, row + inner * left.shape.rows),
-                            at(right, inner + column * right.shape.rows),
-                        )
-                    })
-                    .collect::<Vec<_>>();
-                elements.push(terms.join(" + "));
-            }
-        }
-        return Ok(array(&elements));
-    }
-    if name.starts_with("Transpose") {
-        let [input] = inputs else {
-            return Err(format!("{name}: expected one input"));
-        };
-        let elements = (0..output.columns)
-            .flat_map(|column| {
-                (0..output.rows).map(move |row| at(input, column + row * input.shape.rows))
-            })
-            .collect::<Vec<_>>();
-        return checked_array(name, elements, output.len());
-    }
-    if name.starts_with("Dot") {
-        let [left, right] = inputs else {
-            return Err(format!("{name}: expected two inputs"));
-        };
-        if left.shape.len() != right.shape.len() || output.len() != 1 {
-            return Err(format!("{name}: dot shape mismatch"));
-        }
-        let sum = (0..left.shape.len())
-            .map(|index| format!("{} * {}", at(left, index), at(right, index)))
-            .collect::<Vec<_>>()
-            .join(" + ");
-        return Ok(format!("[{sum}]"));
-    }
-    if name.starts_with("Assign") {
-        let [input] = inputs else {
-            return Err(format!("{name}: expected one input"));
-        };
-        return checked_array(
-            name,
-            (0..input.shape.len())
-                .map(|index| at(input, index))
-                .collect(),
-            output.len(),
-        );
-    }
-    if name.starts_with("MathSin") || name.starts_with("MathCos") || name.starts_with("Negate") {
-        let [input] = inputs else {
-            return Err(format!("{name}: expected one input"));
-        };
-        let elements = (0..input.shape.len())
-            .map(|index| {
-                let value = at(input, index);
-                if name.starts_with("MathSin") {
-                    format!("({value}).sin()")
-                } else if name.starts_with("MathCos") {
-                    format!("({value}).cos()")
-                } else {
-                    format!("-({value})")
-                }
-            })
-            .collect();
-        return checked_array(name, elements, output.len());
-    }
-    if name.starts_with("Atan2") {
-        let [left, right] = inputs else {
-            return Err(format!("{name}: expected two inputs"));
-        };
-        return Ok(format!("[({}).atan2({})]", at(left, 0), at(right, 0)));
-    }
-    for (prefix, operator) in [("Add", "+"), ("Sub", "-"), ("Mul", "*"), ("Div", "/")] {
-        if name.starts_with(prefix) {
+        Operation::MatrixMultiply => {
             let [left, right] = inputs else {
-                return Err(format!("{name}: expected two inputs"));
+                unreachable!("kernel IR validated matrix multiplication arity")
+            };
+            let mut elements = Vec::with_capacity(output.len());
+            for column in 0..output.columns {
+                for row in 0..output.rows {
+                    let terms = (0..left.shape.columns)
+                        .map(|inner| {
+                            format!(
+                                "{} * {}",
+                                at(left, row + inner * left.shape.rows),
+                                at(right, inner + column * right.shape.rows),
+                            )
+                        })
+                        .collect::<Vec<_>>();
+                    elements.push(terms.join(" + "));
+                }
+            }
+            Ok(array(&elements))
+        }
+        Operation::Transpose => {
+            let [input] = inputs else {
+                unreachable!("kernel IR validated transpose arity")
+            };
+            checked_array(
+                (0..output.columns)
+                    .flat_map(|column| {
+                        (0..output.rows).map(move |row| at(input, column + row * input.shape.rows))
+                    })
+                    .collect(),
+                output.len(),
+            )
+        }
+        Operation::Dot => {
+            let [left, right] = inputs else {
+                unreachable!("kernel IR validated dot arity")
+            };
+            let sum = (0..left.shape.len())
+                .map(|index| format!("{} * {}", at(left, index), at(right, index)))
+                .collect::<Vec<_>>()
+                .join(" + ");
+            Ok(format!("[{sum}]"))
+        }
+        Operation::Assign => {
+            let [input] = inputs else {
+                unreachable!("kernel IR validated assignment arity")
+            };
+            checked_array(
+                (0..input.shape.len())
+                    .map(|index| at(input, index))
+                    .collect(),
+                output.len(),
+            )
+        }
+        Operation::Unary(operation) => {
+            let [input] = inputs else {
+                unreachable!("kernel IR validated unary arity")
+            };
+            let elements = (0..input.shape.len())
+                .map(|index| {
+                    let value = at(input, index);
+                    match operation {
+                        UnaryOperation::Sin => format!("({value}).sin()"),
+                        UnaryOperation::Cos => format!("({value}).cos()"),
+                        UnaryOperation::Negate => format!("-({value})"),
+                    }
+                })
+                .collect();
+            checked_array(elements, output.len())
+        }
+        Operation::Atan2 => {
+            let [left, right] = inputs else {
+                unreachable!("kernel IR validated atan2 arity")
+            };
+            Ok(format!("[({}).atan2({})]", at(left, 0), at(right, 0)))
+        }
+        Operation::Binary(operation) => {
+            let [left, right] = inputs else {
+                unreachable!("kernel IR validated binary arity")
+            };
+            let operator = match operation {
+                BinaryOperation::Add => "+",
+                BinaryOperation::Subtract => "-",
+                BinaryOperation::Multiply => "*",
+                BinaryOperation::Divide => "/",
             };
             let elements = (0..output.len())
                 .map(|index| {
@@ -613,30 +440,69 @@ fn emit_operation(name: &str, inputs: &[Operand], output: Shape) -> Result<Strin
                     format!(
                         "{} {operator} {}",
                         at(left, left_index),
-                        at(right, right_index)
+                        at(right, right_index),
                     )
                 })
                 .collect::<Vec<_>>();
-            return Ok(array(&elements));
+            Ok(array(&elements))
         }
     }
-    Err(format!("unsupported resident operation {name}"))
 }
 
 fn at(operand: &Operand, index: usize) -> String {
     format!("({})[{index}]", operand.expression)
 }
 
-fn checked_array(name: &str, elements: Vec<String>, expected: usize) -> Result<String, String> {
+fn checked_array(elements: Vec<String>, expected: usize) -> Result<String, String> {
     if elements.len() != expected {
         return Err(format!(
-            "{name}: generated {} elements, expected {expected}",
+            "kernel IR/codegen mismatch: generated {} elements, expected {expected}",
             elements.len(),
         ));
     }
     Ok(array(&elements))
 }
 
+fn float_literal(bits: u64) -> String {
+    format!("f64::from_bits({bits}u64)")
+}
+
 fn array(elements: &[String]) -> String {
     format!("[{}]", elements.join(", "))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn matrix_multiply_codegen_uses_column_major_shapes() {
+        let left = Operand {
+            expression: "left".to_string(),
+            shape: Shape {
+                rows: 2,
+                columns: 3,
+            },
+        };
+        let right = Operand {
+            expression: "right".to_string(),
+            shape: Shape {
+                rows: 3,
+                columns: 1,
+            },
+        };
+        let expression = emit_operation(
+            Operation::MatrixMultiply,
+            &[left, right],
+            Shape {
+                rows: 2,
+                columns: 1,
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            expression,
+            "[(left)[0] * (right)[0] + (left)[2] * (right)[1] + (left)[4] * (right)[2], (left)[1] * (right)[0] + (left)[3] * (right)[1] + (left)[5] * (right)[2]]",
+        );
+    }
 }

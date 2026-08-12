@@ -1,4 +1,7 @@
+#![allow(clippy::result_large_err)]
+
 mod aot;
+mod kernel_ir;
 
 use mech_core::{
     ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError, LegacyValue, MResult,
@@ -19,6 +22,7 @@ use std::time::{Duration, Instant};
 use aot::{AotProgram, AotState};
 
 const SOURCE: &str = include_str!("../../ekf-high-level.mec");
+const NUMERIC_PROOF_SOURCE: &str = include_str!("../../numeric-kernel-proof.mec");
 const INPUT_PERIOD: usize = 4_096;
 const DT: f64 = 0.1;
 const LANDMARK_X: f64 = 140.0;
@@ -128,24 +132,33 @@ impl ReferenceEkf {
 }
 
 #[derive(Debug, Default)]
-struct EkfCompilationServices {
+struct CompilationServices {
+    values: BTreeMap<String, f64>,
     bindings: Vec<(ExecutionResourceRequest, ValRef)>,
 }
 
-impl EkfCompilationServices {
-    fn value(request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
-        let value = match request.path.as_str() {
-            "pulse" => 0.0,
-            "linear-velocity" => 1.0,
-            "angular-velocity" => 0.01,
-            "bearing" => -0.25,
-            path => return Err(error(format!("unknown EKF input path {path}"))),
-        };
+impl CompilationServices {
+    fn new(values: impl IntoIterator<Item = (&'static str, f64)>) -> Self {
+        Self {
+            values: values
+                .into_iter()
+                .map(|(path, value)| (path.to_string(), value))
+                .collect(),
+            bindings: Vec::new(),
+        }
+    }
+
+    fn value(&self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+        let value = self
+            .values
+            .get(&request.path)
+            .copied()
+            .ok_or_else(|| error(format!("unknown input path {}", request.path)))?;
         Ok(LegacyValue::F64(Ref::new(value)))
     }
 }
 
-impl MechExecutionServices for EkfCompilationServices {
+impl MechExecutionServices for CompilationServices {
     fn invoke_host_function(
         &mut self,
         request: &ExecutionHostFunctionRequest,
@@ -158,11 +171,11 @@ impl MechExecutionServices for EkfCompilationServices {
         &mut self,
         request: &ExecutionResourceRequest,
     ) -> MResult<LegacyValue> {
-        Self::value(request)
+        self.value(request)
     }
 
     fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
-        Self::value(request)
+        self.value(request)
     }
 
     fn write_resource(
@@ -403,7 +416,7 @@ fn validate_aot(program: &AotProgram, samples: &[InputSample]) {
         reference.turn(sample);
         program.turn(
             &mut state,
-            [
+            &[
                 (turn + 1) as f64,
                 sample.linear_velocity,
                 sample.angular_velocity,
@@ -440,7 +453,7 @@ fn benchmark_aot(program: &AotProgram, samples: &[InputSample]) {
         let sample = samples[turn % samples.len()];
         program.turn(
             &mut state,
-            [
+            &[
                 (turn + 1) as f64,
                 sample.linear_velocity,
                 sample.angular_velocity,
@@ -454,10 +467,95 @@ fn benchmark_aot(program: &AotProgram, samples: &[InputSample]) {
     print_measurement("Mech AOT generated Rust", &measurement, black_box(check));
 }
 
+fn prove_general_numeric_kernel(
+    catalog: &std::sync::Arc<mech_core::FunctionCatalog>,
+) -> MResult<AotProgram> {
+    let mut services = CompilationServices::new([("pulse", 0.0), ("drive", 0.0)]);
+    let mut program =
+        MechProgram::with_function_catalog(MechProgramConfig::default(), catalog.clone());
+    program.run_string_with_services(NUMERIC_PROOF_SOURCE, &mut services)?;
+    let (artifact, _bytecode) = program.compile_program_product()?.into_parts();
+    let instance = activate(
+        ReactiveInstanceId::new(3, 0),
+        &artifact,
+        catalog,
+        &ActivationFacts::default(),
+    )
+    .map_err(|resident_error| {
+        error(format!(
+            "numeric proof resident activation failed: {resident_error:?}"
+        ))
+    })?;
+    let input_slots = instance
+        .plan
+        .inputs
+        .iter()
+        .map(|input| mech_core::CellSlotId::new(input.slot.get()))
+        .collect::<Vec<_>>();
+    let aot = AotProgram::build(&artifact, &instance.plan, &input_slots)
+        .map_err(|message| error(format!("numeric proof AOT build failed: {message}")))?;
+
+    let input_paths = services
+        .bindings
+        .iter()
+        .map(|(request, _)| request.path.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(input_paths.len(), 2);
+    let mut state = AotState::new(&aot);
+    let mut expected = [1.0_f64, -2.0];
+    let mut maximum_error = 0.0_f64;
+    for turn in 0..INPUT_PERIOD {
+        let drive = (TAU * turn as f64 / 127.0).sin();
+        let inputs = input_paths
+            .iter()
+            .map(|path| match *path {
+                "pulse" => (turn + 1) as f64,
+                "drive" => drive,
+                path => panic!("unexpected numeric proof input {path}"),
+            })
+            .collect::<Vec<_>>();
+        let previous = expected;
+        expected = [
+            0.999 * previous[0] + 0.01 * previous[1] + 0.005 * drive,
+            -0.02 * previous[0] + 0.998 * previous[1] - 0.003 * drive,
+        ];
+        aot.turn(&mut state, &inputs);
+        let error = state
+            .values()
+            .iter()
+            .zip(expected)
+            .map(|(actual, expected)| (actual - expected).abs())
+            .fold(0.0, f64::max);
+        maximum_error = maximum_error.max(error);
+        assert!(
+            error < 1.0e-12,
+            "numeric proof mismatch at turn {turn}: {error:e}"
+        );
+    }
+    println!(
+        "general numeric-kernel proof: {} Mech nodes -> {} kernel instructions; {} turns, maximum absolute error {:.3e}",
+        artifact.nodes().len(),
+        aot.instruction_count(),
+        INPUT_PERIOD,
+        maximum_error,
+    );
+    println!(
+        "  generated independent proof: {} (rustc -O: {:.1} ms)",
+        aot.source_path().display(),
+        aot.compile_time().as_secs_f64() * 1.0e3,
+    );
+    Ok(aot)
+}
+
 fn main() -> MResult<()> {
     let frontend_started = Instant::now();
     let catalog = mech_stdlib::source_catalog();
-    let mut services = EkfCompilationServices::default();
+    let mut services = CompilationServices::new([
+        ("pulse", 0.0),
+        ("linear-velocity", 1.0),
+        ("angular-velocity", 0.01),
+        ("bearing", -0.25),
+    ]);
     let mut program =
         MechProgram::with_function_catalog(MechProgramConfig::default(), catalog.clone());
     program.run_string_with_services(SOURCE, &mut services)?;
@@ -572,11 +670,13 @@ fn main() -> MResult<()> {
     let aot = AotProgram::build(&artifact, &validation.plan, &input_slots)
         .map_err(|message| error(format!("AOT build failed: {message}")))?;
     println!(
-        "generated AOT Rust: {} (rustc -O: {:.1} ms)",
+        "generated AOT Rust from {} kernel instructions: {} (rustc -O: {:.1} ms)",
+        aot.instruction_count(),
         aot.source_path().display(),
         aot.compile_time().as_secs_f64() * 1.0e3,
     );
     validate_aot(&aot, &samples);
+    let _numeric_proof = prove_general_numeric_kernel(&catalog)?;
 
     let mut full = activate(
         ReactiveInstanceId::new(1, 0),
